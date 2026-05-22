@@ -1156,16 +1156,7 @@ class pomodoroVc: NSViewController {
                                 }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
                                     var shouldAskPasswordForEvening = false
                                     if shouldAskPassword() &&  !SettingsManagerObject.isEasySkipEnabled{
-                                        var isCutOffTimeGoing = false
-                                        if cutOffTime != nil {
-                                            let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
-                                            let currentDate = Date()
-                                            if currentDate > cutOffDate{
-                                                isCutOffTimeGoing = true
-                                            }
-                                        }
-                                        
-                                        if isCutOffTimeGoing{
+                                        if isCutOffTimeGoing(){ 
                                             if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
                                                 shouldAskPasswordForEvening = true
                                             }
@@ -1351,6 +1342,9 @@ class pomodoroVc: NSViewController {
         }
         
         appdelegate?.setFocusModeTimer(hour: nil, minute: minute)
+        //focusButtonService
+        focusButtonServiceObject.startFocusSession(seconds: minute*60)
+        
         isFocusModeStartedFromPomodoroMode = true
         if isSkipMicrobreaks{
             isSkipBreakActivityDuringPomodoro = true

@@ -432,18 +432,12 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                     boxTodoPlayer.isEnabled = true
                 }
             }
-//            else{
-//                enableAllItems()
-//            }
         case boxBrainDump:
             mainViewControllerObj?.showBrainDumpView()
         case boxBrowsersTabAudit:
             mainViewControllerObj?.showBrowsersTabAuditView()
         case boxFocusMusic:
             mainViewControllerObj?.showAllTracksView()
-//        case boxFocusModeSettings:
-//            mainViewControllerObj?.showFocusPreferencesView()
-//            mainViewControllerObj?.askPasswordForSettingsIfNeeded()
         case boxBlocks:
             mainViewControllerObj?.showBlocksPreferencesView()
             mainViewControllerObj?.askPasswordForSettingsIfNeeded()
@@ -499,11 +493,6 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
             }
         case boxCustomRoutine:
-//            if currentState == ._CUSTOM_ROUTINE_{
-//                mainViewControllerObj?.checkIsFullScreenNeeded()
-//            }else{
-//                mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
-//            }
             if currentState == ._CUSTOM_ROUTINE_ {
                 if customRoutineTimeWcObj != nil {
                     if customRoutineTimeWcObj?.window?.isVisible ?? false{
@@ -518,18 +507,16 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
             }
         case boxTodoPlayer:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            checkScreenSizeIfFullScreenHabitIsRunning()
             if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                 self.view.window?.styleMask.insert(.miniaturizable)// task player should be miniaturizable
             }
         case boxBrainDump:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            checkScreenSizeIfFullScreenHabitIsRunning()
         case boxBrowsersTabAudit:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            checkScreenSizeIfFullScreenHabitIsRunning()
         case boxFocusMusic:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
-//        case boxFocusModeSettings:
-//            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            checkScreenSizeIfFullScreenHabitIsRunning()
         case boxBlocks:
             mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         case boxSettings:
@@ -537,23 +524,26 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         case boxEditHabits:
             mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         case boxMotivation:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            checkScreenSizeIfFullScreenHabitIsRunning()
         case boxHelpAndSupport:
-            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_ || currentState == ._CUSTOM_ROUTINE_ || currentState == ._MICRO_BREAK_{
-                
-                if !isAnyAllowedFocusModeActivityRunning && checkIsFullScreenEnabled(){
-                    mainViewControllerObj?.checkIsFullScreenNeeded()
-                }else{
-                    if isAnyAllowedFocusModeActivityRunning{
-                        mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
-                    }
-                }
-            }else{
-                mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
-            }
-            
+            checkScreenSizeIfFullScreenHabitIsRunning()
         default:
             break;
+        }
+    }
+    
+    func checkScreenSizeIfFullScreenHabitIsRunning(){
+        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_ || currentState == ._CUSTOM_ROUTINE_ || currentState == ._MICRO_BREAK_{
+            
+            if !isAnyAllowedFocusModeActivityRunning && checkIsFullScreenEnabled(){
+                mainViewControllerObj?.checkIsFullScreenNeeded()
+            }else{
+                if isAnyAllowedFocusModeActivityRunning{
+                    mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+                }
+            }
+        }else{
+            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         }
     }
     

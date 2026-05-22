@@ -624,7 +624,14 @@ class simplePomodoroVc: NSViewController {
         allApiObject.getAllTasks(completionHandler: {json in
             DispatchQueue.main.async { [self] in
                 if let json = json{
-                    let sortedTasks = json.sorted { t1, t2 in
+                    
+                    // Remove completed tasks. added in v3.32.487
+                    let filteredTasks = json.filter { task in
+                        let status = task.value(forKey: "status") as? String ?? ""
+                        return status.uppercased() != "COMPLETED"
+                    }
+                    
+                    let sortedTasks = filteredTasks.sorted { t1, t2 in
                         let s1 = t1.value(forKey: "created_at") as? String ?? ""
                         let s2 = t2.value(forKey: "created_at") as? String ?? ""
                         
@@ -900,9 +907,7 @@ class simplePomodoroVc: NSViewController {
                                     }else{
                                         var shouldAskPasswordForEvening = false
                                         if shouldAskPassword() && cutOffTime != nil && SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
-                                            let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
-                                            let currentDate = Date()
-                                            if currentDate > cutOffDate{
+                                            if isCutOffTimeGoing(){
                                                 shouldAskPasswordForEvening = true
                                             }
                                         }
@@ -1051,6 +1056,9 @@ class simplePomodoroVc: NSViewController {
         }
         
         appdelegate?.setFocusModeTimer(hour: nil, minute: minute)
+        //focusButtonService
+        focusButtonServiceObject.startFocusSession(seconds: minute*60)
+        
         isFocusModeStartedFromPomodoroMode = true
     
         isSkipBreakActivityDuringPomodoro = true

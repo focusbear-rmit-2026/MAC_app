@@ -176,16 +176,7 @@ class focusEndWarningVc: NSViewController {
                                     
                                     var shouldAskPasswordForEvening = false
                                     if shouldAskPassword() &&  !SettingsManagerObject.isEasySkipEnabled{
-                                        var isCutOffTimeGoing = false
-                                        if cutOffTime != nil {
-                                            let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
-                                            let currentDate = Date()
-                                            if currentDate > cutOffDate{
-                                                isCutOffTimeGoing = true
-                                            }
-                                        }
-                                        
-                                        if isCutOffTimeGoing{
+                                        if isCutOffTimeGoing(){
                                             if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
                                                 shouldAskPasswordForEvening = true
                                             }

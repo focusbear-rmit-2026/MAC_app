@@ -134,7 +134,14 @@ class popUpAddNewFocusGoalVc: NSViewController {
                     comboBoxTask.isEnabled = true
                     lblGettingTasks.isHidden = true
                     if let json = json{
-                        let sortedTasks = json.sorted { t1, t2 in
+                        
+                        // Remove completed tasks. added in v3.32.487
+                        let filteredTasks = json.filter { task in
+                            let status = task.value(forKey: "status") as? String ?? ""
+                            return status.uppercased() != "COMPLETED"
+                        }
+                        
+                        let sortedTasks = filteredTasks.sorted { t1, t2 in
                             let s1 = t1.value(forKey: "created_at") as? String ?? ""
                             let s2 = t2.value(forKey: "created_at") as? String ?? ""
                             

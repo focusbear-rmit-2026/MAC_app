@@ -984,16 +984,6 @@ func closePopoverTooltipIfVisible(){
     }
 }
 
-
-func closePomodoroWindowIOfVisible(){
-    if pomodoroWindowControllerObj != nil{
-        if pomodoroWindowControllerObj!.window!.isVisible{
-            pomodoroWindowControllerObj?.window?.close()
-            allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
-        }
-    }
-}
-
 func closePupUpBlockIfVisible(){
     if popUpBlockConfirmWcObj != nil{
         if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
@@ -1006,7 +996,6 @@ func closePupUpBlockIfVisible(){
 
 func closePopupBlockWindowIfRunningForUrl(){
     currentBrowserUrlForAi = ""
-//    appdelegate?.timerForCheckUrlFromAiTimeOut?.invalidate()
     if popUpBlockConfirmWcObj != nil{
         if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
             if !popUpBlockConfirmVcObj!.isAppBlocking{
@@ -1257,6 +1246,8 @@ func closeMenuWindowIsVisible(){
                 menuWcObj?.window?.close()
             }
         }
+    }else{
+        appdelegate?.popover.close()
     }
 }
 

@@ -317,9 +317,7 @@ class askPostponeVc: NSViewController {
             if shouldAskPassword() && !SettingsManagerObject.isEasySkipEnabled{
                 var shouldShowPasswordView = false
                 if cutOffTime != nil{
-                    let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
-                    let currentDate = Date()
-                    if currentDate > cutOffDate{
+                    if isCutOffTimeGoing(){
                         if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
                             shouldShowPasswordView = true
                         }

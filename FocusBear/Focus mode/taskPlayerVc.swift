@@ -52,6 +52,8 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         
         trackingAreaPlayFocusMusic = NSTrackingArea.init(rect: self.btnStartFocusMusic.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         self.btnStartFocusMusic.addTrackingArea(trackingAreaPlayFocusMusic!)
+        
+        lblFocusAlignmentScore.isHidden = true
     }
     
     override func viewWillAppear() {
@@ -78,23 +80,12 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     
     override func viewDidAppear() {
         updateTrackingAreaIfNeeded()
-        if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
-            lblFocusAlignmentScore.isHidden = false
-        }else{
-            lblFocusAlignmentScore.isHidden = true
-        }
     }
     
     func setFocusAlignmentScore(){
-        if lblFocusAlignmentScore.isHidden{
-            return;
+        if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
+            updateAlignmentScoreToPlayer()
         }
-        let totalAlignmentScore:Double = currentFocusAlignmentScore//(totalAlignmentScore*100).rounded()/100
-        var focusAlignmentScoreText = "Focus alignment score = <SCORE>"
-        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-            focusAlignmentScoreText = menuInfo.value(forKey: "focusAlignmentScoreText") as? String ?? focusAlignmentScoreText
-        }
-        lblFocusAlignmentScore.stringValue = focusAlignmentScoreText.replacingOccurrences(of: "<SCORE>", with: "\(totalAlignmentScore)%")
     }
     
     func updateTrackingAreaIfNeeded() {
@@ -315,6 +306,65 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
                 addLog(text: "loadIntentionForToDoPlayer:- JavaScript evaluation error: \(error)")// v 2.28.441
             }
         })
+    }
+    
+    func updateAlignmentScoreToPlayer(){
+        let taskData: [String: Any] = [
+            "focusAlignmentScore": currentFocusAlignmentScore
+        ]
+        
+       // . Create main payload
+        let payload: [String: Any] = [
+            "todoPlayer": taskData
+        ]
+        
+       // let script = "syncWithDevices('\(payload)');"
+        
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: payload, options: [])
+            guard let jsonString = String(data: jsonData, encoding: .utf8) else {
+                print("Failed to convert JSON data to string")
+                addLog(text: "Failed to convert JSON data to string")// v 2.28.441
+                return
+            }
+            
+            // 5. Create JavaScript with proper variable handling
+            let jsFunction = """
+            (function() {
+                if (window.__taskInterval) {
+                    clearInterval(window.__taskInterval);
+                }
+                
+                window.__taskInterval = setInterval(() => {
+                    if (window.syncWithDevices) {
+                        try {
+                            const data = \(jsonString);
+                            syncWithDevices(data);
+                            clearInterval(window.__taskInterval);
+                            delete window.__taskInterval;
+                        } catch (error) {
+                            console.error('JS Error:', error);
+                            clearInterval(window.__taskInterval);
+                            delete window.__taskInterval;
+                        }
+                    }
+                }, 100);
+            })();
+            """
+            
+            // Execute JavaScript
+            webView.evaluateJavaScript(jsFunction) { result, error in
+                if let error = error {
+                    print("JavaScript evaluation error: \(error)")
+                    addLog(text: "JavaScript evaluation error: \(error)")// v 2.28.441
+                }else{
+                    addLog(text: "addAndPlayTaskInCurrentList:- success")// v 2.28.444
+                }
+            }
+        } catch {
+            print("JSON serialization error: \(error)")
+            addLog(text: "JSON serialization error: \(error)")// v 2.28.441
+        }
     }
     
     func addAndPlayTaskInCurrentList(taskName: String, id:String, duration:Int, shouldCompleteCurrentTask:Bool) {

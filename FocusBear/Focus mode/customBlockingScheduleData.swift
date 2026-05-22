@@ -670,12 +670,24 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
                     if SettingsManagerObject.isGeekModeEnabled{
                         if pomodoroVcObj != nil{
                             if pomodoroVcObj?.isViewVisible ?? false{
+                                let intentionAdded = pomodoroVcObj?.textViewAchieve.string
                                 leftMenuVcObj?.showPomodoro(pomodoroVcObj: pomodoroVcObj!.view)
+                                
+                                //Postpone intention overwritten by blocking schedule #1815 added v 3.32.484
+                                if let intentionAdded = intentionAdded{
+                                    pomodoroVcObj?.textViewAchieve.string = intentionAdded
+                                }
                             }
                         }
                     }else if simplePomodoroVcObj != nil{
                         if simplePomodoroVcObj?.isViewVisible ?? false{
+                            let intentionAdded = simplePomodoroVcObj?.textViewAchieve.string
                             leftMenuVcObj?.showPomodoro(pomodoroVcObj: simplePomodoroVcObj!.view)
+                            
+                            //Postpone intention overwritten by blocking schedule #1815 added v 3.32.484
+                            if let intentionAdded = intentionAdded{
+                                simplePomodoroVcObj?.textViewAchieve.string = intentionAdded
+                            }
                         }
                     }
                 }
@@ -730,6 +742,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         do {
             let schedule = try decoder.decode([customBlockingSchedule].self, from: jsonData)
             arrBlockingSchedule = schedule
+            saveBlockingSchedulesToLocal()
         } catch {
             addLog(text: "❌ Failed to decode customBlockingSchedule")
             addLog(text: "Error: \(error.localizedDescription)")
@@ -761,6 +774,56 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     }
 
     
+    // local cache added v3.32.487
+    private let localBlockingSchedulesFile = "blocking_schedules.json"
+
+    private func blockingSchedulesFileURL() -> URL {
+        let currentUserURL = appdelegate!.currentUserURL ?? applicationSupportURL!
+        if !FileManager.default.fileExists(atPath: currentUserURL.path) {
+            try? FileManager.default.createDirectory(at: currentUserURL, withIntermediateDirectories: true)
+        }
+        return currentUserURL.appendingPathComponent(localBlockingSchedulesFile)
+    }
+
+    func saveBlockingSchedulesToLocal() {
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .prettyPrinted
+            
+            let data = try encoder.encode(arrBlockingSchedule)
+            
+            try data.write(to: blockingSchedulesFileURL(), options: .atomic)
+            
+            addLog(text: "Blocking schedules saved locally.")
+            
+        } catch {
+            addLog(text: "Failed to save blocking schedules locally: \(error.localizedDescription)")
+        }
+    }
+
+    func loadBlockingSchedulesFromLocal() {
+        let url = blockingSchedulesFileURL()
+        
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            addLog(text: "No local blocking schedules file found.")
+            return
+        }
+        
+        do {
+            let data = try Data(contentsOf: url)
+            
+            let decoder = JSONDecoder()
+            let schedules = try decoder.decode([customBlockingSchedule].self, from: data)
+            
+            arrBlockingSchedule = schedules
+            
+            addLog(text: "Loaded blocking schedules from local cache.")
+            
+        } catch {
+            addLog(text: "Failed to load local blocking schedules: \(error.localizedDescription)")
+        }
+    }
+    //-------------------------------------------------//
     
     func validateBlockingSchedules() {
         if arrFocusType.count == 0 || arrBlockingSchedule.count == 0{
@@ -783,6 +846,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         arrBlockingSchedule.removeAll {
             !validFocusModeIDs.contains($0.focusModeID)
         }
+        saveBlockingSchedulesToLocal()
     }
     
     func validateBlockingScheduleFocusId(schedule: customBlockingSchedule)->Bool {
@@ -843,6 +907,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
             
         })
         arrBlockingSchedule.remove(at: index)
+        saveBlockingSchedulesToLocal()
     }
     
     func isStrictnessLevelNormal()->Bool{
@@ -908,5 +973,6 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
             allApiObject.capturePosthog(event: "add-blocking-schedule", metadata: [:])
             addCustomBlockingScheduleAtIndex(arrBlockingSchedule.count - 1)
         }
+        saveBlockingSchedulesToLocal()
     }
 }

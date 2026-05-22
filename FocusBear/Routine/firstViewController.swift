@@ -35,7 +35,6 @@ class firstViewController: NSViewController {
     @IBOutlet weak var scrollViewHabits: NSScrollView!
     
     @IBOutlet weak var imgView: NSImageView!
-    //    @IBOutlet weak var btnWidth: NSLayoutConstraint!
     @IBOutlet weak var lblSubTitle: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var btnStartFirstHabit: NSButton!
@@ -59,7 +58,7 @@ class firstViewController: NSViewController {
     var actionBarItemPlay = "Play"
     var actionBarItemDone = "Done"
     var actionBarItemSkip = "Skip"
-    
+    var shouldIgnoreVisualizeInstructions = false
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -248,12 +247,7 @@ class firstViewController: NSViewController {
                     imgView.image = NSImage(named: "Waking up _ SMall")
                     imgView.animates = true
                 }
-                habitTotalCompletedSeconds = 0
                 lblTitle.stringValue = startMorningHabitTitleText
-                btnStartFirstHabit.title = "Begin"
-                if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
-                    btnStartFirstHabit.title = activityInfo.value(forKey: "buttonBeginText") as? String ?? btnStartFirstHabit.title
-                }
                 
                 tblViewHabits.isHidden = false
                 scrollViewHabits.isHidden = false
@@ -285,12 +279,6 @@ class firstViewController: NSViewController {
                 imgViewTopSpace.constant = 35
                 imgViewBottomSpace.constant = 5
                 lblTitle.stringValue = startEveningHabitTitleText
-                habitTotalCompletedSeconds = 0
-                
-                btnStartFirstHabit.title = "Begin"
-                if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
-                    btnStartFirstHabit.title = activityInfo.value(forKey: "buttonBeginText") as? String ?? btnStartFirstHabit.title
-                }
                 
                 tblViewHabits.isHidden = false
                 scrollViewHabits.isHidden = false
@@ -325,7 +313,6 @@ class firstViewController: NSViewController {
                 imgViewHeight.constant = 40
                 imgViewTopSpace.constant = 35
                 imgViewBottomSpace.constant = 5
-                habitTotalCompletedSeconds = 0
                 
                 tblViewHabits.isHidden = false
                 scrollViewHabits.isHidden = false
@@ -336,6 +323,7 @@ class firstViewController: NSViewController {
                 }else{
                     segmentControlOfficeMode.setSelected(true, forSegment: 1)
                 }
+                startMicroBreakTimer(duration: 5)
             }else if currentState == ._CUSTOM_ROUTINE_{
                 if arrAllCustomRoutine[currentRoutineIndex].arrAllHabits.count == 1{
                     btnSelectHabitsToDo.isHidden = true
@@ -639,6 +627,59 @@ class firstViewController: NSViewController {
         }
     }
     
+    
+    func startMicroBreakTimer(duration:Int) {
+        if isTimerGoingOn{
+            lbltimer.isHidden = false
+            return
+        }
+        lbltimer.isHidden = false
+        isTimerGoingOn = true
+        currentTimer = 0
+        totalDuration = duration
+        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+        var minute = "\(m)"
+        var second = "\(s)"
+        if minute.count == 1 {
+            minute = "0\(m)"
+        }
+        if second.count == 1 {
+            second = "0\(s)"
+        }
+        self.lbltimer.stringValue = "\(minute):\(second)"
+        DispatchQueue.global().sync {
+            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performMicroBreakTimerCount), userInfo: nil, repeats: true)
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
+        }
+    }
+    
+    @objc func performMicroBreakTimerCount() {
+        currentTimer += 1
+        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+        
+        var minute = "\(m)"
+        var second = "\(s)"
+        if minute.count == 1 {
+            minute = "0\(m)"
+        }
+        if second.count == 1 {
+            second = "0\(s)"
+        }
+        
+        DispatchQueue.main.async {
+            self.lbltimer.isHidden = false
+            self.lbltimer.stringValue = "\(minute):\(second)"
+        }
+        if self.totalDuration <= self.currentTimer {
+            self.timer?.invalidate()
+            DispatchQueue.main.async { [self] in
+                self.isTimerGoingOn = false
+                self.lbltimer.isHidden = true
+                btnStartFirstHabitClicked(self)
+            }
+        }
+    }
+    
     @IBAction func popUpBtnActivitiesClicked(_ sender: Any) {
         let index = popUpBtnActivities.indexOfSelectedItem
         let name = introActivities[index].value(forKey: "name") as? String ?? ""
@@ -716,6 +757,8 @@ class firstViewController: NSViewController {
     
     @IBAction func btnStartFirstHabitClicked(_ sender: Any) {
         addLog(text: "[user-action] btnStartFirstHabitClicked")
+        self.timer?.invalidate()
+        self.isTimerGoingOn = false
         if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{//qki enter per ye button handle hai  or jha se handle h vha condition lganase accha yahi lagadi (enterv  password per bhi default enter key code h button per )
             if enterPasswordVcObj != nil{
                 if mainViewControllerObj!.view.subviews.contains(enterPasswordVcObj!.view){
@@ -729,10 +772,14 @@ class firstViewController: NSViewController {
             if currentState == ._MORNING_HABIT_{
                 sortMorningHabitsBySelectedFirst()
                 currentHabitIndex = -1
-                getHabitsVcObject().showVisualizeInstructionsVc()
-                visualizeInstructionsVcObj?.startTimer()
-                allApiObject.capturePosthog(event: "visualize-morning-routine", metadata: ["routine-type":"morning_routine"])
-                UserDefaults.standard.set(Date(), forKey: kUserdefaultsBeginMorningHabitClickedDate)
+                if shouldIgnoreVisualizeInstructions{
+                    getHabitsVcObject().startFirstMorningHabit()
+                }else{
+                    getHabitsVcObject().showVisualizeInstructionsVc()
+                    visualizeInstructionsVcObj?.startTimer()
+                    allApiObject.capturePosthog(event: "visualize-morning-routine", metadata: ["routine-type":"morning_routine"])
+                    UserDefaults.standard.set(Date(), forKey: kUserdefaultsBeginMorningHabitClickedDate)
+                }
             }else if currentState == ._EVENING_HABIT_{
                 if tblViewHabits.selectedRow != 0 && tblViewHabits.selectedRow != -1{
                     var tempArr = arrFilteredEveningHabits
@@ -765,12 +812,15 @@ class firstViewController: NSViewController {
                 }else{
                     currentHabitIndex = -1
                 }
-                
-                
-                getHabitsVcObject().showVisualizeInstructionsVc()
-                visualizeInstructionsVcObj?.startTimer()
-                allApiObject.capturePosthog(event: "visualize-evening-routine", metadata: ["routine-type":"evening_routine"])
-                UserDefaults.standard.set(Date(), forKey: kUserdefaultsBeginEveningHabitClickedDate)
+
+                if shouldIgnoreVisualizeInstructions{
+                    getHabitsVcObject().startFirstEveningHabit()
+                }else{
+                    getHabitsVcObject().showVisualizeInstructionsVc()
+                    visualizeInstructionsVcObj?.startTimer()
+                    allApiObject.capturePosthog(event: "visualize-evening-routine", metadata: ["routine-type":"evening_routine"])
+                    UserDefaults.standard.set(Date(), forKey: kUserdefaultsBeginEveningHabitClickedDate)
+                }
             }else if currentState == ._MICRO_BREAK_{
                 thirdVcObj?.btnMainClicked(self)
             }else if currentState == ._CUSTOM_ROUTINE_{
@@ -1125,7 +1175,7 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
                 cell.boxBg.borderColor = NSColor.clear
                 cell.lblTitle.tag = 99
                 if tblViewHabits.selectedRow == row{
-                    cell.boxBg.fillColor = NSColor.systemBlue
+                    cell.boxBg.fillColor = NSColor.orange
                     cell.lblTitle.textColor = NSColor.white
                 }
             }else if currentState == ._EVENING_HABIT_{
@@ -1133,7 +1183,7 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
                 cell.boxBg.borderColor = NSColor.clear
                 cell.lblTitle.tag = 99
                 if tblViewHabits.selectedRow == row{
-                    cell.boxBg.fillColor = NSColor.systemBlue
+                    cell.boxBg.fillColor = NSColor.orange
                     cell.lblTitle.textColor = NSColor.white
                 }
             }else if currentState == ._MICRO_BREAK_{
@@ -1157,21 +1207,26 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
                 cell.boxBg.borderColor = NSColor.clear
                 cell.lblTitle.tag = 99
                 if tblViewHabits.selectedRow == row{
-                    cell.boxBg.fillColor = NSColor.systemBlue
+                    cell.boxBg.fillColor = NSColor.orange
                     cell.lblTitle.textColor = NSColor.white
                 }
-            }
-            
-            if row == tblViewHabits.selectedRow{
-                addActionBar(cell: cell, row: row)
-            }else{
-                cell.boxActionBar.isHidden = true
             }
             
             cell.boxBg.wantsLayer = true
             cell.boxBg.layer?.borderWidth = 1
             cell.boxBg.layer?.cornerRadius = 7
-            cell.boxBg.layer?.borderColor = .clear
+            
+            if row == tblViewHabits.selectedRow{
+                if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_{
+                    cell.boxBg.layer?.borderColor = NSColor(named: "dark_OrangeColor")?.cgColor ?? NSColor.blue.cgColor
+                }
+                addActionBar(cell: cell, row: row)
+            }else{
+                cell.boxActionBar.isHidden = true
+                cell.boxBg.layer?.borderColor = .clear
+            }
+            
+            
             return cell
         }
         
@@ -1252,6 +1307,18 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
                 cell.isSelected = true
                 cell.boxBg.layer?.borderColor = NSColor(named: "dark_OrangeColor")?.cgColor ?? NSColor.blue.cgColor
                 addActionBar(cell: cell, row: tblViewHabits.selectedRow)
+            }
+        }
+        
+        if currentState == ._MORNING_HABIT_{
+            if arrFilteredMorningHabits.count != 0 {
+                let time = arrFilteredMorningHabits[tblViewHabits.selectedRow].durationSeconds!
+                btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrFilteredMorningHabits[tblViewHabits.selectedRow].name!)
+            }
+        }else if currentState == ._EVENING_HABIT_{
+            if arrFilteredEveningHabits.count != 0 {
+                let time = arrFilteredEveningHabits[tblViewHabits.selectedRow].durationSeconds!
+                btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrFilteredEveningHabits[tblViewHabits.selectedRow].name!)
             }
         }
     }

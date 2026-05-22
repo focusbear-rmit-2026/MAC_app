@@ -32,7 +32,7 @@ var arrConvinceAiAppsInCurrentFocus = [[String:String]]()
 
 var arrKeywordsToAllowInFocus = [String]()
 var currentRunningFocusType = [String:Any]()
-
+var lastRunningFocusModeId = ""
 //var dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus = [String:[String:Any]]()
 let dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus = SafeDict()
 
@@ -1487,7 +1487,7 @@ func checkIsAnyOldFoucsModeRemaining(){
                     print(currentFocusModeId)
                     //arrFocusType
                     let name = currentFocusMode.value(forKey: "name") as? String ?? ""
-                    addLog(text: "old focus mode with id: \(currentFocusModeId) and name: \(name) is running- finish it")
+                    addLog(text: "old focus mode with id: \(currentFocusModeId) and name: \(name) is running")
                     var finishFocusMoedTime = Date()
                     if let currentFocusModeFinishTime = json?.value(forKey: "current_focus_mode_finish_time") as? String{
                         finishFocusMoedTime = getDateFromStringInUtc(date: currentFocusModeFinishTime, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") ?? finishFocusMoedTime
@@ -1525,6 +1525,7 @@ func checkIsAnyOldFoucsModeRemaining(){
                                     diffSeconds = Calendar.current.dateComponents([.second], from: Date(), to: endDate).second ?? diffSeconds
                                     appdelegate!.remainingFocusModeSecondsAfterPaused = diffSeconds
                                     DispatchQueue.main.async {
+                                        addLog(text: "Focus mode resumed. Remaining duration: \(focusModeActualDurationPerformed) seconds. Reason: Current time < end time") // added in v 3.32.483
                                         resumeFocusModeAfterAppStartted(diffSeconds: diffSeconds, focusMode: focusMode, finishFocusMoedTime: endDate, index: i)
                                         focusModeActualDurationPerformed = Calendar.current.dateComponents([.second], from: startDate, to: Date()).second ?? diffSeconds//dont change this line place because  focusModeActualDurationPerformed = 0 in resumeFocusModeAfterAppStartted func
                                         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
@@ -2176,6 +2177,9 @@ func startWorkFocusAutomaticallyClicked(id:String){
                 }
                 appdelegate?.setFocusModeTimer(hour: nil, minute: 25)
 
+                //focusButtonService
+                focusButtonServiceObject.startFocusSession(seconds: 25*60)
+                
                 isFocusModeStartedFromPomodoroMode = false
                 whatToAchieveInFocusBlock = ""
                 
@@ -2183,7 +2187,6 @@ func startWorkFocusAutomaticallyClicked(id:String){
                 allApiObject.capturePosthog(event: "start-work-focus-mode", metadata: [:])
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 isFocusModeStartedAutomatically = false
-                closePomodoroWindowIOfVisible()
                 break;
             }
         }
@@ -2344,4 +2347,432 @@ func focusModeStarttedResetAllData(){
     lastFocusModeTempInfo = nil
     appdelegate!.isAutoMeetingsModeStarted = false
     stageManagerObject.isStageManagerEnabled = stageManagerObject.checkIsStageManagerEnabled()
+}
+
+
+// MARK: - Focus New device button
+
+func startFocusModeFromFocusDeviceButton(diffMinutes:Int, shouldUpdateFocusButton:Bool, goal:String?, initiatedByRecording:Bool){
+    
+    if initiatedByRecording {
+        addLog(text: "Focus session triggered by recording activity ")
+    } else {
+        addLog(text: "Focus session triggered manually from focus device button")
+    }
+    
+    if let goal = goal {
+        addLog(text: "Starting focus session for \(diffMinutes) minutes with goal: \(goal)")
+    } else {
+        addLog(text: "Starting focus session for \(diffMinutes) minutes")
+    }
+    
+    let isFocusModeOn = isFocusModeOn()
+    let isFocusModePaused = isFocusModePaused()
+    
+    if isFocusModeOn{
+        addLog(text: "Ignoring focus device button: focus mode already running")
+        return;
+    }else if isFocusModePaused{
+        addLog(text: "Ignoring focus device button: focus mode is paused")
+        return;
+    }else if isHardCorePomodoroModeOn{
+        addLog(text: "Ignoring focus device button: hardcore pomodoro mode is active")
+        return;
+    }else if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_ || currentState == ._SHUTOFFMAC_{
+        addLog(text: "Ignoring focus device button: reason :- current state is \(currentState)")
+        return;
+    }
+    
+    
+    if diffMinutes > 0{
+        addLog(text: "Start focus mode from focus device button")
+        if !getTaskPlayerVcObject().isViewLoaded{
+            getTaskPlayerVcObject().loadView()
+        }
+        getTaskPlayerVcObject().loadRequest()
+        
+        var currentFocusModeIndex = 0
+        
+        for i in 0..<arrFocusType.count{
+            if arrFocusType[i]["id"] as? String  == lastRunningFocusModeId{
+                currentFocusModeIndex = i
+                break;
+            }
+        }
+        
+        let calendar = Calendar.current
+        startFocusModeTime = Date()
+        endFocusModeTime = calendar.date(byAdding: .minute, value: diffMinutes, to: startFocusModeTime!)
+        currentFocusModeStrictness = ._NORMAL_
+        addLog(text: "focus mode is normal mode")
+        arrFocusType[currentFocusModeIndex]["isOn"] = true
+        arrFocusType[currentFocusModeIndex]["lastStartedDate"] = getStringFromDate(date: startFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
+        arrFocusType[currentFocusModeIndex]["lastScheduledEndDate"] = getStringFromDate(date: endFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
+        
+        
+        var intention = ""
+        if let goal = goal{
+            arrFocusType[currentFocusModeIndex]["lastIntentionUsed"] = goal
+            intention = goal
+        }else{
+            intention = arrFocusType[currentFocusModeIndex]["lastIntentionUsed"] as? String ?? ""
+        }
+        
+        
+        shouldReloadTaskPlayer = true
+        
+        if let isAutoDoNotDisturbEnabled = arrFocusType[currentFocusModeIndex]["isAutoDoNotDisturbEnabled"] as? Bool{
+            if isAutoDoNotDisturbEnabled{
+                if isAccessibilityEnabled(isPrompt: true){
+                    enableDND()
+                }
+            }
+        }
+        if !isDndEnabled{
+            if let isDeepWorkFocus = arrFocusType[currentFocusModeIndex]["isDeepWorkFocus"] as? Bool{
+                if  isDeepWorkFocus{
+                    if isAccessibilityEnabled(isPrompt: true){
+                        enableDND()
+                    }
+                }
+            }else if let isDefault = arrFocusType[currentFocusModeIndex]["isDefault"] as? Bool{
+                if  isDefault{
+                    if isAccessibilityEnabled(isPrompt: true){
+                        enableDND()
+                    }
+                }
+            }
+        }
+        
+        workBeforeFocusBegin(index: currentFocusModeIndex)
+        isFocusModeRunning = true
+        appdelegate!.setStatusBarButtonColorForFocusMode(color: nil, colorString:arrFocusType[currentFocusModeIndex]["color"] as? String ?? "")
+        appdelegate!.setStatusBarButtonTitleForFocusMode(title: intention)
+        
+        whatToAchieveInFocusBlock = intention
+        
+        DispatchQueue.global().async {
+            sleep(1)
+            DispatchQueue.main.async {
+                if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
+                    showTaskPlayerWindow(totalDuration: diffMinutes, intention: whatToAchieveInFocusBlock, automatically:true)
+                }else{
+                    if !getTaskPlayerVcObject().isViewLoaded{
+                        getTaskPlayerVcObject().loadView()
+                    }
+                    taskPlayerVcObj?.reloadData(totalDuration: diffMinutes, intention: whatToAchieveInFocusBlock)
+                    shouldReloadTaskPlayer = false
+                    mainWindowControllerObj?.window?.close()
+                }
+            }
+        }
+        
+        appdelegate!.statusbutton?.imagePosition = .imageLeft
+        if timerForFocusMode != nil{
+            timerForFocusMode?.invalidate()
+            timerForFocusMode = nil
+        }
+        if timerForFocusModeEndNotification != nil{
+            timerForFocusModeEndNotification?.invalidate()
+            setAppIconForFocusModeScore(probability: nil)
+            timerForFocusModeEndNotification = nil
+        }
+        appdelegate?.setFocusModeTimer(hour: nil, minute: diffMinutes)
+        
+        //focusButtonService
+        if shouldUpdateFocusButton{
+            focusButtonServiceObject.startFocusSession(seconds: diffMinutes*60)
+        }
+        //
+        
+        appdelegate!.focusModeStartted(isStartedByPusher: false)
+    }else{
+        addLog(text: "Ignoring focus device button: invalid diffMinutes \(diffMinutes)")
+    }
+}
+
+func pauseFocusModeFromFocusDeviceButton(shouldUpdateFocusButton:Bool){
+    addLog(text: "Pause focus mode from focus device button")
+    if isFocusModeRunning{
+        for i in 0..<arrFocusType.count{
+            if arrFocusType[i]["isOn"] as? Bool == true{
+                appdelegate?.pauseFocusMode(index: i, shouldUpdateFocusButton: shouldUpdateFocusButton)
+                addLog(text: "Successfully Paused focus mode from focus device button")
+                break;
+            }
+        }
+    }
+}
+
+func resumeFocusModeFromFocusDeviceButton(shouldUpdateFocusButton:Bool)->Bool{
+    addLog(text: "Resume focus mode from focus device button")
+    
+    let isFocusModeOn = isFocusModeOn()
+    let isFocusModePaused = isFocusModePaused()
+    
+    if isFocusModeOn{
+        addLog(text: "Ignoring focus device button: focus mode already running")
+        return false;
+    }else if isFocusModePaused{
+        addLog(text: "Ignoring focus device button: focus mode is paused")
+        return false;
+    }else if isHardCorePomodoroModeOn{
+        addLog(text: "Ignoring focus device button: hardcore pomodoro mode is active")
+        return false;
+    }else if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+        addLog(text: "Ignoring focus device button: blocked by current state \(currentState)")
+        return false;
+    }
+    
+    
+    for index in 0..<arrFocusType.count{
+        if arrFocusType[index]["isPaused"] as? Bool == true{
+            appdelegate?.resumeFocusMode(index: index, shouldUpdateFocusButton:shouldUpdateFocusButton)
+            return true
+        }
+    }
+    return false
+}
+
+func finishFocusModeFromFocusDeviceButton(shouldUpdateFocusButton:Bool){
+    addLog(text: "Finsh focus mode from focus device button")
+    isHardCorePomodoroModeOn = false
+    appdelegate?.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false, shouldUpdateFocusButton: shouldUpdateFocusButton)
+}
+
+
+func createTask(with name:String, dateString:String, shouldShowNotification:Bool){
+    addLog(text: "Create task with \(name)")
+    allApiObject.addTask(title: name, details: "", eisenhowerQuadrant: 1, dueDate: dateString, objective: "", tags: [], completionHandler: { result,json in
+        if result{
+            addLog(text: "\(name) task created successfully.")
+            if shouldShowNotification{
+                DispatchQueue.main.async {
+                    var taskCreatedText = "\"<TASK>\" task created successfully."
+                    if let common = configjson.value(forKey: "common") as? NSDictionary{
+                        taskCreatedText = common.value(forKey: "taskCreated") as? String ?? taskCreatedText
+                    }
+                    taskCreatedText = taskCreatedText.replacingOccurrences(of: "<TASK>", with: name)
+                    showCustomAlert(title: taskCreatedText, body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: true, buttonLinkUrl:nil, buttonLinkText: nil, completionHandler: {isOkClicked in
+                        print(isOkClicked)
+                    })
+                }
+            }
+        }
+    })
+}
+
+func checkAllFocusModes(){
+    var isDefaultContain = false
+    var defaultContainLocation = -1
+    var isMeetingsContain = false
+    var islockedFocusContain = false
+    var isRelaxFocusContain = false
+    
+    var isDeepWorkFocusContain = false
+    
+    
+    if let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrFocusTypes) as? [[String:Any]]{
+        arrFocusType = arr
+        
+        for i in 0..<arrFocusType.count{
+            arrFocusType[i].removeValue(forKey: "doNotSuggestAnyMore")
+            arrFocusType[i]["isOn"] = false
+            arrFocusType[i]["isPaused"] = false
+            if let isDefault = arrFocusType[i]["isDefault"] as? Bool{//this key will only be awailable in default focus type
+                if  isDefault{
+                    isDefaultContain = isDefault
+                    defaultContainLocation = i
+                }
+            }
+            if let isMeetings = arrFocusType[i]["isMeetings"] as? Bool{//this key will only be awailable in default focus type
+                if  isMeetings{
+                    isMeetingsContain = isMeetings
+                }
+            }
+            if let isLockedFocus = arrFocusType[i]["isLockedFocus"] as? Bool{//this key will only be awailable in default focus type
+                if  isLockedFocus{
+                    islockedFocusContain = isLockedFocus
+                }
+            }
+            if let isRelaxFocus = arrFocusType[i]["isRelaxFocus"] as? Bool{//this key will only be awailable in default focus type
+                if  isRelaxFocus{
+                    isRelaxFocusContain = isRelaxFocus
+                }
+            }
+            if let isDeepWorkFocus = arrFocusType[i]["isDeepWorkFocus"] as? Bool{//this key will only be awailable in default focus type
+                if  isDeepWorkFocus{
+                    isDeepWorkFocusContain = isDeepWorkFocus
+                }
+            }
+            
+        }
+        
+    }
+    if !isDefaultContain{
+        let id = getUuid()
+        let dic:[String:Any] = ["id":id, "name":"Block super distracting sites/apps", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)),"allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":false, "isDefault":true, "isAllowedListApproach":false, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp, "isAutoDoNotDisturbEnabled": true]//#453//tags
+        
+        arrFocusType.insert(dic, at: 0)
+        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
+            if success{
+                // create first pending blocking schedule for new onboarding
+                customBlockingScheduleManagerObj.createFirstBlockingSchedule(focusModeId: id)
+            }
+        })
+        
+        
+    }
+    else{//defalt focus mode will always be first in list so rearranging it
+        if defaultContainLocation == 0{
+            if arrFocusType[defaultContainLocation]["isAllowedAllApps"] as? Bool == true{
+                arrFocusType[defaultContainLocation]["isAllowedAllApps"] = false
+                arrFocusType[defaultContainLocation]["allowed_apps"] = []
+                arrFocusType[defaultContainLocation]["isAllowedListApproach"] = false
+                arrFocusType[defaultContainLocation]["allowed_urls"] = []
+                arrFocusType[defaultContainLocation]["blockUrlsArray"] = []
+                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                
+                allApiObject.editFocusMode(focusType: arrFocusType[defaultContainLocation], completionHandler: {newDic in
+                    DispatchQueue.main.async {
+                        print("*************************api called*****************")
+                        
+                    }
+                })
+            }
+            
+        }else{
+            var focusMode = arrFocusType[defaultContainLocation]
+            if focusMode["isAllowedAllApps"] as? Bool == true{
+                focusMode["isAllowedAllApps"] = false
+                focusMode["allowed_apps"] = []
+                focusMode["isAllowedListApproach"] = false
+                focusMode["allowed_urls"] = []
+                focusMode["blockUrlsArray"] = []
+                
+                allApiObject.editFocusMode(focusType: focusMode, completionHandler: {newDic in
+                    DispatchQueue.main.async {
+                        print("*************************api called*****************")
+                        
+                    }
+                })
+            }
+            arrFocusType.remove(at: defaultContainLocation)
+            arrFocusType.insert(focusMode, at: 0)
+            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        }
+        
+    }// if any new default focus mode created then count should be changed in kUserdefaultsFocusTipsShown
+    
+    if !isMeetingsContain{
+        let id = getUuid()
+        let dic:[String:Any] = ["id":id, "name":"Meetings", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Teams.app", "/Applications/Microsoft Teams classic.app", "/Applications/zoom.us.app", "/Applications/Jitsi.app", "/Applications/Safari.app", "/Applications/Google Chrome.app", "/Applications/Firefox.app", "/Applications/Slack.app", "/Applications/Sidekick.app", "/Applications/Brave Browser.app"], "allowed_urls": ["http://meet.google.com", "http://meet.zoho.com", "focusmate.com", "shimmer.care", "webex.com", "gotomeeting.com", "goto.com/meeting",  "skype.com", "adobeconnect", "join.me", "joinme.com", "slack.com", "whereby.com", "chime.aws", "aws.amazon.com/chime/", "dialpad.com"], "isOn": false, "isAllowedAllApps":false, "isMeetings":true, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp, "isAutoDoNotDisturbEnabled": true]//#453 , "isBlockedAllUrls":false , "isAllowedAllUrls":false
+        
+        if arrFocusType.count == 0{
+            arrFocusType.append(dic)
+        }else{
+            arrFocusType.insert(dic, at: arrFocusType.count - 1)
+        }
+        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
+        })
+    }
+    if !islockedFocusContain{
+        let id = getUuid()
+        let dic:[String:Any] = ["id":id, "name":"Locked Focus on current activity", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":false, "isLockedFocus":true, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp, "isAutoDoNotDisturbEnabled": true]//#453 , "isAllowedAllUrls":false , "isBlockedAllUrls":false
+        
+        if arrFocusType.count == 0{
+            arrFocusType.append(dic)
+        }else{
+            arrFocusType.append(dic)
+        }
+        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
+        })
+        
+    }
+    
+    if !isRelaxFocusContain{
+        let id = getUuid()
+        let dic:[String:Any] = ["id":id, "name":"Free time - block nothing", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isRelaxFocus":true, "isAllowedListApproach":false, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp, "isAutoDoNotDisturbEnabled": true]
+        
+        if arrFocusType.count == 0{
+            arrFocusType.append(dic)
+        }else{
+            arrFocusType.insert(dic, at: arrFocusType.count - 1)
+        }
+        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
+        })
+    }
+    
+    
+    if !isDeepWorkFocusContain{
+        let id = getUuid()
+        let dic:[String:Any] = ["id":id, "name":"Deep Work", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": [], "allowed_urls": ["google.com"], "isOn": false, "isAllowedAllApps":true, "isDeepWorkFocus":true, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp, "isAutoDoNotDisturbEnabled": true]
+        
+        if arrFocusType.count == 0{
+            arrFocusType.append(dic)
+        }else{
+            arrFocusType.insert(dic, at: arrFocusType.count - 1)
+        }
+        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
+        })
+    }
+
+    
+    // occupation relevant focus mode
+    if let occupationSpecificRelevantData = occupationSpecificRelevantSitesForFocusMode{
+        let userRelevantSites = occupationSpecificRelevantData["user_relevant_sites"] as? [String] ?? []
+        let userDistractions = occupationSpecificRelevantData["user_typical_distractions"] as? [String] ?? []
+        
+        let id = getUuid()
+        let dic:[String:Any] = ["id":id, "name":"Work", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": [], "allowed_urls": userRelevantSites, "isOn": false, "isAllowedAllApps":true, "isWorkFocus":true, "isAllowedListApproach":true, "blockUrlsArray": userDistractions, "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp, "autoSuggestFocusModeOnAllowedURL": true, "isAutoDoNotDisturbEnabled": true]
+        
+        
+        if arrFocusType.count == 0{
+            arrFocusType.append(dic)
+        }else{
+            arrFocusType.insert(dic, at: arrFocusType.count - 1)
+        }
+        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
+        })
+        
+    }
+    
+    for i in 0..<arrFocusType.count{
+        if arrFocusType[i]["isAllowedListApproach"] == nil{
+            arrFocusType[i]["isAllowedListApproach"] = true
+        }
+    }
+    
+    // locked in current focus should not be visible in focus prefrences thats why removing it and adding it at the end so that we will not show last item in list//486 - Remove Locked Focus
+    for i in 0..<arrFocusType.count{
+        if let isLockedFocus = arrFocusType[i]["isLockedFocus"] as? Bool{
+            if  isLockedFocus{
+                if i != arrFocusType.count - 1{
+                    let focusMode = arrFocusType[i]
+                    arrFocusType.remove(at: i)
+                    arrFocusType.append(focusMode)
+                }
+                break;
+            }
+        }
+        
+    }
+    sortFocusModes()
+    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+    
+    
+    arrFocusTypeForPomodoro.removeAll()
+    for i in 0..<arrFocusType.count{
+        if !(arrFocusType[i]["isMeetings"] as? Bool ?? false == true){
+            arrFocusTypeForPomodoro.append(arrFocusType[i])
+        }
+    }
+    
+    UserDefaults.standard.set(true, forKey: kUserdefaultsFocusTipsShown)// The option to setup Focus Mode is no longer required for the user.
 }

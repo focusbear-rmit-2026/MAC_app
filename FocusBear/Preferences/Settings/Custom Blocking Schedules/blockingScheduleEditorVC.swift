@@ -431,6 +431,7 @@ class blockingScheduleEditorVC: NSViewController {
     
     func createBlockingSchedule(blockingSchedule: customBlockingSchedule){
         customBlockingScheduleManagerObj.arrBlockingSchedule.append(blockingSchedule)
+        customBlockingScheduleManagerObj.saveBlockingSchedulesToLocal()
         customBlockingSchedulesVcObj?.scheduleAdded()
         allApiObject.capturePosthog(event: "add-blocking-schedule", metadata: [:])//2.27.421
         customBlockingScheduleManagerObj.addCustomBlockingScheduleAtIndex(customBlockingScheduleManagerObj.arrBlockingSchedule.count - 1)
@@ -447,6 +448,7 @@ class blockingScheduleEditorVC: NSViewController {
         customBlockingScheduleManagerObj.updateCustomBlockingScheduleAtIndex(currentFocusModeIndex)
         closeView()
         customBlockingScheduleManagerObj.updateEditedBlockingScheduleEndTimeIfRunning(index: currentFocusModeIndex)
+        customBlockingScheduleManagerObj.saveBlockingSchedulesToLocal()
     }
     
     func showOverlapAlert(for blockingSchedule: customBlockingSchedule) {

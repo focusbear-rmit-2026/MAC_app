@@ -1295,14 +1295,7 @@ var menuViewControllerObj = mainStoryboard.instantiateController(withIdentifier:
 let addWebUrlVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("addWebUrlVc")) as? addWebUrlVc
 let addFocusTypeVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("addFocusTypeVc")) as? addFocusTypeVc
 
-var pomodoroWindowControllerObj:pomodoroWindowController?
 
-func getPomodoroWindowControllerObj()->pomodoroWindowController{
-    if pomodoroWindowControllerObj == nil{
-        pomodoroWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("pomodoroWindowController")) as? pomodoroWindowController
-    }
-    return pomodoroWindowControllerObj!
-}
 
 var simplePomodoroVcObj: simplePomodoroVc?
 func getSimplePomodoroVcObj()->simplePomodoroVc{

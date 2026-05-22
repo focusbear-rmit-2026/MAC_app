@@ -148,7 +148,7 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
             }
         }
         let id = getUuid()
-        let dic:[String:Any] = ["id":id, "name":textFieldFocusType.stringValue, "color": getColorString(color: colorWell.color), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedListApproach":false, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp]//, "isAllowedAllUrls":true , "isBlockedAllUrls":false#453
+        let dic:[String:Any] = ["id":id, "name":textFieldFocusType.stringValue, "color": getColorString(color: colorWell.color), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedListApproach":false, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp, "isAutoDoNotDisturbEnabled": true]//, "isAllowedAllUrls":true , "isBlockedAllUrls":false#453
         
         let row = focusPreferencesVcObj?.tblViewFocusType.numberOfRows ?? 0
         arrFocusType.insert(dic, at: row)

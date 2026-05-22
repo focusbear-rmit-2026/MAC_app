@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class breaksBrainDumpVc: NSViewController {
+class breaksBrainDumpVc: NSViewController {// not in use 
 
     @IBOutlet weak var comboBoxTask: searchableComboBox!
     @IBOutlet weak var bottomSpaceStackViewTask: NSLayoutConstraint!

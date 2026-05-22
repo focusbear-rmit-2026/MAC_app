@@ -221,7 +221,8 @@
         "focusSessionPausedText": "Focus Session is paused.",
         "trayIconTooltipText": "Focus Bear",
         "trayIconBalloonText": "Focus Bear",
-        "unblockNotAvailableNewText": "You're in Grizzly Bear mode - change your settings to unblock"
+        "unblockNotAvailableNewText": "You're in Grizzly Bear mode - change your settings to unblock",
+        "taskCreated": "\"<TASK>\" task created successfully."
     },
     "callNotifier": {
         "micUsageText": "is using your microphone",
@@ -1975,7 +1976,10 @@
         "tabLimitDescText": "Set the maximum number of browser tabs you want open at once. Focus Bear will alert you when you exceed this limit. Set to 0 to disable.",
         "disableNotificationSoundsText": "Disable notification sounds",
         "disableNotificationSoundsDescText": "When enabled, Focus Bear will not play any notification sounds (habit complete, routine start/end, focus mode). Focus music is not affected.",
-        "alwaysAllowedAppsTitle": "Always Allowed Apps"
+        "alwaysAllowedAppsTitle": "Always Allowed Apps",
+        "titleFocusButton": "Focus Button",
+        "descriptionFocusButton": "The FocusButton device connects to your computer using a USB cable and works together with the app to help manage focus sessions and actions. Once connected, the app automatically detects the device and establishes communication with it.",
+        "buttonConnectFocusButton": "Connect"
     },
     "impactMeasurementVcInfo": {
         "title": "Analyse Your Sleep and Mood",
@@ -2810,7 +2814,10 @@
     "holdOnVcInfo": {
         "titleText": "Hold on a minute!",
         "buttonContinueText": "Okay...",
-        "bubbleText": "Arr… if you want to focus better, you’ve got to get your habits shipshape first."
+        "bubbleText": "Arr… if you want to focus better, you’ve got to get your habits shipshape first.",
+        "alertTitleLogout": "Do you want to log out and start again?",
+        "buttonLogout": "Yes - logout",
+        "buttonNo": "Oops no"
     },
     "setUpHabitsVcInfo": {
         "titleText": "Set up habits to focus better",
@@ -2906,6 +2913,14 @@
         "inputIntention": "Intention:",
         "inputTask": "Task:",
         "buttonBadAiToolTip": "Report bad AI decision"
+    },
+    "keyboardShortcutsSettingsVcInfo": {
+        "keyboardShortcutsSettingTitle": "Keyboard Shortcuts",
+        "recordingPlaceholder": "Record Shortcut",
+        "descriptionText": "Set global keyboard shortcuts to instantly open Brain Dump, Focus Music, or Task List from anywhere on your Mac.",
+        "brainDumpTitle": "Open Brain Dump:",
+        "focusMusicTitle": "Open Focus Music:",
+        "taskListTitle": "Open Task List:"
     },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",

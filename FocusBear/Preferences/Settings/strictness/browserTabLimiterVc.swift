@@ -44,7 +44,7 @@ class browserTabLimiterVc: NSViewController {
 
         stackView.insertView(enableTabLimiterItemVcObj!.view, at: 0, in: .top)
         enableTabLimiterItemVcObj?.lblTitle.stringValue = checkBoxTabLimiterText
-        enableTabLimiterItemVcObj?.lblSubTitle.isHidden = true
+        enableTabLimiterItemVcObj?.lblSubTitle.stringValue = "Works only during active Focus Sessions or active Blocking Schedules."// todo text
         enableTabLimiterItemVcObj?.delegate = self
         enableTabLimiterItemVcObj?.toolTip = strictness_BrowserTabLimiter
         

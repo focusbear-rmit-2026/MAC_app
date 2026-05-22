@@ -224,6 +224,11 @@ class chooseHabitsVC: NSViewController {
                     arrFilteredMorningHabits.append(arrFilteredHabits[i].habit)
                 }
             }
+            
+            //focusButtonService-------//
+            focusButtonServiceObject.sendMorningHabitsToFocusDevice()
+            //---------//
+            
         }else if currentState == ._EVENING_HABIT_{
             let arrTempFilteredEveningHabits = arrFilteredEveningHabits
             arrFilteredEveningHabits.removeAll()
@@ -242,10 +247,13 @@ class chooseHabitsVC: NSViewController {
                 if arrFilteredHabits[i].state{
                     arrHabitIds.append(arrFilteredHabits[i].habit.id)
                     arrFilteredEveningHabits.append(arrFilteredHabits[i].habit)
-                }else{
-                    addLog(text: "habit skipped:- habit was not selected by user this time:- \(arrFilteredHabits[i].habit.name)  \(arrFilteredHabits[i].habit.id)") // remove this
                 }
             }
+            
+            //focusButtonService-------//
+            focusButtonServiceObject.sendEveningHabitsToFocusDevice()
+            //---------//
+            
         }else if currentState == ._CUSTOM_ROUTINE_{
             let arrTempFilteredHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits
             arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.removeAll()

@@ -50,6 +50,8 @@
 	<string>Copyright © 2022-2026 Focus Bear Pty Ltd, All rights reserved</string>
 	<key>NSMainStoryboardFile</key>
 	<string>Main</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Focus Bear wants to access your microphone to listen for your voice commands.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSUserNotificationAlertStyle</key>

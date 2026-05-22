@@ -70,6 +70,7 @@ class settingsSideBarVc: NSViewController {
         var accountSettingTitle = "Account"
         var uninstallSettingTitle = "Uninstall"
         var permissionsSettingTitle = "Permissions"
+        var keyboardShortcutsSettingTitle = "Keyboard Shortcuts"
         
         
         if let settingsNew = configjson.value(forKey: "settingsNew") as? NSDictionary{
@@ -85,6 +86,10 @@ class settingsSideBarVc: NSViewController {
             breaksSettingTitle = settingsNew.value(forKey: "breaksNewSettingTitle") as? String ?? breaksSettingTitle
             toDoListSettingTitle = settingsNew.value(forKey: "toDoListSettingTitle") as? String ?? toDoListSettingTitle
             btnReleaseNotes.title = settingsNew.value(forKey: "buttonReleaseNotesText") as? String ?? btnReleaseNotes.title
+        }
+        
+        if let keyboardShortcutsSettingsVcInfo = configjson.value(forKey: "keyboardShortcutsSettingsVcInfo") as? NSDictionary{
+            keyboardShortcutsSettingTitle = keyboardShortcutsSettingsVcInfo.value(forKey: "keyboardShortcutsSettingTitle") as? String ?? keyboardShortcutsSettingTitle
         }
         var iconAccount:NSImage?
         var iconUi:NSImage?
@@ -149,6 +154,7 @@ class settingsSideBarVc: NSViewController {
                                         ["title": aISettingTitle, "icon": iconAi as Any, "id": idAi],
                                         ["title": breaksSettingTitle, "icon": iconBreaks as Any, "id": idMicroBreaks],
                                         ["title": toDoListSettingTitle, "icon": iconToDoList as Any, "id": idToDoList],
+                                        ["title": permissionsSettingTitle, "icon": iconPermission as Any, "id": idPermissions],
                                         ["title": accountSettingTitle, "icon": iconAccount as Any, "id": idAccount],
                                         ["title": uninstallSettingTitle, "icon": iconUninstall as Any, "id": idUninstall]]
         

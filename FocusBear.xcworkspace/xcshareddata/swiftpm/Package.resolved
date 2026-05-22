@@ -1,5 +1,5 @@
 {
-  "originHash" : "74324f0dc2035af9aea3a02761f948b18fddd82a5b4760c22fcce54b8ba08292",
+  "originHash" : "37fdc0466c1687045a0aa9f82b57225c27bf77419f8345b2448802a27712762c",
   "pins" : [
     {
       "identity" : "auth0.swift",
@@ -17,6 +17,15 @@
       "state" : {
         "revision" : "d07041068fed2d4b8a38f2b321ea6d97c9152c4a",
         "version" : "3.0.0"
+      }
+    },
+    {
+      "identity" : "orsserialport",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/armadsen/ORSSerialPort",
+      "state" : {
+        "revision" : "58a8cc454304e22280f184c2d2e25ecb3d5a74c5",
+        "version" : "2.1.0"
       }
     },
     {

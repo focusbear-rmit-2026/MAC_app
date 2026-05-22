@@ -17,10 +17,6 @@
 //lekin agar kisi se focus summary ya evening habit ko 4 hour app deactivate kiyta h to sirf shutoff ayga, focus summary 4 hour deactivate se evening routine bhi skip hogi
 
 // note break activity postpone krke sleep mac akrte h to mac jagne k baad break activity   normal timer lgega
-//todo always check releas notes in updae build xml
-
-
-//todo always add new search items in search
 // always seet new height if new item added in preferences
 //there will be no habit display on first day
 

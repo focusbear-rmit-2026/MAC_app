@@ -12,6 +12,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     
   
+    @IBOutlet weak var btnBackToHabits: Button!
     @IBOutlet weak var boxBg: NSBox!
     @IBOutlet weak var btnTutorial: cursorButton!
     @IBOutlet weak var webViewTutorial: WKWebView!
@@ -77,6 +78,12 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        
+        let orangeColor = NSColor(named: "dark_OrangeColor") ?? NSColor.orange
+        btnBackToHabits.borderColor = orangeColor.withAlphaComponent(0.5).cgColor
+        btnBackToHabits.buttonColor = orangeColor.withAlphaComponent(0.1).cgColor
+        btnBackToHabits.isHidden = true
+        
         btnTutorial.title = "Tutorial"
         menuItemSkipHabit = NSMenuItem(title: "Skip this habit for today", action: #selector(menuItemSkipHabitClicked), keyEquivalent: "")
         menuItemSkipHabit.target = self
@@ -191,6 +198,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }
         }
     }
+    
     @IBAction func btnTabNotesClicked(_ sender: Any) {
         webView.isHidden = true
         boxTakeNotes.isHidden = false
@@ -204,6 +212,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         btnTutorial.state = .off
         self.view.window?.makeFirstResponder(textViewNotes)
     }
+    
     @IBAction func btnTabVideoClicked(_ sender: Any) {
         webView.isHidden = false
         boxTakeNotes.isHidden = true
@@ -228,6 +237,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         btnTabCheckList.state = .on
         btnTutorial.state = .off
     }
+    
     @IBAction func btnTabTutorialClicked(_ sender: Any) {
         webView.isHidden = true
         boxTakeNotes.isHidden = true
@@ -240,6 +250,15 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         btnTabCheckList.state = .off
         btnTutorial.state = .on
     }
+    
+    @IBAction func btnBackToHabitsClicked(_ sender: Any) {
+        if currentHabitIndex >= 0{
+            currentHabitIndex -= 1
+        }
+        getHabitsVcObject().showAllMorningEveningHabitsFromHabitCompleted()
+    }
+    
+    
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         print("*************didFinish navigation**************")
         if webView == self.webView{
@@ -752,13 +771,18 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         boxBg.isHidden = false
         let url = getRandomVideoUrl(activityId:currentHabit.id, urlsArray: currentHabit.urlsArray)
         addLog(text:"Current Activity id is :- \(currentHabit.id ?? "")")
-        
+        btnBackToHabits.isHidden = true
         if currentState != ._CUSTOM_ROUTINE_{
             UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitsStartedDate)
         }
         
+        //focusButtonService---//
+        focusButtonServiceObject.startHabit(habitId: currentHabit.id)
+        //--------------//
+        
+        
         isAnyAllowedFocusModeActivityRunning = false
-        if !(getHabitsVcObject().isBreakActivityPostponeInsideAllowedHabit ?? false){
+        if !(getHabitsVcObject().isBreakActivityPostponeInsideAllowedHabit){
             getHabitsVcObject().stopActivityTimer()
         }
         if isFocusModeOnOrPaused(){
@@ -809,9 +833,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         if currentHabit.showSavedDistractingWebsites{
             currentRelaxHabitPlaying = currentHabit
             showRelaxModeWindow(durationSeconds: durationSeconds, currentTimerValue: currentTimerValue)
-           // if checkIsFullScreenEnabled(){
-                //mainViewControllerObj?.showSmallScreen()
-          //  }
+
             mainWindowControllerObj?.window?.close()
             hideBlankWindowInSecondaryMonitor()
         }else if currentHabit.openSpecificApps{
@@ -821,9 +843,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }else{
                 showcompletionRequirementsWindow(title: currentHabit.completion_requirements)
             }
-            //if checkIsFullScreenEnabled(){
-                //mainViewControllerObj?.showSmallScreen()
-            //}
+
             mainWindowControllerObj?.window?.close()
             appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: shouldLaunchAppAndUrl)
             hideBlankWindowInSecondaryMonitor()
@@ -839,9 +859,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 if !SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
                     mainWindowControllerObj?.window?.close()
                 }
-                //if checkIsFullScreenEnabled(){
-                 //   mainViewControllerObj?.showSmallScreen()
-                //}
+
                 appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: shouldLaunchAppAndUrl)
                 hideBlankWindowInSecondaryMonitor()
                 
@@ -973,6 +991,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     var lastCurrentSpecialActivityDuration = 0
     func startSpecialActivity(durationSeconds:Int,currentHabit: habit?, currentActivity: breakActivity?, currentChoice:activityChoice?) {
         
+        btnBackToHabits.isHidden = true
         lastCurrentSpecialHabit = currentHabit
         lastCurrentSpecialActivity = currentActivity
         lastCurrentSpecialActivityChoice = currentChoice
@@ -1210,7 +1229,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         disableSystemSleep()
         btnSkipHabit.isHidden = true
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(arrFilteredMorningHabits[currentHabitIndex].name!)."
-        
+        btnBackToHabits.isHidden = true
         if useTimer{
             totalDuration = durationSeconds//durationInMinutes*60
             let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
@@ -1246,6 +1265,10 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }
             
             setCountDownTimer()
+            
+            //focusButtonService---//
+            focusButtonServiceObject.resumeHabit()
+            //--------------//
         }else{
             if url != nil{
                 if #available(macOS 12.0, *) {
@@ -1339,7 +1362,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
 //        isLastActivityStoppedInRunningState = false
         //lastActivityRunningId = ""
         //lastActivityStoppedTimerCount = 0
-        
+        btnBackToHabits.isHidden = true
         var url: String?
         addLog(text:"Current Activity id is :- \(currentActivity.id ?? "")")
         if currentChoice == nil{
@@ -1558,6 +1581,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             boxTimerCenterY = boxTimerCenterY.setMultiplier(multiplier: 1.6)
         }
     }
+    
     func resumeTimerActivity(durationInSeconds:Int,name:String, url:String?, useTimer:Bool) {
         disableSystemSleep()
         btnSkipHabit.isHidden = true
@@ -1587,7 +1611,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
             }
         }
-        
+        btnBackToHabits.isHidden = true
 
         
         if !isActivityPaused{
@@ -1612,12 +1636,14 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }
         }
     }
+    
     func startBreathing() {
         allApiObject.capturePosthog(event: "ongoing-onboarding-activity-shown", metadata: [:])
         btnSkipHabit.title = "Skip"
         if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
             btnSkipHabit.title = dic.value(forKey: "buttonSkipText") as? String ?? btnSkipHabit.title
         }
+        btnBackToHabits.isHidden = true
         isActivityPaused = false
         btnSkipHabit.isHidden = false
         self.btnPause.image = pauseIcon
@@ -1754,6 +1780,12 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             addLog(text:"[user-action]Ongoing activity:-btn Resume Clicked")
             isActivityPaused = false
             allApiObject.capturePosthog(event: "resume-activity", metadata: [:])
+            
+            //focusButtonService---//
+            focusButtonServiceObject.resumeHabit()
+            //--------------//
+            btnBackToHabits.isHidden = true
+            
             DispatchQueue.main.async {
                 self.btnPause.image = self.pauseIcon
             }
@@ -1786,6 +1818,12 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             isActivityPaused = true
             allApiObject.capturePosthog(event: "pause-activity", metadata: [:])
             timer?.invalidate()
+            
+            //focusButtonService---//
+            focusButtonServiceObject.pauseHabit()
+            //--------------//
+            
+            
             if isVideoLodded{
                 if #available(macOS 12.0, *) {
                     webView.setAllMediaPlaybackSuspended(true)
@@ -1808,9 +1846,11 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 if currentState == ._MORNING_HABIT_{
                     if currentHabitIndex == arrFilteredMorningHabits.count - 1{
                         menuItemChooseHabit.isHidden = true
+                        btnBackToHabits.isHidden = true
                         addLog(text:"Hide menu Item Select Another Habit")
                     }else{
                         menuItemChooseHabit.isHidden = false
+                        btnBackToHabits.isHidden = false
                         addLog(text:"Show menu Item Select Another Habit")
                     }
                     saveCurrentHabitCurrentDurationDone(id: arrFilteredMorningHabits[currentHabitIndex].id, duration: currentTimer)
@@ -1820,6 +1860,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 }else if currentState == ._EVENING_HABIT_{
                     if currentHabitIndex == arrFilteredEveningHabits.count - 1{
                         menuItemChooseHabit.isHidden = true
+                        btnBackToHabits.isHidden = true
                         addLog(text:"Hide menu Item Select Another Habit:- Reason: last habit")
                     }else{
                         if isHighPrioritySequenceGoing{
@@ -1840,13 +1881,16 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                             }
                             if isAnyHighPriorityHabitRemaining{
                                 menuItemChooseHabit.isHidden = false
+                                btnBackToHabits.isHidden = false
                                 addLog(text:"Show menu Item Select Another Habit:- Reason: High Priority Habit Remaining")
                             }else{
                                 menuItemChooseHabit.isHidden = true
+                                btnBackToHabits.isHidden = true
                                 addLog(text:"Hide menu Item Select Another Habit:- Reason: No High Priority Habit Remaining")
                             }
                         }else{
                             menuItemChooseHabit.isHidden = false
+                            btnBackToHabits.isHidden = false
                             addLog(text:"Show menu Item Select Another Habit")
                         }
                         
@@ -1861,6 +1905,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                         menuItemChooseHabit.isHidden = false
                         addLog(text:"Show menu Item Select Another Habit")
                     }
+                    btnBackToHabits.isHidden = true
                 }
                 
                 if isVideoLodded{
@@ -1881,11 +1926,13 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
                     btnSkipHabit.title = dic.value(forKey: "buttonSkipText") as? String ?? btnSkipHabit.title
                 }
+                btnBackToHabits.isHidden = true
             }else if currentState == ._MICRO_BREAK_{
                 btnSkipHabit.isHidden = false
                 menuItemChooseHabit.isHidden = true
                 menuItemChooseVideo.isHidden = true
                 btnSkipHabit.title = buttonMoreActionsText
+                btnBackToHabits.isHidden = true
             }
         }
     }

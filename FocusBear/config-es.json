@@ -221,7 +221,8 @@
         "focusSessionPausedText": "La sesión de enfoque está en pausa.",
         "trayIconTooltipText": "Focus Bear",
         "trayIconBalloonText": "Focus Bear",
-        "unblockNotAvailableNewText": "Estás en modo Oso Grizzly — cambia tu configuración para desbloquear"
+        "unblockNotAvailableNewText": "Estás en modo Oso Grizzly — cambia tu configuración para desbloquear",
+        "taskCreated": "La tarea “<TASK>” se creó correctamente."
     },
     "callNotifier": {
         "micUsageText": "está usando tu micrófono",
@@ -1973,7 +1974,10 @@
         "tabLimitDescText": "Establece el número máximo de pestañas del navegador que quieres tener abiertas a la vez. Focus Bear te avisará cuando lo superes. Pon 0 para desactivarlo.",
         "disableNotificationSoundsText": "Desactivar sonidos de notificaciones",
         "disableNotificationSoundsDescText": "Cuando está activado, Focus Bear no reproducirá ningún sonido de notificación (hábito completado, inicio/fin de rutina, modo de enfoque). La música de enfoque no se ve afectada.",
-        "alwaysAllowedAppsTitle": "Aplicaciones siempre permitidas"
+        "alwaysAllowedAppsTitle": "Aplicaciones siempre permitidas",
+        "titleFocusButton": "Botón de enfoque",
+        "descriptionFocusButton": "El dispositivo FocusButton se conecta a tu computadora mediante un cable USB y funciona junto con la app para ayudarte a gestionar sesiones de enfoque y acciones. Una vez conectado, la app detecta automáticamente el dispositivo y establece comunicación con él.",
+        "buttonConnectFocusButton": "Conectar"
     },
     "impactMeasurementVcInfo": {
         "title": "Analiza tu sueño y estado de ánimo",
@@ -2807,7 +2811,10 @@
     "holdOnVcInfo": {
         "titleText": "¡Espera un momento!",
         "buttonContinueText": "Está bien...",
-        "bubbleText": "Arr… si quieres concentrarte mejor, primero debes poner tus hábitos en orden."
+        "bubbleText": "Arr… si quieres concentrarte mejor, primero debes poner tus hábitos en orden.",
+        "alertTitleLogout": "¿Quieres cerrar sesión y empezar de nuevo?",
+        "buttonLogout": "Sí, cerrar sesión",
+        "buttonNo": "Ups, no"
     },
     "setUpHabitsVcInfo": {
         "titleText": "Configura hábitos para concentrarte mejor",
@@ -2903,6 +2910,14 @@
         "inputIntention": "Intención:",
         "inputTask": "Tarea:",
         "buttonBadAiToolTip": "Reportar una mala decisión de la IA"
+    },
+    "keyboardShortcutsSettingsVcInfo": {
+        "keyboardShortcutsSettingTitle": "Atajos de teclado",
+        "recordingPlaceholder": "Asignar atajo",
+        "descriptionText": "Configura atajos de teclado globales para abrir al instante Brain Dump, Focus Music o la lista de tareas desde cualquier lugar de tu Mac.",
+        "brainDumpTitle": "Abrir Brain Dump:",
+        "focusMusicTitle": "Abrir Focus Music:",
+        "taskListTitle": "Abrir lista de tareas:"
     },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",

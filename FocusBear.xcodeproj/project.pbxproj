@@ -72,6 +72,9 @@
 		13BBEEE02F7547060073B58E /* holdOnVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13BBEEDF2F7547060073B58E /* holdOnVc.swift */; };
 		13BBEEE22F7561580073B58E /* setUpHabitsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13BBEEE12F7561580073B58E /* setUpHabitsVc.swift */; };
 		13BBEEE42F7567F10073B58E /* startSetUpHabitsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13BBEEE32F7567F10073B58E /* startSetUpHabitsVc.swift */; };
+		13C6BF082FB199E70074DD63 /* focusButtonService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6BF072FB199E70074DD63 /* focusButtonService.swift */; };
+		13C6BF0B2FB19D750074DD63 /* ORSSerial in Frameworks */ = {isa = PBXBuildFile; productRef = 13C6BF0A2FB19D750074DD63 /* ORSSerial */; };
+		13C6BF0E2FB211CA0074DD63 /* audioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */; };
 		13CBE7652F07E9660025544E /* enableAIBlockingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */; };
 		13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */; };
 		13D90E802ECC514000FC39FD /* createUnlockRequestVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D90E7F2ECC514000FC39FD /* createUnlockRequestVc.swift */; };
@@ -450,6 +453,8 @@
 		13BBEEDF2F7547060073B58E /* holdOnVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = holdOnVc.swift; sourceTree = "<group>"; };
 		13BBEEE12F7561580073B58E /* setUpHabitsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = setUpHabitsVc.swift; sourceTree = "<group>"; };
 		13BBEEE32F7567F10073B58E /* startSetUpHabitsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = startSetUpHabitsVc.swift; sourceTree = "<group>"; };
+		13C6BF072FB199E70074DD63 /* focusButtonService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusButtonService.swift; sourceTree = "<group>"; };
+		13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = audioRecorder.swift; sourceTree = "<group>"; };
 		13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = enableAIBlockingVc.swift; sourceTree = "<group>"; };
 		13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineStateVc.swift; sourceTree = "<group>"; };
 		13D90E7F2ECC514000FC39FD /* createUnlockRequestVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = createUnlockRequestVc.swift; sourceTree = "<group>"; };
@@ -764,6 +769,7 @@
 				274E0F472890291D000234A3 /* Auth0 in Frameworks */,
 				137CD6032D9D4ACC00A8385A /* Sparkle.framework in Frameworks */,
 				13F8278E2ED5ED75006C0BEF /* Swifter in Frameworks */,
+				13C6BF0B2FB19D750074DD63 /* ORSSerial in Frameworks */,
 				13AAC9DC2D97CC76000AD619 /* WebKit.framework in Frameworks */,
 				BEED37F6C1373AFCB67BCF04 /* Pods_Focus_Bear.framework in Frameworks */,
 			);
@@ -838,6 +844,15 @@
 				136058B42F5C2F1C00DEF6F0 /* ScanningCircleView.swift */,
 			);
 			path = Controls;
+			sourceTree = "<group>";
+		};
+		13C6BF0C2FB1A10B0074DD63 /* FocusButton */ = {
+			isa = PBXGroup;
+			children = (
+				13C6BF072FB199E70074DD63 /* focusButtonService.swift */,
+				13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */,
+			);
+			path = FocusButton;
 			sourceTree = "<group>";
 		};
 		13EE47102E50420C00F952FE /* Products */ = {
@@ -1274,6 +1289,7 @@
 				8FAC6C8827805F6E008A4180 /* ViewController.swift */,
 				1364364A2DE1FA7400B90724 /* splashVc.swift */,
 				138FE1252E5701B0002A2C4C /* floatingTopBarVc.swift */,
+				13C6BF0C2FB1A10B0074DD63 /* FocusButton */,
 				8FB50EF727BE12CB00A7175B /* menuView */,
 				132EFCA82E5437FE00189428 /* leftMenu */,
 				135CBDAD2D966CCC003BA438 /* Routine */,
@@ -1581,6 +1597,7 @@
 			packageProductDependencies = (
 				274E0F462890291D000234A3 /* Auth0 */,
 				13F8278D2ED5ED75006C0BEF /* Swifter */,
+				13C6BF0A2FB19D750074DD63 /* ORSSerial */,
 			);
 			productName = EarnYourScreentime;
 			productReference = 8FAC6C8327805F6D008A4180 /* Focus Bear.app */;
@@ -1640,6 +1657,7 @@
 			packageReferences = (
 				274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0" */,
 				13F8278C2ED5EC8B006C0BEF /* XCRemoteSwiftPackageReference "swifter" */,
+				13C6BF092FB19C210074DD63 /* XCRemoteSwiftPackageReference "ORSSerialPort" */,
 			);
 			productRefGroup = 8FAC6C8427805F6D008A4180 /* Products */;
 			projectDirPath = "";
@@ -2046,9 +2064,11 @@
 				8FE5E5BA2C46A5C800420717 /* alertLimitedUsageVc.swift in Sources */,
 				13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */,
 				8F09ACC129703C5B00A0F1D0 /* tblCellTracks.swift in Sources */,
+				13C6BF082FB199E70074DD63 /* focusButtonService.swift in Sources */,
 				8F23A1DC2CAE508C0042CE2A /* explainingPermissionsVc.swift in Sources */,
 				135A8A572E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift in Sources */,
 				8F36D517297AB32800A7E4AD /* addFocusTempUrlsOrAppsVc.swift in Sources */,
+				13C6BF0E2FB211CA0074DD63 /* audioRecorder.swift in Sources */,
 				8F19BCA5293F360D00F70544 /* whySkipHabitVc.swift in Sources */,
 				8F8C3FE12A8CFFEE005CAF96 /* uIVc.swift in Sources */,
 				8F8FDA152B3C582D0067B0A0 /* firefoxPermissionsVc.swift in Sources */,
@@ -2347,7 +2367,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 477;
+				CURRENT_PROJECT_VERSION = 487;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
@@ -2363,7 +2383,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 3.31;
+				MARKETING_VERSION = 3.32;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = FocusBearMainAppProfile;
@@ -2385,7 +2405,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 477;
+				CURRENT_PROJECT_VERSION = 487;
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2401,7 +2421,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 3.31;
+				MARKETING_VERSION = 3.32;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = FocusBearMainAppProfile;
@@ -2495,6 +2515,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		13C6BF092FB19C210074DD63 /* XCRemoteSwiftPackageReference "ORSSerialPort" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/armadsen/ORSSerialPort";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.1.0;
+			};
+		};
 		13F8278C2ED5EC8B006C0BEF /* XCRemoteSwiftPackageReference "swifter" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/httpswift/swifter.git";
@@ -2514,6 +2542,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		13C6BF0A2FB19D750074DD63 /* ORSSerial */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 13C6BF092FB19C210074DD63 /* XCRemoteSwiftPackageReference "ORSSerialPort" */;
+			productName = ORSSerial;
+		};
 		13F8278D2ED5ED75006C0BEF /* Swifter */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 13F8278C2ED5EC8B006C0BEF /* XCRemoteSwiftPackageReference "swifter" */;

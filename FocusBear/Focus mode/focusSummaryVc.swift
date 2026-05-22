@@ -596,9 +596,7 @@ class focusSummaryVc: NSViewController {
         if viewVisibleCount == 0{
             addLog(text: "[user-action] button Need one More minute Clicked from focus summary")
             if cutOffTime != nil && SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff && !SettingsManagerObject.isEasySkipEnabled{
-                let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
-                let currentDate = Date()
-                if currentDate > cutOffDate && shouldAskPassword(){
+                if isCutOffTimeGoing() && shouldAskPassword(){
                     mainViewControllerObj?.showPasswordView()
                 }else{
                     postponeFocusSummaryForOneMinute()
@@ -621,12 +619,6 @@ class focusSummaryVc: NSViewController {
 
 
 extension focusSummaryVc: NSTableViewDelegate, NSTableViewDataSource {
-    /*
-     focus type
-     start time
-     work achived
-     destruction encountered
-     */
     func numberOfRows(in tableView: NSTableView) -> Int {
         if tableView == tblViewFocusSummary{
             for i in 0..<tableView.tableColumns.count{

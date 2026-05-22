@@ -202,7 +202,7 @@ class shutOffTimeVc: NSViewController {
     @IBAction func btnGetAccessNowClicked(_ sender: Any) {
         addLog(text:"[user-action] btnGetAccessNowClicked")
         
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{//} && isCutOffTimeGoing(){
+        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
             // if user has not unlocked today
             var shouldAbortShutDownInOneClick = true
             if let date = UserDefaults.standard.object(forKey: kUserdefaultsLastShutdownAbortedDate) as? Date{
@@ -228,7 +228,7 @@ class shutOffTimeVc: NSViewController {
                     currentState = ._NOTHING_
                     mainWindowControllerObj?.window?.close()
                     hideBlankWindowInSecondaryMonitor()
-                    
+                    leftMenuVcObj?.habitOver()
 
                     let shutdownAbortedTillTime = Calendar.current.date(byAdding: .second, value: 1800, to: Date())! // 30 minutes
                     UserDefaults.standard.set(shutdownAbortedTillTime, forKey: kUserdefaultsShutdownAborted)
@@ -441,7 +441,25 @@ class shutOffTimeVc: NSViewController {
     
     func workEmergencyClicked(){
         if SettingsManagerObject.isGeekModeEnabled{
-            emergencyStartDone()
+            //Bug fixed in v3.32.487. Previously, emergencyStartDone() was being called, which caused issues during cutoff time because that function contains additional checks. This has now been corrected.
+            getHabitsVcObject().hideCloseButtons()
+            getHabitsVcObject().removeSubViews()
+            currentState = ._NOTHING_
+            hideBlankWindowInSecondaryMonitor()
+            leftMenuVcObj?.habitOver()
+
+            let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+            let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+            
+            let curreentDate = Date()
+            if curreentDate > shutOffdate{// iska matlab 20-24 k bich
+                let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+                let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
+                UserDefaults.standard.set(startDate, forKey: kUserdefaultsShutdownAborted)
+            }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
+                UserDefaults.standard.set(startDate, forKey: kUserdefaultsShutdownAborted)
+            }
+            
             appdelegate?.menuShowPomodoroModeView()
         }else{
             btnGetAccessNowClicked(self)
@@ -572,7 +590,6 @@ class shutOffTimeVc: NSViewController {
         getHabitsVcObject().hideCloseButtons()
         getHabitsVcObject().removeSubViews()
         currentState = ._NOTHING_
-//        mainWindowControllerObj?.window?.close()
         hideBlankWindowInSecondaryMonitor()
         leftMenuVcObj?.habitOver()
         

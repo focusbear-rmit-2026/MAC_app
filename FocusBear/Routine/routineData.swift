@@ -961,15 +961,6 @@ func isShutOffTimeGoing()->Bool{
 
 
 func isCutOffTimeGoing()->Bool{
-//    if cutOffTime != nil{
-//        let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
-//        let currentDate = Date()
-//        if currentDate > cutOffDate{
-//            return true
-//        }
-//    }
-//    return false
-    
     if startTime == nil || cutOffTime == nil{
         return false
     }

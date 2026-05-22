@@ -19,9 +19,6 @@ import Cocoa
 // Global reference (mirrors pomodoroSettingsVcObj pattern)
 var keyboardShortcutsSettingsVcObj: keyboardShortcutsSettingsVc?
 
-// Sidebar title constant (mirrors pattern used by other settings titles)
-var keyboardShortcutsSettingTitle = "Keyboard Shortcuts"//todo text
-
 // NSScrollView document views are non-flipped by default (origin bottom-left).
 // This subclass flips the coordinate system so content lays out from the top.
 private class FlippedView: NSView {
@@ -56,19 +53,41 @@ class keyboardShortcutsSettingsVc: NSViewController {
     // Uses ActiveShortcutRecorder (from HotkeyService.swift) — no separate RecordingRow enum needed
     private var recordingRow: ActiveShortcutRecorder = .none
     private let normalBorderColor = NSColor.gray
-    private let recordingPlaceholder = "Record Shortcut"
-
+    private var lblHeader: NSTextField?
     // MARK: - Lifecycle
 
     override func loadView() {
         view = NSView()
     }
-
+    
+    
+    // All Strings
+    private var keyboardShortcutsSettingTitle = "Keyboard Shortcuts"
+    private var recordingPlaceholder = "Record Shortcut"
+    private var descriptionText = "Set global keyboard shortcuts to instantly open Brain Dump, Focus Music, or Task List from anywhere on your Mac."
+    private var brainDumpTitle = "Open Brain Dump:"
+    private var focusMusicTitle = "Open Focus Music:"
+    private var taskListTitle = "Open Task List:"
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         keyboardShortcutsSettingsVcObj = self
+        
+        
+        if let keyboardShortcutsSettingsVcInfo = configjson.value(forKey: "keyboardShortcutsSettingsVcInfo") as? NSDictionary{
+            keyboardShortcutsSettingTitle = keyboardShortcutsSettingsVcInfo.value(forKey: "keyboardShortcutsSettingTitle") as? String ?? keyboardShortcutsSettingTitle
+            recordingPlaceholder = keyboardShortcutsSettingsVcInfo.value(forKey: "recordingPlaceholder") as? String ?? recordingPlaceholder
+            descriptionText = keyboardShortcutsSettingsVcInfo.value(forKey: "descriptionText") as? String ?? descriptionText
+            brainDumpTitle = keyboardShortcutsSettingsVcInfo.value(forKey: "brainDumpTitle") as? String ?? brainDumpTitle
+            focusMusicTitle = keyboardShortcutsSettingsVcInfo.value(forKey: "focusMusicTitle") as? String ?? focusMusicTitle
+            taskListTitle = keyboardShortcutsSettingsVcInfo.value(forKey: "taskListTitle") as? String ?? taskListTitle
+        }
+        
+        
+        
         buildUI()
         refreshLabels()
+        arrForSearchFromSettings.append(["title": keyboardShortcutsSettingTitle, "tabId": idKeyboardShortcuts, "object": self.lblHeader as Any])
         addLog(text: "keyboardShortcutsSettingsVc viewDidLoad")
     }
 
@@ -114,9 +133,10 @@ class keyboardShortcutsSettingsVc: NSViewController {
         lblHeader.font = NSFont.boldSystemFont(ofSize: 16)
         lblHeader.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(lblHeader)
+        
+        self.lblHeader = lblHeader
 
-        let lblDescription = NSTextField(wrappingLabelWithString:
-            "Set global keyboard shortcuts to instantly open Brain Dump, Focus Music, or Task List from anywhere on your Mac.")
+        let lblDescription = NSTextField(wrappingLabelWithString: descriptionText)
         lblDescription.translatesAutoresizingMaskIntoConstraints = false
         lblDescription.textColor = .secondaryLabelColor
         contentView.addSubview(lblDescription)
@@ -127,7 +147,7 @@ class keyboardShortcutsSettingsVc: NSViewController {
             recorderBox:   boxRecordBrainDump,
             shortcutLabel: lblShortcutBrainDump,
             clearButton:   btnClearBrainDump,
-            title:         "Open Brain Dump:",
+            title:         brainDumpTitle,
             recordAction:  #selector(boxBrainDumpClicked),
             clearAction:   #selector(btnClearBrainDumpClicked)
         )
@@ -137,7 +157,7 @@ class keyboardShortcutsSettingsVc: NSViewController {
             recorderBox:   boxRecordFocusMusic,
             shortcutLabel: lblShortcutFocusMusic,
             clearButton:   btnClearFocusMusic,
-            title:         "Open Focus Music:",
+            title:         focusMusicTitle,
             recordAction:  #selector(boxFocusMusicClicked),
             clearAction:   #selector(btnClearFocusMusicClicked)
         )
@@ -147,7 +167,7 @@ class keyboardShortcutsSettingsVc: NSViewController {
             recorderBox:   boxRecordTaskList,
             shortcutLabel: lblShortcutTaskList,
             clearButton:   btnClearTaskList,
-            title:         "Open Task List:",
+            title:         taskListTitle,
             recordAction:  #selector(boxTaskListClicked),
             clearAction:   #selector(btnClearTaskListClicked)
         )
@@ -160,7 +180,7 @@ class keyboardShortcutsSettingsVc: NSViewController {
         NSLayoutConstraint.activate([
             lblHeader.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 24),
             lblHeader.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
-            lblHeader.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
+            lblHeader.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -24),
 
             lblDescription.topAnchor.constraint(equalTo: lblHeader.bottomAnchor, constant: 8),
             lblDescription.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
@@ -206,7 +226,7 @@ class keyboardShortcutsSettingsVc: NSViewController {
 
         // ── Recorder box (mirrors boxRecordShortcutPomodoro) ────────────────────
         recorderBox.boxType = .custom
-        recorderBox.borderType = .lineBorder
+   //     recorderBox.borderType = .lineBorder
         recorderBox.borderWidth = 1.5
         recorderBox.cornerRadius = 6
         recorderBox.borderColor = normalBorderColor
@@ -250,7 +270,7 @@ class keyboardShortcutsSettingsVc: NSViewController {
         recordOverlay.translatesAutoresizingMaskIntoConstraints = false
         recordOverlay.target = self
         recordOverlay.action = recordAction
-        recordOverlay.setAccessibilityLabel("Record shortcut")
+        recordOverlay.setAccessibilityLabel(recordingPlaceholder)
 
         // ── Assemble box internals ───────────────────────────────────────────────
         // NSBox.addSubview adds to contentView, so constrain to contentView anchors

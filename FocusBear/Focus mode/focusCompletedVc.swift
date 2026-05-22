@@ -380,7 +380,6 @@ class focusCompletedVc: NSViewController {
         }else{
             boxTags.isHidden = true
         }
-        closePomodoroWindowIOfVisible()
     }
     
     override func viewDidAppear() {

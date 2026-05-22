@@ -12,6 +12,9 @@ import IOKit.pwr_mgt
 //import SystemConfiguration// for check internet availibility code
 //import WebKit
 
+// Initialize the service
+let focusButtonServiceObject = focusButtonService()
+let recorder = audioRecorder()
 
 let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
 
@@ -284,8 +287,28 @@ var applastSettingsGetTime:Date?
 
 
 
-enum CURRENTSTATE:Int{
+enum CURRENTSTATE:Int, CustomStringConvertible {
     case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _MICRO_BREAK_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FOCUS_SUMMARY_, _POSTPON_MORNING_HABIT_, _POSTPON_EVENING_HABIT_, _POSTPON_FOCUS_SUMMARY_, _ONBOARDING_, _SPECIAL_ACTIVITY_, _CUSTOM_ROUTINE_, _LOGIN_
+    
+    var description: String {
+        switch self {
+        case ._NOTHING_: return "_NOTHING_"
+        case ._MORNING_HABIT_: return "_MORNING_HABIT_"
+        case ._EVENING_HABIT_: return "_EVENING_HABIT_"
+        case ._MICRO_BREAK_: return "_MICRO_BREAK_"
+        case ._SHUTOFFMAC_: return "_SHUTOFFMAC_"
+        case ._BREATHING_: return "_BREATHING_"
+        case ._ABORT_: return "_ABORT_"
+        case ._FOCUS_SUMMARY_: return "_FOCUS_SUMMARY_"
+        case ._POSTPON_MORNING_HABIT_: return "_POSTPON_MORNING_HABIT_"
+        case ._POSTPON_EVENING_HABIT_: return "_POSTPON_EVENING_HABIT_"
+        case ._POSTPON_FOCUS_SUMMARY_: return "_POSTPON_FOCUS_SUMMARY_"
+        case ._ONBOARDING_: return "_ONBOARDING_"
+        case ._SPECIAL_ACTIVITY_: return "_SPECIAL_ACTIVITY_"
+        case ._CUSTOM_ROUTINE_: return "_CUSTOM_ROUTINE_"
+        case ._LOGIN_: return "_LOGIN_"
+        }
+    }
 }//_POSTPON_BREAK_ACTIVITY_ is not required because we always reset break activity timer when user clicks on postpone
 
 var lastCurrentStateSaved:CURRENTSTATE = ._NOTHING_
@@ -864,14 +887,8 @@ func isBlockSuperDistractingFocusModeOn()->Bool{
 
 //pomodoro
 func resetPomodoroVcFocusListIfNeeded(){
-    if pomodoroWindowControllerObj != nil{
-        if pomodoroWindowControllerObj != nil{
-            if (pomodoroWindowControllerObj?.window!.isVisible)!{
-                if pomodoroWindowControllerObj?.contentViewController == pomodoroVcObj{
-                    pomodoroVcObj?.reFillFocusTypeList()
-                }
-            }
-        }
+    if pomodoroVcObj?.isViewVisible ?? false{
+        pomodoroVcObj?.reFillFocusTypeList()
     }
 }
 
@@ -1582,8 +1599,10 @@ func showAlertNoInternet(window:NSWindow){
     alert.alertStyle = .warning
     alert.addButton(withTitle:  buttonOkText)
     alert.beginSheetModal(for: window, completionHandler: {_ in
-        window.close()
-    }) 
+        //  window.close()
+        // Since v3.32.487, users are allowed to continue using the app even when internet connectivity is unavailable.
+        // We no longer close the window when the internet is disconnected.
+    })
 }
 
 
@@ -3007,7 +3026,7 @@ func enableMenuPopover(){
     appdelegate?.popover.behavior = .transient
     allApiObject.capturePosthog(event: "settings-changed-menu-as-popover-enabled", metadata: [:])
     appdelegate?.showPopover()
-    menuViewControllerObj?.view.window?.makeKey()
+    //menuViewControllerObj?.view.window?.makeKey()
 //    appdelegate?.popover.becomeFirstResponder()
 }
 
@@ -3181,3 +3200,5 @@ func reloadPermissionsIfNeeded() {
 
     customVC.checkPermissions()
 }
+
+

@@ -205,78 +205,7 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
                 }
             }
     }
-    
-    
-    func startAppleLogin() {
-        let clientID = "com.focusbear.applesignin"
-        let redirectURI = "Focus Bear://auth/callback"
-        
-        let authURL = URL(string:
-            "https://appleid.apple.com/auth/authorize?" +
-            "response_type=code%20id_token&" +
-            "client_id=\(clientID)&" +
-            "redirect_uri=\(redirectURI)&" +
-            "scope=email%20name"
-        )!
-        
-        let session = ASWebAuthenticationSession(
-            url: authURL,
-            callbackURLScheme: "yourapp"
-        ) { callbackURL, error in
-            guard error == nil, let callbackURL = callbackURL else {
-                print("Login canceled or failed")
-                return
-            }
-            // Extract ?code= and ?id_token= from callbackURL
-            print("Apple returned: \(callbackURL)")
-        }
-        
-        session.start()
-    }
-    
-    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
-        if let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
-           let authorizationCodeData = credential.authorizationCode,
-           let authorizationCode = String(data: authorizationCodeData, encoding: .utf8) {
-            
-            // Exchange Apple authorizationCode with Auth0
-            let url = URL(string: "https://YOUR_DOMAIN.auth0.com/oauth/token")!
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            let body: [String: Any] = [
-                "grant_type": "urn:ietf:params:oauth:grant-type:token-exchange",
-                "subject_token_type": "http://auth0.com/oauth/token-type/apple-authz-code",
-                "scope": "openid profile email offline_access",
-                "audience": "https://auth.focusbear.io/api/v2/",
-                "subject_token": authorizationCode,
-                "client_id": "com.focusbear.applesignin",
-                "user_profile": [
-                    "name": [
-                        "firstName": credential.fullName?.givenName ?? "",
-                        "lastName": credential.fullName?.familyName ?? ""
-                    ],
-                    "email": credential.email ?? ""
-                ]
-            ]
-            
-            request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-            
-            URLSession.shared.dataTask(with: request) { data, response, error in
-                if let data = data {
-                    do {
-                        let result = try JSONSerialization.jsonObject(with: data, options: [])
-                        print("Auth0 response: \(result)")
-                        // store credentials in CredentialsManager like you do for Google
-                    } catch {
-                        print("Failed to decode: \(error)")
-                    }
-                }
-            }.resume()
-        }
-    }
-    
+
     func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
         print("Apple login failed: \(error)")
     }

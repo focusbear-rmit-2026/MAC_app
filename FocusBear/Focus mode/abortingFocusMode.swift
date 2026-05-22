@@ -69,9 +69,7 @@ class abortingFocusModeVc: NSViewController {
         
         btnCancel.isSecondaryButton = true
     }
-    override func viewWillAppear() {
-        closePomodoroWindowIOfVisible()
-    }
+
     var currentReasonIndex = 0
     func ResetData(forPause:Bool){
         isPausingFocusMode = forPause

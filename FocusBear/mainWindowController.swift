@@ -129,17 +129,15 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
                 return true
             }
             
-            // window close is allowed if non timer based habits are running
+            // window close if allowed if non timer based habits are running
             if currentAction == ._INPROGRESS_{
                 if currentHabitPlaying != nil{
-                    if !currentHabitPlaying!.useTimer{
-                        if timerViewcontrollerObj?.isActivityPaused ?? false{
-                            leftMenuVcObj?.showHabitsView()
-                            timerViewcontrollerObj?.btnPauseClicked(self)
-                            return false
-                        }else{
-                            return true
-                        }
+                    if timerViewcontrollerObj?.isActivityPaused ?? false{
+                        leftMenuVcObj?.showHabitsView()
+                        timerViewcontrollerObj?.btnPauseClicked(self)
+                        return false
+                    }else{
+                        return true
                     }
                 }else if currentRelaxHabitPlaying != nil{
                     if relaxModeWcObj != nil{

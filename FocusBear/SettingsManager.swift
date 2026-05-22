@@ -1186,6 +1186,10 @@ class SettingsManager:NSObject{
                 UserDefaults.standard.set(arrAlwaysAllowedApps, forKey: kUserdefaultsArrAlwaysAllowedApps)
             }
             
+            if let id = UserDefaults.standard.object(forKey: kUserdefaultsLastFocusModeId) as? String{
+                lastRunningFocusModeId = id
+            }
+            
             
             if isSettingsBlank{
                 //first time work

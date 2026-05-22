@@ -451,16 +451,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                                     
                                     var shouldAskPasswordForEvening = false
                                     if shouldAskPassword() &&  !SettingsManagerObject.isEasySkipEnabled{
-                                        var isCutOffTimeGoing = false
-                                        if cutOffTime != nil {
-                                            let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
-                                            let currentDate = Date()
-                                            if currentDate > cutOffDate{
-                                                isCutOffTimeGoing = true
-                                            }
-                                        }
-                                        
-                                        if isCutOffTimeGoing{
+                                        if isCutOffTimeGoing(){
                                             if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
                                                 shouldAskPasswordForEvening = true
                                             }
@@ -552,7 +543,6 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         
         
         appdelegate?.setFocusModeTimerForExtendAfterComplete(hour: nil, minute: minutesToExtend)
-        closePomodoroWindowIOfVisible()
         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled && currentState != ._MICRO_BREAK_{
             showTaskPlayerWindow(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock, automatically:false)
             leftMenuVcObj?.focusModeOrFocusModeHabitStarted()

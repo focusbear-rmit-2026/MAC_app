@@ -52,9 +52,9 @@
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <box appearanceType="aqua" boxType="custom" borderWidth="2" cornerRadius="11" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="hMa-h0-V4Z">
-                                                        <rect key="frame" x="54" y="14" width="336" height="647"/>
+                                                        <rect key="frame" x="54" y="14" width="335" height="647"/>
                                                         <view key="contentView" id="FQD-sF-y4t">
-                                                            <rect key="frame" x="2" y="2" width="332" height="643"/>
+                                                            <rect key="frame" x="2" y="2" width="331" height="643"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
                                                                 <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="cxx-xO-Sc4">
@@ -66,7 +66,7 @@
                                                                     <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" image="NSApplicationIcon" id="hBw-dk-9fJ"/>
                                                                 </imageView>
                                                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Yho-9B-jHg">
-                                                                    <rect key="frame" x="18" y="490" width="296" height="39"/>
+                                                                    <rect key="frame" x="18" y="490" width="295" height="39"/>
                                                                     <textFieldCell key="cell" lineBreakMode="clipping" alignment="center" title="xxBasic" id="SVD-dJ-mgO">
                                                                         <font key="font" metaFont="systemBold" size="33"/>
                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -74,7 +74,7 @@
                                                                     </textFieldCell>
                                                                 </textField>
                                                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Ruv-4q-dty">
-                                                                    <rect key="frame" x="18" y="459" width="296" height="19"/>
+                                                                    <rect key="frame" x="18" y="459" width="295" height="19"/>
                                                                     <textFieldCell key="cell" lineBreakMode="clipping" alignment="center" title="xxTo keep you running" id="HPt-04-DrY">
                                                                         <font key="font" metaFont="system" size="16"/>
                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -82,7 +82,7 @@
                                                                     </textFieldCell>
                                                                 </textField>
                                                                 <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Fdh-gM-Eqy">
-                                                                    <rect key="frame" x="35" y="217" width="277" height="224"/>
+                                                                    <rect key="frame" x="35" y="217" width="276" height="224"/>
                                                                     <subviews>
                                                                         <stackView distribution="fill" orientation="horizontal" alignment="top" spacing="10" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6i3-8Q-CUd">
                                                                             <rect key="frame" x="0.0" y="204" width="130" height="20"/>
@@ -172,7 +172,7 @@
                                                                             </customSpacing>
                                                                         </stackView>
                                                                         <stackView distribution="fill" orientation="horizontal" alignment="top" spacing="10" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6qt-4e-pCZ">
-                                                                            <rect key="frame" x="0.0" y="102" width="277" height="38"/>
+                                                                            <rect key="frame" x="0.0" y="102" width="276" height="38"/>
                                                                             <subviews>
                                                                                 <textField focusRingType="none" horizontalHuggingPriority="252" verticalHuggingPriority="750" horizontalCompressionResistancePriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="jT7-Ri-T8C">
                                                                                     <rect key="frame" x="-2" y="18" width="19" height="20"/>
@@ -183,7 +183,7 @@
                                                                                     </textFieldCell>
                                                                                 </textField>
                                                                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="6bn-Ur-JTi">
-                                                                                    <rect key="frame" x="23" y="0.0" width="256" height="38"/>
+                                                                                    <rect key="frame" x="23" y="0.0" width="255" height="38"/>
                                                                                     <textFieldCell key="cell" title="xxMorning &amp; Evening Routines With Limited habits" id="esV-dg-wsh">
                                                                                         <font key="font" metaFont="system" size="15"/>
                                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -201,7 +201,7 @@
                                                                             </customSpacing>
                                                                         </stackView>
                                                                         <stackView distribution="fill" orientation="horizontal" alignment="top" spacing="10" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VvR-WN-YKM">
-                                                                            <rect key="frame" x="0.0" y="56" width="277" height="38"/>
+                                                                            <rect key="frame" x="0.0" y="56" width="276" height="38"/>
                                                                             <subviews>
                                                                                 <textField focusRingType="none" horizontalHuggingPriority="252" verticalHuggingPriority="750" horizontalCompressionResistancePriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="oX3-Ya-4O8">
                                                                                     <rect key="frame" x="-2" y="18" width="19" height="20"/>
@@ -212,7 +212,7 @@
                                                                                     </textFieldCell>
                                                                                 </textField>
                                                                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Dgf-ni-3Dz">
-                                                                                    <rect key="frame" x="23" y="0.0" width="256" height="38"/>
+                                                                                    <rect key="frame" x="23" y="0.0" width="255" height="38"/>
                                                                                     <textFieldCell key="cell" title="xxMicro-Breaks with Limited activities" id="b4g-AB-vSG">
                                                                                         <font key="font" metaFont="system" size="15"/>
                                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1510,22 +1510,22 @@ DQ
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="pCx-k2-1gj">
-                                <rect key="frame" x="0.0" y="0.0" width="542" height="386"/>
+                                <rect key="frame" x="0.0" y="0.0" width="543" height="386"/>
                                 <view key="contentView" id="DJh-AG-5mO">
-                                    <rect key="frame" x="0.0" y="0.0" width="542" height="386"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="543" height="386"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <stackView distribution="fillEqually" orientation="vertical" alignment="leading" spacing="0.0" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3ge-2m-kXj">
-                                            <rect key="frame" x="0.0" y="0.0" width="542" height="386"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="543" height="386"/>
                                             <subviews>
                                                 <scrollView autohidesScrollers="YES" horizontalLineScroll="38" horizontalPageScroll="10" verticalLineScroll="38" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hfF-Yr-4EU">
-                                                    <rect key="frame" x="0.0" y="0.0" width="542" height="386"/>
+                                                    <rect key="frame" x="0.0" y="0.0" width="543" height="386"/>
                                                     <clipView key="contentView" id="hTg-vh-W1e">
-                                                        <rect key="frame" x="1" y="1" width="540" height="384"/>
+                                                        <rect key="frame" x="1" y="1" width="541" height="384"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <subviews>
                                                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="plain" multipleSelection="NO" autosaveColumns="NO" rowHeight="38" rowSizeStyle="automatic" viewBased="YES" id="1lL-un-s67">
-                                                                <rect key="frame" x="0.0" y="0.0" width="540" height="384"/>
+                                                                <rect key="frame" x="0.0" y="0.0" width="541" height="384"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <size key="intercellSpacing" width="12" height="0.0"/>
                                                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -1550,7 +1550,7 @@ DQ
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="gQu-RZ-Q3i">
                                                                                         <rect key="frame" x="0.0" y="0.0" width="520" height="38"/>
                                                                                         <view key="contentView" id="O91-k6-aO2">
-                                                                                            <rect key="frame" x="0.0" y="0.0" width="520" height="38"/>
+                                                                                            <rect key="frame" x="1" y="0.0" width="519" height="38"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                             <subviews>
                                                                                                 <textField focusRingType="none" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="aHY-6l-Sz6">
@@ -1606,7 +1606,7 @@ DQ
                                                             </tableView>
                                                         </subviews>
                                                     </clipView>
-                                                    <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="0.58634356165090562" horizontal="YES" id="ndU-gG-C1B">
+                                                    <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="YES" id="ndU-gG-C1B">
                                                         <rect key="frame" x="1" y="119" width="223" height="15"/>
                                                         <autoresizingMask key="autoresizingMask"/>
                                                     </scroller>
@@ -2364,7 +2364,7 @@ DQ
                                         <box boxType="custom" borderWidth="3" cornerRadius="17" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="6QL-ks-I2T">
                                             <rect key="frame" x="0.0" y="0.0" width="34" height="34"/>
                                             <view key="contentView" id="SG9-Fk-zLw">
-                                                <rect key="frame" x="3" y="3" width="28" height="28"/>
+                                                <rect key="frame" x="4" y="3" width="26" height="28"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="HfA-8s-rGe">
@@ -2437,6 +2437,7 @@ DQ
                         <outlet property="boxMoreItems" destination="VYN-6x-vl6" id="bLn-QP-Vb3"/>
                         <outlet property="boxTimer" destination="u9E-lh-BFu" id="f3Z-Yy-kbv"/>
                         <outlet property="boxTimerSmall" destination="yVF-Gv-sbW" id="LC0-hV-0MW"/>
+                        <outlet property="imgViewSmallAppIcon" destination="HfA-8s-rGe" id="duh-A5-luL"/>
                         <outlet property="lblScheduleName" destination="vgH-f8-5QL" id="gm5-rg-rnL"/>
                         <outlet property="lblScheduleTime" destination="QYb-XW-0dD" id="r1m-2R-roW"/>
                         <outlet property="stackViewMoreItems" destination="s23-CD-gux" id="GHJ-dD-JPs"/>
@@ -2548,7 +2549,7 @@ DQ
                                         <box boxType="custom" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="5gN-N0-1np">
                                             <rect key="frame" x="124" y="88" width="92" height="30"/>
                                             <view key="contentView" id="HMJ-Oq-hOL">
-                                                <rect key="frame" x="1" y="1" width="90" height="28"/>
+                                                <rect key="frame" x="2" y="1" width="88" height="28"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ksh-VX-ySY">

@@ -10,6 +10,10 @@ import Cocoa
 
 class addOnsVc: NSViewController {
 
+    @IBOutlet weak var btnConnect: Button!
+    @IBOutlet weak var lblDescriptionFocusButton: NSTextField!
+    @IBOutlet weak var lblTitleFocusButton: NSTextField!
+    @IBOutlet weak var boxFocusButton: NSBox!
     @IBOutlet weak var boxGetLateNoMore: NSBox!
     @IBOutlet weak var lblLateNoMoreAlreadyInstalled: NSTextField!
     @IBOutlet weak var btnGetLateNoMore: Button!
@@ -25,6 +29,11 @@ class addOnsVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        lblTitleFocusButton.stringValue = "Focus Button"
+        lblDescriptionFocusButton.stringValue = "The FocusButton device connects to your computer using a USB cable and works together with the app to help manage focus sessions and actions. Once connected, the app automatically detects the device and establishes communication with it."
+        btnConnect.title = "Connect"
+        
+        
         lblLateNoMoreAlreadyInstalled.stringValue = "Late No More already installed"
         lblTitle.stringValue = "Add Ons"
         btnGetLateNoMore.title = "Get Late No More"
@@ -43,6 +52,10 @@ class addOnsVc: NSViewController {
             lblTitle.stringValue = settingsNew.value(forKey: "addOnsTitle") as? String ?? lblTitle.stringValue
             lblTitleLateNoMore.stringValue = settingsNew.value(forKey: "titleGetLateNoMore") as? String ?? lblTitleLateNoMore.stringValue
             btnGetLateNoMore.title = settingsNew.value(forKey: "titleGetLateNoMore") as? String ?? btnGetLateNoMore.title
+            
+            lblTitleFocusButton.stringValue = settingsNew.value(forKey: "titleFocusButton") as? String ?? lblTitleFocusButton.stringValue
+            lblDescriptionFocusButton.stringValue = settingsNew.value(forKey: "descriptionFocusButton") as? String ?? lblDescriptionFocusButton.stringValue
+            btnConnect.title = settingsNew.value(forKey: "buttonConnectFocusButton") as? String ?? btnConnect.title
         }
         if let lateNoMorePopUpVcInfo = configjson.value(forKey: "lateNoMorePopUpVcInfo") as? NSDictionary{
             lblDescriptionLateNoMore.stringValue = lateNoMorePopUpVcInfo.value(forKey: "description") as? String ?? lblDescriptionLateNoMore.stringValue
@@ -128,6 +141,11 @@ class addOnsVc: NSViewController {
             stackViewBottomForDownLoadFbtt?.isHidden = false
         }
 
+        if focusButtonServiceObject.isRunning{
+            btnConnect.isEnabled = false
+        }else{
+            btnConnect.isEnabled = true
+        }
     }
     @objc func btnDownLoadClicked(){
         print("btndownloadclicked")
@@ -161,6 +179,28 @@ class addOnsVc: NSViewController {
     
     @IBAction func btnBackClicked(_ sender: Any) {
         settingsContainerVcObj?.showAdvancedView()
+    }
+    
+    @IBAction func btnConnectClicked(_ sender: Any) {
+        addLog(text: "addOnsVc: button Connect Clicked")
+        if !focusButtonServiceObject.isRunning{
+            btnConnect.isEnabled = false
+            if focusButtonServiceObject.start() {
+                addLog(text: "addOnsVc: FocusButton: service started successfully")
+            }
+            DispatchQueue.global().async {
+                sleep(2)
+                DispatchQueue.main.async { [self] in
+                    if focusButtonServiceObject.isRunning{
+                        btnConnect.isEnabled = false
+                        addLog(text: "addOnsVc: service running")
+                    }else{
+                        btnConnect.isEnabled = true
+                        addLog(text: "addOnsVc: service not running")
+                    }
+                }
+            }
+        }
     }
 }
 
