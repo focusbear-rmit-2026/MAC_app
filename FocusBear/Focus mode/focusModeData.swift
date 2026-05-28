@@ -1525,7 +1525,7 @@ func checkIsAnyOldFoucsModeRemaining(){
                                     diffSeconds = Calendar.current.dateComponents([.second], from: Date(), to: endDate).second ?? diffSeconds
                                     appdelegate!.remainingFocusModeSecondsAfterPaused = diffSeconds
                                     DispatchQueue.main.async {
-                                        addLog(text: "Focus mode resumed. Remaining duration: \(focusModeActualDurationPerformed) seconds. Reason: Current time < end time") // added in v 3.32.483
+                                        addLog(text: "Focus mode resumed. Remaining duration: \(diffSeconds) seconds. Reason: Current time < end time") // added in v 3.32.483
                                         resumeFocusModeAfterAppStartted(diffSeconds: diffSeconds, focusMode: focusMode, finishFocusMoedTime: endDate, index: i)
                                         focusModeActualDurationPerformed = Calendar.current.dateComponents([.second], from: startDate, to: Date()).second ?? diffSeconds//dont change this line place because  focusModeActualDurationPerformed = 0 in resumeFocusModeAfterAppStartted func
                                         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
@@ -1613,7 +1613,12 @@ func resumeFocusModeAfterAppStartted(diffSeconds: Int, focusMode: [String : Any]
     
     focusModeMinutesToPerform = diffSeconds / 60
     isFocusModeStartedFromPomodoroMode = true
-    isSkipBreakActivityDuringPomodoro = true
+    
+    if SettingsManagerObject.isGeekModeEnabled{
+        isSkipBreakActivityDuringPomodoro = SettingsManagerObject.isSkipBreakActivityDuringPomodoro
+    }else{
+        isSkipBreakActivityDuringPomodoro = true
+    }
     focusModeTaskString = focusMode["lastTaskUsed"] as? String ?? ""
     taskCreatedByBlockPopup = ""
     whatToAchieveInFocusBlock = focusMode["lastIntentionUsed"] as? String ?? ""
@@ -2158,7 +2163,7 @@ func startWorkFocusAutomaticallyClicked(id:String){
                 if let isAutoDoNotDisturbEnabled = arrFocusType[i]["isAutoDoNotDisturbEnabled"] as? Bool{
                     if isAutoDoNotDisturbEnabled{
                         if isAccessibilityEnabled(isPrompt: true){
-                            enableDND()
+                            DNDManager.shared.setDND(true)
                         }
                     }
                 }
@@ -2424,21 +2429,21 @@ func startFocusModeFromFocusDeviceButton(diffMinutes:Int, shouldUpdateFocusButto
         if let isAutoDoNotDisturbEnabled = arrFocusType[currentFocusModeIndex]["isAutoDoNotDisturbEnabled"] as? Bool{
             if isAutoDoNotDisturbEnabled{
                 if isAccessibilityEnabled(isPrompt: true){
-                    enableDND()
+                    DNDManager.shared.setDND(true)
                 }
             }
         }
-        if !isDndEnabled{
+        if !DNDManager.shared.isDndEnabled{
             if let isDeepWorkFocus = arrFocusType[currentFocusModeIndex]["isDeepWorkFocus"] as? Bool{
                 if  isDeepWorkFocus{
                     if isAccessibilityEnabled(isPrompt: true){
-                        enableDND()
+                        DNDManager.shared.setDND(true)
                     }
                 }
             }else if let isDefault = arrFocusType[currentFocusModeIndex]["isDefault"] as? Bool{
                 if  isDefault{
                     if isAccessibilityEnabled(isPrompt: true){
-                        enableDND()
+                        DNDManager.shared.setDND(true)
                     }
                 }
             }
@@ -2514,8 +2519,8 @@ func resumeFocusModeFromFocusDeviceButton(shouldUpdateFocusButton:Bool)->Bool{
         addLog(text: "Ignoring focus device button: focus mode already running")
         return false;
     }else if isFocusModePaused{
-        addLog(text: "Ignoring focus device button: focus mode is paused")
-        return false;
+        //addLog(text: "Ignoring focus device button: focus mode is paused")
+       // return false;
     }else if isHardCorePomodoroModeOn{
         addLog(text: "Ignoring focus device button: hardcore pomodoro mode is active")
         return false;

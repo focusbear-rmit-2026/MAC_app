@@ -128,9 +128,9 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         var flags = "[\"settings-updated\"]"
         if SettingsManagerObject.isGeekModeEnabled{
-            flags = "[\"settings-updated\",\"geek-mode\"]"
+            flags = "[\"settings-updated\",\"geek-mode\",\"save-settings-migrate-to-web\"]"
         }else{
-            flags = "[\"settings-updated\",\"simple-mode\"]"
+            flags = "[\"settings-updated\",\"simple-mode\",\"save-settings-migrate-to-web\"]"
         }
         let settingsJson = "{\"access_token\":\"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"flags\":\(flags)}"
         let javascript = "loadSettingsData(\(settingsJson));"

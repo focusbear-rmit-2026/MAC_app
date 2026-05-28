@@ -85,21 +85,21 @@ class pusherEvents:NSObject, PusherDelegate {
                                         if let isAutoDoNotDisturbEnabled = arrFocusType[currentFocusModeIndex]["isAutoDoNotDisturbEnabled"] as? Bool{
                                             if isAutoDoNotDisturbEnabled{
                                                 if isAccessibilityEnabled(isPrompt: true){
-                                                    enableDND()
+                                                    DNDManager.shared.setDND(true)
                                                 }
                                             }
                                         }
-                                        if !isDndEnabled{
+                                        if !DNDManager.shared.isDndEnabled{
                                             if let isDeepWorkFocus = arrFocusType[currentFocusModeIndex]["isDeepWorkFocus"] as? Bool{
                                                 if  isDeepWorkFocus{
                                                     if isAccessibilityEnabled(isPrompt: true){
-                                                        enableDND()
+                                                        DNDManager.shared.setDND(true)
                                                     }
                                                 }
                                             }else if let isDefault = arrFocusType[currentFocusModeIndex]["isDefault"] as? Bool{
                                                 if  isDefault{
                                                     if isAccessibilityEnabled(isPrompt: true){
-                                                        enableDND()
+                                                        DNDManager.shared.setDND(true)
                                                     }
                                                 }
                                             }
@@ -215,8 +215,8 @@ class pusherEvents:NSObject, PusherDelegate {
                         arrFocusType[i]["isPaused"] = false
                         currentFocusModeName = arrFocusType[i]["name"] as? String ?? ""
 
-                        if isDndEnabled{
-                            disableDND()
+                        if DNDManager.shared.isDndEnabled{
+                            DNDManager.shared.setDND(true)
                         }
                         
                         workAfterFocusBegin(index: i)
@@ -266,29 +266,32 @@ class pusherEvents:NSObject, PusherDelegate {
         _ = channel.bind(eventName: "activity-completed", eventCallback: { (event: PusherEvent) in
             if let data = event.data {
                 print(data)
-                if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
-                    menuViewControllerObj?.btnResumeHabitsClicked(self)
-                    return;
-                }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
-                    menuViewControllerObj?.btnResumeHabitsClicked(self)
-                    return;
-                }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
-                    menuViewControllerObj?.btnResumeHabitsClicked(self)
-                    return;
-                }
+                
                 
                 if let data = data.data(using: .utf8) {
                     do {
                         if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]{
                             print(dictionary)
                             
-                            
                             var shouldIgnore = false
-                            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_{
-                                if dictionary["leader_device_id"] as? String == currentDeviceId{
-                                    shouldIgnore = true
+                            
+                            if dictionary["leader_device_id"] as? String == currentDeviceId{
+                                shouldIgnore = true
+                            }
+                            
+                            if !shouldIgnore {
+                                if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+                                    menuViewControllerObj?.btnResumeHabitsClicked(self)
+                                    return;
+                                }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
+                                    menuViewControllerObj?.btnResumeHabitsClicked(self)
+                                    return;
+                                }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
+                                    menuViewControllerObj?.btnResumeHabitsClicked(self)
+                                    return;
                                 }
-                                if !shouldIgnore{
+     
+                                if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_{
                                     appdelegate!.abortAllProcess()
                                     currentState = ._NOTHING_
                                     appdelegate!.backgroundThread()
@@ -300,7 +303,6 @@ class pusherEvents:NSObject, PusherDelegate {
                                         }
                                     }
                                 }
-                                
                             }
                         }
                     }catch{

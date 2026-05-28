@@ -680,17 +680,12 @@ class pomodoroVc: NSViewController {
             lblCompletedPomodoroCount.stringValue = completedPomodoroCountText//"You have completed \(completedPomodoroCountInHardcorePomodoro) of \(totalPomodoroCountInHardCorePomodoro) pomodoros. \(remainingPomodoroCount) more to go."//
             
         }else{
-            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroSkipMicroBreaks) as? Bool{
-                if state{
-                    btnToggleBreaksSettings.title = titleBreaksOff
-                    isSkipMicrobreaks = true
-                }else{
-                    btnToggleBreaksSettings.title = titleBreaksOn
-                    isSkipMicrobreaks = false
-                }
-            }else{
+            if SettingsManagerObject.isSkipBreakActivityDuringPomodoro{
                 btnToggleBreaksSettings.title = titleBreaksOff
                 isSkipMicrobreaks = true
+            }else{
+                btnToggleBreaksSettings.title = titleBreaksOn
+                isSkipMicrobreaks = false
             }
             lblTimerUnfocused.isHidden = false
             startTimer()
@@ -1248,7 +1243,6 @@ class pomodoroVc: NSViewController {
             if count != oldCount{
                 SettingsManagerObject.isSettingsChanged = true
                 UserDefaults.standard.set(count, forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes)
-                SettingsManagerObject.putUserLocalDeviceSettings()
             }
         }
 
@@ -1278,22 +1272,22 @@ class pomodoroVc: NSViewController {
                     if let isAutoDoNotDisturbEnabled = arrFocusType[i]["isAutoDoNotDisturbEnabled"] as? Bool{
                         if isAutoDoNotDisturbEnabled{
                             if isAccessibilityEnabled(isPrompt: true){
-                                enableDND()
+                                DNDManager.shared.setDND(true)
                             }
                         }
                     }
                     
-                    if !isDndEnabled{
+                    if !DNDManager.shared.isDndEnabled{
                         if let isDeepWorkFocus = arrFocusType[i]["isDeepWorkFocus"] as? Bool{
                             if  isDeepWorkFocus{
                                 if isAccessibilityEnabled(isPrompt: true){
-                                    enableDND()
+                                    DNDManager.shared.setDND(true)
                                 }
                             }
                         }else if let isDefault = arrFocusType[i]["isDefault"] as? Bool{
                             if  isDefault{
                                 if isAccessibilityEnabled(isPrompt: true){
-                                    enableDND()
+                                    DNDManager.shared.setDND(true)
                                 }
                             }
                         }
@@ -1353,6 +1347,13 @@ class pomodoroVc: NSViewController {
             isSkipBreakActivityDuringPomodoro = false
             addLog(text: "checkBoxSkipMicrobreaks is off in geek mode focus session.")
         }
+        if SettingsManagerObject.isSkipBreakActivityDuringPomodoro != isSkipBreakActivityDuringPomodoro{
+            SettingsManagerObject.isSkipBreakActivityDuringPomodoro = isSkipBreakActivityDuringPomodoro
+            SettingsManagerObject.isSettingsChanged = true
+        }
+        
+        SettingsManagerObject.putUserLocalDeviceSettings()
+        
         whatToAchieveInFocusBlock = textViewAchieve.string
         appdelegate!.focusModeStartted(isStartedByPusher: false)
         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled && currentState != ._MICRO_BREAK_{ // added is micro break is running :- v 2.28.438
@@ -1610,11 +1611,9 @@ class pomodoroVc: NSViewController {
     @IBAction func btnToggleBreaksSettingsClicked(_ sender: Any) {
         if isSkipMicrobreaks{
             btnToggleBreaksSettings.title = titleBreaksOn
-            UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsPomodoroSkipMicroBreaks)
             isSkipMicrobreaks = false
         }else{
             btnToggleBreaksSettings.title = titleBreaksOff
-            UserDefaults.standard.set(true, forKey: SettingsManagerObject.kUserdefaultsPomodoroSkipMicroBreaks)
             isSkipMicrobreaks = true
         }
     }

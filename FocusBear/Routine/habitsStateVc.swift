@@ -10,6 +10,7 @@ import Cocoa
 
 class habitsStateVc: NSViewController {
 
+    @IBOutlet weak var customView: NSView!
     @IBOutlet weak var btnResumeHabits: Button!
     @IBOutlet weak var lblTitle: NSTextField!
     
@@ -32,13 +33,23 @@ class habitsStateVc: NSViewController {
     }
     
     override func viewWillAppear() {
+        removeSubViews()
+        customView.isHidden = true
         reloadData()
+    }
+    
+    override func viewWillDisappear() {
+        removeSubViews()
     }
     
     func reloadData(){
         addLog(text:"habitsStateVc:- reloadData")
         isFreeTimeBeforeShutoff = false
         editRoutineButtonShowing = false
+        
+        btnResumeHabits.isHidden = false
+        lblTitle.isHidden = false
+        
         if !isAppEnable{
             btnResumeHabits.title = "Activate Distraction Blocking"
             lblTitle.stringValue = "Distraction Blocking is currently paused. You can turn it back on anytime to stay focused."
@@ -59,18 +70,30 @@ class habitsStateVc: NSViewController {
         if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
             btnResumeHabits.title = habitsStateVcInfo.value(forKey: "buttonResumeHabits") as? String ?? btnResumeHabits.title
         }
-        if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+        if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_{
             btnResumeHabits.isHidden = false
+            if currentState == ._POSTPON_MORNING_HABIT_{
+                showRutinePostponedInfoView(state: CURRENTSTATE._MORNING_HABIT_)
+            }else if currentState == ._POSTPON_EVENING_HABIT_{
+                showRutinePostponedInfoView(state: CURRENTSTATE._EVENING_HABIT_)
+            }else{
+                showRutinePostponedInfoView(state: ._FOCUS_SUMMARY_)
+            }
             if currentState == ._POSTPON_MORNING_HABIT_{
                 lblTitle.stringValue = morningRoutinePostponedText
             }else{
                 lblTitle.stringValue = eveningRoutinePostponedText
             }
             
+        }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
+            btnResumeHabits.isHidden = false
+            lblTitle.stringValue = eveningRoutinePostponedText
         }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
             btnResumeHabits.isHidden = false
+            showRutinePostponedInfoView(state: ._MORNING_HABIT_)
             lblTitle.stringValue = morningRoutinePostponedText
         }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
+            showRutinePostponedInfoView(state: ._EVENING_HABIT_)
             btnResumeHabits.isHidden = false
             lblTitle.stringValue = eveningRoutinePostponedText
         }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit{
@@ -225,6 +248,22 @@ class habitsStateVc: NSViewController {
                 }
             }
         }
+    }
+    
+    func removeSubViews(){
+        let viewsArr = customView.subviews
+        for subview in viewsArr {
+            subview.removeFromSuperview()
+        }
+    }
+    
+    func showRutinePostponedInfoView(state:CURRENTSTATE){
+        btnResumeHabits.isHidden = true
+        lblTitle.isHidden = true
+        customView.isHidden = false
+        customView.addSubview(getRutinePostponedInfoVcObject().view)
+        customView.addConstraints(subView: getRutinePostponedInfoVcObject().view)
+        getRutinePostponedInfoVcObject().lCurrentState = state
     }
     
     @IBAction func btnResumeHabitsClicked(_ sender: Any) {

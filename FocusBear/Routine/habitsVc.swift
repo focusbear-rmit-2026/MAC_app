@@ -81,6 +81,17 @@ class habitsVc: NSViewController {
         self.btnAbort.isHidden = false
     }
     
+    func stopPostponeEndTimer(){
+        if postponeTimer != nil{
+            postponeTimer?.invalidate()
+            postponeTimer = nil
+        }
+        if postponeNotificationTimer != nil{
+            postponeNotificationTimer?.invalidate()
+            postponeNotificationTimer = nil
+        }
+    }
+    
     @objc func showFocusSummaryView(){
         appdelegate!.checkSystemTimeAndShowWindow()
         if startTime == nil || shutOffTime == nil{
@@ -626,6 +637,8 @@ class habitsVc: NSViewController {
         self.view.addConstraints(subView: enterPasswordVcObj!.view)
         enterPasswordVcObj?.removeConstraints()
         enterPasswordVcObj?.parentVc = nil
+        enterPasswordVcObj?.pendingAction = nil
+        enterPasswordVcObj?.cancelAction = nil
         addLog(text: "Showing enter password view")
     }
     
@@ -1158,9 +1171,10 @@ class habitsVc: NSViewController {
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
     
-    func showAllMorningEveningHabitsFromHabitCompleted(){
+    func removeCompletedHabitsForMorningEveningRoutine(){
         if currentState == ._MORNING_HABIT_{
             if currentHabitIndex != -1{
+                // remove habits which are completed
                 let tempHabits = arrFilteredMorningHabits
                 arrFilteredMorningHabits.removeAll()
                 
@@ -1195,6 +1209,27 @@ class habitsVc: NSViewController {
                 }
             }
         }
+    }
+    
+    func saveRemainingHabitIdForPostponedRoutineList(state:CURRENTSTATE){
+        removeCompletedHabitsForMorningEveningRoutine()
+        
+        if state == ._MORNING_HABIT_{
+            let ids = arrFilteredMorningHabits.map { $0.id }
+            let preFilteredIds = arrPreFilteredMorningHabits.map { $0.id }
+            UserDefaults.standard.set(ids, forKey: kUserdefaultsLastHabitsIdsBeforePostpone)
+            UserDefaults.standard.set(preFilteredIds, forKey: kUserdefaultsPrefilterLastHabitsIdsBeforePostpone)
+        }else if state == ._EVENING_HABIT_{
+            let ids = arrFilteredEveningHabits.map { $0.id }
+            let preFilteredIds = arrPreFilteredEveningHabits.map { $0.id }
+            UserDefaults.standard.set(ids, forKey: kUserdefaultsLastHabitsIdsBeforePostpone)
+            UserDefaults.standard.set(preFilteredIds, forKey: kUserdefaultsPrefilterLastHabitsIdsBeforePostpone)
+        }
+    }
+    
+    func showAllMorningEveningHabitsFromHabitCompleted(){
+        
+        removeCompletedHabitsForMorningEveningRoutine()
         
         addLog(text: "Showing morning habits from habit completed back button.")
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
@@ -2013,7 +2048,7 @@ class habitsVc: NSViewController {
         closeEasyPostponeWindowIfVisible()
         if isFocusModeOnOrPaused(){
             addLog(text: "Special Activity start:- Focus Mode Finished")
-            appdelegate?.tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
+            appdelegate?.tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false, shouldUpdateFocusButton: true)
             
         }
         mainWindowControllerObj?.showWindow(self)
@@ -2047,6 +2082,9 @@ class habitsVc: NSViewController {
         habitsView.addSubview(timerViewcontrollerObj!.view)
         habitsView.addConstraints(subView: timerViewcontrollerObj!.view)
         currentActivityIndex += 1
+        if arrFinalBreakActivities.count <= currentActivityIndex{
+            currentActivityIndex = arrFinalBreakActivities.count - 1// crash solved
+        }
         let activity = arrFinalBreakActivities[currentActivityIndex]
         let currentActivity = activity.activity!
         if let randomChoice = activity.randomChoice{//currentActivity.choices.randomElement(){
@@ -2407,7 +2445,7 @@ class habitsVc: NSViewController {
             }
         }
     }
-    func postponeMorningHabitFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool, showAskIntention:Bool){
+    func postponeMorningHabitFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool, showAskIntention:Bool, isExtendingPostponeFromAppStart:Bool = false){
         var showAskIntention = showAskIntention
         
         if SettingsManagerObject.isStrictnessLevelSuperGentle(){
@@ -2531,7 +2569,9 @@ class habitsVc: NSViewController {
                 }
             }
             writeStringToHabitInfo(isFinishTime: true, activityName: "")
-            
+            if !isExtendingPostponeFromAppStart{
+                saveRemainingHabitIdForPostponedRoutineList(state: ._MORNING_HABIT_)
+            }
             menuViewControllerObj?.reloadIfNeeded()
             leftMenuVcObj?.habitOver()
         }
@@ -2606,7 +2646,7 @@ class habitsVc: NSViewController {
     }
     
     
-    func postponeEveningHabitFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool, showAskIntention:Bool){
+    func postponeEveningHabitFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool, showAskIntention:Bool, isExtendingPostponeFromAppStart:Bool = false){
         var showAskIntention = showAskIntention
         
         if SettingsManagerObject.isStrictnessLevelSuperGentle(){
@@ -2730,7 +2770,9 @@ class habitsVc: NSViewController {
                 habitsVcObj?.showHabitState()
             }
             writeStringToHabitInfo(isFinishTime: true, activityName: "")
-            
+            if !isExtendingPostponeFromAppStart{
+                saveRemainingHabitIdForPostponedRoutineList(state: ._EVENING_HABIT_)
+            }
             menuViewControllerObj?.reloadIfNeeded()
             leftMenuVcObj?.habitOver()
         }

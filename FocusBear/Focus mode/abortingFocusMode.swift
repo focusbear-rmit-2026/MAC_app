@@ -256,7 +256,7 @@ class abortingFocusModeVc: NSViewController {
 //                }
 //            }
             reason = "I achieved what I wanted to too early."
-            appdelegate?.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
+            appdelegate?.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false, shouldUpdateFocusButton: true)
             
             addLog(text: "Focus mode abort clicked with reason - \(reason)")
             let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")

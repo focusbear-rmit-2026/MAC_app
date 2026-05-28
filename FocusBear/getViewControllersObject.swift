@@ -109,6 +109,15 @@ func getAskPostponeVcObject()->askPostponeVc{
     return askPostponeVcObj!
 }
 
+var routinePostponedInfoVcObj:routinePostponedInfoVc?
+func getRutinePostponedInfoVcObject()->routinePostponedInfoVc{
+    if routinePostponedInfoVcObj == nil{
+        routinePostponedInfoVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("routinePostponedInfoVc")) as? routinePostponedInfoVc
+    }
+    return routinePostponedInfoVcObj!
+}
+
+
 var skipHabitVcObj:skipHabitVc?
 func getSkipHabitVcObject()->skipHabitVc{
     if skipHabitVcObj == nil{
@@ -1694,21 +1703,21 @@ var blankLayerVcObj: blankLayerVc?
 var focusPreferencesAdvancedVcObj:focusPreferencesAdvancedVc?
 
 
-var breakSurveyVcObj:breakSurveyVc?
-func getBreakSurveyVcObject()->breakSurveyVc{
-    if breakSurveyVcObj == nil{
-        breakSurveyVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("breakSurveyVc")) as? breakSurveyVc
-    }
-    return breakSurveyVcObj!
-}
-
-var breakSurveyWcObj:commonWindowController?
-func getBreakSurveyWindowObject()->commonWindowController{
-    if breakSurveyWcObj == nil{
-        breakSurveyWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-    }
-    return breakSurveyWcObj!
-}
+//var breakSurveyVcObj:breakSurveyVc?
+//func getBreakSurveyVcObject()->breakSurveyVc{
+//    if breakSurveyVcObj == nil{
+//        breakSurveyVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("breakSurveyVc")) as? breakSurveyVc
+//    }
+//    return breakSurveyVcObj!
+//}
+//
+//var breakSurveyWcObj:commonWindowController?
+//func getBreakSurveyWindowObject()->commonWindowController{
+//    if breakSurveyWcObj == nil{
+//        breakSurveyWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+//    }
+//    return breakSurveyWcObj!
+//}
 
 
 // Custom Alert

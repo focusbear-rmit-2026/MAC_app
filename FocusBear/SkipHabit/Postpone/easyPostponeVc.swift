@@ -119,20 +119,11 @@ class easyPostponeVc: NSViewController {
             }
             
             currentState = ._NOTHING_
-            if mainViewControllerObj != nil{
-                if getHabitsVcObject().postponeTimer != nil{
-                    getHabitsVcObject().postponeTimer?.invalidate()
-                    getHabitsVcObject().postponeTimer = nil
-                    closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
-                }
-                if getHabitsVcObject().postponeNotificationTimer != nil{
-                    getHabitsVcObject().postponeNotificationTimer?.invalidate()
-                    getHabitsVcObject().postponeNotificationTimer = nil
-                }
+            if getHabitsVcObject().postponeTimer != nil{
+                getHabitsVcObject().stopPostponeEndTimer()
+                closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
             }
-            
-            
-            
+
             appdelegate?.backgroundThread()
             closeView()
             return;
@@ -140,9 +131,7 @@ class easyPostponeVc: NSViewController {
         
        
         
-        if currentAction == ._INPROGRESS_  && (currentHabitPlaying != nil || currentActivityPlaying != nil){// if background abit is going on
-//            getSmallCountDownWindowObject().showWindow(self)
-//            getsmallCountDownVcObject().view.isHidden = false
+        if currentAction == ._INPROGRESS_  && (currentHabitPlaying != nil || currentActivityPlaying != nil){// if background habit is going on
             showSmallTimerView()
         }else{
             mainWindowControllerObj?.showWindow(self)
@@ -157,19 +146,10 @@ class easyPostponeVc: NSViewController {
         addLog(text: "[user-action] easyPostponeVc:- button postpone clicked")
         
         if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_{
-            
-            if mainViewControllerObj != nil{
-                if getHabitsVcObject().postponeTimer != nil{
-                    getHabitsVcObject().postponeTimer?.invalidate()
-                    getHabitsVcObject().postponeTimer = nil
-                    closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
-                }
-                if getHabitsVcObject().postponeNotificationTimer != nil{
-                    getHabitsVcObject().postponeNotificationTimer?.invalidate()
-                    getHabitsVcObject().postponeNotificationTimer = nil
-                }
+            if getHabitsVcObject().postponeTimer != nil{
+                getHabitsVcObject().stopPostponeEndTimer()
+                closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
             }
-
         }
         
         if lastCurrentState == ._MORNING_HABIT_{

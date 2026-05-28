@@ -206,14 +206,8 @@ class blockingScheduleEditorVC: NSViewController {
         
         if shouldCreateNew{
             textFieldScheduleName.stringValue = ""
-            let today = Date()
-            let calendar = Calendar.current
-            let weekday = calendar.component(.weekday, from: today)
             for box in arrAllWeekDayBox{
-                if box.index == weekday{
-                    box.isSelected = true
-                    break;
-                }
+                box.isSelected = true
             }
             
             popUpBtnFocusMode.removeAllItems()

@@ -260,6 +260,8 @@ class ViewController: NSViewController {
         self.view.addConstraints(subView: enterPasswordVcObj!.view)
         enterPasswordVcObj?.removeConstraints()
         enterPasswordVcObj?.parentVc = nil
+        enterPasswordVcObj?.pendingAction = nil
+        enterPasswordVcObj?.cancelAction = nil
         addLog(text: "Showing enter password view")
     }
 
@@ -380,6 +382,8 @@ class ViewController: NSViewController {
         self.view.addSubview(getEnterPasswordVcObjForPreferences().view)
         self.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
         getEnterPasswordVcObjForPreferences().parentVc = nil
+        getEnterPasswordVcObjForPreferences().pendingAction = nil
+        getEnterPasswordVcObjForPreferences().cancelAction = nil
         enterPasswordVcObjForPreferences?.removeConstraints()
         addLog(text: "Showing enter password view inside edit habits")
     }

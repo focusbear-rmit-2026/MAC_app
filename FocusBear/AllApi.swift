@@ -1519,7 +1519,6 @@ class AllApi:NSObject {
             completionHandler(nil);
             return;
         }
-        
         addLog(text: "func call:- activityCompletedApi completed-activity")
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
@@ -1728,7 +1727,6 @@ class AllApi:NSObject {
     
     func activityCompletedReviseApi(activity_id:String, quantity_logged:Double , choice_id:String?, log_quantity_answers:[[String:Any]], completionHandler: @escaping(_ result: NSDictionary?) -> ()){//
         addLog(text: "func call:- activityCompletedReviseApi:- completed-activity/revise/id")
-        
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
             

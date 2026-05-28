@@ -1020,7 +1020,7 @@ class simplePomodoroVc: NSViewController {
                     addLog(text: "Focus mode id is:- \(focusModeId)")// added v 3.31.474
                     
                     if isAccessibilityEnabled(isPrompt: true){
-                        enableDND()
+                        DNDManager.shared.setDND(true)
                     }
                     workBeforeFocusBegin(index: i)
                     if !textViewAchieve.string.isEmpty{

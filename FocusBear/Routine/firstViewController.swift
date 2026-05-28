@@ -1109,7 +1109,9 @@ class firstViewController: NSViewController {
             }
             tblViewHabits.reloadData()
         }
-        
+        allApiObject.activitySkippedApi(activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, completionHandler: {dic in
+            
+        })
     }
     
     func eveningHabitSkipClicked(){
@@ -1128,6 +1130,9 @@ class firstViewController: NSViewController {
             }
             tblViewHabits.reloadData()
         }
+        allApiObject.activitySkippedApi(activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, completionHandler: {dic in
+            
+        })
     }
     
     func customRoutineHabitSkipClicked(){

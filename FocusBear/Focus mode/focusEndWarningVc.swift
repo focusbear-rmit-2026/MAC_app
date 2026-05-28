@@ -223,7 +223,7 @@ class focusEndWarningVc: NSViewController {
     @IBAction func btnEndFocusSessionClicked(_ sender: Any) {
         allApiObject.capturePosthog(event: "end-focus-session-clciked-from-warning", metadata: [:])
         isHardCorePomodoroModeOn = false
-        appdelegate?.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
+        appdelegate?.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false, shouldUpdateFocusButton: true)
         self.view.window?.close()
     }
     

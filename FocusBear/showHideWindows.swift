@@ -17,7 +17,7 @@ func showAbortingFocusModeVc(forPause:Bool){// abortview for pause only in stric
         NSApplication.shared.activate(ignoringOtherApps: true)
     }else{
         isHardCorePomodoroModeOn = false
-        appdelegate?.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
+        appdelegate?.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false, shouldUpdateFocusButton: true)
     }
 }
 

@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class breakSurveyVc: NSViewController {
+class breakSurveyVc: NSViewController {// not in use
 
     @IBOutlet weak var btnSkip: underLineButton!
     @IBOutlet weak var textFieldFeedback: NSTextField!

@@ -228,3 +228,6 @@ var kUserDefaultsBlockingScheduleAddedFirstTime = "kBlockingScheduleAddedFirstTi
 var kUserdefaultsIsGuestAccount = "kUserdefaultsIsGuestAccount"
 
 var kUserdefaultsLastFocusModeId = "kLastRunningFocusModeId"
+
+var kUserdefaultsLastHabitsIdsBeforePostpone = "kRemainingHabitIdsBeforePostpone"
+var kUserdefaultsPrefilterLastHabitsIdsBeforePostpone = "kPrefilterRemainingHabitIdsBeforePostpone"

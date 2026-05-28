@@ -127,7 +127,7 @@ class focusButtonService: NSObject {
     
     func finishFocusSession() {
         log("FocusButton: FinishFocusSession()")
-        sendCmd("SET|DONE")
+        sendCmd("SET|CANCEL")
         applyState(.idle)
     }
     

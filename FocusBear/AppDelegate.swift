@@ -186,7 +186,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             options.enableAutoSessionTracking = false
             options.sendDefaultPii = true // Enables sending personally identifiable information
         }
-        
+       
         //doing this because if app is started after quit by user then  helper app will know that main app is restarted
         //        getTransparentWindowObject().showWindow(nil)
         let isAppRestartedNormally = UserDefaults.standard.object(forKey: kUserDefaultsAppRestartedNormally) as? Bool ?? false
@@ -3219,11 +3219,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             self.timerPomodoroMode?.invalidate()
             self.timerPomodoroMode = nil
         }
-        if isSmallCountDownTimerViewVisible(){
-            if smallCountDownVcObj?.isFocusBreak ?? false{
-                smallCountDownVcObj?.closeTimerBox()
-            }
-        }
+        closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
         
         pomodoroVcObj?.isShowingMorningHardcorePomodoro = false
         allApiObject.capturePosthog(event: "start-focus-session-popup-opened", metadata: [:])
@@ -3261,11 +3257,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             self.timerPomodoroMode = nil
         }
         
-        if isSmallCountDownTimerViewVisible(){
-            if smallCountDownVcObj?.isFocusBreak ?? false{
-                smallCountDownVcObj?.closeTimerBox()
-            }
-        }
+        closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
         
         allApiObject.capturePosthog(event: "start-focus-session-popup-opened", metadata: [:])
         
@@ -3496,7 +3488,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             if isAutoMeetingsModeStarted{//end meetings focus mode
                 if isFocusModeOn(){
                     DispatchQueue.main.async {
-                        self.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
+                        self.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false, shouldUpdateFocusButton: true)
                     }
                 }
             }
@@ -4062,7 +4054,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     if let isAutoDoNotDisturbEnabled = arrFocusType[i]["isAutoDoNotDisturbEnabled"] as? Bool{
                         if isAutoDoNotDisturbEnabled{
                             if isAccessibilityEnabled(isPrompt: true){
-                                enableDND()
+                                DNDManager.shared.setDND(true)
                             }
                         }
                     }
@@ -4504,7 +4496,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                             let result = alert.runModal()
                                             if result == .alertSecondButtonReturn{
                                                 addLog(text: "Stop current focus from alert and show start focus view")
-                                                tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
+                                                tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false, shouldUpdateFocusButton: true)
                                                 
                                                 appdelegate?.menuShowPomodoroModeView()
                                                 if !(pomodoroVcObj?.isViewLoaded ?? false){
@@ -4589,25 +4581,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         }
                                     }
                                 }
-                                //                                    if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                                //                                        if smallCountDownWcObj?.window != nil{
-                                //                                            if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                                //                                                if getsmallCountDownVcObject().timer != nil {
-                                //                                                    getsmallCountDownVcObject().timer?.invalidate()
-                                //                                                    getSmallCountDownWindowObject().window?.close()
-                                //                                                }
-                                //                                            }
-                                //                                        }
-                                //                                    }
-                                
-                                
-                                if isSmallCountDownTimerViewVisible(){
-                                    if !(smallCountDownVcObj?.isFocusBreak ?? false){
-                                        smallCountDownVcObj?.closeTimerBox()
-                                    }
-                                }
-                                
-                                
+                                closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
                             }
                         }
                         getHabitsVcObject().refreshLastPostponeCount()
@@ -4703,12 +4677,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         getHabitsVcObject().stopActivityCountDownTimer()
                         
                         if currentHabitPlaying != nil || currentActivityPlaying != nil{
-                            
-                            if isSmallCountDownTimerViewVisible(){
-                                if !(smallCountDownVcObj?.isFocusBreak ?? false){
-                                    smallCountDownVcObj?.closeTimerBox()
-                                }
-                            }
+                            closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
                         }
                         
                         if currentState == ._MORNING_HABIT_{
@@ -5072,22 +5041,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     if focusSummaryLastPostponeTime! < cutOffDate{
                                         addLog(text: "Focus Summary postpone abandoned at the start of cutoff_for_high_priority_activities")
                                         currentState = ._NOTHING_
-                                        if mainViewControllerObj != nil{
-                                            if getHabitsVcObject().postponeTimer != nil{
-                                                getHabitsVcObject().postponeTimer?.invalidate()
-                                                getHabitsVcObject().postponeTimer = nil
-                                                if getHabitsVcObject().postponeNotificationTimer != nil{
-                                                    getHabitsVcObject().postponeNotificationTimer?.invalidate()
-                                                    getHabitsVcObject().postponeNotificationTimer = nil
-                                                }
-
-                                                if isSmallCountDownTimerViewVisible(){
-                                                    if (smallCountDownVcObj?.isFocusBreak ?? false){
-                                                        smallCountDownVcObj?.closeTimerBox()
-                                                    }
-                                                }
-                                            }
-                                        }
+                                        getHabitsVcObject().stopPostponeEndTimer()
+                                        closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
                                     }
                                 }
                             }
@@ -5111,22 +5066,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     if eveningRoutineLastPostponeTime! < cutOffDate && isCutOffTimeGoing(){
                                         addLog(text: "Postpone abandoned at the start of cutoff_for_high_priority_activities")
                                         currentState = ._NOTHING_
-                                        if mainViewControllerObj != nil{
-                                            if getHabitsVcObject().postponeTimer != nil{// todo make func for kill postpone
-                                                getHabitsVcObject().postponeTimer?.invalidate()
-                                                getHabitsVcObject().postponeTimer = nil
-                                                if getHabitsVcObject().postponeNotificationTimer != nil{
-                                                    getHabitsVcObject().postponeNotificationTimer?.invalidate()
-                                                    getHabitsVcObject().postponeNotificationTimer = nil
-                                                }
-                                                
-                                                if isSmallCountDownTimerViewVisible(){
-                                                    if (smallCountDownVcObj?.isFocusBreak ?? false){
-                                                        smallCountDownVcObj?.closeTimerBox()
-                                                    }
-                                                }
-                                            }
-                                        }
+                                        getHabitsVcObject().stopPostponeEndTimer()
+                                        closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
                                     }
                                 }
                             }
@@ -5267,7 +5208,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 }
                                 if isFocusModeOnOrPaused(){
                                     addLog(text: "isFocusModeOnOrPaused True: focusModeFinished.")
-                                    self.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: true, allowExtend:false, isCustomRoutineTime:false)
+                                    self.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: true, allowExtend:false, isCustomRoutineTime:false, shouldUpdateFocusButton: true)
                                     return;
                                 }
                                 
@@ -5660,7 +5601,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }
                 }
             }
-            tryFocusModeFinished(isSilent: false, isShutOffTime: true, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
+            tryFocusModeFinished(isSilent: false, isShutOffTime: true, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false, shouldUpdateFocusButton: true)
             return;
         }
         
@@ -5984,14 +5925,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
         arrFilteredEveningHabits.removeAll()
         let currentWeekDay = Date().dayOfWeek()
-        
+        let isCutOffTimeGoing = isCutOffTimeGoing()
         for habit in arrAllDaysEveningHabits{
-            if let cutOffTime = habit.cutOffTime{
-                let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
-                let currentDate = Date()
-                if currentDate > cutOffDate{
-                    addLog(text: "evening habit skipped:- running late cutoff time passed for this habit:- \(habit.name)  \(habit.id)") // remove this
-                    continue;
+            if isCutOffTimeGoing{
+                if let cutOffTime = habit.cutOffTime{
+                    let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
+                    let currentDate = Date()
+                    if currentDate > cutOffDate{
+                        addLog(text: "evening habit skipped:- running late cutoff time passed for this habit:- \(habit.name)  \(habit.id)") // remove this
+                        continue;
+                    }
                 }
             }
             if habit.days_of_week.contains(where: {$0.compare("all", options: .caseInsensitive) == .orderedSame}) {
@@ -6040,7 +5983,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if arrFilteredEveningHabits.count != 0{
             if cutOffTime != nil{
                 
-                if isCutOffTimeGoing(){
+                if isCutOffTimeGoing{
                     
                     let tempHabits = arrFilteredEveningHabits
                     arrFilteredEveningHabits.removeAll()
@@ -7041,7 +6984,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     
     @objc func focusModeTimerFinished(){
-        tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:true, isCustomRoutineTime:false)
+        tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:true, isCustomRoutineTime:false, shouldUpdateFocusButton: true)
     }
     
     
@@ -7092,8 +7035,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 currentFocusModeName = arrFocusType[i]["name"] as? String ?? ""
                 currentFocusModeId = arrFocusType[i]["id"] as? String ?? ""
                 
-                if isDndEnabled{
-                    disableDND()
+                if DNDManager.shared.isDndEnabled{
+                    DNDManager.shared.setDND(false)
                 }
                 workAfterFocusBegin(index: i)
                 break;
@@ -7658,6 +7601,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if let appUrl = runningApp.bundleURL{//let name = runningApp.localizedName{
                     let name = appUrl.deletingPathExtension().lastPathComponent
                     let nameLowercased = name.lowercased()
+                    
+                    if customBlockingScheduleManagerObj.isAnyCustomScheduleOn && !isFocusModeRunning{
+                        suggestWorkFocusManagerObject.startUrlTimer(browserName: nameLowercased, runningApp: runningApp)// added v 3.32.489
+                    }
+                    
                     var isAppAllowed = false
                     var isSelfApp = false
                     

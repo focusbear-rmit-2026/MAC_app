@@ -787,7 +787,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
         if isFocusModeOnOrPaused(){
             addLog(text: "Activity start:- Focus Mode Finished")
-            appdelegate?.tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
+            appdelegate?.tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false, shouldUpdateFocusButton: true)
         }
         isLastActivityStoppedInRunningState = false
         lastActivityRunningId = ""
@@ -2158,7 +2158,7 @@ extension timerViewcontroller:NSCollectionViewDelegate, NSCollectionViewDataSour
             if let url = URL(string: arrImgUrls[indexPath.item].addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? arrImgUrls[indexPath.item]){
                 DispatchQueue.global().async {
                     DispatchQueue.main.async {
-                        item.imgView.image = NSImage(contentsOf: url)
+                        item.imgView.image = NSImage(contentsOf: url)// todo sahi kro ise 
                     }
                 }
                 

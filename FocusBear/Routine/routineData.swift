@@ -198,7 +198,7 @@ func startCustomRoutine(index:Int, isOnDemand:Bool){
     if isFocusModeOnOrPaused(){//53fd08d9-90f6-41db-b920-aa1fd017146e, 3dd1f268-96f4-492c-b098-89dea60a013a
         addLog(text: "isFocusModeOnOrPaused True: focusModeFinished.")
         leftMenuVcObj?.customRoutineStarted()// added here v 2.28.452. reason Bug: When starting a custom routine, the app does not switch to the Custom Routine tab. Because of this mismatch, several issues occur—for example, the window does not close. The reason is that the app remains in the custom routine state, but the custom routine view is not visible.
-        appdelegate!.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:true)
+        appdelegate!.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:true, shouldUpdateFocusButton: true)
         return;
     }
     
@@ -1031,11 +1031,11 @@ func restorePostponeStateIfNeeded() {
         let remainingSeconds = Int(remaining)
         if state == CURRENTSTATE._POSTPON_MORNING_HABIT_.rawValue{
             addLog(text: "Restored morning postpone: \(remainingSeconds)s left")
-            getHabitsVcObject().postponeMorningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false)
+            getHabitsVcObject().postponeMorningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false, isExtendingPostponeFromAppStart: true)
 
         }else if state == CURRENTSTATE._POSTPON_EVENING_HABIT_.rawValue{
             addLog(text: "Restored evening postpone: \(remainingSeconds)s left")
-            getHabitsVcObject().postponeEveningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false)
+            getHabitsVcObject().postponeEveningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false, isExtendingPostponeFromAppStart: true)
         }else if state == CURRENTSTATE._POSTPON_FOCUS_SUMMARY_.rawValue{
             addLog(text: "Restored focus summary postpone: \(remainingSeconds)s left")
             if !(focusSummaryVcObj?.isViewLoaded ?? false){

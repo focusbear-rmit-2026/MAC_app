@@ -44,7 +44,8 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     var isShowingForRelaxFocusMode = false
     var isShowingForDeactivatingApp = false
     
-    
+    var pendingAction: (() -> Void)?
+    var cancelAction: (() -> Void)?
     
     
     var accountabilityBuddyVcObj:accountabilityBuddyVc?
@@ -96,6 +97,11 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         tabView.delegate = self
         customViewAccountabilityBuddy.isHidden = true
         
+    }
+    
+    func requestAuthorization(action: @escaping () -> Void, onCancel: (() -> Void)? = nil) {
+        pendingAction = action
+        cancelAction = onCancel
     }
     
     func hidePasswordView(){
@@ -249,6 +255,13 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     }
     
     func authenticated(){
+        if let pendingAction = pendingAction{
+            self.view.removeFromSuperview()
+            pendingAction()
+            self.pendingAction = nil
+            self.cancelAction = nil
+            return;
+        }
         if parentVc != nil{
             
             if parentVc == pomodoroVcObj{
@@ -488,31 +501,21 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 }
             }
         }
-        
-        
-//        if preferencesWindowControllerObj != nil{
-//            if self.view.window == preferencesWindowControllerObj?.window{
-//                if selectJsonVcObj != nil{
-//                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                        if tabview.selectedTabViewItemIndex == preferencesEditHabitsIndex{
-//                            self.view.removeFromSuperview()
-//                            return;
-//                        }
-//                    }
-//                }
-//            }
-//        }
-        
-        
-        
-        
-        
-        
         self.view.removeFromSuperview()
     }
+    
     @IBAction func btnCancelClicked(_ sender: Any) {
         addLog(text: "[user-action] Enter password view - cancel clicked")
         allApiObject.capturePosthog(event: "cancel-when-prompted-password", metadata: [:])
+        
+        if let cancelAction = cancelAction{
+            self.view.removeFromSuperview()
+            cancelAction()
+            self.pendingAction = nil
+            self.cancelAction = nil
+            return;
+        }
+        
         if parentVc != nil{
             if parentVc == pomodoroVcObj{
                 self.dismiss(self)

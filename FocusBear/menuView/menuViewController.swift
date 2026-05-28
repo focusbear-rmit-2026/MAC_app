@@ -1964,11 +1964,7 @@ class menuViewController: NSViewController {
         if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
             getHabitsVcObject().stopActivityCountDownTimer()
             if currentActivityPlaying != nil{
-                if isSmallCountDownTimerViewVisible(){
-                    if !(smallCountDownVcObj?.isFocusBreak ?? false){
-                        smallCountDownVcObj?.closeTimerBox()
-                    }
-                }
+                closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             }
             mainWindowControllerObj?.window?.close()
             hideBlankWindowInSecondaryMonitor()
@@ -2008,18 +2004,8 @@ class menuViewController: NSViewController {
         getHabitsVcObject().stopActivityTimer()
         
         currentState = ._NOTHING_
-        if mainViewControllerObj != nil{
-            if getHabitsVcObject().postponeTimer != nil{
-                getHabitsVcObject().postponeTimer?.invalidate()
-                getHabitsVcObject().postponeTimer = nil
-                closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
-            }
-            if getHabitsVcObject().postponeNotificationTimer != nil{
-                getHabitsVcObject().postponeNotificationTimer?.invalidate()
-                getHabitsVcObject().postponeNotificationTimer = nil
-            }
-        }
-        
+        getHabitsVcObject().stopPostponeEndTimer()
+        closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
         appdelegate?.backgroundThread()
         closeMenuWindowIsVisible()
         

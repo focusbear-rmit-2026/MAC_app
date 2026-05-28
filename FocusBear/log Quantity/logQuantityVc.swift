@@ -177,6 +177,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         }
         return false
     }
+    
     @IBAction func btnCancelClicked(_ sender: Any) {
         addLog(text:"[user-action] Log quantity-btnCancelClicked")
         if lastActivityPerformedTime == nil{// nil is not possible but we are doing this
@@ -195,13 +196,23 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
            return
         }
         
-        if !(getHabitsVcObject().habitsView.subviews.contains(firstViewControllerObj!.view)){ // it means user has not used quick action bar
+        var isUsingActionBar = false
+        if getHabitsVcObject().habitsView.subviews.contains(firstViewControllerObj!.view){
+            isUsingActionBar = true
+        }else if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_ && (leftMenuVcObj?.boxHabits.isSelected ?? false){
+            if let habitsStateVcObj = habitsStateVcObj{
+                if getHabitsVcObject().habitsView.subviews.contains(habitsStateVcObj.view){
+                    isUsingActionBar = true
+                }
+            }
+        }
+        
+        if !isUsingActionBar{ // it means user has not used quick action bar
             thirdVcObj?.logQuantityQuestionsForGraph.removeAll()
             thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "0")
                
         }
-        
-        
+
 
         let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
 
@@ -292,7 +303,18 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
 
         self.view.removeFromSuperview()
         
-        if !(getHabitsVcObject().habitsView.subviews.contains(firstViewControllerObj!.view)){ // it means user has not used quick action bar
+        var isUsingActionBar = false
+        if getHabitsVcObject().habitsView.subviews.contains(firstViewControllerObj!.view){
+            isUsingActionBar = true
+        }else if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_ && (leftMenuVcObj?.boxHabits.isSelected ?? false){
+            if let habitsStateVcObj = habitsStateVcObj{
+                if getHabitsVcObject().habitsView.subviews.contains(habitsStateVcObj.view){
+                    isUsingActionBar = true
+                }
+            }
+        }
+        
+        if !isUsingActionBar{ // it means user has not used quick action bar
             thirdVcObj?.currentGraphIndex = 0
             thirdVcObj?.logQuantityQuestionsForGraph = logQuantityQuestions
             thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId, activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "\(logQuantityQuestions[0].quantity)")

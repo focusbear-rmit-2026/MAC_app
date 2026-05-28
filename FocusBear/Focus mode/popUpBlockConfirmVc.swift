@@ -608,17 +608,15 @@ class popUpBlockConfirmVc: NSViewController {
         hidePopUpAddNewFocusGoalView()
         hidePopUpSaveThisTaskForLaterView()
         
-        
         if getCurrentTaskInFocusMode() == nil && whatToAchieveInFocusBlock.isEmpty{// added on 2/9/25 on version 2.27.409
-            if !SettingsManagerObject.isGeekModeEnabled || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-                showoPopUpAddNewFocusGoalView()
-                let pickTaskText =  "AI can’t tell if this fits your work. Pick a task to guide Focus Bear!"
-                popUpAddNewFocusGoalVcObj?.lblTitle.stringValue = pickTaskText
-                if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
-                    popUpAddNewFocusGoalVcObj?.lblTitle.stringValue = popUpBlockConfirmVcInfo.value(forKey: "pickTaskText") as? String ?? pickTaskText
-                }
+            showoPopUpAddNewFocusGoalView()
+            let pickTaskText =  "AI can’t tell if this fits your work. Pick a task to guide Focus Bear!"
+            popUpAddNewFocusGoalVcObj?.lblTitle.stringValue = pickTaskText
+            if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                popUpAddNewFocusGoalVcObj?.lblTitle.stringValue = popUpBlockConfirmVcInfo.value(forKey: "pickTaskText") as? String ?? pickTaskText
             }
         }
+        
         if boxNoTaskSpecified.isHidden == false{
             
             if let suggestedTask = suggestedTask{
@@ -641,7 +639,7 @@ class popUpBlockConfirmVc: NSViewController {
            !arrAllTasks.isEmpty {
 
             print("✅ Using cached tasks")
-            // Even with cached API tasks, always merge latest todo-player tasks at top
+            // Even with cached API tasks, always merge latest task-player tasks at top
             let cachedTodoIds = Set(arrCurrentFocusTasks.compactMap { $0["task_id"] as? String })
             let filteredCached = arrAllTasks.filter { task in
                 guard let id = task.value(forKey: "id") as? String else { return true }
@@ -691,13 +689,13 @@ class popUpBlockConfirmVc: NSViewController {
                 self.arrAllTasks = sortedTasks
                 self.lastTasksAPICallDate = Date() // ✅ save API call time
 
-                // Merge todo-player tasks at the top, deduplicated
+                // Merge task-player tasks at the top, deduplicated
                 let todoPlayerIds = Set(arrCurrentFocusTasks.compactMap { $0["task_id"] as? String })
                 let filteredApiTasks = sortedTasks.filter { task in
                     guard let id = task.value(forKey: "id") as? String else { return true }
                     return !todoPlayerIds.contains(id)
                 }
-                // Convert todo-player tasks to NSDictionary to match the list type
+                // Convert task-player tasks to NSDictionary to match the list type
                 let todoAsDicts: [NSDictionary] = arrCurrentFocusTasks.map { task in
                     ["title": task["task_name"] as? String ?? "",
                      "id": task["task_id"] as? String ?? ""] as NSDictionary

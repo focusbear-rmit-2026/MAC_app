@@ -515,21 +515,21 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         if let isAutoDoNotDisturbEnabled = arrFocusType[currentFocusModeIndex]["isAutoDoNotDisturbEnabled"] as? Bool{
             if isAutoDoNotDisturbEnabled{
                 if isAccessibilityEnabled(isPrompt: true){
-                    enableDND()
+                    DNDManager.shared.setDND(true)
                 }
             }
         }
-        if !isDndEnabled{
+        if !DNDManager.shared.isDndEnabled{
             if let isDeepWorkFocus = arrFocusType[currentFocusModeIndex]["isDeepWorkFocus"] as? Bool{
                 if  isDeepWorkFocus{
                     if isAccessibilityEnabled(isPrompt: true){
-                        enableDND()
+                        DNDManager.shared.setDND(true)
                     }
                 }
             }else if let isDefault = arrFocusType[currentFocusModeIndex]["isDefault"] as? Bool{
                 if  isDefault{
                     if isAccessibilityEnabled(isPrompt: true){
-                        enableDND()
+                        DNDManager.shared.setDND(true)
                     }
                 }
             }
