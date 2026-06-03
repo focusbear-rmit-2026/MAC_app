@@ -341,10 +341,10 @@ extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
                 
                 let appName = getCurrentBrowserNameFrom(browser: browser) ?? ""
                 NSWorkspace.shared.open(URL(fileURLWithPath: "/Applications/\(appName).app"))
-                var shouldShowPermissionBox = true
-                if !permissionAlertShownInfoDic.contains(browser){
-                    shouldShowPermissionBox = false// will show Automatically from "getActiveTabUrlOf" func
-                }
+//                var shouldShowPermissionBox = true
+//                if !permissionAlertShownInfoDic.contains(browser){
+//                    shouldShowPermissionBox = false// will show Automatically from "getActiveTabUrlOf" func
+//                }
                 if getActiveTabUrlOf(browser: browser) != nil{
                     DispatchQueue.main.async {
                         self.arrBrowsers[row]["isEnabled"] = true
@@ -357,7 +357,7 @@ extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
                     }
                 }else {
                     DispatchQueue.main.async {
-                        if shouldShowPermissionBox{
+                        //if shouldShowPermissionBox{
                             let alert = NSAlert()
                             alert.setSharingType()
                             alert.alertStyle = .informational
@@ -379,11 +379,10 @@ extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
                             }
                             
                             urlError = urlError.replacingOccurrences(of: "<APPNAME>", with: appName)
-                            var buttonPreferencesText = "Open System Preferences"
+                            var buttonPreferencesText = "Open Automation Preferences"
                             
-                            
-                            if let firefoxPermissionsVcInfo = configjson.value(forKey: "firefoxPermissionsVcInfo") as? NSDictionary{
-                                buttonPreferencesText = firefoxPermissionsVcInfo.value(forKey: "buttonPreferencesText") as? String ?? buttonPreferencesText
+                            if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
+                                buttonPreferencesText = onboardingControllingBrowserVcInfo.value(forKey: "buttonOpenPreferences") as? String ?? buttonPreferencesText
                             }
                             
                             alert.messageText = urlError
@@ -396,7 +395,7 @@ extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
                                     NSWorkspace.shared.open(URL(string: urlstring)!)
                                 }
                             })
-                        }
+                        //}
                         self.startTimerCheckPermission()
                     }
                 }

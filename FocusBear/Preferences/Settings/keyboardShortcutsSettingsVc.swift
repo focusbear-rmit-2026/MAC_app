@@ -49,6 +49,13 @@ class keyboardShortcutsSettingsVc: NSViewController {
     private let lblShortcutTaskList = NSTextField(labelWithString: "")
     private let btnClearTaskList    = NSButton()
 
+    // MARK: UI elements – Start Focus row
+    private let lblTitleFocusSession    = NSTextField(labelWithString: "")
+    private let boxRecordFocusSession   = NSBox()
+    private let lblShortcutFocusSession = NSTextField(labelWithString: "")
+    private let btnClearFocusSession    = NSButton()
+    
+    
     // MARK: State
     // Uses ActiveShortcutRecorder (from HotkeyService.swift) — no separate RecordingRow enum needed
     private var recordingRow: ActiveShortcutRecorder = .none
@@ -68,6 +75,7 @@ class keyboardShortcutsSettingsVc: NSViewController {
     private var brainDumpTitle = "Open Brain Dump:"
     private var focusMusicTitle = "Open Focus Music:"
     private var taskListTitle = "Open Task List:"
+    private var startFocusSessionTitle = "Start focus session:"
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -81,6 +89,7 @@ class keyboardShortcutsSettingsVc: NSViewController {
             brainDumpTitle = keyboardShortcutsSettingsVcInfo.value(forKey: "brainDumpTitle") as? String ?? brainDumpTitle
             focusMusicTitle = keyboardShortcutsSettingsVcInfo.value(forKey: "focusMusicTitle") as? String ?? focusMusicTitle
             taskListTitle = keyboardShortcutsSettingsVcInfo.value(forKey: "taskListTitle") as? String ?? taskListTitle
+            startFocusSessionTitle = keyboardShortcutsSettingsVcInfo.value(forKey: "focusSessionTitle") as? String ?? startFocusSessionTitle
         }
         
         
@@ -171,10 +180,22 @@ class keyboardShortcutsSettingsVc: NSViewController {
             recordAction:  #selector(boxTaskListClicked),
             clearAction:   #selector(btnClearTaskListClicked)
         )
+        
+        let focusSessionRow = makeShortcutRow(
+            titleLabel:    lblTitleFocusSession,
+            recorderBox:   boxRecordFocusSession,
+            shortcutLabel: lblShortcutFocusSession,
+            clearButton:   btnClearFocusSession,
+            title:         startFocusSessionTitle,
+            recordAction:  #selector(boxFocusSessionClicked),
+            clearAction:   #selector(btnClearFocusSessionClicked)
+        )
+        
 
         contentView.addSubview(brainDumpRow)
         contentView.addSubview(focusMusicRow)
         contentView.addSubview(taskListRow)
+        contentView.addSubview(focusSessionRow)
 
         // ── Layout ───────────────────────────────────────────────────────────────
         NSLayoutConstraint.activate([
@@ -197,7 +218,11 @@ class keyboardShortcutsSettingsVc: NSViewController {
             taskListRow.topAnchor.constraint(equalTo: focusMusicRow.bottomAnchor, constant: 16),
             taskListRow.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
             taskListRow.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
-            taskListRow.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24)
+            
+            focusSessionRow.topAnchor.constraint(equalTo: taskListRow.bottomAnchor, constant: 16),
+            focusSessionRow.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
+            focusSessionRow.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
+            focusSessionRow.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24)
         ])
     }
 
@@ -322,27 +347,34 @@ class keyboardShortcutsSettingsVc: NSViewController {
 
     // MARK: - Box click actions (start recording — mirrors btnRecordShortcutPomodoroClicked)
 
-    @objc private func boxBrainDumpClicked() {
+    @objc func boxBrainDumpClicked() {
         startRecording(row: .brainDump,
                        box: boxRecordBrainDump,
                        shortcutLabel: lblShortcutBrainDump,
                        clearButton: btnClearBrainDump)
     }
 
-    @objc private func boxFocusMusicClicked() {
+    @objc func boxFocusMusicClicked() {
         startRecording(row: .focusMusic,
                        box: boxRecordFocusMusic,
                        shortcutLabel: lblShortcutFocusMusic,
                        clearButton: btnClearFocusMusic)
     }
 
-    @objc private func boxTaskListClicked() {
+    @objc func boxTaskListClicked() {
         startRecording(row: .taskList,
                        box: boxRecordTaskList,
                        shortcutLabel: lblShortcutTaskList,
                        clearButton: btnClearTaskList)
     }
 
+    @objc func boxFocusSessionClicked() {
+        startRecording(row: .focusSession,
+                       box: boxRecordFocusSession,
+                       shortcutLabel: lblShortcutFocusSession,
+                       clearButton: btnClearFocusSession)
+    }
+    
     /// Mirrors pomodoroSettingsVc.btnRecordShortcutPomodoroClicked
     private func startRecording(row: ActiveShortcutRecorder,
                                 box: NSBox,
@@ -363,6 +395,7 @@ class keyboardShortcutsSettingsVc: NSViewController {
         case .brainDump:  HotkeyService.shared.unregisterBrainDump()
         case .focusMusic: HotkeyService.shared.unregisterFocusMusic()
         case .taskList:   HotkeyService.shared.unregisterTaskList()
+        case .focusSession:   HotkeyService.shared.unregisterFocusSession()
         case .none: break
         }
 
@@ -388,7 +421,11 @@ class keyboardShortcutsSettingsVc: NSViewController {
     @objc private func btnClearTaskListClicked() {
         clearShortcut(.taskList)
     }
-
+    
+    @objc private func btnClearFocusSessionClicked() {
+        clearShortcut(.focusSession)
+    }
+    
     /// Mirrors pomodoroSettingsVc.btnClearShortcutPomodoroClicked
     private func clearShortcut(_ row: ActiveShortcutRecorder) {
         switch row {
@@ -407,6 +444,11 @@ class keyboardShortcutsSettingsVc: NSViewController {
             SettingsManagerObject.taskListShortcutFlags = []
             SettingsManagerObject.isSettingsChanged = true
             HotkeyService.shared.unregisterTaskList()
+        case .focusSession:
+            SettingsManagerObject.startPomodoroShortcutChar = ""
+            SettingsManagerObject.startPomodoroShortcutFlags = []
+            SettingsManagerObject.isSettingsChanged = true
+            HotkeyService.shared.unregisterFocusSession()
         case .none:
             break
         }
@@ -444,6 +486,11 @@ class keyboardShortcutsSettingsVc: NSViewController {
             SettingsManagerObject.taskListShortcutFlags = flagInts
             SettingsManagerObject.isSettingsChanged = true
             HotkeyService.shared.registerTaskList()
+        case .focusSession:
+            SettingsManagerObject.startPomodoroShortcutChar = char
+            SettingsManagerObject.startPomodoroShortcutFlags = flagInts
+            SettingsManagerObject.isSettingsChanged = true
+            HotkeyService.shared.registerFocusSession()
         case .none:
             break
         }
@@ -459,6 +506,7 @@ class keyboardShortcutsSettingsVc: NSViewController {
         case .brainDump:  HotkeyService.shared.registerBrainDump()
         case .focusMusic: HotkeyService.shared.registerFocusMusic()
         case .taskList:   HotkeyService.shared.registerTaskList()
+        case .focusSession: HotkeyService.shared.registerFocusSession()
         case .none: break
         }
         recordingRow = .none
@@ -489,6 +537,12 @@ class keyboardShortcutsSettingsVc: NSViewController {
             shortcutLabel: lblShortcutTaskList,
             clearButton: btnClearTaskList
         )
+        refreshRow(
+            char: SettingsManagerObject.startPomodoroShortcutChar,
+            flagInts: SettingsManagerObject.startPomodoroShortcutFlags,
+            shortcutLabel: lblShortcutFocusSession,
+            clearButton: btnClearFocusSession
+        )
     }
 
     private func refreshRow(char: String,
@@ -513,5 +567,6 @@ class keyboardShortcutsSettingsVc: NSViewController {
         boxRecordBrainDump.borderColor  = normalBorderColor
         boxRecordFocusMusic.borderColor = normalBorderColor
         boxRecordTaskList.borderColor   = normalBorderColor
+        boxRecordFocusSession.borderColor = normalBorderColor
     }
 }

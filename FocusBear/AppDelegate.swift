@@ -1130,7 +1130,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     
                     
                     if flags.isEmpty == false || char != "" {
-                        self.registerPomodoroShortcut()
+                        //self.registerPomodoroShortcut()//todo 
                     }
                 }
 
@@ -3451,6 +3451,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
             return;
         }
+        
         let isMicOn = avmonitor.isMicOn()
         let isACameraOn = avmonitor.isACameraOn()
         let isPreventUserIdleDisplaySleepOn = isPreventUserIdleDisplaySleepOn()
@@ -3574,54 +3575,102 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             )
             
             DispatchQueue.global(qos: .utility).async { [self] in
+                var micStatus: MicStatus?
+                if isMicAlreadyOn{
+                    let status = micMonitor().microphoneStatus()
+                    print(status)
+                    micStatus = status
+                }
                 for i in 0..<arrFocusType.count{
                     let focus = arrFocusType[i]
                     if let state = focus["isMeetings"] as? Bool{//this key will only be awailable in default focus type
                         if  state{
                             if let arr = focus["allowed_apps"] as? [String]{
                                 for apppPath in arr{
-                                    for nameLowercased in runningAppNames{
-                                        let url = URL(fileURLWithPath: apppPath)
-                                        if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
-                                            
-                                            if isUserOnMeeting{
-                                                if isFocusModeOn(){
-                                                    DispatchQueue.main.async {
-                                                        self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText + " / " + buttonStatusStateFocusText)
+                                    
+                                    if let micStatus = micStatus{// mic process name added v 3.32.491
+                                        for app in micStatus.apps{
+                                            let nameLowercased = app.appName.lowercased()
+                                            let url = URL(fileURLWithPath: apppPath)
+                                            let appNameToCheck = url.deletingPathExtension().lastPathComponent.lowercased()
+                                            if nameLowercased.contains(s: appNameToCheck){
+                                                
+                                                if isUserOnMeeting{
+                                                    if isFocusModeOn(){
+                                                        DispatchQueue.main.async {
+                                                            self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText + " / " + buttonStatusStateFocusText)
+                                                        }
+                                                    }else{
+                                                        DispatchQueue.main.async {
+                                                            self.setStatusBarButtonColorForFocusMode(color: NSColor.systemBlue, colorString: nil)
+                                                            self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText)
+                                                            self.statusbutton?.imagePosition = .imageLeft
+                                                        }
                                                     }
-                                                }else{
-                                                    DispatchQueue.main.async {
-                                                        self.setStatusBarButtonColorForFocusMode(color: NSColor.systemBlue, colorString: nil)
-                                                        self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText)
-                                                        self.statusbutton?.imagePosition = .imageLeft
+                                                    return;
+                                                }
+                                                
+                                                if let browser = getCurrentBrowserFrom(browserName: appNameToCheck){
+                                                    addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is a browser:- get current url")
+                                                    
+                                                    if !isBrowserMeetingAllowed(focus: focus, browser: browser){
+                                                        continue;
                                                     }
                                                 }
+                                                
+                                                addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is \(nameLowercased)")
+                                                
+                                                appUsedInAutoMeetingFocusMode = url.lastPathComponent
+                                                
+                                                handleMeetingDetected()
                                                 return;
                                             }
                                             
-                                            if nameLowercased == "microsoft teams" || nameLowercased == "microsoft teams classic" || nameLowercased == "zoom.us"{
-                                                if !isPreventUserIdleDisplaySleepOn{
-                                                    continue;
-                                                }
-                                            }
-                                            
-                                            
-                                            if let browser = getCurrentBrowserFrom(browserName: nameLowercased){
-                                                addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is a browser:- get current url")
-                                                
-                                                if !isBrowserMeetingAllowed(focus: focus, browser: browser){
-                                                    continue;
-                                                }
-                                            }
-                                            
-                                            addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is \(nameLowercased)")
-                                            
-                                            appUsedInAutoMeetingFocusMode = url.lastPathComponent
-                                            
-                                            handleMeetingDetected()
-                                            return;
                                         }
-                                        
+                                    }else{
+                                        for nameLowercased in runningAppNames{
+                                            let url = URL(fileURLWithPath: apppPath)
+                                            if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
+                                                
+                                                if isUserOnMeeting{
+                                                    if isFocusModeOn(){
+                                                        DispatchQueue.main.async {
+                                                            self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText + " / " + buttonStatusStateFocusText)
+                                                        }
+                                                    }else{
+                                                        DispatchQueue.main.async {
+                                                            self.setStatusBarButtonColorForFocusMode(color: NSColor.systemBlue, colorString: nil)
+                                                            self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText)
+                                                            self.statusbutton?.imagePosition = .imageLeft
+                                                        }
+                                                    }
+                                                    return;
+                                                }
+                                                
+                                                if nameLowercased == "microsoft teams" || nameLowercased == "microsoft teams classic" || nameLowercased == "zoom.us"{
+                                                    if !isPreventUserIdleDisplaySleepOn{
+                                                        continue;
+                                                    }
+                                                }
+                                                
+                                                
+                                                if let browser = getCurrentBrowserFrom(browserName: nameLowercased){
+                                                    addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is a browser:- get current url")
+                                                    
+                                                    if !isBrowserMeetingAllowed(focus: focus, browser: browser){
+                                                        continue;
+                                                    }
+                                                }
+                                                
+                                                addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is \(nameLowercased)")
+                                                
+                                                appUsedInAutoMeetingFocusMode = url.lastPathComponent
+                                                
+                                                handleMeetingDetected()
+                                                return;
+                                            }
+                                            
+                                        }
                                     }
                                 }
                             }
@@ -4171,6 +4220,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
                     self.abortAllProcess()
                     currentState = ._NOTHING_
+                    leftMenuVcObj?.habitOver()
                     backgroundThread()
                     if self.isUserOnMeeting && currentState == ._NOTHING_{
                         addLog(text: "isUserOnMeeting True and currentState is None: Hide Main Window.")
@@ -4821,7 +4871,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
   
             if isFocusModeRunning || (isAnyAllowedFocusModeActivityRunning && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_)){
                 calculateFocusAlignmentScore()
+                saveRemainingFocusModeDuration()
             }
+            
             customBlockingScheduleManagerObj.checkAndFinishScheduleIfNeeded()// Finish the current custom blocking schedule if its end time has passed
             self.processOfflineData()
             
@@ -5245,6 +5297,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                 getHabitsVcObject().removeSubViews()
                                             }
                                         }
+                                        
+                                        getHabitsVcObject().hideLoaderView()
                                         if json != nil{
                                             //                print(json)
                                             // check is there any change in settings
@@ -6073,11 +6127,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             allApiObject.getLastActivityInfo(completionHandler: { json in
                 DispatchQueue.main.async {
                     
-                    if isMainWindowLoaded{// if main window is visible show loader
+                    if isMainWindowLoaded{
                         if mainWindowControllerObj?.window?.isVisible ?? false{
                             getHabitsVcObject().removeSubViews()
                         }
                     }
+                    getHabitsVcObject().hideLoaderView()
                     if json != nil{
                         
                         // check is there any change in settings
@@ -6121,6 +6176,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                     }
                                                     isHabitAlreadyShowed = false
                                                     self.isProcessingHabitRoutine = false
+                                                    if leftMenuVcObj?.boxHabits.isSelected ?? false{
+                                                        leftMenuVcObj?.selectableListBoxDidChangeSelectionByUser(leftMenuVcObj!.boxHabits)// added 3.32.491
+                                                    }
                                                     addLog(text: "evening habit already Done for today")
                                                     return
                                                 }
@@ -6159,6 +6217,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         }
                                         isHabitAlreadyShowed = false
                                         self.isProcessingHabitRoutine = false
+                                        if leftMenuVcObj?.boxHabits.isSelected ?? false{
+                                            leftMenuVcObj?.selectableListBoxDidChangeSelectionByUser(leftMenuVcObj!.boxHabits)// added 3.32.491
+                                        }
+                                        
                                         addLog(text: "evening habit already Done for today")
                                         return
                                     }
@@ -7168,6 +7230,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         DispatchQueue.main.async {
             stageManagerObject.isStageManagerEnabled = stageManagerObject.checkIsStageManagerEnabled()
         }
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastRunningFocusModeInfo)
     }
     
 
@@ -7257,7 +7320,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     var timerAllowAppForActivity:Timer?
     var timerBlockUrl:Timer?//block urls list
     
+
     @objc func frontApplicationChanged(){
+
         if UserDefaults.standard.object(forKey: kUserdefaultsIsUserLoggedIn) as? Bool != nil{
             if UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) != nil{
                 if !isSettingsLoddedInAppdelegate{
@@ -7283,7 +7348,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         let nameLowercased = name.lowercased()
                         if !focusDefaultAllowApps.contains(nameLowercased) && nameLowercased != selfAppName.lowercased(){
                             exitFullScreen(runningApp:runningApp)
-                            runningApp.hide()
+                            runningApp.hide() 
                         }
                     }
                 }
@@ -7603,7 +7668,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     let nameLowercased = name.lowercased()
                     
                     if customBlockingScheduleManagerObj.isAnyCustomScheduleOn && !isFocusModeRunning{
-                        suggestWorkFocusManagerObject.startUrlTimer(browserName: nameLowercased, runningApp: runningApp)// added v 3.32.489
+                        if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_ && currentState != ._MICRO_BREAK_ && currentState != ._BREATHING_ && currentState != ._SHUTOFFMAC_{
+                            suggestWorkFocusManagerObject.startUrlTimer(browserName: nameLowercased, runningApp: runningApp)// added v 3.32.489
+                        }
                     }
                     
                     var isAppAllowed = false
@@ -7811,7 +7878,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }
                 }
                 if !isOnboardingCheckBlockingTime{
-                    suggestWorkFocusManagerObject.startUrlTimer(browserName: nameLowercased, runningApp: runningApp)
+                    if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_ && currentState != ._MICRO_BREAK_ && currentState != ._BREATHING_ && currentState != ._SHUTOFFMAC_{
+                        suggestWorkFocusManagerObject.startUrlTimer(browserName: nameLowercased, runningApp: runningApp)
+                    }
                 }
                 
                 if isFocusBreakOn{
@@ -9322,47 +9391,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
     }
-    
-    
-    var hotKeyStartPomodoro: HotKey? {
-        didSet {
-            guard let hotKey = hotKeyStartPomodoro else {
-                return
-            }
-            hotKey.keyDownHandler = { [weak self] in
-                print("Pressed at \(Date())")
-                addLog(text: "Shortcut start Pomodoro Pressed")
-                let isFocusModeOnOrPaused = isFocusModeOnOrPaused()
-                
-                if isFocusModeOnOrPaused{
-                    addLog(text: "FocusMode is On Or Paused:- return")
-                    return;
-                }else{
-                    if isHardCorePomodoroModeOn{
-                        addLog(text: "HardCore Pomodoro Mode is On:- return")
-                        return;
-                    }else{
-                        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
-                            
-                            addLog(text: "Activity is running:- return")
-                            return;
-                        }
-                    }
-                }
-                self?.menuShowPomodoroModeView()
-            }
-        }
-    }
-    
-    func registerPomodoroShortcut() {
-        addLog(text: "registerPomodoroShortcut")
-        hotKeyStartPomodoro = HotKey(keyCombo: KeyCombo(stkey: char, modifiers: flags))
-        addLog(text: "registerPomodoroShortcut done")
-    }
-    
-    func unregisterPomodoroShortcut() {
-        hotKeyStartPomodoro = nil
-    }
+
 }
 
 
@@ -9374,3 +9403,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 // remvoed completyed task from list
 // "Works only during active Focus Sessions or active Blocking Schedules."
 //Bug fixed in v3.32.487. Previously, emergencyStartDone() was being called, which caused issues during cutoff time because that function contains additional checks. This has now been corrected.
+
+
+// remove chekc box from default focus mode
+// resume focus mode according to remaining time// after 2 hours this will not resume
+
+
+
+//  intel arraow bug
+
+
+// chatgpt app ka title bhi nikalo
+//All Core Features Disabled After Reinstall ("Disabled because your all-day summary is visible")
+//#1900
+//Meeting detection false positive due to dictation
+//#1901
+
+//Remove 15 second countdown if you skip and choose "Can't do it" unless the user has selected high friction#311
+
+// skip timer work from first habit list and postpone ist// need to test in evening routine todo 
+
+
+// tab title ka kaam
+// pomodoro bug 

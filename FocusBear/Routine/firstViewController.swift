@@ -94,7 +94,7 @@ class firstViewController: NSViewController {
             toolTipWfhMode = menuInfo.value(forKey: "toolTipWfhMode") as? String ?? toolTipWfhMode
         }
         
-        segmentControlOfficeMode.selectedSegmentBezelColor = NSColor.systemBlue
+        segmentControlOfficeMode.selectedSegmentBezelColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
         segmentControlOfficeMode.setLabel(titleOfficeMode, forSegment: 0)
         segmentControlOfficeMode.setLabel(titleWFHMode, forSegment: 1)
         
@@ -133,9 +133,9 @@ class firstViewController: NSViewController {
     
     override func mouseEntered(with event: NSEvent) {
         if event.trackingArea == segmentOfficeModeTrackingArea{
-            showTooltip(sender: segmentControlOfficeMode, msg: toolTipOfficeMode, preferredEdge: NSRectEdge.minX, maxWidthVal:230, autoCloseOnMouseExit: true)
+            showTooltipWithOsTahoe(sender: segmentControlOfficeMode, msg: toolTipOfficeMode, preferredEdge: NSRectEdge.minX, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == segmentWfhModeTrackingArea{
-            showTooltip(sender: segmentControlOfficeMode, msg: toolTipWfhMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
+            showTooltipWithOsTahoe(sender: segmentControlOfficeMode, msg: toolTipWfhMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
         }
     }
     
@@ -734,15 +734,35 @@ class firstViewController: NSViewController {
             }
         }else if passwordWindowShowingForMarkHabitSkip{
             if currentState == ._MORNING_HABIT_{
-                morningHabitSkipClicked()
+                tryMorningRoutineSkip()
             }else if currentState == ._EVENING_HABIT_{
-                eveningHabitSkipClicked()
+                tryEveningRoutineSkip()
             }
         }else{
             showEditHabitsView()
         }
     }
     
+    
+    func tryMorningRoutineSkip(){
+        if SettingsManagerObject.isEasySkipEnabled{
+            self.morningHabitSkipClicked()
+        }else{
+            mainViewControllerObj!.showOneClickSkipHabitView(completionHandler: {
+                self.morningHabitSkipClicked()
+            })
+        }
+    }
+    
+    func tryEveningRoutineSkip(){
+        if SettingsManagerObject.isEasySkipEnabled{
+            self.eveningHabitSkipClicked()
+        }else{
+            mainViewControllerObj!.showOneClickSkipHabitView(completionHandler: {
+                self.eveningHabitSkipClicked()
+            })
+        }
+    }
     func sortMorningHabitsBySelectedFirst(){
         if tblViewHabits.selectedRow != 0 && tblViewHabits.selectedRow != -1{
             var tempArr = arrFilteredMorningHabits
@@ -993,6 +1013,10 @@ class firstViewController: NSViewController {
             }
             
         }
+        
+        //focusButtonService-------//
+        focusButtonServiceObject.sendMorningHabitsToFocusDevice()
+        //---------//
     }
     
     func eveningHabitAlreadyDoneClicked(){
@@ -1042,6 +1066,9 @@ class firstViewController: NSViewController {
             }
             
         }
+        //focusButtonService-------//
+        focusButtonServiceObject.sendEveningHabitsToFocusDevice()
+        //---------//
     }
     
     func customHabitAlreadyDoneClicked(){
@@ -1112,6 +1139,9 @@ class firstViewController: NSViewController {
         allApiObject.activitySkippedApi(activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, completionHandler: {dic in
             
         })
+        //focusButtonService-------//
+        focusButtonServiceObject.sendMorningHabitsToFocusDevice()
+        //---------//
     }
     
     func eveningHabitSkipClicked(){
@@ -1133,6 +1163,9 @@ class firstViewController: NSViewController {
         allApiObject.activitySkippedApi(activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, completionHandler: {dic in
             
         })
+        //focusButtonService-------//
+        focusButtonServiceObject.sendEveningHabitsToFocusDevice()
+        //---------//
     }
     
     func customRoutineHabitSkipClicked(){
@@ -1370,7 +1403,7 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
                 mainViewControllerObj?.showPasswordView()
                 enterPasswordVcObj?.parentVc = self
             }else{
-                morningHabitSkipClicked()
+                tryMorningRoutineSkip()
             }
         }else if currentState == ._EVENING_HABIT_{
             if shouldAskPassword() && SettingsManagerObject.isPasswordRequireInSkipEvening{
@@ -1378,7 +1411,7 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
                 mainViewControllerObj?.showPasswordView()
                 enterPasswordVcObj?.parentVc = self
             }else{
-                eveningHabitSkipClicked()
+                tryEveningRoutineSkip()
             }
         }else if currentState == ._CUSTOM_ROUTINE_{
             customRoutineHabitSkipClicked()

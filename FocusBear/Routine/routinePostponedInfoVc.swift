@@ -38,10 +38,16 @@ class routinePostponedInfoVc: NSViewController {
         
         if lCurrentState == ._MORNING_HABIT_{
             sourceHabits = arrAllDaysMorningHabits
-            lblTitle.stringValue = "Morning routine postponed. Begin a habit to resume the morning routine."// todo text
+            lblTitle.stringValue = "Morning routine postponed. Begin a habit to resume the morning routine."
+            if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+                lblTitle.stringValue = activityInfo.value(forKey: "titleMorningRoutinePostponed") as? String ?? lblTitle.stringValue
+            }
         }else if lCurrentState == ._EVENING_HABIT_{
             sourceHabits = arrAllDaysEveningHabits
             lblTitle.stringValue = "Evening routine postponed. Begin a habit to resume the evening routine."
+            if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+                lblTitle.stringValue = activityInfo.value(forKey: "titleEveningRoutinePostponed") as? String ?? lblTitle.stringValue
+            }
         }
         
         if let arrIds = UserDefaults.standard.object(
@@ -80,8 +86,14 @@ class routinePostponedInfoVc: NSViewController {
         
         if lCurrentState == ._MORNING_HABIT_{
             getMorningHabitsListAgain()
+            //focusButtonService-------//
+            focusButtonServiceObject.sendMorningHabitsToFocusDevice()
+            //---------//
         }else if lCurrentState == ._EVENING_HABIT_{
             getEveningHabitsListAgain()
+            //focusButtonService-------//
+            focusButtonServiceObject.sendEveningHabitsToFocusDevice()
+            //---------//
         }
     }
     
@@ -194,6 +206,9 @@ class routinePostponedInfoVc: NSViewController {
                         }
                     }
                     self.tblViewHabits.reloadData()
+                    //focusButtonService-------//
+                    focusButtonServiceObject.sendMorningHabitsToFocusDevice()
+                    //---------//
                 }
             }
         })
@@ -340,6 +355,9 @@ class routinePostponedInfoVc: NSViewController {
                         }
                     }
                     self.tblViewHabits.reloadData()
+                    //focusButtonService-------//
+                    focusButtonServiceObject.sendEveningHabitsToFocusDevice()
+                    //---------//
                 }
             }
         })
@@ -363,7 +381,9 @@ class routinePostponedInfoVc: NSViewController {
             arrPreFilteredMorningHabits.remove(at: index)
         }
         tblViewHabits.reloadData()
-        
+        //focusButtonService-------//
+        focusButtonServiceObject.sendMorningHabitsToFocusDevice()
+        //---------//
         if arrFilteredMorningHabits.count == 0{
             if currentState == ._POSTPON_MORNING_HABIT_{
                 currentState = ._NOTHING_
@@ -425,7 +445,9 @@ class routinePostponedInfoVc: NSViewController {
             arrPreFilteredEveningHabits.remove(at: index)
         }
         tblViewHabits.reloadData()
-        
+        //focusButtonService-------//
+        focusButtonServiceObject.sendEveningHabitsToFocusDevice()
+        //---------//
         if arrFilteredEveningHabits.count == 0{
             if currentState == ._POSTPON_EVENING_HABIT_{
                 currentState = ._NOTHING_
@@ -488,8 +510,32 @@ class routinePostponedInfoVc: NSViewController {
         getHabitsVcObject().saveRemainingHabitIdForPostponedRoutineList(state: ._EVENING_HABIT_)
     }
 
+    func tryMorningRoutineSkip(){
+        if SettingsManagerObject.isEasySkipEnabled{
+            self.morningHabitSkipClicked()
+        }else{
+            mainViewControllerObj!.showOneClickSkipHabitView(completionHandler: {
+                self.morningHabitSkipClicked()
+            })
+        }
+    }
+    
+    func tryEveningRoutineSkip(){
+        if SettingsManagerObject.isEasySkipEnabled{
+            self.eveningHabitSkipClicked()
+        }else{
+            mainViewControllerObj!.showOneClickSkipHabitView(completionHandler: {
+                self.eveningHabitSkipClicked()
+            })
+        }
+    }
+    
     func morningHabitSkipClicked(){
         addLog(text: "routinePostponedInfoVc action bar:- morningHabitSkipClicked")
+        if currentHabitIndex == -1 || currentHabitIndex >= arrFilteredMorningHabits.count{
+            addLog(text: "Invalid index. skip cancelled")
+            return;
+        }
         let lastHabitIndex = currentHabitIndex
         let lastHabit = arrFilteredMorningHabits[lastHabitIndex]
         lastActivityPerformedTime = Date()
@@ -499,6 +545,9 @@ class routinePostponedInfoVc: NSViewController {
             arrPreFilteredMorningHabits.remove(at: index)
         }
         tblViewHabits.reloadData()
+        //focusButtonService-------//
+        focusButtonServiceObject.sendMorningHabitsToFocusDevice()
+        //---------//
         if arrFilteredMorningHabits.count == 0{
             if currentState == ._POSTPON_MORNING_HABIT_{
                 currentState = ._NOTHING_
@@ -522,6 +571,10 @@ class routinePostponedInfoVc: NSViewController {
     
     func eveningHabitSkipClicked(){
         addLog(text: "routinePostponedInfoVc action bar:- eveningHabitSkipClicked")
+        if currentHabitIndex == -1 || currentHabitIndex >= arrFilteredEveningHabits.count{
+            addLog(text: "Invalid index. skip cancelled")
+            return;
+        }
         let lastHabitIndex = currentHabitIndex
         let lastHabit = arrFilteredEveningHabits[lastHabitIndex]
         lastActivityPerformedTime = Date()
@@ -531,7 +584,9 @@ class routinePostponedInfoVc: NSViewController {
             arrPreFilteredEveningHabits.remove(at: index)
         }
         tblViewHabits.reloadData()
-        
+        //focusButtonService-------//
+        focusButtonServiceObject.sendEveningHabitsToFocusDevice()
+        //---------//
         if arrFilteredEveningHabits.count == 0{
             if currentState == ._POSTPON_EVENING_HABIT_{
                 currentState = ._NOTHING_
@@ -675,28 +730,28 @@ class routinePostponedInfoVc: NSViewController {
                 mainViewControllerObj?.showPasswordView()
                 enterPasswordVcObj?.requestAuthorization(
                     action: {
-                        self.morningHabitSkipClicked()
+                        self.tryMorningRoutineSkip()
                     },
                     onCancel: {
                         print("User cancelled password entry")
                     }
                 )
             }else{
-                morningHabitSkipClicked()
+                tryMorningRoutineSkip()
             }
         }else if lCurrentState == ._EVENING_HABIT_{
             if shouldAskPassword() && SettingsManagerObject.isPasswordRequireInSkipEvening{
                 mainViewControllerObj?.showPasswordView()
                 enterPasswordVcObj?.requestAuthorization(
                     action: {
-                        self.eveningHabitSkipClicked()
+                        self.tryEveningRoutineSkip()
                     },
                     onCancel: {
                         print("User cancelled password entry")
                     }
                 )
             }else{
-                eveningHabitSkipClicked()
+                tryEveningRoutineSkip()
             }
         }
     }

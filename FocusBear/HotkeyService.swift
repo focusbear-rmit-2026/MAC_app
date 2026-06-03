@@ -24,6 +24,7 @@ enum ActiveShortcutRecorder {
     case brainDump
     case focusMusic
     case taskList
+    case focusSession
 }
 
 var activeShortcutRecorder: ActiveShortcutRecorder = .none
@@ -42,7 +43,7 @@ final class HotkeyService {
     private var hotKeyBrainDump: HotKey?
     private var hotKeyFocusMusic: HotKey?
     private var hotKeyTaskList: HotKey?
-
+    private var hotKeyStartFocusSession: HotKey?
     // MARK: - Registration
 
     /// Re-reads current settings and registers/re-registers all three shortcuts.
@@ -50,6 +51,7 @@ final class HotkeyService {
         registerBrainDump()
         registerFocusMusic()
         registerTaskList()
+        registerFocusSession()
     }
 
     func registerBrainDump() {
@@ -104,6 +106,42 @@ final class HotkeyService {
 
     func unregisterTaskList() {
         hotKeyTaskList = nil
+    }
+    
+    func registerFocusSession() {
+        hotKeyStartFocusSession = nil
+        let keyChar   = SettingsManagerObject.startPomodoroShortcutChar
+        let flagInts  = SettingsManagerObject.startPomodoroShortcutFlags
+        guard !keyChar.isEmpty && !flagInts.isEmpty else { return }
+        updateFlags(sflags: flagInts)
+        let localFlags = flags
+        hotKeyStartFocusSession = HotKey(keyCombo: KeyCombo(stkey: keyChar, modifiers: localFlags))
+        hotKeyStartFocusSession?.keyDownHandler = {
+            addLog(text: "[HotkeyService] Task List shortcut triggered")
+            addLog(text: "Shortcut start Pomodoro Pressed")
+            let isFocusModeOnOrPaused = isFocusModeOnOrPaused()
+            
+            if isFocusModeOnOrPaused{
+                addLog(text: "FocusMode is On Or Paused:- return")
+                return;
+            }else{
+                if isHardCorePomodoroModeOn{
+                    addLog(text: "HardCore Pomodoro Mode is On:- return")
+                    return;
+                }else{
+                    if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+                        
+                        addLog(text: "Activity is running:- return")
+                        return;
+                    }
+                }
+            }
+            appdelegate!.menuShowPomodoroModeView()
+        }
+    }
+
+    func unregisterFocusSession() {
+        hotKeyStartFocusSession = nil
     }
 
     // MARK: - Helpers

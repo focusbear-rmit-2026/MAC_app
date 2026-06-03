@@ -303,7 +303,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             print(error)
             print(html)
             if let error = error {
-                addLog(text: "loadIntentionForToDoPlayer:- JavaScript evaluation error: \(error)")// v 2.28.441
+                addLog(text: "updateBrainDumpToPlayer:- JavaScript evaluation error: \(error)")// v 2.28.441
             }
         })
     }

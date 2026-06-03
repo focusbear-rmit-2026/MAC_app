@@ -34,13 +34,13 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     @IBOutlet weak var boxFocusSession: mainWindowListBox!
     @IBOutlet weak var boxHabits: mainWindowListBox!
     @IBOutlet weak var boxDashboard: mainWindowListBox!
-    
-    var disableReasonMorningRoutine = "Disabled because your morning routine is in progress."
-    var disableReasonEveningRoutine = "Disabled because your evening routine is in progress."
-    var disableReasonFocusSummary = "Disabled because your all-day summary is visible."
-    var disableReasonShutoffTime = "Disabled because it’s your shutoff time."
-    var disableReasonMircoBreaks = "Disabled because your micro break is in progress."
-    var disableReasonCustomRoutine = "Disabled because your custom routine is in progress."
+
+    var disableReasonMorningRoutine = "Disabled because your morning routine is in progress. Go to the Habits tab to continue."
+    var disableReasonEveningRoutine = "Disabled because your evening routine is in progress. Go to the Habits tab to continue."
+    var disableReasonFocusSummary = "Disabled because your all-day summary is visible. Go to the Habits tab to continue."
+    var disableReasonShutoffTime = "Disabled because it’s your shutoff time. Go to the Habits tab to continue."
+    var disableReasonMircoBreaks = "Disabled because your micro break is in progress. Go to the Micro Break tab to continue."
+    var disableReasonCustomRoutine = "Disabled because your custom routine is in progress. Go to the Custom Routine tab to continue."
     
     override func viewDidLoad() {
         super.viewDidLoad()

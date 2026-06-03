@@ -1003,28 +1003,28 @@ class GeekModeSegmentedControl: NSSegmentedControl {
         self.addTrackingArea(segmentGeekModeTrackingArea!)
         
         
-        let customBox = NSBox()
-        customBox.boxType = .custom
-        customBox.borderWidth = 0
-        customBox.fillColor = NSColor.clear
-        self.superview?.addSubview(customBox)
-//        self.addConstraints(subView: customBox)
-        
-        
-        customBox.translatesAutoresizingMaskIntoConstraints = false
-        //Trailing
-        let trailing = NSLayoutConstraint(item: customBox, attribute: .trailing, relatedBy: .equal, toItem: self, attribute: .trailing, multiplier: 1.0, constant: 0.0)
-        //Leading
-        let leading = NSLayoutConstraint(item: customBox, attribute: .leading, relatedBy: .equal, toItem: self, attribute: .leading, multiplier: 1.0, constant: 0.0)
-        //Bottom
-        let bottom = NSLayoutConstraint(item: customBox, attribute: .bottom, relatedBy: .equal, toItem: self, attribute: .bottom, multiplier: 1.0, constant: 0.0)
-        //Height to be fixed for SubView same as AdHeight
-        let height = NSLayoutConstraint(item: customBox, attribute: .top, relatedBy: .equal, toItem: self, attribute: .top, multiplier: 1.0, constant: 0.0)
-        self.superview?.addConstraint(trailing)
-        self.superview?.addConstraint(bottom)
-        self.superview?.addConstraint(leading)
-        //Add height constraint to the subview, as subview owns it.
-        self.superview?.addConstraint(height)
+//        let customBox = NSBox()
+//        customBox.boxType = .custom
+//        customBox.borderWidth = 0
+//        customBox.fillColor = NSColor.clear
+//        self.superview?.addSubview(customBox)
+////        self.addConstraints(subView: customBox)
+//        
+//        
+//        customBox.translatesAutoresizingMaskIntoConstraints = false
+//        //Trailing
+//        let trailing = NSLayoutConstraint(item: customBox, attribute: .trailing, relatedBy: .equal, toItem: self, attribute: .trailing, multiplier: 1.0, constant: 0.0)
+//        //Leading
+//        let leading = NSLayoutConstraint(item: customBox, attribute: .leading, relatedBy: .equal, toItem: self, attribute: .leading, multiplier: 1.0, constant: 0.0)
+//        //Bottom
+//        let bottom = NSLayoutConstraint(item: customBox, attribute: .bottom, relatedBy: .equal, toItem: self, attribute: .bottom, multiplier: 1.0, constant: 0.0)
+//        //Height to be fixed for SubView same as AdHeight
+//        let height = NSLayoutConstraint(item: customBox, attribute: .top, relatedBy: .equal, toItem: self, attribute: .top, multiplier: 1.0, constant: 0.0)
+//        self.superview?.addConstraint(trailing)
+//        self.superview?.addConstraint(bottom)
+//        self.superview?.addConstraint(leading)
+//        //Add height constraint to the subview, as subview owns it.
+//        self.superview?.addConstraint(height)
         
     }
 
@@ -1035,13 +1035,13 @@ class GeekModeSegmentedControl: NSSegmentedControl {
             if let geekModeInfo = configjson.value(forKey: "geekModeInfo") as? NSDictionary{
                 tooltipGeekMode = geekModeInfo.value(forKey: "tooltipGeekMode") as? String ?? tooltipGeekMode
             }
-            showTooltip(sender: self, msg: tooltipGeekMode, preferredEdge: NSRectEdge.minX, maxWidthVal:230)
+            showTooltipWithOsTahoe(sender: self, msg: tooltipGeekMode, preferredEdge: NSRectEdge.minX, maxWidthVal:230)
         }else{
             var tooltipSimpleMode = "Simple Mode active - only basic features shown. Toggle the switch to activate Geek Mode"
             if let geekModeInfo = configjson.value(forKey: "geekModeInfo") as? NSDictionary{
                 tooltipSimpleMode = geekModeInfo.value(forKey: "tooltipSimpleMode") as? String ?? tooltipSimpleMode
             }
-            showTooltip(sender: self, msg: tooltipSimpleMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+            showTooltipWithOsTahoe(sender: self, msg: tooltipSimpleMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
         }
         NSCursor.pointingHand.set()
     }

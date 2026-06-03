@@ -31,9 +31,9 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
         return true ;
     }
     if currentBrowser == ._SAFARI_{
-        if safariWindowsInfo.keys.count == 0{
-            safariWindowsInfo = browserStruct
-        }else{
+//        if safariWindowsInfo.keys.count == 0{
+//            safariWindowsInfo = browserStruct
+//        }else{
             var currentBrowserTabsArr = [String]()
             var allSelfTabArr = [String]()
             
@@ -92,11 +92,11 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
             }else{
                 safariWindowsInfo = browserStruct
             }
-        }
+//        }
     }else if currentBrowser == ._GOOGLE_CHROME_{
-        if googleChromeWindowsInfo.keys.count == 0{
-            googleChromeWindowsInfo = browserStruct
-        }else{
+      ///  if googleChromeWindowsInfo.keys.count == 0{
+           // googleChromeWindowsInfo = browserStruct
+       // }else{
             var currentBrowserTabsArr = [String]()
             var allSelfTabArr = [String]()
             
@@ -155,11 +155,11 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
             }else{
                 googleChromeWindowsInfo = browserStruct
             }
-        }
+       // }
     }else if currentBrowser == ._OPERA_{
-        if operaWindowsInfo.keys.count == 0{
-            operaWindowsInfo = browserStruct
-        }else{
+       // if operaWindowsInfo.keys.count == 0{
+        //    operaWindowsInfo = browserStruct
+       // }else{
             var currentBrowserTabsArr = [String]()
             var allSelfTabArr = [String]()
             
@@ -218,11 +218,11 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
             }else{
                 operaWindowsInfo = browserStruct
             }
-        }
+       // }
     }else if currentBrowser == ._OPERA_GX_{
-        if operaGxWindowsInfo.keys.count == 0{
-            operaGxWindowsInfo = browserStruct
-        }else{
+        //if operaGxWindowsInfo.keys.count == 0{
+         //   operaGxWindowsInfo = browserStruct
+        //}else{
             var currentBrowserTabsArr = [String]()
             var allSelfTabArr = [String]()
             
@@ -281,11 +281,11 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
             }else{
                 operaGxWindowsInfo = browserStruct
             }
-        }
+       // }
     }else if currentBrowser == ._VIVALDI_{
-        if vivaldiWindowsInfo.keys.count == 0{
-            vivaldiWindowsInfo = browserStruct
-        }else{
+//        if vivaldiWindowsInfo.keys.count == 0{
+//            vivaldiWindowsInfo = browserStruct
+//        }else{
             var currentBrowserTabsArr = [String]()
             var allSelfTabArr = [String]()
             
@@ -344,11 +344,11 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
             }else{
                 vivaldiWindowsInfo = browserStruct
             }
-        }
+       // }
     }else if currentBrowser == ._BRAVE_BROWSER_{
-        if braveBrowserWindowsInfo.keys.count == 0{
-            braveBrowserWindowsInfo = browserStruct
-        }else{
+//        if braveBrowserWindowsInfo.keys.count == 0{
+//            braveBrowserWindowsInfo = browserStruct
+//        }else{
             var currentBrowserTabsArr = [String]()
             var allSelfTabArr = [String]()
             
@@ -407,11 +407,11 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
             }else{
                 braveBrowserWindowsInfo = browserStruct
             }
-        }
+//        }
     }else if currentBrowser == ._SIDEKICK_{
-        if sidekickWindowsInfo.keys.count == 0{
-            sidekickWindowsInfo = browserStruct
-        }else{
+//        if sidekickWindowsInfo.keys.count == 0{
+//            sidekickWindowsInfo = browserStruct
+//        }else{
             var currentBrowserTabsArr = [String]()
             var allSelfTabArr = [String]()
             
@@ -470,11 +470,11 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
             }else{
                 sidekickWindowsInfo = browserStruct
             }
-        }
+//        }
     }else if currentBrowser == ._MICROSOFT_EDGE_{
-        if microsoftEdgeWindowsInfo.keys.count == 0{
-            microsoftEdgeWindowsInfo = browserStruct
-        }else{
+//        if microsoftEdgeWindowsInfo.keys.count == 0{
+//            microsoftEdgeWindowsInfo = browserStruct
+//        }else{
             var currentBrowserTabsArr = [String]()
             var allSelfTabArr = [String]()
             
@@ -531,13 +531,13 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
             }else{
                 microsoftEdgeWindowsInfo = browserStruct
             }
-        }
+//        }
     }else if currentBrowser == ._ARC_{
-        if arcBrowserTabsInfo.count == 0{
-            if let allTabs = browserStruct["window"]{
-                arcBrowserTabsInfo = allTabs
-            }
-        }else{
+//        if arcBrowserTabsInfo.count == 0{
+//            if let allTabs = browserStruct["window"]{
+//                arcBrowserTabsInfo = allTabs
+//            }
+//        }else{
             let currentBrowserTabsArr = browserStruct["window"] ?? []
             let allSelfTabArr = arcBrowserTabsInfo
             
@@ -568,7 +568,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
             }else{
                 arcBrowserTabsInfo = currentBrowserTabsArr
             }
-        }
+//        }
     }
     return true
 }

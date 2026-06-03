@@ -81,10 +81,10 @@ class focusPreferencesAdvancedVc: NSViewController {
         
         tokenField.delegate = self
         
-        btnCheckBoxSuggestWorkFocusMode.title = "Automatically suggest starting this focus mode when any allowed URL is opened"
+        btnCheckBoxSuggestWorkFocusMode.title = "Automatically suggest starting this focus mode when any allowed URL/App is opened" // todo text
         
         if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-            btnCheckBoxSuggestWorkFocusMode.title = focusPreferencesInfo.value(forKey: "checkBoxSuggestWorkFocusMode") as? String ?? btnCheckBoxSuggestWorkFocusMode.title
+            //btnCheckBoxSuggestWorkFocusMode.title = focusPreferencesInfo.value(forKey: "checkBoxSuggestWorkFocusMode") as? String ?? btnCheckBoxSuggestWorkFocusMode.title
         }
         
         lblFocusAlignmentScore.stringValue = "Show distracting site popup only when focus alignment score is less than"
@@ -296,12 +296,19 @@ class focusPreferencesAdvancedVc: NSViewController {
                     boxBlockUrls.isHidden = true
                     boxBlockApps.isHidden = true
                     boxHeaderBlockUrlsAndApps.isHidden = true
+                    btnCheckBoxSuggestWorkFocusMode.isHidden = true
                 }else if arrFocusType[row]["isRelaxFocus"] as? Bool == true{
                     lineHorizontal.isHidden = true
                     boxBlockUrls.isHidden = true
                     boxBlockApps.isHidden = true
                     boxHeaderBlockUrlsAndApps.isHidden = true
+                    btnCheckBoxSuggestWorkFocusMode.isHidden = true
                 }else{
+                    if arrFocusType[row]["isMeetings"] as? Bool == true{
+                        btnCheckBoxSuggestWorkFocusMode.isHidden = true
+                    }else{
+                        btnCheckBoxSuggestWorkFocusMode.isHidden = false
+                    }
                     if isAllowedListApproach{
                         lineHorizontal.isHidden = false
                         boxBlockUrls.isHidden = false
@@ -367,7 +374,6 @@ class focusPreferencesAdvancedVc: NSViewController {
         DispatchQueue.global().async {
             usleep(50000)
             DispatchQueue.main.async {
-//                self.view.setFrameSize(self.boxBg.frame.size)
                 self.view.window?.setFrame(NSRect(x: 0, y: 0, width: self.view.frame.width, height: self.boxBg.frame.height), display: true)
             }
         }

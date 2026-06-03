@@ -146,7 +146,7 @@ class focusButtonService: NSObject {
             let id = arrFilteredMorningHabits[i].id ?? ""
             let isActivityCompleted = isActivityCompleted(id: id, habits: arrFilteredMorningHabits)
             if !isActivityCompleted{
-                arrHabits.append((id: id, name: arrFilteredMorningHabits[i].name, durationSeconds: arrFilteredMorningHabits[i].durationSeconds))
+                arrHabits.append((id: "\(i + 1)", name: arrFilteredMorningHabits[i].name, durationSeconds: arrFilteredMorningHabits[i].durationSeconds))
             }
         }
         sendHabits(habits: arrHabits)
@@ -160,7 +160,7 @@ class focusButtonService: NSObject {
             let id = arrFilteredEveningHabits[i].id ?? ""
             let isActivityCompleted = isActivityCompleted(id: id, habits: arrFilteredEveningHabits)
             if !isActivityCompleted{
-                arrHabits.append((id: id, name: arrFilteredEveningHabits[i].name, durationSeconds: arrFilteredEveningHabits[i].durationSeconds))
+                arrHabits.append((id: "\(i + 1)", name: arrFilteredEveningHabits[i].name, durationSeconds: arrFilteredEveningHabits[i].durationSeconds))
             }
         }
         sendHabits(habits: arrHabits)
@@ -169,6 +169,12 @@ class focusButtonService: NSObject {
     func isActivityCompleted(id:String, habits:[habit])->Bool{
         if currentHabitIndex == -1{
             return false
+        }
+        if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_{
+            return false // user is in postponed habit list so no need to remove completed
+        }
+        if currentAction != ._START_{
+            return false // user is in firstvc habit list so no need to remove completed
         }
         for i in 0..<currentHabitIndex + 1{
             let habit = habits[i]
@@ -192,7 +198,7 @@ class focusButtonService: NSObject {
             return
         }
         
-        let entries = habits.map { "\($0.id),\($0.name),\($0.durationSeconds * 60)" }
+        let entries = habits.map { "\($0.id),\($0.name),\($0.durationSeconds)" }
         sendCmd("SET|HABITS|" + entries.joined(separator: "|"))
     }
     
@@ -214,9 +220,9 @@ class focusButtonService: NSObject {
         applyState(.running)
     }
     
-    func finishHabit() {
+    func cancelHabit() {
         log("FocusButton: finishHabit()")
-        sendCmd("SET|DONE")
+        sendCmd("SET|CANCEL")
         applyState(.idle)
     }
     
@@ -455,16 +461,32 @@ class focusButtonService: NSObject {
             
             
             if parts[1].uppercased() == "STARTHB" && parts.count >= 4 {
+                let name = parts[3].trimmingCharacters(in: .whitespaces).lowercased()
                 if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
-                    let id = parts[3].trimmingCharacters(in: .whitespaces)
-                    onHabitNameChanged?(currentHabitName)
+                    
+                    //onHabitNameChanged?(id)
                     
                     if currentAction != ._INPROGRESS_{
-                        
+                        if currentState == ._MORNING_HABIT_{
+                            getHabitsVcObject().startMorningRouintHabitFromDeviceButton(name: name)
+                        }else if currentState == ._EVENING_HABIT_{
+                            getHabitsVcObject().startEveningRouintHabitFromDeviceButton(name: name)
+                        }
                     }
                 }else {
                     currentHabitName = ""
                     onHabitNameChanged?("")
+                    
+                    if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_{
+                        getHabitsVcObject().stopPostponeEndTimer()
+                        closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
+                        if currentState == ._POSTPON_MORNING_HABIT_{
+                            getHabitsVcObject().startMorningRouintHabitFromDeviceButton(name: name)
+                        }else if currentState == ._POSTPON_EVENING_HABIT_{
+                            getHabitsVcObject().startEveningRouintHabitFromDeviceButton(name: name)
+                        }
+                    }
+                    
                 }
                 
             } else {
@@ -485,7 +507,7 @@ class focusButtonService: NSObject {
                     if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
                         log("FocusButton: Try pause habit")
                         if timerViewcontrollerObj != nil {
-                            if currentAction == ._INPROGRESS_ && !(timerViewcontrollerObj?.isActivityPaused ?? false){
+                            if currentAction == ._INPROGRESS_ && !(timerViewcontrollerObj?.isActivityPaused ?? false) && (timerViewcontrollerObj?.timer?.isValid ?? false){
                                 if timerViewcontrollerObj?.timer != nil {
                                     log("FocusButton: Successfully paused habit")
                                     timerViewcontrollerObj?.btnPauseClicked(self)

@@ -231,3 +231,5 @@ var kUserdefaultsLastFocusModeId = "kLastRunningFocusModeId"
 
 var kUserdefaultsLastHabitsIdsBeforePostpone = "kRemainingHabitIdsBeforePostpone"
 var kUserdefaultsPrefilterLastHabitsIdsBeforePostpone = "kPrefilterRemainingHabitIdsBeforePostpone"
+
+var kUserdefaultsLastRunningFocusModeInfo = "kLastRunningFocusModeInfo"

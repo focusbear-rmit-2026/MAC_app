@@ -2004,10 +2004,14 @@ class menuViewController: NSViewController {
         getHabitsVcObject().stopActivityTimer()
         
         currentState = ._NOTHING_
+        leftMenuVcObj?.enableAllItems()
         getHabitsVcObject().stopPostponeEndTimer()
         closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
         appdelegate?.backgroundThread()
         closeMenuWindowIsVisible()
+        
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
         
         Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { timer in
             self.reloadIfNeeded()

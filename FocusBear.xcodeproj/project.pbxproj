@@ -57,6 +57,7 @@
 		137CD6042D9D4ACC00A8385A /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 137CD6022D9D4ACC00A8385A /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		138F0D8E2EBDE5180046CDB0 /* itemActionBarVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138F0D8D2EBDE5180046CDB0 /* itemActionBarVc.swift */; };
 		138FE1262E5701B0002A2C4C /* floatingTopBarVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138FE1252E5701B0002A2C4C /* floatingTopBarVc.swift */; };
+		139D87A62FCF18B000BA7598 /* claudeTitleReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 139D87A52FCF18B000BA7598 /* claudeTitleReader.swift */; };
 		13A45A2E2DB3DB12009ECF81 /* superGentleQuitVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A45A2D2DB3DB12009ECF81 /* superGentleQuitVc.swift */; };
 		13A9D5AA2F73FB30004ACB7F /* welcomeAdhdVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A9D5A92F73FB30004ACB7F /* welcomeAdhdVc.swift */; };
 		13A9D5AC2F741324004ACB7F /* welcomeLetsDoItVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A9D5AB2F741324004ACB7F /* welcomeLetsDoItVc.swift */; };
@@ -77,6 +78,7 @@
 		13C6BF0B2FB19D750074DD63 /* ORSSerial in Frameworks */ = {isa = PBXBuildFile; productRef = 13C6BF0A2FB19D750074DD63 /* ORSSerial */; };
 		13C6BF0E2FB211CA0074DD63 /* audioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */; };
 		13CBE7652F07E9660025544E /* enableAIBlockingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */; };
+		13D5D0112FD0396E00AB474C /* micMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D5D0102FD0396E00AB474C /* micMonitor.swift */; };
 		13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */; };
 		13D90E802ECC514000FC39FD /* createUnlockRequestVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D90E7F2ECC514000FC39FD /* createUnlockRequestVc.swift */; };
 		13DC8AA62FC1DEE40035A7E1 /* routinePostponedInfoVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13DC8AA52FC1DEE40035A7E1 /* routinePostponedInfoVc.swift */; };
@@ -441,6 +443,7 @@
 		137CD6022D9D4ACC00A8385A /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
 		138F0D8D2EBDE5180046CDB0 /* itemActionBarVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = itemActionBarVc.swift; sourceTree = "<group>"; };
 		138FE1252E5701B0002A2C4C /* floatingTopBarVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = floatingTopBarVc.swift; sourceTree = "<group>"; };
+		139D87A52FCF18B000BA7598 /* claudeTitleReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = claudeTitleReader.swift; sourceTree = "<group>"; };
 		13A45A2D2DB3DB12009ECF81 /* superGentleQuitVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = superGentleQuitVc.swift; sourceTree = "<group>"; };
 		13A9D5A92F73FB30004ACB7F /* welcomeAdhdVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = welcomeAdhdVc.swift; sourceTree = "<group>"; };
 		13A9D5AB2F741324004ACB7F /* welcomeLetsDoItVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = welcomeLetsDoItVc.swift; sourceTree = "<group>"; };
@@ -459,6 +462,7 @@
 		13C6BF072FB199E70074DD63 /* focusButtonService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusButtonService.swift; sourceTree = "<group>"; };
 		13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = audioRecorder.swift; sourceTree = "<group>"; };
 		13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = enableAIBlockingVc.swift; sourceTree = "<group>"; };
+		13D5D0102FD0396E00AB474C /* micMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = micMonitor.swift; sourceTree = "<group>"; };
 		13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineStateVc.swift; sourceTree = "<group>"; };
 		13D90E7F2ECC514000FC39FD /* createUnlockRequestVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = createUnlockRequestVc.swift; sourceTree = "<group>"; };
 		13DC8AA52FC1DEE40035A7E1 /* routinePostponedInfoVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = routinePostponedInfoVc.swift; sourceTree = "<group>"; };
@@ -1177,6 +1181,7 @@
 				135A8A542E7EB27A00A96A8E /* customBlockingScheduleData.swift */,
 				13B74D5C2E8801DA00556C79 /* abortingCustomScheduleBlockingVc.swift */,
 				13395D402DB900380094F019 /* focusModeData.swift */,
+				139D87A52FCF18B000BA7598 /* claudeTitleReader.swift */,
 				13E0386E2ED075420097E91C /* focusTimerManager.swift */,
 				135AD5302ED18D7D00870175 /* focusHabitTimerManager.swift */,
 				13B1D8282F7D2B9B0010610C /* suggestWorkFocusManager.swift */,
@@ -1335,6 +1340,7 @@
 				8FF9351929110D8C004511C0 /* Onboarding */,
 				8FDA858F279A8E82008AD6AA /* AVMonitor.h */,
 				8FDA8590279A8E82008AD6AA /* AVMonitor.m */,
+				13D5D0102FD0396E00AB474C /* micMonitor.swift */,
 				8F7819D828E588F500FB1F63 /* Login */,
 				8FA633E42848BB860055EE88 /* graph */,
 				8F9A5A94278853A0009121E3 /* Abort */,
@@ -1921,6 +1927,7 @@
 				8F5596B42805B49E0044DF28 /* quitCountDownVc.swift in Sources */,
 				13130A772F769929005842C6 /* askSetDistractionsVc.swift in Sources */,
 				13B7700B2F76BE77006C30AC /* onboardingAllowedUrlsVc.swift in Sources */,
+				139D87A62FCF18B000BA7598 /* claudeTitleReader.swift in Sources */,
 				13395D412DB900440094F019 /* focusModeData.swift in Sources */,
 				135ABA6D2E5345A300D133F2 /* focusModeStateVc.swift in Sources */,
 				8FAC6CA127808125008A4180 /* timerViewcontroller.swift in Sources */,
@@ -2011,6 +2018,7 @@
 				8F9A5A9A27887889009121E3 /* abortDoneVc.swift in Sources */,
 				8F270CB229436D4400E91015 /* tblCellOnboardingBlockedUrls.swift in Sources */,
 				8F6DD76A2A8A4EE300096F08 /* settingsSideBarVc.swift in Sources */,
+				13D5D0112FD0396E00AB474C /* micMonitor.swift in Sources */,
 				8F8C3FE32A8D0158005CAF96 /* settingPopUpButtonItemVc.swift in Sources */,
 				8FBE37A52A8F5B640018402A /* aiSettingNewVc.swift in Sources */,
 				8FCE07AB2931F2A300DF4530 /* popUpOfflineVc.swift in Sources */,
@@ -2375,7 +2383,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 488;
+				CURRENT_PROJECT_VERSION = 491;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
@@ -2413,7 +2421,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 488;
+				CURRENT_PROJECT_VERSION = 491;
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;

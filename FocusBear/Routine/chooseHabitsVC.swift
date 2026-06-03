@@ -365,7 +365,8 @@ class chooseHabitsVC: NSViewController {
         hideBlankWindowInSecondaryMonitor()
         currentState = ._NOTHING_
         getHabitsVcObject().setActivityTimer()
-        addLog(text: "morning habit skipped by user")
+        leftMenuVcObj?.habitOver()
+        addLog(text: "Routine skipped by user")//addLog(text: "morning habit skipped by user")
     }
     
     @IBAction func btnCloseClicked(_ sender: Any) {

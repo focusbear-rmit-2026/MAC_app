@@ -269,12 +269,14 @@ class habitsVc: NSViewController {
         }
         return false
     }
+    
     func showSkipHabitView(){
         addLog(text: "show SkipHabit View")
         self.view.addSubview(getSkipHabitVcObject().view)
         self.view.addConstraints(subView: getSkipHabitVcObject().view)
         getSkipHabitVcObject().resetView()
     }
+
     func showWhySkipHabitView(){
         addLog(text: "show whySkipHabit View")
         self.view.addSubview(getWhySkipHabitVcObject().view)
@@ -1247,6 +1249,41 @@ class habitsVc: NSViewController {
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
     
+    func startMorningRouintHabitFromDeviceButton(name:String){
+        addLog(text: "Start Morning Rouint Habit From Device Button.")
+        removeCompletedHabitsForMorningEveningRoutine()
+        for i in 0..<arrFilteredMorningHabits.count{
+            if arrFilteredMorningHabits[i].id == name || arrFilteredMorningHabits[i].name.lowercased() == name{
+                let habit = arrFilteredMorningHabits[i]
+                arrFilteredMorningHabits.remove(at: i)
+                arrFilteredMorningHabits.insert(habit, at: 0)
+                self.showCloseButtons()
+                removeSubViews()
+                currentHabitIndex = -1
+                currentAction = ._START_
+                getHabitsVcObject().startFirstMorningHabit()
+                break;
+            }
+        }
+    }
+    
+    func startEveningRouintHabitFromDeviceButton(name:String){
+        addLog(text: "Start Evening Rouint Habit From Device Button.")
+        removeCompletedHabitsForMorningEveningRoutine()
+        for i in 0..<arrFilteredEveningHabits.count{
+            if arrFilteredEveningHabits[i].id == name || arrFilteredEveningHabits[i].name.lowercased() == name{
+                let habit = arrFilteredEveningHabits[i]
+                arrFilteredEveningHabits.remove(at: i)
+                arrFilteredEveningHabits.insert(habit, at: 0)
+                self.showCloseButtons()
+                removeSubViews()
+                currentHabitIndex = -1
+                currentAction = ._START_
+                getHabitsVcObject().startFirstEveningHabit()
+                break;
+            }
+        }
+    }
     
     func showAllCustomRoutineHabitsAbortCancel(){
         addLog(text: "Abort Cancel Showing Custom Routine habits.")
@@ -1350,11 +1387,6 @@ class habitsVc: NSViewController {
     
     func morningHabitOver() {
         addLog(text:"current morning Habit Over called")
-        
-        //focusButtonService---//
-        focusButtonServiceObject.finishHabit()
-        //--------------//
-
         getHabitsVcObject().stopActivityTimer()
         if mainWindowControllerObj?.window?.isVisible == false{
             mainWindowControllerObj?.window?.setIsVisible(true)
@@ -1649,10 +1681,6 @@ class habitsVc: NSViewController {
     
     func eveningHabitOver() {// current evening habit over
         addLog(text:"current evening Habit Over called")
-        
-        //focusButtonService---//
-        focusButtonServiceObject.finishHabit()
-        //--------------//
         
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
         getHabitsVcObject().stopActivityTimer()
@@ -2491,6 +2519,9 @@ class habitsVc: NSViewController {
                 }
                 currentState = ._POSTPON_MORNING_HABIT_
                 hideBlankWindowInSecondaryMonitor()
+                //focusButtonService-------//
+                focusButtonServiceObject.cancelHabit()
+                //---------//
             }
             
             closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
@@ -2699,6 +2730,9 @@ class habitsVc: NSViewController {
                 closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             }
             
+            //focusButtonService-------//
+            focusButtonServiceObject.cancelHabit()
+            //---------//
             
             if popUpCheckListWcObj != nil{
                 if popUpCheckListWcObj?.window?.isVisible ?? false{

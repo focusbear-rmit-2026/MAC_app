@@ -33,39 +33,85 @@ class DNDManager {
         // Usage
     }
 
+//    func optionClickClock() {
+//        guard let menuBarScreen = NSScreen.main else { return }
+//        
+//        // NSScreen.frame is in AppKit flipped coords (Y up from bottom of primary screen)
+//        // CGEvent uses CG coords (Y down from top of primary screen)
+//        // Convert: CGY = primaryScreenHeight - (frame.origin.y + frame.height)
+//        
+//        let primaryScreenHeight = NSScreen.screens[0].frame.height
+//        let screenFrame = menuBarScreen.frame
+//        
+//        // Top-right of the menu bar screen in CG coordinates
+//        let cgY = primaryScreenHeight - (screenFrame.origin.y + screenFrame.height)
+//        let cgX = screenFrame.origin.x + screenFrame.width - 60
+//        
+//        let clickPoint = CGPoint(x: cgX, y: cgY + 11)
+//
+//        let src = CGEventSource(stateID: .combinedSessionState)
+//
+//        let down = CGEvent(mouseEventSource: src,
+//                           mouseType: .leftMouseDown,
+//                           mouseCursorPosition: clickPoint,
+//                           mouseButton: .left)
+//        down?.flags = .maskAlternate
+//
+//        let up = CGEvent(mouseEventSource: src,
+//                         mouseType: .leftMouseUp,
+//                         mouseCursorPosition: clickPoint,
+//                         mouseButton: .left)
+//        up?.flags = .maskAlternate
+//
+//        down?.post(tap: .cgSessionEventTap)
+//        Thread.sleep(forTimeInterval: 0.05)
+//        up?.post(tap: .cgSessionEventTap)
+//    }
     func optionClickClock() {
         guard let menuBarScreen = NSScreen.main else { return }
-        
-        // NSScreen.frame is in AppKit flipped coords (Y up from bottom of primary screen)
-        // CGEvent uses CG coords (Y down from top of primary screen)
-        // Convert: CGY = primaryScreenHeight - (frame.origin.y + frame.height)
-        
+
+        // Save current mouse position
+        let oldLocation = NSEvent.mouseLocation
+
         let primaryScreenHeight = NSScreen.screens[0].frame.height
         let screenFrame = menuBarScreen.frame
-        
-        // Top-right of the menu bar screen in CG coordinates
+
         let cgY = primaryScreenHeight - (screenFrame.origin.y + screenFrame.height)
         let cgX = screenFrame.origin.x + screenFrame.width - 60
-        
+
         let clickPoint = CGPoint(x: cgX, y: cgY + 11)
 
         let src = CGEventSource(stateID: .combinedSessionState)
 
-        let down = CGEvent(mouseEventSource: src,
-                           mouseType: .leftMouseDown,
-                           mouseCursorPosition: clickPoint,
-                           mouseButton: .left)
+        let down = CGEvent(
+            mouseEventSource: src,
+            mouseType: .leftMouseDown,
+            mouseCursorPosition: clickPoint,
+            mouseButton: .left
+        )
         down?.flags = .maskAlternate
 
-        let up = CGEvent(mouseEventSource: src,
-                         mouseType: .leftMouseUp,
-                         mouseCursorPosition: clickPoint,
-                         mouseButton: .left)
+        let up = CGEvent(
+            mouseEventSource: src,
+            mouseType: .leftMouseUp,
+            mouseCursorPosition: clickPoint,
+            mouseButton: .left
+        )
         up?.flags = .maskAlternate
 
         down?.post(tap: .cgSessionEventTap)
         Thread.sleep(forTimeInterval: 0.05)
         up?.post(tap: .cgSessionEventTap)
+
+        // Restore cursor position
+        let primaryHeight = NSScreen.screens[0].frame.height
+
+        let quartzPoint = CGPoint(
+            x: oldLocation.x,
+            y: primaryHeight - oldLocation.y
+        )
+        Thread.sleep(forTimeInterval: 0.05)// to prevent opening right menu 3.32.491
+        CGWarpMouseCursorPosition(quartzPoint)
     }
     
     func isDNDOrFocusActive() -> Bool {

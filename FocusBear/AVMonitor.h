@@ -26,6 +26,7 @@
 /* METHODS */
 
 -(BOOL)isMicOn;
+-(NSDictionary *)microphoneStatus;
 -(BOOL)isACameraOn;
 -(NSDictionary*)getSystemAssertionDic;
 //checkCameraState

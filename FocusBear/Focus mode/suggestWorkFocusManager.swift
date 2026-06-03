@@ -44,6 +44,16 @@ class suggestWorkFocusManager {
             
             newTimer.resume()
             timer = newTimer
+        }else{// check app v 3.32.491
+            if alertIsVisible || isFocusModeRunning{
+                return;
+            }
+            
+            if let nextTime = nextSuggestionAllowedTime,
+               Date() < nextTime {
+                return;
+            }
+            checkCheckApp(runningApp: runningApp)
         }
     }
     
@@ -53,6 +63,84 @@ class suggestWorkFocusManager {
         timer = nil
     }
     
+    
+    func checkCheckApp(runningApp:NSRunningApplication){
+        if let appUrl = runningApp.bundleURL{
+            let name = appUrl.deletingPathExtension().lastPathComponent
+            let nameLowercased = name.lowercased()
+            
+            if nameLowercased == selfAppName.lowercased() || nameLowercased == focusBearTimeTrackerAppName{
+                return;
+            }
+            
+            for i in 0..<arrFocusType.count{
+                let workFocusMode = arrFocusType[i]
+                
+                let isAllowedListApproachInFocus = workFocusMode["isAllowedListApproach"] as? Bool ?? false
+                let allowAppsPath = workFocusMode["allowed_apps"] as? [String] ?? []
+                let doNotSuggestAnyMore = arrFocusType[i]["doNotSuggestAnyMore"] as? Bool ?? false
+                
+                let autoSuggestFocusModeOnAllowedURL = arrFocusType[i]["autoSuggestFocusModeOnAllowedURL"] as? Bool ?? false
+                if !autoSuggestFocusModeOnAllowedURL{
+                    continue;
+                }
+                if doNotSuggestAnyMore || !isAllowedListApproachInFocus{
+                    continue;
+                }
+                
+                
+                var isAllowed = false
+                
+                
+                for path in allowAppsPath{
+                    let url = URL(fileURLWithPath: path)
+                    if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
+                        isAllowed = true
+                        break;
+                    }
+                }
+                
+                
+                if alertIsVisible{
+                    return;
+                }
+                if isAllowed{
+                    print("suggestion given to user")
+                    alertIsVisible = true
+                    let name = arrFocusType[i]["name"] as? String ?? ""
+                    DispatchQueue.main.async {
+                        var title = "You’re currently using a app allowed for <WORK> Focus Mode."//todo text
+                        var subTitle = "Would you like to start Focus Mode now?"
+                        var buttonYes = "Yes, Start"
+                        var buttonNotNow = "Not Now"
+                        
+                        if let info = configjson.value(forKey: "alertStartWorkFocusMode") as? NSDictionary{
+                            //title = info.value(forKey: "title") as? String ?? title
+                            subTitle = info.value(forKey: "subTitle") as? String ?? subTitle
+                            buttonYes = info.value(forKey: "buttonYes") as? String ?? buttonYes
+                            buttonNotNow = info.value(forKey: "buttonNotNow") as? String ?? buttonNotNow
+                        }
+                        
+                        title = title.replacingOccurrences(of: "<WORK>", with: name)
+                        showCustomAlert(title: title, body: subTitle, buttonOkText: buttonYes, buttonCancelText: buttonNotNow, checkBoxText: nil, autoClose: true, buttonLinkUrl:nil, buttonLinkText: nil, completionHandler: {isOkClicked in
+                            print(isOkClicked)
+                            if isOkClicked{
+                                startWorkFocusAutomaticallyClicked(id: arrFocusType[i]["id"] as? String ?? "")
+                                arrFocusType[i]["doNotSuggestAnyMore"] = false
+                            }else{
+                                arrFocusType[i]["doNotSuggestAnyMore"] = true
+                                
+                                // ADD (30 min cooldown)
+                                self.nextSuggestionAllowedTime = Date().addingTimeInterval(30 * 60)
+                            }
+                            self.alertIsVisible = false
+                        })
+                    }
+                    break;
+                }
+            }
+        }
+    }
     
     @objc func checkInBackground(){
         if alertIsVisible || isFocusModeRunning{

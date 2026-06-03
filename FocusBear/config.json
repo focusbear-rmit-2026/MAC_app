@@ -83,7 +83,9 @@
         "actionBarItemPlay": "Play",
         "actionBarItemDone": "Done",
         "actionBarItemSkip": "Skip",
-        "habitsRemovedWarningText": "Some habits which are past the cutoff time you set have been removed from the list."
+        "habitsRemovedWarningText": "Some habits which are past the cutoff time you set have been removed from the list.",
+        "titleMorningRoutinePostponed": "Morning routine postponed. Begin a habit to resume the morning routine.",
+        "titleEveningRoutinePostponed": "Evening routine postponed. Begin a habit to resume the evening routine."
     },
     "focusProgressInfo": {
         "pauseText": "Pause",
@@ -628,7 +630,8 @@
         "descriptionAdvanceAanalytics": "Track the exact time you spend on each app and browser tab during focus mode. Gain deeper insights into your productivity by understanding how your attention is distributed.",
         "switchButtonFocusVisualIndicatoText": "Show focus visual indicator",
         "descriptionFocusVisualIndicatorText": "Display a visual indicator when the focus alignment score drops.",
-        "privacyAdvanceAanalytics": "Data is only stored on your computer and not sent to our servers."
+        "privacyAdvanceAanalytics": "Data is only stored on your computer and not sent to our servers.",
+        "subTitleTabLimiter": "Works only during active Focus Sessions or active Blocking Schedules."
     },
     "focusPreferencesInfo": {
         "titleFocusType": "Use Block Lists to stay focused on a certain type of work.Start a focus session from the focus bear menu or use a blocking schedule.",
@@ -1700,7 +1703,8 @@
         "descriptionNew": "Click on ‘Request Permission’ to view the prompt on the browser. Then, select the ‘Allow’ option:",
         "buttonProceed": "Proceed",
         "buttonSkip": "Skip",
-        "bubbleText": "We need this to redirect the browser to the blocked page when you visit a distracting site"
+        "bubbleText": "We need this to redirect the browser to the blocked page when you visit a distracting site",
+        "buttonOpenPreferences": "Open Automation Preferences"
     },
     "onboardingPrivacyTipVcInfo": {
         "title": "Privacy and Security",
@@ -2651,8 +2655,10 @@
         "setSleepTime": "You do not have sleep time set.",
         "buttonSetTiming": "Set timing",
         "shutoffAbortedTextNew": "Your morning routine starts at <TIME> — time to log off and rest.",
-        "freeTimeTextNew": "Well done finishing your evening routine 👏\nYour sleep time is <CUTOFFTIME>.\nYour next morning routine starts at <STARTTIME>.\nRest well and recharge for a strong start tomorrow 💪"
-        
+        "freeTimeTextNew": "Well done finishing your evening routine 👏\nYour sleep time is <CUTOFFTIME>.\nYour next morning routine starts at <STARTTIME>.\nRest well and recharge for a strong start tomorrow 💪",
+        "freeTimeCancelledEveningRoutine": "You cancelled your evening routine for today. 👏\nYour sleep time is <CUTOFFTIME>.\nYour next morning routine starts at <STARTTIME>.\nRest well and recharge for a strong start tomorrow 💪",
+        "setSleepTimeCancelledEveningRoutine": "You cancelled your evening routine habits for today.\nYou do not have sleep time set.",
+        "nextRoutineTimeCancelledMorninigRoutine": "You cancelled your morning routine for today.\nYour next scheduled routine (<ROUTINE>) is set for <TIME>. Be ready to jump back in and continue building those healthy habits. You've got this!"
     },
     "breakStateVcInfo":{
         "buttonEnableBreaks": "Enable Breaks",
@@ -2687,12 +2693,12 @@
         "menuHelpAndSupport": "Help & Support",
         "menuUpgradeNow": "Upgrade Now",
         "menuTabAudit": "Tab Audit",
-        "disableReasonMorningRoutine": "Disabled because your morning routine is in progress.",
-        "disableReasonEveningRoutine": "Disabled because your evening routine is in progress.",
-        "disableReasonFocusSummary": "Disabled because your all-day summary is visible.",
-        "disableReasonShutoffTime": "Disabled because it’s your shutoff time.",
-        "disableReasonMircoBreaks": "Disabled because your micro break is in progress.",
-        "disableReasonCustomRoutine": "Disabled because your custom routine is in progress.",
+        "disableReasonMorningRoutine": "Disabled because your morning routine is in progress. Go to the Habits tab to continue.",
+        "disableReasonEveningRoutine": "Disabled because your evening routine is in progress. Go to the Habits tab to continue.",
+        "disableReasonFocusSummary": "Disabled because your all-day summary is visible. Go to the Habits tab to continue.",
+        "disableReasonShutoffTime": "Disabled because it’s your shutoff time. Go to the Habits tab to continue.",
+        "disableReasonMircoBreaks": "Disabled because your micro break is in progress. Go to the Micro Break tab to continue.",
+        "disableReasonCustomRoutine": "Disabled because your custom routine is in progress. Go to the Custom Routine tab to continue.",
         "superStrictNeedPasswordText": "You're running in Super Strict mode and no password is set. You will need to set a password to pause this custom schedule."
     },
     "browsersTabAuditVcInfo":{
@@ -2920,7 +2926,8 @@
         "descriptionText": "Set global keyboard shortcuts to instantly open Brain Dump, Focus Music, or Task List from anywhere on your Mac.",
         "brainDumpTitle": "Open Brain Dump:",
         "focusMusicTitle": "Open Focus Music:",
-        "taskListTitle": "Open Task List:"
+        "taskListTitle": "Open Task List:",
+        "focusSessionTitle": "Start focus session:"
     },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",

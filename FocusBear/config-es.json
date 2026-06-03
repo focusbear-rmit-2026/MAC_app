@@ -83,7 +83,9 @@
         "actionBarItemPlay": "Reproducir",
         "actionBarItemDone": "Hecho",
         "actionBarItemSkip": "Saltar",
-        "habitsRemovedWarningText": "Algunos hábitos que pasaron la hora de corte que estableciste han sido eliminados de la lista."
+        "habitsRemovedWarningText": "Algunos hábitos que pasaron la hora de corte que estableciste han sido eliminados de la lista.",
+        "titleMorningRoutinePostponed": "Rutina de la mañana pospuesta. Inicia un hábito para reanudar la rutina de la mañana.",
+        "titleEveningRoutinePostponed": "Rutina de la tarde pospuesta. Inicia un hábito para reanudar la rutina de la tarde."
     },
     "focusProgressInfo": {
         "pauseText": "Pausar",
@@ -640,7 +642,8 @@
         "descriptionAdvanceAanalytics": "Registra el tiempo exacto que pasas en cada app y pestaña de navegador durante el modo de enfoque. Obtén información más detallada sobre tu productividad sabiendo cómo se distribuye tu atención.",
         "switchButtonFocusVisualIndicatoText": "Mostrar indicador visual de enfoque",
         "descriptionFocusVisualIndicatorText": "Mostrar un indicador visual cuando baje la puntuación de alineación de enfoque.",
-        "privacyAdvanceAanalytics": "Los datos sólo se almacenan en tu computador y no se envían a nuestros servidores."
+        "privacyAdvanceAanalytics": "Los datos sólo se almacenan en tu computador y no se envían a nuestros servidores.",
+        "subTitleTabLimiter": "Funciona solo durante sesiones de enfoque activas o bloqueos programados activos."
     },
     "focusPreferencesInfo": {
         "titleFocusType": "Utiliza las Listas de Bloqueos para concentrarte en un determinado tipo de trabajo. Inicia un modo de enfoque desde el menú de Focus Bear o utiliza un Horario de Bloqueo.",
@@ -1699,7 +1702,8 @@
 		"descriptionNew": "Haz clic en ‘Solicitar permiso’ para ver el aviso en el navegador. Luego selecciona ‘Permitir’:",
 		"buttonProceed": "Continuar",
 		"buttonSkip": "Omitir",
-		"bubbleText": "Necesitamos esto para redirigir el navegador a la página de bloqueo cuando visites un sitio que distrae"
+		"bubbleText": "Necesitamos esto para redirigir el navegador a la página de bloqueo cuando visites un sitio que distrae",
+        "buttonOpenPreferences": "Abrir preferencias de automatización"
     },
     "onboardingPrivacyTipVcInfo": {
         "title": "Privacidad y Seguridad",
@@ -2649,7 +2653,10 @@
         "setSleepTime": "No tienes configurado un horario de sueño.",
         "buttonSetTiming": "Configurar horario",
         "shutoffAbortedTextNew": "Tu rutina matutina comienza a las <TIME> — es hora de desconectarte y descansar.",
-        "freeTimeTextNew": "¡Bien hecho al terminar tu rutina nocturna 👏Tu hora de dormir es a las <CUTOFFTIME>.\nTu próxima rutina matutina comienza a las <STARTTIME>.\nDescansa bien y recarga energías para empezar fuerte mañana 💪"
+        "freeTimeTextNew": "¡Bien hecho al terminar tu rutina nocturna 👏Tu hora de dormir es a las <CUTOFFTIME>.\nTu próxima rutina matutina comienza a las <STARTTIME>.\nDescansa bien y recarga energías para empezar fuerte mañana 💪",
+        "freeTimeCancelledEveningRoutine": "Has cancelado tu rutina de la tarde de hoy. 👏\nTu hora de dormir es a las <CUTOFFTIME>.\nTu próxima rutina de la mañana comienza a las <STARTTIME>.\nDescansa bien y recarga energías para empezar mañana con fuerza. 💪",
+        "setSleepTimeCancelledEveningRoutine": "Has cancelado los hábitos de tu rutina de la tarde para hoy.\nNo tienes configurada una hora de sueño.",
+        "nextRoutineTimeCancelledMorninigRoutine": "Has cancelado tu rutina de la mañana de hoy.\nTu próxima rutina programada (<ROUTINE>) comenzará a las <TIME>. Prepárate para retomarla y seguir fortaleciendo esos hábitos saludables. ¡Tú puedes!"
     },
     "breakStateVcInfo":{
         "buttonEnableBreaks": "Activar descansos",
@@ -2684,12 +2691,12 @@
         "menuHelpAndSupport": "Ayuda y soporte",
         "menuUpgradeNow": "Actualizar ahora",
         "menuTabAudit": "Auditoría de pestañas",
-        "disableReasonMorningRoutine": "Desactivado porque tu rutina matutina está en progreso.",
-        "disableReasonEveningRoutine": "Desactivado porque tu rutina nocturna está en progreso.",
-        "disableReasonFocusSummary": "Desactivado porque tu resumen de todo el día está visible.",
-        "disableReasonShutoffTime": "Desactivado porque es tu hora de apagado.",
-        "disableReasonMircoBreaks": "Desactivado porque tu micro descanso está en progreso.",
-        "disableReasonCustomRoutine": "Desactivado porque tu rutina personalizada está en progreso.",
+        "disableReasonMorningRoutine": "Desactivado porque tu rutina de la mañana está en curso. Ve a la pestaña Hábitos para continuar.",
+        "disableReasonEveningRoutine": "Desactivado porque tu rutina de la tarde está en curso. Ve a la pestaña Hábitos para continuar.",
+        "disableReasonFocusSummary": "Desactivado porque tu resumen del día está visible. Ve a la pestaña Hábitos para continuar.",
+        "disableReasonShutoffTime": "Desactivado porque es tu hora de desconexión. Ve a la pestaña Hábitos para continuar.",
+        "disableReasonMircoBreaks": "Desactivado porque tu microdescanso está en curso. Ve a la pestaña Microdescanso para continuar.",
+        "disableReasonCustomRoutine": "Desactivado porque tu rutina personalizada está en curso. Ve a la pestaña Rutina personalizada para continuar.",
         "superStrictNeedPasswordText": "Estás en modo Super Estricto y no tienes contraseña configurada. Necesitarás establecer una contraseña para pausar este horario personalizado."
     },
     "browsersTabAuditVcInfo":{
@@ -2917,7 +2924,8 @@
         "descriptionText": "Configura atajos de teclado globales para abrir al instante Brain Dump, Focus Music o la lista de tareas desde cualquier lugar de tu Mac.",
         "brainDumpTitle": "Abrir Brain Dump:",
         "focusMusicTitle": "Abrir Focus Music:",
-        "taskListTitle": "Abrir lista de tareas:"
+        "taskListTitle": "Abrir lista de tareas:",
+        "focusSessionTitle": "Iniciar sesión de enfoque:"
     },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",

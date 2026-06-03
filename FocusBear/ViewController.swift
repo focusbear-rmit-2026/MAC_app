@@ -368,6 +368,18 @@ class ViewController: NSViewController {
         customMessageVcObj?.lblMessage.stringValue = msg
     }
     
+    func showOneClickSkipHabitView(completionHandler: @escaping() -> ()){
+        addLog(text: "Show One Click Skip Habit View")
+        self.view.addSubview(getSkipHabitVcObject().view)
+        self.view.addConstraints(subView: getSkipHabitVcObject().view)
+        getSkipHabitVcObject().requestAuthorization(
+            action: {
+                completionHandler()
+            }
+        )
+    }
+    
+    
     @IBAction func btnHiddenClicked(_ sender: Any) {
         //mainWindowControllerObj?.window?.close()
     }

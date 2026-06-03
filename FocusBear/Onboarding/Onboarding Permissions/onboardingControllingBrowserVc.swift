@@ -515,11 +515,10 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
                         }
                         
                         urlError = urlError.replacingOccurrences(of: "<APPNAME>", with: appName)
-                        var buttonPreferencesText = "Open System Preferences"
+                        var buttonPreferencesText = "Open Automation Preferences"
                         
-                        
-                        if let firefoxPermissionsVcInfo = configjson.value(forKey: "firefoxPermissionsVcInfo") as? NSDictionary{
-                            buttonPreferencesText = firefoxPermissionsVcInfo.value(forKey: "buttonPreferencesText") as? String ?? buttonPreferencesText
+                        if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
+                            buttonPreferencesText = onboardingControllingBrowserVcInfo.value(forKey: "buttonOpenPreferences") as? String ?? buttonPreferencesText
                         }
                         
                         alert.messageText = urlError

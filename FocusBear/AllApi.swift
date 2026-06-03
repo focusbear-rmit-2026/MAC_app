@@ -697,6 +697,8 @@ class AllApi:NSObject {
     
     var isApiAddAdditionalGoalsErrorFound = false
     
+    var isApiUnCompleteCurrentSequenceErrorFound = false
+    
     var errorCodeRequestTimeout = -1001
     var errorCodeNoInternet = -1009
     
@@ -2157,6 +2159,109 @@ class AllApi:NSObject {
             }
         }
     }
+    
+    func uncompleteCurrentSequence(activity_sequence_id:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+        addLog(text: "func call:- uncompleteCurrentSequence:- completed-activity-sequence/activity_sequence_id/force-complete-current-sequence")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            let responsePath = "\(baseUrl)/completed-activity-sequence/\(activity_sequence_id)/uncomplete"
+
+            if let responsePathUrl = NSURL(string: responsePath){
+                addLog(text: "api call uncompleteCurrentSequence \(responsePathUrl)")
+                let token = appdelegate!.credential?.accessToken ?? ""
+                
+                let request = makeRequest(responsePathUrl: responsePathUrl)
+                request.httpMethod = "POST";
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                
+                let json: [String: Any] = [:]
+                let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                
+                
+                request.httpBody = jsonData
+                
+                let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                    data, response, error in
+                    
+                    if let httpResponse = response as? HTTPURLResponse {
+                        self.isApiUnCompleteCurrentSequenceErrorFound = false
+                        if httpResponse.statusCode == 201{
+                            addLog(text: "api call uncompleteCurrentSequence success")
+                            if data != nil{
+                                do {
+                                    if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                        addLog(text: "api call uncompleteCurrentSequence success")
+                                        print(jsonResult)
+                                        completionHandler(jsonResult)
+                                        return
+                                    }
+                                    
+                                }catch{
+                                    addLog(text: "api call uncompleteCurrentSequence error:- \(error.localizedDescription)")
+                                    print(error)
+                                    completionHandler(nil)
+                                    return
+                                }
+                            }
+                        }else{
+                            addLog(text: "api call uncompleteCurrentSequence error:- statusCode is \(httpResponse.statusCode)")
+                            self.writeJsonInLog(data: data)
+                            addLog(text: "accessToken is:- \(token)")
+                            completionHandler(nil)
+                            return
+                        }
+                    }
+                    
+                    
+                    
+                    
+                    if error != nil {
+                        addLog(text: "api call uncompleteCurrentSequence error:- \(error!.localizedDescription)")
+                        if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                            if self.isApiUnCompleteCurrentSequenceErrorFound{
+                                self.isApiUnCompleteCurrentSequenceErrorFound = false
+                                completionHandler(nil)
+                                return
+                            }else{
+                                self.isApiUnCompleteCurrentSequenceErrorFound = true
+                                addLog(text: "error uncompleteCurrentSequence:- try second time")
+                                self.getLastActivityInfo(completionHandler: { json in
+                                    completionHandler(json)
+                                    return
+                                })
+                                
+                                self.uncompleteCurrentSequence(activity_sequence_id: activity_sequence_id, completionHandler: {json in
+                                    
+                                    completionHandler(json)
+                                    return
+                                })
+                                
+                            }
+                        }else{
+                            completionHandler(nil)
+                            return
+                        }
+                        
+                        
+                    }else{
+                        completionHandler(nil)
+                        return
+                    }
+                    
+                    
+                }
+                
+                task.resume()
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
+    
     func getAllTracks(completionHandler: @escaping(_ stats:[NSDictionary]?) -> ()){
         addLog(text: "func call:- getAllTracks")
         appdelegate!.credentialsManager.credentials {credentialsInfo in
@@ -3947,7 +4052,17 @@ class AllApi:NSObject {
     
     func chatGPTIsAppSafe(appName: String, focus_mode: String, intention:String, other_explanations_including_apps:[String], currentTaskInToDoPlayer:String?, currentHabitName:String?, completionHandler: @escaping(_ newDic:NSDictionary?, _ appName:String?, _ payload: [String: Any]?) -> ()){
         addLog(text: "func call:- chatGPTIsAppSafe")
-        
+        var appName = appName
+        //var tabTitle:String?
+        if appName == "Claude"{
+            if let runningApp = NSWorkspace.shared.frontmostApplication{
+                if let title = claudeTitleReader.shared.chatTitle(for: runningApp){
+                    print(title)
+                    //tabTitle = title
+                    appName = appName + " - " + title
+                }
+            }
+        }
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
             
@@ -3985,6 +4100,10 @@ class AllApi:NSObject {
                     if currentFocusModeStrictness == ._SUPER_STRICT_ {
                         json["task_must_align_to_focus_intention"] = true
                     }
+                    
+//                    if let tabTitle = tabTitle{
+//                        json["tab_title"] = tabTitle
+//                    }
                     addLog(text: "chatGPTIsAppSafe: json data for api is:- \(json)")// will remove it after some time
                     request.timeoutInterval = 15
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)

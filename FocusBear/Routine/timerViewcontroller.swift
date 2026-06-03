@@ -75,6 +75,11 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     var arrStartCustomRoutineMenu = [NSMenuItem]()
     var isActivityPaused = false
     
+    var isVideoLodded = false
+    var arrImgUrls = [String]()
+    var arrCheckList = [[String:Any]]()
+    var images: [NSImage?] = []
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -320,9 +325,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }
         }
     }
-    var isVideoLodded = false
-    var arrImgUrls = [String]()
-    var arrCheckList = [[String:Any]]()
+    
     
     func changeVideoUrl(url:String){
         var videoUrl = url
@@ -546,6 +549,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     func checkInstructionsState(text_instructions:String, imgUrls:[String]){
         arrImgUrls.removeAll()
+        images.removeAll()
         if !text_instructions.isEmpty || imgUrls.count != 0{
             if !text_instructions.isEmpty{
                 textViewInstructions.enclosingScrollView?.isHidden = false
@@ -555,8 +559,10 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }
             if imgUrls.count != 0{
                 arrImgUrls = imgUrls
-                collectionViewImges.enclosingScrollView?.isHidden = false
-                collectionViewImges.reloadData()
+                
+                if !imgUrls.isEmpty {
+                    loadImages(urls: imgUrls)
+                }
             }else{
                 collectionViewImges.enclosingScrollView?.isHidden = true
             }
@@ -591,6 +597,37 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
     }
     
+    
+
+    func loadImages(urls: [String]) {
+        images = Array(repeating: nil, count: urls.count)
+
+        let group = DispatchGroup()
+
+        for (index, urlString) in urls.enumerated() {
+            guard let url = URL(string: urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? urlString) else {
+                continue
+            }
+
+            group.enter()
+
+            URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
+                defer { group.leave() }
+
+                guard let data,
+                      let image = NSImage(data: data) else {
+                    return
+                }
+
+                self?.images[index] = image
+            }.resume()
+        }
+
+        group.notify(queue: .main) { [weak self] in
+            self?.collectionViewImges.enclosingScrollView?.isHidden = false
+            self?.collectionViewImges.reloadData()
+        }
+    }
     
     func checkListState(list:[String]){
         arrCheckList.removeAll()
@@ -1267,7 +1304,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             setCountDownTimer()
             
             //focusButtonService---//
-            focusButtonServiceObject.resumeHabit()
+            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+                focusButtonServiceObject.resumeHabit()
+            }
             //--------------//
         }else{
             if url != nil{
@@ -1782,7 +1821,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             allApiObject.capturePosthog(event: "resume-activity", metadata: [:])
             
             //focusButtonService---//
-            focusButtonServiceObject.resumeHabit()
+            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+                focusButtonServiceObject.resumeHabit()
+            }
             //--------------//
             btnBackToHabits.isHidden = true
             
@@ -1820,7 +1861,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             timer?.invalidate()
             
             //focusButtonService---//
-            focusButtonServiceObject.pauseHabit()
+            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+                focusButtonServiceObject.pauseHabit()
+            }
             //--------------//
             
             
@@ -1933,6 +1976,11 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 menuItemChooseVideo.isHidden = true
                 btnSkipHabit.title = buttonMoreActionsText
                 btnBackToHabits.isHidden = true
+            }
+            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+                if currentHabitPlaying != nil{
+                    closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
+                }
             }
         }
     }
@@ -2147,24 +2195,16 @@ extension timerViewcontroller:NSTextViewDelegate{
 extension timerViewcontroller:NSCollectionViewDelegate, NSCollectionViewDataSource {
     
     func collectionView(_ collectionView: NSCollectionView, numberOfItemsInSection section: Int) -> Int {
-        
-        return arrImgUrls.count
+        return images.count
     }
     
     func collectionView(_ collectionView: NSCollectionView, itemForRepresentedObjectAt indexPath: IndexPath) -> NSCollectionViewItem {
         let item = collectionView.makeItem(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "collectionViewItemImage"), for: indexPath) as! collectionViewItemImage
         
-        if indexPath.item < arrImgUrls.count{
-            if let url = URL(string: arrImgUrls[indexPath.item].addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? arrImgUrls[indexPath.item]){
-                DispatchQueue.global().async {
-                    DispatchQueue.main.async {
-                        item.imgView.image = NSImage(contentsOf: url)// todo sahi kro ise 
-                    }
-                }
-                
-            }else{
-                item.imgView.image = nil
-            }
+        if indexPath.item < images.count {
+            item.imgView.image = images[indexPath.item]
+        }else{
+            item.imgView.image = nil
         }
         
         return item

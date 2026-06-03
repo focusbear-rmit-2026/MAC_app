@@ -331,10 +331,13 @@ func calculateFocusAlignmentScore(){
             lastFocusAlignmentShownScore = totalAlignmentScore// refresh lastFocusAlignmentShownScore
         }
     }
-    currentFocusAlignmentScore = totalAlignmentScore
+    
+    if currentFocusAlignmentScore != totalAlignmentScore{
+        currentFocusAlignmentScore = totalAlignmentScore
+        taskPlayerVcObj?.setFocusAlignmentScore()
+    }
     lastFocusAlignmentScore = totalAlignmentScore
     
-    taskPlayerVcObj?.setFocusAlignmentScore()
     if SettingsManagerObject.isFocusVisualIndicatorEnabled{
         if nudgeFocusAlignmentScoreDippingWcObject != nil{
             if nudgeFocusAlignmentScoreDippingWcObject?.window?.isVisible ?? false{
@@ -1507,11 +1510,66 @@ func checkIsAnyOldFoucsModeRemaining(){
                             if let startDateString = focusMode["lastStartedDate"] as? String, let endDateString = focusMode["lastScheduledEndDate"] as? String{
                                 let startDate = getDateFromString(date: startDateString, dateFormat: "yyyy-MM-dd HH:mm:ss") ?? Date()
                                 startFocusModeTime = startDate
-                                let endDate = getDateFromString(date: endDateString, dateFormat: "yyyy-MM-dd HH:mm:ss") ?? finishFocusMoedTime
+                                var endDate = getDateFromString(date: endDateString, dateFormat: "yyyy-MM-dd HH:mm:ss") ?? finishFocusMoedTime
                                 
                                 addLog(text: "Retrieved startDateString: \(startDateString) and endDateString: \(endDateString) from local")
                                 
-                                if Date().compare(endDate) == .orderedDescending {
+                                // Focus mode end time - actual duration to be stored and also the end time..if current time is more than 24 hrs + end time, cancel it, else resume it 3.32.490
+                                
+                                // Recovery logic for interrupted focus modes.
+                                // If a matching focus mode is found in local storage with saved remaining time,
+                                // allow it to resume even after its scheduled end time has passed.
+                                // However, if more than 24 hours have elapsed since the scheduled end time,
+                                // consider the session expired and do not restore it.
+                                
+                                var lastRunningFocusModeDurationFromLocal:Int = 0
+                                var shouldExtendFocusModeIfRemaining = false
+                                if let lastRunningFocusModeInfo = UserDefaults.standard.object(forKey: kUserdefaultsLastRunningFocusModeInfo) as? [String:Any]{
+                                    if let lastRunningFocusModeId = lastRunningFocusModeInfo["id"] as? String, let remainingSeconds = lastRunningFocusModeInfo["remainingSeconds"] as? Int{
+                                        if lastRunningFocusModeId == currentFocusModeId{
+                                            addLog(text: "Local recovery data matches current focus mode id: \(currentFocusModeId)")
+                                            lastRunningFocusModeDurationFromLocal = remainingSeconds
+                                            addLog(text: "Recovered remaining duration from local storage: \(remainingSeconds) seconds")
+                                            let twentyFourHoursLater = endDate.addingTimeInterval(24 * 60 * 60)
+
+                                            if Date() > twentyFourHoursLater {
+                                                addLog(text: "More than 24 hours have passed since focus mode ended")
+                                                shouldExtendFocusModeIfRemaining = false
+                                            }else{
+                                                shouldExtendFocusModeIfRemaining = true
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                
+                                if shouldExtendFocusModeIfRemaining{
+                                    diffSeconds = lastRunningFocusModeDurationFromLocal
+                                    addLog(text: "Recovered remaining duration from local storage: \(diffSeconds) seconds")
+                                    endDate = Calendar.current.date(byAdding: .second, value: diffSeconds, to: Date()) ?? Date()
+                                    appdelegate!.remainingFocusModeSecondsAfterPaused = diffSeconds
+                                    DispatchQueue.main.async {
+                                        addLog(text: "Focus mode resumed. Remaining duration: \(diffSeconds) seconds. Reason: Current time < end time + 24 hrs") // added in v 3.32.490
+                                        resumeFocusModeAfterAppStartted(diffSeconds: diffSeconds, focusMode: focusMode, finishFocusMoedTime: endDate, index: i)
+                                        focusModeActualDurationPerformed = Calendar.current.dateComponents([.second], from: startDate, to: Date()).second ?? diffSeconds//dont change this line place because  focusModeActualDurationPerformed = 0 in resumeFocusModeAfterAppStartted func
+                                        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
+                                            let minute = diffSeconds / 60
+                                            getTaskPlayerVcObject().loadView()
+                                            getTaskPlayerVcObject().loadRequest()
+                                            shouldReloadTaskPlayer = true
+                                            showTaskPlayerWindow(totalDuration: minute, intention: whatToAchieveInFocusBlock, automatically:true)
+                                        }else{
+                                            let minute = diffSeconds / 60
+                                            if !getTaskPlayerVcObject().isViewLoaded{
+                                                getTaskPlayerVcObject().loadView()
+                                            }
+                                            taskPlayerVcObj?.reloadData(totalDuration: minute, intention: whatToAchieveInFocusBlock)
+                                            shouldReloadTaskPlayer = false
+                                        }
+                                    }
+                                }
+                                //-------------------------------------------//
+                                else if Date().compare(endDate) == .orderedDescending {
                                     focusModeActualDurationPerformed = Calendar.current.dateComponents([.second], from: startDate, to: endDate).second ?? diffSeconds
                                     addLog(text: "focus mode finished with duration seconds: \(focusModeActualDurationPerformed) reason:- current time is greater then focus mode end time ")
                                     allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: endDate, rating:nil, completionHandler: {newDic in
@@ -2149,10 +2207,17 @@ final class SafeDict {
 
 func startWorkFocusAutomaticallyClicked(id:String){
     addLog(text: "Alert Start Wrok Focus Clicked")
+    
+    if !getTaskPlayerVcObject().isViewLoaded{
+        getTaskPlayerVcObject().loadView()
+    }
+    getTaskPlayerVcObject().loadRequest()
+    
     for i in 0..<arrFocusType.count{
         let focus = arrFocusType[i]
         if let focusId = focus["id"] as? String{
             if focusId == id{
+                var minutes  = 25
                 let calendar = Calendar.current
                 endFocusModeTime = calendar.date(byAdding: .minute, value: 5, to: Date())
                 startFocusModeTime = Date()
@@ -2180,13 +2245,31 @@ func startWorkFocusAutomaticallyClicked(id:String){
                     timerForFocusModeEndNotification?.invalidate()
                     timerForFocusModeEndNotification = nil
                 }
-                appdelegate?.setFocusModeTimer(hour: nil, minute: 25)
+                appdelegate?.setFocusModeTimer(hour: nil, minute: minutes)
 
                 //focusButtonService
-                focusButtonServiceObject.startFocusSession(seconds: 25*60)
+                focusButtonServiceObject.startFocusSession(seconds: minutes*60)
+                
                 
                 isFocusModeStartedFromPomodoroMode = false
                 whatToAchieveInFocusBlock = ""
+                
+                DispatchQueue.global().async {
+                    sleep(1)
+                    DispatchQueue.main.async {
+                        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
+                            showTaskPlayerWindow(totalDuration: minutes, intention: whatToAchieveInFocusBlock, automatically:true)
+                        }else{
+                            if !getTaskPlayerVcObject().isViewLoaded{
+                                getTaskPlayerVcObject().loadView()
+                            }
+                            taskPlayerVcObj?.reloadData(totalDuration: minutes, intention: whatToAchieveInFocusBlock)
+                            shouldReloadTaskPlayer = false
+                            mainWindowControllerObj?.window?.close()
+                        }
+                    }
+                }
+                
                 
                 appdelegate!.focusModeStartted(isStartedByPusher: false)
                 allApiObject.capturePosthog(event: "start-work-focus-mode", metadata: [:])
@@ -2781,3 +2864,98 @@ func checkAllFocusModes(){
     
     UserDefaults.standard.set(true, forKey: kUserdefaultsFocusTipsShown)// The option to setup Focus Mode is no longer required for the user.
 }
+
+
+//saveRemainingFocusModeDuration
+// Focus mode end time - actual duration to be stored and also the end time..if current time is more than 24 hrs + end time, cancel it, else resume it 3.32.490
+func saveRemainingFocusModeDuration() {
+    guard let endFocusModeTime = endFocusModeTime,
+          isFocusModeRunning,
+          !appdelegate!.isAutoMeetingsModeStarted else {
+        return
+    }
+
+    guard let selectedFocusMode = arrFocusType.first(where: {
+        ($0["isOn"] as? Bool) == true
+    }),
+    let id = selectedFocusMode["id"] as? String else {
+        return
+    }
+
+    let remainingSeconds:Int = Int(max(0, endFocusModeTime.timeIntervalSince(Date())))
+
+    UserDefaults.standard.set(
+        ["id": id, "remainingSeconds": remainingSeconds],
+        forKey: kUserdefaultsLastRunningFocusModeInfo
+    )
+}
+
+
+
+//func readClaudeAppChatTitle(runningApp:NSRunningApplication){
+//    let appElement = AXUIElementCreateApplication(runningApp.processIdentifier)
+//
+//    var windowRef: CFTypeRef?
+//
+//    let result = AXUIElementCopyAttributeValue(
+//        appElement,
+//        kAXFocusedWindowAttribute as CFString,
+//        &windowRef
+//    )
+//
+//    if result == .success,
+//       let window = windowRef {
+//        let title = getClaudeConversationTitle(from: window as! AXUIElement)
+//        print(title)
+//    }
+//}
+//
+//func getClaudeConversationTitle(from window: AXUIElement) -> String? {
+//    var texts: [String] = []
+//
+//    func collectTexts(_ element: AXUIElement) {
+//        var roleRef: CFTypeRef?
+//
+//        if AXUIElementCopyAttributeValue(
+//            element,
+//            kAXRoleAttribute as CFString,
+//            &roleRef
+//        ) == .success,
+//           let role = roleRef as? String,
+//           role == kAXStaticTextRole {
+//
+//            var valueRef: CFTypeRef?
+//
+//            if AXUIElementCopyAttributeValue(
+//                element,
+//                kAXValueAttribute as CFString,
+//                &valueRef
+//            ) == .success,
+//               let value = valueRef as? String,
+//               !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+//
+//                texts.append(value)
+//            }
+//        }
+//
+//        var childrenRef: CFTypeRef?
+//
+//        if AXUIElementCopyAttributeValue(
+//            element,
+//            kAXChildrenAttribute as CFString,
+//            &childrenRef
+//        ) == .success,
+//           let children = childrenRef as? [AXUIElement] {
+//
+//            children.forEach(collectTexts)
+//        }
+//    }
+//
+//    collectTexts(window)
+//
+//    guard texts.count > 3 else {
+//        return nil
+//    }
+//
+//    return texts[3] // 4th item
+//}

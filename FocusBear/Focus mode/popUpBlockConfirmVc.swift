@@ -608,12 +608,14 @@ class popUpBlockConfirmVc: NSViewController {
         hidePopUpAddNewFocusGoalView()
         hidePopUpSaveThisTaskForLaterView()
         
-        if getCurrentTaskInFocusMode() == nil && whatToAchieveInFocusBlock.isEmpty{// added on 2/9/25 on version 2.27.409
-            showoPopUpAddNewFocusGoalView()
-            let pickTaskText =  "AI can’t tell if this fits your work. Pick a task to guide Focus Bear!"
-            popUpAddNewFocusGoalVcObj?.lblTitle.stringValue = pickTaskText
-            if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
-                popUpAddNewFocusGoalVcObj?.lblTitle.stringValue = popUpBlockConfirmVcInfo.value(forKey: "pickTaskText") as? String ?? pickTaskText
+        if SettingsManagerObject.isAiCheckUrlEnabled{// check added 3.32.491
+            if getCurrentTaskInFocusMode() == nil && whatToAchieveInFocusBlock.isEmpty{// added on 2/9/25 on version 2.27.409
+                showoPopUpAddNewFocusGoalView()
+                let pickTaskText =  "AI can’t tell if this fits your work. Pick a task to guide Focus Bear!"
+                popUpAddNewFocusGoalVcObj?.lblTitle.stringValue = pickTaskText
+                if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                    popUpAddNewFocusGoalVcObj?.lblTitle.stringValue = popUpBlockConfirmVcInfo.value(forKey: "pickTaskText") as? String ?? pickTaskText
+                }
             }
         }
         
