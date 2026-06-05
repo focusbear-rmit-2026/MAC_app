@@ -1739,6 +1739,25 @@ func getCustomAlertWindowObject()->commonWindowController{
 }
 
 
+// Custom suggest focus mode window
+
+var suggestFocusModeVcObj:suggestFocusModeVc?
+func getSuggestFocusModeVcObject()->suggestFocusModeVc{
+    if suggestFocusModeVcObj == nil{
+        suggestFocusModeVcObj = nagsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("suggestFocusModeVc")) as? suggestFocusModeVc
+    }
+    return suggestFocusModeVcObj!
+}
+
+var suggestFocusModeWcObj:commonWindowController?
+func getSuggestFocusModeWindowObject()->commonWindowController{
+    if suggestFocusModeWcObj == nil{
+        suggestFocusModeWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+    }
+    return suggestFocusModeWcObj!
+}
+
+
 //// unverifiedEmail window
 var unverifiedEmailVcObj: unverifiedEmailVc?
 func getUnverifiedEmailVcObject()->unverifiedEmailVc{

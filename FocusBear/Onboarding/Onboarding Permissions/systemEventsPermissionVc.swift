@@ -10,6 +10,7 @@ import Cocoa
 
 class systemEventsPermissionVc: NSViewController {
     
+    @IBOutlet weak var btnImagePermission: cursorButton!
     @IBOutlet weak var imgViewPermission: NSImageView!
     @IBOutlet weak var imgViewTick: NSImageView!
     @IBOutlet weak var imgViewBear: NSImageView!
@@ -59,6 +60,7 @@ class systemEventsPermissionVc: NSViewController {
         getDistractionBlockingProgressVcObj().setProgress(level: 3, progress: 0.25)
 
         imgViewTick.isHidden = true
+        btnImagePermission.isHidden = false
     }
     
     override func viewWillAppear() {
@@ -146,6 +148,7 @@ class systemEventsPermissionVc: NSViewController {
                 }
                 
                 imgViewTick.isHidden = false
+                btnImagePermission.isHidden = true
                 imgViewPermission.alphaValue = 0.5
                 permissionSet = true
                 imgViewBear.isHidden = true
@@ -201,4 +204,11 @@ class systemEventsPermissionVc: NSViewController {
         }
         
     }
+    
+    @IBAction func btnImagePermissionClicked(_ sender: Any) {
+        if imgViewTick.isHidden{
+            btnGrantPermissionClicked(self)
+        }
+    }
+    
 }

@@ -2205,7 +2205,7 @@ final class SafeDict {
 
 
 
-func startWorkFocusAutomaticallyClicked(id:String){
+func startWorkFocusAutomaticallyClicked(id:String, minutes:Int, intention:String){
     addLog(text: "Alert Start Wrok Focus Clicked")
     
     if !getTaskPlayerVcObject().isViewLoaded{
@@ -2217,9 +2217,8 @@ func startWorkFocusAutomaticallyClicked(id:String){
         let focus = arrFocusType[i]
         if let focusId = focus["id"] as? String{
             if focusId == id{
-                var minutes  = 25
                 let calendar = Calendar.current
-                endFocusModeTime = calendar.date(byAdding: .minute, value: 5, to: Date())
+                endFocusModeTime = calendar.date(byAdding: .minute, value: minutes, to: Date())
                 startFocusModeTime = Date()
                 currentFocusModeStrictness = ._NORMAL_
                 addLog(text: "focus mode is normal mode")
@@ -2252,7 +2251,7 @@ func startWorkFocusAutomaticallyClicked(id:String){
                 
                 
                 isFocusModeStartedFromPomodoroMode = false
-                whatToAchieveInFocusBlock = ""
+                whatToAchieveInFocusBlock = intention
                 
                 DispatchQueue.global().async {
                     sleep(1)
@@ -2360,8 +2359,9 @@ func addEntryInProductivityStatsCsv(){
 }
 
 func addEntryInUsageTimingsExplanationCsv(){
+    addLog(text: "Try Add Entry In Usage Timings Explanation Csv")
     if SettingsManagerObject.isAdvancedAnalyticsInFocusModeEnabled{
-        
+        addLog(text: "Setting advanced analytics is enabled")
         var arrAllAppsTabsData = [[String:Any]]()
         let arrAllUrlsRecodDuringFocusMode = tabMatricsObject.arrAllUrlsRecodDuringFocusMode
         let arrAllAppsRecodDuringFocusMode = tabMatricsObject.arrAllAppsRecodDuringFocusMode

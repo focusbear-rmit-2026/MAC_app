@@ -7348,7 +7348,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         let nameLowercased = name.lowercased()
                         if !focusDefaultAllowApps.contains(nameLowercased) && nameLowercased != selfAppName.lowercased(){
                             exitFullScreen(runningApp:runningApp)
-                            runningApp.hide() 
+                            runningApp.hide()
                         }
                     }
                 }

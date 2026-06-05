@@ -826,13 +826,13 @@
                                                             </view>
                                                         </box>
                                                         <box hidden="YES" boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="HRn-0e-gk0">
-                                                            <rect key="frame" x="0.0" y="48" width="400" height="36"/>
+                                                            <rect key="frame" x="0.0" y="43" width="400" height="41"/>
                                                             <view key="contentView" id="Fh1-MI-HA4">
-                                                                <rect key="frame" x="0.0" y="0.0" width="400" height="36"/>
+                                                                <rect key="frame" x="0.0" y="0.0" width="400" height="41"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
                                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="e4a-WK-2Q7">
-                                                                        <rect key="frame" x="11" y="3" width="367" height="30"/>
+                                                                        <rect key="frame" x="11" y="3" width="367" height="35"/>
                                                                         <constraints>
                                                                             <constraint firstAttribute="height" relation="lessThanOrEqual" constant="35" id="VXO-8z-hAC"/>
                                                                         </constraints>
@@ -843,7 +843,7 @@
                                                                         </textFieldCell>
                                                                     </textField>
                                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="fjG-P5-eWl">
-                                                                        <rect key="frame" x="-2" y="18" width="12" height="15"/>
+                                                                        <rect key="frame" x="-2" y="23" width="12" height="15"/>
                                                                         <textFieldCell key="cell" title="*" id="p96-g8-h21">
                                                                             <font key="font" size="13" name="CourierNewPSMT"/>
                                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -851,7 +851,7 @@
                                                                         </textFieldCell>
                                                                     </textField>
                                                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="W6C-Hf-1LJ">
-                                                                        <rect key="frame" x="385" y="18" width="15" height="15"/>
+                                                                        <rect key="frame" x="385" y="23" width="15" height="15"/>
                                                                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="validIcon" id="lkx-Oz-GKx"/>
                                                                     </imageView>
                                                                 </subviews>
@@ -866,13 +866,13 @@
                                                             </view>
                                                         </box>
                                                         <box hidden="YES" boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="5PV-ED-2LN">
-                                                            <rect key="frame" x="0.0" y="43" width="400" height="41"/>
+                                                            <rect key="frame" x="0.0" y="63" width="400" height="21"/>
                                                             <view key="contentView" id="vMg-RO-YMl">
-                                                                <rect key="frame" x="0.0" y="0.0" width="400" height="41"/>
+                                                                <rect key="frame" x="0.0" y="0.0" width="400" height="21"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
                                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2Er-Nm-mfN">
-                                                                        <rect key="frame" x="11" y="3" width="367" height="35"/>
+                                                                        <rect key="frame" x="11" y="3" width="367" height="15"/>
                                                                         <constraints>
                                                                             <constraint firstAttribute="height" relation="lessThanOrEqual" constant="35" id="eDo-xP-TYQ"/>
                                                                         </constraints>
@@ -883,7 +883,7 @@
                                                                         </textFieldCell>
                                                                     </textField>
                                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="epq-EP-fT5">
-                                                                        <rect key="frame" x="-2" y="23" width="12" height="15"/>
+                                                                        <rect key="frame" x="-2" y="3" width="12" height="15"/>
                                                                         <textFieldCell key="cell" title="*" id="jcJ-vi-fy4">
                                                                             <font key="font" size="13" name="CourierNewPSMT"/>
                                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -891,7 +891,7 @@
                                                                         </textFieldCell>
                                                                     </textField>
                                                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="diQ-6n-BpF">
-                                                                        <rect key="frame" x="385" y="23" width="15" height="15"/>
+                                                                        <rect key="frame" x="385" y="3" width="15" height="15"/>
                                                                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="validIcon" id="cUZ-fV-ac9"/>
                                                                     </imageView>
                                                                 </subviews>
@@ -3083,6 +3083,16 @@
                                             </constraints>
                                             <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="systemEventsNew" id="4p8-h5-TxS"/>
                                         </imageView>
+                                        <button translatesAutoresizingMaskIntoConstraints="NO" id="HnQ-ma-Fr2" customClass="cursorButton" customModule="Focus_Bear" customModuleProvider="target">
+                                            <rect key="frame" x="365" y="216" width="264" height="288"/>
+                                            <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" alignment="center" imageScaling="proportionallyDown" inset="2" id="YlL-92-gXS">
+                                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                <font key="font" metaFont="system"/>
+                                            </buttonCell>
+                                            <connections>
+                                                <action selector="btnImagePermissionClicked:" target="rEu-gr-cKm" id="PIa-cF-a7p"/>
+                                            </connections>
+                                        </button>
                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="HCy-xe-YsT">
                                             <rect key="frame" x="0.0" y="612" width="994" height="108"/>
                                         </customView>
@@ -3108,8 +3118,11 @@
                                         <constraint firstItem="oWT-aq-7WE" firstAttribute="centerX" secondItem="B5w-AV-1T0" secondAttribute="centerX" id="H4u-hM-oKN"/>
                                         <constraint firstItem="HCy-xe-YsT" firstAttribute="leading" secondItem="B5w-AV-1T0" secondAttribute="leading" id="I40-OX-MsF"/>
                                         <constraint firstItem="8ne-ko-lop" firstAttribute="centerY" secondItem="B5w-AV-1T0" secondAttribute="centerY" id="K2b-pR-8OO"/>
+                                        <constraint firstItem="HnQ-ma-Fr2" firstAttribute="leading" secondItem="8ne-ko-lop" secondAttribute="leading" id="La6-uP-gar"/>
                                         <constraint firstItem="Cig-bb-H0f" firstAttribute="height" secondItem="B5w-AV-1T0" secondAttribute="height" multiplier="0.25" id="MZD-Hz-30G"/>
+                                        <constraint firstItem="HnQ-ma-Fr2" firstAttribute="trailing" secondItem="8ne-ko-lop" secondAttribute="trailing" id="RMR-DN-yOI"/>
                                         <constraint firstItem="eUK-Wa-Hb0" firstAttribute="centerY" secondItem="MIq-Kc-3Xg" secondAttribute="centerY" id="SSE-2N-qji"/>
+                                        <constraint firstItem="HnQ-ma-Fr2" firstAttribute="bottom" secondItem="8ne-ko-lop" secondAttribute="bottom" id="STw-Xc-2Kc"/>
                                         <constraint firstItem="eUK-Wa-Hb0" firstAttribute="leading" secondItem="MIq-Kc-3Xg" secondAttribute="trailing" constant="10" id="W1i-Ka-o8Y"/>
                                         <constraint firstAttribute="trailing" secondItem="IZt-4E-dy2" secondAttribute="trailing" constant="25" id="WdT-mG-AYc"/>
                                         <constraint firstItem="faO-NF-NIy" firstAttribute="centerY" secondItem="B5w-AV-1T0" secondAttribute="centerY" id="Wwj-8m-og9"/>
@@ -3124,6 +3137,7 @@
                                         <constraint firstAttribute="trailing" secondItem="HCy-xe-YsT" secondAttribute="trailing" id="nIE-ij-Dge"/>
                                         <constraint firstItem="8ne-ko-lop" firstAttribute="centerX" secondItem="B5w-AV-1T0" secondAttribute="centerX" id="p7V-CS-yuQ"/>
                                         <constraint firstItem="IZt-4E-dy2" firstAttribute="leading" secondItem="B5w-AV-1T0" secondAttribute="leading" constant="25" id="pc8-KV-Pjz"/>
+                                        <constraint firstItem="HnQ-ma-Fr2" firstAttribute="top" secondItem="8ne-ko-lop" secondAttribute="top" id="sxT-N5-ged"/>
                                         <constraint firstItem="HCy-xe-YsT" firstAttribute="top" secondItem="B5w-AV-1T0" secondAttribute="top" id="sxz-qt-Yjs"/>
                                         <constraint firstItem="faO-NF-NIy" firstAttribute="height" secondItem="8ne-ko-lop" secondAttribute="height" multiplier="0.8" id="udb-g1-N7h"/>
                                         <constraint firstItem="MIq-Kc-3Xg" firstAttribute="top" secondItem="HCy-xe-YsT" secondAttribute="bottom" constant="5" id="w3I-RQ-AhF"/>
@@ -3141,6 +3155,7 @@
                     <connections>
                         <outlet property="btnContinue" destination="Y70-tE-i7A" id="lZw-J6-u0H"/>
                         <outlet property="btnGrantPermission" destination="mJV-su-bIm" id="RSx-Fv-ATo"/>
+                        <outlet property="btnImagePermission" destination="HnQ-ma-Fr2" id="W1o-Mb-dEh"/>
                         <outlet property="btnInfo" destination="eUK-Wa-Hb0" id="g7j-v1-HlV"/>
                         <outlet property="customViewProgress" destination="HCy-xe-YsT" id="hgu-pi-Kcj"/>
                         <outlet property="imgViewBear" destination="Cig-bb-H0f" id="Qrz-lg-O4i"/>
@@ -7091,7 +7106,7 @@ Edit setting -"search" in Firefox</string>
                                                                     <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="suggestedWebsites" id="nVg-NV-gPF"/>
                                                                 </imageView>
                                                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Lpr-r1-Kcd">
-                                                                    <rect key="frame" x="55" y="229" width="612" height="19"/>
+                                                                    <rect key="frame" x="55" y="229" width="267" height="19"/>
                                                                     <textFieldCell key="cell" lineBreakMode="clipping" title="xxChoose from suggested websites:" id="djg-BY-5Sb">
                                                                         <font key="font" metaFont="system" size="16"/>
                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -7184,12 +7199,26 @@ Edit setting -"search" in Firefox</string>
                                                                     <color key="borderColor" name="lightOrangeBorderColor"/>
                                                                     <color key="fillColor" name="backgroundColor"/>
                                                                 </box>
+                                                                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="zXp-E9-RH6">
+                                                                    <rect key="frame" x="646" y="227" width="22" height="22"/>
+                                                                    <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="left" controlSize="large" state="on" inset="2" id="WFK-Cg-dKw">
+                                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                        <font key="font" metaFont="system"/>
+                                                                    </buttonCell>
+                                                                    <color key="bezelColor" name="dark_OrangeColor"/>
+                                                                    <color key="contentTintColor" name="dark_OrangeColor"/>
+                                                                    <connections>
+                                                                        <action selector="btnCheckBoxSelectAllClicked:" target="XPV-4I-w7X" id="KQW-X4-TDc"/>
+                                                                    </connections>
+                                                                </button>
                                                             </subviews>
                                                             <constraints>
                                                                 <constraint firstAttribute="bottom" secondItem="FEV-aa-dJs" secondAttribute="bottom" constant="15" id="36Y-3M-usk"/>
                                                                 <constraint firstItem="Lpr-r1-Kcd" firstAttribute="centerY" secondItem="6a8-xh-XON" secondAttribute="centerY" id="61A-fs-cFx"/>
+                                                                <constraint firstItem="zXp-E9-RH6" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Lpr-r1-Kcd" secondAttribute="trailing" constant="10" id="J3e-Y9-vsD"/>
+                                                                <constraint firstItem="zXp-E9-RH6" firstAttribute="centerY" secondItem="Lpr-r1-Kcd" secondAttribute="centerY" id="LvT-tX-c2M"/>
                                                                 <constraint firstItem="6a8-xh-XON" firstAttribute="leading" secondItem="fDc-zA-KXC" secondAttribute="leading" constant="15" id="cI9-vJ-kIK"/>
-                                                                <constraint firstAttribute="trailing" secondItem="Lpr-r1-Kcd" secondAttribute="trailing" constant="15" id="eoK-ZI-9KA"/>
+                                                                <constraint firstItem="FEV-aa-dJs" firstAttribute="trailing" secondItem="zXp-E9-RH6" secondAttribute="trailing" id="eRY-Ul-wtB"/>
                                                                 <constraint firstAttribute="trailing" secondItem="FEV-aa-dJs" secondAttribute="trailing" constant="15" id="kXU-fs-Ck6"/>
                                                                 <constraint firstItem="6a8-xh-XON" firstAttribute="top" secondItem="fDc-zA-KXC" secondAttribute="top" constant="15" id="q3d-HW-AgQ"/>
                                                                 <constraint firstItem="Lpr-r1-Kcd" firstAttribute="leading" secondItem="6a8-xh-XON" secondAttribute="trailing" constant="10" id="rBh-Tf-rGm"/>
@@ -7276,6 +7305,17 @@ Edit setting -"search" in Firefox</string>
                                                 </constraints>
                                             </view>
                                         </box>
+                                        <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="MyF-kX-zCx">
+                                            <rect key="frame" x="166" y="120" width="804" height="16"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" constant="800" id="cuv-s5-LSr"/>
+                                            </constraints>
+                                            <textFieldCell key="cell" lineBreakMode="clipping" alignment="center" title="xxyou can change this later" id="TS3-q2-3du">
+                                                <font key="font" metaFont="system"/>
+                                                <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                            </textFieldCell>
+                                        </textField>
                                     </subviews>
                                     <constraints>
                                         <constraint firstItem="LKo-Oo-xyn" firstAttribute="centerY" secondItem="CtJ-gE-TcX" secondAttribute="centerY" multiplier="1.1" id="0FQ-YA-qV9"/>
@@ -7287,11 +7327,13 @@ Edit setting -"search" in Firefox</string>
                                         <constraint firstItem="I9T-mQ-7Bm" firstAttribute="top" secondItem="cx5-1X-HfU" secondAttribute="bottom" id="LEo-8w-EF4"/>
                                         <constraint firstAttribute="trailing" secondItem="ibG-rp-DQ3" secondAttribute="trailing" constant="100" id="M7a-cp-fXw"/>
                                         <constraint firstItem="txe-Z5-qug" firstAttribute="leading" secondItem="CtJ-gE-TcX" secondAttribute="leading" id="QOX-gT-BFp"/>
+                                        <constraint firstItem="MyF-kX-zCx" firstAttribute="centerX" secondItem="CtJ-gE-TcX" secondAttribute="centerX" id="RdZ-FX-47P"/>
                                         <constraint firstItem="I9T-mQ-7Bm" firstAttribute="leading" secondItem="CtJ-gE-TcX" secondAttribute="leading" id="Rx9-Rc-hxT"/>
                                         <constraint firstItem="cx5-1X-HfU" firstAttribute="centerX" secondItem="CtJ-gE-TcX" secondAttribute="centerX" id="TDX-fs-IXH"/>
                                         <constraint firstItem="txe-Z5-qug" firstAttribute="top" secondItem="ibG-rp-DQ3" secondAttribute="bottom" id="ZQt-Dz-Yqy"/>
                                         <constraint firstItem="LKo-Oo-xyn" firstAttribute="top" secondItem="txe-Z5-qug" secondAttribute="bottom" id="ayH-Hf-thO"/>
                                         <constraint firstItem="Ip7-Nk-HAc" firstAttribute="height" secondItem="CtJ-gE-TcX" secondAttribute="height" multiplier="0.15" id="bk6-92-jy7"/>
+                                        <constraint firstItem="MyF-kX-zCx" firstAttribute="top" secondItem="LKo-Oo-xyn" secondAttribute="bottom" constant="15" id="bli-CY-9e1"/>
                                         <constraint firstItem="Ip7-Nk-HAc" firstAttribute="leading" secondItem="CtJ-gE-TcX" secondAttribute="leading" id="ccm-Fb-3wF"/>
                                         <constraint firstAttribute="trailing" secondItem="Ip7-Nk-HAc" secondAttribute="trailing" id="fz5-bT-MIe"/>
                                         <constraint firstItem="ibG-rp-DQ3" firstAttribute="leading" secondItem="CtJ-gE-TcX" secondAttribute="leading" constant="100" id="iNs-1n-ue7"/>
@@ -7314,10 +7356,12 @@ Edit setting -"search" in Firefox</string>
                     </view>
                     <connections>
                         <outlet property="btnAdd" destination="7yb-U7-P0b" id="zsK-a4-P8n"/>
+                        <outlet property="btnCheckBoxSelectAll" destination="zXp-E9-RH6" id="58J-Yw-cf4"/>
                         <outlet property="btnContinue" destination="cx5-1X-HfU" id="O7Q-6D-Pxw"/>
                         <outlet property="btnSkip" destination="lSf-5k-tPp" id="scJ-nA-vsc"/>
                         <outlet property="customViewProgress" destination="Ip7-Nk-HAc" id="wBm-qc-Pc3"/>
                         <outlet property="imgViewBear" destination="U1t-j5-dn8" id="bh6-mA-Zoy"/>
+                        <outlet property="lblChangeThisLater" destination="MyF-kX-zCx" id="h5g-3L-zuT"/>
                         <outlet property="lblSubtitle" destination="NNT-EP-Owz" id="cur-TC-ajR"/>
                         <outlet property="lblTitle" destination="ibG-rp-DQ3" id="LnO-nR-I4G"/>
                         <outlet property="lblTitleChooseFromList" destination="Lpr-r1-Kcd" id="jKu-gT-2Yc"/>
@@ -7603,8 +7647,8 @@ Edit setting -"search" in Firefox</string>
                                                                                                                     <rect key="frame" x="5" y="4" width="82" height="28"/>
                                                                                                                     <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="Des-YI-ybj">
                                                                                                                         <font key="font" metaFont="system"/>
-                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="800611076.05114996">
-                                                                                                                            <!--2026-05-16 07:57:56 +0000-->
+                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="802351230.82673001">
+                                                                                                                            <!--2026-06-05 11:20:30 +0000-->
                                                                                                                         </date>
                                                                                                                         <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -7654,8 +7698,8 @@ Edit setting -"search" in Firefox</string>
                                                                                                                     <rect key="frame" x="5" y="4" width="82" height="28"/>
                                                                                                                     <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="z7A-mY-tK3">
                                                                                                                         <font key="font" metaFont="system"/>
-                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="800611076.05471396">
-                                                                                                                            <!--2026-05-16 07:57:56 +0000-->
+                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="802351230.83013999">
+                                                                                                                            <!--2026-06-05 11:20:30 +0000-->
                                                                                                                         </date>
                                                                                                                         <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -8427,7 +8471,7 @@ System Preferences &gt; Privacy &amp; Security &gt; Accessibility</string>
         <image name="NSRemoveTemplate" width="18" height="4"/>
         <image name="NSStopProgressTemplate" width="17" height="15"/>
         <image name="NSTouchBarPlayTemplate" width="14" height="16"/>
-        <image name="accessibility" width="896" height="450"/>
+        <image name="accessibility" width="827" height="582"/>
         <image name="bear_allSet" width="450" height="450"/>
         <image name="bear_allowedUrls" width="291" height="450"/>
         <image name="bear_askBlockingSchedule" width="450" height="450"/>

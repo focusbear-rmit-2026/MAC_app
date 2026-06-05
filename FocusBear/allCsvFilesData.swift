@@ -140,7 +140,7 @@ func addEntryInofflineActivitiesCsv(activity_id:String, duration_logged:String, 
             csvLoggerOfflineActivitiesCsv = nil
             csvLoggerOfflineActivitiesCsv = CSVLogger(fileURL: offlineActivitiesCsvURL)
         } catch {
-            print("error creating file")
+            addLog(text: "error creating file")
         }
     }
     
@@ -152,7 +152,7 @@ func addEntryInofflineActivitiesCsv(activity_id:String, duration_logged:String, 
 //stast CSV new entry
 func addEntryInStatsCsv(logType:String, activity:String, durationInSeconds:String, quantityQuestion:String, quantityLogged:String, startTime:String, workAchieved:String, distractionsEncountered:String, abortReason:String, feedback:String, tags:String){
     
-    
+    addLog(text: "Add Entry In Stats Csv")
     if !FileManager.default.fileExists(atPath: quantityCsvURL.path){
         let csvString = "Log type,Timestamp,Activity,Duration in seconds,Quantity Question,Quantity Logged,Start Time,Work achieved,Distractions encountered,Abort reason,Feedback,Tags\n"
         
@@ -163,6 +163,7 @@ func addEntryInStatsCsv(logType:String, activity:String, durationInSeconds:Strin
             csvLoggerStatsCsv = CSVLogger(fileURL: quantityCsvURL)
         } catch {
             print("error creating file")
+            addLog(text: "error creating file")
         }
     }
     
@@ -186,7 +187,7 @@ func addEntryInfocusAlignmentScoreCsv(url:String, tabTitle:String, focusMode:Str
             csvLoggerFocusAlignmentScoreCsv = nil
             csvLoggerFocusAlignmentScoreCsv = CSVLogger(fileURL: focusAlignmentScoreCsvURL)
         } catch {
-            print("error creating file")
+            addLog(text: "error creating file")
         }
     }
     
@@ -211,7 +212,7 @@ func addEntryInFocusAIDecisionsCsv(url:String, domain:String, tabTitle:String, s
             csvLoggerFocusAIDecisionsCsv = nil
             csvLoggerFocusAIDecisionsCsv = CSVLogger(fileURL: focusAIDecisionsCsvURL)
         } catch {
-            print("error creating file")
+            addLog(text: "error creating file")
         }
     }
     
@@ -235,7 +236,7 @@ func addEntryInProductivityStatsCsv(isoString: String, currentFocusAlignmentScor
             csvLoggerProductivityStatsCsv = nil
             csvLoggerProductivityStatsCsv = CSVLogger(fileURL: focusProductivityStatsCsvURL)
         } catch {
-            print("error creating file")
+            addLog(text: "error creating file")
         }
     }
     
@@ -249,6 +250,7 @@ func addEntryInProductivityStatsCsv(isoString: String, currentFocusAlignmentScor
 
 
 func addEntriesInUsageTimingsExplanationCsv(arrAllCsvLinesToAdd:[String]){
+    addLog(text: "Add Entries In UsageTimingsExplanationCsv")
     if !FileManager.default.fileExists(atPath: usageTimingsExplanationCsvUrl.path){
         let csvString = "start_time,end_time,tab_url/app_name,duration_seconds\n"
         
@@ -258,7 +260,7 @@ func addEntriesInUsageTimingsExplanationCsv(arrAllCsvLinesToAdd:[String]){
             csvLoggerUsageTimingsExplanationCsv = nil
             csvLoggerUsageTimingsExplanationCsv = CSVLogger(fileURL: usageTimingsExplanationCsvUrl)
         } catch {
-            print("error creating file")
+            addLog(text: "error creating file")
         }
     }
     
@@ -270,6 +272,7 @@ func addEntriesInUsageTimingsExplanationCsv(arrAllCsvLinesToAdd:[String]){
 
 //CSV replace Last entry
 func replaceLastEntryInActivitiesCsv(activity_id:String, duration_logged:String, device_id:String, activity_sequence_id:String, start_time:String, finish_time:String, skipped_did_complete:String, choice_id:String, quantity_logged:String, skipped_did_not_complete:String ){
+    addLog(text: "Replace last entry in activities csv")
     do {
         var csv = try String(contentsOf: offlineActivitiesCsvURL, encoding: .utf8)
         //        let timestamp = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
@@ -281,16 +284,18 @@ func replaceLastEntryInActivitiesCsv(activity_id:String, duration_logged:String,
         do {
             try csv.write(to: offlineActivitiesCsvURL, atomically: true, encoding: .utf8)
         } catch {
-            print("error creating file")
+            addLog(text: "error write file")
         }
     }catch{
         print(error)
+        addLog(text: "error write file:- \(error.localizedDescription)")
     }
 }
 
 
 //CSV replace Last entry
 func replaceLastEntryInStatsCsv(logType:String, activity:String, durationInSeconds:String, quantityQuestion:String, quantityLogged:String, startTime:String, workAchieved:String, distractionsEncountered:String, abortReason:String, feedback:String ){
+    addLog(text: "Replace last entry in Stats csv")
     do {
         var csv = try String(contentsOf: quantityCsvURL, encoding: .utf8)
         let timestamp = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
@@ -302,14 +307,15 @@ func replaceLastEntryInStatsCsv(logType:String, activity:String, durationInSecon
         do {
             try csv.write(to: quantityCsvURL, atomically: true, encoding: .utf8)
         } catch {
-            print("error creating file")
+            addLog(text: "error write file")
         }
     }catch{
-        print(error)
+        addLog(text: "error write file:- \(error.localizedDescription)")
     }
 }
 
 func addTagsColumnInStatsCsv(){
+    addLog(text: "Add Tags Column In Stats Csv")
     do {
         var csv = try String(contentsOf: quantityCsvURL, encoding: .utf8)
         
@@ -323,15 +329,16 @@ func addTagsColumnInStatsCsv(){
         do {
             try csv.write(to: quantityCsvURL, atomically: true, encoding: .utf8)
         } catch {
-            print("error creating file")
+            addLog(text: "error write file")
         }
     }catch{
-        print(error)
+        addLog(text: "error write file:- \(error.localizedDescription)")
     }
     
 }
 
 func removeEntryInActivitiesCsv(count:Int){
+    addLog(text: "Remove Entry In Activities Csv")
     do {
         var csv = try String(contentsOf: offlineActivitiesCsvURL, encoding: .utf8)
         csv = csv.removeEntries(count: count)
@@ -339,15 +346,16 @@ func removeEntryInActivitiesCsv(count:Int){
         do {
             try csv.write(to: offlineActivitiesCsvURL, atomically: true, encoding: .utf8)
         } catch {
-            print("error creating file")
+            addLog(text: "error write file")
         }
     }catch{
-        print(error)
+        addLog(text: "error write file:- \(error.localizedDescription)")
     }
 }
 
 
 func addNotesColumnInOfflineCsv(){
+    addLog(text: "Add notes column in offline csv")
     do {
         var csv = try String(contentsOf: offlineActivitiesCsvURL, encoding: .utf8)
         
@@ -361,13 +369,14 @@ func addNotesColumnInOfflineCsv(){
         do {
             try csv.write(to: offlineActivitiesCsvURL, atomically: true, encoding: .utf8)
         } catch {
-            print("error creating file")
+            addLog(text: "error write file")
         }
     }catch{
-        print(error)
+        addLog(text: "error write file:- \(error.localizedDescription)")
     }
     
 }
+
 final class CSVLogger {
 
     private let fileURL: URL
@@ -418,6 +427,7 @@ final class CSVLogger {
                 }
             } catch {
                 print("CSV append error: \(error)")
+                addLog(text: "CSV append error: \(error)")
             }
         }
     }
@@ -438,6 +448,7 @@ final class CSVLogger {
                 }
             } catch {
                 print("CSV append error: \(error)")
+                addLog(text: "CSV append error: \(error)")
             }
         }
     }

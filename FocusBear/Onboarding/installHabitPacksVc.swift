@@ -15,7 +15,7 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
     @IBOutlet weak var webView: WKWebView!
     
     var isWebViewBlank = false
-    var suggestHabits:Bool = true
+    var suggestHabits:Bool = false
     let currentProgressLevel = 3
     var hasSkippedHabits = false
     var isEditHabitsLoaded = false
@@ -52,6 +52,9 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
     }
 
     func loadWebView(suggestHabits:Bool){
+        if self.suggestHabits == suggestHabits{
+            return;
+        }
         self.suggestHabits = suggestHabits
         isEditHabitsLoaded = false
         let addHabitsMode = suggestHabits ? "recommend" : "import"

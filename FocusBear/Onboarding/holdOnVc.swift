@@ -30,6 +30,12 @@ class holdOnVc: NSViewController {
     
     override func viewWillAppear() {
         allApiObject.capturePosthog(event: "holdon-screen-shown", metadata: [:])
+        
+        //Preload routine suggestions so it's not blank 3.32.492
+        if !getInstallHabitPacksVcObj().isViewLoaded{
+            getInstallHabitPacksVcObj().loadView()
+        }
+        getInstallHabitPacksVcObj().loadWebView(suggestHabits: true)
     }
     
     override func viewDidAppear() {

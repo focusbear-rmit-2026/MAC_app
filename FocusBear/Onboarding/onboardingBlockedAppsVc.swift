@@ -41,9 +41,7 @@ class onboardingBlockedAppsVc: NSViewController {
             btnAdd.title = info.value(forKey: "buttonAdd") as? String ?? btnAdd.title
             btnRemove.title = info.value(forKey: "buttonRemove") as? String ?? btnRemove.title
         }
-        
-    
-        
+ 
         //progress
         self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
         self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
@@ -51,6 +49,9 @@ class onboardingBlockedAppsVc: NSViewController {
         
         btnAdd.horizontalPadding = 25
         btnRemove.horizontalPadding = 25
+        
+        addDefaultBlockedApps()
+        tblView.reloadData()
         
         addLog(text: "onboardingBlockedAppsVc-shown")
     }
@@ -72,6 +73,37 @@ class onboardingBlockedAppsVc: NSViewController {
         
         showOnboardingBellIcon(view: self.view, screen: "onboarding-blocked-apps-screen")
     }
+    
+    // added in v 3.32.492
+    private func addDefaultBlockedApps() {
+        let defaultApps = [
+            "Chess",
+            "Stocks",
+            "TV"
+        ]
+
+        for appName in defaultApps {
+            if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier(for: appName)) {
+                if !arrBlockedApps.contains(appURL.path) {
+                    arrBlockedApps.append(appURL.path)
+                }
+            }
+        }
+    }
+
+    private func bundleIdentifier(for appName: String) -> String {
+        switch appName {
+        case "Chess":
+            return "com.apple.Chess"
+        case "Stocks":
+            return "com.apple.stocks"
+        case "TV":
+            return "com.apple.TV"
+        default:
+            return ""
+        }
+    }
+    
     
     func getDistractionBlockingProgressVcObj()->distractionBlockingProgressVc{
         if distractionBlockingProgressVcObj == nil{

@@ -597,6 +597,22 @@ func showCustomAlert(title:String, body:String?, buttonOkText:String, buttonCanc
 }
 //-------------------------------------------------//
 
+
+//***********showCustomAlert***************//
+func showSuggestFocusWindow(title:String, body:String?, buttonOkText:String, buttonCancelText:String?, checkBoxText:String?, autoClose:Bool, completionHandler: @escaping (Bool, Int?, String?) -> Void){
+    if suggestFocusModeWcObj == nil{
+        getSuggestFocusModeWindowObject().contentViewController = getSuggestFocusModeVcObject()
+    }
+    getSuggestFocusModeWindowObject().window?.center()
+    getSuggestFocusModeWindowObject().window?.styleMask.remove(.closable)
+    getSuggestFocusModeWindowObject().window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
+    getSuggestFocusModeWindowObject().showWindow(nil)
+    getSuggestFocusModeVcObject().resetData(title: title, body: body, buttonOkText: buttonOkText, buttonCancelText: buttonCancelText, checkBoxText: checkBoxText, autoClose:autoClose, completionHandler: {isOkClicked, duration, intention in
+        completionHandler(isOkClicked, duration, intention)
+    })
+}
+//-------------------------------------------------//
+
 //***********unverifiedEmailVc***************//
 func showUnverifiedEmailWindow(){
     addLog(text:"showUnverifiedEmailWindow")

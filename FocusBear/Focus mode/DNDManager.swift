@@ -68,50 +68,97 @@ class DNDManager {
 //        up?.post(tap: .cgSessionEventTap)
 //    }
     func optionClickClock() {
-        guard let menuBarScreen = NSScreen.main else { return }
-
-        // Save current mouse position
-        let oldLocation = NSEvent.mouseLocation
-
-        let primaryScreenHeight = NSScreen.screens[0].frame.height
-        let screenFrame = menuBarScreen.frame
-
-        let cgY = primaryScreenHeight - (screenFrame.origin.y + screenFrame.height)
-        let cgX = screenFrame.origin.x + screenFrame.width - 60
-
-        let clickPoint = CGPoint(x: cgX, y: cgY + 11)
-
-        let src = CGEventSource(stateID: .combinedSessionState)
-
-        let down = CGEvent(
-            mouseEventSource: src,
-            mouseType: .leftMouseDown,
-            mouseCursorPosition: clickPoint,
-            mouseButton: .left
-        )
-        down?.flags = .maskAlternate
-
-        let up = CGEvent(
-            mouseEventSource: src,
-            mouseType: .leftMouseUp,
-            mouseCursorPosition: clickPoint,
-            mouseButton: .left
-        )
-        up?.flags = .maskAlternate
-
-        down?.post(tap: .cgSessionEventTap)
-        Thread.sleep(forTimeInterval: 0.05)
-        up?.post(tap: .cgSessionEventTap)
-
-        // Restore cursor position
-        let primaryHeight = NSScreen.screens[0].frame.height
-
-        let quartzPoint = CGPoint(
-            x: oldLocation.x,
-            y: primaryHeight - oldLocation.y
-        )
-        Thread.sleep(forTimeInterval: 0.05)// to prevent opening right menu 3.32.491
-        CGWarpMouseCursorPosition(quartzPoint)
+//        // 1. Force the system to reveal the auto-hidden menu bar
+//         NSApp.presentationOptions = [.autoHideMenuBar]
+//         
+//         // 2. Restore normal behavior after a brief delay so it doesn't get locked open.
+//         // The menu bar will remain slid down until the user interacts or clicks away.
+//         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+//             NSApp.presentationOptions = []
+//         }
+//        return;
+        DispatchQueue.global().async {
+            DispatchQueue.main.async {
+                guard let menuBarScreen = NSScreen.main else { return }
+                
+                // Save current mouse position
+                let oldLocation = NSEvent.mouseLocation
+                
+                let primaryScreenHeight = NSScreen.screens[0].frame.height
+                let screenFrame = menuBarScreen.frame
+                
+                let cgY = primaryScreenHeight - (screenFrame.origin.y + screenFrame.height)
+                let cgX = screenFrame.origin.x + screenFrame.width - 60
+                
+                let menuBarHidePosition = CGPoint(x: cgX, y: cgY)
+                
+                let clickPoint = CGPoint(x: cgX, y: cgY + 11)
+                
+                // Move cursor first to reveal auto-hidden menu bar
+                CGWarpMouseCursorPosition(menuBarHidePosition)
+                
+                if let move = CGEvent(
+                    mouseEventSource: nil,
+                    mouseType: .mouseMoved,
+                    mouseCursorPosition: menuBarHidePosition,
+                    mouseButton: .left
+                ) {
+                    move.post(tap: .cgSessionEventTap)
+                }
+                
+                //        Thread.sleep(forTimeInterval: 0.1)
+                //        let menuBarHidePositionEdge = CGPoint(x: cgX-1, y: cgY)
+                //        CGWarpMouseCursorPosition(menuBarHidePositionEdge)
+                // Give macOS time to show menu bar
+                //        Thread.sleep(forTimeInterval: 0.5)
+                //        return;
+                DispatchQueue.global().async {
+                    //            usleep(200000)
+                    sleep(1)
+                    DispatchQueue.main.async {
+                        let src = CGEventSource(stateID: .combinedSessionState)
+                        
+                        let down = CGEvent(
+                            mouseEventSource: src,
+                            mouseType: .leftMouseDown,
+                            mouseCursorPosition: clickPoint,
+                            mouseButton: .left
+                        )
+                        down?.flags = .maskAlternate
+                        
+                        let up = CGEvent(
+                            mouseEventSource: src,
+                            mouseType: .leftMouseUp,
+                            mouseCursorPosition: clickPoint,
+                            mouseButton: .left
+                        )
+                        up?.flags = .maskAlternate
+                        
+                        down?.post(tap: .cgSessionEventTap)
+                        Thread.sleep(forTimeInterval: 0.05)
+                        up?.post(tap: .cgSessionEventTap)
+                        
+                        // Restore cursor position
+                        let primaryHeight = NSScreen.screens[0].frame.height
+                        
+                        let quartzPoint = CGPoint(
+                            x: oldLocation.x,
+                            y: primaryHeight - oldLocation.y
+                        )
+                        Thread.sleep(forTimeInterval: 0.05)// to prevent opening right menu 3.32.491
+                        CGWarpMouseCursorPosition(quartzPoint)
+                        if let move = CGEvent(
+                            mouseEventSource: nil,
+                            mouseType: .mouseMoved,
+                            mouseCursorPosition: quartzPoint,
+                            mouseButton: .left
+                        ) {
+                            move.post(tap: .cgSessionEventTap)
+                        }
+                    }
+                }
+            }
+        }
     }
     
     func isDNDOrFocusActive() -> Bool {

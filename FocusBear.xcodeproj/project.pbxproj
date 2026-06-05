@@ -64,6 +64,7 @@
 		13A9D5AE2F741B4D004ACB7F /* setUpAccountVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A9D5AD2F741B4D004ACB7F /* setUpAccountVc.swift */; };
 		13AAC9DC2D97CC76000AD619 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F7DCC022796E8D200EE3282 /* WebKit.framework */; };
 		13AAC9E12D9819F7000AD619 /* customRoutineTimeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */; };
+		13AFB9CC2FD3044D002DA62E /* suggestFocusModeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13AFB9CB2FD3044D002DA62E /* suggestFocusModeVc.swift */; };
 		13B1D8292F7D2B9B0010610C /* suggestWorkFocusManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B1D8282F7D2B9B0010610C /* suggestWorkFocusManager.swift */; };
 		13B74D582E87A71E00556C79 /* collectionCellScreenshots.xib in Resources */ = {isa = PBXBuildFile; fileRef = 13B74D572E87A71E00556C79 /* collectionCellScreenshots.xib */; };
 		13B74D592E87A71E00556C79 /* collectionCellScreenshots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B74D562E87A71E00556C79 /* collectionCellScreenshots.swift */; };
@@ -449,6 +450,7 @@
 		13A9D5AB2F741324004ACB7F /* welcomeLetsDoItVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = welcomeLetsDoItVc.swift; sourceTree = "<group>"; };
 		13A9D5AD2F741B4D004ACB7F /* setUpAccountVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = setUpAccountVc.swift; sourceTree = "<group>"; };
 		13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineTimeVc.swift; sourceTree = "<group>"; };
+		13AFB9CB2FD3044D002DA62E /* suggestFocusModeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = suggestFocusModeVc.swift; sourceTree = "<group>"; };
 		13B1D8282F7D2B9B0010610C /* suggestWorkFocusManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = suggestWorkFocusManager.swift; sourceTree = "<group>"; };
 		13B74D562E87A71E00556C79 /* collectionCellScreenshots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = collectionCellScreenshots.swift; sourceTree = "<group>"; };
 		13B74D572E87A71E00556C79 /* collectionCellScreenshots.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = collectionCellScreenshots.xib; sourceTree = "<group>"; };
@@ -1185,6 +1187,7 @@
 				13E0386E2ED075420097E91C /* focusTimerManager.swift */,
 				135AD5302ED18D7D00870175 /* focusHabitTimerManager.swift */,
 				13B1D8282F7D2B9B0010610C /* suggestWorkFocusManager.swift */,
+				13AFB9CB2FD3044D002DA62E /* suggestFocusModeVc.swift */,
 				133747622FC87AB600CB3DA1 /* DNDManager.swift */,
 			);
 			path = "Focus mode";
@@ -1863,6 +1866,7 @@
 				8F0419482C353DCA00481ACD /* allUserdefaults.swift in Sources */,
 				8FFBCE8B28549EB1004B77D9 /* PopoverViewController.swift in Sources */,
 				8F3DD00D29F3B41C00E23715 /* AHLaunchJob.m in Sources */,
+				13AFB9CC2FD3044D002DA62E /* suggestFocusModeVc.swift in Sources */,
 				8F9BB8B92787307D00BB25D4 /* shutOffTimeVc.swift in Sources */,
 				8FB50EFD27BE6AD100A7175B /* focusPreferencesVc.swift in Sources */,
 				8FD86E1E2A54376C004F6761 /* todoNotes.swift in Sources */,
@@ -2383,7 +2387,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 491;
+				CURRENT_PROJECT_VERSION = 492;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
@@ -2399,7 +2403,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 3.32;
+				MARKETING_VERSION = 3.33;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = FocusBearMainAppProfile;
@@ -2421,7 +2425,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 491;
+				CURRENT_PROJECT_VERSION = 492;
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2437,7 +2441,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 3.32;
+				MARKETING_VERSION = 3.33;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = FocusBearMainAppProfile;

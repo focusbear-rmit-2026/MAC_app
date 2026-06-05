@@ -348,19 +348,6 @@ class ViewController: NSViewController {
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
     
-    func showInstalltHabitPacksVc(){
-        addLog(text: "Showing install Habit Packs view.")
-        removeSubViews()
-        
-        containerView.addSubview(getInstallHabitPacksVcObj().view)
-        containerView.addConstraints(subView: getInstallHabitPacksVcObj().view)
-        currentState = ._ONBOARDING_
-        currentAction = ._START_
-        NSApplication.shared.activate(ignoringOtherApps: true)
-        allApiObject.capturePosthog(event: "habit-packs-shown", metadata: [:])
-    }
-    
-    
     func showCustomMessageView(msg:String){
         addLog(text: "show Custom Message View")
         self.view.addSubview(getCustomMessageVcObject().view)

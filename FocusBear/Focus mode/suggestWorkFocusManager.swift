@@ -122,10 +122,10 @@ class suggestWorkFocusManager {
                         }
                         
                         title = title.replacingOccurrences(of: "<WORK>", with: name)
-                        showCustomAlert(title: title, body: subTitle, buttonOkText: buttonYes, buttonCancelText: buttonNotNow, checkBoxText: nil, autoClose: true, buttonLinkUrl:nil, buttonLinkText: nil, completionHandler: {isOkClicked in
+                        showSuggestFocusWindow(title: title, body: subTitle, buttonOkText: buttonYes, buttonCancelText: buttonNotNow, checkBoxText: nil, autoClose: true, completionHandler: {isOkClicked, duration, intention in
                             print(isOkClicked)
                             if isOkClicked{
-                                startWorkFocusAutomaticallyClicked(id: arrFocusType[i]["id"] as? String ?? "")
+                                startWorkFocusAutomaticallyClicked(id: arrFocusType[i]["id"] as? String ?? "", minutes:duration ?? 25, intention:intention ?? "")
                                 arrFocusType[i]["doNotSuggestAnyMore"] = false
                             }else{
                                 arrFocusType[i]["doNotSuggestAnyMore"] = true
@@ -276,10 +276,10 @@ class suggestWorkFocusManager {
                             }
                             
                             title = title.replacingOccurrences(of: "<WORK>", with: name)
-                            showCustomAlert(title: title, body: subTitle, buttonOkText: buttonYes, buttonCancelText: buttonNotNow, checkBoxText: nil, autoClose: true, buttonLinkUrl:nil, buttonLinkText: nil, completionHandler: {isOkClicked in
+                            showSuggestFocusWindow(title: title, body: subTitle, buttonOkText: buttonYes, buttonCancelText: buttonNotNow, checkBoxText: nil, autoClose: true, completionHandler: {isOkClicked, duration, intention in
                                 print(isOkClicked)
                                 if isOkClicked{
-                                    startWorkFocusAutomaticallyClicked(id: arrFocusType[i]["id"] as? String ?? "")
+                                    startWorkFocusAutomaticallyClicked(id: arrFocusType[i]["id"] as? String ?? "", minutes:duration ?? 25, intention:intention ?? "")
                                     arrFocusType[i]["doNotSuggestAnyMore"] = false
                                 }else{
                                     arrFocusType[i]["doNotSuggestAnyMore"] = true

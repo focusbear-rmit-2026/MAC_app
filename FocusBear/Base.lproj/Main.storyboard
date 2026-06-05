@@ -904,16 +904,6 @@
                                                 </constraints>
                                             </view>
                                         </box>
-                                        <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="yao-f3-8UN" customClass="underLineButton" customModule="Focus_Bear" customModuleProvider="target">
-                                            <rect key="frame" x="489" y="695" width="234" height="16"/>
-                                            <buttonCell key="cell" type="square" title="xxI don't have time for all these habits" bezelStyle="shadowlessSquare" alignment="center" imageScaling="proportionallyDown" inset="2" id="AgZ-M2-vR6">
-                                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                                <font key="font" metaFont="system"/>
-                                            </buttonCell>
-                                            <connections>
-                                                <action selector="btnSelectHabitsToDoClicked:" target="MoT-Nt-pNZ" id="U1R-LG-d5c"/>
-                                            </connections>
-                                        </button>
                                         <box hidden="YES" boxType="custom" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="9g7-n9-6b8" customClass="customNewBadgeBox" customModule="Focus_Bear" customModuleProvider="target">
                                             <rect key="frame" x="726" y="695" width="50" height="17"/>
                                             <view key="contentView" id="cB6-JK-s0h">
@@ -1090,6 +1080,16 @@
                                                 <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="180" id="zIK-k6-hHX"/>
                                             </constraints>
                                         </box>
+                                        <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="yao-f3-8UN" customClass="underLineButton" customModule="Focus_Bear" customModuleProvider="target">
+                                            <rect key="frame" x="489" y="695" width="234" height="16"/>
+                                            <buttonCell key="cell" type="square" title="xxI don't have time for all these habits" bezelStyle="shadowlessSquare" alignment="center" imageScaling="proportionallyDown" inset="2" id="AgZ-M2-vR6">
+                                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                <font key="font" metaFont="system"/>
+                                            </buttonCell>
+                                            <connections>
+                                                <action selector="btnSelectHabitsToDoClicked:" target="MoT-Nt-pNZ" id="U1R-LG-d5c"/>
+                                            </connections>
+                                        </button>
                                         <imageView horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="3MT-xh-qQB">
                                             <rect key="frame" x="526" y="883" width="160" height="160"/>
                                             <constraints>
@@ -2261,13 +2261,13 @@
                                                             <color key="borderColor" name="separatorColor" catalog="System" colorSpace="catalog"/>
                                                         </box>
                                                         <box boxType="custom" borderType="line" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="RBM-ww-eoK">
-                                                            <rect key="frame" x="1291" y="460" width="249" height="94"/>
+                                                            <rect key="frame" x="1291" y="461" width="249" height="92"/>
                                                             <view key="contentView" id="FSl-QV-9pN">
-                                                                <rect key="frame" x="1" y="1" width="247" height="92"/>
+                                                                <rect key="frame" x="1" y="1" width="247" height="90"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
                                                                     <box boxType="custom" borderType="line" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="vcm-4q-hdK">
-                                                                        <rect key="frame" x="0.0" y="42" width="247" height="50"/>
+                                                                        <rect key="frame" x="0.0" y="40" width="247" height="50"/>
                                                                         <view key="contentView" id="UWt-4W-6gw">
                                                                             <rect key="frame" x="0.0" y="0.0" width="247" height="50"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -2300,13 +2300,13 @@
                                                                         <color key="fillColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                     </box>
                                                                     <scrollView horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" borderType="none" autohidesScrollers="YES" horizontalLineScroll="40" horizontalPageScroll="10" verticalLineScroll="40" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="BmC-FB-q29">
-                                                                        <rect key="frame" x="0.0" y="0.0" width="247" height="42"/>
+                                                                        <rect key="frame" x="0.0" y="0.0" width="247" height="40"/>
                                                                         <clipView key="contentView" id="xse-cV-tNZ">
-                                                                            <rect key="frame" x="0.0" y="0.0" width="247" height="42"/>
+                                                                            <rect key="frame" x="0.0" y="0.0" width="247" height="40"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
                                                                                 <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" selectionHighlightStyle="none" multipleSelection="NO" autosaveColumns="NO" rowHeight="40" rowSizeStyle="automatic" viewBased="YES" id="vNa-fU-S7L">
-                                                                                    <rect key="frame" x="-1" y="0.0" width="247" height="42"/>
+                                                                                    <rect key="frame" x="-1" y="0.0" width="247" height="40"/>
                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                     <size key="intercellSpacing" width="10" height="0.0"/>
                                                                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>

@@ -1550,7 +1550,7 @@ DQ
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="gQu-RZ-Q3i">
                                                                                         <rect key="frame" x="0.0" y="0.0" width="520" height="38"/>
                                                                                         <view key="contentView" id="O91-k6-aO2">
-                                                                                            <rect key="frame" x="1" y="0.0" width="519" height="38"/>
+                                                                                            <rect key="frame" x="0.0" y="0.0" width="520" height="38"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                             <subviews>
                                                                                                 <textField focusRingType="none" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="aHY-6l-Sz6">
@@ -2364,7 +2364,7 @@ DQ
                                         <box boxType="custom" borderWidth="3" cornerRadius="17" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="6QL-ks-I2T">
                                             <rect key="frame" x="0.0" y="0.0" width="34" height="34"/>
                                             <view key="contentView" id="SG9-Fk-zLw">
-                                                <rect key="frame" x="4" y="3" width="26" height="28"/>
+                                                <rect key="frame" x="3" y="3" width="28" height="28"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="HfA-8s-rGe">
@@ -2549,7 +2549,7 @@ DQ
                                         <box boxType="custom" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="5gN-N0-1np">
                                             <rect key="frame" x="124" y="88" width="92" height="30"/>
                                             <view key="contentView" id="HMJ-Oq-hOL">
-                                                <rect key="frame" x="2" y="1" width="88" height="28"/>
+                                                <rect key="frame" x="1" y="1" width="90" height="28"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ksh-VX-ySY">
@@ -4173,6 +4173,257 @@ DQ
                 <customObject id="15y-Je-SRS" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="5349" y="72"/>
+        </scene>
+        <!--Suggest Focus Mode Vc-->
+        <scene sceneID="nnp-n5-qOg">
+            <objects>
+                <viewController storyboardIdentifier="suggestFocusModeVc" id="c1T-NF-rNH" customClass="suggestFocusModeVc" customModule="Focus_Bear" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" misplaced="YES" id="n4r-Nn-Xnv">
+                        <rect key="frame" x="0.0" y="0.0" width="350" height="439"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                        <subviews>
+                            <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="lFs-Ud-U9e" customClass="customBoxBg" customModule="Focus_Bear" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="0.0" width="350" height="439"/>
+                                <view key="contentView" id="bdI-2Q-bet">
+                                    <rect key="frame" x="0.0" y="0.0" width="350" height="439"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                    <subviews>
+                                        <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="a2l-Vn-fzE">
+                                            <rect key="frame" x="140" y="354" width="70" height="70"/>
+                                            <constraints>
+                                                <constraint firstAttribute="height" constant="70" id="iO2-ei-BHl"/>
+                                                <constraint firstAttribute="width" constant="70" id="q6I-oI-SYz"/>
+                                            </constraints>
+                                            <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyUpOrDown" image="NSApplicationIcon" id="Y3Q-bO-OrU"/>
+                                        </imageView>
+                                        <stackView distribution="fill" orientation="vertical" alignment="centerX" spacing="10" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="WyD-Ow-uwT">
+                                            <rect key="frame" x="20" y="126" width="310" height="213"/>
+                                            <subviews>
+                                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="QaO-r7-eZc">
+                                                    <rect key="frame" x="-2" y="181" width="314" height="32"/>
+                                                    <textFieldCell key="cell" alignment="center" title="xxAllow all URLs from &lt;DOMAIN&gt; for this focus session" id="GVC-xT-ktZ">
+                                                        <font key="font" metaFont="systemBold"/>
+                                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                    </textFieldCell>
+                                                </textField>
+                                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="VGD-n3-Kcz">
+                                                    <rect key="frame" x="-2" y="143" width="314" height="28"/>
+                                                    <textFieldCell key="cell" alignment="center" id="D1I-ZI-rdq">
+                                                        <font key="font" metaFont="smallSystem"/>
+                                                        <string key="title">xxReason: Google is a search engine and
+relevant to programming work.</string>
+                                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                    </textFieldCell>
+                                                </textField>
+                                                <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="RX5-FW-Ohm">
+                                                    <rect key="frame" x="0.0" y="0.0" width="310" height="133"/>
+                                                    <view key="contentView" id="LQ7-u6-Zuq">
+                                                        <rect key="frame" x="0.0" y="0.0" width="310" height="133"/>
+                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                        <subviews>
+                                                            <scrollView borderType="line" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" translatesAutoresizingMaskIntoConstraints="NO" id="9ss-jE-Ee0">
+                                                                <rect key="frame" x="0.0" y="5" width="310" height="40"/>
+                                                                <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="DBT-pr-2rw">
+                                                                    <rect key="frame" x="1" y="1" width="308" height="38"/>
+                                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                    <subviews>
+                                                                        <textView importsGraphics="NO" richText="NO" verticallyResizable="YES" spellingCorrection="YES" smartInsertDelete="YES" id="Eax-v9-V3L">
+                                                                            <rect key="frame" x="0.0" y="0.0" width="308" height="38"/>
+                                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                            <size key="minSize" width="308" height="38"/>
+                                                                            <size key="maxSize" width="686" height="10000000"/>
+                                                                        </textView>
+                                                                    </subviews>
+                                                                </clipView>
+                                                                <constraints>
+                                                                    <constraint firstAttribute="height" constant="40" id="GcA-Ho-Qxb"/>
+                                                                    <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="30" id="ge6-YC-DOj"/>
+                                                                </constraints>
+                                                                <scroller key="horizontalScroller" hidden="YES" verticalHuggingPriority="750" horizontal="YES" id="4RJ-EN-8U7">
+                                                                    <rect key="frame" x="-100" y="-100" width="225" height="15"/>
+                                                                    <autoresizingMask key="autoresizingMask"/>
+                                                                </scroller>
+                                                                <scroller key="verticalScroller" hidden="YES" verticalHuggingPriority="750" horizontal="NO" id="FPp-lG-qXA">
+                                                                    <rect key="frame" x="266" y="1" width="15" height="50"/>
+                                                                    <autoresizingMask key="autoresizingMask"/>
+                                                                </scroller>
+                                                            </scrollView>
+                                                            <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="6tl-SR-cbk">
+                                                                <rect key="frame" x="130" y="102" width="50" height="21"/>
+                                                                <constraints>
+                                                                    <constraint firstAttribute="height" constant="21" id="OAV-43-K7b"/>
+                                                                    <constraint firstAttribute="width" constant="50" id="izD-Kc-Qhs"/>
+                                                                </constraints>
+                                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" id="FsI-I6-6tV">
+                                                                    <font key="font" metaFont="system"/>
+                                                                    <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                </textFieldCell>
+                                                            </textField>
+                                                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="H4E-JN-2cz">
+                                                                <rect key="frame" x="183" y="105" width="66" height="16"/>
+                                                                <textFieldCell key="cell" lineBreakMode="clipping" title="xxminutes" id="1Qf-Tw-gwR">
+                                                                    <font key="font" metaFont="system"/>
+                                                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                </textFieldCell>
+                                                            </textField>
+                                                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="751" horizontalCompressionResistancePriority="751" verticalCompressionResistancePriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="EkH-MR-Gtm">
+                                                                <rect key="frame" x="-2" y="55" width="314" height="32"/>
+                                                                <textFieldCell key="cell" title="xxWhat do you want to achieve in this focus session?" id="X7f-fb-bNb">
+                                                                    <font key="font" metaFont="system"/>
+                                                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                </textFieldCell>
+                                                            </textField>
+                                                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="7ws-q5-bsO">
+                                                                <rect key="frame" x="15" y="105" width="112" height="16"/>
+                                                                <textFieldCell key="cell" lineBreakMode="clipping" title="xxFocus duration:" id="fys-YB-QzT">
+                                                                    <font key="font" usesAppearanceFont="YES"/>
+                                                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                </textFieldCell>
+                                                            </textField>
+                                                        </subviews>
+                                                        <constraints>
+                                                            <constraint firstItem="9ss-jE-Ee0" firstAttribute="top" secondItem="EkH-MR-Gtm" secondAttribute="bottom" constant="10" id="A9P-je-5cj"/>
+                                                            <constraint firstItem="EkH-MR-Gtm" firstAttribute="leading" secondItem="LQ7-u6-Zuq" secondAttribute="leading" id="Enn-7v-Unv"/>
+                                                            <constraint firstAttribute="bottom" secondItem="9ss-jE-Ee0" secondAttribute="bottom" constant="5" id="HZq-8g-iGV"/>
+                                                            <constraint firstItem="6tl-SR-cbk" firstAttribute="leading" secondItem="LQ7-u6-Zuq" secondAttribute="leading" constant="130" id="IOl-cw-RH2"/>
+                                                            <constraint firstAttribute="trailing" secondItem="EkH-MR-Gtm" secondAttribute="trailing" id="SoC-9Q-riS"/>
+                                                            <constraint firstItem="7ws-q5-bsO" firstAttribute="centerY" secondItem="6tl-SR-cbk" secondAttribute="centerY" id="Xxw-Hc-wjh"/>
+                                                            <constraint firstItem="9ss-jE-Ee0" firstAttribute="leading" secondItem="LQ7-u6-Zuq" secondAttribute="leading" id="aqA-44-I13"/>
+                                                            <constraint firstItem="H4E-JN-2cz" firstAttribute="centerY" secondItem="6tl-SR-cbk" secondAttribute="centerY" id="jTi-AL-j4B"/>
+                                                            <constraint firstItem="H4E-JN-2cz" firstAttribute="leading" secondItem="6tl-SR-cbk" secondAttribute="trailing" constant="5" id="otV-HU-q9w"/>
+                                                            <constraint firstItem="EkH-MR-Gtm" firstAttribute="top" secondItem="6tl-SR-cbk" secondAttribute="bottom" constant="15" id="qz2-SY-4Hg"/>
+                                                            <constraint firstAttribute="trailing" secondItem="9ss-jE-Ee0" secondAttribute="trailing" id="rg9-6V-iZ3"/>
+                                                            <constraint firstItem="6tl-SR-cbk" firstAttribute="top" secondItem="LQ7-u6-Zuq" secondAttribute="top" constant="10" id="t5u-HX-BMK"/>
+                                                            <constraint firstItem="6tl-SR-cbk" firstAttribute="leading" secondItem="7ws-q5-bsO" secondAttribute="trailing" constant="5" id="teM-nK-Dq2"/>
+                                                        </constraints>
+                                                    </view>
+                                                </box>
+                                            </subviews>
+                                            <constraints>
+                                                <constraint firstItem="QaO-r7-eZc" firstAttribute="leading" secondItem="WyD-Ow-uwT" secondAttribute="leading" id="7qa-Ve-xdX"/>
+                                                <constraint firstAttribute="trailing" secondItem="VGD-n3-Kcz" secondAttribute="trailing" id="A7E-Ds-rg2"/>
+                                                <constraint firstItem="VGD-n3-Kcz" firstAttribute="leading" secondItem="WyD-Ow-uwT" secondAttribute="leading" id="bZx-vA-7vI"/>
+                                                <constraint firstAttribute="trailing" secondItem="RX5-FW-Ohm" secondAttribute="trailing" id="deg-gK-oWK"/>
+                                                <constraint firstAttribute="trailing" secondItem="QaO-r7-eZc" secondAttribute="trailing" id="fFw-N4-LIK"/>
+                                                <constraint firstItem="RX5-FW-Ohm" firstAttribute="leading" secondItem="WyD-Ow-uwT" secondAttribute="leading" id="woz-wm-do7"/>
+                                            </constraints>
+                                            <visibilityPriorities>
+                                                <integer value="1000"/>
+                                                <integer value="1000"/>
+                                                <integer value="1000"/>
+                                            </visibilityPriorities>
+                                            <customSpacing>
+                                                <real value="3.4028234663852886e+38"/>
+                                                <real value="3.4028234663852886e+38"/>
+                                                <real value="3.4028234663852886e+38"/>
+                                            </customSpacing>
+                                        </stackView>
+                                        <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="7" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="pYD-V7-esL">
+                                            <rect key="frame" x="30" y="20" width="290" height="90"/>
+                                            <subviews>
+                                                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="O6F-iU-NZa" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
+                                                    <rect key="frame" x="0.0" y="60" width="290" height="30"/>
+                                                    <buttonCell key="cell" type="square" title="xxOK" bezelStyle="shadowlessSquare" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="2Up-vk-8a0">
+                                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                        <font key="font" metaFont="system"/>
+                                                        <string key="keyEquivalent" base64-UTF8="YES">
+DQ
+</string>
+                                                    </buttonCell>
+                                                    <constraints>
+                                                        <constraint firstAttribute="height" constant="30" id="5tm-0E-i85"/>
+                                                    </constraints>
+                                                    <connections>
+                                                        <action selector="btnOkClicked:" target="c1T-NF-rNH" id="ddR-tm-VBk"/>
+                                                    </connections>
+                                                </button>
+                                                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="aeE-Gy-Eq1" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
+                                                    <rect key="frame" x="0.0" y="23" width="290" height="30"/>
+                                                    <buttonCell key="cell" type="square" title="xxCancel" bezelStyle="shadowlessSquare" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="hkW-fr-AFf">
+                                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                        <font key="font" metaFont="system"/>
+                                                    </buttonCell>
+                                                    <connections>
+                                                        <action selector="btnCancelClicked:" target="c1T-NF-rNH" id="hbs-6E-Wo7"/>
+                                                    </connections>
+                                                </button>
+                                                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Cbi-yb-Xte">
+                                                    <rect key="frame" x="-2" y="-1" width="78" height="18"/>
+                                                    <buttonCell key="cell" type="check" title="xxCheck" bezelStyle="regularSquare" imagePosition="left" lineBreakMode="truncatingTail" state="on" inset="2" id="PVv-wt-x5Y">
+                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                        <font key="font" metaFont="system"/>
+                                                    </buttonCell>
+                                                    <connections>
+                                                        <action selector="checkBoxClicked:" target="c1T-NF-rNH" id="ATo-Ky-Vf6"/>
+                                                    </connections>
+                                                </button>
+                                            </subviews>
+                                            <constraints>
+                                                <constraint firstItem="aeE-Gy-Eq1" firstAttribute="height" secondItem="O6F-iU-NZa" secondAttribute="height" id="9CF-Dm-hVj"/>
+                                                <constraint firstAttribute="trailing" secondItem="aeE-Gy-Eq1" secondAttribute="trailing" id="A4m-ke-cqo"/>
+                                                <constraint firstItem="O6F-iU-NZa" firstAttribute="leading" secondItem="pYD-V7-esL" secondAttribute="leading" id="dwa-hp-V6X"/>
+                                                <constraint firstAttribute="trailing" secondItem="O6F-iU-NZa" secondAttribute="trailing" id="exP-ft-cud"/>
+                                                <constraint firstItem="aeE-Gy-Eq1" firstAttribute="leading" secondItem="pYD-V7-esL" secondAttribute="leading" id="g9D-4p-fhm"/>
+                                            </constraints>
+                                            <visibilityPriorities>
+                                                <integer value="1000"/>
+                                                <integer value="1000"/>
+                                                <integer value="1000"/>
+                                            </visibilityPriorities>
+                                            <customSpacing>
+                                                <real value="3.4028234663852886e+38"/>
+                                                <real value="3.4028234663852886e+38"/>
+                                                <real value="3.4028234663852886e+38"/>
+                                            </customSpacing>
+                                        </stackView>
+                                    </subviews>
+                                    <constraints>
+                                        <constraint firstItem="pYD-V7-esL" firstAttribute="centerX" secondItem="bdI-2Q-bet" secondAttribute="centerX" id="2eM-3v-xGU"/>
+                                        <constraint firstItem="WyD-Ow-uwT" firstAttribute="top" secondItem="a2l-Vn-fzE" secondAttribute="bottom" constant="15" id="68Y-um-Ndz"/>
+                                        <constraint firstItem="pYD-V7-esL" firstAttribute="leading" secondItem="bdI-2Q-bet" secondAttribute="leading" constant="30" id="7h6-5V-amP"/>
+                                        <constraint firstItem="WyD-Ow-uwT" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="bdI-2Q-bet" secondAttribute="leading" constant="20" id="Bb5-qu-Kyz"/>
+                                        <constraint firstItem="a2l-Vn-fzE" firstAttribute="centerX" secondItem="bdI-2Q-bet" secondAttribute="centerX" id="Hof-jY-vhz"/>
+                                        <constraint firstItem="pYD-V7-esL" firstAttribute="top" secondItem="WyD-Ow-uwT" secondAttribute="bottom" constant="16" id="RbG-vq-hPT"/>
+                                        <constraint firstItem="a2l-Vn-fzE" firstAttribute="top" secondItem="bdI-2Q-bet" secondAttribute="top" constant="15" id="YeS-cs-0XB"/>
+                                        <constraint firstAttribute="bottom" secondItem="pYD-V7-esL" secondAttribute="bottom" constant="20" id="cG1-ys-ueq"/>
+                                        <constraint firstItem="WyD-Ow-uwT" firstAttribute="centerX" secondItem="bdI-2Q-bet" secondAttribute="centerX" id="gea-jo-jLr"/>
+                                    </constraints>
+                                </view>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="350" id="sGD-KA-ckB"/>
+                                </constraints>
+                            </box>
+                        </subviews>
+                        <constraints>
+                            <constraint firstItem="lFs-Ud-U9e" firstAttribute="leading" secondItem="n4r-Nn-Xnv" secondAttribute="leading" id="159-c3-HyI"/>
+                            <constraint firstItem="lFs-Ud-U9e" firstAttribute="top" secondItem="n4r-Nn-Xnv" secondAttribute="top" id="6jk-rA-fCg"/>
+                            <constraint firstAttribute="trailing" secondItem="lFs-Ud-U9e" secondAttribute="trailing" id="7jc-cz-iu5"/>
+                            <constraint firstAttribute="bottom" secondItem="lFs-Ud-U9e" secondAttribute="bottom" id="BFN-dh-XV9"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="btnCancel" destination="aeE-Gy-Eq1" id="K0v-Or-8DV"/>
+                        <outlet property="btnOk" destination="O6F-iU-NZa" id="TpZ-WK-9sv"/>
+                        <outlet property="checkBox" destination="Cbi-yb-Xte" id="Ecx-f8-vQ9"/>
+                        <outlet property="lblSubTitle" destination="VGD-n3-Kcz" id="F1S-JG-hkt"/>
+                        <outlet property="lblTitle" destination="QaO-r7-eZc" id="6l5-mn-OiV"/>
+                        <outlet property="lblTitleDuration" destination="7ws-q5-bsO" id="o1W-JJ-BDD"/>
+                        <outlet property="lblTitleGoal" destination="EkH-MR-Gtm" id="kBH-RG-IGv"/>
+                        <outlet property="lblTitleMinutes" destination="H4E-JN-2cz" id="YdQ-fd-AbL"/>
+                        <outlet property="textFieldWorkDuration" destination="6tl-SR-cbk" id="k1k-pw-Rb6"/>
+                        <outlet property="textViewGoal" destination="Eax-v9-V3L" id="QPX-AH-amb"/>
+                    </connections>
+                </viewController>
+                <customObject id="WvA-bI-YAP" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-594" y="1621"/>
         </scene>
     </scenes>
     <resources>

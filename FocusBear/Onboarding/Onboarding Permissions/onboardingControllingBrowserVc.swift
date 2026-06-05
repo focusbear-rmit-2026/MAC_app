@@ -379,6 +379,13 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
             }
             
             
+            if !cell.btnRequest.isHidden {
+                addPulseRing(to: cell.btnRequest)
+            } else {
+                cell.btnRequest.layer?.sublayers?.removeAll {
+                    $0.name == "PulseRing"
+                }
+            }
             
             if arrBrowsers[row]["browser"] as? BROWSER == ._FIREFOX_{
                 if !state{
@@ -549,6 +556,20 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
                 showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
             }
         }
+    }
+    
+    func addPulseRing(to button: Button) {
+        
+        button.wantsLayer = true
+        let color = NSColor(named: "dark_OrangeColor") ?? .orange
+        let animation = CABasicAnimation(keyPath: "backgroundColor")
+        animation.fromValue = color.cgColor
+        animation.toValue = NSColor.brown.cgColor
+        animation.duration = 0.8
+        animation.autoreverses = true
+        animation.repeatCount = .infinity
+        
+        button.layer?.add(animation, forKey: "bgPulse")
     }
 }
 
