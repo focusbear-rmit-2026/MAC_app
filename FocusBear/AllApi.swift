@@ -5496,7 +5496,7 @@ class AllApi:NSObject {
         }
     }
     
-    //https://api.focusbear.io/api#/to-do/TodoController_getUserToDos
+    // Use /to-do/recent to fetch up to 50 most recently updated tasks.
     func getAllTasks(completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
         addLog(text: "func call:- getAllTasks")
         
@@ -5505,7 +5505,10 @@ class AllApi:NSObject {
             
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             if appdelegate!.credential != nil{
-                let responsePath = "\(baseUrl)/to-do"
+                // more than 10 task work recent?take=50 added 3.33.493
+                // This endpoint returns a plain array (not a paginated wrapper), so
+                // more than the default 10 tasks are returned.
+                let responsePath = "\(baseUrl)/to-do/recent?take=50"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call getAllTasks \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -5522,18 +5525,13 @@ class AllApi:NSObject {
                                 
                                 if data != nil{
                                     do {
-                                        if let arrJsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                        // /to-do/recent returns a plain array, not a paginated wrapper
+                                        if let arrJsonResult: [NSDictionary] = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? [NSDictionary]{
                                             
-                                            
+                                            addLog(text: "api call getAllTasks success")
                                             print(arrJsonResult)
-                                            if let arrAllTasks = arrJsonResult.value(forKey: "data") as? [NSDictionary]{
-                                                addLog(text: "api call getAllTasks success")
-                                                completionHandler(arrAllTasks)
-                                                return
-                                            }else{
-                                                completionHandler(nil)
-                                                return
-                                            }
+                                            completionHandler(arrJsonResult)
+                                            return
                                         }
                                         
                                     }catch{

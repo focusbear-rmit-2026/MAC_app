@@ -48,7 +48,7 @@ class popUpOfflineVc: NSViewController {
                     if !isInternetOn{
                         if self.step == 1{
                             self.step = 2
-                            self.lblTitle.stringValue = "Sorry we still can't reach our backend server. Please check your internet and try again. If you are definitely online and are getting this error, please contact team@focusbear.io"
+                            self.lblTitle.stringValue = "Sorry we still can't reach our backend server. Please check your internet and try again. If you are definitely online and are getting this error, please contact support@focusbear.io"
                             self.btnIAmOnline.title = "I'm definitely online"
                             
                             if let popUpOfflineVcInfo = configjson.value(forKey: "popUpOfflineVcInfo") as? NSDictionary{

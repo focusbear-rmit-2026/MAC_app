@@ -468,7 +468,7 @@ var startMorningHabitTitleText = "Good Morning! It’s time to Focus Bear. Here 
 var startEveningHabitTitleText = "Good Evening! It’s time to Focus Bear. Here are the habits you need to accomplish before you can leave for the day."
 var startCustomRoutineHabitTitleText = "Good Morning! It’s time to Focus Bear. Here are the habits you need to accomplish before you can use your computer."
 
-var emailID = "team@focusbear.io"
+var emailID = "support@focusbear.io"
 var appName = "Focus Bear"
 var buttonCancelText = "Cancel"
 var buttonOkText = "OK"

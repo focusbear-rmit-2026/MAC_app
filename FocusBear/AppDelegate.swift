@@ -3297,7 +3297,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         loadMenuWindow()
     }
-    
+
     @objc func checkWindowState(){
         loadAllWindows()
         isFirstRun = false
@@ -7348,7 +7348,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         let nameLowercased = name.lowercased()
                         if !focusDefaultAllowApps.contains(nameLowercased) && nameLowercased != selfAppName.lowercased(){
                             exitFullScreen(runningApp:runningApp)
-                            runningApp.hide()
                         }
                     }
                 }
@@ -9421,8 +9420,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 //Remove 15 second countdown if you skip and choose "Can't do it" unless the user has selected high friction#311
 
-// skip timer work from first habit list and postpone ist// need to test in evening routine todo 
-
 
 // tab title ka kaam
 // pomodoro bug 
+// window auto close

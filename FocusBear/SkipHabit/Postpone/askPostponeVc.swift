@@ -80,8 +80,6 @@ class askPostponeVc: NSViewController {
             }
             
         }else if currentState == ._FOCUS_SUMMARY_{
-            
-            
             popUpButtonSelectMinutes.isHidden = false
             lblSelectMinutes.isHidden = false
             popUpButtonSelectMinutes.selectItem(at: 0)
@@ -97,9 +95,6 @@ class askPostponeVc: NSViewController {
             
             btnPostpone.isSecondaryButton = false
             btnAbortBreak.isSecondaryButton = true
-            
-            
-            
         }else if currentState == ._MICRO_BREAK_{
             if activityPostponeCount == 0{
                 if SettingsManagerObject.isOfficeModeEnabled{

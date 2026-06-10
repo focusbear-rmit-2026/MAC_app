@@ -161,16 +161,15 @@ class setIntentionBlockedUrlsVc: NSViewController {
         }
         
 
-        totalDurationToAutoBlock = 30
-        if isAppInstalledWithinLast3Days(){
-            totalDurationToAutoBlock = 60
-        }
-        
+        totalDurationToAutoBlock = 60
+
         boxTimer.fillColor = NSColor.clear
         boxTimerSetIntention.fillColor = NSColor.clear
         lblTimerTotalSeconds.textColor = .labelColor
         lblTimerTotalSecondsCopy.textColor = .labelColor
         
+        lblTimerTotalSeconds.isHidden = true
+        lblTimerTotalSecondsCopy.isHidden = true
         
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDurationToAutoBlock-currentTimerToAutoBlock)
         DispatchQueue.main.async {
@@ -377,6 +376,7 @@ class setIntentionBlockedUrlsVc: NSViewController {
             RunLoop.main.add((self.timerFiveSecond!), forMode: RunLoop.Mode.common)
         }
     }
+    
     @objc func performTimerFiveSecond() {
         currentTimer += 1
         setProgress()
@@ -519,6 +519,9 @@ class setIntentionBlockedUrlsVc: NSViewController {
             boxTimerSetIntention.fillColor = NSColor(resource: .darkOrange)
             lblTimerTotalSeconds.textColor = .white
             lblTimerTotalSecondsCopy.textColor = .white
+        }else if remainingSeconds < 31{
+            lblTimerTotalSeconds.isHidden = false
+            lblTimerTotalSecondsCopy.isHidden = false
         }else{
             boxTimer.fillColor = NSColor.clear
             boxTimerSetIntention.fillColor = NSColor.clear

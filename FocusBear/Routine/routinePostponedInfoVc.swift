@@ -182,7 +182,7 @@ class routinePostponedInfoVc: NSViewController {
                                     let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
                                     if let infoDic = UserDefaults.standard.object(forKey: kUserdefaultsLastSequenceSelectHabitsInfo) as? [String:Any]{
                                         if let lastSavedSequenceId =  infoDic["sequenceId"] as? String, let arrHabitIds =  infoDic["arrHabitIds"] as? [String], let date =  infoDic["date"] as? Date{
-                                            if lastSavedSequenceId == arrFilteredMorningHabits[0].activity_sequence_id && date.compare(startDate) == .orderedDescending{
+                                            if lastSavedSequenceId == arrFilteredMorningHabits.first?.activity_sequence_id && date.compare(startDate) == .orderedDescending{
                                                 if arrHabitIds.count != 0{
                                                     arrFilteredMorningHabits.removeAll()
                                                     for habit in arrPreFilteredMorningHabits{
@@ -331,7 +331,7 @@ class routinePostponedInfoVc: NSViewController {
                                     let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
                                     if let infoDic = UserDefaults.standard.object(forKey: kUserdefaultsLastSequenceSelectHabitsInfo) as? [String:Any]{
                                         if let lastSavedSequenceId =  infoDic["sequenceId"] as? String, let arrHabitIds =  infoDic["arrHabitIds"] as? [String], let date =  infoDic["date"] as? Date{
-                                            if lastSavedSequenceId == arrPreFilteredEveningHabits[0].activity_sequence_id && date.compare(startDate) == .orderedDescending{
+                                            if lastSavedSequenceId == arrPreFilteredEveningHabits.first?.activity_sequence_id && date.compare(startDate) == .orderedDescending{
                                                 if arrHabitIds.count != 0{
                                                     arrFilteredEveningHabits.removeAll()
                                                     for habit in arrPreFilteredEveningHabits{
@@ -786,6 +786,9 @@ extension routinePostponedInfoVc:NSTableViewDelegate, NSTableViewDataSource {
             cell.boxBg.fillColor = NSColor.clear
             cell.lblTitle.textColor = NSColor.labelColor
             if lCurrentState == ._MORNING_HABIT_{
+                guard row < arrFilteredMorningHabits.count else {
+                    return NSTableCellView()
+                }
                 cell.lblTitle.stringValue  = "\(row + 1).   \(arrFilteredMorningHabits[row].name ?? "")"
                 cell.boxBg.borderColor = NSColor.clear
                 cell.lblTitle.tag = 99
@@ -794,6 +797,9 @@ extension routinePostponedInfoVc:NSTableViewDelegate, NSTableViewDataSource {
                     cell.lblTitle.textColor = NSColor.white
                 }
             }else if lCurrentState == ._EVENING_HABIT_{
+                guard row < arrFilteredEveningHabits.count else {
+                    return NSTableCellView()
+                }
                 cell.lblTitle.stringValue  = "\(row + 1).   \(arrFilteredEveningHabits[row].name ?? "")"
                 cell.boxBg.borderColor = NSColor.clear
                 cell.lblTitle.tag = 99
@@ -901,13 +907,13 @@ extension routinePostponedInfoVc:NSTableViewDelegate, NSTableViewDataSource {
         
         if lCurrentState == ._MORNING_HABIT_{
             if arrFilteredMorningHabits.count != 0 {
-                let time = arrFilteredMorningHabits[tblViewHabits.selectedRow].durationSeconds!
-                btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrFilteredMorningHabits[tblViewHabits.selectedRow].name!)
+                let time = arrFilteredMorningHabits[tblViewHabits.selectedRow].durationSeconds ?? 0
+                btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrFilteredMorningHabits[tblViewHabits.selectedRow].name ?? "")
             }
         }else if lCurrentState == ._EVENING_HABIT_{
             if arrFilteredEveningHabits.count != 0 {
-                let time = arrFilteredEveningHabits[tblViewHabits.selectedRow].durationSeconds!
-                btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrFilteredEveningHabits[tblViewHabits.selectedRow].name!)
+                let time = arrFilteredEveningHabits[tblViewHabits.selectedRow].durationSeconds ?? 0
+                btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrFilteredEveningHabits[tblViewHabits.selectedRow].name ?? "")
             }
         }
     }

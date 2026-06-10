@@ -559,7 +559,7 @@ class focusButtonService: NSObject {
             onHabitNameChanged?("")
             applyState(.idle)
             
-            if isFocusModeOnOrPaused(){
+            if isFocusModeOnOrPaused(){//todo 
                 finishFocusModeFromFocusDeviceButton(shouldUpdateFocusButton: false)
             }else{
                 
