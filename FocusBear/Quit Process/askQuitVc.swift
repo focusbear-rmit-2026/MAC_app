@@ -301,7 +301,7 @@ class askQuitVc: NSViewController {
     
     func tryDeactivateApp(){
         addLog(text: "askQuitVc:- tryDeactivateApp")
-        if currentState == ._MORNING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_{
+        if currentState == ._MORNING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_{
             let alert = NSAlert()
             alert.setSharingType()
             alert.alertStyle = .informational

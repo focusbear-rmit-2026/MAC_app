@@ -1102,7 +1102,7 @@ class pomodoroVc: NSViewController {
         
         let totalMinutes = textFieldWorkDuration.integerValue
         
-        if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+        if currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
             if getHabitsVcObject().postponeTimer != nil {
                 if getHabitsVcObject().postponeTimer!.isValid{
                     let currentTime = Date()
@@ -1131,7 +1131,7 @@ class pomodoroVc: NSViewController {
                         
                         alertExtendPostpone!.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                             if modalResponse == .alertFirstButtonReturn{
-                                if currentState == ._POSTPON_MORNING_HABIT_{
+                                if currentState == ._POSTPONE_MORNING_HABIT_{
                                     
                                     
                                     if SettingsManagerObject.isEasySkipEnabled{
@@ -1148,7 +1148,7 @@ class pomodoroVc: NSViewController {
                                             self.checkStateAndStartPomodoroMode()
                                         }
                                     }
-                                }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+                                }else if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
                                     var shouldAskPasswordForEvening = false
                                     if shouldAskPassword() &&  !SettingsManagerObject.isEasySkipEnabled{
                                         if isCutOffTimeGoing(){ 
@@ -1168,9 +1168,9 @@ class pomodoroVc: NSViewController {
                                         self.enterPasswordVcObj?.isShowingForRelaxFocusMode = false
                                         return;
                                     }else{
-                                        if currentState == ._POSTPON_EVENING_HABIT_{
+                                        if currentState == ._POSTPONE_EVENING_HABIT_{
                                             getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
-                                        }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
+                                        }else if currentState == ._POSTPONE_FOCUS_SUMMARY_{
                                             getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                                         }
                                         self.checkStateAndStartPomodoroMode()

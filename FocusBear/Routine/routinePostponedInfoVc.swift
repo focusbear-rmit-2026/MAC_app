@@ -385,7 +385,7 @@ class routinePostponedInfoVc: NSViewController {
         focusButtonServiceObject.sendMorningHabitsToFocusDevice()
         //---------//
         if arrFilteredMorningHabits.count == 0{
-            if currentState == ._POSTPON_MORNING_HABIT_{
+            if currentState == ._POSTPONE_MORNING_HABIT_{
                 currentState = ._NOTHING_
                 getHabitsVcObject().stopPostponeEndTimer()
             }
@@ -449,7 +449,7 @@ class routinePostponedInfoVc: NSViewController {
         focusButtonServiceObject.sendEveningHabitsToFocusDevice()
         //---------//
         if arrFilteredEveningHabits.count == 0{
-            if currentState == ._POSTPON_EVENING_HABIT_{
+            if currentState == ._POSTPONE_EVENING_HABIT_{
                 currentState = ._NOTHING_
                 getHabitsVcObject().stopPostponeEndTimer()
             }
@@ -549,7 +549,7 @@ class routinePostponedInfoVc: NSViewController {
         focusButtonServiceObject.sendMorningHabitsToFocusDevice()
         //---------//
         if arrFilteredMorningHabits.count == 0{
-            if currentState == ._POSTPON_MORNING_HABIT_{
+            if currentState == ._POSTPONE_MORNING_HABIT_{
                 currentState = ._NOTHING_
                 getHabitsVcObject().stopPostponeEndTimer()
             }
@@ -588,7 +588,7 @@ class routinePostponedInfoVc: NSViewController {
         focusButtonServiceObject.sendEveningHabitsToFocusDevice()
         //---------//
         if arrFilteredEveningHabits.count == 0{
-            if currentState == ._POSTPON_EVENING_HABIT_{
+            if currentState == ._POSTPONE_EVENING_HABIT_{
                 currentState = ._NOTHING_
                 getHabitsVcObject().stopPostponeEndTimer()
             }

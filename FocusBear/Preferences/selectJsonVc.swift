@@ -575,7 +575,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                                 }
                                 
                                 if currentAction == ._END_ && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_){
-                                    if (getHabitsVcObject().habitsView.subviews.contains(thirdVcObj!.view)){
+                                    if (getHabitsVcObject().habitsView.subviews.contains(activityCompletionVcObj!.view)){
                                         if focusCompletedForActivityVcObj != nil{
                                             if (getHabitsVcObject().view.subviews.contains((focusCompletedForActivityVcObj!.view))){
                                                 focusCompletedForActivityVcObj?.textFieldAchieve.stringValue = taskString

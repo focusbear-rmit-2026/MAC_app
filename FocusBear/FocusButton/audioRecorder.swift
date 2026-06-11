@@ -230,7 +230,9 @@ class audioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate{
                         case .success(let transcription):
                             addLog(text: "Transcription text is:- \(transcription)")
                             
-                            getIntentFromOpenAIAndPerformTask(transcription: transcription)
+                            
+                            let habitsString = isShutOffTimeGoing() ? sendEveningHabitsToFocusDevice() : sendMorningHabitsToFocusDevice()
+                            getIntentFromOpenAIAndPerformTask(transcription: transcription, habits: habitsString)
                         case .failure(let error):
                             print("Error: \(error)")
                         }
@@ -240,8 +242,28 @@ class audioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate{
         }
     }
     
-    func getIntentFromOpenAIAndPerformTask(transcription:String){
-        allApiObject.getIntentFromOpenAI(userMessage: transcription) { intentResult in
+    func sendMorningHabitsToFocusDevice()-> String{
+        var arrHabits = [String]()
+        for i in 0..<arrFilteredMorningHabits.count{
+            arrHabits.append(arrFilteredMorningHabits[i].name)
+        }
+        return getHabitsString(habits: arrHabits)
+    }
+    
+    func sendEveningHabitsToFocusDevice()-> String{
+        var arrHabits = [String]()
+        for i in 0..<arrFilteredEveningHabits.count{
+            arrHabits.append(arrFilteredEveningHabits[i].name)
+        }
+        return getHabitsString(habits: arrHabits)
+    }
+    
+    func getHabitsString(habits: [String])-> String {
+        habits.map { "- \($0)" }.joined(separator: "\n")
+    }
+    
+    func getIntentFromOpenAIAndPerformTask(transcription:String, habits:String){
+        allApiObject.getIntentFromOpenAI(userMessage: transcription, habits: habits) { intentResult in
             DispatchQueue.main.async {
                 switch intentResult {
                 case .success(let response):
@@ -279,8 +301,29 @@ class audioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate{
                     case "start_habit":
                         let habitName = response.parameters.habit_name ?? "Unknown habit"
                         addLog(text: "Starting habit: \(habitName)")
-                        // Call your habit function here
-                        // startHabit(name: habitName)
+                    
+                        let name = habitName.lowercased()
+                        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+                            
+                            if currentAction != ._INPROGRESS_{
+                                if currentState == ._MORNING_HABIT_{
+                                    getHabitsVcObject().startMorningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
+                                }else if currentState == ._EVENING_HABIT_{
+                                    getHabitsVcObject().startEveningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
+                                }
+                            }
+                        }else {
+                            if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_{
+                                getHabitsVcObject().stopPostponeEndTimer()
+                                closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
+                                if currentState == ._POSTPONE_MORNING_HABIT_{
+                                    getHabitsVcObject().startMorningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
+                                }else if currentState == ._POSTPONE_EVENING_HABIT_{
+                                    getHabitsVcObject().startEveningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
+                                }
+                            }
+                            
+                        }
                         
                     default:
                         addLog(text: "Unknown action: \(response.action)")

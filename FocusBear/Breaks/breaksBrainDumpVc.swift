@@ -82,7 +82,7 @@ class breaksBrainDumpVc: NSViewController {// not in use
         lblSubtitle.stringValue = "You're going to feel great after this break. Write down what you were just working on so you don't forget."
         
         
-        lblProgress.stringValue = thirdVcObj?.lblProgress.stringValue ?? ""
+        lblProgress.stringValue = activityCompletionVcObj?.lblProgress.stringValue ?? ""
 
         var totalDuration = 0
         for activity in arrFinalBreakActivities{

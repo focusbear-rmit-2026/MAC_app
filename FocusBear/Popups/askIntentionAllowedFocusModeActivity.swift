@@ -19,7 +19,7 @@ class askIntentionAllowedFocusModeActivity: NSViewController {
     var name:String = ""
     var currentHabit: habit!
     var currentTimerValue:Int = 0
-    
+    var shouldUpdateDeviceButton = true
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -40,14 +40,16 @@ class askIntentionAllowedFocusModeActivity: NSViewController {
         }
     }
     
-    func resetData(focusMode:String, intention:String, durationSeconds:Int, name:String,currentHabit: habit, currentTimerValue:Int){
+    func resetData(focusMode:String, intention:String, durationSeconds:Int, name:String,currentHabit: habit, currentTimerValue:Int, shouldUpdateDeviceButton:Bool){
         lblTitle.stringValue = titleText.replacingOccurrences(of: "<FOCUSTYPE>", with: focusMode)
         textViewIntention.string = intention
         self.durationSeconds = durationSeconds
         self.name = name
         self.currentHabit = currentHabit
         self.currentTimerValue = currentTimerValue
+        self.shouldUpdateDeviceButton = shouldUpdateDeviceButton
     }
+    
     @IBAction func btnContinueClicked(_ sender: Any) {
         if let focusModeId = currentHabit.allowedFocusMode{
             for i in 0..<arrFocusType.count{
@@ -60,7 +62,7 @@ class askIntentionAllowedFocusModeActivity: NSViewController {
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         updateAllFocusModes()
         self.dismiss(self)
-        timerViewcontrollerObj?.startTimerHabit(durationSeconds: durationSeconds, name: name, currentHabit: currentHabit, currentTimerValue: currentTimerValue)
+        timerViewcontrollerObj?.startTimerHabit(durationSeconds: durationSeconds, name: name, currentHabit: currentHabit, currentTimerValue: currentTimerValue, shouldUpdateDeviceButton: shouldUpdateDeviceButton)
     }
     
 }

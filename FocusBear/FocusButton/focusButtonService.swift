@@ -33,8 +33,7 @@ class focusButtonService: NSObject {
     private var state: DeviceState = .disconnected
     private var remainingSeconds: Int64 = 0
     private var sessionTotalSeconds: Int64 = 0
-    private var currentHabitName: String = ""
-    
+
     private var pendingResponse = false
     private var lastSentCmd = ""
     private var responseCheckTimer: Timer?
@@ -53,7 +52,6 @@ class focusButtonService: NSObject {
     // MARK: - Callbacks
     var onStateChanged: ((DeviceState) -> Void)?
     var onRemainingTimeChanged: ((Int64) -> Void)?
-    var onHabitNameChanged: ((String) -> Void)?
     var onHabitsReceived: (([(id: String, name: String, durationSeconds: Int64)]) -> Void)?
     
     var onError: ((String) -> Void)?
@@ -137,6 +135,11 @@ class focusButtonService: NSObject {
         applyState(.idle)
     }
     
+    func updateHabitDuration(seconds: Int) {
+        log("FocusButton: updateHabitDuration()")
+        sendCmd("SET|UPDATE|\(seconds)")
+        applyState(.idle)
+    }
     
     func sendMorningHabitsToFocusDevice(){
         log("FocusButton: sendMorningHabitsToFocusDevice()")
@@ -146,7 +149,7 @@ class focusButtonService: NSObject {
             let id = arrFilteredMorningHabits[i].id ?? ""
             let isActivityCompleted = isActivityCompleted(id: id, habits: arrFilteredMorningHabits)
             if !isActivityCompleted{
-                arrHabits.append((id: "\(i + 1)", name: arrFilteredMorningHabits[i].name, durationSeconds: arrFilteredMorningHabits[i].durationSeconds))
+                arrHabits.append((id: arrFilteredMorningHabits[i].fakeIdForDevice, name: arrFilteredMorningHabits[i].nameWithoutIcon, durationSeconds: arrFilteredMorningHabits[i].durationSeconds))
             }
         }
         sendHabits(habits: arrHabits)
@@ -160,7 +163,7 @@ class focusButtonService: NSObject {
             let id = arrFilteredEveningHabits[i].id ?? ""
             let isActivityCompleted = isActivityCompleted(id: id, habits: arrFilteredEveningHabits)
             if !isActivityCompleted{
-                arrHabits.append((id: "\(i + 1)", name: arrFilteredEveningHabits[i].name, durationSeconds: arrFilteredEveningHabits[i].durationSeconds))
+                arrHabits.append((id: arrFilteredEveningHabits[i].fakeIdForDevice, name: arrFilteredEveningHabits[i].nameWithoutIcon, durationSeconds: arrFilteredEveningHabits[i].durationSeconds))
             }
         }
         sendHabits(habits: arrHabits)
@@ -428,15 +431,6 @@ class focusButtonService: NSObject {
             onRemainingTimeChanged?(rem)
         }
         
-        if parts.count >= 4 {
-            if parts[3].uppercased() == "HABIT" && parts.count >= 5 && !parts[4].isEmpty {
-                currentHabitName = parts[4].trimmingCharacters(in: .whitespaces)
-                onHabitNameChanged?(currentHabitName)
-            } else if parts[3].uppercased() == "FOCUS" {
-                currentHabitName = ""
-                onHabitNameChanged?("")
-            }
-        }
         
         applyState(newState)
     }
@@ -464,34 +458,26 @@ class focusButtonService: NSObject {
                 let name = parts[3].trimmingCharacters(in: .whitespaces).lowercased()
                 if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
                     
-                    //onHabitNameChanged?(id)
-                    
                     if currentAction != ._INPROGRESS_{
                         if currentState == ._MORNING_HABIT_{
-                            getHabitsVcObject().startMorningRouintHabitFromDeviceButton(name: name)
+                            getHabitsVcObject().startMorningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
                         }else if currentState == ._EVENING_HABIT_{
-                            getHabitsVcObject().startEveningRouintHabitFromDeviceButton(name: name)
+                            getHabitsVcObject().startEveningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
                         }
                     }
                 }else {
-                    currentHabitName = ""
-                    onHabitNameChanged?("")
-                    
-                    if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_{
+                    if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_{
                         getHabitsVcObject().stopPostponeEndTimer()
                         closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
-                        if currentState == ._POSTPON_MORNING_HABIT_{
-                            getHabitsVcObject().startMorningRouintHabitFromDeviceButton(name: name)
-                        }else if currentState == ._POSTPON_EVENING_HABIT_{
-                            getHabitsVcObject().startEveningRouintHabitFromDeviceButton(name: name)
+                        if currentState == ._POSTPONE_MORNING_HABIT_{
+                            getHabitsVcObject().startMorningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
+                        }else if currentState == ._POSTPONE_EVENING_HABIT_{
+                            getHabitsVcObject().startEveningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
                         }
                     }
                     
                 }
                 
-            } else {
-                currentHabitName = ""
-                onHabitNameChanged?("")
             }
             applyState(.running)
             
@@ -545,8 +531,6 @@ class focusButtonService: NSObject {
             applyState(.running)
             
         case "CANCEL":
-            currentHabitName = ""
-            onHabitNameChanged?("")
             applyState(.idle)
             if isFocusModeOnOrPaused(){
                 finishFocusModeFromFocusDeviceButton(shouldUpdateFocusButton: false)
@@ -555,15 +539,8 @@ class focusButtonService: NSObject {
             }
             
         case "DONE":
-            currentHabitName = ""
-            onHabitNameChanged?("")
             applyState(.idle)
             
-            if isFocusModeOnOrPaused(){//todo 
-                finishFocusModeFromFocusDeviceButton(shouldUpdateFocusButton: false)
-            }else{
-                
-            }
         case "LISTEN":
             if parts.count >= 3 {
                 if parts[2].uppercased() == "START"{

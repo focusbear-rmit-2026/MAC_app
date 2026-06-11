@@ -20,6 +20,8 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
     var hasSkippedHabits = false
     var isEditHabitsLoaded = false
     
+    var completionHandler: (() -> Void)?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -51,6 +53,17 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
         showOnboardingBellIcon(view: self.view, screen: "habit-packs-screen")
     }
 
+    
+    func loadwebViewWithCompletion(suggestHabits:Bool, completionHandler: @escaping () -> Void){
+        self.completionHandler = completionHandler
+        if self.suggestHabits == suggestHabits{
+            completionHandler()
+            self.completionHandler = nil
+            return;
+        }
+        loadWebView(suggestHabits: suggestHabits)
+    }
+    
     func loadWebView(suggestHabits:Bool){
         if self.suggestHabits == suggestHabits{
             return;
@@ -77,6 +90,12 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
                         self.setSettingsToWebView()
                     }else{
                         self.setAccessTokenToWebView()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                            if self?.completionHandler != nil{
+                                self?.completionHandler!()
+                                self?.completionHandler = nil
+                            }
+                        }
                     }
                 }
             }
@@ -84,10 +103,18 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        if self.completionHandler != nil{
+            completionHandler!()
+            self.completionHandler = nil
+        }
         handleLoadError(webView: webView)
     }
     
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        if self.completionHandler != nil{
+            completionHandler!()
+            self.completionHandler = nil
+        }
         handleLoadError(webView: webView)
     }
   

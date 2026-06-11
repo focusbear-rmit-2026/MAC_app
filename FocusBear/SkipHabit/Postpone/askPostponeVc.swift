@@ -154,9 +154,9 @@ class askPostponeVc: NSViewController {
         if currentAction == ._INPROGRESS_{
             currentActicityTitle = timerViewcontrollerObj?.currentActicityTitle ?? ""
         }else if currentAction == ._END_{
-            currentActicityTitle = thirdVcObj?.activityName ?? ""
+            currentActicityTitle = activityCompletionVcObj?.activityName ?? ""
         }else if currentAction == ._START_{
-            currentActicityTitle = thirdVcObj?.activityName ?? ""
+            currentActicityTitle = activityCompletionVcObj?.activityName ?? ""
         }
         btnPostpone.title = "I don't have time"
         btnAbortBreak.title = "I'm in the offIce"

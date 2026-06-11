@@ -288,7 +288,7 @@ var applastSettingsGetTime:Date?
 
 
 enum CURRENTSTATE:Int, CustomStringConvertible {
-    case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _MICRO_BREAK_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FOCUS_SUMMARY_, _POSTPON_MORNING_HABIT_, _POSTPON_EVENING_HABIT_, _POSTPON_FOCUS_SUMMARY_, _ONBOARDING_, _SPECIAL_ACTIVITY_, _CUSTOM_ROUTINE_, _LOGIN_
+    case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _MICRO_BREAK_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FOCUS_SUMMARY_, _POSTPONE_MORNING_HABIT_, _POSTPONE_EVENING_HABIT_, _POSTPONE_FOCUS_SUMMARY_, _ONBOARDING_, _SPECIAL_ACTIVITY_, _CUSTOM_ROUTINE_, _LOGIN_
     
     var description: String {
         switch self {
@@ -300,16 +300,16 @@ enum CURRENTSTATE:Int, CustomStringConvertible {
         case ._BREATHING_: return "_BREATHING_"
         case ._ABORT_: return "_ABORT_"
         case ._FOCUS_SUMMARY_: return "_FOCUS_SUMMARY_"
-        case ._POSTPON_MORNING_HABIT_: return "_POSTPON_MORNING_HABIT_"
-        case ._POSTPON_EVENING_HABIT_: return "_POSTPON_EVENING_HABIT_"
-        case ._POSTPON_FOCUS_SUMMARY_: return "_POSTPON_FOCUS_SUMMARY_"
+        case ._POSTPONE_MORNING_HABIT_: return "_POSTPONE_MORNING_HABIT_"
+        case ._POSTPONE_EVENING_HABIT_: return "_POSTPONE_EVENING_HABIT_"
+        case ._POSTPONE_FOCUS_SUMMARY_: return "_POSTPONE_FOCUS_SUMMARY_"
         case ._ONBOARDING_: return "_ONBOARDING_"
         case ._SPECIAL_ACTIVITY_: return "_SPECIAL_ACTIVITY_"
         case ._CUSTOM_ROUTINE_: return "_CUSTOM_ROUTINE_"
         case ._LOGIN_: return "_LOGIN_"
         }
     }
-}//_POSTPON_BREAK_ACTIVITY_ is not required because we always reset break activity timer when user clicks on postpone
+}//_POSTPONE_BREAK_ACTIVITY_ is not required because we always reset break activity timer when user clicks on postpone
 
 var lastCurrentStateSaved:CURRENTSTATE = ._NOTHING_
 
@@ -319,11 +319,11 @@ var currentState:CURRENTSTATE = ._NOTHING_{
     didSet{
         if currentState == ._NOTHING_ && lastCurrentStateSaved == ._CUSTOM_ROUTINE_{// if currest state was custom routine and custom routine was started during postpone morning/evening routine state then after complete or abort custom routine set postpone state again
             if isCustomRoutineWasRunningInPostponeEveningHabit && !isCustomRoutineWasRunningBetweenEveningHabit{
-                currentState = ._POSTPON_EVENING_HABIT_
+                currentState = ._POSTPONE_EVENING_HABIT_
             }
             
             if isCustomRoutineWasRunningInPostponeMorningHabit && !isCustomRoutineWasRunningBetweenMorningHabit{
-                currentState = ._POSTPON_MORNING_HABIT_
+                currentState = ._POSTPONE_MORNING_HABIT_
             }
         }
         if currentState != ._CUSTOM_ROUTINE_{

@@ -133,9 +133,9 @@ class skipHabitVc: NSViewController {
         self.view.removeFromSuperview()
         
         if rememberNextHabitVcObj != nil{
-            if thirdVcObj!.view.subviews.contains(rememberNextHabitVcObj!.view){
+            if activityCompletionVcObj!.view.subviews.contains(rememberNextHabitVcObj!.view){
                 rememberNextHabitVcObj!.view.removeFromSuperview()
-                thirdVcObj?.boxBg.isHidden = false
+                activityCompletionVcObj?.boxBg.isHidden = false
             }
         }
         if currentAction == ._VISUALIZE_{
@@ -149,13 +149,13 @@ class skipHabitVc: NSViewController {
         }
         
         if currentState == ._MICRO_BREAK_{
-            thirdVcObj?.activitySkipped()
+            activityCompletionVcObj?.activitySkipped()
         }else if currentState == ._MORNING_HABIT_{
-            thirdVcObj?.morningHabitSkipped()
+            activityCompletionVcObj?.morningHabitSkipped()
         }else if currentState == ._EVENING_HABIT_{
-            thirdVcObj?.eveningHabitSkipped()
+            activityCompletionVcObj?.eveningHabitSkipped()
         }else if currentState == ._CUSTOM_ROUTINE_{
-            thirdVcObj?.customRoutineHabitSkipped()
+            activityCompletionVcObj?.customRoutineHabitSkipped()
         }
     }
 }

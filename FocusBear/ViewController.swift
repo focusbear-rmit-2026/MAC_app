@@ -153,6 +153,27 @@ class ViewController: NSViewController {
         }
     }//
     
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        // bug solved v 3.33.494 Option-clicking outside the window making blank screen when shows again
+        // Normally, another flow restores the content inside containerView.
+        // In some cases (e.g. Option-clicking outside the window), all subviews
+        // may have been removed in viewWillDisappear() and not restored.
+        // and user may click on dock icon to show window again
+        // Delay the check slightly to allow the normal UI setup flow to complete.
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+            guard let self = self else { return }
+            let viewsArr = self.containerView.subviews
+            if viewsArr.count == 0{
+                addLog(text: "InstallHabitVC - containerView is empty, restoring last selected view")
+                if let leftMenuVcObj = leftMenuVcObj, let lastSelectedBox = leftMenuVcObj.lastSelectedBox{
+                    leftMenuVcObj.selectableListBoxDidChangeSelectionByUser(lastSelectedBox)
+                }
+            }
+        }
+    }
+    
     override func viewWillDisappear() {
         if !shouldIgnoreViewWilDisappear{
             removeSubViews()

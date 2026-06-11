@@ -1992,6 +1992,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     let days_of_week = habitDic["days_of_week"] as? [String] ?? []
                     var tutorial = habitDic["tutorial"] as? String ?? ""
                     let icon = habitDic["habit_icon"] as? String ?? ""
+                    let nameWithoutIcon = name
+                    
                     if !icon.isEmpty{
                         name = icon + " " + name
                     }
@@ -2049,7 +2051,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     
                     var habit = habit(id:id,name: name, durationSeconds: durationSeconds, urlsArray: videoUrl, logQuantity: logQuantity, logQuantityQuestion: logQuantityQuestion, openSpecificApps: openSpecificApps, allowUrls: allowUrls, allowApps: allowApps, allowedFocusMode: allowedFocusMode, activity_sequence_id: activity_sequence_id, run_micro_breaks: run_micro_breaks, take_notes: take_notes, isPriorityHigh: false, days_of_week: days_of_week, text_instructions: text_instructions, imgUrls: imgUrls, completion_requirements: completion_requirements, useTimer: useTimer, checkList:check_list, tutorial: tutorial)
                     
+                    habit.nameWithoutIcon = nameWithoutIcon
                     habit.logQuantityQuestions = arrLogQuantityQuestions
+                    habit.fakeIdForDevice = "\(arrFilteredMorningHabits.count + 1)"
                     arrFilteredMorningHabits.append(habit)
                 }
             }
@@ -2077,6 +2081,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     let days_of_week = habitDic["days_of_week"] as? [String] ?? []
                     var tutorial = habitDic["tutorial"] as? String ?? ""
                     let icon = habitDic["habit_icon"] as? String ?? ""
+                    let nameWithoutIcon = name
                     if !icon.isEmpty{
                         name = icon + " " + name
                     }
@@ -2141,9 +2146,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         habit.cutOffTime = getTimeFromString(val: cutoff_time)
                     }
                     
-                    
+                    habit.nameWithoutIcon = nameWithoutIcon
                     habit.showSavedDistractingWebsites = show_saved_distracting_websites
                     habit.logQuantityQuestions = arrLogQuantityQuestions
+                    habit.fakeIdForDevice = "\(arrFilteredEveningHabits.count + 1)"
                     arrFilteredEveningHabits.append(habit)
                     
                 }
@@ -2285,8 +2291,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     arrAllbreakActivities.append(activity)
                 }
             }
-            
-            
             
             if let breakMinutes = jsonResult!.value(forKey: "break_after_minutes") as? Int {
                 //                print("breakAfterMinutes")
@@ -2655,7 +2659,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             }
                         }else if event.keyCode == 48{// tab
                             if mainWindowControllerObj?.window?.isVisible ?? false && (leftMenuVcObj?.boxHabits.isSelected ?? false || leftMenuVcObj?.boxCustomRoutine.isSelected ?? false || leftMenuVcObj?.boxMicroBreaks.isSelected ?? false){
-                                if (getHabitsVcObject().habitsView.subviews.contains(thirdVcObj!.view)){
+                                if (getHabitsVcObject().habitsView.subviews.contains(activityCompletionVcObj!.view)){
                                     if (getHabitsVcObject().view.subviews.contains((logQuantityVcObj!.view))){
                                         if currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                                             if logQuantityVcObj!.tabClickedSelectNextTextField(){
@@ -2686,7 +2690,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         }
                                     }
                                     if currentAction == ._END_{
-                                        if (getHabitsVcObject().habitsView.subviews.contains(thirdVcObj!.view)){
+                                        if (getHabitsVcObject().habitsView.subviews.contains(activityCompletionVcObj!.view)){
                                             if focusCompletedForActivityVcObj != nil{
                                                 if (getHabitsVcObject().view.subviews.contains((focusCompletedForActivityVcObj!.view))){
                                                     return event
@@ -2696,9 +2700,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                 logQuantityVcObj?.btnOkClicked(self)
                                                 return nil
                                             }else{
-                                                if thirdVcObj?.boxBg.isHidden == true{// it means remember next habit is added
+                                                if activityCompletionVcObj?.boxBg.isHidden == true{// it means remember next habit is added
                                                     if rememberNextHabitVcObj != nil{
-                                                        if thirdVcObj?.view.subviews.contains(rememberNextHabitVcObj!.view) ?? false{
+                                                        if activityCompletionVcObj?.view.subviews.contains(rememberNextHabitVcObj!.view) ?? false{
                                                             if rememberNextHabitVcObj?.btnStartNextHabit.isHidden == false{
                                                                 rememberNextHabitVcObj?.btnStartNextHabitClicked(self)
                                                                 return nil
@@ -2706,7 +2710,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                         }
                                                     }
                                                 }else{
-                                                    thirdVcObj?.btnMainClicked(self)
+                                                    activityCompletionVcObj?.btnMainClicked(self)
                                                     return nil
                                                 }
                                             }
@@ -2756,12 +2760,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                         return nil
                                                     }
                                                 }
-                                            }else if (getHabitsVcObject().habitsView.subviews.contains(thirdVcObj!.view)){
+                                            }else if (getHabitsVcObject().habitsView.subviews.contains(activityCompletionVcObj!.view)){
                                                 if (getHabitsVcObject().view.subviews.contains((logQuantityVcObj!.view))){
                                                     logQuantityVcObj?.btnOkClicked(self)
                                                     return nil
                                                 }else{
-                                                    thirdVcObj?.btnMainClicked(self)
+                                                    activityCompletionVcObj?.btnMainClicked(self)
                                                     return nil
                                                 }
                                             }
@@ -3368,9 +3372,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             print("Time remaining: \(minutes):\(String(format: "%02d", remainingSeconds))")
         }
 
-        focusButtonServiceObject.onHabitNameChanged = { habitName in
-            print("Current habit: \(habitName)")
-        }
 
         focusButtonServiceObject.onHabitsReceived = { habits in
             for habit in habits {
@@ -4164,7 +4165,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
         
-        if currentState == ._MICRO_BREAK_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_ || currentState == ._POSTPON_MORNING_HABIT_ || !isAppEnable || currentState == ._ABORT_ || currentState == ._SPECIAL_ACTIVITY_{
+        if currentState == ._MICRO_BREAK_ || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_ || currentState == ._POSTPONE_MORNING_HABIT_ || !isAppEnable || currentState == ._ABORT_ || currentState == ._SPECIAL_ACTIVITY_{
             addLog(text: "func:- returnFromSystemSleepCheckAppStateAgain   return:- currentState is activity/postpone/abort/specialActivity")
             
             
@@ -4778,8 +4779,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                         
                         //Late No More disrupts saving achievements at end of activity with focus mode#919
-                        if currentAction == ._END_ && thirdVcObj != nil{
-                            if (getHabitsVcObject().habitsView.subviews.contains(thirdVcObj!.view)){
+                        if currentAction == ._END_ && activityCompletionVcObj != nil{
+                            if (getHabitsVcObject().habitsView.subviews.contains(activityCompletionVcObj!.view)){
                                 if logQuantityVcObj != nil{// log quanity
                                     if (getHabitsVcObject().view.subviews.contains((logQuantityVcObj!.view))){
                                         logQuantityVcObj?.btnOkClicked(self)
@@ -5080,10 +5081,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     isBreakActivityExecuteFromMorningHabit = false
                     isBreakActivityExecuteFromPostponeMorningHabit = false
                     
-                    if currentState == ._POSTPON_MORNING_HABIT_{//if user postpone again and again
+                    if currentState == ._POSTPONE_MORNING_HABIT_{//if user postpone again and again
                         currentState = ._NOTHING_
                     }
-                    if currentState == ._POSTPON_FOCUS_SUMMARY_{
+                    if currentState == ._POSTPONE_FOCUS_SUMMARY_{
                         addLog(text: "Focus Summary is Postponed. Focus Summary Time checking Cancelled.")
                         
                         if cutOffTime != nil{//If you focus summary routine before cutoff time, it doesn't cut you off #1368
@@ -5101,14 +5102,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                         
                         
-                        if currentState == ._POSTPON_FOCUS_SUMMARY_{
+                        if currentState == ._POSTPONE_FOCUS_SUMMARY_{
                             checkCustomRoutineTime()
                             customBlockingScheduleManagerObj.checkCustomBlockingScheduleTime()
                         }
                         return;
                     }
                     
-                    if currentState == ._POSTPON_EVENING_HABIT_{
+                    if currentState == ._POSTPONE_EVENING_HABIT_{
                         addLog(text: "Evening Routine is Postponed. Evening Habits Time checking Cancelled.")
                         if cutOffTime != nil{//Postpone should be abandoned at the start of cutoff_for_high_priority_activities/evening_routine#513
                             if !isHighPrioritySequenceGoing{
@@ -5125,7 +5126,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             }
                         }
                         
-                        if currentState == ._POSTPON_EVENING_HABIT_{// need to check this
+                        if currentState == ._POSTPONE_EVENING_HABIT_{// need to check this
                             checkCustomRoutineTime()
                             customBlockingScheduleManagerObj.checkCustomBlockingScheduleTime()
                         }
@@ -5171,7 +5172,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     isBreakActivityExecuteFromPostponeEveningHabit = false
                     
                     if currentState != ._MORNING_HABIT_{
-                        if currentState == ._POSTPON_EVENING_HABIT_{//if user postpone again and again
+                        if currentState == ._POSTPONE_EVENING_HABIT_{//if user postpone again and again
                             currentState = ._NOTHING_
                         }
                         
@@ -5207,7 +5208,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             //********************** new work*************************//
                             
                             if !self.isProcessingHabitRoutine{
-                                if currentState == ._POSTPON_MORNING_HABIT_{
+                                if currentState == ._POSTPONE_MORNING_HABIT_{
                                     addLog(text: "Morning Routine is Postponed. Morning Habits Time checking Cancelled.")
                                     checkCustomRoutineTime()
                                     customBlockingScheduleManagerObj.checkCustomBlockingScheduleTime()
@@ -5599,7 +5600,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             showBlankWindowInSecondaryMonitor()
                             leftMenuVcObj?.showHabitsView()
                             getHabitsVcObject().showThirdVc()
-                            thirdVcObj?.eveningHabitSkipped()
+                            activityCompletionVcObj?.eveningHabitSkipped()
                         }else{
                             if let cutOffTime = arrFilteredEveningHabits[currentHabitIndex].cutOffTime{
                                 let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
@@ -5629,7 +5630,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     showBlankWindowInSecondaryMonitor()
                                     leftMenuVcObj?.showHabitsView()
                                     getHabitsVcObject().showThirdVc()
-                                    thirdVcObj?.eveningHabitSkipped()
+                                    activityCompletionVcObj?.eveningHabitSkipped()
                                 }
                             }
                         }

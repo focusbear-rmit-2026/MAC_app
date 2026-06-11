@@ -407,10 +407,10 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
     
     @IBAction func btnSkipClicked(_ sender: Any) {
         addLog(text:"[user-action] visualizeInstructionsVc - btnSkipClicked :- \(btnSkipHabit.title)")
-        if !(thirdVcObj?.isViewLoaded ?? false){
-            thirdVcObj?.loadView()
+        if !(activityCompletionVcObj?.isViewLoaded ?? false){
+            activityCompletionVcObj?.loadView()
         }
-        thirdVcObj?.menuItemSkipHabitClicked()
+        activityCompletionVcObj?.menuItemSkipHabitClicked()
     }
     @IBAction func btnSkipTimerClicked(_ sender: Any) {
         currentTimer = totalDuration

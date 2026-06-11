@@ -103,7 +103,7 @@
 		8F0419462C353D4100481ACD /* getViewControllersObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0419452C353D4100481ACD /* getViewControllersObject.swift */; };
 		8F0419482C353DCA00481ACD /* allUserdefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0419472C353DCA00481ACD /* allUserdefaults.swift */; };
 		8F04F340290A93B800A8D5A6 /* breakWarningVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */; };
-		8F050A0927842B8400F3CE17 /* thirdVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F050A0827842B8400F3CE17 /* thirdVc.swift */; };
+		8F050A0927842B8400F3CE17 /* activityCompletionVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F050A0827842B8400F3CE17 /* activityCompletionVc.swift */; };
 		8F0734652C520C3D002FACE8 /* Onboarding.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8F0734642C520C3D002FACE8 /* Onboarding.storyboard */; };
 		8F07346B2C526AA1002FACE8 /* informationPopoverVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F07346A2C526AA1002FACE8 /* informationPopoverVc.swift */; };
 		8F08FD7028B60DD60016C741 /* uninstallingConfirmVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F08FD6F28B60DD60016C741 /* uninstallingConfirmVc.swift */; };
@@ -488,7 +488,7 @@
 		8F0419452C353D4100481ACD /* getViewControllersObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = getViewControllersObject.swift; sourceTree = "<group>"; };
 		8F0419472C353DCA00481ACD /* allUserdefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = allUserdefaults.swift; sourceTree = "<group>"; };
 		8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breakWarningVc.swift; sourceTree = "<group>"; };
-		8F050A0827842B8400F3CE17 /* thirdVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = thirdVc.swift; sourceTree = "<group>"; };
+		8F050A0827842B8400F3CE17 /* activityCompletionVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = activityCompletionVc.swift; sourceTree = "<group>"; };
 		8F050A0B278467B000F3CE17 /* FocusBear-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FocusBear-Bridging-Header.h"; sourceTree = "<group>"; };
 		8F0734642C520C3D002FACE8 /* Onboarding.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Onboarding.storyboard; sourceTree = "<group>"; };
 		8F07346A2C526AA1002FACE8 /* informationPopoverVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = informationPopoverVc.swift; sourceTree = "<group>"; };
@@ -832,7 +832,7 @@
 				8FAC6C9C27806DCB008A4180 /* firstViewController.swift */,
 				8F99C8D52A13AE1D00FD2403 /* editHabitRoutineVc.swift */,
 				8F6138B528B7698300A45B1A /* visualizeInstructionsVc.swift */,
-				8F050A0827842B8400F3CE17 /* thirdVc.swift */,
+				8F050A0827842B8400F3CE17 /* activityCompletionVc.swift */,
 				8FAC6CA027808125008A4180 /* timerViewcontroller.swift */,
 				13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */,
 				8FAC6C9E2780748D008A4180 /* tblCellHabits.swift */,
@@ -1996,7 +1996,7 @@
 				8F7ED7432CC0F1E100AB973D /* taskPlayerWc.swift in Sources */,
 				8FB257872C7DF0EB00794A43 /* askIntentionAllowedFocusModeActivity.swift in Sources */,
 				8F4BD8C827883FBE00ABAEF5 /* HotKey.swift in Sources */,
-				8F050A0927842B8400F3CE17 /* thirdVc.swift in Sources */,
+				8F050A0927842B8400F3CE17 /* activityCompletionVc.swift in Sources */,
 				8FAD22D327CA044800CDC866 /* pomodoroWindowController.swift in Sources */,
 				13CBE7652F07E9660025544E /* enableAIBlockingVc.swift in Sources */,
 				13A9D5AA2F73FB30004ACB7F /* welcomeAdhdVc.swift in Sources */,
@@ -2387,7 +2387,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 493;
+				CURRENT_PROJECT_VERSION = 494;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
@@ -2425,7 +2425,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 493;
+				CURRENT_PROJECT_VERSION = 494;
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;

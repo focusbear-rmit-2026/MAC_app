@@ -490,8 +490,8 @@ class focusCompletedForActivityVc: NSViewController {
         
         self.view.removeFromSuperview()
         if currentState == ._EVENING_HABIT_{
-            if thirdVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
-                thirdVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
+            if activityCompletionVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
+                activityCompletionVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
             }
         }
         var should_not_update_current_activity = false

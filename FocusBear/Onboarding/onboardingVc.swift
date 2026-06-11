@@ -105,8 +105,11 @@ class onboardingVc: NSViewController {
         if !getInstallHabitPacksVcObj().isViewLoaded{
             getInstallHabitPacksVcObj().loadView()
         }
-        getInstallHabitPacksVcObj().loadWebView(suggestHabits: suggestHabits)
-        navigate(to: ._INSTALL_HABIT_PACKS_)
+        mainViewControllerObj?.showLoaderView()
+        getInstallHabitPacksVcObj().loadwebViewWithCompletion(suggestHabits: suggestHabits, completionHandler: {
+            self.navigate(to: ._INSTALL_HABIT_PACKS_)
+            mainViewControllerObj?.hideLoaderView()
+        })
     }
     
     func navigate(to state: ONBOARDINGSTATE) {

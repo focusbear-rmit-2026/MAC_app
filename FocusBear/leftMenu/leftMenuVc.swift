@@ -42,6 +42,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     var disableReasonMircoBreaks = "Disabled because your micro break is in progress. Go to the Micro Break tab to continue."
     var disableReasonCustomRoutine = "Disabled because your custom routine is in progress. Go to the Custom Routine tab to continue."
     
+    var lastSelectedBox:mainWindowListBox?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -303,66 +305,67 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             
         case boxHabits:
             mainViewControllerObj?.showHabitsView()
-            if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
-                habitsVcObj?.showHabitState()
-            }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
-                habitsVcObj?.showHabitState()
-            }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
-                habitsVcObj?.showHabitState()
-            }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit{
-                habitsVcObj?.showHabitState()
-            }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit{
-                habitsVcObj?.showHabitState()
-            }else{
-                if isHabitAlreadyShowed && !isShutOffTimeGoing(){
+            
+            if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_{// blank habit state scrren bug solved v 3.33.494
+                if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
+                    habitsVcObj?.showHabitState()
+                }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
+                    habitsVcObj?.showHabitState()
+                }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
+                    habitsVcObj?.showHabitState()
+                }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit{
+                    habitsVcObj?.showHabitState()
+                }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit{
                     habitsVcObj?.showHabitState()
                 }else{
-                    if let date = UserDefaults.standard.object(forKey: kUserdefaultsShutdownAborted) as? Date{
-                        if Date().compare(date) == .orderedAscending {
-                            habitsVcObj?.showHabitState()//showCustomRoutineState
-                        }
-                    }
-                }
-
-                let currentDate = Date()
-                let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
-                let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
-                let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
-                
-                
-                if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_  && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil{
-                    if isHabitsDisabled{
-                        UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
+                    if isHabitAlreadyShowed && !isShutOffTimeGoing(){
                         habitsVcObj?.showHabitState()
                     }else{
-                        if sameDay || !shouldDoHabits(){
-                            habitsVcObj?.showHabitState()
-                        }else{
-                            UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
-                        }
-                    }
-                }else{
-                    if let date = UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date{
-                        if Date().compare(date) == .orderedAscending {//"Evening habits already shown for today
-                            if isShutOffTimeGoing() && !isCutOffTimeGoing(){
-                                habitsVcObj?.showHabitState()// free time 
+                        if let date = UserDefaults.standard.object(forKey: kUserdefaultsShutdownAborted) as? Date{
+                            if Date().compare(date) == .orderedAscending {
+                                habitsVcObj?.showHabitState()
                             }
                         }
-                    }else if isShutOffTimeGoing() && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_ && currentState != ._POSTPON_EVENING_HABIT_ && currentState != ._POSTPON_FOCUS_SUMMARY_ && arrAllDaysEveningHabits.count == 0{
-                        habitsVcObj?.showHabitState()// v 2.28.437
-                    }else if (appdelegate?.isUserOnMeeting ?? false) && !isHabitAlreadyShowed && !isShutOffTimeGoing(){
-                        habitsVcObj?.showHabitState()// v 2.28.445
-                    }else if !isAppEnable{
-                        habitsVcObj?.showHabitState()// v 2.28.456
-                    }else if sameDay || !shouldDoHabits(){
+                    }
+
+                    let currentDate = Date()
+                    let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
+                    let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
+                    let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
+                    
+                    if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_  && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil{
                         if isHabitsDisabled{
                             UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
+                            habitsVcObj?.showHabitState()
+                        }else{
+                            if sameDay || !shouldDoHabits(){
+                                habitsVcObj?.showHabitState()
+                            }else{
+                                UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
+                            }
                         }
-                        habitsVcObj?.showHabitState()
+                    }else{
+                        if let date = UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date{
+                            if Date().compare(date) == .orderedAscending {//"Evening habits already shown for today
+                                if isShutOffTimeGoing() && !isCutOffTimeGoing(){
+                                    habitsVcObj?.showHabitState()// free time
+                                }
+                            }
+                        }else if isShutOffTimeGoing() && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_ && currentState != ._POSTPONE_EVENING_HABIT_ && currentState != ._POSTPONE_FOCUS_SUMMARY_ && arrAllDaysEveningHabits.count == 0{
+                            habitsVcObj?.showHabitState()// v 2.28.437
+                        }else if (appdelegate?.isUserOnMeeting ?? false) && !isHabitAlreadyShowed && !isShutOffTimeGoing(){
+                            habitsVcObj?.showHabitState()// v 2.28.445
+                        }else if !isAppEnable{
+                            habitsVcObj?.showHabitState()// v 2.28.456
+                        }else if sameDay || !shouldDoHabits(){
+                            if isHabitsDisabled{
+                                UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
+                            }
+                            habitsVcObj?.showHabitState()
+                        }
                     }
                 }
             }
-            
             break;
         case boxFocusSession:
             let isFocusModeOn = isFocusModeOn()
@@ -457,6 +460,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     }
     
     func selectableListBoxSelectionDidChange(_ box: mainWindowListBox) {
+        lastSelectedBox = box
         switch box{
 
         case boxHabits:

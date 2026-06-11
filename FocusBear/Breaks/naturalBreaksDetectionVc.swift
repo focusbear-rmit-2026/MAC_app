@@ -157,9 +157,9 @@ class naturalBreaksDetectionVc: NSViewController {
         }else{
             addLog(text: "[user-action] naturalBreaksDetectionVc - btnYupINeedBreak Clicked")
             self.closeView()
-            if currentState == ._POSTPON_MORNING_HABIT_{
+            if currentState == ._POSTPONE_MORNING_HABIT_{
                 isBreakActivityExecuteFromPostponeMorningHabit = true
-            }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+            }else if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
                 isBreakActivityExecuteFromPostponeEveningHabit = true
             }
             if !isMainWindowLoaded{
@@ -173,7 +173,7 @@ class naturalBreaksDetectionVc: NSViewController {
     
     @IBAction func btnSecondClicked(_ sender: Any) {
         if isNormalState{
-            if currentState != ._MORNING_HABIT_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !appdelegate!.isUserOnMeeting && currentState != ._BREATHING_ && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_{
+            if currentState != ._MORNING_HABIT_ && (isHabitAlreadyShowed || currentState == ._POSTPONE_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !appdelegate!.isUserOnMeeting && currentState != ._BREATHING_ && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_{
                 addLog(text: "show AskTakeBreakView")
                 showAskTakeBreakView()
             }else{

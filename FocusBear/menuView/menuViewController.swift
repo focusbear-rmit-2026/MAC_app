@@ -737,7 +737,7 @@ class menuViewController: NSViewController {
                     btnCustomRoutine.isHidden = true
                 }else{
                     if isShutOffTimeGoing(){
-                        if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+                        if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
                             btnCustomRoutine.isHidden = false
                         }else{
                             btnCustomRoutine.isHidden = true
@@ -1010,7 +1010,7 @@ class menuViewController: NSViewController {
                         }else if currentState == ._CUSTOM_ROUTINE_ || currentState == ._SPECIAL_ACTIVITY_{
                             breakDisableReason = breaksDisabledHabitInProgress
                             isBreakEnabled = false
-                        }else if currentState == ._POSTPON_FOCUS_SUMMARY_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_{
+                        }else if currentState == ._POSTPONE_FOCUS_SUMMARY_ || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_{
                             if !SettingsManagerObject.IsShowBreaksInPostponeEnabled{
                                 isBreakEnabled = false
                                 breakDisableReason = breaksDisabledRoutinePostponed
@@ -1234,7 +1234,7 @@ class menuViewController: NSViewController {
             boxSectionFocusMode.isHidden = false
         }
         
-        if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+        if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
             btnResumeHabits.isHidden = false
             boxLblTitleHabitStatus.isHidden = false
         }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
@@ -1455,16 +1455,16 @@ class menuViewController: NSViewController {
         isBreakActivityExecuteFromPostponeMorningHabit = false
         isBreakActivityExecuteFromPostponeEveningHabit = false
         isBreakActivityExecuteFromPostponeEveningHabit = false
-        if currentState == ._POSTPON_MORNING_HABIT_{// ⚠️ do not change current state inside this block
+        if currentState == ._POSTPONE_MORNING_HABIT_{// ⚠️ do not change current state inside this block
             // new work // 20/04/23
             isBreakActivityExecuteFromPostponeMorningHabit = true//
         }
         
-        if currentState == ._POSTPON_EVENING_HABIT_{// ⚠️ do not change current state inside this block
+        if currentState == ._POSTPONE_EVENING_HABIT_{// ⚠️ do not change current state inside this block
             isBreakActivityExecuteFromPostponeEveningHabit = true
         }
         
-        if currentState == ._POSTPON_FOCUS_SUMMARY_{// ⚠️ do not change current state inside this block
+        if currentState == ._POSTPONE_FOCUS_SUMMARY_{// ⚠️ do not change current state inside this block
             isBreakActivityExecuteFromPostponeEveningHabit = true
         }
         getHabitsVcObject().executeBreakActivities()

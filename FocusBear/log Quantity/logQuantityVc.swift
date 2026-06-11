@@ -188,11 +188,11 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         if isReviseQuantity{
             addLog(text:"Log quantity-btnCancelClicked return - isReviseQuantity")
             if lCurrentState! == ._EVENING_HABIT_{
-                if thirdVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
-                    thirdVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
+                if activityCompletionVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
+                    activityCompletionVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
                 }
             }
-            thirdVcObj?.btnReviseQuantity.isHidden = false
+            activityCompletionVcObj?.btnReviseQuantity.isHidden = false
            return
         }
         
@@ -208,8 +208,8 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         }
         
         if !isUsingActionBar{ // it means user has not used quick action bar
-            thirdVcObj?.logQuantityQuestionsForGraph.removeAll()
-            thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "0")
+            activityCompletionVcObj?.logQuantityQuestionsForGraph.removeAll()
+            activityCompletionVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "0")
                
         }
 
@@ -246,8 +246,8 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:0.0, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: [], notes: notes)
         }else{
             if lCurrentState! == ._EVENING_HABIT_{
-                if thirdVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
-                    thirdVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
+                if activityCompletionVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
+                    activityCompletionVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
                 }
             }
 
@@ -315,9 +315,9 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         }
         
         if !isUsingActionBar{ // it means user has not used quick action bar
-            thirdVcObj?.currentGraphIndex = 0
-            thirdVcObj?.logQuantityQuestionsForGraph = logQuantityQuestions
-            thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId, activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "\(logQuantityQuestions[0].quantity)")
+            activityCompletionVcObj?.currentGraphIndex = 0
+            activityCompletionVcObj?.logQuantityQuestionsForGraph = logQuantityQuestions
+            activityCompletionVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId, activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "\(logQuantityQuestions[0].quantity)")
         }
         
         var log_quantity_answers = [[String : Any]]()
@@ -339,8 +339,8 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
                 focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:logQuantityQuestions[0].quantity, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: log_quantity_answers, notes: notes)
             }else{
                 if lCurrentState! == ._EVENING_HABIT_{
-                    if thirdVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
-                        thirdVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
+                    if activityCompletionVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
+                        activityCompletionVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
                     }
                 }
                 var should_not_update_current_activity = false
@@ -380,8 +380,8 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
                 })
             }
             if lCurrentState! == ._EVENING_HABIT_{
-                if thirdVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
-                    thirdVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
+                if activityCompletionVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
+                    activityCompletionVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
                 }
             }
         }

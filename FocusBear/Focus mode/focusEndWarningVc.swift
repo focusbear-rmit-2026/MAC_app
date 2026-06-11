@@ -133,7 +133,7 @@ class focusEndWarningVc: NSViewController {
     
     @IBAction func btnExtendClicked(_ sender: Any) {
         let totalMinutes = Int(popUpBtn.title) ?? 0
-        if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+        if currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
             if getHabitsVcObject().postponeTimer != nil {
                 if getHabitsVcObject().postponeTimer!.isValid{
                     let currentTime = Date()
@@ -159,7 +159,7 @@ class focusEndWarningVc: NSViewController {
                         
                         alertExtendPostpone!.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                             if modalResponse == .alertFirstButtonReturn{
-                                if currentState == ._POSTPON_MORNING_HABIT_{
+                                if currentState == ._POSTPONE_MORNING_HABIT_{
                                     if SettingsManagerObject.isEasySkipEnabled{
                                         getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                         self.extendFocusMode()
@@ -172,7 +172,7 @@ class focusEndWarningVc: NSViewController {
                                             self.extendFocusMode()
                                         }
                                     }
-                                }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+                                }else if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
                                     
                                     var shouldAskPasswordForEvening = false
                                     if shouldAskPassword() &&  !SettingsManagerObject.isEasySkipEnabled{
@@ -192,7 +192,7 @@ class focusEndWarningVc: NSViewController {
                                     }else{
                                         if currentState == ._EVENING_HABIT_{
                                             getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
-                                        }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
+                                        }else if currentState == ._POSTPONE_FOCUS_SUMMARY_{
                                             getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                                         }
                                         self.extendFocusMode()

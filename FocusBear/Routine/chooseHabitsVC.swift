@@ -279,30 +279,30 @@ class chooseHabitsVC: NSViewController {
         }else if currentAction == ._END_{
             if currentState == ._MORNING_HABIT_ {
                 let time = arrFilteredMorningHabits[currentHabitIndex+1].durationSeconds
-                if thirdVcObj?.boxBg.isHidden == true{// it means remember next habit is added
+                if activityCompletionVcObj?.boxBg.isHidden == true{// it means remember next habit is added
                     if rememberNextHabitVcObj != nil{
-                        if thirdVcObj?.view.subviews.contains(rememberNextHabitVcObj!.view) ?? false{
+                        if activityCompletionVcObj?.view.subviews.contains(rememberNextHabitVcObj!.view) ?? false{
                             rememberNextHabitVcObj?.btnStartNextHabit.title = getstartActivityButtonText(seconds: time!, name: arrFilteredMorningHabits[currentHabitIndex+1].name!)
                         }
                     }
                 }
-                thirdVcObj?.btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredMorningHabits[currentHabitIndex+1].name!)
-                thirdVcObj?.setProgress()
+                activityCompletionVcObj?.btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredMorningHabits[currentHabitIndex+1].name!)
+                activityCompletionVcObj?.setProgress()
             }else if currentState == ._EVENING_HABIT_{
                 let time = arrFilteredEveningHabits[currentHabitIndex+1].durationSeconds
-                if thirdVcObj?.boxBg.isHidden == true{
+                if activityCompletionVcObj?.boxBg.isHidden == true{
                     if rememberNextHabitVcObj != nil{
-                        if thirdVcObj?.view.subviews.contains(rememberNextHabitVcObj!.view) ?? false{
+                        if activityCompletionVcObj?.view.subviews.contains(rememberNextHabitVcObj!.view) ?? false{
                             rememberNextHabitVcObj?.btnStartNextHabit.title = getstartActivityButtonText(seconds: time!, name: arrFilteredEveningHabits[currentHabitIndex+1].name!)
                         }
                     }
                 }
-                thirdVcObj?.btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredEveningHabits[currentHabitIndex+1].name!)
-                thirdVcObj?.setProgress()
+                activityCompletionVcObj?.btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredEveningHabits[currentHabitIndex+1].name!)
+                activityCompletionVcObj?.setProgress()
             }else if currentState == ._CUSTOM_ROUTINE_{
                 let time = arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[currentHabitIndex+1].durationSeconds
-                thirdVcObj?.btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[currentHabitIndex+1].name!)
-                thirdVcObj?.setProgress()
+                activityCompletionVcObj?.btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[currentHabitIndex+1].name!)
+                activityCompletionVcObj?.setProgress()
             }
         }
         

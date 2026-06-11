@@ -24,7 +24,7 @@ class habitsStateVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        btnUnCancelRoutine.title = "Uncancel my evening routine"
+        btnUnCancelRoutine.title = "Uncancel my evening routine"//todo text
         
         lblTitle.stringValue = ""// v 2.28.453
         btnResumeHabits.title = "Resume Habits"
@@ -76,22 +76,22 @@ class habitsStateVc: NSViewController {
         if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
             btnResumeHabits.title = habitsStateVcInfo.value(forKey: "buttonResumeHabits") as? String ?? btnResumeHabits.title
         }
-        if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_{
+        if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_{
             btnResumeHabits.isHidden = false
-            if currentState == ._POSTPON_MORNING_HABIT_{
+            if currentState == ._POSTPONE_MORNING_HABIT_{
                 showRutinePostponedInfoView(state: CURRENTSTATE._MORNING_HABIT_)
-            }else if currentState == ._POSTPON_EVENING_HABIT_{
+            }else if currentState == ._POSTPONE_EVENING_HABIT_{
                 showRutinePostponedInfoView(state: CURRENTSTATE._EVENING_HABIT_)
             }else{
                 showRutinePostponedInfoView(state: ._FOCUS_SUMMARY_)
             }
-            if currentState == ._POSTPON_MORNING_HABIT_{
+            if currentState == ._POSTPONE_MORNING_HABIT_{
                 lblTitle.stringValue = morningRoutinePostponedText
             }else{
                 lblTitle.stringValue = eveningRoutinePostponedText
             }
             
-        }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
+        }else if currentState == ._POSTPONE_FOCUS_SUMMARY_{
             btnResumeHabits.isHidden = false
             lblTitle.stringValue = eveningRoutinePostponedText
         }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
@@ -206,7 +206,7 @@ class habitsStateVc: NSViewController {
                         }
                     }
                 }
-            }else if (appdelegate?.isUserOnMeeting ?? false) && !isHabitAlreadyShowed && !isShutOffTimeGoing() && currentState != ._POSTPON_MORNING_HABIT_{
+            }else if (appdelegate?.isUserOnMeeting ?? false) && !isHabitAlreadyShowed && !isShutOffTimeGoing() && currentState != ._POSTPONE_MORNING_HABIT_{
                 // v 2.28.445
                 btnResumeHabits.isHidden = true
                 lblTitle.stringValue = "Morning routine will resume after the call ends."
@@ -325,29 +325,38 @@ class habitsStateVc: NSViewController {
         mainViewControllerObj?.showLoaderView()
         if isShutOffTimeGoing(){
             allApiObject.uncompleteCurrentSequence(activity_sequence_id: arrFilteredEveningHabits.first?.activity_sequence_id ?? "", completionHandler: {json in
-                if json != nil{
-                    DispatchQueue.main.async {
-                        mainViewControllerObj?.hideLoaderView()
+                DispatchQueue.main.async {
+                    mainViewControllerObj?.hideLoaderView()
+                    if json != nil{
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsEveningHabitsShowedTillDate)
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutdownAborted)
                         appdelegate!.backgroundThread()
+                    }else{
+                        showCustomAlert(title: "We couldn't restore your routine right now. Please try again.", body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: true, buttonLinkUrl: nil, buttonLinkText: nil, completionHandler: {_ in
+                            
+                        })//todo text
                     }
                 }
             })
         }else{
             
             allApiObject.uncompleteCurrentSequence(activity_sequence_id: arrFilteredMorningHabits.first?.activity_sequence_id ?? "", completionHandler: {json in
-                if json != nil{
-                    DispatchQueue.main.async {
-                        mainViewControllerObj?.hideLoaderView()
+                DispatchQueue.main.async {
+                    mainViewControllerObj?.hideLoaderView()
+                    if json != nil{
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitShowDate)
                         isHabitAlreadyShowed = false
                         appdelegate!.backgroundThread()
+                    }else{
+                        showCustomAlert(title: "We couldn't restore your routine right now. Please try again.", body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: true, buttonLinkUrl: nil, buttonLinkText: nil, completionHandler: {_ in 
+                            
+                        })//todo text
                     }
                 }
             })
         }
     }
+    
     
     func updateUncancelRoutineButtonVisibility(isEveningRoutine: Bool) {
         let routineType = isEveningRoutine ? "evening_routine" : "morning_routine"
@@ -367,7 +376,9 @@ class habitsStateVc: NSViewController {
             else {
                 return
             }
-            
+            if !wasForceCompleted{
+                return;
+            }
             let shouldShowButton =
                 todaySequenceId == sequenceIdToCheck &&
                 status.lowercased() == "completed" &&
@@ -414,6 +425,7 @@ class habitsStateVc: NSViewController {
                             if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
                                 btnResumeHabits.title = habitsStateVcInfo.value(forKey: "buttonChangeTiming") as? String ?? btnResumeHabits.title
                             }
+                            btnUnCancelRoutine.title = "Uncancel my evening routine" //todo text
                             return;
                         }
                     }
@@ -436,7 +448,7 @@ class habitsStateVc: NSViewController {
                         let dateString = getStringFromDate(date: startdate, dateFormat: getSystemTimeFormat())
                         lblDescription.stringValue = "Your next morning routine starts at <STARTTIME>.\nRest well and recharge for a strong start tomorrow 💪"//todo text
                         lblDescription.stringValue = lblDescription.stringValue.replacingOccurrences(of: "<STARTTIME>", with: dateString)
-                        
+                        btnUnCancelRoutine.title = "Uncancel my evening routine" //todo text
                         lblDescription.isHidden = false
                     }
                 }else{
@@ -444,14 +456,14 @@ class habitsStateVc: NSViewController {
                     
                    
                     let (dateString) = getStringFromDate(date: nextRoutine, dateFormat: getSystemTimeFormat())
-                    var nextRoutineText = "Your next scheduled routine (<ROUTINE>) is set for <TIME>. Be ready to jump back in and continue building those healthy habits. You've got this!\n(By the way, you cancelled your evening routine. if you changed your mind and want to do your evening habits click Uncancel my evening routine)" // todo text
+                    var nextRoutineText = "Your next scheduled routine (<ROUTINE>) is set for <TIME>. Be ready to jump back in and continue building those healthy habits. You've got this!\n\n(By the way, you cancelled your morning routine. if you changed your mind and want to do your morning habits click Uncancel my morning routine)" // todo text
                     if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
                         //nextRoutineText = habitsStateVcInfo.value(forKey: "nextRoutineTimeCancelledMorninigRoutine") as? String ?? nextRoutineText
                     }
                     nextRoutineText = nextRoutineText.replacingOccurrences(of: "<ROUTINE>", with: nextRoutineName)
                     nextRoutineText = nextRoutineText.replacingOccurrences(of: "<TIME>", with: dateString)
                     lblTitle.stringValue = nextRoutineText
-                    
+                    btnUnCancelRoutine.title = "Uncancel my morning routine" //todo text
                     if nextRoutineIsEveningRoutine{
                         if arrAllDaysEveningHabits.count == 0{
                            
@@ -459,10 +471,11 @@ class habitsStateVc: NSViewController {
                             if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
                                 title = menuInfo.value(forKey: "alertNoHabitsFound") as? String ?? title
                             }
-                            lblTitle.stringValue = nextRoutineText + "\n\n\n" + title
+                            lblDescription.stringValue = title
                             btnResumeHabits.title = "Edit Habits"
                             editRoutineButtonShowing = true
                             btnResumeHabits.isHidden = false
+                            lblDescription.isHidden = false
                             if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
                                 btnResumeHabits.title = leftMenuVcInfo.value(forKey: "menuEditHabits") as? String ?? btnResumeHabits.title
                             }

@@ -710,7 +710,7 @@ class focusCompletedVc: NSViewController {
             
         }
         
-        if currentState != ._MORNING_HABIT_ && currentState != ._MICRO_BREAK_ && currentState != ._EVENING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_ || currentState == ._POSTPON_EVENING_HABIT_) && arrAllbreakActivities.count != 0 && (!isShutOffTimeGoing() || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_) && !isHardCorePomodoroModeOn{
+        if currentState != ._MORNING_HABIT_ && currentState != ._MICRO_BREAK_ && currentState != ._EVENING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && (isHabitAlreadyShowed || currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_ || currentState == ._POSTPONE_EVENING_HABIT_) && arrAllbreakActivities.count != 0 && (!isShutOffTimeGoing() || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_) && !isHardCorePomodoroModeOn{
             btnDoBreakActivity.isHidden = false
         }else{
             btnDoBreakActivity.isHidden = true
@@ -892,10 +892,10 @@ class focusCompletedVc: NSViewController {
         if lastFocusModeTempInfo != nil{
             showaddFocusTempUrlsOrAppsWindow()
         }
-        if currentState == ._POSTPON_MORNING_HABIT_{
+        if currentState == ._POSTPONE_MORNING_HABIT_{
             isBreakActivityExecuteFromPostponeMorningHabit = true
         }
-        if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+        if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
             isBreakActivityExecuteFromPostponeEveningHabit = true
         }
         if !isMainWindowLoaded{
@@ -966,7 +966,7 @@ class focusCompletedVc: NSViewController {
         
         workDone()
         
-        if currentState != ._MORNING_HABIT_ && !isMicroBreaksRunning() && currentState != ._EVENING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !isShutOffTimeGoing() && !isHardCorePomodoroModeOn{
+        if currentState != ._MORNING_HABIT_ && !isMicroBreaksRunning() && currentState != ._EVENING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && (isHabitAlreadyShowed || currentState == ._POSTPONE_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !isShutOffTimeGoing() && !isHardCorePomodoroModeOn{
             if !isCloseWindowClicked{
                 appdelegate?.setTimerForPomodoroMode(delay: TimeInterval(60*self.breakMinute))
                 if isAppEnable{

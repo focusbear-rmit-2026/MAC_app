@@ -768,7 +768,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     }
     
     var tabCount = 0
-    func tryStartTimerHabit(durationSeconds:Int, name:String,currentHabit: habit, currentTimerValue:Int) {
+    func tryStartTimerHabit(durationSeconds:Int, name:String,currentHabit: habit, currentTimerValue:Int, shouldUpdateDeviceButton:Bool = true) {
         if askIntentionAllowedFocusModeActivityObj != nil{
             if askIntentionAllowedFocusModeActivityObj?.presentingViewController == self{
                 askIntentionAllowedFocusModeActivityObj?.dismiss(lateMorningHabitPopupVcObj)
@@ -787,7 +787,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                         if self.view.window != nil{
                             allApiObject.capturePosthog(event: "ask-intention-allowed-focus-mode-activity-shown", metadata: [:])
                             self.presentAsSheet(getAskIntentionAllowedFocusModeActivityObject())
-                            askIntentionAllowedFocusModeActivityObj?.resetData(focusMode: name, intention: lastIntentionUsed, durationSeconds:durationSeconds, name:name,currentHabit: currentHabit, currentTimerValue:currentTimerValue)
+                            askIntentionAllowedFocusModeActivityObj?.resetData(focusMode: name, intention: lastIntentionUsed, durationSeconds:durationSeconds, name:name,currentHabit: currentHabit, currentTimerValue:currentTimerValue, shouldUpdateDeviceButton: shouldUpdateDeviceButton)
                         }
                         getTaskPlayerVcObject().loadView()
                         getTaskPlayerVcObject().loadRequest()
@@ -799,12 +799,12 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }
         }
         if !isFocusModeActivity{
-            startTimerHabit(durationSeconds: durationSeconds, name: name, currentHabit: currentHabit, currentTimerValue: currentTimerValue)
+            startTimerHabit(durationSeconds: durationSeconds, name: name, currentHabit: currentHabit, currentTimerValue: currentTimerValue, shouldUpdateDeviceButton: shouldUpdateDeviceButton)
         }
     }
     
     
-    func startTimerHabit(durationSeconds:Int, name:String,currentHabit: habit, currentTimerValue:Int) {
+    func startTimerHabit(durationSeconds:Int, name:String,currentHabit: habit, currentTimerValue:Int, shouldUpdateDeviceButton:Bool) {
         boxBg.isHidden = false
         let url = getRandomVideoUrl(activityId:currentHabit.id, urlsArray: currentHabit.urlsArray)
         addLog(text:"Current Activity id is :- \(currentHabit.id ?? "")")
@@ -814,7 +814,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
         
         //focusButtonService---//
-        focusButtonServiceObject.startHabit(habitId: currentHabit.id)
+        if shouldUpdateDeviceButton{
+            focusButtonServiceObject.startHabit(habitId: currentHabit.fakeIdForDevice)
+        }
         //--------------//
         
         
@@ -842,8 +844,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         })
         
         
-        if !(thirdVcObj?.isViewLoaded ?? false){
-            thirdVcObj?.loadView()
+        if !(activityCompletionVcObj?.isViewLoaded ?? false){
+            activityCompletionVcObj?.loadView()
         }
         disableSystemSleep()
         checkActivityExtraAllowedAppsAndUrls(allowedFocusMode: currentHabit.allowedFocusMode, duration: durationSeconds, habitId:currentHabit.id)
@@ -985,6 +987,13 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         startTimerValue = currentTimerValue
         currentTimer = currentTimerValue
         totalDuration = durationSeconds//durationInMinutes*60
+        
+        //focusButtonService---//
+        if currentTimerValue != 0{
+            focusButtonServiceObject.updateHabitDuration(seconds: self.totalDuration-currentTimer)
+        }
+        //--------------//
+        
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         
         var hour = "\(h)"
@@ -1081,8 +1090,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             
         })
         
-        if !(thirdVcObj?.isViewLoaded ?? false){
-            thirdVcObj?.loadView()
+        if !(activityCompletionVcObj?.isViewLoaded ?? false){
+            activityCompletionVcObj?.loadView()
         }
         disableSystemSleep()
         
@@ -1439,8 +1448,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
         
         
-        if !(thirdVcObj?.isViewLoaded ?? false){
-            thirdVcObj?.loadView()
+        if !(activityCompletionVcObj?.isViewLoaded ?? false){
+            activityCompletionVcObj?.loadView()
         }
         
 

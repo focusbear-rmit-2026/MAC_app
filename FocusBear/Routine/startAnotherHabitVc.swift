@@ -107,16 +107,16 @@ class startAnotherHabitVc: NSViewController {
         if currentAction == ._INPROGRESS_{
             timerViewcontrollerObj?.tryStartTimerHabit(durationSeconds: selectedHabit.durationSeconds, name: selectedHabit.name, currentHabit: selectedHabit, currentTimerValue: 0)
         }else{
-            if thirdVcObj?.boxBg.isHidden == true{// it means remember next habit is added
+            if activityCompletionVcObj?.boxBg.isHidden == true{// it means remember next habit is added
                 if rememberNextHabitVcObj != nil{
-                    if thirdVcObj?.view.subviews.contains(rememberNextHabitVcObj!.view) ?? false{
+                    if activityCompletionVcObj?.view.subviews.contains(rememberNextHabitVcObj!.view) ?? false{
                         if rememberNextHabitVcObj?.btnStartNextHabit.isHidden == false{
                             rememberNextHabitVcObj?.btnStartNextHabitClicked(self)
                         }
                     }
                 }
             }else{
-                thirdVcObj?.btnMainClicked(self)
+                activityCompletionVcObj?.btnMainClicked(self)
             }
             
         }

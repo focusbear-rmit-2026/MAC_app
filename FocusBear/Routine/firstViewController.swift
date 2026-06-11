@@ -301,10 +301,10 @@ class firstViewController: NSViewController {
                     btnPostponeBreak.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnPostponeBreak.title
                 }
                 
-                lblTitle.stringValue = thirdVcObj?.lblTitle.stringValue ?? ""
-                btnStartFirstHabit.title = thirdVcObj?.btnMain.title ?? ""
+                lblTitle.stringValue = activityCompletionVcObj?.lblTitle.stringValue ?? ""
+                btnStartFirstHabit.title = activityCompletionVcObj?.btnMain.title ?? ""
                 
-                lblProgress.stringValue = thirdVcObj?.lblProgress.stringValue ?? ""
+                lblProgress.stringValue = activityCompletionVcObj?.lblProgress.stringValue ?? ""
                 
                 btnTopSpace.constant = 60
                 btnTopSpaceValue = 60
@@ -699,7 +699,7 @@ class firstViewController: NSViewController {
             getHabitsVcObject().abortCurrentState()
             return;
         }
-        thirdVcObj?.btnSkipHabitClicked(self)//for breakActivity only
+        activityCompletionVcObj?.btnSkipHabitClicked(self)//for breakActivity only
     }
     
     
@@ -842,7 +842,7 @@ class firstViewController: NSViewController {
                     UserDefaults.standard.set(Date(), forKey: kUserdefaultsBeginEveningHabitClickedDate)
                 }
             }else if currentState == ._MICRO_BREAK_{
-                thirdVcObj?.btnMainClicked(self)
+                activityCompletionVcObj?.btnMainClicked(self)
             }else if currentState == ._CUSTOM_ROUTINE_{
                 if tblViewHabits.selectedRow != 0 && tblViewHabits.selectedRow != -1{
                     var tempArr = arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits
@@ -891,9 +891,9 @@ class firstViewController: NSViewController {
             getHabitsVcObject().reFillBreakActivitiesArray()
             tblViewHabits.reloadData()
             //v 2.27.422
-            thirdVcObj?.startBreakActivity()
-            btnStartFirstHabit.title = thirdVcObj?.btnMain.title ?? ""
-            lblProgress.stringValue = thirdVcObj?.lblProgress.stringValue ?? ""
+            activityCompletionVcObj?.startBreakActivity()
+            btnStartFirstHabit.title = activityCompletionVcObj?.btnMain.title ?? ""
+            lblProgress.stringValue = activityCompletionVcObj?.lblProgress.stringValue ?? ""
         }else{
             let filterArr = arrAllbreakActivities.filter { $0.isOfficeFriendly == true}
             if filterArr.count == 0{// no activity found with isOfficeFriendly //
@@ -961,9 +961,9 @@ class firstViewController: NSViewController {
         tblViewHabits.reloadData()
         
         //v 2.27.422
-        thirdVcObj?.startBreakActivity()
-        btnStartFirstHabit.title = thirdVcObj?.btnMain.title ?? ""
-        lblProgress.stringValue = thirdVcObj?.lblProgress.stringValue ?? ""
+        activityCompletionVcObj?.startBreakActivity()
+        btnStartFirstHabit.title = activityCompletionVcObj?.btnMain.title ?? ""
+        lblProgress.stringValue = activityCompletionVcObj?.lblProgress.stringValue ?? ""
     }
     
     func morningHabitAlreadyDoneClicked(){
@@ -978,7 +978,7 @@ class firstViewController: NSViewController {
         
         if arrFilteredMorningHabits.count == 1{
             habitsVcObj?.showThirdVc()
-            thirdVcObj!.showLastMorningHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: false)
+            activityCompletionVcObj!.showLastMorningHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: false)
         }else{
             arrFilteredMorningHabits.remove(at: currentHabitIndex) // dont remove if last index
             if let index = arrPreFilteredMorningHabits.firstIndex(where: { $0.id == lastHabit.id }) {
@@ -1032,7 +1032,7 @@ class firstViewController: NSViewController {
         
         if arrFilteredEveningHabits.count == 1{
             habitsVcObj?.showThirdVc()
-            thirdVcObj!.showLastEveningHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: false)
+            activityCompletionVcObj!.showLastEveningHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: false)
         }else{
             arrFilteredEveningHabits.remove(at: currentHabitIndex)
             if let index = arrPreFilteredEveningHabits.firstIndex(where: { $0.id == lastHabit.id }) {
@@ -1084,7 +1084,7 @@ class firstViewController: NSViewController {
         
         if arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.count == 1{
             habitsVcObj?.showThirdVc()
-            thirdVcObj!.showLastCustomRoutineHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: false)
+            activityCompletionVcObj!.showLastCustomRoutineHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: false)
         }else{
             arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.remove(at: currentHabitIndex)
             if let index = arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits.firstIndex(where: { $0.id == lastHabit.id }) {
@@ -1128,7 +1128,7 @@ class firstViewController: NSViewController {
         
         if arrFilteredMorningHabits.count == 1{
             habitsVcObj?.showThirdVc()
-            thirdVcObj!.showLastMorningHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: true)
+            activityCompletionVcObj!.showLastMorningHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: true)
         }else{
             arrFilteredMorningHabits.remove(at: currentHabitIndex) // dont remove if last index
             if let index = arrPreFilteredMorningHabits.firstIndex(where: { $0.id == lastHabit.id }) {
@@ -1152,7 +1152,7 @@ class firstViewController: NSViewController {
         
         if arrFilteredEveningHabits.count == 1{
             habitsVcObj?.showThirdVc()
-            thirdVcObj!.showLastEveningHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: true)
+            activityCompletionVcObj!.showLastEveningHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: true)
         }else{
             arrFilteredEveningHabits.remove(at: currentHabitIndex) // dont remove if last index
             if let index = arrPreFilteredEveningHabits.firstIndex(where: { $0.id == lastHabit.id }) {
@@ -1176,7 +1176,7 @@ class firstViewController: NSViewController {
         
         if arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.count == 1{
             habitsVcObj?.showThirdVc()
-            thirdVcObj!.showLastCustomRoutineHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: true)
+            activityCompletionVcObj!.showLastCustomRoutineHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: true)
         }else{
             arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.remove(at: currentHabitIndex)
             if let index = arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits.firstIndex(where: { $0.id == lastHabit.id }) {

@@ -6321,7 +6321,7 @@ class AllApi:NSObject {
         task.resume()
     }
     
-    func getIntentFromOpenAI(userMessage: String, completion: @escaping (Result<IntentResponse, Error>) -> Void) {
+    func getIntentFromOpenAI(userMessage: String, habits:String, completion: @escaping (Result<IntentResponse, Error>) -> Void) {
         let apiKey = "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"
         let url = URL(string: "https://api.openai.com/v1/chat/completions")!
         let dateString = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
@@ -6339,8 +6339,11 @@ class AllApi:NSObject {
         - create_task
         - start_focus
         - pause_focus
+        - resume_focus
         - stop_focus
         - start_habit
+        - pause_habit
+        - resume_habit
 
         **Create task**  
         Fields: task (string), datetime (local system datetime or relative like "tomorrow 9am", "tomorrow", "in 2 hours", "next thursday"), optional repeat.
@@ -6356,7 +6359,13 @@ class AllApi:NSObject {
 
         **Start a habit**  
         Fields: habit_name (string), optional duration or repeat.
+        
+        **Pause habit**  
+        Fields: none.
 
+        **Resume habit**  
+        Fields: none.
+        
         Rules:
         - Infer missing details sensibly. If no duration for focus, default to 25 min.
         - Assume current datetime is \(dateString) and format is "yyyy-MM-dd HH:mm:ss".
@@ -6428,6 +6437,10 @@ class AllApi:NSObject {
           "clarification_needed": null
         }
 
+        For habits, please note that I have a defined list of habits and you should closely match the input and return one name from this habit list: " 
+                   
+        "\(habits)"
+        
         Now classify this user command:
         "\(userMessage)"
         """

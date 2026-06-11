@@ -193,8 +193,8 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
     @IBAction func btnStartNextHabitClicked(_ sender: Any) {
         addLog(text:"[user-action] rememberNextHabitVc:- button Start Next Habit Clicked")
         self.view.removeFromSuperview()
-        thirdVcObj?.boxBg.isHidden = false
-        thirdVcObj?.btnMainClicked(self)
+        activityCompletionVcObj?.boxBg.isHidden = false
+        activityCompletionVcObj?.btnMainClicked(self)
     }
 
     @IBAction func comboBoxHabitAction(_ sender: Any) {
@@ -280,7 +280,7 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
     }
     
     @objc func menuItemSkipHabitClicked(){
-        thirdVcObj?.menuItemSkipHabitClicked()
+        activityCompletionVcObj?.menuItemSkipHabitClicked()
     }
 
     @objc func menuItemSelectAnotherHabitClicked(){

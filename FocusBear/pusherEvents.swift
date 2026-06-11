@@ -280,7 +280,7 @@ class pusherEvents:NSObject, PusherDelegate {
                             }
                             
                             if !shouldIgnore {
-                                if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+                                if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
                                     menuViewControllerObj?.btnResumeHabitsClicked(self)
                                     return;
                                 }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
