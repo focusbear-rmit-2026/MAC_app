@@ -2449,9 +2449,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             
             
             if let breakMinutes = jsonResult!.value(forKey: "break_after_minutes") as? Int {
-                //                print("breakAfterMinutes")
-                breakAfterMinutes = breakMinutes
-                print(breakAfterMinutes)
+                // Respect a locally-chosen break frequency (set via the break-frequency
+                // prompt) so the server sync does not clobber the user's choice.
+                let localOverride = UserDefaults.standard.integer(forKey: kUserdefaultsBreakFrequencyMinutes)
+                breakAfterMinutes = localOverride > 0 ? localOverride : breakMinutes
             }
             
             if let customRoutines = jsonResult!.value(forKey: "custom_routines") as? [NSDictionary] {

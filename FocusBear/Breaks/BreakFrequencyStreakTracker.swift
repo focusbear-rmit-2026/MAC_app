@@ -63,7 +63,7 @@ final class BreakFrequencyStreakTracker {
             dates = Array(dates.suffix(7))
         }
         saveBreakOffDates(dates)
-        addLog(text: "BreakFrequencyStreakTracker: recorded break-off for \(today) — streak array: \(dates)")
+        addLog(text: "BreakFrequencyStreakTracker: recorded break-off for \(today) — streak length: \(dates.count)")
 
         checkAndShowPromptIfNeeded()
     }
