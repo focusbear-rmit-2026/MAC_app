@@ -30,6 +30,11 @@ var habitTotalCompletedSeconds = 0
 var isProcessingCustomRoutine = false
 
 var activityPostponeCount = 0
+/// #1590: counts consecutive break postpones via the hold control, to escalate the
+/// required hold time (5s → 10s → 15s). Reset when a break is actually taken. Kept
+/// separate from activityPostponeCount (which habits also increment) so the hold
+/// always starts at 5s for a fresh break.
+var breakPostponeHoldCount = 0
 var activitySkipCount = 0
 var isHabitsDisabled = false
 var isHabitAlreadyShowed = true

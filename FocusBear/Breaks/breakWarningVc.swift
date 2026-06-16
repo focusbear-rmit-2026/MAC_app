@@ -7,8 +7,15 @@
 //
 
 import Cocoa
+import SwiftUI
 
 class breakWarningVc: NSViewController {
+
+    // SwiftUI conversion (#1590): the storyboard view is covered by a SwiftUI popup
+    // driven by this view-model. The legacy outlets remain (storyboard-connected) but
+    // are not shown; all presentation now flows through `breakViewModel`.
+    let breakViewModel = BreakWarningViewModel()
+    private var breakHostingView: NSHostingView<BreakWarningView>?
     
     @IBOutlet weak var lblTimeSinceLastBreak: NSTextField!
     @IBOutlet weak var btnSkip: Button!
@@ -159,7 +166,49 @@ class breakWarningVc: NSViewController {
         }
         btnSkip.isSecondaryButton = true
         btnPostpone.isSecondaryButton = true
+
+        setupSwiftUIPopup()
     }
+
+    /// Installs the SwiftUI popup over the storyboard view and wires its actions.
+    private func setupSwiftUIPopup() {
+        breakViewModel.startTitle = btnStartMicroBreak.title
+        breakViewModel.skipTitle = btnSkip.title
+        breakViewModel.postponeTitle = btnPostpone.title
+        breakViewModel.selectMinutesTitle = lblTitleSelectMinutes.stringValue
+        breakViewModel.minutesOptions = ["5", "10", "15", "20", "25", "30", "45", "60", "90"]
+
+        breakViewModel.onStartBreak = { [weak self] in self?.startBreakNow() }
+        breakViewModel.onSkip = { [weak self] in self?.skipBreak() }
+        breakViewModel.onPostpone = { [weak self] in self?.postponeBreak() }
+        // Pause the auto-start countdown while the user holds to postpone, so it can't
+        // fire mid-hold; resume if they release without completing.
+        breakViewModel.onPostponePressing = { [weak self] pressing in
+            if pressing { self?.pauseCountdown() } else { self?.resumeCountdown() }
+        }
+
+        let hosting = NSHostingView(rootView: BreakWarningView(model: breakViewModel))
+        hosting.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(hosting)
+        NSLayoutConstraint.activate([
+            hosting.topAnchor.constraint(equalTo: view.topAnchor),
+            hosting.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hosting.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hosting.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+        breakHostingView = hosting
+        // The storyboard pins the box to a fixed (narrower) width; deactivate it so the
+        // window matches the SwiftUI card width — otherwise the card overflows and its
+        // padding gets clipped.
+        boxWidth?.isActive = false
+        view.layoutSubtreeIfNeeded()
+        // Size the popup to the SwiftUI content so the window frames it correctly.
+        let fitting = hosting.fittingSize
+        if fitting.width > 0, fitting.height > 0 {
+            view.setFrameSize(fitting)
+        }
+    }
+
     override func viewWillDisappear() {
         if transparentWcObj != nil{
             transparentWcObj?.window?.close()
@@ -170,9 +219,20 @@ class breakWarningVc: NSViewController {
         if let lastBreakTimeText = getTimeSinceLastBreak(){
             lblTimeSinceLastBreak.stringValue = lastBreakTimeText
             lblTimeSinceLastBreak.isHidden = false
+            breakViewModel.timeSinceLastBreak = lastBreakTimeText
+            breakViewModel.showTimeSinceLastBreak = true
         }else{
             lblTimeSinceLastBreak.isHidden = true
+            breakViewModel.showTimeSinceLastBreak = false
         }
+        breakViewModel.urgency = currentBreakUrgency()
+    }
+
+    /// 0…1 escalation based on how long since the last meaningful break (red by ~3h).
+    private func currentBreakUrgency() -> Double {
+        guard let lastEnd = UserDefaults.standard.object(forKey: kUserdefaultsLastBreakEndTime) as? Date else { return 0 }
+        let hours = Date().timeIntervalSince(lastEnd) / 3600.0
+        return max(0, min(1, hours / 3.0))
     }
     
     func resetView(){
@@ -183,10 +243,20 @@ class breakWarningVc: NSViewController {
             }
         }
         reloadTimeSinceLastBreak()
-        
+
         popupButtonMinutes.selectItem(at: defaultSelectedIndex)
         progressBar.isHidden = false
         isPostponing = false
+
+        // Escalating postpone friction (#1590): hold gets longer with each consecutive
+        // postpone (5s → 10s → 15s, capped). Easy-skip users get a plain tap (0s).
+        breakViewModel.selectedMinutes = popupButtonMinutes.title
+        if SettingsManagerObject.isEasySkipEnabled {
+            breakViewModel.requiredHoldSeconds = 0
+        } else {
+            // Starts at 5s for a fresh break, escalates 5→10→15 per consecutive postpone.
+            breakViewModel.requiredHoldSeconds = Double(min(15, 5 * (breakPostponeHoldCount + 1)))
+        }
         var title = "Your <DURATION> seconds micro break starts in"
         btnPostpone.title = "Postpone"
         if let breakWarningVcInfo = configjson.value(forKey: "breakWarningVcInfo") as? NSDictionary{
@@ -215,6 +285,7 @@ class breakWarningVc: NSViewController {
                 let quote = randomElement["quote"] ?? ""
                 let attribution = randomElement["attribution"] ?? ""
                 lblDescription.stringValue = quote + " - " + attribution
+                breakViewModel.quote = quote + " - " + attribution
             }
             
             
@@ -222,6 +293,7 @@ class breakWarningVc: NSViewController {
         }
         
         lblTitle.stringValue = title.replacingOccurrences(of: "<DURATION>", with: "\(totalDuration)")
+        breakViewModel.title = lblTitle.stringValue
         popUpBtnClicked(self)
     }
     func startTimer(durationSeconds:Int) {
@@ -251,7 +323,9 @@ class breakWarningVc: NSViewController {
         }else{
             self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
         }
-        
+        breakViewModel.timerText = self.lblTimer.stringValue
+        breakViewModel.countdownProgress = 1
+
         DispatchQueue.main.async {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
             RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
@@ -289,8 +363,11 @@ class breakWarningVc: NSViewController {
             }else{
                 self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
             }
-            
-            
+            self.breakViewModel.timerText = self.lblTimer.stringValue
+            if self.totalDuration > 0 {
+                self.breakViewModel.countdownProgress = Double(remainingSeconds) / Double(self.totalDuration)
+            }
+
             if self.totalDuration <= self.currentTimer {
                 self.timer?.invalidate()
                 self.view.window?.close()
@@ -305,6 +382,7 @@ class breakWarningVc: NSViewController {
                 }else{
                     if currentState == ._MICRO_BREAK_{// whenever show waring then make current state _MICRO_BREAK_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
                         allApiObject.capturePosthog(event: "break-warning-started-after-30-seconds-delay", metadata: [:])
+                        breakPostponeHoldCount = 0   // taking the break resets the escalating hold time
                         getHabitsVcObject().performBreakActivities()
                     }
                 }
@@ -325,61 +403,60 @@ class breakWarningVc: NSViewController {
 //        }
     }
     
-    @IBAction func btnStartMicroBreakClicked(_ sender: Any) {
+    // Storyboard actions (the buttons are covered by the SwiftUI popup, but the
+    // outlets/actions stay connected). All real flow goes through the private handlers
+    // below, which are also invoked by the SwiftUI view's callbacks.
+    @IBAction func btnStartMicroBreakClicked(_ sender: Any) { startBreakNow() }
+    @IBAction func btnSkipClicked(_ sender: Any) { skipBreak() }
+    @IBAction func btnPostponeClicked(_ sender: Any) { postponeBreak() }
+
+    private func startBreakNow() {
         self.timer?.invalidate()
         self.view.window?.close()
         transparentWcObj?.window?.close()
-        if currentState == ._MICRO_BREAK_{// whenever show waring then make current state _MICRO_BREAK_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
+        breakPostponeHoldCount = 0   // taking a break resets the escalating hold time
+        if currentState == ._MICRO_BREAK_{
             allApiObject.capturePosthog(event: "break-warning-user-started-early", metadata: [:])
             getHabitsVcObject().performBreakActivities()
         }
     }
-    
-    @IBAction func btnSkipClicked(_ sender: Any) {
+
+    /// Pause/resume the auto-start countdown (used while the user holds to postpone).
+    private func pauseCountdown() {
+        timer?.invalidate()
+    }
+    private func resumeCountdown() {
+        timer?.invalidate()
+        DispatchQueue.main.async {
+            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
+            RunLoop.main.add(self.timer!, forMode: RunLoop.Mode.common)
+        }
+    }
+
+    private func skipBreak() {
         addLog(text: "[user-action] breakWarningVc - Skip Break Activities Completely Clicked")
         allApiObject.capturePosthog(event: "skip-breaks-from-warning", metadata: [:])
         self.timer?.invalidate()
         self.view.window?.close()
         getHabitsVcObject().postponeBreakActivitiesFor(minutes: breakAfterMinutes, secondsToPostpone: nil, isFromBreakWarningWindow: true)
     }
-    @IBAction func btnPostponeClicked(_ sender: Any) {
-        if isPostponing{
-            addLog(text: "[user-action]breakWarningVc:- btn take break clicked")
-            self.timer?.invalidate()
-            self.view.window?.close()
-            if currentState == ._MICRO_BREAK_{// whenever show waring then make current state _MICRO_BREAK_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
-                getHabitsVcObject().performBreakActivities()
-            }
-            
-        }else{
-            addLog(text: "[user-action]breakWarningVc:- btn Postpone clicked")
-            if activityPostponeCount > 0 && !SettingsManagerObject.isEasySkipEnabled{
-                addLog(text: "breakWarningVc:- btn Postpone timer begin")
-                isPostponing = true
-                self.timer?.invalidate()
-                lblTitle.stringValue = "You postponed the last break - are you sure you can't make time for The break now?"
-                btnPostpone.title = "Argh ok I'll take a break!"
-                progressBar.isHidden = true
-                startTimer(durationSeconds: 15)
-                if let breakWarningVcInfo = configjson.value(forKey: "breakWarningVcInfo") as? NSDictionary{
-                    lblTitle.stringValue = breakWarningVcInfo.value(forKey: "postponeConfirmText") as? String ?? lblTitle.stringValue
-                    btnPostpone.title = breakWarningVcInfo.value(forKey: "buttonTakeBreakText") as? String ?? btnPostpone.title
-                }
-                if transparentWcObj != nil{
-                    transparentWcObj?.window?.close()
-                }
-            }else{
-                allApiObject.capturePosthog(event: "postpone-breaks-from-warning", metadata: [:])
-                self.timer?.invalidate()
-                self.view.window?.close()
-                activityPostponeCount += 1
-                getHabitsVcObject().postponeBreakActivitiesFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, isFromBreakWarningWindow: true)
-                postponeBreaksFromBreaksWarningCount += 1
-                if postponeBreaksFromBreaksWarningCount >= 2{
-                    postponeBreaksFromBreaksWarningCount = 0
-                    showDeactivateBreaksWindow()
-                }
-            }
+
+    /// Called when the user completes the press-and-hold on the postpone control
+    /// (#1590). The hold itself is the friction (escalating duration), so this just
+    /// performs the postpone.
+    private func postponeBreak() {
+        addLog(text: "[user-action]breakWarningVc:- postpone hold completed (hold \(Int(breakViewModel.requiredHoldSeconds))s, count \(activityPostponeCount))")
+        allApiObject.capturePosthog(event: "postpone-breaks-from-warning", metadata: ["hold_seconds": Int(breakViewModel.requiredHoldSeconds), "postpone_count": activityPostponeCount])
+        self.timer?.invalidate()
+        self.view.window?.close()
+        transparentWcObj?.window?.close()
+        activityPostponeCount += 1
+        breakPostponeHoldCount += 1   // next break popup requires a longer hold
+        getHabitsVcObject().postponeBreakActivitiesFor(minutes: Int(breakViewModel.selectedMinutes) ?? 5, secondsToPostpone: nil, isFromBreakWarningWindow: true)
+        postponeBreaksFromBreaksWarningCount += 1
+        if postponeBreaksFromBreaksWarningCount >= 2{
+            postponeBreaksFromBreaksWarningCount = 0
+            showDeactivateBreaksWindow()
         }
     }
 }

@@ -103,6 +103,7 @@
 		8F0419462C353D4100481ACD /* getViewControllersObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0419452C353D4100481ACD /* getViewControllersObject.swift */; };
 		8F0419482C353DCA00481ACD /* allUserdefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0419472C353DCA00481ACD /* allUserdefaults.swift */; };
 		8F04F340290A93B800A8D5A6 /* breakWarningVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */; };
+		5A39659727C1470935ACF869 /* BreakWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52A9006F098F83D833838736 /* BreakWarningView.swift */; };
 		8F050A0927842B8400F3CE17 /* activityCompletionVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F050A0827842B8400F3CE17 /* activityCompletionVc.swift */; };
 		8F0734652C520C3D002FACE8 /* Onboarding.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8F0734642C520C3D002FACE8 /* Onboarding.storyboard */; };
 		8F07346B2C526AA1002FACE8 /* informationPopoverVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F07346A2C526AA1002FACE8 /* informationPopoverVc.swift */; };
@@ -488,6 +489,7 @@
 		8F0419452C353D4100481ACD /* getViewControllersObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = getViewControllersObject.swift; sourceTree = "<group>"; };
 		8F0419472C353DCA00481ACD /* allUserdefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = allUserdefaults.swift; sourceTree = "<group>"; };
 		8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breakWarningVc.swift; sourceTree = "<group>"; };
+		52A9006F098F83D833838736 /* BreakWarningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakWarningView.swift; sourceTree = "<group>"; };
 		8F050A0827842B8400F3CE17 /* activityCompletionVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = activityCompletionVc.swift; sourceTree = "<group>"; };
 		8F050A0B278467B000F3CE17 /* FocusBear-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FocusBear-Bridging-Header.h"; sourceTree = "<group>"; };
 		8F0734642C520C3D002FACE8 /* Onboarding.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Onboarding.storyboard; sourceTree = "<group>"; };
@@ -980,6 +982,7 @@
 			isa = PBXGroup;
 			children = (
 				8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */,
+				52A9006F098F83D833838736 /* BreakWarningView.swift */,
 				8F3F1F28299BB96400E67F42 /* breaksBrainDumpVc.swift */,
 				8F1FBAE529F2A46000AA1979 /* naturalBreaksDetectionVc.swift */,
 				8F3A28982C22A46F002AD2E3 /* deactivateBreaksVc.swift */,
@@ -1951,6 +1954,7 @@
 				8FAC6C9D27806DCB008A4180 /* firstViewController.swift in Sources */,
 				274C9A93289BF8D70066F883 /* SettingsManager.swift in Sources */,
 				8F04F340290A93B800A8D5A6 /* breakWarningVc.swift in Sources */,
+				5A39659727C1470935ACF869 /* BreakWarningView.swift in Sources */,
 				8F892E602B3E91550030414C /* permissionsVc.swift in Sources */,
 				8F9B6E392A0636620082EFC1 /* PopoverViewControllerForSearch.swift in Sources */,
 				8F3DD01329F3B4B400E23715 /* AHLaunchJobSchedule.m in Sources */,
