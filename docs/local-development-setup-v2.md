@@ -2,6 +2,13 @@
 - This document records **all issues encountered while setting up and building the V2 branch locally**, along with the **final confirmed fixes** that resulted in a successful build and app launch.
 - The goal is to help future contributors avoid the same blockers and understand why these issues occurred.
 
+> **Most of these fixes are now baked into the repo — you should not need to apply them by hand.**
+> The project already ships with: macOS 11 deployment target, `SWIFT_ENABLE_EXPLICIT_MODULES = NO`
+> (project + `Podfile` `post_install`), the `Focus Bear`/`FBHelper` Run actions set to **Debug**,
+> ad-hoc Debug signing via `Config/*.xcconfig`, and Sparkle fetched via `./scripts/fetch-sparkle.sh`.
+> The sections below are kept as **background / troubleshooting** — read them to understand *why*
+> a setting is the way it is, not as a manual checklist.
+
 ---
 
 ## Environment
@@ -23,7 +30,8 @@ cd ~/Desktop/FocusBear
 git clone https://github.com/Focus-Bear/Mac-App.git FocusBear-MacApp-V2
 cd FocusBear-MacApp-V2
 
-pod install
+./scripts/fetch-sparkle.sh   # Sparkle.framework is not committed — fetch it
+pod install                  # only needed if you change the Podfile (Pods/ is committed)
 open FocusBear.xcworkspace
 ```
 - Always open the .xcworkspace, not the .xcodeproj.
@@ -104,21 +112,18 @@ No such module 'Sparkle'
 - `Headers`, `Modules`, `Resources`, etc. were **files instead of symlinks**
 -  Confirmed via: `ls -la Sparkle.framework`
 
-### Resolution
-- Recreated the Sparkle framework symlink structure correctly.
+### Resolution (current)
+- **Sparkle is no longer committed to git.** The old vendored framework was a broken Sparkle
+  1.x with corrupted symlinks (top-level `Headers`/`Modules`/`Resources`/`Sparkle` were plain
+  files instead of symlinks). It is now fetched as the official **signed Sparkle 2.7.0** release:
 ```bash
 # From the repository root
-cd Sparkle.framework
-
-rm -f Headers Modules PrivateHeaders Resources Sparkle Versions/Current
-ln -s A Versions/Current
-ln -s Versions/Current/Headers Headers
-ln -s Versions/Current/Modules Modules
-ln -s Versions/Current/PrivateHeaders PrivateHeaders
-ln -s Versions/Current/Resources Resources
-ln -s Versions/Current/Sparkle Sparkle
+./scripts/fetch-sparkle.sh
 ```
-- Then cleared derived data and reopened Xcode:
+- This downloads `Sparkle.framework` (checksum-verified) to the repo root with the correct
+  symlink structure, so `import Sparkle` resolves the Sparkle 2 API (`SPUUpdater`). No manual
+  symlink surgery is needed.
+- If `import Sparkle` still fails after fetching, clear derived data and reopen Xcode:
 ```bash
 rm -rf ~/Library/Developer/Xcode/DerivedData/*
 open FocusBear.xcworkspace
@@ -256,14 +261,14 @@ but module 'Auth0' has a minimum deployment target of macOS 11.0
 - Deployment Target: macOS 11
 - Workspace: FocusBear.xcworkspace
 - Pods: Installed cleanly
-- Sparkle: Correct symlink structure
+- Sparkle: fetched via `./scripts/fetch-sparkle.sh` (not committed to git)
 
 ---
 
 ## Notes for Future Contributors
 - If you see `Unable to find module dependency: CTrueTime on Xcode 26`, check explicit module settings first.
 - Do not attempt to fix this by downgrading TrueTime or editing module maps.
-- Sparkle issues are usually filesystem-related, not CocoaPods-related. If Sparkle fails → verify framework symlinks. 
+- Sparkle issues are usually filesystem-related, not CocoaPods-related. If Sparkle fails → re-run `./scripts/fetch-sparkle.sh` (and delete the existing `Sparkle.framework` first to force a clean re-download). 
 - If you hit Auth0 / TweetNacl errors → check deployment target first. 
 - If Swift packages go red → reset caches fully (do not partially clean).
 

@@ -1,0 +1,10 @@
+// Release signing — Developer-ID (for archiving / notarised distribution builds).
+//
+// This is what ships to users. Keep this identity intact so prod builds stay signed.
+// The per-target Release xcconfigs (FocusBear-Release / FBHelper-Release) add the
+// matching PROVISIONING_PROFILE_SPECIFIER.
+
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_IDENTITY = Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)
+CODE_SIGN_IDENTITY[sdk=macosx*] = Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)
+DEVELOPMENT_TEAM = TCUD568B3U

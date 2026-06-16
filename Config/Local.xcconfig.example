@@ -1,0 +1,14 @@
+// Personal Debug signing overrides — OPTIONAL.
+//
+// Copy this file to Config/Local.xcconfig (which is gitignored) to sign Debug builds
+// with your own Apple Developer team instead of the default ad-hoc ("Sign to Run
+// Locally"). You only need this if you're testing entitlements that require a real
+// team (e.g. some App Group / push scenarios). For ordinary local development you can
+// ignore this file entirely.
+//
+// Signing-Debug.xcconfig does `#include? "Local.xcconfig"` after its defaults, so
+// anything you set here wins.
+
+// DEVELOPMENT_TEAM = ABCDE12345
+// CODE_SIGN_STYLE = Automatic
+// CODE_SIGN_IDENTITY = Apple Development

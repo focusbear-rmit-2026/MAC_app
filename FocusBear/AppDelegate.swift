@@ -299,7 +299,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         allApiObject.downloadBlockPageAsync(url: URL(string: "https://focus-bear.github.io/assets/focus-blocked/index.html"), destinationUrl: fileUrl){ (success, error) in
             print(success)
             if flaskServerObject.startFlaskServer(){
-                blockWebUrlString = "http://localhost:50501"
+                blockWebUrlString = "http://localhost:\(flaskServerPort)"
             }else{
                 blockWebUrlString = fileUrl.absoluteString
             }

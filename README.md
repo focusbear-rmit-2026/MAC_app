@@ -1,3 +1,33 @@
+# Running locally (Debug)
+
+> The rest of this README covers building a **Release** DMG for distribution. To just
+> **run the app locally for development**, do the following. For the full background and
+> troubleshooting (Xcode 26, Auth0, Sentry, etc.) see
+> [`docs/local-development-setup-v2.md`](docs/local-development-setup-v2.md).
+
+1. **Fetch Sparkle:** `./scripts/fetch-sparkle.sh` — downloads the official signed
+   `Sparkle.framework` to the repo root (it is no longer committed to git).
+2. **Open the workspace**, not the project: `open FocusBear.xcworkspace` (Pods are
+   committed; run `pod install` only if you change `Podfile`).
+3. **Select the `Focus Bear` scheme and Run (⌘R).** Clean build folder (⇧⌘K) first if needed.
+
+That's it — everything else is already configured in the project: the Run action builds
+**Debug** (Release is for archiving/notarisation only), Debug signs **ad-hoc** ("Sign to
+Run Locally"), the deployment target is **macOS 11**, and `SWIFT_ENABLE_EXPLICIT_MODULES`
+is off for Xcode 26. Signing lives in `Config/*.xcconfig` — Release keeps the Developer-ID
+identity, Debug is ad-hoc; to sign Debug with your own team copy
+`Config/Local.xcconfig.example` → `Config/Local.xcconfig` (gitignored).
+
+> **⚠️ Flask server binaries (`FocusBear/server` and `FocusBear/serverIntel`) — lead
+> developer only.**  These pre-built, codesigned binaries must **not** be rebuilt by
+> individual contributors.  `server` targets Apple Silicon (arm64) and is built on an
+> M-Series Mac; `serverIntel` targets Intel (x86_64) and must be built on an Intel Mac
+> (universal Python on M-Series does not produce a working Intel binary).  Both binaries
+> must also be signed with the Focus Bear Developer-ID certificate before being committed.
+> If a new build is required, contact lead developer.
+
+---
+
 ### 📆 Steps to Build and Create a Notarized DMG for macOS App
 
 ✅ 1. Build the App for Release

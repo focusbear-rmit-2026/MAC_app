@@ -1,0 +1,18 @@
+// Debug signing — ad-hoc ("Sign to Run Locally").
+//
+// Needs no certificates and works on any machine, so interns / new contributors can
+// build and run without the team's Developer-ID certs. Do NOT put a real Developer-ID
+// identity here — Release signing lives in Signing-Release.xcconfig.
+//
+// To sign Debug with your own Apple Developer team (e.g. for entitlements that need a
+// real team), copy Config/Local.xcconfig.example -> Config/Local.xcconfig (gitignored)
+// and override there.
+
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_IDENTITY = -
+CODE_SIGN_IDENTITY[sdk=macosx*] = -
+PROVISIONING_PROFILE_SPECIFIER =
+PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*] =
+DEVELOPMENT_TEAM = TCUD568B3U
+
+#include? "Local.xcconfig"

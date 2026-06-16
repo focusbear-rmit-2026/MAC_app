@@ -1,0 +1,5 @@
+// Base config for the "Focus Bear" app target — Debug.
+// Pulls in the CocoaPods settings, then our shared Debug signing.
+
+#include "../Pods/Target Support Files/Pods-Focus Bear/Pods-Focus Bear.debug.xcconfig"
+#include "Signing-Debug.xcconfig"
