@@ -122,6 +122,7 @@ struct BreakWarningView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
                         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.5), lineWidth: 1))
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
 
@@ -169,6 +170,7 @@ struct HoldToPostponeButton: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 9)
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(accent, lineWidth: 1))
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         } else {
@@ -201,7 +203,6 @@ struct HoldToPostponeButton: View {
             }, perform: {
                 progress = 0
                 isPressing = false
-                onPressingChanged(false)
                 onComplete()
             })
             .accessibility(label: Text("\(title), hold for \(Int(seconds)) seconds"))

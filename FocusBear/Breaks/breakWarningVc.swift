@@ -172,12 +172,17 @@ class breakWarningVc: NSViewController {
 
     /// Installs the SwiftUI popup over the storyboard view and wires its actions.
     private func setupSwiftUIPopup() {
+        // Hide the storyboard buttons so that they cannot be clicked accidentally from the upper view.
+        btnPostpone.isHidden = true
+        btnStartMicroBreak.isHidden = true
+        btnSkip.isHidden = true
+        
         breakViewModel.startTitle = btnStartMicroBreak.title
         breakViewModel.skipTitle = btnSkip.title
         breakViewModel.postponeTitle = btnPostpone.title
         breakViewModel.selectMinutesTitle = lblTitleSelectMinutes.stringValue
         breakViewModel.minutesOptions = ["5", "10", "15", "20", "25", "30", "45", "60", "90"]
-
+        
         breakViewModel.onStartBreak = { [weak self] in self?.startBreakNow() }
         breakViewModel.onSkip = { [weak self] in self?.skipBreak() }
         breakViewModel.onPostpone = { [weak self] in self?.postponeBreak() }
@@ -186,7 +191,7 @@ class breakWarningVc: NSViewController {
         breakViewModel.onPostponePressing = { [weak self] pressing in
             if pressing { self?.pauseCountdown() } else { self?.resumeCountdown() }
         }
-
+        
         let hosting = NSHostingView(rootView: BreakWarningView(model: breakViewModel))
         hosting.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(hosting)
@@ -331,6 +336,7 @@ class breakWarningVc: NSViewController {
             RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
+    
     func setProgres(){
         let remainingSeconds = self.totalDuration-currentTimer
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: remainingSeconds)
@@ -423,10 +429,17 @@ class breakWarningVc: NSViewController {
 
     /// Pause/resume the auto-start countdown (used while the user holds to postpone).
     private func pauseCountdown() {
-        timer?.invalidate()
+        if timer != nil{
+            timer?.invalidate()
+            timer = nil
+        }
     }
+    
     private func resumeCountdown() {
-        timer?.invalidate()
+        if timer != nil{
+            timer?.invalidate()
+            timer = nil
+        }
         DispatchQueue.main.async {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
             RunLoop.main.add(self.timer!, forMode: RunLoop.Mode.common)
@@ -447,7 +460,10 @@ class breakWarningVc: NSViewController {
     private func postponeBreak() {
         addLog(text: "[user-action]breakWarningVc:- postpone hold completed (hold \(Int(breakViewModel.requiredHoldSeconds))s, count \(activityPostponeCount))")
         allApiObject.capturePosthog(event: "postpone-breaks-from-warning", metadata: ["hold_seconds": Int(breakViewModel.requiredHoldSeconds), "postpone_count": activityPostponeCount])
-        self.timer?.invalidate()
+        if timer != nil{
+            timer?.invalidate()
+            timer = nil
+        }
         self.view.window?.close()
         transparentWcObj?.window?.close()
         activityPostponeCount += 1

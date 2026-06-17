@@ -552,10 +552,21 @@ class habitsVc: NSViewController {
                     if currentActivityPlaying != nil{
                         closePupUpBlockIfVisible()
                     }
+                    if (getHabitsVcObject().habitsView.subviews.contains(firstViewControllerObj!.view)){
+                        if firstViewControllerObj!.isTimerGoingOn{
+                            firstViewControllerObj?.stopTimer()// stop 5 seconds timer if clicked postpone
+                        }
+                    }
                 }else{
                     postponeBreakActivitiesFor(minutes: breakAfterMinutes, secondsToPostpone: nil, isFromBreakWarningWindow:false)
                 }
             }else{
+                if (getHabitsVcObject().habitsView.subviews.contains(firstViewControllerObj!.view)){
+                    if firstViewControllerObj!.isTimerGoingOn{
+                        firstViewControllerObj?.stopTimer()// stop 5 seconds timer if clicked postpone
+                    }
+                }
+                
                 if currentAction == ._START_{// start state sirf first activity ki start mi hi hoti h fir  second activity ki start mai "end state hoti hai "
                     showAskPostponeView()
                 }else{

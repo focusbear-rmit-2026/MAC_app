@@ -78,6 +78,7 @@
 		13C6BF082FB199E70074DD63 /* focusButtonService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6BF072FB199E70074DD63 /* focusButtonService.swift */; };
 		13C6BF0B2FB19D750074DD63 /* ORSSerial in Frameworks */ = {isa = PBXBuildFile; productRef = 13C6BF0A2FB19D750074DD63 /* ORSSerial */; };
 		13C6BF0E2FB211CA0074DD63 /* audioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */; };
+		13C6C2A22FE2615E00B1F278 /* BreakWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */; };
 		13CBE7652F07E9660025544E /* enableAIBlockingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */; };
 		13D5D0112FD0396E00AB474C /* micMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D5D0102FD0396E00AB474C /* micMonitor.swift */; };
 		13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */; };
@@ -103,7 +104,6 @@
 		8F0419462C353D4100481ACD /* getViewControllersObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0419452C353D4100481ACD /* getViewControllersObject.swift */; };
 		8F0419482C353DCA00481ACD /* allUserdefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0419472C353DCA00481ACD /* allUserdefaults.swift */; };
 		8F04F340290A93B800A8D5A6 /* breakWarningVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */; };
-		5A39659727C1470935ACF869 /* BreakWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52A9006F098F83D833838736 /* BreakWarningView.swift */; };
 		8F050A0927842B8400F3CE17 /* activityCompletionVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F050A0827842B8400F3CE17 /* activityCompletionVc.swift */; };
 		8F0734652C520C3D002FACE8 /* Onboarding.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8F0734642C520C3D002FACE8 /* Onboarding.storyboard */; };
 		8F07346B2C526AA1002FACE8 /* informationPopoverVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F07346A2C526AA1002FACE8 /* informationPopoverVc.swift */; };
@@ -466,6 +466,7 @@
 		13BBEEE32F7567F10073B58E /* startSetUpHabitsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = startSetUpHabitsVc.swift; sourceTree = "<group>"; };
 		13C6BF072FB199E70074DD63 /* focusButtonService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusButtonService.swift; sourceTree = "<group>"; };
 		13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = audioRecorder.swift; sourceTree = "<group>"; };
+		13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakWarningView.swift; sourceTree = "<group>"; };
 		13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = enableAIBlockingVc.swift; sourceTree = "<group>"; };
 		13D5D0102FD0396E00AB474C /* micMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = micMonitor.swift; sourceTree = "<group>"; };
 		13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineStateVc.swift; sourceTree = "<group>"; };
@@ -487,13 +488,12 @@
 		274E671528951DDC0030163F /* AllApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllApi.swift; sourceTree = "<group>"; };
 		5F7C4CC4D1F38E18CC9D5E55 /* FocusBear-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "FocusBear-Release.xcconfig"; sourceTree = "<group>"; };
 		889FCE3E1080DC22C97AB6D8 /* Pods-Focus Bear.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Focus Bear.debug.xcconfig"; path = "Target Support Files/Pods-Focus Bear/Pods-Focus Bear.debug.xcconfig"; sourceTree = "<group>"; };
-		8E5DEAA96AD3FCA949FF525B /* Local.xcconfig.example */ = {isa = PBXFileReference; includeInIndex = 1; path = Local.xcconfig.example; sourceTree = "<group>"; };
+		8E5DEAA96AD3FCA949FF525B /* Local.xcconfig.example */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = Local.xcconfig.example; sourceTree = "<group>"; };
 		8F02AF412A751A5200BA6536 /* blockedAppsVc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = blockedAppsVc.swift; sourceTree = "<group>"; };
 		8F0419432C353B9C00481ACD /* breakSurveyVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breakSurveyVc.swift; sourceTree = "<group>"; };
 		8F0419452C353D4100481ACD /* getViewControllersObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = getViewControllersObject.swift; sourceTree = "<group>"; };
 		8F0419472C353DCA00481ACD /* allUserdefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = allUserdefaults.swift; sourceTree = "<group>"; };
 		8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breakWarningVc.swift; sourceTree = "<group>"; };
-		52A9006F098F83D833838736 /* BreakWarningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakWarningView.swift; sourceTree = "<group>"; };
 		8F050A0827842B8400F3CE17 /* activityCompletionVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = activityCompletionVc.swift; sourceTree = "<group>"; };
 		8F050A0B278467B000F3CE17 /* FocusBear-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FocusBear-Bridging-Header.h"; sourceTree = "<group>"; };
 		8F0734642C520C3D002FACE8 /* Onboarding.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Onboarding.storyboard; sourceTree = "<group>"; };
@@ -991,7 +991,7 @@
 			isa = PBXGroup;
 			children = (
 				8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */,
-				52A9006F098F83D833838736 /* BreakWarningView.swift */,
+				13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */,
 				8F3F1F28299BB96400E67F42 /* breaksBrainDumpVc.swift */,
 				8F1FBAE529F2A46000AA1979 /* naturalBreaksDetectionVc.swift */,
 				8F3A28982C22A46F002AD2E3 /* deactivateBreaksVc.swift */,
@@ -1587,7 +1587,6 @@
 				0EDB8FEB66F6AAB9C4A6C924 /* FBHelper-Release.xcconfig */,
 				8E5DEAA96AD3FCA949FF525B /* Local.xcconfig.example */,
 			);
-			name = Config;
 			path = Config;
 			sourceTree = "<group>";
 		};
@@ -1698,7 +1697,7 @@
 			);
 			mainGroup = 8FAC6C7A27805F6D008A4180;
 			packageReferences = (
-				274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0.swift" */,
+				274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0" */,
 				13F8278C2ED5EC8B006C0BEF /* XCRemoteSwiftPackageReference "swifter" */,
 				13C6BF092FB19C210074DD63 /* XCRemoteSwiftPackageReference "ORSSerialPort" */,
 			);
@@ -1979,7 +1978,6 @@
 				8FAC6C9D27806DCB008A4180 /* firstViewController.swift in Sources */,
 				274C9A93289BF8D70066F883 /* SettingsManager.swift in Sources */,
 				8F04F340290A93B800A8D5A6 /* breakWarningVc.swift in Sources */,
-				5A39659727C1470935ACF869 /* BreakWarningView.swift in Sources */,
 				8F892E602B3E91550030414C /* permissionsVc.swift in Sources */,
 				8F9B6E392A0636620082EFC1 /* PopoverViewControllerForSearch.swift in Sources */,
 				8F3DD01329F3B4B400E23715 /* AHLaunchJobSchedule.m in Sources */,
@@ -2059,6 +2057,7 @@
 				8F6465CE2A612C58009A3341 /* tblCellUrlRelaxMode.swift in Sources */,
 				8F3DD01629F3B4CA00E23715 /* AHAuthorizer.m in Sources */,
 				274C9A91289A8C910066F883 /* accountVc.swift in Sources */,
+				13C6C2A22FE2615E00B1F278 /* BreakWarningView.swift in Sources */,
 				8FA692FD2B90B31600FF4862 /* confirmRunScriptVc.swift in Sources */,
 				8F6DAD842B32A84400CB210B /* lateNoMorePopUpVc.swift in Sources */,
 				8FC31BFE28C757B400E2DD4C /* brainDumpVc.swift in Sources */,
@@ -2407,7 +2406,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Focus Bear.entitlements";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 494;
+				CURRENT_PROJECT_VERSION = 496;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2440,7 +2439,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Focus Bear.entitlements";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 494;
+				CURRENT_PROJECT_VERSION = 496;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_TESTABILITY = NO;
@@ -2566,7 +2565,7 @@
 				minimumVersion = 1.5.0;
 			};
 		};
-		274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0.swift" */ = {
+		274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/auth0/Auth0.swift";
 			requirement = {
@@ -2589,7 +2588,7 @@
 		};
 		274E0F462890291D000234A3 /* Auth0 */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0.swift" */;
+			package = 274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0" */;
 			productName = Auth0;
 		};
 /* End XCSwiftPackageProductDependency section */

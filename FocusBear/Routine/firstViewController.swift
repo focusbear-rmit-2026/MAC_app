@@ -680,6 +680,12 @@ class firstViewController: NSViewController {
         }
     }
     
+    func stopTimer(){
+        self.timer?.invalidate()
+        self.lbltimer.isHidden = true
+        self.isTimerGoingOn = false
+    }
+    
     @IBAction func popUpBtnActivitiesClicked(_ sender: Any) {
         let index = popUpBtnActivities.indexOfSelectedItem
         let name = introActivities[index].value(forKey: "name") as? String ?? ""

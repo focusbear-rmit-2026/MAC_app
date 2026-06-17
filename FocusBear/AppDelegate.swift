@@ -2167,9 +2167,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     let IncludeInEveryBreak = activityDic["include_in_every_break"] as? Bool ?? false
                     let videoUrl = activityDic["video_urls"] as? [String] ?? []
                     var logQuantity = activityDic["log_quantity"] as? Bool ?? false
-                    //                let openSpecificApps = activityDic["openSpecificApps"] as? Bool ?? false
-                    let allowUrls = activityDic["allowed_urls"] as? [String] ?? []
-                    let allowApps = activityDic["allowed_apps"] as? [String] ?? []
+
                     let isOfficeFriendly = activityDic["is_office_friendly"] as? Bool ?? false
                     let allowedFocusMode = activityDic["allowed_focus_mode_id"] as? String ?? ""
                     let activity_sequence_id = activityDic["activity_sequence_id"] as? String ?? ""
@@ -2178,10 +2176,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     if !icon.isEmpty{
                         name = icon + " " + name
                     }
-                    var openSpecificApps = false
-                    if allowApps.count != 0{
-                        openSpecificApps = true
-                    }
+
+                    //"Initially, micro-break with the 'allowed apps' feature were available, but later, the functionality for allowing apps was removed from web settings. However, the implementation still exists within the app. To ensure that the 'allowed apps' micro-break does not occur, we have stopped reading that data accordingly."
+                    //                    let allowUrls = activityDic["allowed_urls"] as? [String] ?? []
+                    //                    let allowApps = activityDic["allowed_apps"] as? [String] ?? []
+                    //                    var openSpecificApps = false
+                    //                    if allowApps.count != 0{
+                    //                        openSpecificApps = true
+                    //                    }
                     //                    var isRandomChoice = false
                     var choiceType:CHOICETYPE = ._NONE_
                     if let type = activityDic["choice_type"] as? String{//competency,  "random", check_list
@@ -2286,7 +2288,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         logQuantity = false
                     }
                     
-                    var activity = breakActivity(id: id, name: name, durationSeconds: durationSeconds, IncludeInEveryBreak: IncludeInEveryBreak, urlsArray: videoUrl, logQuantity:logQuantity, choiceType: choiceType, choices: arrChoices, logQuantityQuestion: logQuantityQuestion, openSpecificApps: openSpecificApps, allowUrls: allowUrls, allowApps: allowApps, isOfficeFriendly: isOfficeFriendly, allowedFocusMode: allowedFocusMode, logQuantityType: logQuantityType, activity_sequence_id: activity_sequence_id, take_notes: take_notes, text_instructions: text_instructions, imgUrls: imgUrls, completion_requirements: completion_requirements, useTimer: useTimer, checkList:check_list)
+                    var activity = breakActivity(id: id, name: name, durationSeconds: durationSeconds, IncludeInEveryBreak: IncludeInEveryBreak, urlsArray: videoUrl, logQuantity:logQuantity, choiceType: choiceType, choices: arrChoices, logQuantityQuestion: logQuantityQuestion, openSpecificApps: false, allowUrls: [], allowApps: [], isOfficeFriendly: isOfficeFriendly, allowedFocusMode: allowedFocusMode, logQuantityType: logQuantityType, activity_sequence_id: activity_sequence_id, take_notes: take_notes, text_instructions: text_instructions, imgUrls: imgUrls, completion_requirements: completion_requirements, useTimer: useTimer, checkList:check_list)
                     activity.logQuantityQuestions = arrLogQuantityQuestions
                     arrAllbreakActivities.append(activity)
                 }
@@ -5026,7 +5028,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
             
             if isShutOffTimeGoing(){
-                //closeNatutalBreakIfRunning() // todo rmeove
                 if isAppEnable{
                     //Natural break detection not working if the user closes their laptop lid #319
                     detectNatualBreaks()
@@ -9394,34 +9395,4 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 }
 
-
-// tooltip mai dikha  xcode in allowed in woek focs mode but focus mode tha locked in current focus todo
-// usb device check
-
-// blocking schedule offline sync  done 
-// space removed in email 
-// remvoed completyed task from list
-// "Works only during active Focus Sessions or active Blocking Schedules."
-//Bug fixed in v3.32.487. Previously, emergencyStartDone() was being called, which caused issues during cutoff time because that function contains additional checks. This has now been corrected.
-
-
-// remove chekc box from default focus mode
-// resume focus mode according to remaining time// after 2 hours this will not resume
-
-
-
 //  intel arraow bug
-
-
-// chatgpt app ka title bhi nikalo
-//All Core Features Disabled After Reinstall ("Disabled because your all-day summary is visible")
-//#1900
-//Meeting detection false positive due to dictation
-//#1901
-
-//Remove 15 second countdown if you skip and choose "Can't do it" unless the user has selected high friction#311
-
-
-// tab title ka kaam
-// pomodoro bug 
-// window auto close

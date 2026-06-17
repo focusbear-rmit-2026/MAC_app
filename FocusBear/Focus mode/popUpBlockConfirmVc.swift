@@ -1682,7 +1682,7 @@ class popUpBlockConfirmVc: NSViewController {
 //        
 //        return false
 //    }
-}//todo focus was on another view sahi kro
+}
 
 extension popUpBlockConfirmVc: NSTextViewDelegate{
     func textDidChange(_ notification: Notification) {
