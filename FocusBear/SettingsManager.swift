@@ -1648,10 +1648,11 @@ class SettingsManager:NSObject{
     }
     
     func isAIBlockingEnabled()->Bool{
-        if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-            return customBlockingScheduleManagerObj.isAIBlockingEnabled()
-        }
-        return isAiCheckUrlEnabled
+        // Fix #1584: log which code path is taken to diagnose the ~50% activation rate.
+        let customScheduleOn = customBlockingScheduleManagerObj.isAnyCustomScheduleOn
+        let result = customScheduleOn ? customBlockingScheduleManagerObj.isAIBlockingEnabled() : isAiCheckUrlEnabled
+        addLog(text: "isAIBlockingEnabled: customScheduleOn=\(customScheduleOn) globalAI=\(isAiCheckUrlEnabled) → \(result)")
+        return result
     }
     
 }

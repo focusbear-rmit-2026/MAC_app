@@ -422,9 +422,36 @@ extension Date {
 let customBlockingScheduleManagerObj = customBlockingScheduleManager()
 
 class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
-    
-    var arrBlockingSchedule = [customBlockingSchedule]()
-    var isAnyCustomScheduleOn = false
+
+    /// Serial queue protecting shared mutable state from concurrent access.
+    /// All reads and writes of `arrBlockingSchedule` and `isAnyCustomScheduleOn`
+    /// are routed through this queue so that the reader (`isAIBlockingEnabled()`,
+    /// which can be invoked from background AI-checking threads) and the writers
+    /// (schedule start/stop/pause, decode, add/remove — invoked on the main thread)
+    /// are properly serialized.
+    /// Fix: PR #1584 — AI blocking race condition
+    private let stateQueue = DispatchQueue(label: "com.focusbear.blockingScheduleManager.state")
+
+    // Backing storage for the serialized accessors below. Do NOT touch these
+    // directly except via the `arrBlockingSchedule` / `isAnyCustomScheduleOn`
+    // computed properties, which serialize every access through `stateQueue`.
+    private var _arrBlockingSchedule = [customBlockingSchedule]()
+    private var _isAnyCustomScheduleOn = false
+
+    /// Thread-safe accessor for the schedules array. Every read and write is
+    /// serialized through `stateQueue`. Mutating array elements in place
+    /// (e.g. `arrBlockingSchedule[i].state = .off`) performs a serialized
+    /// read followed by a serialized write, which is safe and non-reentrant.
+    var arrBlockingSchedule: [customBlockingSchedule] {
+        get { stateQueue.sync { _arrBlockingSchedule } }
+        set { stateQueue.sync { _arrBlockingSchedule = newValue } }
+    }
+
+    /// Thread-safe accessor for the "any schedule currently on" flag.
+    var isAnyCustomScheduleOn: Bool {
+        get { stateQueue.sync { _isAnyCustomScheduleOn } }
+        set { stateQueue.sync { _isAnyCustomScheduleOn = newValue } }
+    }
     var currentScheduleFinishTime:Date?
     var isAnyCustomSchedulePaused = false
     var pendingFirstBlockingSchedule: customBlockingSchedule?
@@ -872,14 +899,12 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     
     
     func isAIBlockingEnabled()->Bool{
-        if isAnyCustomScheduleOn{
-            for schedule in arrBlockingSchedule{
-                if schedule.state == .on{
-                    return schedule.isAIBlockingEnabled
-                }
-            }
-        }
-        return false
+        // Capture a local snapshot to avoid a data race if arrBlockingSchedule
+        // is mutated from another thread while we iterate (fix for #1584).
+        // Reads go through the serialized `isAnyCustomScheduleOn` /
+        // `arrBlockingSchedule` accessors below.
+        guard isAnyCustomScheduleOn else { return false }
+        return arrBlockingSchedule.first(where: { $0.state == .on })?.isAIBlockingEnabled ?? false
     }
     func isMicroBreaksEnabled()->Bool{
         if isAnyCustomScheduleOn{
