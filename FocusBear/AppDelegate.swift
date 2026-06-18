@@ -3381,11 +3381,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
         
-        // Start the service
-        if focusButtonServiceObject.start() {
-            addLog(text: "FocusButton: service started successfully")
+        // Start the service off the main thread. The Focus Button is an optional USB
+        // accessory and ORSSerialPort's open() can block in the kernel for a
+        // misbehaving / unrelated serial device (e.g. a USB hub's modem interface).
+        // Running it synchronously here froze the whole UI on the splash screen because
+        // the connection-timeout guard is itself scheduled on the (now-blocked) main queue.
+        DispatchQueue.global(qos: .utility).async {
+            if focusButtonServiceObject.start() {
+                addLog(text: "FocusButton: service started successfully")
+            }
         }
-        
+
     }
     
     
