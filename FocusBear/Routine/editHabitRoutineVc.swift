@@ -19,6 +19,7 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
         let handler = MessageHandler()
         webView.configuration.userContentController.add(handler, name: "setting_saved")
         webView.configuration.userContentController.add(handler, name: "open_marketplace")
+        webView.configuration.userContentController.add(AccessTokenRequestHandler.shared, name: AccessTokenRequestHandler.messageName)
         self.webView.navigationDelegate = self
         
         loadWebView()
@@ -122,7 +123,7 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
         loadWebView()
     }
     
-    func setSettingsToWebView(){
+    func setSettingsToWebView(requestId: String? = nil){
         let theme = getWindowTheme()
 
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
@@ -132,7 +133,10 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
         }else{
             flags = "[\"settings-updated\",\"simple-mode\",\"save-settings-migrate-to-web\"]"
         }
-        let settingsJson = "{\"access_token\":\"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"flags\":\(flags)}"
+        var settingsJson = "{\"access_token\":\"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"flags\":\(flags)}"
+        if let requestId = requestId {
+            settingsJson = String(settingsJson.dropLast()) + ",\"requestId\":\"\(requestId)\"}"
+        }
         let javascript = "loadSettingsData(\(settingsJson));"
         
         webView?.evaluateJavaScript(javascript,completionHandler: { (html: Any?, error: Error?) in

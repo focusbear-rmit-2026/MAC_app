@@ -65,6 +65,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         webView.configuration.userContentController.add(handler, name: "get_selected_tasks")
         webView.configuration.userContentController.add(handler, name: "close_todo_task_ui")
         webView.configuration.userContentController.add(handler, name: "close_todo_focus_end_ui")
+        webView.configuration.userContentController.add(AccessTokenRequestHandler.shared, name: AccessTokenRequestHandler.messageName)
         
         btnEnableAdvancedAnalytics.titleColor = NSColor.systemBlue
         
@@ -368,11 +369,24 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         loadRequest()
     }
     
-    func setAccessTokenToWebView(){
+    // Re-inject the freshly refreshed token via the same loader used on initial
+    // load for the current mode (see webView(_:didFinish:)).
+    func applyRefreshedAccessToken(requestId: String) {
+        if isAddingTask {
+            setAccessTokenToWebView(requestId: requestId)
+        } else {
+            setAccessTokenAndTaksToWebView(requestId: requestId)
+        }
+    }
+
+    func setAccessTokenToWebView(requestId: String? = nil){
         let theme = getWindowTheme()
         
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
-        let stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\"}"
+        var stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\"}"
+        if let requestId = requestId {
+            stringJson = String(stringJson.dropLast()) + ",\"requestId\":\"\(requestId)\"}"
+        }
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadAccessTokenForToDo) { loadAccessTokenForToDo(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
         
         webView.evaluateJavaScript(settingsFunc,completionHandler: { (html: Any?, error: Error?) in
@@ -382,14 +396,17 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         })
     }
 
-    func setAccessTokenAndTaksToWebView(){
+    func setAccessTokenAndTaksToWebView(requestId: String? = nil){
         let theme = getWindowTheme()
         
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         
         let totalDuration = focusModeActualDurationPerformed / 60
         
-        let stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"tasks\":\(focusModeTaskString),\"total_duration\":\(totalDuration),\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\"}"
+        var stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"tasks\":\(focusModeTaskString),\"total_duration\":\(totalDuration),\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\"}"
+        if let requestId = requestId {
+            stringJson = String(stringJson.dropLast()) + ",\"requestId\":\"\(requestId)\"}"
+        }
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadTasks) { loadTasks(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
         
         webView.evaluateJavaScript(settingsFunc,completionHandler: { (html: Any?, error: Error?) in

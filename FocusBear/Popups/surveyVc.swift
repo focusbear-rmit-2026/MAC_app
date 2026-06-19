@@ -19,6 +19,7 @@ class surveyVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegat
         loadWebView()
         let handler = MessageHandler()
         webView.configuration.userContentController.add(handler, name: "close_survey_ui")
+        webView.configuration.userContentController.add(AccessTokenRequestHandler.shared, name: AccessTokenRequestHandler.messageName)
     }
     
     func loadWebView(){
@@ -75,9 +76,12 @@ class surveyVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegat
         loadWebView()
     }
     
-    func setAccessTokenToWebView(){
+    func setAccessTokenToWebView(requestId: String? = nil){
         let theme = getWindowTheme()
-        let stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"theme\":\"\(theme)\",\"lang\":\"\(currentLanguageCode)\"}"
+        var stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"theme\":\"\(theme)\",\"lang\":\"\(currentLanguageCode)\"}"
+        if let requestId = requestId {
+            stringJson = String(stringJson.dropLast()) + ",\"requestId\":\"\(requestId)\"}"
+        }
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadAccessTokenForSurvey) { loadAccessTokenForSurvey(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
         
         webView.evaluateJavaScript(settingsFunc,completionHandler: { (html: Any?, error: Error?) in

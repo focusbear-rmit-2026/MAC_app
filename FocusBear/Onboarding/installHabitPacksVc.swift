@@ -34,6 +34,7 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
         webView.configuration.userContentController.add(handler, name: "routine_suggestions_step")
         
         webView.configuration.userContentController.add(handler, name: "setting_saved")
+        webView.configuration.userContentController.add(AccessTokenRequestHandler.shared, name: AccessTokenRequestHandler.messageName)
         
         self.webView.navigationDelegate = self
         
@@ -151,11 +152,24 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
         loadEditHabitsView()
     }
 
-    func setSettingsToWebView(){
+    // Re-inject the freshly refreshed token via the same loader used on initial
+    // load for the current mode (see webView(_:didFinish:)).
+    func applyRefreshedAccessToken(requestId: String) {
+        if isEditHabitsLoaded {
+            setSettingsToWebView(requestId: requestId)
+        } else {
+            setAccessTokenToWebView(requestId: requestId)
+        }
+    }
+
+    func setSettingsToWebView(requestId: String? = nil){
         let theme = getWindowTheme()
         var flags = "[\"settings-updated\",\"simple-mode\",\"save-settings-migrate-to-web\"]"
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
-        let settingsJson = "{\"access_token\":\"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"flags\":\(flags)}"
+        var settingsJson = "{\"access_token\":\"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"flags\":\(flags)}"
+        if let requestId = requestId {
+            settingsJson = String(settingsJson.dropLast()) + ",\"requestId\":\"\(requestId)\"}"
+        }
         
         let javascript = "loadSettingsData(\(settingsJson));"
         
@@ -249,7 +263,7 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
         hideOnboardingBellIcon(view: self.view)
     }
     
-    func setAccessTokenToWebView(){
+    func setAccessTokenToWebView(requestId: String? = nil){
         let goals = UserDefaults.standard.object(forKey: kUserDefaultsCustomGoals) as? String ?? ""
         let arrGoals = [goals]
         var goalsString = "\(arrGoals)"//
@@ -266,7 +280,10 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
         
         let theme = getWindowTheme()
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
-        let stringJson1 = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"type\":\"mac\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\",\"long_term_goals\":\(goalsString)}"
+        var stringJson1 = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"type\":\"mac\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\",\"long_term_goals\":\(goalsString)}"
+        if let requestId = requestId {
+            stringJson1 = String(stringJson1.dropLast()) + ",\"requestId\":\"\(requestId)\"}"
+        }
         
         let javascript = "loadMetaDataForRoutineSuggestion(\(stringJson1));"
         

@@ -40,6 +40,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         webView.configuration.userContentController.add(handler, name: "send_new_task_added_to_todo_player")
         webView.configuration.userContentController.add(handler, name: "send_brain_dump_content")
         webView.configuration.userContentController.add(handler, name: "send_intention")
+        webView.configuration.userContentController.add(AccessTokenRequestHandler.shared, name: AccessTokenRequestHandler.messageName)
 
         self.view.window?.backgroundColor = NSColor.clear
         
@@ -195,7 +196,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     }
 
 
-    func setAccessTokenToWebView(){
+    func setAccessTokenToWebView(requestId: String? = nil){
         let theme = getWindowTheme()
         
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
@@ -220,6 +221,9 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         
         if !focusModeTaskStringIsEmpty(){
             stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"tasks\":\(focusModeTaskString),\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"brain_dump\":\"\(brainDump)\",\"isOnboarding\":\(isFirstTime),\"focusmode_endtime\":\"\(finish_time_string)\",\"is_super_strict_mode\":\(isSuperStrictMode)}"
+        }
+        if let requestId = requestId {
+            stringJson = String(stringJson.dropLast()) + ",\"requestId\":\"\(requestId)\"}"
         }
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadMetaDataForToDoPlayer) { loadMetaDataForToDoPlayer(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
         

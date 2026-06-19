@@ -734,7 +734,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
-    
     func loadCredentialsAndDeviceId(){
         addLog(text: "load Credentials And DeviceId")
         

@@ -16,6 +16,7 @@ class todoListToolVc: NSViewController, WKNavigationDelegate, webViewLoadFailedD
         super.viewDidLoad()
         // Do view setup here.
         self.webView.navigationDelegate = self
+        webView.configuration.userContentController.add(AccessTokenRequestHandler.shared, name: AccessTokenRequestHandler.messageName)
     }
     override func viewWillDisappear() {
 //        update all tags because it may be posssible that user has created some tags in webview
@@ -78,13 +79,16 @@ class todoListToolVc: NSViewController, WKNavigationDelegate, webViewLoadFailedD
         reloadData()
     }
     
-    func setAccessTokenToWebView(){
+    func setAccessTokenToWebView(requestId: String? = nil){
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         let intention = whatToAchieveInFocusBlock
         var stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\"}"
         
         if !intention.isEmpty{
             stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"intention\":\"\(intention)\"}"
+        }
+        if let requestId = requestId {
+            stringJson = String(stringJson.dropLast()) + ",\"requestId\":\"\(requestId)\"}"
         }
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadAccessTokenForToDo) { loadAccessTokenForToDo(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
         

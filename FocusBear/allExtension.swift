@@ -700,4 +700,112 @@ extension Date {
 }
 
 
+// MARK: - Web to native access-token refresh (REQUEST_ACCESS_TOKEN)
+
+final class AccessTokenRefreshCoordinator {
+    static let shared = AccessTokenRefreshCoordinator()
+    private init() {}
+
+    // Most recent requestId we've been asked to satisfy, keyed by screen path.
+    private var latestRequestIdByScreen: [String: String] = [:]
+
+    func isLatest(_ requestId: String, for screen: String) -> Bool {
+        return latestRequestIdByScreen[screen] == requestId
+    }
+
+    // Records the request as the latest for `screen`, then performs a silent refresh.
+    // `completion` runs on the main thread with a fresh JWT, or nil on failure.
+    func handleRequest(requestId: String, reason: String, screen: String,
+                       completion: @escaping (_ token: String?) -> Void) {
+        latestRequestIdByScreen[screen] = requestId
+        addLog(text: "[token-refresh] REQUEST_ACCESS_TOKEN reason=\(reason) screen=\(screen) requestId=\(requestId)")
+
+        guard let appdelegate = appdelegate else {
+            DispatchQueue.main.async { completion(nil) }
+            return
+        }
+
+        // Silent refresh. Auth0 renews automatically when the cached token is expired.
+        appdelegate.credentialsManager.credentials { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let credentials):
+                    if appdelegate.credential?.accessToken != credentials.accessToken {
+                        appdelegate.credential = credentials
+                        _ = appdelegate.credentialsManager.store(credentials: credentials)
+                        appdelegate.user = AuthUser(from: credentials.accessToken)
+                    }
+                    addLog(text: "[token-refresh] silent refresh ok requestId=\(requestId)")
+                    completion(credentials.accessToken)
+                case .failure(let error):
+                    // Gentle failure: no logout / no modal here (unlike setCredentialAndUserInfo).
+                    // The web view shows its own retry / reload screen.
+                    addLog(text: "[token-refresh] silent refresh failed: \(error.localizedDescription) requestId=\(requestId)")
+                    completion(nil)
+                }
+            }
+        }
+    }
+}
+
+final class AccessTokenRequestHandler: NSObject, WKScriptMessageHandler {
+    static let messageName = "request_access_token"
+    static let shared = AccessTokenRequestHandler()
+
+    func userContentController(_ userContentController: WKUserContentController,
+                              didReceive message: WKScriptMessage) {
+        guard message.name == AccessTokenRequestHandler.messageName else { return }
+
+        // Body is a JSON string per the spec.
+        guard
+            let jsonString = message.body as? String,
+            let data = jsonString.data(using: .utf8),
+            let dict = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+            let requestId = dict["requestId"] as? String
+        else {
+            addLog(text: "[token-refresh] could not parse REQUEST_ACCESS_TOKEN body")
+            return
+        }
+        let reason = dict["reason"] as? String ?? "unknown"
+        let screen = dict["screen"] as? String ?? ""
+        // Capture the *sending* web view so we can route the reply by identity.
+        // (Screen URLs are not unique: /webview/settings is used by several VCs.)
+        let requestWebView = message.webView
+
+        AccessTokenRefreshCoordinator.shared.handleRequest(requestId: requestId, reason: reason, screen: screen) { token in
+            guard token != nil else { return } // failure -> web retries / shows reload screen
+
+            // Only complete the wait for the newest request for this screen.
+            guard AccessTokenRefreshCoordinator.shared.isLatest(requestId, for: screen) else {
+                addLog(text: "[token-refresh] stale requestId=\(requestId); not injecting")
+                return
+            }
+
+            // Route by the *sending* web view's identity. Each VC reads the now-fresh
+            // appdelegate.credential and re-injects via the same loader it used on
+            // initial load, carrying the requestId so web can match the reply.
+            if requestWebView === taskPlayerVcObj?.webView {
+                taskPlayerVcObj?.setAccessTokenToWebView(requestId: requestId)
+            } else if requestWebView === todoListToolVcObj?.webView {
+                todoListToolVcObj?.setAccessTokenToWebView(requestId: requestId)
+            } else if requestWebView === selectJsonVcObj?.webview {
+                selectJsonVcObj?.setSettingsToWebView(requestId: requestId)
+            } else if requestWebView === editHabitRoutineVcObj?.webView {
+                editHabitRoutineVcObj?.setSettingsToWebView(requestId: requestId)
+            } else if requestWebView === surveyVcObj?.webView {
+                surveyVcObj?.setAccessTokenToWebView(requestId: requestId)
+            } else if requestWebView === manageSubscriptionVcObj?.webView {
+                manageSubscriptionVcObj?.setAccessTokenToWebView(requestId: requestId)
+            } else if requestWebView === addTaskVcObj?.webView {
+                addTaskVcObj?.applyRefreshedAccessToken(requestId: requestId)
+            } else if requestWebView === installHabitPacksVcObj?.webView {
+                installHabitPacksVcObj?.applyRefreshedAccessToken(requestId: requestId)
+            } else {
+                addLog(text: "[token-refresh] no loader mapping for screen=\(screen)")
+            }
+        }
+    }
+}
+
+
 
