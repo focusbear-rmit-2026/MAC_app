@@ -33,6 +33,8 @@ class thirdVc: NSViewController {
     @IBOutlet weak var lblProgress: NSTextField!
     @IBOutlet weak var btnSkipHabit: underLineButton!
     
+    @IBOutlet weak var btnBackToHabitsList: Button!
+    
     var randomIntToRememberNextHabit: Int = 0
     var lastHabitIndex = -1
     var lastActivityIndex = -1// 
@@ -54,6 +56,12 @@ class thirdVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
         btnSkipHabit.isHidden = true
+        
+        let orangeColor = NSColor(named: "dark_OrangeColor") ?? NSColor.orange
+        btnBackToHabitsList.borderColor = orangeColor.withAlphaComponent(0.5).cgColor
+        btnBackToHabitsList.buttonColor = orangeColor.withAlphaComponent(0.1).cgColor
+        
+        btnBackToHabitsList.isHidden = true
         
         btnReviseQuantity.isHidden = true
         lblTimer.isHidden = true
@@ -1345,6 +1353,7 @@ class thirdVc: NSViewController {
                 }
             }
         }
+        showBackButtonIfNeeded()
     }
     
     func customRoutineHabitFinished(index:Int) {
@@ -1490,6 +1499,7 @@ class thirdVc: NSViewController {
                 playActivityFinishedSound(lastActivity: lastHabit ?? "", nextActivity: nextActivityName, isSkipped: false, isAskNext:(self.randomIntToRememberNextHabit == 5))
             }
         }
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastHabit ?? "")
     }
     
@@ -1571,6 +1581,7 @@ class thirdVc: NSViewController {
             btnMain.toolTip = btnMain.title
             btnSkipHabit.isHidden = true
         }
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastHabit ?? "")
     }
     
@@ -1650,6 +1661,7 @@ class thirdVc: NSViewController {
                 playActivityFinishedSound(lastActivity: lastHabit ?? "", nextActivity: nextActivityName, isSkipped: true, isAskNext:false)
             }
         }
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastHabit ?? "")
     }
     
@@ -1759,6 +1771,7 @@ class thirdVc: NSViewController {
                 playActivityFinishedSound(lastActivity: lastHabit ?? "", nextActivity: nextActivityName, isSkipped: false, isAskNext:(self.randomIntToRememberNextHabit == 5))
             }
         }
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastHabit ?? "")
     }
     
@@ -1830,6 +1843,7 @@ class thirdVc: NSViewController {
         btnSkipHabit.isHidden = true
 
         playAfterMorningEveningRoutineSound(isMorning:true)
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastHabit ?? "")
     }
     
@@ -2017,7 +2031,14 @@ class thirdVc: NSViewController {
                 playActivityFinishedSound(lastActivity: lastHabit ?? "", nextActivity: nextActivityName, isSkipped: false, isAskNext:(self.randomIntToRememberNextHabit == 5))
             }
         }
+        
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastHabit ?? "")
+        
+        //focusButtonService-------//
+        focusButtonServiceObject.sendMorningHabitsToFocusDevice()
+        //---------//
+
     }
     
     
@@ -2101,7 +2122,11 @@ class thirdVc: NSViewController {
                 playActivityFinishedSound(lastActivity: lastHabit ?? "", nextActivity: nextActivityName, isSkipped: isSkipped, isAskNext:(self.randomIntToRememberNextHabit == 5))
             }
         }
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastHabit ?? "")
+        //focusButtonService-------//
+        focusButtonServiceObject.sendMorningHabitsToFocusDevice()
+        //---------//
     }
     
     func morningHabitSkippedAndDoneAlready() {
@@ -2256,74 +2281,16 @@ class thirdVc: NSViewController {
                 playActivityFinishedSound(lastActivity: lastHabit ?? "", nextActivity: nextActivityName, isSkipped: false, isAskNext:(self.randomIntToRememberNextHabit == 5))
             }
         }
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastHabit ?? "")
+        
+        
+        //focusButtonService-------//
+        focusButtonServiceObject.sendMorningHabitsToFocusDevice()
+        //---------//
     }
-    
-    func setProgress(){
-        var totalSecondsAllHabits = 0
-        let habitCompletedSeconds = habitTotalCompletedSeconds
-        
-        if currentState == ._MORNING_HABIT_{
-            for i in lastHabitIndex+1..<arrFilteredMorningHabits.count{
-                if arrFilteredMorningHabits[i].useTimer{
-                    totalSecondsAllHabits += arrFilteredMorningHabits[i].durationSeconds
-                }
-            }
-        }else if currentState == ._EVENING_HABIT_{
-            for i in lastHabitIndex+1..<arrFilteredEveningHabits.count{
-                if arrFilteredEveningHabits[i].useTimer{
-                    if isHighPrioritySequenceGoing{
-                        if arrFilteredEveningHabits[i].isPriorityHigh{
-                            if let cutOffTime = arrFilteredEveningHabits[i].cutOffTime{
-                                let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
-                                let currentDate = Date()
-                                if currentDate > cutOffDate{
-                                    continue;
-                                }
-                            }
-                            
-                            totalSecondsAllHabits += arrFilteredEveningHabits[i].durationSeconds
-                        }
-                    }else{
-                        totalSecondsAllHabits += arrFilteredEveningHabits[i].durationSeconds
-                    }
-                }
-            }
-        }else if currentState == ._CUSTOM_ROUTINE_{
-            let arrHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits
-            for i in lastHabitIndex+1..<arrHabits.count{
-                if arrHabits[i].useTimer{
-                    totalSecondsAllHabits += arrHabits[i].durationSeconds
-                }
-            }
-        }
-  
-        let habitMinutesString: String = getStringTime(seconds: habitCompletedSeconds + additionalHabitTotalCompletedSeconds)
-        
-        
-        let totalMinutesString: String = getStringTime(seconds: totalSecondsAllHabits)
-        
 
-        if totalMinutesString.isEmpty{
-            var finalSring = "You have completed <duration> of habits."
-            if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
-                finalSring = activityInfo.value(forKey: "habitsCompleteText") as? String ?? finalSring
-            }
-            finalSring = finalSring.replacingOccurrences(of: "<duration>", with: habitMinutesString)
-            addLog(text:"func setProgress:- \(finalSring)")
-            lblProgress.stringValue = finalSring
-        }else{
-            var finalSring = "You have completed <duration> of habits - <totalduration> to go. You can do it!"
-            if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
-                finalSring = activityInfo.value(forKey: "habitsProgressText") as? String ?? finalSring
-            }
-            finalSring = finalSring.replacingOccurrences(of: "<duration>", with: habitMinutesString)
-            finalSring = finalSring.replacingOccurrences(of: "<totalduration>", with: totalMinutesString)
-            addLog(text:"func setProgress:- \(finalSring)")
-            lblProgress.stringValue = finalSring
-        }
-        
-    }
+    
     func morningHabitFinishedAndStartIncompleteNew(index:Int, isLastActivitySkipped:Bool) {
         btnSkipHabit.title = buttonMoreActionsText
         lblCreateAccount.isHidden = true
@@ -2397,7 +2364,11 @@ class thirdVc: NSViewController {
             btnSkipHabit.isHidden = true
             UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
         }
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastHabit ?? "")
+        //focusButtonService-------//
+        focusButtonServiceObject.sendMorningHabitsToFocusDevice()
+        //---------//
     }
     
     func morningHabitSkipped() {
@@ -2491,7 +2462,11 @@ class thirdVc: NSViewController {
                 playActivityFinishedSound(lastActivity: lastHabit ?? "", nextActivity: nextActivityName, isSkipped: true, isAskNext:false)
             }
         }
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastHabit ?? "")
+        //focusButtonService-------//
+        focusButtonServiceObject.sendMorningHabitsToFocusDevice()
+        //---------//
     }
     var isSequenceFinished = false
     
@@ -2719,27 +2694,35 @@ class thirdVc: NSViewController {
                 playActivityFinishedSound(lastActivity: lastHabit ?? "", nextActivity: nextActivityName, isSkipped: false, isAskNext:(self.randomIntToRememberNextHabit == 5))
             }
         }
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastHabit ?? "")
+        //focusButtonService-------//
+        focusButtonServiceObject.sendEveningHabitsToFocusDevice()
+        //---------//
     }
     
     
     func showWindDownUiIfNeeded(){
         isWrapUpState = false
         if let cutOffTime = cutOffTime {
-            let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
-            let currentDate = Date()
-            
-            if currentDate > cutOffDate {// cutoff time
+            if isCutOffTimeGoing() {// cutoff time
                 isWrapUpState = true
             }else {
-                let differenceInSeconds = cutOffDate.timeIntervalSince(currentDate)
-                let differenceInMinutes = Int(differenceInSeconds / 60)
+                let now = Date()
+                let calendar = Calendar.current
+
+                var cutoffDate = calendar.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: now) ?? now
                 
-                if differenceInMinutes < 10 { // we will hanfle it like cutoff time has passed
+                // If cutoff already passed today, move to tomorrow beacuse we know that isCutOffTimeGoing is false
+                if cutoffDate < now {
+                    cutoffDate = calendar.date(byAdding: .day, value: 1, to: cutoffDate)!
+                }
+                
+                let differenceInMinutes = Int(cutoffDate.timeIntervalSince(now) / 60)
+                
+                if differenceInMinutes <= 10 {
                     print("Cutoff time is in \(differenceInMinutes) minutes.")
                     isWrapUpState = true
-                } else {
-                    isWrapUpState = false
                 }
             }
         }else{ // unlock
@@ -2963,7 +2946,11 @@ class thirdVc: NSViewController {
                 playActivityFinishedSound(lastActivity: lastHabit ?? "", nextActivity: nextActivityName, isSkipped: false, isAskNext:(self.randomIntToRememberNextHabit == 5))
             }
         }
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastHabit ?? "")
+        //focusButtonService-------//
+        focusButtonServiceObject.sendEveningHabitsToFocusDevice()
+        //---------//
     }
     
     func showLastEveningHabitFinishedViewFromActionbar(index:Int, isSkipped:Bool) {
@@ -3049,8 +3036,12 @@ class thirdVc: NSViewController {
             UserDefaults.standard.set(startDate, forKey: kUserdefaultsEveningHabitsShowedTillDate)
         }
         
-        playAfterMorningEveningRoutineSound(isMorning:true)
+        playAfterMorningEveningRoutineSound(isMorning:false)
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastHabit ?? "")
+        //focusButtonService-------//
+        focusButtonServiceObject.sendEveningHabitsToFocusDevice()
+        //---------//
     }
     
     func eveningHabitFinishedAndStartIncompleteNew(index:Int, isLastActivitySkipped:Bool) {
@@ -3088,9 +3079,6 @@ class thirdVc: NSViewController {
                 self.loadGraph(activityId: arrFilteredEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: arrFilteredEveningHabits[self.lastHabitIndex].logQuantity, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
             }
         })
-        
-        
-        
         
         
         isSequenceFinished = false
@@ -3189,8 +3177,13 @@ class thirdVc: NSViewController {
             }
             btnSkipHabit.isHidden = true
         }
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastHabit ?? "")
+        //focusButtonService-------//
+        focusButtonServiceObject.sendEveningHabitsToFocusDevice()
+        //---------//
     }
+    
     func eveningHabitSkipped() {
         if isAnyAllowedFocusModeActivityRunning{
             closeNudgeFocusAlignmentScoreWindow()
@@ -3342,8 +3335,79 @@ class thirdVc: NSViewController {
                 playActivityFinishedSound(lastActivity: lastHabit ?? "", nextActivity: nextActivityName, isSkipped: true, isAskNext:false)
             }
         }
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastHabit ?? "")
+        //focusButtonService-------//
+        focusButtonServiceObject.sendEveningHabitsToFocusDevice()
+        //---------//
     }
+    
+    func setProgress(){
+        var totalSecondsAllHabits = 0
+        let habitCompletedSeconds = habitTotalCompletedSeconds
+        
+        if currentState == ._MORNING_HABIT_{
+            for i in lastHabitIndex+1..<arrFilteredMorningHabits.count{
+                if arrFilteredMorningHabits[i].useTimer{
+                    totalSecondsAllHabits += arrFilteredMorningHabits[i].durationSeconds
+                }
+            }
+        }else if currentState == ._EVENING_HABIT_{
+            for i in lastHabitIndex+1..<arrFilteredEveningHabits.count{
+                if arrFilteredEveningHabits[i].useTimer{
+                    if isHighPrioritySequenceGoing{
+                        if arrFilteredEveningHabits[i].isPriorityHigh{
+                            if let cutOffTime = arrFilteredEveningHabits[i].cutOffTime{
+                                let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
+                                let currentDate = Date()
+                                if currentDate > cutOffDate{
+                                    continue;
+                                }
+                            }
+                            
+                            totalSecondsAllHabits += arrFilteredEveningHabits[i].durationSeconds
+                        }
+                    }else{
+                        totalSecondsAllHabits += arrFilteredEveningHabits[i].durationSeconds
+                    }
+                }
+            }
+        }else if currentState == ._CUSTOM_ROUTINE_{
+            let arrHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits
+            for i in lastHabitIndex+1..<arrHabits.count{
+                if arrHabits[i].useTimer{
+                    totalSecondsAllHabits += arrHabits[i].durationSeconds
+                }
+            }
+        }
+  
+        let habitMinutesString: String = getStringTime(seconds: habitCompletedSeconds + additionalHabitTotalCompletedSeconds)
+        
+        
+        let totalMinutesString: String = getStringTime(seconds: totalSecondsAllHabits)
+        
+
+        if totalMinutesString.isEmpty{
+            var finalSring = "You have completed <duration> of habits."
+            if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+                finalSring = activityInfo.value(forKey: "habitsCompleteText") as? String ?? finalSring
+            }
+            finalSring = finalSring.replacingOccurrences(of: "<duration>", with: habitMinutesString)
+            addLog(text:"func setProgress:- \(finalSring)")
+            lblProgress.stringValue = finalSring
+        }else{
+            var finalSring = "You have completed <duration> of habits - <totalduration> to go. You can do it!"
+            if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+                finalSring = activityInfo.value(forKey: "habitsProgressText") as? String ?? finalSring
+            }
+            finalSring = finalSring.replacingOccurrences(of: "<duration>", with: habitMinutesString)
+            finalSring = finalSring.replacingOccurrences(of: "<totalduration>", with: totalMinutesString)
+            addLog(text:"func setProgress:- \(finalSring)")
+            lblProgress.stringValue = finalSring
+        }
+        
+    }
+    
     var timer:Timer?
     var currentTimer = 0
     var isTimerGoingOn = false
@@ -3376,6 +3440,7 @@ class thirdVc: NSViewController {
             RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
+    
     @objc func performTimerCount() {
         currentTimer += 1
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
@@ -3539,6 +3604,7 @@ class thirdVc: NSViewController {
                 playActivityFinishedSound(lastActivity: lastActivity, nextActivity: nextActivityName, isSkipped: false, isAskNext:false)
             }
         }
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastActivity)
     }
     
@@ -3683,6 +3749,7 @@ class thirdVc: NSViewController {
                 playActivityFinishedSound(lastActivity: lastActivity, nextActivity: nextActivityName, isSkipped: false, isAskNext:false)
             }
         }
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastActivity)
     }
     
@@ -3778,6 +3845,7 @@ class thirdVc: NSViewController {
                 playActivityFinishedSound(lastActivity: lastActivity, nextActivity: nextActivityName, isSkipped: true, isAskNext:false)
             }
         }
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastActivity)
     }
     
@@ -3891,7 +3959,7 @@ class thirdVc: NSViewController {
         allApiObject.capturePosthog(event: "complete-late-no-more-activity", metadata: [:])
         
         playEveryActivitySound()
-        
+        showBackButtonIfNeeded()
         writeStringToHabitInfo(isFinishTime: true, activityName: lastActivity)
     }
     
@@ -3957,9 +4025,10 @@ class thirdVc: NSViewController {
         lblTitle.stringValue = getStartBreakActivityTitleText(seconds: seconds, activityName: activityName)//"It’s time for a break. Do \(seconds) seconds of \(activityName) to earn more screentime."
         btnMain.title = getstartActivityButtonText(seconds: seconds, name: activityName)//"Start \(seconds) seconds \(activityName)"
         btnMain.toolTip = btnMain.title
-        
+        showBackButtonIfNeeded()
         addLog(text:"start-break-activity")//complete break activity//
     }
+    
     @IBAction func btnReviseQuantityClicked(_ sender: Any) {
         addLog(text:"[user-action] thirdvc-btnReviseQuantityClicked")
         btnReviseQuantity.isHidden = true
@@ -4384,6 +4453,23 @@ class thirdVc: NSViewController {
                 print("morning habit str success ***************")
             }
         })
+    }
+    
+    @IBAction func btnBackToHabitsListClicked(_ sender: Any) {
+        getHabitsVcObject().showAllMorningEveningHabitsFromHabitCompleted()
+    }
+    
+    // The back button will appear only during the morning and evening habits flow. Whenever the back button is clicked, the habit list will be shown. Completed habits should be removed from the habit list so that only the correct/remaining habits are visible. The user can then select any habit and start it. The user can also use the action bar of selected habit
+    func showBackButtonIfNeeded(){// v 3.32.483
+        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+            if isSequenceFinished{
+                btnBackToHabitsList.isHidden = true
+            }else{
+                btnBackToHabitsList.isHidden = false
+            }
+        }else{
+            btnBackToHabitsList.isHidden = true
+        }
     }
 }
 

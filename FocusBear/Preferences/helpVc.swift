@@ -55,7 +55,7 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
         tabViewReportProblem.label = "Report Problem"
         tabViewCommunity.label = "Community"
         
-        lblTitle.stringValue = "Focus Bear is still a new app and you might encounter issues (or have great ideas on how to make it better). We'd really appreciate your feedback. You can email us at team@focusbear.io. Screenshots are really helpful to let us understand the problem. Also if you had a problem, please share your logs with Focus Bear Support Team (use the link below)"
+        lblTitle.stringValue = "Focus Bear is still a new app and you might encounter issues (or have great ideas on how to make it better). We'd really appreciate your feedback. You can email us at support@focusbear.io. Screenshots are really helpful to let us understand the problem. Also if you had a problem, please share your logs with Focus Bear Support Team (use the link below)"
         
         btnExportLogs.title = "Share logs with Focus Bear Support Team"
         var placeHolderLogsFeedback = "What happened?"

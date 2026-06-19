@@ -126,8 +126,21 @@ func detectNatualBreaks(){
     lastEvent = CGEventSource.secondsSinceLastEventType(CGEventSourceStateID.hidSystemState, eventType: CGEventType(rawValue: ~0)!)
     
     let idleTimeValue = Int(lastEvent)
-    if currentState != ._MORNING_HABIT_ && currentState != ._MICRO_BREAK_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !appdelegate!.isUserOnMeeting{
+//    if currentState != ._MORNING_HABIT_ && currentState != ._MICRO_BREAK_ && (isHabitAlreadyShowed || currentState == ._POSTPONE_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !appdelegate!.isUserOnMeeting{
+//        checkIsNaturalBreakStarted(idleTimeValue: idleTimeValue)
+//    }else{
+//        closeNatutalBreakIfRunning()
+//    }
+//
+    
+    if currentState != ._MICRO_BREAK_ && arrAllbreakActivities.count != 0{
         checkIsNaturalBreakStarted(idleTimeValue: idleTimeValue)
+    }else if appdelegate!.isUserOnMeeting{
+        if SettingsManagerObject.IsShowBreaksInCallEnabled{
+            checkIsNaturalBreakStarted(idleTimeValue: idleTimeValue)
+        }else{
+            closeNatutalBreakIfRunning()
+        }
     }else{
         closeNatutalBreakIfRunning()
     }
@@ -140,7 +153,7 @@ func checkIsNaturalBreakStarted(idleTimeValue:Int){
             return;
         }
         var shouldShowAlert = true
-        if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+        if currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
             if !SettingsManagerObject.IsShowBreaksInPostponeEnabled{
                 addLog(text: "The current state is 'Postpone' and 'Show Breaks in Postpone' is disabled, so the natural break detection window will not be shown.")// logs addded in v 1.26.395 on 30/7/25
                 shouldShowAlert = false

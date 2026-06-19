@@ -155,14 +155,7 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
         btnStarThird.image = NSImage(named: "star_Gray")
         btnStarFourth.image = NSImage(named: "star_Gray")
         btnStarFifth.image = NSImage(named: "star_Gray")
-        
-//        if currentRatingCount == 0{
-//            btnMain.isEnabled = false
-//            btnSkipHabit.isEnabled = false
-//        }else{
-//            btnMain.isEnabled = true
-//            btnSkipHabit.isEnabled = true
-//        }
+
         if currentRatingCount == 1{
             btnStarFirst.image = NSImage(named: "star_Golden")
         }else if currentRatingCount == 2{
@@ -316,6 +309,7 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
             RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
+    
     @objc func performTimerCount() {
         currentTimer += 1
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
@@ -391,6 +385,7 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
             }
         }
     }
+    
     @IBAction func btnMainClicked(_ sender: Any) {
         addLog(text:"[user-action] visualizeInstructionsVc - btnMainClicked :- \(btnMain.title)")
         if currentState == ._MORNING_HABIT_{
@@ -412,10 +407,10 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
     
     @IBAction func btnSkipClicked(_ sender: Any) {
         addLog(text:"[user-action] visualizeInstructionsVc - btnSkipClicked :- \(btnSkipHabit.title)")
-        if !(thirdVcObj?.isViewLoaded ?? false){
-            thirdVcObj?.loadView()
+        if !(activityCompletionVcObj?.isViewLoaded ?? false){
+            activityCompletionVcObj?.loadView()
         }
-        thirdVcObj?.menuItemSkipHabitClicked()
+        activityCompletionVcObj?.menuItemSkipHabitClicked()
     }
     @IBAction func btnSkipTimerClicked(_ sender: Any) {
         currentTimer = totalDuration

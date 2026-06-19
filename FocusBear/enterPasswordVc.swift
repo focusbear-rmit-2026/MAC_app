@@ -44,7 +44,8 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     var isShowingForRelaxFocusMode = false
     var isShowingForDeactivatingApp = false
     
-    
+    var pendingAction: (() -> Void)?
+    var cancelAction: (() -> Void)?
     
     
     var accountabilityBuddyVcObj:accountabilityBuddyVc?
@@ -96,6 +97,11 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         tabView.delegate = self
         customViewAccountabilityBuddy.isHidden = true
         
+    }
+    
+    func requestAuthorization(action: @escaping () -> Void, onCancel: (() -> Void)? = nil) {
+        pendingAction = action
+        cancelAction = onCancel
     }
     
     func hidePasswordView(){
@@ -249,18 +255,25 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     }
     
     func authenticated(){
+        if let pendingAction = pendingAction{
+            self.view.removeFromSuperview()
+            pendingAction()
+            self.pendingAction = nil
+            self.cancelAction = nil
+            return;
+        }
         if parentVc != nil{
             
             if parentVc == pomodoroVcObj{
                 self.dismiss(self)
                 let totalMinutes = pomodoroVcObj!.textFieldWorkDuration.integerValue
-                if currentState == ._POSTPON_MORNING_HABIT_ && !isShowingForRelaxFocusMode{
+                if currentState == ._POSTPONE_MORNING_HABIT_ && !isShowingForRelaxFocusMode{
                     getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                     pomodoroVcObj!.checkStateAndStartPomodoroMode()
-                }else if currentState == ._POSTPON_EVENING_HABIT_ && !isShowingForRelaxFocusMode{
+                }else if currentState == ._POSTPONE_EVENING_HABIT_ && !isShowingForRelaxFocusMode{
                     getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                     pomodoroVcObj!.checkStateAndStartPomodoroMode()
-                }else if currentState == ._POSTPON_FOCUS_SUMMARY_ && !isShowingForRelaxFocusMode{
+                }else if currentState == ._POSTPONE_FOCUS_SUMMARY_ && !isShowingForRelaxFocusMode{
                     getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                     pomodoroVcObj!.checkStateAndStartPomodoroMode()
                 }else if isShowingForRelaxFocusMode{
@@ -279,11 +292,11 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             }else if parentVc == focusEndWarningVcObj{
                 self.dismiss(self)
                 let totalMinutes = Int(focusEndWarningVcObj?.popUpBtn.title ?? "1") ?? 0
-                if currentState == ._POSTPON_MORNING_HABIT_{
+                if currentState == ._POSTPONE_MORNING_HABIT_{
                     getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
-                }else if currentState == ._POSTPON_EVENING_HABIT_{
+                }else if currentState == ._POSTPONE_EVENING_HABIT_{
                     getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
-                }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
+                }else if currentState == ._POSTPONE_FOCUS_SUMMARY_{
                     getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                 }
                 focusEndWarningVcObj!.extendFocusMode()
@@ -291,11 +304,11 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             }else if parentVc == addTaskVcObj{
                 self.dismiss(self)
                 let totalMinutes = Int(addTaskVcObj?.popUpBtnSelectMinutes.title ?? "1") ?? 0
-                if currentState == ._POSTPON_MORNING_HABIT_{
+                if currentState == ._POSTPONE_MORNING_HABIT_{
                     getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
-                }else if currentState == ._POSTPON_EVENING_HABIT_{
+                }else if currentState == ._POSTPONE_EVENING_HABIT_{
                     getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
-                }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
+                }else if currentState == ._POSTPONE_FOCUS_SUMMARY_{
                     getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                 }
                 addTaskVcObj?.extendFocusMode()
@@ -488,31 +501,21 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 }
             }
         }
-        
-        
-//        if preferencesWindowControllerObj != nil{
-//            if self.view.window == preferencesWindowControllerObj?.window{
-//                if selectJsonVcObj != nil{
-//                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                        if tabview.selectedTabViewItemIndex == preferencesEditHabitsIndex{
-//                            self.view.removeFromSuperview()
-//                            return;
-//                        }
-//                    }
-//                }
-//            }
-//        }
-        
-        
-        
-        
-        
-        
         self.view.removeFromSuperview()
     }
+    
     @IBAction func btnCancelClicked(_ sender: Any) {
         addLog(text: "[user-action] Enter password view - cancel clicked")
         allApiObject.capturePosthog(event: "cancel-when-prompted-password", metadata: [:])
+        
+        if let cancelAction = cancelAction{
+            self.view.removeFromSuperview()
+            cancelAction()
+            self.pendingAction = nil
+            self.cancelAction = nil
+            return;
+        }
+        
         if parentVc != nil{
             if parentVc == pomodoroVcObj{
                 self.dismiss(self)

@@ -34,13 +34,15 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     @IBOutlet weak var boxFocusSession: mainWindowListBox!
     @IBOutlet weak var boxHabits: mainWindowListBox!
     @IBOutlet weak var boxDashboard: mainWindowListBox!
+
+    var disableReasonMorningRoutine = "Disabled because your morning routine is in progress. Go to the Habits tab to continue."
+    var disableReasonEveningRoutine = "Disabled because your evening routine is in progress. Go to the Habits tab to continue."
+    var disableReasonFocusSummary = "Disabled because your all-day summary is visible. Go to the Habits tab to continue."
+    var disableReasonShutoffTime = "Disabled because it’s your shutoff time. Go to the Habits tab to continue."
+    var disableReasonMircoBreaks = "Disabled because your micro break is in progress. Go to the Micro Break tab to continue."
+    var disableReasonCustomRoutine = "Disabled because your custom routine is in progress. Go to the Custom Routine tab to continue."
     
-    var disableReasonMorningRoutine = "Disabled because your morning routine is in progress."
-    var disableReasonEveningRoutine = "Disabled because your evening routine is in progress."
-    var disableReasonFocusSummary = "Disabled because your all-day summary is visible."
-    var disableReasonShutoffTime = "Disabled because it’s your shutoff time."
-    var disableReasonMircoBreaks = "Disabled because your micro break is in progress."
-    var disableReasonCustomRoutine = "Disabled because your custom routine is in progress."
+    var lastSelectedBox:mainWindowListBox?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -303,66 +305,67 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             
         case boxHabits:
             mainViewControllerObj?.showHabitsView()
-            if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
-                habitsVcObj?.showHabitState()
-            }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
-                habitsVcObj?.showHabitState()
-            }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
-                habitsVcObj?.showHabitState()
-            }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit{
-                habitsVcObj?.showHabitState()
-            }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit{
-                habitsVcObj?.showHabitState()
-            }else{
-                if isHabitAlreadyShowed && !isShutOffTimeGoing(){
+            
+            if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_{// blank habit state scrren bug solved v 3.33.494
+                if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
+                    habitsVcObj?.showHabitState()
+                }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
+                    habitsVcObj?.showHabitState()
+                }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
+                    habitsVcObj?.showHabitState()
+                }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit{
+                    habitsVcObj?.showHabitState()
+                }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit{
                     habitsVcObj?.showHabitState()
                 }else{
-                    if let date = UserDefaults.standard.object(forKey: kUserdefaultsShutdownAborted) as? Date{
-                        if Date().compare(date) == .orderedAscending {
-                            habitsVcObj?.showHabitState()//showCustomRoutineState
-                        }
-                    }
-                }
-
-                let currentDate = Date()
-                let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
-                let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
-                let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
-                
-                
-                if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_  && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil{
-                    if isHabitsDisabled{
-                        UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
+                    if isHabitAlreadyShowed && !isShutOffTimeGoing(){
                         habitsVcObj?.showHabitState()
                     }else{
-                        if sameDay || !shouldDoHabits(){
-                            habitsVcObj?.showHabitState()
-                        }else{
-                            UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
-                        }
-                    }
-                }else{
-                    if let date = UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date{
-                        if Date().compare(date) == .orderedAscending {//"Evening habits already shown for today
-                            if isShutOffTimeGoing() && !isCutOffTimeGoing(){
-                                habitsVcObj?.showHabitState()// free time 
+                        if let date = UserDefaults.standard.object(forKey: kUserdefaultsShutdownAborted) as? Date{
+                            if Date().compare(date) == .orderedAscending {
+                                habitsVcObj?.showHabitState()
                             }
                         }
-                    }else if isShutOffTimeGoing() && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_ && currentState != ._POSTPON_EVENING_HABIT_ && currentState != ._POSTPON_FOCUS_SUMMARY_ && arrAllDaysEveningHabits.count == 0{
-                        habitsVcObj?.showHabitState()// v 2.28.437
-                    }else if (appdelegate?.isUserOnMeeting ?? false) && !isHabitAlreadyShowed && !isShutOffTimeGoing(){
-                        habitsVcObj?.showHabitState()// v 2.28.445
-                    }else if !isAppEnable{
-                        habitsVcObj?.showHabitState()// v 2.28.456
-                    }else if sameDay || !shouldDoHabits(){
+                    }
+
+                    let currentDate = Date()
+                    let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
+                    let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
+                    let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
+                    
+                    if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_  && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil{
                         if isHabitsDisabled{
                             UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
+                            habitsVcObj?.showHabitState()
+                        }else{
+                            if sameDay || !shouldDoHabits(){
+                                habitsVcObj?.showHabitState()
+                            }else{
+                                UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
+                            }
                         }
-                        habitsVcObj?.showHabitState()
+                    }else{
+                        if let date = UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date{
+                            if Date().compare(date) == .orderedAscending {//"Evening habits already shown for today
+                                if isShutOffTimeGoing() && !isCutOffTimeGoing(){
+                                    habitsVcObj?.showHabitState()// free time
+                                }
+                            }
+                        }else if isShutOffTimeGoing() && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_ && currentState != ._POSTPONE_EVENING_HABIT_ && currentState != ._POSTPONE_FOCUS_SUMMARY_ && arrAllDaysEveningHabits.count == 0{
+                            habitsVcObj?.showHabitState()// v 2.28.437
+                        }else if (appdelegate?.isUserOnMeeting ?? false) && !isHabitAlreadyShowed && !isShutOffTimeGoing(){
+                            habitsVcObj?.showHabitState()// v 2.28.445
+                        }else if !isAppEnable{
+                            habitsVcObj?.showHabitState()// v 2.28.456
+                        }else if sameDay || !shouldDoHabits(){
+                            if isHabitsDisabled{
+                                UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
+                            }
+                            habitsVcObj?.showHabitState()
+                        }
                     }
                 }
             }
-            
             break;
         case boxFocusSession:
             let isFocusModeOn = isFocusModeOn()
@@ -432,18 +435,12 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                     boxTodoPlayer.isEnabled = true
                 }
             }
-//            else{
-//                enableAllItems()
-//            }
         case boxBrainDump:
             mainViewControllerObj?.showBrainDumpView()
         case boxBrowsersTabAudit:
             mainViewControllerObj?.showBrowsersTabAuditView()
         case boxFocusMusic:
             mainViewControllerObj?.showAllTracksView()
-//        case boxFocusModeSettings:
-//            mainViewControllerObj?.showFocusPreferencesView()
-//            mainViewControllerObj?.askPasswordForSettingsIfNeeded()
         case boxBlocks:
             mainViewControllerObj?.showBlocksPreferencesView()
             mainViewControllerObj?.askPasswordForSettingsIfNeeded()
@@ -463,6 +460,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     }
     
     func selectableListBoxSelectionDidChange(_ box: mainWindowListBox) {
+        lastSelectedBox = box
         switch box{
 
         case boxHabits:
@@ -499,11 +497,6 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
             }
         case boxCustomRoutine:
-//            if currentState == ._CUSTOM_ROUTINE_{
-//                mainViewControllerObj?.checkIsFullScreenNeeded()
-//            }else{
-//                mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
-//            }
             if currentState == ._CUSTOM_ROUTINE_ {
                 if customRoutineTimeWcObj != nil {
                     if customRoutineTimeWcObj?.window?.isVisible ?? false{
@@ -518,18 +511,16 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
             }
         case boxTodoPlayer:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            checkScreenSizeIfFullScreenHabitIsRunning()
             if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                 self.view.window?.styleMask.insert(.miniaturizable)// task player should be miniaturizable
             }
         case boxBrainDump:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            checkScreenSizeIfFullScreenHabitIsRunning()
         case boxBrowsersTabAudit:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            checkScreenSizeIfFullScreenHabitIsRunning()
         case boxFocusMusic:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
-//        case boxFocusModeSettings:
-//            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            checkScreenSizeIfFullScreenHabitIsRunning()
         case boxBlocks:
             mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         case boxSettings:
@@ -537,23 +528,26 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         case boxEditHabits:
             mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         case boxMotivation:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            checkScreenSizeIfFullScreenHabitIsRunning()
         case boxHelpAndSupport:
-            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_ || currentState == ._CUSTOM_ROUTINE_ || currentState == ._MICRO_BREAK_{
-                
-                if !isAnyAllowedFocusModeActivityRunning && checkIsFullScreenEnabled(){
-                    mainViewControllerObj?.checkIsFullScreenNeeded()
-                }else{
-                    if isAnyAllowedFocusModeActivityRunning{
-                        mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
-                    }
-                }
-            }else{
-                mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
-            }
-            
+            checkScreenSizeIfFullScreenHabitIsRunning()
         default:
             break;
+        }
+    }
+    
+    func checkScreenSizeIfFullScreenHabitIsRunning(){
+        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_ || currentState == ._CUSTOM_ROUTINE_ || currentState == ._MICRO_BREAK_{
+            
+            if !isAnyAllowedFocusModeActivityRunning && checkIsFullScreenEnabled(){
+                mainViewControllerObj?.checkIsFullScreenNeeded()
+            }else{
+                if isAnyAllowedFocusModeActivityRunning{
+                    mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+                }
+            }
+        }else{
+            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         }
     }
     

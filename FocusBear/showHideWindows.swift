@@ -17,7 +17,7 @@ func showAbortingFocusModeVc(forPause:Bool){// abortview for pause only in stric
         NSApplication.shared.activate(ignoringOtherApps: true)
     }else{
         isHardCorePomodoroModeOn = false
-        appdelegate?.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
+        appdelegate?.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false, shouldUpdateFocusButton: true)
     }
 }
 
@@ -597,6 +597,22 @@ func showCustomAlert(title:String, body:String?, buttonOkText:String, buttonCanc
 }
 //-------------------------------------------------//
 
+
+//***********showCustomAlert***************//
+func showSuggestFocusWindow(title:String, body:String?, buttonOkText:String, buttonCancelText:String?, checkBoxText:String?, autoClose:Bool, completionHandler: @escaping (Bool, Int?, String?) -> Void){
+    if suggestFocusModeWcObj == nil{
+        getSuggestFocusModeWindowObject().contentViewController = getSuggestFocusModeVcObject()
+    }
+    getSuggestFocusModeWindowObject().window?.center()
+    getSuggestFocusModeWindowObject().window?.styleMask.remove(.closable)
+    getSuggestFocusModeWindowObject().window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
+    getSuggestFocusModeWindowObject().showWindow(nil)
+    getSuggestFocusModeVcObject().resetData(title: title, body: body, buttonOkText: buttonOkText, buttonCancelText: buttonCancelText, checkBoxText: checkBoxText, autoClose:autoClose, completionHandler: {isOkClicked, duration, intention in
+        completionHandler(isOkClicked, duration, intention)
+    })
+}
+//-------------------------------------------------//
+
 //***********unverifiedEmailVc***************//
 func showUnverifiedEmailWindow(){
     addLog(text:"showUnverifiedEmailWindow")
@@ -984,16 +1000,6 @@ func closePopoverTooltipIfVisible(){
     }
 }
 
-
-func closePomodoroWindowIOfVisible(){
-    if pomodoroWindowControllerObj != nil{
-        if pomodoroWindowControllerObj!.window!.isVisible{
-            pomodoroWindowControllerObj?.window?.close()
-            allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
-        }
-    }
-}
-
 func closePupUpBlockIfVisible(){
     if popUpBlockConfirmWcObj != nil{
         if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
@@ -1006,7 +1012,6 @@ func closePupUpBlockIfVisible(){
 
 func closePopupBlockWindowIfRunningForUrl(){
     currentBrowserUrlForAi = ""
-//    appdelegate?.timerForCheckUrlFromAiTimeOut?.invalidate()
     if popUpBlockConfirmWcObj != nil{
         if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
             if !popUpBlockConfirmVcObj!.isAppBlocking{
@@ -1257,6 +1262,8 @@ func closeMenuWindowIsVisible(){
                 menuWcObj?.window?.close()
             }
         }
+    }else{
+        appdelegate?.popover.close()
     }
 }
 

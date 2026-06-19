@@ -66,8 +66,8 @@ class takeActivityNotesVc: NSViewController {
             focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: durationInSeconds, quantity_logged:quantity_logged, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: log_quantity_answers, notes: textViewNotes.string)
         }else{
             if currentState == ._EVENING_HABIT_{
-                if thirdVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
-                    thirdVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
+                if activityCompletionVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
+                    activityCompletionVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
                 }
             }
             var should_not_update_current_activity = false

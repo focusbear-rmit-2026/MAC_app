@@ -624,7 +624,14 @@ class simplePomodoroVc: NSViewController {
         allApiObject.getAllTasks(completionHandler: {json in
             DispatchQueue.main.async { [self] in
                 if let json = json{
-                    let sortedTasks = json.sorted { t1, t2 in
+                    
+                    // Remove completed tasks. added in v3.32.487
+                    let filteredTasks = json.filter { task in
+                        let status = task.value(forKey: "status") as? String ?? ""
+                        return status.uppercased() != "COMPLETED"
+                    }
+                    
+                    let sortedTasks = filteredTasks.sorted { t1, t2 in
                         let s1 = t1.value(forKey: "created_at") as? String ?? ""
                         let s2 = t2.value(forKey: "created_at") as? String ?? ""
                         
@@ -861,7 +868,7 @@ class simplePomodoroVc: NSViewController {
         
         let totalMinutes = textFieldWorkDuration.integerValue
         
-        if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+        if currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
             if getHabitsVcObject().postponeTimer != nil {
                 if getHabitsVcObject().postponeTimer!.isValid{
                     let currentTime = Date()
@@ -890,19 +897,17 @@ class simplePomodoroVc: NSViewController {
                         
                         alertExtendPostpone!.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                             if modalResponse == .alertFirstButtonReturn{
-                                if currentState == ._POSTPON_MORNING_HABIT_{
+                                if currentState == ._POSTPONE_MORNING_HABIT_{
                                     getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                     self.pomodoroModeStarted()
-                                }else if currentState == ._POSTPON_EVENING_HABIT_{
+                                }else if currentState == ._POSTPONE_EVENING_HABIT_{
                                     if SettingsManagerObject.isEasySkipEnabled{
                                         getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                         self.pomodoroModeStarted()
                                     }else{
                                         var shouldAskPasswordForEvening = false
                                         if shouldAskPassword() && cutOffTime != nil && SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
-                                            let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
-                                            let currentDate = Date()
-                                            if currentDate > cutOffDate{
+                                            if isCutOffTimeGoing(){
                                                 shouldAskPasswordForEvening = true
                                             }
                                         }
@@ -916,7 +921,7 @@ class simplePomodoroVc: NSViewController {
                                             self.pomodoroModeStarted()
                                         }
                                     }
-                                }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
+                                }else if currentState == ._POSTPONE_FOCUS_SUMMARY_{
                                     getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                                     self.pomodoroModeStarted()
                                 }
@@ -1015,7 +1020,7 @@ class simplePomodoroVc: NSViewController {
                     addLog(text: "Focus mode id is:- \(focusModeId)")// added v 3.31.474
                     
                     if isAccessibilityEnabled(isPrompt: true){
-                        enableDND()
+                        DNDManager.shared.setDND(true)
                     }
                     workBeforeFocusBegin(index: i)
                     if !textViewAchieve.string.isEmpty{
@@ -1051,6 +1056,9 @@ class simplePomodoroVc: NSViewController {
         }
         
         appdelegate?.setFocusModeTimer(hour: nil, minute: minute)
+        //focusButtonService
+        focusButtonServiceObject.startFocusSession(seconds: minute*60)
+        
         isFocusModeStartedFromPomodoroMode = true
     
         isSkipBreakActivityDuringPomodoro = true

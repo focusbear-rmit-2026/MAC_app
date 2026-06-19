@@ -13,7 +13,7 @@ class habitBlockTimerManager {
     private var timer: DispatchSourceTimer?
     private let queue = DispatchQueue(label: "habitBlockTimerManager")
     private var isRunning = AtomicBool(false) // we'll implement a tiny AtomicBool below
-    
+    private var isTimerValid = false
     /// Start the repeating timer (calls checkInBackground every 1 sec)
     func startUrlTimer(browserName:String) {
         // Prevent starting again if already running
@@ -33,7 +33,7 @@ class habitBlockTimerManager {
             newTimer.setEventHandler { [weak self] in
                 self?.checkInBackgroundForActivity()
             }
-            
+            isTimerValid = true
             newTimer.resume()
             timer = newTimer
         }
@@ -43,6 +43,7 @@ class habitBlockTimerManager {
     func stopUrlTimer() {
         timer?.cancel()
         timer = nil
+        isTimerValid = false
     }
 
     
@@ -518,7 +519,11 @@ class habitBlockTimerManager {
                     blockType = "custom-routine"
                 }
                 
-                
+                //If Mac goes to sleep during allowed app activity, it forgets that it's in an allowed app activity#1521  v 3.32.490
+                if !isTimerValid{
+                    return;
+                }
+                //----------------------//
                 
                 if isAnyAllowedFocusModeActivityRunning == false{
                     for turl in activityAllowUrls{

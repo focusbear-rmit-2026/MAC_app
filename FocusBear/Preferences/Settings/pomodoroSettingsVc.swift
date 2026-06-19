@@ -9,25 +9,17 @@
 import Cocoa
 
 class pomodoroSettingsVc: NSViewController {
-    
-    @IBOutlet weak var lineBottomShortcutPomodoro: NSBox!
+
     @IBOutlet weak var lblTo: NSTextField!
     @IBOutlet weak var textFieldBreakRatio: NSTextField!
     @IBOutlet weak var textFieldWorkRatio: NSTextField!
     @IBOutlet weak var boxWorkToBreakRatio: NSBox!
-    @IBOutlet weak var btnInfoPomodoroShortcut: hoverInfoButton!
-    @IBOutlet weak var boxShortcutPomodoro: NSBox!
     @IBOutlet weak var boxPomodoroModeDuration: NSBox!// not in use
     
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var stackView: NSStackView!
     @IBOutlet weak var boxSuperPomodoro: NSBox!
     @IBOutlet weak var boxPomodoro: NSBox!
-    @IBOutlet weak var lblTitleShortcut: NSTextField!
-    @IBOutlet weak var lblrecordShorcutPomodoro: NSTextField!
-    @IBOutlet weak var btnClearShortcutPomodoro: NSButton!
-    @IBOutlet weak var btnRecordShortcutPomodoro: NSButton!
-    @IBOutlet weak var boxRecordShortcutPomodoro: NSBox!
     @IBOutlet weak var btnLearnPomodoroTechnique: underLineButton!
     @IBOutlet weak var lblDescriptionPomodoro: NSTextField!
 
@@ -37,7 +29,6 @@ class pomodoroSettingsVc: NSViewController {
     var hardCorePomodoroEnabledText = "Hardcore Pomodoro mode enabled to focus on <FOCUSTYPE> for <COUNT> on <DAYS>."
     var hardCorePomodoroNotEnabledText = "Hardcore Pomodoro mode not enabled."
     var automaticPomodoroNotEnabledText = "Automatic Pomodoro mode is disabled."
-    var isAddingPomodoroShortcut = false
     var borderPomodoroShortcutNormalColor = NSColor.gray
     var workDurationEmptyErrorText = "Work Duration can not be empty."
     var workDurationZeroErrorText = "Work Duration can not be 0."
@@ -54,17 +45,10 @@ class pomodoroSettingsVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        
-//        btnInfoBreakDuration.isHidden = false
-        btnInfoPomodoroShortcut.isHidden = false
-//        btnInfoPomodoroModeDuration.isHidden = false
-        
+ 
         lblTitleWorkToBreakRatio.stringValue = "Work to break ratio:"
         lblDescriptionWorkToBreakRatio.stringValue = "For every 5 minutes you focus, you will have a 1 minutes break."
         lblTo.stringValue = "to"
-
-        lblTitleShortcut.stringValue = "Shortcut to start focus session:"
-        lblrecordShorcutPomodoro.stringValue = "Record Shortcut"
         lblDescriptionPomodoro.stringValue = "Pomodoro Mode cycles between deep work blocks where a focus mode is turned on (and distractions turned off) and break periods."
         btnLearnPomodoroTechnique.title = "Learn more about the pomodoro technique here."
         
@@ -86,8 +70,6 @@ class pomodoroSettingsVc: NSViewController {
             
             lblDescriptionPomodoro.stringValue = preferencesInfo.value(forKey: "pomodoroDescriptionText") as? String ?? lblDescriptionPomodoro.stringValue
             btnLearnPomodoroTechnique.title = preferencesInfo.value(forKey: "buttonLearnPomodoroTechniqueText") as? String ?? btnLearnPomodoroTechnique.title
-            lblTitleShortcut.stringValue = preferencesInfo.value(forKey: "titlePomodoroShortcut") as? String ?? lblTitleShortcut.stringValue
-            lblrecordShorcutPomodoro.stringValue = preferencesInfo.value(forKey: "recordShorcutText") as? String ?? lblrecordShorcutPomodoro.stringValue
             
             workDurationEmptyErrorText = preferencesInfo.value(forKey: "workDurationEmptyErrorText") as? String ?? workDurationEmptyErrorText
             workDurationZeroErrorText = preferencesInfo.value(forKey: "workDurationZeroErrorText") as? String ?? workDurationZeroErrorText
@@ -102,18 +84,9 @@ class pomodoroSettingsVc: NSViewController {
             
         }
         
-//        lblTitlePomodoroModeDuration.stringValue = pomodoroModeDurationText
-//        lblTitleBreakDuration.stringValue = breakDurationText
-//        lblMinutesPomodoro.stringValue = minutesText
-//        lblMinutesBreak.stringValue = minutesText
-
-//        textFieldPomodoroDuration.formatter = IntegerFormatter()
-//        textFieldBreakDuration.formatter = IntegerFormatter()
         textFieldWorkRatio.formatter = IntegerFormatter()
         textFieldBreakRatio.formatter = IntegerFormatter()
-        
-//        textFieldPomodoroDuration.delegate = self
-//        textFieldBreakDuration.delegate = self
+
         textFieldWorkRatio.delegate = self
         textFieldBreakRatio.delegate = self
 
@@ -141,12 +114,9 @@ class pomodoroSettingsVc: NSViewController {
         pomodoroItemVcObj?.delegate = self
         pomodoroItemVcObj?.toolTip = pomodoro_AfterMorning
         
-        lineBottomShortcutPomodoro.isHidden = true
         
         arrForSearchFromSettings.append(["title": checkBoxPomodoroText, "tabId": idPomodoro, "object": pomodoroItemVcObj!.bgBox as Any])
-//        arrForSearchFromSettings.append(["title": pomodoroModeDurationText, "tabId": idPomodoro, "object": boxPomodoroModeDuration as Any])
         arrForSearchFromSettings.append(["title": lblTitleWorkToBreakRatio.stringValue, "tabId": idPomodoro, "object": boxWorkToBreakRatio as Any])
-        arrForSearchFromSettings.append(["title": lblTitleShortcut.stringValue, "tabId": idPomodoro, "object": boxShortcutPomodoro as Any])
         
         
         var titleUseHardcorePomodoro = ""
@@ -167,18 +137,8 @@ class pomodoroSettingsVc: NSViewController {
     }
     
     override func viewWillAppear() {
-        isAddingPomodoroShortcut = false
-        boxRecordShortcutPomodoro.borderColor = borderPomodoroShortcutNormalColor
-        reload_newShotShortcut()
         resetPomodoroModeState()
 
-//        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
-//            textFieldPomodoroDuration.stringValue = "\(duration)"
-//        }
-        
-//        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes) as? Int{
-//            textFieldBreakDuration.stringValue = "\(duration)"
-//        }
         var workRatio = 5
         var breakRatio = 1
         if let ratio = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsWorkRatioInPomodoro) as? Int{
@@ -212,33 +172,8 @@ class pomodoroSettingsVc: NSViewController {
             lblTitle.stringValue = ""
         }
     }
-    override func viewDidAppear() {
-//        self.textFieldPomodoroDuration.window?.makeFirstResponder(nil)
-    }
-    override func viewWillDisappear() {
-        resetCurrentRecording()
-        isAddingPomodoroShortcut = false
-    }
-    @IBAction func btnRecordShortcutPomodoroClicked(_ sender: Any) {
-        resetCurrentRecording()
-        isAddingPomodoroShortcut = true
-        lblrecordShorcutPomodoro.stringValue = ""
-        btnClearShortcutPomodoro.isHidden = true
-        boxRecordShortcutPomodoro.borderColor = NSColor.blue
-        appdelegate?.unregisterPomodoroShortcut()
-        flags = []
-        char = ""
-        self.view.window?.makeFirstResponder(nil)
-    }
-    
-    @objc func resetCurrentRecording(){
-        if isAddingPomodoroShortcut{
-            reload_newShotShortcut()
-            if flags.isEmpty == false{
-                appdelegate?.registerPomodoroShortcut()
-            }
-        }
-    }
+
+
     
     func resetPomodoroModeState(){
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroModeEnabled) as? Bool{
@@ -323,49 +258,6 @@ class pomodoroSettingsVc: NSViewController {
         }
     }
     
-    @objc func reload_newShotShortcut(){
-        char = ""
-        flags = NSEvent.modifierFlags
-        char = SettingsManagerObject.startPomodoroShortcutChar
-
-        let sflags = SettingsManagerObject.startPomodoroShortcutFlags
-        updateFlags(sflags: sflags)
-        
-        
-        if flags.isEmpty == true && char == ""{
-            lblrecordShorcutPomodoro.stringValue = "Record Shortcut"
-            if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
-                lblrecordShorcutPomodoro.stringValue = preferencesInfo.value(forKey: "recordShorcutText") as? String ?? lblrecordShorcutPomodoro.stringValue
-            }
-            btnClearShortcutPomodoro.isHidden = true
-        }else{
-            lblrecordShorcutPomodoro.stringValue = "\(flags)\(char)"
-            btnClearShortcutPomodoro.isHidden = false
-        }
-        boxRecordShortcutPomodoro.borderColor = borderPomodoroShortcutNormalColor
-    }
-    
-    
-    func shortcutAdded(){
-        isAddingPomodoroShortcut  = false
-        boxRecordShortcutPomodoro.borderColor = borderPomodoroShortcutNormalColor
-        btnClearShortcutPomodoro.isHidden = false
-    }
-    @IBAction func btnClearShortcutPomodoroClicked(_ sender: Any) {
-        flags = []
-        char = ""
-        appdelegate?.unregisterPomodoroShortcut()
-        SettingsManagerObject.startPomodoroShortcutChar = ""
-        SettingsManagerObject.startPomodoroShortcutFlags = []
-        lblrecordShorcutPomodoro.stringValue = "Record Shortcut"
-        if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
-            lblrecordShorcutPomodoro.stringValue = preferencesInfo.value(forKey: "recordShorcutText") as? String ?? lblrecordShorcutPomodoro.stringValue
-        }
-        btnClearShortcutPomodoro.isHidden = true
-        boxRecordShortcutPomodoro.borderColor = borderPomodoroShortcutNormalColor
-        SettingsManagerObject.isSettingsChanged = true
-        
-    }
     func showAlert(msg:String, completionHandler: @escaping(_ result: Bool) -> ()) {
         let alertWarning = NSAlert()
         alertWarning.setSharingType()
@@ -392,81 +284,11 @@ class pomodoroSettingsVc: NSViewController {
             NSWorkspace.shared.open(url)
         }
     }
-    
-    
-//    @IBAction func btnInfoPomodoroModeDurationClicked(_ sender: Any) {
-//        var toolTip = "Normally pomodoro work blocks are 25 minutes long (with a 5 minute break) but you can customize it to a different time"
-//        if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary{
-//            toolTip = tooltips.value(forKey: "pomodoro_PomodoroModeDuration") as? String ?? toolTip
-//        }
-//        showTooltip(sender: btnInfoPomodoroModeDuration, msg: toolTip, preferredEdge: NSRectEdge.maxX, maxWidthVal:350)
-//    }
-    
-//    @IBAction func btnInfoBreakDurationClicked(_ sender: Any) {
-//        var toolTip = "Normally pomodoro breaks are 5 minutes long but you can take a break on your terms! Customize the Break Duration to align with your preferred downtime interval, allowing you to recharge and refresh in a way that perfectly complements your unique work style and preferences."
-//        if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary{
-//            toolTip = tooltips.value(forKey: "pomodoro_BreakDuration") as? String ?? toolTip
-//        }
-//        showTooltip(sender: btnInfoBreakDuration, msg: toolTip, preferredEdge: NSRectEdge.maxX, maxWidthVal:350)
-//    }
-    @IBAction func btnInfoPomodoroShortcutClicked(_ sender: Any) {
-        var toolTip = "Instant focus mode! The default shortcut is (^⌥⌘P) but you can easily assign a personalized shortcut for immediate access to concentrated work sessions, providing you with seamless productivity whenever and wherever you need it most."
-        if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary{
-            toolTip = tooltips.value(forKey: "pomodoro_Shortcut") as? String ?? toolTip
-        }
-        showTooltip(sender: btnInfoPomodoroShortcut, msg: toolTip, preferredEdge: NSRectEdge.maxX, maxWidthVal:350)
-    }
 }
 
 extension pomodoroSettingsVc: NSTextFieldDelegate{
     func controlTextDidEndEditing(_ obj: Notification) {
         if let textfield = obj.object as? NSTextField{
-//            if textfield == textFieldPomodoroDuration{
-//                
-//                if textFieldPomodoroDuration.stringValue.isEmpty{
-//                    showAlert(msg: workDurationEmptyErrorText, completionHandler: {_ in
-//                        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                            tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-//                        }
-//                        if settingsSideBarVcObj != nil{
-//                            settingsSideBarVcObj?.tblView.selectRowIndexes(IndexSet(integer: settingsSideBarVcObj?.pomodoroSettingsIndex ?? 6), byExtendingSelection: false)
-//                        }
-//                        
-////                        self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
-//                        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
-//                            self.textFieldPomodoroDuration.stringValue = "\(duration)"
-//                        }
-//                        textfield.setFocus()
-//                    })
-//                    return;
-//                }
-//                if textFieldPomodoroDuration.integerValue < 1{
-//                    showAlert(msg: workDurationZeroErrorText, completionHandler: {_ in
-//                        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                            tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-//                        }
-//                        if settingsSideBarVcObj != nil{
-//                            settingsSideBarVcObj?.tblView.selectRowIndexes(IndexSet(integer: settingsSideBarVcObj?.pomodoroSettingsIndex ?? 6), byExtendingSelection: false)
-//                        }
-////                        self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
-//                        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
-//                            self.textFieldPomodoroDuration.stringValue = "\(duration)"
-//                        }
-//                        textfield.setFocus()
-//                    })
-//                    return;
-//                }
-//                let count = textfield.integerValue
-//                if let oldCount = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
-//                    if count == oldCount{
-//                        return;
-//                    }
-//                }
-//                SettingsManagerObject.isSettingsChanged = true
-//                UserDefaults.standard.set(count, forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes)
-//                allApiObject.capturePosthog(event: "settings-changed-pomodoro-duration", metadata: [:])//#490
-//            }
-//            else
             if textfield == textFieldWorkRatio{
                 var count = textfield.integerValue
                 if let oldCount = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsWorkRatioInPomodoro) as? Int{
@@ -481,12 +303,6 @@ extension pomodoroSettingsVc: NSTextFieldDelegate{
                 UserDefaults.standard.set(count, forKey: SettingsManagerObject.kUserdefaultsWorkRatioInPomodoro)
                 allApiObject.capturePosthog(event: "settings-changed-pomodoro-work-ratio", metadata: [:])
                 
-                if pomodoroWindowControllerObj != nil{
-                    if pomodoroWindowControllerObj!.window!.isVisible{
-                        pomodoroVcObj?.updateWorkBreakRatio()
-                        pomodoroVcObj?.updateBreakDuration()
-                    }
-                }
             }else if textfield == textFieldBreakRatio{
                 var count = textfield.integerValue
                 if let oldCount = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakRatioInPomodoro) as? Int{
@@ -500,13 +316,6 @@ extension pomodoroSettingsVc: NSTextFieldDelegate{
                 SettingsManagerObject.isSettingsChanged = true
                 UserDefaults.standard.set(count, forKey: SettingsManagerObject.kUserdefaultsBreakRatioInPomodoro)
                 allApiObject.capturePosthog(event: "settings-changed-pomodoro-break-ratio", metadata: [:])
-                
-                if pomodoroWindowControllerObj != nil{
-                    if pomodoroWindowControllerObj!.window!.isVisible{
-                        pomodoroVcObj?.updateWorkBreakRatio()
-                        pomodoroVcObj?.updateBreakDuration()
-                    }
-                }
             }
         }
     }

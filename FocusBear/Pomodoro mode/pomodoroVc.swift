@@ -680,17 +680,12 @@ class pomodoroVc: NSViewController {
             lblCompletedPomodoroCount.stringValue = completedPomodoroCountText//"You have completed \(completedPomodoroCountInHardcorePomodoro) of \(totalPomodoroCountInHardCorePomodoro) pomodoros. \(remainingPomodoroCount) more to go."//
             
         }else{
-            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroSkipMicroBreaks) as? Bool{
-                if state{
-                    btnToggleBreaksSettings.title = titleBreaksOff
-                    isSkipMicrobreaks = true
-                }else{
-                    btnToggleBreaksSettings.title = titleBreaksOn
-                    isSkipMicrobreaks = false
-                }
-            }else{
+            if SettingsManagerObject.isSkipBreakActivityDuringPomodoro{
                 btnToggleBreaksSettings.title = titleBreaksOff
                 isSkipMicrobreaks = true
+            }else{
+                btnToggleBreaksSettings.title = titleBreaksOn
+                isSkipMicrobreaks = false
             }
             lblTimerUnfocused.isHidden = false
             startTimer()
@@ -1107,7 +1102,7 @@ class pomodoroVc: NSViewController {
         
         let totalMinutes = textFieldWorkDuration.integerValue
         
-        if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+        if currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
             if getHabitsVcObject().postponeTimer != nil {
                 if getHabitsVcObject().postponeTimer!.isValid{
                     let currentTime = Date()
@@ -1136,7 +1131,7 @@ class pomodoroVc: NSViewController {
                         
                         alertExtendPostpone!.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                             if modalResponse == .alertFirstButtonReturn{
-                                if currentState == ._POSTPON_MORNING_HABIT_{
+                                if currentState == ._POSTPONE_MORNING_HABIT_{
                                     
                                     
                                     if SettingsManagerObject.isEasySkipEnabled{
@@ -1153,19 +1148,10 @@ class pomodoroVc: NSViewController {
                                             self.checkStateAndStartPomodoroMode()
                                         }
                                     }
-                                }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+                                }else if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
                                     var shouldAskPasswordForEvening = false
                                     if shouldAskPassword() &&  !SettingsManagerObject.isEasySkipEnabled{
-                                        var isCutOffTimeGoing = false
-                                        if cutOffTime != nil {
-                                            let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
-                                            let currentDate = Date()
-                                            if currentDate > cutOffDate{
-                                                isCutOffTimeGoing = true
-                                            }
-                                        }
-                                        
-                                        if isCutOffTimeGoing{
+                                        if isCutOffTimeGoing(){ 
                                             if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
                                                 shouldAskPasswordForEvening = true
                                             }
@@ -1182,9 +1168,9 @@ class pomodoroVc: NSViewController {
                                         self.enterPasswordVcObj?.isShowingForRelaxFocusMode = false
                                         return;
                                     }else{
-                                        if currentState == ._POSTPON_EVENING_HABIT_{
+                                        if currentState == ._POSTPONE_EVENING_HABIT_{
                                             getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
-                                        }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
+                                        }else if currentState == ._POSTPONE_FOCUS_SUMMARY_{
                                             getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                                         }
                                         self.checkStateAndStartPomodoroMode()
@@ -1257,7 +1243,6 @@ class pomodoroVc: NSViewController {
             if count != oldCount{
                 SettingsManagerObject.isSettingsChanged = true
                 UserDefaults.standard.set(count, forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes)
-                SettingsManagerObject.putUserLocalDeviceSettings()
             }
         }
 
@@ -1287,22 +1272,22 @@ class pomodoroVc: NSViewController {
                     if let isAutoDoNotDisturbEnabled = arrFocusType[i]["isAutoDoNotDisturbEnabled"] as? Bool{
                         if isAutoDoNotDisturbEnabled{
                             if isAccessibilityEnabled(isPrompt: true){
-                                enableDND()
+                                DNDManager.shared.setDND(true)
                             }
                         }
                     }
                     
-                    if !isDndEnabled{
+                    if !DNDManager.shared.isDndEnabled{
                         if let isDeepWorkFocus = arrFocusType[i]["isDeepWorkFocus"] as? Bool{
                             if  isDeepWorkFocus{
                                 if isAccessibilityEnabled(isPrompt: true){
-                                    enableDND()
+                                    DNDManager.shared.setDND(true)
                                 }
                             }
                         }else if let isDefault = arrFocusType[i]["isDefault"] as? Bool{
                             if  isDefault{
                                 if isAccessibilityEnabled(isPrompt: true){
-                                    enableDND()
+                                    DNDManager.shared.setDND(true)
                                 }
                             }
                         }
@@ -1351,6 +1336,9 @@ class pomodoroVc: NSViewController {
         }
         
         appdelegate?.setFocusModeTimer(hour: nil, minute: minute)
+        //focusButtonService
+        focusButtonServiceObject.startFocusSession(seconds: minute*60)
+        
         isFocusModeStartedFromPomodoroMode = true
         if isSkipMicrobreaks{
             isSkipBreakActivityDuringPomodoro = true
@@ -1359,6 +1347,13 @@ class pomodoroVc: NSViewController {
             isSkipBreakActivityDuringPomodoro = false
             addLog(text: "checkBoxSkipMicrobreaks is off in geek mode focus session.")
         }
+        if SettingsManagerObject.isSkipBreakActivityDuringPomodoro != isSkipBreakActivityDuringPomodoro{
+            SettingsManagerObject.isSkipBreakActivityDuringPomodoro = isSkipBreakActivityDuringPomodoro
+            SettingsManagerObject.isSettingsChanged = true
+        }
+        
+        SettingsManagerObject.putUserLocalDeviceSettings()
+        
         whatToAchieveInFocusBlock = textViewAchieve.string
         appdelegate!.focusModeStartted(isStartedByPusher: false)
         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled && currentState != ._MICRO_BREAK_{ // added is micro break is running :- v 2.28.438
@@ -1616,11 +1611,9 @@ class pomodoroVc: NSViewController {
     @IBAction func btnToggleBreaksSettingsClicked(_ sender: Any) {
         if isSkipMicrobreaks{
             btnToggleBreaksSettings.title = titleBreaksOn
-            UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsPomodoroSkipMicroBreaks)
             isSkipMicrobreaks = false
         }else{
             btnToggleBreaksSettings.title = titleBreaksOff
-            UserDefaults.standard.set(true, forKey: SettingsManagerObject.kUserdefaultsPomodoroSkipMicroBreaks)
             isSkipMicrobreaks = true
         }
     }

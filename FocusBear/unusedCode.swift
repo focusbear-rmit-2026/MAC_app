@@ -1226,3 +1226,346 @@
      }
  }
  */
+
+//*************Do not disturb enable disable work*****************////
+//var isDndEnabled = false
+//func enableDND(){
+//    isDndEnabled = true
+//    if #available(OSX 12.0, *) {
+//        setDoNotDisturbMonterey(enable: true)
+//        return
+//    }else{
+//        CFPreferencesSetValue("dndStart" as CFString, CGFloat(0) as CFPropertyList, "com.apple.notificationcenterui" as CFString, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost)
+//
+//        CFPreferencesSetValue("dndEnd" as CFString, CGFloat(1440) as CFPropertyList, "com.apple.notificationcenterui" as CFString, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost)
+//
+//        CFPreferencesSetValue("doNotDisturb" as CFString, true as CFPropertyList, "com.apple.notificationcenterui" as CFString, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost)
+//
+//        commitDNDChanges()
+//    }
+//
+//
+//}
+//
+//func disableDND(){
+//    isDndEnabled = false
+//    if #available(OSX 12.0, *) {
+//        setDoNotDisturbMonterey(enable: false)
+//        return
+//    }else{
+//        CFPreferencesSetValue("dndStart" as CFString, nil, "com.apple.notificationcenterui" as CFString, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost)
+//
+//        CFPreferencesSetValue("dndEnd" as CFString, nil, "com.apple.notificationcenterui" as CFString, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost)
+//
+//        CFPreferencesSetValue("doNotDisturb" as CFString, false as CFPropertyList, "com.apple.notificationcenterui" as CFString, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost)
+//
+//        commitDNDChanges()
+//    }
+//}
+//func commitDNDChanges(){
+//    CFPreferencesSynchronize("com.apple.notificationcenterui" as CFString, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost)
+//    DistributedNotificationCenter.default().postNotificationName(NSNotification.Name(rawValue: "com.apple.notificationcenterui.dndprefs_changed"), object: nil, userInfo: nil, deliverImmediately: true)
+//}
+//
+//func setDoNotDisturbMonterey(enable: Bool) {
+//
+//    let apps = NSWorkspace.shared.runningApplications
+//
+//    guard let controlCenter = apps.first(where: {$0.bundleIdentifier == "com.apple.controlcenter"}) else {
+//        print("Control Center App not found!")
+//        return
+//    }
+//
+//    let target = AXUIElementCreateApplication(controlCenter.processIdentifier)
+//
+//    guard let menubar = getElement(target: target, name: "AXExtrasMenuBar") else {
+//        print("AXExtrasMenuBar not found!")
+//        return
+//    }
+//
+//    guard let controlCenterMenu = getChild(parent: menubar, withTitle: "Control Centre") else {
+//        print("\nControl Center not found !!")
+//        return
+//    }
+//
+//    //        print("\nControl Center\n===========")
+//
+//    // Press the menu
+//    AXUIElementPerformAction(controlCenterMenu, kAXPressAction as CFString)
+//
+//    // Now get the apps main window children since it will be showing
+//    guard let dialog = getElement(target: target, name: "AXFocusedWindow") else {
+//        print("AXFocusedWindow not found!")
+//        return
+//    }
+//
+//    //        print("\nControl Center Window\n===========")
+//
+//    if enable {
+//        if let focusMenu = getChild(parent: dialog, withTitle: "Focus") {
+//
+//            print("\nFocus found !!")
+//
+//            // Press the menu
+//            AXUIElementPerformAction(focusMenu, kAXPressAction as CFString)
+//
+//
+//        } else {
+//            print("\nFocus NOT found !!")
+//        }
+//    }
+//    else {
+//        if let doNotDisturbMenu = getChild(parent: dialog, withTitle: "Do Not Disturb") {
+//
+//            print("\nDo Not Disturb found !!")
+//
+//            // Press the menu
+//            AXUIElementPerformAction(doNotDisturbMenu, kAXPressAction as CFString)
+//
+//        } else {
+//            print("\nDo Not Disturb NOT found !!")
+//        }
+//    }
+//    AXUIElementPerformAction(controlCenterMenu, kAXPressAction as CFString)
+//}
+//
+//func getElement(target: AXUIElement, name: String) -> AXUIElement?{
+//
+//    var attributes: CFArray? = nil
+//
+//    AXUIElementCopyAttributeNames(target, &attributes);
+//
+//    guard let attributes = attributes else {
+//        return nil
+//    }
+//
+//    for attribute in attributes as NSArray {
+//        print(attribute as! CFString)
+//    }
+//
+//    assert((attributes as NSArray).contains(name))
+//
+//
+//    var element: CFTypeRef?
+//    AXUIElementCopyAttributeValue(target, name as CFString, &element)
+//
+//    guard let element = element else {
+//        return nil
+//    }
+//
+//    return element as! AXUIElement?
+//}
+//
+//func getChild(parent: AXUIElement, withTitle: String) -> AXUIElement? {
+//
+//    var children: CFTypeRef?
+//    AXUIElementCopyAttributeValue(parent, "AXChildren" as CFString, &children)
+//
+//    guard let children = children else {
+//        return nil
+//    }
+//
+//    guard let items = children as? NSArray else {
+//        return nil
+//    }
+//    for x in items {
+//        let child = x as! AXUIElement
+//
+//        var title: CFTypeRef?
+//        AXUIElementCopyAttributeValue(child, "AXTitle" as CFString, &title)
+//
+//        guard let title = title else {
+//            continue
+//        }
+//
+//        assert(CFGetTypeID(title) == CFStringGetTypeID())
+//
+//        if ((title as! CFString) as String) == withTitle {
+//
+//            return child
+//        }
+//    }
+//
+//    return nil
+//}
+
+/*
+        if pomodoroSettingsVcObj == nil{
+            super.keyDown(with: event)
+            return;
+        }
+
+        if !pomodoroSettingsVcObj!.isAddingPomodoroShortcut{
+            super.keyDown(with: event)
+            return;
+        }
+        var handled = false
+        if event.keyCode == escKeyCode { // ESC, same as `CMD + .`
+            handled = true
+            print("ESC")
+        }
+        if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.option) || event.modifierFlags.contains(.control) || event.modifierFlags.contains(.shift) {
+            
+            if var chars = event.charactersIgnoringModifiers {
+                
+                if chars == "<"{
+                    chars = ","
+                }else if chars == ">"{
+                    chars = "."
+                }
+                if let specialKey = event.specialKey{
+                    switch specialKey {
+                    case .f1:
+                        char = "f1"
+                    case .f2:
+                        char = "f2"
+                    case .f3:
+                        char = "f3"
+                    case .f4:
+                        char = "f4"
+                    case .f5:
+                        char = "f5"
+                    case .f6:
+                        char = "f6"
+                    case .f7:
+                        char = "f7"
+                    case .f8:
+                        char = "f8"
+                    case .f9:
+                        char = "f9"
+                    case .f10:
+                        char = "f10"
+                    case .f11:
+                        char = "f11"
+                    case .f12:
+                        char = "f12"
+                    default:
+                        char = "f12"
+                    }
+                }else if event.keyCode == spaceKeyCode {
+                    char = "space"
+                }else{
+                    char = chars
+                }
+
+                let errArray = ["c", "v", "z", "f", ",", "h", "q", "n", "z", "a", "x", "\r", "m", "-", "+" ]
+                var iserror = false
+                if event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.option) && !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.shift){
+                    
+                    if errArray.contains(char.lowercased()){
+                        iserror = true
+                    }
+                }
+                
+                if event.modifierFlags.contains(.numericPad){
+                    switch char {
+                    case "0":
+                        char = "keypad0"
+                    case "1":
+                        char = "keypad1"
+                    case "2":
+                        char = "keypad2"
+                    case "3":
+                        char = "keypad3"
+                    case "4":
+                        char = "keypad4"
+                    case "5":
+                        char = "keypad5"
+                    case "6":
+                        char = "keypad6"
+                    case "7":
+                        char = "keypad7"
+                    case "8":
+                        char = "keypad8"
+                    case "9":
+                        char = "keypad9"
+                    case ".":
+                        char = "keypaddecimal"
+                    case "*":
+                        char = "keypadmultiply"
+                    case "+":
+                        char = "keypadplus"
+                    case "/":
+                        char = "keypaddivide"
+                    case "-":
+                        char = "keypadminus"
+                    default:
+                        char = "keypad0"
+                    }
+                }
+                if iserror == true{
+                    char = ""
+                    flags = []
+ 
+                    pomodoroSettingsVcObj?.lblrecordShorcutPomodoro.stringValue = ""
+ 
+                    
+                    let alertShortcutFailed = NSAlert()
+                    alertShortcutFailed.setSharingType()
+                    alertShortcutFailed.alertStyle = .informational
+                    alertShortcutFailed.messageText =  "Please use a different key combination."
+                    if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
+                        alertShortcutFailed.messageText = preferencesInfo.value(forKey: "alertShortcutErrorText") as? String ?? alertShortcutFailed.messageText
+                    }
+                    alertShortcutFailed.addButton(withTitle: buttonOkText)
+                    
+                    alertShortcutFailed.beginSheetModal(for: self.window!, completionHandler: { (modalResponse) in
+                        if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+                            
+                        }
+
+                    })
+                    return
+                }
+                
+                flags = event.modifierFlags
+
+                SettingsManagerObject.isSettingsChanged = true
+                SettingsManagerObject.startPomodoroShortcutChar = char
+                var flagsarr = [Int]()
+                
+                if event.modifierFlags.contains(.control){
+                    flagsarr.append(shortcutFlags._CONTROL_.rawValue)
+                }
+                if event.modifierFlags.contains(.option){
+                    flagsarr.append(shortcutFlags._OPTION_.rawValue)
+                }
+                if event.modifierFlags.contains(.shift){
+                    flagsarr.append(shortcutFlags._SHIFT_.rawValue)
+                }
+                if event.modifierFlags.contains(.command){
+                    flagsarr.append(shortcutFlags._COMMAND_.rawValue)
+                }
+                
+                pomodoroSettingsVcObj?.lblrecordShorcutPomodoro.stringValue = "\(event.modifierFlags)\(char)"
+                SettingsManagerObject.startPomodoroShortcutFlags = flagsarr
+
+                handled = true // likely we are interested with that key
+                pomodoroSettingsVcObj!.shortcutAdded()
+                
+                switch char {
+                case "r":
+                    print("CMD + r")
+                case ",":
+                    print("CMD + ,")
+                case "/":
+                    print("CMD + /")
+                default:
+                    handled = false
+                }
+            }
+        }
+        if !handled {
+            
+            // super.keyDown(with: event) // let system handle it(may contains sound)
+        }
+ *///
+/*
+ @IBAction func btnInfoPomodoroShortcutClicked(_ sender: Any) {
+     var toolTip = "Instant focus mode! The default shortcut is (^⌥⌘P) but you can easily assign a personalized shortcut for immediate access to concentrated work sessions, providing you with seamless productivity whenever and wherever you need it most."
+     if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary{
+         toolTip = tooltips.value(forKey: "pomodoro_Shortcut") as? String ?? toolTip
+     }
+     showTooltip(sender: btnInfoPomodoroShortcut, msg: toolTip, preferredEdge: NSRectEdge.maxX, maxWidthVal:350)
+ }
+ */

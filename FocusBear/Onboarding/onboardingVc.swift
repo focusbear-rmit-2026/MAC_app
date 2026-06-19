@@ -105,8 +105,11 @@ class onboardingVc: NSViewController {
         if !getInstallHabitPacksVcObj().isViewLoaded{
             getInstallHabitPacksVcObj().loadView()
         }
-        getInstallHabitPacksVcObj().loadWebView(suggestHabits: suggestHabits)
-        navigate(to: ._INSTALL_HABIT_PACKS_)
+        mainViewControllerObj?.showLoaderView()
+        getInstallHabitPacksVcObj().loadwebViewWithCompletion(suggestHabits: suggestHabits, completionHandler: {
+            self.navigate(to: ._INSTALL_HABIT_PACKS_)
+            mainViewControllerObj?.hideLoaderView()
+        })
     }
     
     func navigate(to state: ONBOARDINGSTATE) {
@@ -255,7 +258,18 @@ class onboardingVc: NSViewController {
     @IBAction func btnBackClicked(_ sender: Any) {
         addLog(text: "[user-action] onboardingVc:- btnBackClicked.")
         if currentOnboardingState == ._HOLD_ON_{// v 3.31.473
-            showCustomAlert(title: "Do you want to log out and start again?", body: nil, buttonOkText: "Yes - logout", buttonCancelText: "Oops no", checkBoxText: nil, autoClose: false, buttonLinkUrl:nil, buttonLinkText: nil, completionHandler: {isOkClicked in//todo text
+            
+            var alertTitleLogout = "Do you want to log out and start again?"
+            var buttonLogout = "Yes - logout"
+            var buttonNo = "Oops no"
+            
+            if let holdOnVcInfo = configjson["holdOnVcInfo"] as? [String: Any] {
+                alertTitleLogout = holdOnVcInfo["alertTitleLogout"] as? String ?? alertTitleLogout
+                buttonLogout = holdOnVcInfo["buttonLogout"] as? String ?? buttonLogout
+                buttonNo = holdOnVcInfo["buttonNo"] as? String ?? buttonNo
+            }
+            
+            showCustomAlert(title: alertTitleLogout, body: nil, buttonOkText: buttonLogout, buttonCancelText: buttonNo, checkBoxText: nil, autoClose: false, buttonLinkUrl:nil, buttonLinkText: nil, completionHandler: {isOkClicked in
                 print(isOkClicked)
                 if isOkClicked{
                     addLog(text: "Logout:- back to create account view")

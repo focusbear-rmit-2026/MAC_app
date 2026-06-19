@@ -1,0 +1,8 @@
+// Base config for the "Focus Bear" app target — Release (notarised distribution).
+// Pulls in the CocoaPods settings, then Developer-ID signing + this target's profile.
+
+#include "../Pods/Target Support Files/Pods-Focus Bear/Pods-Focus Bear.release.xcconfig"
+#include "Signing-Release.xcconfig"
+
+PROVISIONING_PROFILE_SPECIFIER = FocusBearMainAppProfile
+PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*] = FocusBearMainAppProfile

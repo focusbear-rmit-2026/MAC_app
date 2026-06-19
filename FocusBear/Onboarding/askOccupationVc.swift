@@ -128,7 +128,7 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
     
     override func viewWillDisappear() {
         hideOnboardingBellIcon(view: self.view)
-        NotificationCenter.default.removeObserver(self)// todo need to check everyehere
+        NotificationCenter.default.removeObserver(self)
     }
     
     func controlTextDidChange(_ obj: Notification) {

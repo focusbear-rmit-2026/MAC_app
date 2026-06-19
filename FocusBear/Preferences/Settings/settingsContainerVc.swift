@@ -45,6 +45,10 @@ class settingsContainerVc: NSViewController {
         getAccountVcObject().loadView()
         getUninstallVcObject().loadView()
         
+        
+        _ = getKeyboardShortcutsSettingsVcObject()// The getKeyboardShortcutsSettingsVcObject function is already calling the loadView() function from within.
+        
+        
         getToDoListSettingsVcObject().loadView()
         addLog(text: "settingsContainerVc viewdidload end")
     }

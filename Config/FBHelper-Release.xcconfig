@@ -1,0 +1,7 @@
+// Base config for the FBHelper target — Release (notarised distribution).
+// Developer-ID signing + this target's provisioning profile.
+
+#include "Signing-Release.xcconfig"
+
+PROVISIONING_PROFILE_SPECIFIER = FocusBearHelperPersonalAcProfilePrashant
+PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*] = FocusBearHelperPersonalAcProfilePrashant

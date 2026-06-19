@@ -10,6 +10,8 @@ import Cocoa
 
 class onboardingAllowedUrlsVc: NSViewController {
 
+    @IBOutlet weak var lblChangeThisLater: NSTextField!
+    @IBOutlet weak var btnCheckBoxSelectAll: NSButton!
     @IBOutlet weak var outlineView: NSOutlineView!
     @IBOutlet weak var imgViewBear: NSImageView!
     @IBOutlet weak var btnSkip: hoverUnderlineButton!
@@ -28,7 +30,7 @@ class onboardingAllowedUrlsVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        lblChangeThisLater.stringValue = "you can change this later"
         lblTitle.stringValue = "What websites do you use for work?"
         lblSubtitle.stringValue = "We'll use these to kick off your focus sessions."
         btnAdd.title = "+"
@@ -46,6 +48,10 @@ class onboardingAllowedUrlsVc: NSViewController {
             btnSkip.title = info["buttonSkip"] as? String ?? btnSkip.title
 
             placeholderText = info["textFieldPlaceholder"] as? String ?? placeholderText
+        }
+        
+        if let onboardingBlockedUrlsInfo = configjson.value(forKey: "onboardingBlockedUrlsInfo") as? NSDictionary{
+            lblChangeThisLater.stringValue = onboardingBlockedUrlsInfo.value(forKey: "bottomText") as? String ?? lblChangeThisLater.stringValue
         }
         
         setPlaceHolder(placeholderText: placeholderText)
@@ -87,7 +93,7 @@ class onboardingAllowedUrlsVc: NSViewController {
         
         //Ensure the suggested websites list is reliably loaded and displayed v 3.31.476:-
         if arrAllUrls.count == 0{
-            var sites = ["docs.google.com", "sheets.google.com"]
+            let sites = ["docs.google.com", "sheets.google.com"]
             for site in sites{
                 let urlInfo = ["url":site, "isSelected":true, "tag":lastItemTag] as [String : Any]
                 lastItemTag += 1
@@ -183,6 +189,51 @@ class onboardingAllowedUrlsVc: NSViewController {
         getOnboardingVcObject().navigate(to: ._BLOCKED_URLS_)
     }
     
+    @IBAction func btnCheckBoxSelectAllClicked(_ sender: NSButton) {
+        if sender.state == .off || sender.state == .mixed{
+            allApiObject.capturePosthog(event: "allowed-category-unchecked", metadata: [:])
+            for i in 0..<arrAllowedUrlsStructure.count{
+                arrAllowedUrlsStructure[i]["isSelected"] = false
+            }
+        }else if sender.state == .on{
+            for i in 0..<arrAllowedUrlsStructure.count{
+                arrAllowedUrlsStructure[i]["isSelected"] = true
+            }
+            allApiObject.capturePosthog(event: "allowed-category-checked", metadata: [:])
+        }
+        setCheckBoxState()
+        outlineView.reloadData()
+    }
+    
+    func setCheckBoxState(){
+        var totalfileincurrentRow = 0
+        var selectedfileincurrentrow = 0
+        totalfileincurrentRow = arrAllowedUrlsStructure.count
+        for dic in arrAllowedUrlsStructure{
+            if let state = dic["isSelected"] as? Bool{
+                if state == true{
+                    selectedfileincurrentrow += 1
+                }
+            }
+        }
+        
+        if totalfileincurrentRow == 0{
+            btnCheckBoxSelectAll.state = .on
+            btnContinue.isEnabled = false
+        }else if totalfileincurrentRow == selectedfileincurrentrow{
+            btnCheckBoxSelectAll.allowsMixedState = false
+            btnCheckBoxSelectAll.state = .on
+            btnContinue.isEnabled = true
+        }else if selectedfileincurrentrow == 0{
+            btnCheckBoxSelectAll.allowsMixedState = false
+            btnCheckBoxSelectAll.state = .off
+            btnContinue.isEnabled = false
+        }else if selectedfileincurrentrow < totalfileincurrentRow{
+            btnCheckBoxSelectAll.allowsMixedState = true
+            btnCheckBoxSelectAll.state = .mixed
+            btnContinue.isEnabled = true
+        }
+    }
 }
 
 extension onboardingAllowedUrlsVc: NSOutlineViewDelegate, NSOutlineViewDataSource{
@@ -309,16 +360,8 @@ extension onboardingAllowedUrlsVc: NSOutlineViewDelegate, NSOutlineViewDataSourc
         }
         
         outlineView.reloadData()
-
-        for urlDic in arrAllowedUrlsStructure{
-            if urlDic["isSelected"] as? Bool == true{
-                btnContinue.isEnabled = true
-                return;
-            }
-        }
-        btnContinue.isEnabled = false
+        setCheckBoxState()
     }
-
 }
 
 extension onboardingAllowedUrlsVc:NSTextFieldDelegate{

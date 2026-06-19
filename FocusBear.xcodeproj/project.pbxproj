@@ -21,6 +21,7 @@
 		13188D762DEF162D00E67A44 /* serverIntel in Resources */ = {isa = PBXBuildFile; fileRef = 13188D752DEF162D00E67A44 /* serverIntel */; };
 		13219A8C2ED5977000699D2E /* tabLimiterData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13219A8B2ED5977000699D2E /* tabLimiterData.swift */; };
 		13219A8F2ED5CD8B00699D2E /* firefoxHttpServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13219A8E2ED5CD8B00699D2E /* firefoxHttpServer.swift */; };
+		133747632FC87AB600CB3DA1 /* DNDManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 133747622FC87AB600CB3DA1 /* DNDManager.swift */; };
 		1338D3792E1E35B8002A1BFC /* loginWc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1338D3782E1E35B8002A1BFC /* loginWc.swift */; };
 		13395D412DB900440094F019 /* focusModeData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13395D402DB900380094F019 /* focusModeData.swift */; };
 		134C1D332E8260D00032AF65 /* allSubclasses.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134C1D322E8260C10032AF65 /* allSubclasses.swift */; };
@@ -46,6 +47,7 @@
 		1361D61F2E446DAD00601AB1 /* habitsStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1361D61E2E446DAD00601AB1 /* habitsStateVc.swift */; };
 		1361E6E52DB76A1900E6DE3F /* unverifiedEmailVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */; };
 		1364364B2DE1FA7400B90724 /* splashVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1364364A2DE1FA7400B90724 /* splashVc.swift */; };
+		136E96992FE42A2600380278 /* AnonymousAccountConversionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136E96982FE42A2600380278 /* AnonymousAccountConversionView.swift */; };
 		1372A9172F347DFD00A5B5BC /* messageBoxVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1372A9162F347DFD00A5B5BC /* messageBoxVc.swift */; };
 		13776EA32F764FEC0006A461 /* setScheduledDistractionBlockingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13776EA22F764FEC0006A461 /* setScheduledDistractionBlockingVc.swift */; };
 		13776EA52F7669E40006A461 /* distractionBlockingProgressVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13776EA42F7669E40006A461 /* distractionBlockingProgressVc.swift */; };
@@ -56,12 +58,14 @@
 		137CD6042D9D4ACC00A8385A /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 137CD6022D9D4ACC00A8385A /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		138F0D8E2EBDE5180046CDB0 /* itemActionBarVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138F0D8D2EBDE5180046CDB0 /* itemActionBarVc.swift */; };
 		138FE1262E5701B0002A2C4C /* floatingTopBarVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138FE1252E5701B0002A2C4C /* floatingTopBarVc.swift */; };
+		139D87A62FCF18B000BA7598 /* claudeTitleReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 139D87A52FCF18B000BA7598 /* claudeTitleReader.swift */; };
 		13A45A2E2DB3DB12009ECF81 /* superGentleQuitVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A45A2D2DB3DB12009ECF81 /* superGentleQuitVc.swift */; };
 		13A9D5AA2F73FB30004ACB7F /* welcomeAdhdVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A9D5A92F73FB30004ACB7F /* welcomeAdhdVc.swift */; };
 		13A9D5AC2F741324004ACB7F /* welcomeLetsDoItVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A9D5AB2F741324004ACB7F /* welcomeLetsDoItVc.swift */; };
 		13A9D5AE2F741B4D004ACB7F /* setUpAccountVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A9D5AD2F741B4D004ACB7F /* setUpAccountVc.swift */; };
 		13AAC9DC2D97CC76000AD619 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F7DCC022796E8D200EE3282 /* WebKit.framework */; };
 		13AAC9E12D9819F7000AD619 /* customRoutineTimeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */; };
+		13AFB9CC2FD3044D002DA62E /* suggestFocusModeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13AFB9CB2FD3044D002DA62E /* suggestFocusModeVc.swift */; };
 		13B1D8292F7D2B9B0010610C /* suggestWorkFocusManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B1D8282F7D2B9B0010610C /* suggestWorkFocusManager.swift */; };
 		13B74D582E87A71E00556C79 /* collectionCellScreenshots.xib in Resources */ = {isa = PBXBuildFile; fileRef = 13B74D572E87A71E00556C79 /* collectionCellScreenshots.xib */; };
 		13B74D592E87A71E00556C79 /* collectionCellScreenshots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B74D562E87A71E00556C79 /* collectionCellScreenshots.swift */; };
@@ -72,9 +76,15 @@
 		13BBEEE02F7547060073B58E /* holdOnVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13BBEEDF2F7547060073B58E /* holdOnVc.swift */; };
 		13BBEEE22F7561580073B58E /* setUpHabitsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13BBEEE12F7561580073B58E /* setUpHabitsVc.swift */; };
 		13BBEEE42F7567F10073B58E /* startSetUpHabitsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13BBEEE32F7567F10073B58E /* startSetUpHabitsVc.swift */; };
+		13C6BF082FB199E70074DD63 /* focusButtonService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6BF072FB199E70074DD63 /* focusButtonService.swift */; };
+		13C6BF0B2FB19D750074DD63 /* ORSSerial in Frameworks */ = {isa = PBXBuildFile; productRef = 13C6BF0A2FB19D750074DD63 /* ORSSerial */; };
+		13C6BF0E2FB211CA0074DD63 /* audioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */; };
+		13C6C2A22FE2615E00B1F278 /* BreakWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */; };
 		13CBE7652F07E9660025544E /* enableAIBlockingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */; };
+		13D5D0112FD0396E00AB474C /* micMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D5D0102FD0396E00AB474C /* micMonitor.swift */; };
 		13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */; };
 		13D90E802ECC514000FC39FD /* createUnlockRequestVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D90E7F2ECC514000FC39FD /* createUnlockRequestVc.swift */; };
+		13DC8AA62FC1DEE40035A7E1 /* routinePostponedInfoVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13DC8AA52FC1DEE40035A7E1 /* routinePostponedInfoVc.swift */; };
 		13E0386F2ED075420097E91C /* focusTimerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13E0386E2ED075420097E91C /* focusTimerManager.swift */; };
 		13E09A3E2F77E44B00E6D3F3 /* createFirstBlockingScheduleVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13E09A3D2F77E44B00E6D3F3 /* createFirstBlockingScheduleVc.swift */; };
 		13E09A402F77F38600E6D3F3 /* askPermissionsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13E09A3F2F77F38600E6D3F3 /* askPermissionsVc.swift */; };
@@ -97,7 +107,7 @@
 		8F0419462C353D4100481ACD /* getViewControllersObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0419452C353D4100481ACD /* getViewControllersObject.swift */; };
 		8F0419482C353DCA00481ACD /* allUserdefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0419472C353DCA00481ACD /* allUserdefaults.swift */; };
 		8F04F340290A93B800A8D5A6 /* breakWarningVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */; };
-		8F050A0927842B8400F3CE17 /* thirdVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F050A0827842B8400F3CE17 /* thirdVc.swift */; };
+		8F050A0927842B8400F3CE17 /* activityCompletionVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F050A0827842B8400F3CE17 /* activityCompletionVc.swift */; };
 		8F0734652C520C3D002FACE8 /* Onboarding.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8F0734642C520C3D002FACE8 /* Onboarding.storyboard */; };
 		8F07346B2C526AA1002FACE8 /* informationPopoverVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F07346A2C526AA1002FACE8 /* informationPopoverVc.swift */; };
 		8F08FD7028B60DD60016C741 /* uninstallingConfirmVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F08FD6F28B60DD60016C741 /* uninstallingConfirmVc.swift */; };
@@ -389,6 +399,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0EDB8FEB66F6AAB9C4A6C924 /* FBHelper-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "FBHelper-Release.xcconfig"; sourceTree = "<group>"; };
+		0F1256F7E7236265310238AB /* Signing-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Signing-Debug.xcconfig"; sourceTree = "<group>"; };
 		1302BA832F90AA7C0006F9B2 /* debugLogsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = debugLogsVc.swift; sourceTree = "<group>"; };
 		1303D9AC2E4B085900FD5BEC /* breaksStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breaksStateVc.swift; sourceTree = "<group>"; };
 		13098BC52F7A7B3F00C31540 /* allSetVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = allSetVc.swift; sourceTree = "<group>"; };
@@ -403,6 +415,7 @@
 		13188D752DEF162D00E67A44 /* serverIntel */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = serverIntel; sourceTree = "<group>"; };
 		13219A8B2ED5977000699D2E /* tabLimiterData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tabLimiterData.swift; sourceTree = "<group>"; };
 		13219A8E2ED5CD8B00699D2E /* firefoxHttpServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = firefoxHttpServer.swift; sourceTree = "<group>"; };
+		133747622FC87AB600CB3DA1 /* DNDManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DNDManager.swift; sourceTree = "<group>"; };
 		1338D3782E1E35B8002A1BFC /* loginWc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = loginWc.swift; sourceTree = "<group>"; };
 		13395D402DB900380094F019 /* focusModeData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusModeData.swift; sourceTree = "<group>"; };
 		134C1D322E8260C10032AF65 /* allSubclasses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = allSubclasses.swift; sourceTree = "<group>"; };
@@ -428,6 +441,7 @@
 		1361D61E2E446DAD00601AB1 /* habitsStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = habitsStateVc.swift; sourceTree = "<group>"; };
 		1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = unverifiedEmailVc.swift; sourceTree = "<group>"; };
 		1364364A2DE1FA7400B90724 /* splashVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = splashVc.swift; sourceTree = "<group>"; };
+		136E96982FE42A2600380278 /* AnonymousAccountConversionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnonymousAccountConversionView.swift; sourceTree = "<group>"; };
 		1372A9162F347DFD00A5B5BC /* messageBoxVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = messageBoxVc.swift; sourceTree = "<group>"; };
 		13776EA22F764FEC0006A461 /* setScheduledDistractionBlockingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = setScheduledDistractionBlockingVc.swift; sourceTree = "<group>"; };
 		13776EA42F7669E40006A461 /* distractionBlockingProgressVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = distractionBlockingProgressVc.swift; sourceTree = "<group>"; };
@@ -437,11 +451,13 @@
 		137CD6022D9D4ACC00A8385A /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
 		138F0D8D2EBDE5180046CDB0 /* itemActionBarVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = itemActionBarVc.swift; sourceTree = "<group>"; };
 		138FE1252E5701B0002A2C4C /* floatingTopBarVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = floatingTopBarVc.swift; sourceTree = "<group>"; };
+		139D87A52FCF18B000BA7598 /* claudeTitleReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = claudeTitleReader.swift; sourceTree = "<group>"; };
 		13A45A2D2DB3DB12009ECF81 /* superGentleQuitVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = superGentleQuitVc.swift; sourceTree = "<group>"; };
 		13A9D5A92F73FB30004ACB7F /* welcomeAdhdVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = welcomeAdhdVc.swift; sourceTree = "<group>"; };
 		13A9D5AB2F741324004ACB7F /* welcomeLetsDoItVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = welcomeLetsDoItVc.swift; sourceTree = "<group>"; };
 		13A9D5AD2F741B4D004ACB7F /* setUpAccountVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = setUpAccountVc.swift; sourceTree = "<group>"; };
 		13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineTimeVc.swift; sourceTree = "<group>"; };
+		13AFB9CB2FD3044D002DA62E /* suggestFocusModeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = suggestFocusModeVc.swift; sourceTree = "<group>"; };
 		13B1D8282F7D2B9B0010610C /* suggestWorkFocusManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = suggestWorkFocusManager.swift; sourceTree = "<group>"; };
 		13B74D562E87A71E00556C79 /* collectionCellScreenshots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = collectionCellScreenshots.swift; sourceTree = "<group>"; };
 		13B74D572E87A71E00556C79 /* collectionCellScreenshots.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = collectionCellScreenshots.xib; sourceTree = "<group>"; };
@@ -452,9 +468,14 @@
 		13BBEEDF2F7547060073B58E /* holdOnVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = holdOnVc.swift; sourceTree = "<group>"; };
 		13BBEEE12F7561580073B58E /* setUpHabitsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = setUpHabitsVc.swift; sourceTree = "<group>"; };
 		13BBEEE32F7567F10073B58E /* startSetUpHabitsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = startSetUpHabitsVc.swift; sourceTree = "<group>"; };
+		13C6BF072FB199E70074DD63 /* focusButtonService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusButtonService.swift; sourceTree = "<group>"; };
+		13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = audioRecorder.swift; sourceTree = "<group>"; };
+		13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakWarningView.swift; sourceTree = "<group>"; };
 		13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = enableAIBlockingVc.swift; sourceTree = "<group>"; };
+		13D5D0102FD0396E00AB474C /* micMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = micMonitor.swift; sourceTree = "<group>"; };
 		13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineStateVc.swift; sourceTree = "<group>"; };
 		13D90E7F2ECC514000FC39FD /* createUnlockRequestVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = createUnlockRequestVc.swift; sourceTree = "<group>"; };
+		13DC8AA52FC1DEE40035A7E1 /* routinePostponedInfoVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = routinePostponedInfoVc.swift; sourceTree = "<group>"; };
 		13DF413B2E4E1BF3001184FF /* FocusBear.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = FocusBear.xcodeproj; sourceTree = "<group>"; };
 		13E0386E2ED075420097E91C /* focusTimerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusTimerManager.swift; sourceTree = "<group>"; };
 		13E09A3D2F77E44B00E6D3F3 /* createFirstBlockingScheduleVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = createFirstBlockingScheduleVc.swift; sourceTree = "<group>"; };
@@ -471,13 +492,15 @@
 		274E671528951DDC0030163F /* AllApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllApi.swift; sourceTree = "<group>"; };
 		5A6A3D792FAEB776007ED01F /* BreakFrequencyPromptVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakFrequencyPromptVc.swift; sourceTree = "<group>"; };
 		5A6A3D7B2FAEB7D8007ED01F /* BreakFrequencyStreakTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakFrequencyStreakTracker.swift; sourceTree = "<group>"; };
+		5F7C4CC4D1F38E18CC9D5E55 /* FocusBear-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "FocusBear-Release.xcconfig"; sourceTree = "<group>"; };
 		889FCE3E1080DC22C97AB6D8 /* Pods-Focus Bear.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Focus Bear.debug.xcconfig"; path = "Target Support Files/Pods-Focus Bear/Pods-Focus Bear.debug.xcconfig"; sourceTree = "<group>"; };
+		8E5DEAA96AD3FCA949FF525B /* Local.xcconfig.example */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = Local.xcconfig.example; sourceTree = "<group>"; };
 		8F02AF412A751A5200BA6536 /* blockedAppsVc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = blockedAppsVc.swift; sourceTree = "<group>"; };
 		8F0419432C353B9C00481ACD /* breakSurveyVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breakSurveyVc.swift; sourceTree = "<group>"; };
 		8F0419452C353D4100481ACD /* getViewControllersObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = getViewControllersObject.swift; sourceTree = "<group>"; };
 		8F0419472C353DCA00481ACD /* allUserdefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = allUserdefaults.swift; sourceTree = "<group>"; };
 		8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breakWarningVc.swift; sourceTree = "<group>"; };
-		8F050A0827842B8400F3CE17 /* thirdVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = thirdVc.swift; sourceTree = "<group>"; };
+		8F050A0827842B8400F3CE17 /* activityCompletionVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = activityCompletionVc.swift; sourceTree = "<group>"; };
 		8F050A0B278467B000F3CE17 /* FocusBear-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FocusBear-Bridging-Header.h"; sourceTree = "<group>"; };
 		8F0734642C520C3D002FACE8 /* Onboarding.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Onboarding.storyboard; sourceTree = "<group>"; };
 		8F07346A2C526AA1002FACE8 /* informationPopoverVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = informationPopoverVc.swift; sourceTree = "<group>"; };
@@ -744,10 +767,13 @@
 		8FFBCE8928549EB1004B77D9 /* PopoverViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PopoverViewController.swift; sourceTree = "<group>"; };
 		8FFF70622858A13200164E2B /* GraphTimeDuration.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = GraphTimeDuration.html; sourceTree = "<group>"; };
 		8FFF70642858A59800164E2B /* GraphDaysDuration.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = GraphDaysDuration.html; sourceTree = "<group>"; };
+		A3571BB6ACEBCB217ABDB57F /* FocusBear-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "FocusBear-Debug.xcconfig"; sourceTree = "<group>"; };
 		AAW00001 /* alwaysAllowedAppsVc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = alwaysAllowedAppsVc.swift; sourceTree = "<group>"; };
 		ABH00002 /* AppBlockingHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingHelper.swift; sourceTree = "<group>"; };
 		ABH00004 /* AppBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingTests.swift; sourceTree = "<group>"; };
 		E339C651791746EA3D066A6A /* Pods_Focus_Bear.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Focus_Bear.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F0AB749FD8D6F7D5A64D9CB8 /* Signing-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Signing-Release.xcconfig"; sourceTree = "<group>"; };
+		F2A250D6DD50DF2749899D48 /* FBHelper-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "FBHelper-Debug.xcconfig"; sourceTree = "<group>"; };
 		F4A04585FA1D0F1940D23631 /* Pods-Focus Bear.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Focus Bear.release.xcconfig"; path = "Target Support Files/Pods-Focus Bear/Pods-Focus Bear.release.xcconfig"; sourceTree = "<group>"; };
 		UBT00002 /* URLBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLBlockingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -768,6 +794,7 @@
 				274E0F472890291D000234A3 /* Auth0 in Frameworks */,
 				137CD6032D9D4ACC00A8385A /* Sparkle.framework in Frameworks */,
 				13F8278E2ED5ED75006C0BEF /* Swifter in Frameworks */,
+				13C6BF0B2FB19D750074DD63 /* ORSSerial in Frameworks */,
 				13AAC9DC2D97CC76000AD619 /* WebKit.framework in Frameworks */,
 				BEED37F6C1373AFCB67BCF04 /* Pods_Focus_Bear.framework in Frameworks */,
 			);
@@ -820,7 +847,7 @@
 				8FAC6C9C27806DCB008A4180 /* firstViewController.swift */,
 				8F99C8D52A13AE1D00FD2403 /* editHabitRoutineVc.swift */,
 				8F6138B528B7698300A45B1A /* visualizeInstructionsVc.swift */,
-				8F050A0827842B8400F3CE17 /* thirdVc.swift */,
+				8F050A0827842B8400F3CE17 /* activityCompletionVc.swift */,
 				8FAC6CA027808125008A4180 /* timerViewcontroller.swift */,
 				13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */,
 				8FAC6C9E2780748D008A4180 /* tblCellHabits.swift */,
@@ -828,6 +855,7 @@
 				8F1E3F752B2ADC24005CE096 /* startAnotherHabitVc.swift */,
 				8F779DF92B80DD600011E1BE /* chooseHabitsVC.swift */,
 				1361D61E2E446DAD00601AB1 /* habitsStateVc.swift */,
+				13DC8AA52FC1DEE40035A7E1 /* routinePostponedInfoVc.swift */,
 				13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */,
 				130FFDBA2E4C663800694795 /* blankController.swift */,
 				135CBDAE2D967005003BA438 /* routineData.swift */,
@@ -844,8 +872,19 @@
 			path = Controls;
 			sourceTree = "<group>";
 		};
+		13C6BF0C2FB1A10B0074DD63 /* FocusButton */ = {
+			isa = PBXGroup;
+			children = (
+				13C6BF072FB199E70074DD63 /* focusButtonService.swift */,
+				13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */,
+			);
+			path = FocusButton;
+			sourceTree = "<group>";
+		};
 		13EE47102E50420C00F952FE /* Products */ = {
 			isa = PBXGroup;
+			children = (
+			);
 			name = Products;
 			sourceTree = "<group>";
 		};
@@ -960,6 +999,7 @@
 				5A6A3D7B2FAEB7D8007ED01F /* BreakFrequencyStreakTracker.swift */,
 				5A6A3D792FAEB776007ED01F /* BreakFrequencyPromptVc.swift */,
 				8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */,
+				13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */,
 				8F3F1F28299BB96400E67F42 /* breaksBrainDumpVc.swift */,
 				8F1FBAE529F2A46000AA1979 /* naturalBreaksDetectionVc.swift */,
 				8F3A28982C22A46F002AD2E3 /* deactivateBreaksVc.swift */,
@@ -1163,9 +1203,12 @@
 				135A8A542E7EB27A00A96A8E /* customBlockingScheduleData.swift */,
 				13B74D5C2E8801DA00556C79 /* abortingCustomScheduleBlockingVc.swift */,
 				13395D402DB900380094F019 /* focusModeData.swift */,
+				139D87A52FCF18B000BA7598 /* claudeTitleReader.swift */,
 				13E0386E2ED075420097E91C /* focusTimerManager.swift */,
 				135AD5302ED18D7D00870175 /* focusHabitTimerManager.swift */,
 				13B1D8282F7D2B9B0010610C /* suggestWorkFocusManager.swift */,
+				13AFB9CB2FD3044D002DA62E /* suggestFocusModeVc.swift */,
+				133747622FC87AB600CB3DA1 /* DNDManager.swift */,
 			);
 			path = "Focus mode";
 			sourceTree = "<group>";
@@ -1257,6 +1300,7 @@
 				8F69D1E02796A34B00DB3EFD /* Frameworks */,
 				C39F497A522955388D68AA8B /* Pods */,
 				13DF413B2E4E1BF3001184FF /* FocusBear.xcodeproj */,
+				B5F745AF8D0F3894431BA120 /* Config */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1280,6 +1324,7 @@
 				8FAC6C8827805F6E008A4180 /* ViewController.swift */,
 				1364364A2DE1FA7400B90724 /* splashVc.swift */,
 				138FE1252E5701B0002A2C4C /* floatingTopBarVc.swift */,
+				13C6BF0C2FB1A10B0074DD63 /* FocusButton */,
 				8FB50EF727BE12CB00A7175B /* menuView */,
 				132EFCA82E5437FE00189428 /* leftMenu */,
 				135CBDAD2D966CCC003BA438 /* Routine */,
@@ -1319,6 +1364,7 @@
 				8FF9351929110D8C004511C0 /* Onboarding */,
 				8FDA858F279A8E82008AD6AA /* AVMonitor.h */,
 				8FDA8590279A8E82008AD6AA /* AVMonitor.m */,
+				13D5D0102FD0396E00AB474C /* micMonitor.swift */,
 				8F7819D828E588F500FB1F63 /* Login */,
 				8FA633E42848BB860055EE88 /* graph */,
 				8F9A5A94278853A0009121E3 /* Abort */,
@@ -1462,6 +1508,7 @@
 				8F0A18552A8E4B5000AFA623 /* strictness */,
 				8F8C3FDD2A8CF5B0005CAF96 /* advanced */,
 				274C9A90289A8C900066F883 /* accountVc.swift */,
+				136E96982FE42A2600380278 /* AnonymousAccountConversionView.swift */,
 				130FE9582FA4C7B800E9C386 /* keyboardShortcutsSettingsVc.swift */,
 				8F892E5F2B3E91550030414C /* permissionsVc.swift */,
 				8F28E8312822B15A00310F4E /* uninstallVc.swift */,
@@ -1538,6 +1585,20 @@
 			path = Onboarding;
 			sourceTree = "<group>";
 		};
+		B5F745AF8D0F3894431BA120 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				0F1256F7E7236265310238AB /* Signing-Debug.xcconfig */,
+				F0AB749FD8D6F7D5A64D9CB8 /* Signing-Release.xcconfig */,
+				A3571BB6ACEBCB217ABDB57F /* FocusBear-Debug.xcconfig */,
+				5F7C4CC4D1F38E18CC9D5E55 /* FocusBear-Release.xcconfig */,
+				F2A250D6DD50DF2749899D48 /* FBHelper-Debug.xcconfig */,
+				0EDB8FEB66F6AAB9C4A6C924 /* FBHelper-Release.xcconfig */,
+				8E5DEAA96AD3FCA949FF525B /* Local.xcconfig.example */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
 		C39F497A522955388D68AA8B /* Pods */ = {
 			isa = PBXGroup;
 			children = (
@@ -1587,6 +1648,7 @@
 			packageProductDependencies = (
 				274E0F462890291D000234A3 /* Auth0 */,
 				13F8278D2ED5ED75006C0BEF /* Swifter */,
+				13C6BF0A2FB19D750074DD63 /* ORSSerial */,
 			);
 			productName = EarnYourScreentime;
 			productReference = 8FAC6C8327805F6D008A4180 /* Focus Bear.app */;
@@ -1646,6 +1708,7 @@
 			packageReferences = (
 				274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0" */,
 				13F8278C2ED5EC8B006C0BEF /* XCRemoteSwiftPackageReference "swifter" */,
+				13C6BF092FB19C210074DD63 /* XCRemoteSwiftPackageReference "ORSSerialPort" */,
 			);
 			productRefGroup = 8FAC6C8427805F6D008A4180 /* Products */;
 			projectDirPath = "";
@@ -1839,6 +1902,7 @@
 				8F0419482C353DCA00481ACD /* allUserdefaults.swift in Sources */,
 				8FFBCE8B28549EB1004B77D9 /* PopoverViewController.swift in Sources */,
 				8F3DD00D29F3B41C00E23715 /* AHLaunchJob.m in Sources */,
+				13AFB9CC2FD3044D002DA62E /* suggestFocusModeVc.swift in Sources */,
 				8F9BB8B92787307D00BB25D4 /* shutOffTimeVc.swift in Sources */,
 				8FB50EFD27BE6AD100A7175B /* focusPreferencesVc.swift in Sources */,
 				8FD86E1E2A54376C004F6761 /* todoNotes.swift in Sources */,
@@ -1875,6 +1939,7 @@
 				8F9E5A112B69298C004814D1 /* onboardingProgressVc.swift in Sources */,
 				13219A8F2ED5CD8B00699D2E /* firefoxHttpServer.swift in Sources */,
 				1303D9AD2E4B085900FD5BEC /* breaksStateVc.swift in Sources */,
+				136E96992FE42A2600380278 /* AnonymousAccountConversionView.swift in Sources */,
 				8FAC6C9F2780748D008A4180 /* tblCellHabits.swift in Sources */,
 				8FABDDD327DA2ED600F6A58C /* enterPasswordVc.swift in Sources */,
 				8FABDDD527DA367100F6A58C /* passwordVc.swift in Sources */,
@@ -1904,6 +1969,7 @@
 				8F5596B42805B49E0044DF28 /* quitCountDownVc.swift in Sources */,
 				13130A772F769929005842C6 /* askSetDistractionsVc.swift in Sources */,
 				13B7700B2F76BE77006C30AC /* onboardingAllowedUrlsVc.swift in Sources */,
+				139D87A62FCF18B000BA7598 /* claudeTitleReader.swift in Sources */,
 				13395D412DB900440094F019 /* focusModeData.swift in Sources */,
 				135ABA6D2E5345A300D133F2 /* focusModeStateVc.swift in Sources */,
 				8FAC6CA127808125008A4180 /* timerViewcontroller.swift in Sources */,
@@ -1941,6 +2007,7 @@
 				8F1FBAE629F2A46000AA1979 /* naturalBreaksDetectionVc.swift in Sources */,
 				13A9D5AC2F741324004ACB7F /* welcomeLetsDoItVc.swift in Sources */,
 				8FD1054727EF1A3B00B7728E /* urlValidation.swift in Sources */,
+				133747632FC87AB600CB3DA1 /* DNDManager.swift in Sources */,
 				8FB0DBD72BEA27D1006DE02F /* taskPlayerVc.swift in Sources */,
 				13AAC9E12D9819F7000AD619 /* customRoutineTimeVc.swift in Sources */,
 				13BBEEE42F7567F10073B58E /* startSetUpHabitsVc.swift in Sources */,
@@ -1968,7 +2035,7 @@
 				8F7ED7432CC0F1E100AB973D /* taskPlayerWc.swift in Sources */,
 				8FB257872C7DF0EB00794A43 /* askIntentionAllowedFocusModeActivity.swift in Sources */,
 				8F4BD8C827883FBE00ABAEF5 /* HotKey.swift in Sources */,
-				8F050A0927842B8400F3CE17 /* thirdVc.swift in Sources */,
+				8F050A0927842B8400F3CE17 /* activityCompletionVc.swift in Sources */,
 				8FAD22D327CA044800CDC866 /* pomodoroWindowController.swift in Sources */,
 				13CBE7652F07E9660025544E /* enableAIBlockingVc.swift in Sources */,
 				13A9D5AA2F73FB30004ACB7F /* welcomeAdhdVc.swift in Sources */,
@@ -1994,6 +2061,7 @@
 				8F9A5A9A27887889009121E3 /* abortDoneVc.swift in Sources */,
 				8F270CB229436D4400E91015 /* tblCellOnboardingBlockedUrls.swift in Sources */,
 				8F6DD76A2A8A4EE300096F08 /* settingsSideBarVc.swift in Sources */,
+				13D5D0112FD0396E00AB474C /* micMonitor.swift in Sources */,
 				8F8C3FE32A8D0158005CAF96 /* settingPopUpButtonItemVc.swift in Sources */,
 				8FBE37A52A8F5B640018402A /* aiSettingNewVc.swift in Sources */,
 				8FCE07AB2931F2A300DF4530 /* popUpOfflineVc.swift in Sources */,
@@ -2001,6 +2069,7 @@
 				8F6465CE2A612C58009A3341 /* tblCellUrlRelaxMode.swift in Sources */,
 				8F3DD01629F3B4CA00E23715 /* AHAuthorizer.m in Sources */,
 				274C9A91289A8C910066F883 /* accountVc.swift in Sources */,
+				13C6C2A22FE2615E00B1F278 /* BreakWarningView.swift in Sources */,
 				8FA692FD2B90B31600FF4862 /* confirmRunScriptVc.swift in Sources */,
 				8F6DAD842B32A84400CB210B /* lateNoMorePopUpVc.swift in Sources */,
 				8FC31BFE28C757B400E2DD4C /* brainDumpVc.swift in Sources */,
@@ -2028,6 +2097,7 @@
 				1361E6E52DB76A1900E6DE3F /* unverifiedEmailVc.swift in Sources */,
 				8F93BE6027CCA196004FA0BE /* abortingFocusMode.swift in Sources */,
 				8FAD22D527CA047700CDC866 /* pomodoroVc.swift in Sources */,
+				13DC8AA62FC1DEE40035A7E1 /* routinePostponedInfoVc.swift in Sources */,
 				8F8073822B3D3F2E004935B5 /* CollectionViewItem.swift in Sources */,
 				8FF8E0FF291686EF002938B8 /* popUpBlockConfirmVc.swift in Sources */,
 				8F99C8D62A13AE1D00FD2403 /* editHabitRoutineVc.swift in Sources */,
@@ -2054,9 +2124,11 @@
 				8FE5E5BA2C46A5C800420717 /* alertLimitedUsageVc.swift in Sources */,
 				13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */,
 				8F09ACC129703C5B00A0F1D0 /* tblCellTracks.swift in Sources */,
+				13C6BF082FB199E70074DD63 /* focusButtonService.swift in Sources */,
 				8F23A1DC2CAE508C0042CE2A /* explainingPermissionsVc.swift in Sources */,
 				135A8A572E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift in Sources */,
 				8F36D517297AB32800A7E4AD /* addFocusTempUrlsOrAppsVc.swift in Sources */,
+				13C6BF0E2FB211CA0074DD63 /* audioRecorder.swift in Sources */,
 				8F19BCA5293F360D00F70544 /* whySkipHabitVc.swift in Sources */,
 				8F8C3FE12A8CFFEE005CAF96 /* uIVc.swift in Sources */,
 				8F8FDA152B3C582D0067B0A0 /* firefoxPermissionsVc.swift in Sources */,
@@ -2153,6 +2225,7 @@
 /* Begin XCBuildConfiguration section */
 		8F396D272C2AB53C00C8896A /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = F2A250D6DD50DF2749899D48 /* FBHelper-Debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -2160,11 +2233,8 @@
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CODE_SIGN_ENTITLEMENTS = FBHelper/FBHelper.entitlements;
 				CODE_SIGN_IDENTITY = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
-				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -2177,32 +2247,29 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 11;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.focusbear.focusbearhelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = FocusBearHelperPersonalAcProfilePrashant;
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = FocusBearHelperPersonalAcProfilePrashant;
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
 		8F396D282C2AB53C00C8896A /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0EDB8FEB66F6AAB9C4A6C924 /* FBHelper-Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CODE_SIGN_ENTITLEMENTS = FBHelper/FBHelper.entitlements;
-				CODE_SIGN_IDENTITY = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
-				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -2215,14 +2282,13 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 11;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.focusbear.focusbearhelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = FocusBearHelperPersonalAcProfilePrashant;
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = FocusBearHelperPersonalAcProfilePrashant;
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
@@ -2279,12 +2345,13 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MACOSX_DEPLOYMENT_TARGET = 11;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
@@ -2335,29 +2402,28 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MACOSX_DEPLOYMENT_TARGET = 11;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
 			name = Release;
 		};
 		8FAC6C9427805F70008A4180 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 889FCE3E1080DC22C97AB6D8 /* Pods-Focus Bear.debug.xcconfig */;
+			baseConfigurationReference = A3571BB6ACEBCB217ABDB57F /* FocusBear-Debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Focus Bear.entitlements";
 				CODE_SIGN_IDENTITY = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
-				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 477;
+				CURRENT_PROJECT_VERSION = 497;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -2370,12 +2436,12 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 3.31;
+				MACOSX_DEPLOYMENT_TARGET = 11;
+				MARKETING_VERSION = 3.33;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = FocusBearMainAppProfile;
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = FocusBearMainAppProfile;
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "FocusBear/FocusBear-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -2384,17 +2450,13 @@
 		};
 		8FAC6C9527805F70008A4180 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = F4A04585FA1D0F1940D23631 /* Pods-Focus Bear.release.xcconfig */;
+			baseConfigurationReference = 5F7C4CC4D1F38E18CC9D5E55 /* FocusBear-Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Focus Bear.entitlements";
-				CODE_SIGN_IDENTITY = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
-				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 477;
-				DEVELOPMENT_TEAM = TCUD568B3U;
+				CURRENT_PROJECT_VERSION = 497;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_TESTABILITY = NO;
@@ -2408,12 +2470,12 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 3.31;
+				MACOSX_DEPLOYMENT_TARGET = 11;
+				MARKETING_VERSION = 3.33;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = FocusBearMainAppProfile;
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = FocusBearMainAppProfile;
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "FocusBear/FocusBear-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 			};
@@ -2435,6 +2497,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.App.Earn-Your-ScreentimeTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Focus Bear.app/Contents/MacOS/Focus Bear";
 			};
@@ -2456,6 +2519,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.App.Earn-Your-ScreentimeTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Focus Bear.app/Contents/MacOS/Focus Bear";
 			};
@@ -2503,6 +2567,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		13C6BF092FB19C210074DD63 /* XCRemoteSwiftPackageReference "ORSSerialPort" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/armadsen/ORSSerialPort";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.1.0;
+			};
+		};
 		13F8278C2ED5EC8B006C0BEF /* XCRemoteSwiftPackageReference "swifter" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/httpswift/swifter.git";
@@ -2522,6 +2594,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		13C6BF0A2FB19D750074DD63 /* ORSSerial */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 13C6BF092FB19C210074DD63 /* XCRemoteSwiftPackageReference "ORSSerialPort" */;
+			productName = ORSSerial;
+		};
 		13F8278D2ED5ED75006C0BEF /* Swifter */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 13F8278C2ED5EC8B006C0BEF /* XCRemoteSwiftPackageReference "swifter" */;

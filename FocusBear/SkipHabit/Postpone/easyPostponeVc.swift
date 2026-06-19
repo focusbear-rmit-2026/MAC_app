@@ -54,13 +54,11 @@ class easyPostponeVc: NSViewController {
     
     override func viewDidAppear() {
         //Shouldn't be able to postpone during cutoff time without password after postponing once(wjem habit is about to resume) #797
-        if currentState == ._POSTPON_EVENING_HABIT_ && !SettingsManagerObject.isEasySkipEnabled{
+        if currentState == ._POSTPONE_EVENING_HABIT_ && !SettingsManagerObject.isEasySkipEnabled{
             if cutOffTime != nil{
                 if shouldAskPassword(){
                     if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
-                        let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
-                        let currentDate = Date()
-                        if currentDate > cutOffDate{
+                        if isCutOffTimeGoing(){
                             if self.view.window != nil{
                                 self.presentAsSheet(enterPasswordVcObj!)
                                 enterPasswordVcObj?.parentVc = self
@@ -108,7 +106,7 @@ class easyPostponeVc: NSViewController {
             }
         }
         
-        if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || isViewForMorningEveningRoutineExtendPostponed{
+        if currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_ || isViewForMorningEveningRoutineExtendPostponed{
 
             if (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit){
                 habitsVcObj?.stopActivityCountDownTimer()
@@ -121,20 +119,11 @@ class easyPostponeVc: NSViewController {
             }
             
             currentState = ._NOTHING_
-            if mainViewControllerObj != nil{
-                if getHabitsVcObject().postponeTimer != nil{
-                    getHabitsVcObject().postponeTimer?.invalidate()
-                    getHabitsVcObject().postponeTimer = nil
-                    closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
-                }
-                if getHabitsVcObject().postponeNotificationTimer != nil{
-                    getHabitsVcObject().postponeNotificationTimer?.invalidate()
-                    getHabitsVcObject().postponeNotificationTimer = nil
-                }
+            if getHabitsVcObject().postponeTimer != nil{
+                getHabitsVcObject().stopPostponeEndTimer()
+                closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
             }
-            
-            
-            
+
             appdelegate?.backgroundThread()
             closeView()
             return;
@@ -142,9 +131,7 @@ class easyPostponeVc: NSViewController {
         
        
         
-        if currentAction == ._INPROGRESS_  && (currentHabitPlaying != nil || currentActivityPlaying != nil){// if background abit is going on
-//            getSmallCountDownWindowObject().showWindow(self)
-//            getsmallCountDownVcObject().view.isHidden = false
+        if currentAction == ._INPROGRESS_  && (currentHabitPlaying != nil || currentActivityPlaying != nil){// if background habit is going on
             showSmallTimerView()
         }else{
             mainWindowControllerObj?.showWindow(self)
@@ -158,20 +145,11 @@ class easyPostponeVc: NSViewController {
     @IBAction func btnPostponeClicked(_ sender: Any) {
         addLog(text: "[user-action] easyPostponeVc:- button postpone clicked")
         
-        if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_{
-            
-            if mainViewControllerObj != nil{
-                if getHabitsVcObject().postponeTimer != nil{
-                    getHabitsVcObject().postponeTimer?.invalidate()
-                    getHabitsVcObject().postponeTimer = nil
-                    closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
-                }
-                if getHabitsVcObject().postponeNotificationTimer != nil{
-                    getHabitsVcObject().postponeNotificationTimer?.invalidate()
-                    getHabitsVcObject().postponeNotificationTimer = nil
-                }
+        if currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_{
+            if getHabitsVcObject().postponeTimer != nil{
+                getHabitsVcObject().stopPostponeEndTimer()
+                closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
             }
-
         }
         
         if lastCurrentState == ._MORNING_HABIT_{
@@ -205,9 +183,9 @@ class easyPostponeVc: NSViewController {
             }
         }else if lastCurrentState == ._MICRO_BREAK_{
             getHabitsVcObject().postponeBreakActivitiesFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, isFromBreakWarningWindow: false)
-        }else if lastCurrentState == ._POSTPON_MORNING_HABIT_{
+        }else if lastCurrentState == ._POSTPONE_MORNING_HABIT_{
             getHabitsVcObject().postponeMorningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView:false, showAskIntention:false)
-        }else if lastCurrentState == ._POSTPON_EVENING_HABIT_{
+        }else if lastCurrentState == ._POSTPONE_EVENING_HABIT_{
             getHabitsVcObject().postponeEveningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView:false, showAskIntention:false)
         }
         closeView()

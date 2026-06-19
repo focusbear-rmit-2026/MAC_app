@@ -378,8 +378,8 @@ class customLoginVc: NSViewController {
         }else{
             password = textFieldPassword.stringValue
         }
-
-        if textFieldEmail.stringValue.isEmpty == true
+        let email = textFieldEmail.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        if email.isEmpty == true
         {
             alertforvalidation(question: titleEmailIsBlank, text: emailInvalidText)
             return
@@ -389,9 +389,8 @@ class customLoginVc: NSViewController {
             return
         }
         
-        let value = isValidEmail(email: textFieldEmail.stringValue)
-        if value == false
-        {
+        let value = isValidEmail(email: email)
+        if value == false{
             alertforvalidation(question: titleInvalidEmail, text: emailInvalidText)
             return
         }
@@ -450,7 +449,7 @@ class customLoginVc: NSViewController {
         }else{
             password = textFieldPassword.stringValue
         }
-        let email = textFieldEmail.stringValue
+        let email = textFieldEmail.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         
         loader.startAnimation(self)
         btnSignIn.isEnabled = false
@@ -587,7 +586,8 @@ class customLoginVc: NSViewController {
     @IBAction func btnForgotPasswordClicked(_ sender: Any) {
         addLog(text: "[user-action] btnForgotPasswordClicked")
         allApiObject.capturePosthog(event: "button-forgot-password-clicked", metadata: [:])
-        if textFieldEmail.stringValue.isEmpty{
+        let email = textFieldEmail.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        if email.isEmpty{
             alertforvalidation(question: titleEmailIsBlank, text: emailInvalidText)
             return
         }
@@ -599,7 +599,7 @@ class customLoginVc: NSViewController {
         textFieldPassword.isEnabled = false
         self.btnBack.isEnabled = false
         self.btnForgotPassword.isEnabled = false
-        allApiObject.getForgotPassword(emailAddress: textFieldEmail.stringValue, completionHandler: {result in
+        allApiObject.getForgotPassword(emailAddress: email, completionHandler: {result in
             if result != nil{
                 DispatchQueue.main.async {
                     addLog(text: "Forgot Password success")
@@ -635,7 +635,8 @@ class customLoginVc: NSViewController {
             reloadView()
         }else{
             allApiObject.capturePosthog(event: "button-create-account-clicked", metadata: [:])
-            if textFieldEmail.stringValue.isEmpty == true
+            let email = textFieldEmail.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            if email.isEmpty == true
             {
                 alertforvalidation(question: titleEmailIsBlank, text: emailInvalidText)
                 return
@@ -645,7 +646,7 @@ class customLoginVc: NSViewController {
             }
 
             
-            let value = isValidEmail(email: textFieldEmail.stringValue)
+            let value = isValidEmail(email: email)
             if value == false
             {
                 alertforvalidation(question: titleInvalidEmail, text: emailInvalidText)
@@ -695,7 +696,7 @@ class customLoginVc: NSViewController {
         self.secureTextFieldConfirmPassword.isEnabled = false
         self.textFieldConfirmPasword.isEnabled = false
         self.btnBack.isEnabled = false
-        let email = textFieldEmail.stringValue
+        let email = textFieldEmail.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         
         Auth0
             .authentication()
@@ -778,15 +779,13 @@ class customLoginVc: NSViewController {
             }
     }
     
-    func isValidEmail(email:String?) -> Bool {
-        
-        guard email != nil else { return false }
-        
+    func isValidEmail(email:String) -> Bool {
         let regEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
         
         let pred = NSPredicate(format:"SELF MATCHES %@", regEx)
         return pred.evaluate(with: email)
     }
+    
     func isValidPassword(password:String) -> Bool {
         var isPasswordFirstRuleValid = false
         if password.count >= 8{
@@ -802,14 +801,7 @@ class customLoginVc: NSViewController {
         }else{
             imgViewRuleFourth.isHidden = true
         }
-        
-//        if isContainAnySmallLetter(password: password){
-//            passwordRuleAppliedCount += 1
-//            imgViewRuleThird.isHidden = false
-//        }else{
-//            imgViewRuleThird.isHidden = true
-//        }
-        
+
         if isContainAnyNumber(password: password){
             passwordRuleAppliedCount += 1
             imgViewRuleFifth.isHidden = false

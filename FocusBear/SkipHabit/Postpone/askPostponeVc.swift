@@ -7,8 +7,14 @@
 //
 
 import Cocoa
+import SwiftUI
 
 class askPostponeVc: NSViewController {
+
+    // #1590: for the mid-break "are you sure" confirmation, replace the passive
+    // countdown with the same press-and-hold-to-postpone friction used on the
+    // pre-break warning popup (escalating hold time by activityPostponeCount).
+    private var holdHostingView: NSView?
 
     @IBOutlet weak var btnCancelPostpone: cursorButton!
     @IBOutlet weak var lblSelectMinutes: NSTextField!
@@ -67,6 +73,7 @@ class askPostponeVc: NSViewController {
     }
     func resetView(){
         addLog(text: "Ask postpone view - resetView")
+        hideHoldToPostpone()
         isShowingAskOfficeModeView = false
         btnPostpone.isHidden = false
         btnAbortBreak.isHidden = false
@@ -80,8 +87,6 @@ class askPostponeVc: NSViewController {
             }
             
         }else if currentState == ._FOCUS_SUMMARY_{
-            
-            
             popUpButtonSelectMinutes.isHidden = false
             lblSelectMinutes.isHidden = false
             popUpButtonSelectMinutes.selectItem(at: 0)
@@ -97,9 +102,6 @@ class askPostponeVc: NSViewController {
             
             btnPostpone.isSecondaryButton = false
             btnAbortBreak.isSecondaryButton = true
-            
-            
-            
         }else if currentState == ._MICRO_BREAK_{
             if activityPostponeCount == 0{
                 if SettingsManagerObject.isOfficeModeEnabled{
@@ -148,8 +150,49 @@ class askPostponeVc: NSViewController {
         if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
             btnOkIWillDoBreak.title = activityPostponeInfo.value(forKey: "buttonTakeBreakText") as? String ?? btnOkIWillDoBreak.title
         }
-        
-        startTimer(duration: 15)
+
+        // #1590: hold-to-postpone instead of the 15s countdown.
+        lblTimer.isHidden = true
+        // Same escalating hold as the pre-break warning (5s → 10s → 15s).
+        showHoldToPostpone(seconds: Double(min(15, 5 * (breakPostponeHoldCount + 1))),
+                           title: "Postpone",
+                           onComplete: { [weak self] in self?.performMicroBreakHoldPostpone() })
+    }
+
+    /// Shows a press-and-hold "Postpone" control over the confirmation. The hold itself
+    /// is the friction (escalating duration); `onComplete` runs once the hold finishes.
+    private func showHoldToPostpone(seconds: Double, title: String, onComplete: @escaping () -> Void) {
+        hideHoldToPostpone()
+        let accent = Color(red: 232 / 255, green: 136 / 255, blue: 0 / 255)
+        let control = HoldToPostponeButton(seconds: seconds, title: title, accent: accent,
+                                           onComplete: onComplete)
+        let hv = NSHostingView(rootView: control)
+        hv.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(hv)
+        NSLayoutConstraint.activate([
+            hv.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            hv.centerYAnchor.constraint(equalTo: lblTimer.centerYAnchor),
+            hv.widthAnchor.constraint(equalToConstant: 240),
+            hv.heightAnchor.constraint(equalToConstant: 34),
+        ])
+        holdHostingView = hv
+    }
+
+    private func hideHoldToPostpone() {
+        holdHostingView?.removeFromSuperview()
+        holdHostingView = nil
+    }
+
+    private func performMicroBreakHoldPostpone() {
+        addLog(text: "[user-action] Ask postpone view - hold-to-postpone completed")
+        let postponeTime = Int(popUpButtonSelectMinutes.title) ?? breakAfterMinutes
+        hideHoldToPostpone()
+        self.timer?.invalidate()
+        self.timer = nil
+        activityPostponeCount += 1
+        breakPostponeHoldCount += 1   // escalate the hold for the next break
+        self.view.removeFromSuperview()
+        getHabitsVcObject().postponeBreakActivitiesFor(minutes: postponeTime, secondsToPostpone: nil, isFromBreakWarningWindow: false)
     }
     var isShowingAskOfficeModeView = false
     func showAskOfficeModeView(){
@@ -159,9 +202,9 @@ class askPostponeVc: NSViewController {
         if currentAction == ._INPROGRESS_{
             currentActicityTitle = timerViewcontrollerObj?.currentActicityTitle ?? ""
         }else if currentAction == ._END_{
-            currentActicityTitle = thirdVcObj?.activityName ?? ""
+            currentActicityTitle = activityCompletionVcObj?.activityName ?? ""
         }else if currentAction == ._START_{
-            currentActicityTitle = thirdVcObj?.activityName ?? ""
+            currentActicityTitle = activityCompletionVcObj?.activityName ?? ""
         }
         btnPostpone.title = "I don't have time"
         btnAbortBreak.title = "I'm in the offIce"
@@ -195,25 +238,16 @@ class askPostponeVc: NSViewController {
         btnPostpone.isHidden = true
         btnOkIWillDoBreak.isHidden = true
         
-        var timer = 0
-        switch activityPostponeCount {
-        case 1:
-            timer = 5
-        case 2:
-            timer = 10
-        case 3:
-            timer = 15
-        case 4:
-            timer = 30
-        case 5:
-            timer = 45
-        case 6:
-            timer = 60
-        default:
-            timer = 60
-        }
-        
-        startTimer(duration: timer)
+        // #1590: replace the escalating countdown with a press-and-hold gate (5→10→15s,
+        // capped). Completing the hold proceeds to the postpone options, preserving the
+        // existing password / cut-off logic in showHabitPostponeView/btnPostponeClicked.
+        lblTimer.isHidden = true
+        showHoldToPostpone(seconds: Double(min(15, max(5, 5 * activityPostponeCount))),
+                           title: "Postpone habit",
+                           onComplete: { [weak self] in
+                               self?.hideHoldToPostpone()
+                               self?.showHabitPostponeView()
+                           })
         btnOkIWillDoBreak.isHidden = false
         btnOkIWillDoBreak.title = "I changed my mind - I'll do my habits"
         
@@ -317,9 +351,7 @@ class askPostponeVc: NSViewController {
             if shouldAskPassword() && !SettingsManagerObject.isEasySkipEnabled{
                 var shouldShowPasswordView = false
                 if cutOffTime != nil{
-                    let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
-                    let currentDate = Date()
-                    if currentDate > cutOffDate{
+                    if isCutOffTimeGoing(){
                         if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
                             shouldShowPasswordView = true
                         }

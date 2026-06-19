@@ -112,7 +112,7 @@ class smallCountDownVc: NSViewController {
             getHabitsVcObject().timerGiveOneMoreMinut = nil
             getHabitsVcObject().showFocusSummaryView()
             leftMenuVcObj?.showHabitsView()
-        }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit){
+        }else if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit){
             addLog(text:"[user-action] button Extend postpone time Clicked")
             lastCurrentState = currentState 
             closeTimerBox()
@@ -207,7 +207,7 @@ class smallCountDownVc: NSViewController {
                 btnPostpone.title = common.value(forKey: "buttonBackToMyHabitsText") as? String ?? btnPostpone.title
             }
             btnSkip.isHidden = true
-        }else if (currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit)) && !msg.isEmpty{
+        }else if (currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit)) && !msg.isEmpty{
             
             if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
                // lblTimerTopSpaceConstraint.constant = lblTopSpaceInBigFont

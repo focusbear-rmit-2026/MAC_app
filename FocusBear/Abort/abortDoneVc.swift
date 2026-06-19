@@ -21,7 +21,7 @@ class abortDoneVc: NSViewController {
         super.viewDidLoad()
 
         lblTitle.stringValue = "Aborted"
-        lblSubTitle.stringValue = "You’ve successfully aborted Focus Bear. The app won’t show habit prompts until you activate it again from the menu icon. If you aborted it because of a problem with the app, please email team@focusbear.io"
+        lblSubTitle.stringValue = "You’ve successfully aborted Focus Bear. The app won’t show habit prompts until you activate it again from the menu icon. If you aborted it because of a problem with the app, please email support@focusbear.io"
         if let abortInfo = configjson.value(forKey: "abortInfo") as? NSDictionary{
             if let abortDoneInfo = abortInfo.value(forKey: "abortDoneInfo") as? NSDictionary{
                 

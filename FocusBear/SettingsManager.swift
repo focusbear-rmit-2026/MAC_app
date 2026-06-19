@@ -93,6 +93,7 @@ class SettingsManager:NSObject{
     var showBrainDumpAfterMorningRoutineEnabled = false
     var isMicroBreaksEnabled = true
     
+    var isSkipBreakActivityDuringPomodoro = false
     
     var brainDumpCustomUrlEnabled = false
     var brainDumpCustomUrlValue = ""
@@ -193,7 +194,7 @@ class SettingsManager:NSObject{
     var kUserdefaultsHardcorePomodoroFocusedCount = "kUserdefaultsHardcorePomodoroFocusedCount"
     var kUserdefaultsHardcorePomodoroSkipMicroBreaks = "kUserdefaultsHardcorePomodoroSkipMicroBreaks"
     
-    var kUserdefaultsPomodoroSkipMicroBreaks = "kUserdefaultsPomodoroSkipMicroBreaks"// for local use only
+    //var kUserdefaultsPomodoroSkipMicroBreaks = "kUserdefaultsPomodoroSkipMicroBreaks"// for local use only
     
     var kUserdefaultsHardcorePomodoroArrDays = "kUserdefaultsHardcorePomodoroArrDays"
     
@@ -458,6 +459,7 @@ class SettingsManager:NSObject{
                 let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
                 let kMicroBreaksEnabled = "kMicroBreaksEnabled"
                 
+                let kSkipBreakActivityDuringFocusSession = "kSkipBreakActivityDuringFocusSession"
                 
                 addLog(text: "Parse ReducedMotion")
                 if let val = settings.value(forKey: kIsReducedMotionEnabled) as? Bool{
@@ -692,7 +694,9 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kBrainDumpCustomUrlEnabled) as? Bool{
                     brainDumpCustomUrlEnabled = val
                 }
-                
+                if let val = settings.value(forKey: kSkipBreakActivityDuringFocusSession) as? Bool{
+                    isSkipBreakActivityDuringPomodoro = val
+                }
                 
                 if let val = settings.value(forKey: kIsMenuPopoverEnabled) as? Bool{
                     isMenuPopoverEnabled = val
@@ -1186,6 +1190,10 @@ class SettingsManager:NSObject{
                 UserDefaults.standard.set(arrAlwaysAllowedApps, forKey: kUserdefaultsArrAlwaysAllowedApps)
             }
             
+            if let id = UserDefaults.standard.object(forKey: kUserdefaultsLastFocusModeId) as? String{
+                lastRunningFocusModeId = id
+            }
+            
             
             if isSettingsBlank{
                 //first time work
@@ -1267,6 +1275,7 @@ class SettingsManager:NSObject{
         let kBrainDumpCustomUrlValue = "kBrainDumpCustomUrlValue"
         let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
         let kMicroBreaksEnabled = "kMicroBreaksEnabled"
+        let kSkipBreakActivityDuringFocusSession = "kSkipBreakActivityDuringFocusSession"
 
         //        let kAiAllowUrlShowAlertEnabled = "kAiAllowUrlShowAlertEnabled"
         let isEditBlockedUrlsOnce = UserDefaults.standard.object(forKey: kUserdefaultsEditBlockedUrlsOnce) as? Bool ?? false
@@ -1339,10 +1348,9 @@ class SettingsManager:NSObject{
             kBrainDumpCustomUrlValue:brainDumpCustomUrlValue,
             kShowBrainDumpAfterMorningRoutine:showBrainDumpAfterMorningRoutineEnabled,
             kMicroBreaksEnabled:isMicroBreaksEnabled,
+            kSkipBreakActivityDuringFocusSession:isSkipBreakActivityDuringPomodoro,
             "has_edited_blocked_urls":isEditBlockedUrlsOnce
-            //            kAiAllowUrlShowAlertEnabled:isAiAllowUrlShowAlertEnabled,
         ]
-        
         if let password = UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) as? String{
             if !password.isEmpty{
                 json[kAppPassword] = password
@@ -1640,10 +1648,11 @@ class SettingsManager:NSObject{
     }
     
     func isAIBlockingEnabled()->Bool{
-        if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-            return customBlockingScheduleManagerObj.isAIBlockingEnabled()
-        }
-        return isAiCheckUrlEnabled
+        // Fix #1584: log which code path is taken to diagnose the ~50% activation rate.
+        let customScheduleOn = customBlockingScheduleManagerObj.isAnyCustomScheduleOn
+        let result = customScheduleOn ? customBlockingScheduleManagerObj.isAIBlockingEnabled() : isAiCheckUrlEnabled
+        addLog(text: "isAIBlockingEnabled: customScheduleOn=\(customScheduleOn) globalAI=\(isAiCheckUrlEnabled) → \(result)")
+        return result
     }
     
 }

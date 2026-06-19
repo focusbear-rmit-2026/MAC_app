@@ -153,6 +153,27 @@ class ViewController: NSViewController {
         }
     }//
     
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        // bug solved v 3.33.494 Option-clicking outside the window making blank screen when shows again
+        // Normally, another flow restores the content inside containerView.
+        // In some cases (e.g. Option-clicking outside the window), all subviews
+        // may have been removed in viewWillDisappear() and not restored.
+        // and user may click on dock icon to show window again
+        // Delay the check slightly to allow the normal UI setup flow to complete.
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+            guard let self = self else { return }
+            let viewsArr = self.containerView.subviews
+            if viewsArr.count == 0{
+                addLog(text: "InstallHabitVC - containerView is empty, restoring last selected view")
+                if let leftMenuVcObj = leftMenuVcObj, let lastSelectedBox = leftMenuVcObj.lastSelectedBox{
+                    leftMenuVcObj.selectableListBoxDidChangeSelectionByUser(lastSelectedBox)
+                }
+            }
+        }
+    }
+    
     override func viewWillDisappear() {
         if !shouldIgnoreViewWilDisappear{
             removeSubViews()
@@ -260,6 +281,8 @@ class ViewController: NSViewController {
         self.view.addConstraints(subView: enterPasswordVcObj!.view)
         enterPasswordVcObj?.removeConstraints()
         enterPasswordVcObj?.parentVc = nil
+        enterPasswordVcObj?.pendingAction = nil
+        enterPasswordVcObj?.cancelAction = nil
         addLog(text: "Showing enter password view")
     }
 
@@ -346,25 +369,24 @@ class ViewController: NSViewController {
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
     
-    func showInstalltHabitPacksVc(){
-        addLog(text: "Showing install Habit Packs view.")
-        removeSubViews()
-        
-        containerView.addSubview(getInstallHabitPacksVcObj().view)
-        containerView.addConstraints(subView: getInstallHabitPacksVcObj().view)
-        currentState = ._ONBOARDING_
-        currentAction = ._START_
-        NSApplication.shared.activate(ignoringOtherApps: true)
-        allApiObject.capturePosthog(event: "habit-packs-shown", metadata: [:])
-    }
-    
-    
     func showCustomMessageView(msg:String){
         addLog(text: "show Custom Message View")
         self.view.addSubview(getCustomMessageVcObject().view)
         self.view.addConstraints(subView: getCustomMessageVcObject().view)
         customMessageVcObj?.lblMessage.stringValue = msg
     }
+    
+    func showOneClickSkipHabitView(completionHandler: @escaping() -> ()){
+        addLog(text: "Show One Click Skip Habit View")
+        self.view.addSubview(getSkipHabitVcObject().view)
+        self.view.addConstraints(subView: getSkipHabitVcObject().view)
+        getSkipHabitVcObject().requestAuthorization(
+            action: {
+                completionHandler()
+            }
+        )
+    }
+    
     
     @IBAction func btnHiddenClicked(_ sender: Any) {
         //mainWindowControllerObj?.window?.close()
@@ -380,6 +402,8 @@ class ViewController: NSViewController {
         self.view.addSubview(getEnterPasswordVcObjForPreferences().view)
         self.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
         getEnterPasswordVcObjForPreferences().parentVc = nil
+        getEnterPasswordVcObjForPreferences().pendingAction = nil
+        getEnterPasswordVcObjForPreferences().cancelAction = nil
         enterPasswordVcObjForPreferences?.removeConstraints()
         addLog(text: "Showing enter password view inside edit habits")
     }

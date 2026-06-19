@@ -3,3 +3,16 @@ FBHelper/Assets.xcassets/.DS_Store
 /FocusBear.xcworkspace/xcuserdata
 FocusBear/.DS_Store
 FocusBear/Preferences/.DS_Store
+
+# Sparkle is a large prebuilt binary framework — not committed to git.
+# Fetch it with ./scripts/fetch-sparkle.sh (downloads the official signed release).
+/Sparkle.framework/
+
+# Local signing overrides for Debug (see Config/Local.xcconfig.example).
+/Config/Local.xcconfig
+
+# PyInstaller build artifacts for the embedded Flask server (docs/FlaskAppBuild).
+docs/FlaskAppBuild/.venv_x86/
+docs/FlaskAppBuild/build/
+docs/FlaskAppBuild/dist/
+docs/FlaskAppBuild/__pycache__/

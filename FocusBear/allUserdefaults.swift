@@ -231,3 +231,10 @@ var kUserdefaultsIsGuestAccount = "kUserdefaultsIsGuestAccount"
 let kUserdefaultsBreakOffDates         = "kFBBreakOffDates"
 let kUserdefaultsBreakOffPromptShown   = "kFBBreakOffPromptShownDate"
 let kUserdefaultsBreakFrequencyMinutes = "kFBBreakFrequencyMinutes"
+
+var kUserdefaultsLastFocusModeId = "kLastRunningFocusModeId"
+
+var kUserdefaultsLastHabitsIdsBeforePostpone = "kRemainingHabitIdsBeforePostpone"
+var kUserdefaultsPrefilterLastHabitsIdsBeforePostpone = "kPrefilterRemainingHabitIdsBeforePostpone"
+
+var kUserdefaultsLastRunningFocusModeInfo = "kLastRunningFocusModeInfo"

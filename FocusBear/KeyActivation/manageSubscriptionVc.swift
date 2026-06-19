@@ -16,6 +16,7 @@ class manageSubscriptionVc: NSViewController, WKNavigationDelegate, webViewLoadF
         super.viewDidLoad()
         self.webView.navigationDelegate = self
         webView.configuration.userContentController.add(handler, name: "send_user_subscription_status")
+        webView.configuration.userContentController.add(AccessTokenRequestHandler.shared, name: AccessTokenRequestHandler.messageName)
         loadWebView()
     }
     
@@ -77,10 +78,13 @@ class manageSubscriptionVc: NSViewController, WKNavigationDelegate, webViewLoadF
         setAccessTokenToWebView()
     }
 
-    func setAccessTokenToWebView(){
+    func setAccessTokenToWebView(requestId: String? = nil){
         let theme = getWindowTheme()
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
-        let stringJson1 = "{\"access_token\":\"\(appdelegate!.credential?.accessToken ?? "")\",\"type\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\"}"
+        var stringJson1 = "{\"access_token\":\"\(appdelegate!.credential?.accessToken ?? "")\",\"type\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\"}"
+        if let requestId = requestId {
+            stringJson1 = String(stringJson1.dropLast()) + ",\"requestId\":\"\(requestId)\"}"
+        }
         
         let javascript = "loadMetaDataForSubscription(\(stringJson1));"
         

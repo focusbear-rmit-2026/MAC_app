@@ -12,6 +12,9 @@ import IOKit.pwr_mgt
 //import SystemConfiguration// for check internet availibility code
 //import WebKit
 
+// Initialize the service
+let focusButtonServiceObject = focusButtonService()
+let recorder = audioRecorder()
 
 let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
 
@@ -284,9 +287,29 @@ var applastSettingsGetTime:Date?
 
 
 
-enum CURRENTSTATE:Int{
-    case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _MICRO_BREAK_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FOCUS_SUMMARY_, _POSTPON_MORNING_HABIT_, _POSTPON_EVENING_HABIT_, _POSTPON_FOCUS_SUMMARY_, _ONBOARDING_, _SPECIAL_ACTIVITY_, _CUSTOM_ROUTINE_, _LOGIN_
-}//_POSTPON_BREAK_ACTIVITY_ is not required because we always reset break activity timer when user clicks on postpone
+enum CURRENTSTATE:Int, CustomStringConvertible {
+    case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _MICRO_BREAK_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FOCUS_SUMMARY_, _POSTPONE_MORNING_HABIT_, _POSTPONE_EVENING_HABIT_, _POSTPONE_FOCUS_SUMMARY_, _ONBOARDING_, _SPECIAL_ACTIVITY_, _CUSTOM_ROUTINE_, _LOGIN_
+    
+    var description: String {
+        switch self {
+        case ._NOTHING_: return "_NOTHING_"
+        case ._MORNING_HABIT_: return "_MORNING_HABIT_"
+        case ._EVENING_HABIT_: return "_EVENING_HABIT_"
+        case ._MICRO_BREAK_: return "_MICRO_BREAK_"
+        case ._SHUTOFFMAC_: return "_SHUTOFFMAC_"
+        case ._BREATHING_: return "_BREATHING_"
+        case ._ABORT_: return "_ABORT_"
+        case ._FOCUS_SUMMARY_: return "_FOCUS_SUMMARY_"
+        case ._POSTPONE_MORNING_HABIT_: return "_POSTPONE_MORNING_HABIT_"
+        case ._POSTPONE_EVENING_HABIT_: return "_POSTPONE_EVENING_HABIT_"
+        case ._POSTPONE_FOCUS_SUMMARY_: return "_POSTPONE_FOCUS_SUMMARY_"
+        case ._ONBOARDING_: return "_ONBOARDING_"
+        case ._SPECIAL_ACTIVITY_: return "_SPECIAL_ACTIVITY_"
+        case ._CUSTOM_ROUTINE_: return "_CUSTOM_ROUTINE_"
+        case ._LOGIN_: return "_LOGIN_"
+        }
+    }
+}//_POSTPONE_BREAK_ACTIVITY_ is not required because we always reset break activity timer when user clicks on postpone
 
 var lastCurrentStateSaved:CURRENTSTATE = ._NOTHING_
 
@@ -296,11 +319,11 @@ var currentState:CURRENTSTATE = ._NOTHING_{
     didSet{
         if currentState == ._NOTHING_ && lastCurrentStateSaved == ._CUSTOM_ROUTINE_{// if currest state was custom routine and custom routine was started during postpone morning/evening routine state then after complete or abort custom routine set postpone state again
             if isCustomRoutineWasRunningInPostponeEveningHabit && !isCustomRoutineWasRunningBetweenEveningHabit{
-                currentState = ._POSTPON_EVENING_HABIT_
+                currentState = ._POSTPONE_EVENING_HABIT_
             }
             
             if isCustomRoutineWasRunningInPostponeMorningHabit && !isCustomRoutineWasRunningBetweenMorningHabit{
-                currentState = ._POSTPON_MORNING_HABIT_
+                currentState = ._POSTPONE_MORNING_HABIT_
             }
         }
         if currentState != ._CUSTOM_ROUTINE_{
@@ -445,7 +468,7 @@ var startMorningHabitTitleText = "Good Morning! It’s time to Focus Bear. Here 
 var startEveningHabitTitleText = "Good Evening! It’s time to Focus Bear. Here are the habits you need to accomplish before you can leave for the day."
 var startCustomRoutineHabitTitleText = "Good Morning! It’s time to Focus Bear. Here are the habits you need to accomplish before you can use your computer."
 
-var emailID = "team@focusbear.io"
+var emailID = "support@focusbear.io"
 var appName = "Focus Bear"
 var buttonCancelText = "Cancel"
 var buttonOkText = "OK"
@@ -864,14 +887,8 @@ func isBlockSuperDistractingFocusModeOn()->Bool{
 
 //pomodoro
 func resetPomodoroVcFocusListIfNeeded(){
-    if pomodoroWindowControllerObj != nil{
-        if pomodoroWindowControllerObj != nil{
-            if (pomodoroWindowControllerObj?.window!.isVisible)!{
-                if pomodoroWindowControllerObj?.contentViewController == pomodoroVcObj{
-                    pomodoroVcObj?.reFillFocusTypeList()
-                }
-            }
-        }
+    if pomodoroVcObj?.isViewVisible ?? false{
+        pomodoroVcObj?.reFillFocusTypeList()
     }
 }
 
@@ -1582,8 +1599,10 @@ func showAlertNoInternet(window:NSWindow){
     alert.alertStyle = .warning
     alert.addButton(withTitle:  buttonOkText)
     alert.beginSheetModal(for: window, completionHandler: {_ in
-        window.close()
-    }) 
+        //  window.close()
+        // Since v3.32.487, users are allowed to continue using the app even when internet connectivity is unavailable.
+        // We no longer close the window when the internet is disconnected.
+    })
 }
 
 
@@ -1797,170 +1816,6 @@ func checkLogFileRotation(){
     }
 }
 
-
-
-
-//*************Do not disturb enable disable work*****************//
-var isDndEnabled = false
-func enableDND(){
-    isDndEnabled = true
-    if #available(OSX 12.0, *) {
-        setDoNotDisturbMonterey(enable: true)
-        return
-    }else{
-        CFPreferencesSetValue("dndStart" as CFString, CGFloat(0) as CFPropertyList, "com.apple.notificationcenterui" as CFString, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost)
-        
-        CFPreferencesSetValue("dndEnd" as CFString, CGFloat(1440) as CFPropertyList, "com.apple.notificationcenterui" as CFString, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost)
-        
-        CFPreferencesSetValue("doNotDisturb" as CFString, true as CFPropertyList, "com.apple.notificationcenterui" as CFString, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost)
-        
-        commitDNDChanges()
-    }
-    
-    
-}
-
-func disableDND(){
-    isDndEnabled = false
-    if #available(OSX 12.0, *) {
-        setDoNotDisturbMonterey(enable: false)
-        return
-    }else{
-        CFPreferencesSetValue("dndStart" as CFString, nil, "com.apple.notificationcenterui" as CFString, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost)
-        
-        CFPreferencesSetValue("dndEnd" as CFString, nil, "com.apple.notificationcenterui" as CFString, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost)
-        
-        CFPreferencesSetValue("doNotDisturb" as CFString, false as CFPropertyList, "com.apple.notificationcenterui" as CFString, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost)
-        
-        commitDNDChanges()
-    }
-}
-func commitDNDChanges(){
-    CFPreferencesSynchronize("com.apple.notificationcenterui" as CFString, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost)
-    DistributedNotificationCenter.default().postNotificationName(NSNotification.Name(rawValue: "com.apple.notificationcenterui.dndprefs_changed"), object: nil, userInfo: nil, deliverImmediately: true)
-}
-
-func setDoNotDisturbMonterey(enable: Bool) {
-    
-    let apps = NSWorkspace.shared.runningApplications
-    
-    guard let controlCenter = apps.first(where: {$0.bundleIdentifier == "com.apple.controlcenter"}) else {
-        print("Control Center App not found!")
-        return
-    }
-    
-    let target = AXUIElementCreateApplication(controlCenter.processIdentifier)
-    
-    guard let menubar = getElement(target: target, name: "AXExtrasMenuBar") else {
-        print("AXExtrasMenuBar not found!")
-        return
-    }
-    
-    guard let controlCenterMenu = getChild(parent: menubar, withTitle: "Control Centre") else {
-        print("\nControl Center not found !!")
-        return
-    }
-    
-    //        print("\nControl Center\n===========")
-    
-    // Press the menu
-    AXUIElementPerformAction(controlCenterMenu, kAXPressAction as CFString)
-    
-    // Now get the apps main window children since it will be showing
-    guard let dialog = getElement(target: target, name: "AXFocusedWindow") else {
-        print("AXFocusedWindow not found!")
-        return
-    }
-    
-    //        print("\nControl Center Window\n===========")
-    
-    if enable {
-        if let focusMenu = getChild(parent: dialog, withTitle: "Focus") {
-            
-            print("\nFocus found !!")
-            
-            // Press the menu
-            AXUIElementPerformAction(focusMenu, kAXPressAction as CFString)
-            
-            
-        } else {
-            print("\nFocus NOT found !!")
-        }
-    }
-    else {
-        if let doNotDisturbMenu = getChild(parent: dialog, withTitle: "Do Not Disturb") {
-            
-            print("\nDo Not Disturb found !!")
-            
-            // Press the menu
-            AXUIElementPerformAction(doNotDisturbMenu, kAXPressAction as CFString)
-            
-        } else {
-            print("\nDo Not Disturb NOT found !!")
-        }
-    }
-    AXUIElementPerformAction(controlCenterMenu, kAXPressAction as CFString)
-}
-
-func getElement(target: AXUIElement, name: String) -> AXUIElement?{
-    
-    var attributes: CFArray? = nil
-    
-    AXUIElementCopyAttributeNames(target, &attributes);
-    
-    guard let attributes = attributes else {
-        return nil
-    }
-    
-    for attribute in attributes as NSArray {
-        print(attribute as! CFString)
-    }
-    
-    assert((attributes as NSArray).contains(name))
-    
-    
-    var element: CFTypeRef?
-    AXUIElementCopyAttributeValue(target, name as CFString, &element)
-    
-    guard let element = element else {
-        return nil
-    }
-    
-    return element as! AXUIElement?
-}
-
-func getChild(parent: AXUIElement, withTitle: String) -> AXUIElement? {
-    
-    var children: CFTypeRef?
-    AXUIElementCopyAttributeValue(parent, "AXChildren" as CFString, &children)
-    
-    guard let children = children else {
-        return nil
-    }
-    
-    guard let items = children as? NSArray else {
-        return nil
-    }
-    for x in items {
-        let child = x as! AXUIElement
-        
-        var title: CFTypeRef?
-        AXUIElementCopyAttributeValue(child, "AXTitle" as CFString, &title)
-        
-        guard let title = title else {
-            continue
-        }
-        
-        assert(CFGetTypeID(title) == CFStringGetTypeID())
-        
-        if ((title as! CFString) as String) == withTitle {
-            
-            return child
-        }
-    }
-    
-    return nil
-}
 
 func isAccessibilityEnabled(isPrompt: Bool) -> Bool {// if  isPrompt is true it means setting prompt will be visible
     if #available(OSX 12.0, *) {
@@ -3007,7 +2862,7 @@ func enableMenuPopover(){
     appdelegate?.popover.behavior = .transient
     allApiObject.capturePosthog(event: "settings-changed-menu-as-popover-enabled", metadata: [:])
     appdelegate?.showPopover()
-    menuViewControllerObj?.view.window?.makeKey()
+    //menuViewControllerObj?.view.window?.makeKey()
 //    appdelegate?.popover.becomeFirstResponder()
 }
 
@@ -3181,3 +3036,6 @@ func reloadPermissionsIfNeeded() {
 
     customVC.checkPermissions()
 }
+
+
+

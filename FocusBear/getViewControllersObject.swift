@@ -109,6 +109,15 @@ func getAskPostponeVcObject()->askPostponeVc{
     return askPostponeVcObj!
 }
 
+var routinePostponedInfoVcObj:routinePostponedInfoVc?
+func getRutinePostponedInfoVcObject()->routinePostponedInfoVc{
+    if routinePostponedInfoVcObj == nil{
+        routinePostponedInfoVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("routinePostponedInfoVc")) as? routinePostponedInfoVc
+    }
+    return routinePostponedInfoVcObj!
+}
+
+
 var skipHabitVcObj:skipHabitVc?
 func getSkipHabitVcObject()->skipHabitVc{
     if skipHabitVcObj == nil{
@@ -1273,10 +1282,9 @@ func getMenuTourVcObject()->menuTourVc{
 
 
 
-let thirdVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("thirdVc")) as? thirdVc
+let activityCompletionVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("activityCompletionVc")) as? activityCompletionVc
 
-//let selectJsonWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("selectJsonWindowController")) as? selectJsonWindowController
-//var selectJsonVcObj:selectJsonVc?// = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("selectJsonVc")) as? selectJsonVc
+
 let shutOffTimeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("shutOffTimeVc")) as? shutOffTimeVc
 
 let abortingCountDownVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("abortingCountDownVc")) as? abortingCountDownVc
@@ -1295,14 +1303,7 @@ var menuViewControllerObj = mainStoryboard.instantiateController(withIdentifier:
 let addWebUrlVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("addWebUrlVc")) as? addWebUrlVc
 let addFocusTypeVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("addFocusTypeVc")) as? addFocusTypeVc
 
-var pomodoroWindowControllerObj:pomodoroWindowController?
 
-func getPomodoroWindowControllerObj()->pomodoroWindowController{
-    if pomodoroWindowControllerObj == nil{
-        pomodoroWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("pomodoroWindowController")) as? pomodoroWindowController
-    }
-    return pomodoroWindowControllerObj!
-}
 
 var simplePomodoroVcObj: simplePomodoroVc?
 func getSimplePomodoroVcObj()->simplePomodoroVc{
@@ -1701,21 +1702,21 @@ var blankLayerVcObj: blankLayerVc?
 var focusPreferencesAdvancedVcObj:focusPreferencesAdvancedVc?
 
 
-var breakSurveyVcObj:breakSurveyVc?
-func getBreakSurveyVcObject()->breakSurveyVc{
-    if breakSurveyVcObj == nil{
-        breakSurveyVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("breakSurveyVc")) as? breakSurveyVc
-    }
-    return breakSurveyVcObj!
-}
-
-var breakSurveyWcObj:commonWindowController?
-func getBreakSurveyWindowObject()->commonWindowController{
-    if breakSurveyWcObj == nil{
-        breakSurveyWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-    }
-    return breakSurveyWcObj!
-}
+//var breakSurveyVcObj:breakSurveyVc?
+//func getBreakSurveyVcObject()->breakSurveyVc{
+//    if breakSurveyVcObj == nil{
+//        breakSurveyVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("breakSurveyVc")) as? breakSurveyVc
+//    }
+//    return breakSurveyVcObj!
+//}
+//
+//var breakSurveyWcObj:commonWindowController?
+//func getBreakSurveyWindowObject()->commonWindowController{
+//    if breakSurveyWcObj == nil{
+//        breakSurveyWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+//    }
+//    return breakSurveyWcObj!
+//}
 
 
 // Custom Alert
@@ -1734,6 +1735,25 @@ func getCustomAlertWindowObject()->commonWindowController{
         customAlertWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
     }
     return customAlertWcObj!
+}
+
+
+// Custom suggest focus mode window
+
+var suggestFocusModeVcObj:suggestFocusModeVc?
+func getSuggestFocusModeVcObject()->suggestFocusModeVc{
+    if suggestFocusModeVcObj == nil{
+        suggestFocusModeVcObj = nagsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("suggestFocusModeVc")) as? suggestFocusModeVc
+    }
+    return suggestFocusModeVcObj!
+}
+
+var suggestFocusModeWcObj:commonWindowController?
+func getSuggestFocusModeWindowObject()->commonWindowController{
+    if suggestFocusModeWcObj == nil{
+        suggestFocusModeWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+    }
+    return suggestFocusModeWcObj!
 }
 
 

@@ -30,6 +30,11 @@ var habitTotalCompletedSeconds = 0
 var isProcessingCustomRoutine = false
 
 var activityPostponeCount = 0
+/// #1590: counts consecutive break postpones via the hold control, to escalate the
+/// required hold time (5s → 10s → 15s). Reset when a break is actually taken. Kept
+/// separate from activityPostponeCount (which habits also increment) so the hold
+/// always starts at 5s for a fresh break.
+var breakPostponeHoldCount = 0
 var activitySkipCount = 0
 var isHabitsDisabled = false
 var isHabitAlreadyShowed = true
@@ -73,6 +78,7 @@ var lastActivityStoppedTimerCount = 0
 struct habit {
     var id:String!
     var name:String!
+    var nameWithoutIcon:String = ""
     var durationSeconds:Int!
     var urlsArray:[String]
     var logQuantity:Bool!
@@ -95,6 +101,7 @@ struct habit {
     var tutorial:String!
     var showSavedDistractingWebsites = false
     var cutOffTime:Time?
+    var fakeIdForDevice:String = ""
     init(id:String, name:String, durationSeconds:Int, urlsArray:[String], logQuantity:Bool, logQuantityQuestion:String?, openSpecificApps:Bool,allowUrls:[String],allowApps:[String],allowedFocusMode:String, activity_sequence_id:String, run_micro_breaks:Bool, take_notes:String,isPriorityHigh:Bool,days_of_week:[String], text_instructions:String, imgUrls:[String], completion_requirements:String, useTimer:Bool, checkList:[String], tutorial:String) {
         self.id = id
         self.name = name
@@ -183,10 +190,10 @@ var currentRoutineIndex = 0
 func startCustomRoutine(index:Int, isOnDemand:Bool){
     isCustomRoutineWasRunningBetweenMorningHabit = false
     isCustomRoutineWasRunningBetweenEveningHabit = false
-    if currentState == ._POSTPON_MORNING_HABIT_{
+    if currentState == ._POSTPONE_MORNING_HABIT_{
         isCustomRoutineWasRunningInPostponeMorningHabit = true
         isCustomRoutineWasRunningInPostponeEveningHabit = false
-    }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+    }else if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
         isCustomRoutineWasRunningInPostponeEveningHabit = true
         isCustomRoutineWasRunningInPostponeMorningHabit = false
     }else if currentState != ._CUSTOM_ROUTINE_{
@@ -198,7 +205,7 @@ func startCustomRoutine(index:Int, isOnDemand:Bool){
     if isFocusModeOnOrPaused(){//53fd08d9-90f6-41db-b920-aa1fd017146e, 3dd1f268-96f4-492c-b098-89dea60a013a
         addLog(text: "isFocusModeOnOrPaused True: focusModeFinished.")
         leftMenuVcObj?.customRoutineStarted()// added here v 2.28.452. reason Bug: When starting a custom routine, the app does not switch to the Custom Routine tab. Because of this mismatch, several issues occur—for example, the window does not close. The reason is that the app remains in the custom routine state, but the custom routine view is not visible.
-        appdelegate!.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:true)
+        appdelegate!.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:true, shouldUpdateFocusButton: true)
         return;
     }
     
@@ -393,10 +400,10 @@ func checkCustomRoutineTime(){
                 
                 if isRoutineTime{
                     arrAllCustomRoutine[i].nextSheduledTime = nil
-                    if currentState == ._POSTPON_MORNING_HABIT_{
+                    if currentState == ._POSTPONE_MORNING_HABIT_{
                         isCustomRoutineWasRunningInPostponeMorningHabit = true
                         isCustomRoutineWasRunningInPostponeEveningHabit = false
-                    }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+                    }else if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
                         isCustomRoutineWasRunningInPostponeEveningHabit = true
                         isCustomRoutineWasRunningInPostponeMorningHabit = false
                     }else{
@@ -961,15 +968,6 @@ func isShutOffTimeGoing()->Bool{
 
 
 func isCutOffTimeGoing()->Bool{
-//    if cutOffTime != nil{
-//        let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
-//        let currentDate = Date()
-//        if currentDate > cutOffDate{
-//            return true
-//        }
-//    }
-//    return false
-    
     if startTime == nil || cutOffTime == nil{
         return false
     }
@@ -1038,14 +1036,19 @@ func restorePostponeStateIfNeeded() {
     if remaining > 0 {
         // ⏳ Still postponed
         let remainingSeconds = Int(remaining)
-        if state == CURRENTSTATE._POSTPON_MORNING_HABIT_.rawValue{
+        if state == CURRENTSTATE._POSTPONE_MORNING_HABIT_.rawValue{
             addLog(text: "Restored morning postpone: \(remainingSeconds)s left")
-            getHabitsVcObject().postponeMorningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false)
+            getHabitsVcObject().postponeMorningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false, isExtendingPostponeFromAppStart: true)
 
-        }else if state == CURRENTSTATE._POSTPON_EVENING_HABIT_.rawValue{
+        }else if state == CURRENTSTATE._POSTPONE_EVENING_HABIT_.rawValue{
             addLog(text: "Restored evening postpone: \(remainingSeconds)s left")
-            getHabitsVcObject().postponeEveningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false)
-        }else if state == CURRENTSTATE._POSTPON_FOCUS_SUMMARY_.rawValue{
+            if isShutOffTimeGoing(){
+                getHabitsVcObject().postponeEveningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false, isExtendingPostponeFromAppStart: true)
+            }else{
+                UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+                UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+            }
+        }else if state == CURRENTSTATE._POSTPONE_FOCUS_SUMMARY_.rawValue{
             addLog(text: "Restored focus summary postpone: \(remainingSeconds)s left")
             if !(focusSummaryVcObj?.isViewLoaded ?? false){
                 focusSummaryVcObj?.loadView()

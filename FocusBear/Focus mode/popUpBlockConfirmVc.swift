@@ -9,7 +9,7 @@
 import Cocoa
 
 class popUpBlockConfirmVc: NSViewController {
-
+    
     @IBOutlet weak var checkBoxMarkCurrentTaskAsCompleted: NSButton!
     @IBOutlet weak var btnInfoAlScore: hoverInfoButton!
     @IBOutlet weak var btnWorkingOnSomethingElse: Button!
@@ -123,7 +123,7 @@ class popUpBlockConfirmVc: NSViewController {
             titleStillFocusGoal = popUpFocusGoalConfirmationVcInfo.value(forKey: "titleGoal") as? String ?? titleStillFocusGoal
             titleStillWorking = popUpFocusGoalConfirmationVcInfo.value(forKey: "titleGoalAndTask") as? String ?? titleStillWorking
         }
-
+        
         btnConvinceAgain.title = "Let me convince the AI again"
         btnAllow.title = "Yes - just this time"
         btnBlock.title = "No - I was getting distracted"
@@ -185,7 +185,7 @@ class popUpBlockConfirmVc: NSViewController {
         btnSetTask.isSecondaryButton = true
     }
     
-
+    
     func updateTrackingAreaIfNeeded() {
         // Remove the old tracking area if it exists
         if let trackingArea = self.aiReasonTrackingArea {
@@ -297,7 +297,7 @@ class popUpBlockConfirmVc: NSViewController {
                 }
                 self.currentTaskInToDoPlayer = currentTaskInToDoPlayer
             }
-
+            
             lblTitle.stringValue = blockTitle
             lblAi.isHidden = true
             btnBlockAndAddToRelaxMode.isHidden = true
@@ -366,7 +366,7 @@ class popUpBlockConfirmVc: NSViewController {
                     lblTitle.stringValue = titleChangedFocus
                     lblIntention.stringValue = suggestedTaskText.replacingOccurrences(of: "<TASK>", with: suggestedTask)
                     lblSelectTask.stringValue = changeTaskText
-
+                    
                     lblAi.isHidden = true
                     self.btnSeeMore.isHidden = true
                     btnAllow.isHidden = false
@@ -428,7 +428,7 @@ class popUpBlockConfirmVc: NSViewController {
             
         }else{
             domain = getDomainFromUrl(url: fullUrl)
-            boxAllowDomain.isHidden = true 
+            boxAllowDomain.isHidden = true
             if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
                 self.payload = payload
                 lblFocusAlignmentScore.isHidden = false
@@ -450,13 +450,13 @@ class popUpBlockConfirmVc: NSViewController {
                     }
                     focusAlignmentScoreText = focusAlignmentScoreText.replacingOccurrences(of: "<SCORE>", with: "\(currentFocusAlignmentScore)")
                 }
-
+                
                 lblFocusAlignmentScore.stringValue = focusAlignmentScoreText
             }else{
                 boxBellIcon.isHidden = true
                 lblFocusAlignmentScore.isHidden = true
             }
-
+            
             btnBlockAndAddToRelaxMode.isHidden = true
             
             
@@ -468,14 +468,14 @@ class popUpBlockConfirmVc: NSViewController {
             
             var blockTitle = titleText.replacingOccurrences(of: "<URL>", with: urlString)
             blockTitle = blockTitle.replacingOccurrences(of: "<FOCUSTYPE>", with: currentRunningFocusModeName)
-
+            
             if !whatToAchieveInFocusBlock.isEmpty{
                 lblIntention.isHidden = false
                 lblIntention.stringValue = self.intentionText.replacingOccurrences(of: "<INTENTION>", with: whatToAchieveInFocusBlock)
             }else{
                 lblIntention.isHidden = true
             }
-
+            
             lblTitle.stringValue = blockTitle
             
             if let currentTaskInToDoPlayer = getCurrentTaskInFocusMode(){
@@ -533,7 +533,7 @@ class popUpBlockConfirmVc: NSViewController {
                     lblTitle.stringValue = titleChangedFocus
                     lblIntention.stringValue = suggestedTaskText.replacingOccurrences(of: "<TASK>", with: suggestedTask)
                     lblSelectTask.stringValue = changeTaskText
-
+                    
                     lblAi.isHidden = true
                     self.btnSeeMore.isHidden = true
                     btnAllow.isHidden = false
@@ -608,9 +608,8 @@ class popUpBlockConfirmVc: NSViewController {
         hidePopUpAddNewFocusGoalView()
         hidePopUpSaveThisTaskForLaterView()
         
-        
-        if getCurrentTaskInFocusMode() == nil && whatToAchieveInFocusBlock.isEmpty{// added on 2/9/25 on version 2.27.409
-            if !SettingsManagerObject.isGeekModeEnabled || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+        if SettingsManagerObject.isAiCheckUrlEnabled{// check added 3.32.491
+            if getCurrentTaskInFocusMode() == nil && whatToAchieveInFocusBlock.isEmpty{// added on 2/9/25 on version 2.27.409
                 showoPopUpAddNewFocusGoalView()
                 let pickTaskText =  "AI can’t tell if this fits your work. Pick a task to guide Focus Bear!"
                 popUpAddNewFocusGoalVcObj?.lblTitle.stringValue = pickTaskText
@@ -619,6 +618,7 @@ class popUpBlockConfirmVc: NSViewController {
                 }
             }
         }
+        
         if boxNoTaskSpecified.isHidden == false{
             
             if let suggestedTask = suggestedTask{
@@ -634,14 +634,14 @@ class popUpBlockConfirmVc: NSViewController {
     }
     
     func loadTasks() {
-
+        
         //  If API was called within last 2 minutes, use cached data
         if let lastCall = lastTasksAPICallDate,
            Date().timeIntervalSince(lastCall) < tasksCacheInterval,
            !arrAllTasks.isEmpty {
-
+            
             print("✅ Using cached tasks")
-            // Even with cached API tasks, always merge latest todo-player tasks at top
+            // Even with cached API tasks, always merge latest task-player tasks at top
             let cachedTodoIds = Set(arrCurrentFocusTasks.compactMap { $0["task_id"] as? String })
             let filteredCached = arrAllTasks.filter { task in
                 guard let id = task.value(forKey: "id") as? String else { return true }
@@ -654,50 +654,56 @@ class popUpBlockConfirmVc: NSViewController {
             updateComboBox(with: todoAsDicts + filteredCached)
             return
         }
-
+        
         print("🌐 Calling API")
-
+        
         comboBoxSelectTask.isEnabled = false
         comboBoxSelectTask.items.removeAll()
         arrAllTasks.removeAll()
         loader.startAnimation(self)
-
+        
         allApiObject.getAllTasks { json in
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
-
+                
                 self.comboBoxSelectTask.isEnabled = true
                 self.loader.stopAnimation(self)
-
+                
                 guard let json = json else { return }
-
+                
+                // Remove completed tasks. added in v3.32.487
+                let filteredTasks = json.filter { task in
+                    let status = task.value(forKey: "status") as? String ?? ""
+                    return status.uppercased() != "COMPLETED"
+                }
+                
                 // Sort API tasks by updated_at (most recently worked on first)
-                let sortedTasks = json.sorted { t1, t2 in
+                let sortedTasks = filteredTasks.sorted { t1, t2 in
                     let s1 = t1.value(forKey: "updated_at") as? String ?? ""
                     let s2 = t2.value(forKey: "updated_at") as? String ?? ""
-
+                    
                     let d1 = getDateFromStringInUtc(dateString: s1) ?? .distantPast
                     let d2 = getDateFromStringInUtc(dateString: s2) ?? .distantPast
-
+                    
                     return d1 > d2
                 }
-
+                
                 self.arrAllTasks = sortedTasks
                 self.lastTasksAPICallDate = Date() // ✅ save API call time
-
-                // Merge todo-player tasks at the top, deduplicated
+                
+                // Merge task-player tasks at the top, deduplicated
                 let todoPlayerIds = Set(arrCurrentFocusTasks.compactMap { $0["task_id"] as? String })
                 let filteredApiTasks = sortedTasks.filter { task in
                     guard let id = task.value(forKey: "id") as? String else { return true }
                     return !todoPlayerIds.contains(id)
                 }
-                // Convert todo-player tasks to NSDictionary to match the list type
+                // Convert task-player tasks to NSDictionary to match the list type
                 let todoAsDicts: [NSDictionary] = arrCurrentFocusTasks.map { task in
                     ["title": task["task_name"] as? String ?? "",
                      "id": task["task_id"] as? String ?? ""] as NSDictionary
                 }
                 let mergedTasks = todoAsDicts + filteredApiTasks
-
+                
                 self.updateComboBox(with: mergedTasks)
                 
                 
@@ -712,19 +718,19 @@ class popUpBlockConfirmVc: NSViewController {
             }
         }
     }
-
+    
     private func updateComboBox(with tasks: [NSDictionary]) {
         comboBoxSelectTask.items.removeAll()
-
+        
         for task in tasks {
             let title = task.value(forKey: "title") as? String ?? ""
             comboBoxSelectTask.items.append(title)
             print(title)
         }
-
+        
         comboBoxSelectTask.reloadData()
     }
-
+    
     
     func cropText(_ text: String, limit: Int = 100) -> String {
         if text.count > limit {
@@ -798,7 +804,7 @@ class popUpBlockConfirmVc: NSViewController {
             }
         }
     }
-
+    
     override func mouseExited(with event: NSEvent) {
         print("mouseExited")
         if event.trackingArea == aiReasonTrackingArea{
@@ -953,7 +959,7 @@ class popUpBlockConfirmVc: NSViewController {
     }
     
     
- 
+    
     var isSetIntentionFirstTime = false
     func showUseDistractingUrlFlow(isSetIntentionFirstTime:Bool){
         addLog(text: "[user-action] popUpBlockConfirmVc:- showUseDistractingUrlFlow")
@@ -1045,11 +1051,12 @@ class popUpBlockConfirmVc: NSViewController {
         lblTimer.textColor = .labelColor
         lblTimerIntentionBox.textColor = .labelColor
         
+        lblTimer.isHidden = true
+        lblTimerIntentionBox.isHidden = true
+        
         currentTimer = 0
-        var durationSeconds = 30
-        if isAppInstalledWithinLast3Days(){
-            durationSeconds = 60
-        }
+        var durationSeconds = 60
+
         totalDuration = durationSeconds//durationInMinutes*60
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         var hour = "\(h)"
@@ -1089,6 +1096,9 @@ class popUpBlockConfirmVc: NSViewController {
             boxTimerIntention.fillColor = NSColor(resource: .darkOrange)
             lblTimer.textColor = .white
             lblTimerIntentionBox.textColor = .white
+        }else if remainingSeconds < 31{
+            lblTimer.isHidden = false
+            lblTimerIntentionBox.isHidden = false
         }else{
             boxTimer.fillColor = NSColor.clear
             boxTimerIntention.fillColor = NSColor.clear
@@ -1099,7 +1109,7 @@ class popUpBlockConfirmVc: NSViewController {
         var hour = "\(h)"
         var minute = "\(m)"
         var second = "\(s)"
-
+        
         if hour.count == 1 {
             hour = "0\(h)"
         }
@@ -1126,7 +1136,7 @@ class popUpBlockConfirmVc: NSViewController {
                 let options = CGWindowListOption(arrayLiteral: CGWindowListOption.excludeDesktopElements, CGWindowListOption.optionOnScreenOnly)
                 let windowListInfo = CGWindowListCopyWindowInfo(options, CGWindowID(0))
                 let windowInfoList = windowListInfo as NSArray? as? [[String: AnyObject]]
-           
+                
                 for info in windowInfoList! {
                     let windowPID = info["kCGWindowOwnerPID"] as! UInt32
                     if  windowPID == pid {
@@ -1146,7 +1156,7 @@ class popUpBlockConfirmVc: NSViewController {
                                     if blurWcObj != nil{
                                         blurWcObj?.window?.close()
                                     }
-                                } 
+                                }
                                 break;
                             }
                             
@@ -1155,7 +1165,7 @@ class popUpBlockConfirmVc: NSViewController {
                     }
                 }
             }
-
+            
             if self.totalDuration <= self.currentTimer {
                 addLog(text: "popUpBlockConfirmVc:- 30 seconds counter completed")
                 self.timer?.invalidate()
@@ -1211,7 +1221,7 @@ class popUpBlockConfirmVc: NSViewController {
             }
         }
         
-       
+        
         DispatchQueue.global().async {
             DispatchQueue.main.async {
                 let runningApp = NSWorkspace.shared.frontmostApplication
@@ -1285,11 +1295,11 @@ class popUpBlockConfirmVc: NSViewController {
         if self.currentApp != nil && isAppBlocking{
             
             if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn() && !isFailedToGetResponse && !isBrowser{
-//                showConvincedAiPopUpBox(allowedByConvinceAiAlready:false, reason: "")
-//                isUserTypingIntention = true
-//                isUserTypingTime = Date()
+                //                showConvincedAiPopUpBox(allowedByConvinceAiAlready:false, reason: "")
+                //                isUserTypingIntention = true
+                //                isUserTypingTime = Date()
                 
-
+                
                 showPopUpFocusGoalConfirmationView()
                 
                 
@@ -1316,9 +1326,9 @@ class popUpBlockConfirmVc: NSViewController {
             
         }else{
             if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn() && !isFailedToGetResponse{
-//                showConvincedAiPopUpBox(allowedByConvinceAiAlready:false, reason: "")
-//                isUserTypingIntention = true
-//                isUserTypingTime = Date()
+                //                showConvincedAiPopUpBox(allowedByConvinceAiAlready:false, reason: "")
+                //                isUserTypingIntention = true
+                //                isUserTypingTime = Date()
                 showPopUpFocusGoalConfirmationView()
             }else{
                 arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
@@ -1341,7 +1351,7 @@ class popUpBlockConfirmVc: NSViewController {
             }
             
         }
-
+        
     }
     
     func closeWindow(){
@@ -1352,10 +1362,10 @@ class popUpBlockConfirmVc: NSViewController {
     }
     
     func closeWindowNeedToCheckAppUrlAgain(){
-//        let gg = dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]
+        //        let gg = dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]
         if isItemCheckedByConvinceAi{
             print("checked")
-            // if convince ai is checked once then . check url from ai not call again because convince ai data locally stored in dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus and this prevent it to check url from ai again untill user convince ai again. so doing this to check it again from ai 
+            // if convince ai is checked once then . check url from ai not call again because convince ai data locally stored in dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus and this prevent it to check url from ai again untill user convince ai again. so doing this to check it again from ai
             if isAppBlocking{
                 let key = currentAppName.lowercased()
                 dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus.removeValue(forKey: key)
@@ -1373,7 +1383,7 @@ class popUpBlockConfirmVc: NSViewController {
         setFocusBearIconToNormal()
         focusModeCloseCurrentAppForAlignmentScore()
         habitBlockTimerHelper.stopUrlTimer()
-//        appdelegate!.timerAllowUrl?.invalidate()
+        //        appdelegate!.timerAllowUrl?.invalidate()
         focusModeHelper.stopUrlTimer()
         currentBrowserUrlForAi = ""
     }
@@ -1396,7 +1406,7 @@ class popUpBlockConfirmVc: NSViewController {
             }else{
                 focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
             }
-
+            
         }
         self.timer?.invalidate()
         self.view.window?.close()
@@ -1454,7 +1464,7 @@ class popUpBlockConfirmVc: NSViewController {
                 self.view.window?.close()
                 blurWcObj?.window?.close()
                 boxAskIntention.isHidden = true
-
+                
                 if stackViewProgress.isHidden == false{
                     SettingsManagerObject.isSettingsChanged = true
                     SettingsManagerObject.cuddlyModeProgressCount = SettingsManagerObject.cuddlyModeProgressCount + 1
@@ -1495,7 +1505,7 @@ class popUpBlockConfirmVc: NSViewController {
                 self.view.window?.close()
                 blurWcObj?.window?.close()
                 boxAskIntention.isHidden = true
-
+                
                 if stackViewProgress.isHidden == false{
                     SettingsManagerObject.isSettingsChanged = true
                     SettingsManagerObject.cuddlyModeProgressCount = SettingsManagerObject.cuddlyModeProgressCount + 1
@@ -1548,7 +1558,7 @@ class popUpBlockConfirmVc: NSViewController {
         setFocusBearIconToNormal()
         focusModeCloseCurrentAppForAlignmentScore()
         habitBlockTimerHelper.stopUrlTimer()
-//        appdelegate!.timerAllowUrl?.invalidate()
+        //        appdelegate!.timerAllowUrl?.invalidate()
         focusModeHelper.stopUrlTimer()
         currentBrowserUrlForAi = ""
         if isAppBlocking && currentApp != nil{
@@ -1556,11 +1566,11 @@ class popUpBlockConfirmVc: NSViewController {
         }else{
             showReportBadAIResponseWindow(url: fullUrl, app: nil, payload: payload)
         }
-    
+        
     }
     
     @IBAction func btnConvinceAgainClicked(_ sender: Any) {
-//        showConvincedAiPopUpBox(allowedByConvinceAiAlready: false, reason: "")
+        //        showConvincedAiPopUpBox(allowedByConvinceAiAlready: false, reason: "")
         addLog(text: "[user-action] btnConvinceAgainClicked")
         showPopUpFocusGoalConfirmationView()
     }
@@ -1578,11 +1588,11 @@ class popUpBlockConfirmVc: NSViewController {
         addLog(text: "[user-action] btnCloseAskIntentionBoxClicked")
         btnCloseAskIntentionBox.isHidden = true
         showConvincedAiPopUpBox(allowedByConvinceAiAlready: true, reason: lastBlockReasonFromAi)
-//        if self.isSetIntentionFirstTime{
-//            showConvincedAiPopUpBox(allowedByConvinceAiAlready: true, reason: lastBlockReasonFromAi)
-//        }else{
-//            btnCancelClicked(self)
-//        }
+        //        if self.isSetIntentionFirstTime{
+        //            showConvincedAiPopUpBox(allowedByConvinceAiAlready: true, reason: lastBlockReasonFromAi)
+        //        }else{
+        //            btnCancelClicked(self)
+        //        }
     }
     
     @IBAction func btnSeeMoreClicked(_ sender: Any) {
@@ -1658,6 +1668,20 @@ class popUpBlockConfirmVc: NSViewController {
     @IBAction func checkBoxMarkCurrentTaskAsCompletedClicked(_ sender: Any) {
         addLog(text: "[user-action] popUpBlockConfirmVc:- checkBox mark current task as completed clicked.")
     }
+    
+//    func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+//        if commandSelector == #selector(NSResponder.insertTab(_:)) {
+//            view.window?.selectNextKeyView(nil)
+//            return true
+//        }
+//        
+//        if commandSelector == #selector(NSResponder.insertBacktab(_:)) {
+//            view.window?.selectPreviousKeyView(nil)
+//            return true
+//        }
+//        
+//        return false
+//    }
 }
 
 extension popUpBlockConfirmVc: NSTextViewDelegate{

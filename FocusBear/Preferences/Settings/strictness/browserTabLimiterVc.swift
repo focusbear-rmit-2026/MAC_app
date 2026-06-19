@@ -27,11 +27,12 @@ class browserTabLimiterVc: NSViewController {
         
         var titleTabLimitCount = "Max tab limit:"
         var checkBoxTabLimiterText = "Prevent user from opening more browser tabs"
-        
+        var subTitleTabLimiter = "Works only during active Focus Sessions or active Blocking Schedules."
         if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
             lblTitle.stringValue = preferencesInfo.value(forKey: "titleTabLimiter") as? String ?? lblTitle.stringValue
             titleTabLimitCount = preferencesInfo.value(forKey: "titleTabLimitCount") as? String ?? titleTabLimitCount
             checkBoxTabLimiterText = preferencesInfo.value(forKey: "checkBoxTabLimiterText") as? String ?? checkBoxTabLimiterText
+            subTitleTabLimiter = preferencesInfo.value(forKey: "subTitleTabLimiter") as? String ?? subTitleTabLimiter
         }
         var strictness_BrowserTabLimiter = "Too many tabs can mess with your productivity. Set a limit of tabs across all browsers"
         if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary{
@@ -44,7 +45,7 @@ class browserTabLimiterVc: NSViewController {
 
         stackView.insertView(enableTabLimiterItemVcObj!.view, at: 0, in: .top)
         enableTabLimiterItemVcObj?.lblTitle.stringValue = checkBoxTabLimiterText
-        enableTabLimiterItemVcObj?.lblSubTitle.isHidden = true
+        enableTabLimiterItemVcObj?.lblSubTitle.stringValue = subTitleTabLimiter
         enableTabLimiterItemVcObj?.delegate = self
         enableTabLimiterItemVcObj?.toolTip = strictness_BrowserTabLimiter
         

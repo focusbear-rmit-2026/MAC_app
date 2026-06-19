@@ -267,7 +267,7 @@ func getActiveTabUrlForBlocking(browser:BROWSER)->String?{
     return url
 }
 
-var permissionAlertShownInfoDic = [BROWSER]()
+
 func getActiveTabUrlOf(browser:BROWSER)->String?{
     addLog(text:"func call:- getActiveTabUrl")
     

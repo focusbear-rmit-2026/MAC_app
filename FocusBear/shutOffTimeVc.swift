@@ -10,6 +10,9 @@ import Cocoa
 
 class shutOffTimeVc: NSViewController {
     
+    @IBOutlet weak var stackViewUnCancelRoutine: NSStackView!
+    @IBOutlet weak var lblUncancelRoutine: NSTextField!
+    @IBOutlet weak var btnUncancelEveningRoutine: underLineButton!
     @IBOutlet weak var bottomSpaceLblAlreadyUnlocked: NSLayoutConstraint!
     @IBOutlet weak var lblAlreadyUnlocked: NSTextField!
     @IBOutlet weak var lblSelectMinutesToUSe: NSTextField!
@@ -46,6 +49,11 @@ class shutOffTimeVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        
+        lblUncancelRoutine.stringValue = "(By the way, you cancelled your evening routine. if you changed your mind and want to do your evening habits click resume evening routine)"
+        btnUncancelEveningRoutine.title = "Resume evening routine"
+        
+        
         lblSelectMinutesToUSe.stringValue = "Select duration for unlock:"
         btnShutDownMac.title = "Shut Down"
         btnSleep.title = "Sleep Mac"
@@ -63,6 +71,8 @@ class shutOffTimeVc: NSViewController {
             btnSleep.title = shutOffTimeInfo.value(forKey: "buttonSleepText") as? String ?? btnSleep.title
             lblSelectMinutesToUSe.stringValue = shutOffTimeInfo.value(forKey: "selectUnlockMinutesText") as? String ?? lblSelectMinutesToUSe.stringValue
             lblAlreadyUnlocked.stringValue = shutOffTimeInfo.value(forKey: "alreadyUnlockedText") as? String ?? lblAlreadyUnlocked.stringValue
+            lblUncancelRoutine.stringValue = shutOffTimeInfo.value(forKey: "cancelledEveningRoutineReminderText") as? String ?? lblUncancelRoutine.stringValue
+            btnUncancelEveningRoutine.title = shutOffTimeInfo.value(forKey: "buttonResumeEveningRoutine") as? String ?? btnUncancelEveningRoutine.title
         }
         
         lblAlreadyUnlocked.stringValue = lblAlreadyUnlocked.stringValue.replacingOccurrences(of: "<DURATION>", with: "30")
@@ -71,6 +81,20 @@ class shutOffTimeVc: NSViewController {
         popUpBtnDuration.removeAllItems()
         popUpBtnDuration.addItems(withTitles: ["15 \(minutesText)", "30 \(minutesText)", "1 \(hourText)", "2 \(hoursText)", "4 \(hoursText)", "8 \(hoursText)"])
         arrDurationSeconds = [900, 1800, 3600, 7200, 14400, 28800]
+        stackViewUnCancelRoutine.isHidden = true
+        
+        btnStartMorningRoutine.isSecondaryButton = true
+        btnWorkEmergency.isSecondaryButton = true
+        btnSleep.isSecondaryButton = true
+        
+        
+        btnShutDownMac.title = "⏻  " + btnShutDownMac.title
+        btnSleep.title = "💤  " + btnSleep.title
+        btnStartMorningRoutine.title = "☀️  " + btnStartMorningRoutine.title
+        btnWorkEmergency.title = "🔨  " + btnWorkEmergency.title
+        
+        viewDidResize()
+        NotificationCenter.default.addObserver(self, selector: #selector(viewDidResize), name: NSView.frameDidChangeNotification, object: self.view)
     }
     
     override func viewWillAppear() {
@@ -104,7 +128,11 @@ class shutOffTimeVc: NSViewController {
         }
         
         lblTitle.stringValue = "Time to wind down"
-        btnGetAccessNow.title = "Get access now"
+        btnGetAccessNow.title = "Unlock computer"
+        
+        if let shutOffTimeInfo = configjson.value(forKey: "shutOffTimeInfo") as? NSDictionary{
+            btnGetAccessNow.title = shutOffTimeInfo.value(forKey: "buttonUnlockComputer") as? String ?? btnGetAccessNow.title
+        }
         
         var timeFormat = "h:mm a"
         if let dict = UserDefaults.standard.persistentDomain(forName: "com.apple.menuextra.clock") {
@@ -140,7 +168,7 @@ class shutOffTimeVc: NSViewController {
                 lblSubTitle.stringValue = subTitle
             }
             if let buttonAbortText = shutOffTimeInfo.value(forKey: "buttonAbortText") as? String{
-                btnGetAccessNow.title = buttonAbortText
+               // btnGetAccessNow.title = buttonAbortText
             }
         }
         
@@ -158,6 +186,8 @@ class shutOffTimeVc: NSViewController {
         lblSelectMinutesToUSe.isHidden = true
         
         btnCompleteEveningRoutine.isHidden = true
+        
+        //Evening routine aborted. reason:- four hours remaining in start morning routines and evening routine is not started yet.
         if arrAllDaysEveningHabits.count != 0{//} && !iseveningHabitAlreadyShowed {
             if UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date == nil{
                 btnCompleteEveningRoutine.isHidden = false
@@ -173,6 +203,27 @@ class shutOffTimeVc: NSViewController {
                     }
                 }
             }
+        }
+        
+        updateUncancelRoutineButtonVisibility()
+    }
+    
+    @objc func viewDidResize(){
+        if self.view.frame.height < 600{
+            lblSubTitle.font = getRegularFont(size: 18)
+            lblUncancelRoutine.font = getRegularFont(size: 12)
+            stackViewUnCancelRoutine.spacing = 4
+            btnUncancelEveningRoutine.font = getRegularFont(size: 12)
+        }else if self.view.frame.height < 700{
+            lblSubTitle.font = getRegularFont(size: 19)
+            lblUncancelRoutine.font = getRegularFont(size: 15)
+            stackViewUnCancelRoutine.spacing = 6
+            btnUncancelEveningRoutine.font = getRegularFont(size: 15)
+        }else{
+            lblSubTitle.font = getRegularFont(size: 22)
+            lblUncancelRoutine.font = getRegularFont(size: 16)
+            stackViewUnCancelRoutine.spacing = 10
+            btnUncancelEveningRoutine.font = getRegularFont(size: 16)
         }
     }
     
@@ -202,7 +253,7 @@ class shutOffTimeVc: NSViewController {
     @IBAction func btnGetAccessNowClicked(_ sender: Any) {
         addLog(text:"[user-action] btnGetAccessNowClicked")
         
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{//} && isCutOffTimeGoing(){
+        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
             // if user has not unlocked today
             var shouldAbortShutDownInOneClick = true
             if let date = UserDefaults.standard.object(forKey: kUserdefaultsLastShutdownAbortedDate) as? Date{
@@ -228,7 +279,7 @@ class shutOffTimeVc: NSViewController {
                     currentState = ._NOTHING_
                     mainWindowControllerObj?.window?.close()
                     hideBlankWindowInSecondaryMonitor()
-                    
+                    leftMenuVcObj?.habitOver()
 
                     let shutdownAbortedTillTime = Calendar.current.date(byAdding: .second, value: 1800, to: Date())! // 30 minutes
                     UserDefaults.standard.set(shutdownAbortedTillTime, forKey: kUserdefaultsShutdownAborted)
@@ -272,6 +323,7 @@ class shutOffTimeVc: NSViewController {
     }
     
     func getAccessNowClicked(){
+        stackViewUnCancelRoutine.isHidden = true
         btnCompleteEveningRoutine.isHidden = true
         titleCenter.constant = 0
         btnGetAccessNow.isHidden = true
@@ -441,7 +493,25 @@ class shutOffTimeVc: NSViewController {
     
     func workEmergencyClicked(){
         if SettingsManagerObject.isGeekModeEnabled{
-            emergencyStartDone()
+            //Bug fixed in v3.32.487. Previously, emergencyStartDone() was being called, which caused issues during cutoff time because that function contains additional checks. This has now been corrected.
+            getHabitsVcObject().hideCloseButtons()
+            getHabitsVcObject().removeSubViews()
+            currentState = ._NOTHING_
+            hideBlankWindowInSecondaryMonitor()
+            leftMenuVcObj?.habitOver()
+
+            let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+            let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+            
+            let curreentDate = Date()
+            if curreentDate > shutOffdate{// iska matlab 20-24 k bich
+                let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+                let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
+                UserDefaults.standard.set(startDate, forKey: kUserdefaultsShutdownAborted)
+            }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
+                UserDefaults.standard.set(startDate, forKey: kUserdefaultsShutdownAborted)
+            }
+            
             appdelegate?.menuShowPomodoroModeView()
         }else{
             btnGetAccessNowClicked(self)
@@ -572,7 +642,6 @@ class shutOffTimeVc: NSViewController {
         getHabitsVcObject().hideCloseButtons()
         getHabitsVcObject().removeSubViews()
         currentState = ._NOTHING_
-//        mainWindowControllerObj?.window?.close()
         hideBlankWindowInSecondaryMonitor()
         leftMenuVcObj?.habitOver()
         
@@ -599,33 +668,47 @@ class shutOffTimeVc: NSViewController {
             UserDefaults.standard.set(shutdownAbortedTillTime, forKey: kUserdefaultsShutdownAborted)
         }
     }
+    
+
+    @IBAction func btnUncancelEveningRoutineClicked(_ sender: Any) {
+        mainViewControllerObj?.showLoaderView()
+        allApiObject.uncompleteCurrentSequence(activity_sequence_id: arrFilteredEveningHabits.first?.activity_sequence_id ?? "", completionHandler: {json in
+            if json != nil{
+                DispatchQueue.main.async {
+                    mainViewControllerObj?.hideLoaderView()
+                    UserDefaults.standard.removeObject(forKey: kUserdefaultsEveningHabitsShowedTillDate)
+                    currentState = ._NOTHING_
+                    appdelegate!.backgroundThread()
+                }
+            }
+        })
+    }
+    
+    func updateUncancelRoutineButtonVisibility() {
+        stackViewUnCancelRoutine.isHidden = true
+        let routineType = "evening_routine"
+        let sequenceIdToCheck = arrFilteredEveningHabits.first?.activity_sequence_id ?? ""
+        
+        allApiObject.getLastActivityInfo { json in
+            
+            guard
+                let todayRoutineProgress = json?["today_routine_progress"] as? NSDictionary,
+                let routine = todayRoutineProgress[routineType] as? NSDictionary,
+                let todaySequenceId = routine["sequence_id"] as? String,
+                let status = routine["status"] as? String,
+                let wasForceCompleted = routine["was_force_completed"] as? Bool
+            else {
+                return
+            }
+            
+            let shouldShowButton =
+                todaySequenceId == sequenceIdToCheck &&
+                status.lowercased() == "completed" &&
+                wasForceCompleted
+            
+            DispatchQueue.main.async { [self] in
+                self.stackViewUnCancelRoutine.isHidden = !shouldShowButton
+            }
+        }
+    }
 }
-//2026-01-06 19:45:30  -  [user-action] btnGetAccessNowClicked
-//2026-01-06 19:45:39  -  func flushEvents events: 0
-//2026-01-06 19:45:41  -  [user-action] btnUnlockClicked
-//2026-01-06 19:45:46  -  captureEventEndpoint event: shutoff-aborted
-//2026-01-06 19:45:46  -  capturePosthog event: shutoff-aborted
-//2026-01-06 19:45:46  -  emergencyStartDone
-//
-//
-//2026-01-06 21:00:28  -  Initiating shut off process.
-//2026-01-06 22:00:51  -  Initiating shut off process.
-//2026-01-06 22:00:51  -  call abort all process.
-//
-//
-//2026-01-06 22:00:51  -  sleepEvent
-//2026-01-06 22:00:51  -  com.apple.screenIsUnlocked
-//2026-01-06 22:00:51  -  func checkNaturalBreakFromIdleTimeAfterScreenUnlocked
-//2026-01-06 22:00:51  -  Detect Natual Breaks is not enabled
-//2026-01-06 22:00:51  -  func:- returnFromSystemSleepCheckAppStateAgain
-//2026-01-06 22:00:51  -  call abort all process.
-//2026-01-06 22:00:51  -  func call:- updateAllFocusMode:- focus-mode
-//2026-01-06 22:00:51  -  func call:-  finishFocusMode:- focus-mode/id/finish
-//2026-01-06 22:00:51  -  func:- hideBlankWindowInSecondaryMonitor
-//2026-01-06 22:00:51  -  Initiating shut off process.
-//2026-01-06 22:00:51  -  call abort all process.
-//
-//
-//2026-01-06 22:00:53  -  [user-action] btnGetAccessNowClicked
-//2026-01-06 22:00:55  -  api call finishFocusMode success
-//2026-01-06 22:00:55  -  Initiating shut off process.

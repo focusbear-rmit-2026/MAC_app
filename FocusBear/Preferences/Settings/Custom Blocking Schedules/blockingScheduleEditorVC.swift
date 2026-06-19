@@ -89,6 +89,14 @@ class blockingScheduleEditorVC: NSViewController {
         lblTitleStrictnessLevel.stringValue = "Strictness level:"
         btnCancel.title = buttonCancelText
         
+        var daySun = "Sun"
+        var daySat = "Sat"
+        var dayFri = "Fri"
+        var dayThu = "Thu"
+        var dayWed = "Wed"
+        var dayTue = "Tue"
+        var dayMon = "Mon"
+        
         if let blockingScheduleEditorVcInfo = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary{
             lblTitle.stringValue = blockingScheduleEditorVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
             lblTitleScheduleName.stringValue = blockingScheduleEditorVcInfo.value(forKey: "titleScheduleName") as? String ?? lblTitleScheduleName.stringValue
@@ -101,6 +109,15 @@ class blockingScheduleEditorVC: NSViewController {
             checkBoxAiEnabled.title = blockingScheduleEditorVcInfo.value(forKey: "buttonEnableAi") as? String ?? checkBoxAiEnabled.title
             btnSave.title = blockingScheduleEditorVcInfo.value(forKey: "buttonSave") as? String ?? btnSave.title
             btnDelete.title = blockingScheduleEditorVcInfo.value(forKey: "buttonDelete") as? String ?? btnDelete.title
+            
+            daySun = blockingScheduleEditorVcInfo.value(forKey: "daySun") as? String ?? daySun
+            daySat = blockingScheduleEditorVcInfo.value(forKey: "daySat") as? String ?? daySat
+            dayFri = blockingScheduleEditorVcInfo.value(forKey: "dayFri") as? String ?? dayFri
+            dayThu = blockingScheduleEditorVcInfo.value(forKey: "dayThu") as? String ?? dayThu
+            dayWed = blockingScheduleEditorVcInfo.value(forKey: "dayWed") as? String ?? dayWed
+            dayTue = blockingScheduleEditorVcInfo.value(forKey: "dayTue") as? String ?? dayTue
+            dayMon = blockingScheduleEditorVcInfo.value(forKey: "dayMon") as? String ?? dayMon
+            
         }
         
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
@@ -130,14 +147,14 @@ class blockingScheduleEditorVC: NSViewController {
         btnCancel.isSecondaryButton = true
         btnDelete.isSecondaryButton = true
 
-    
-        boxSunday.titleLabel.stringValue = "Sun"// todo need to  covert with some one
-        boxSaturday.titleLabel.stringValue = "Sat"
-        boxFriday.titleLabel.stringValue = "Fri"
-        boxThursday.titleLabel.stringValue = "Thu"
-        boxWednesday.titleLabel.stringValue = "Wed"
-        boxTuesday.titleLabel.stringValue = "Tue"
-        boxMonday.titleLabel.stringValue = "Mon"
+        
+        boxSunday.titleLabel.stringValue = daySun
+        boxSaturday.titleLabel.stringValue = daySat
+        boxFriday.titleLabel.stringValue = dayFri
+        boxThursday.titleLabel.stringValue = dayThu
+        boxWednesday.titleLabel.stringValue = dayWed
+        boxTuesday.titleLabel.stringValue = dayTue
+        boxMonday.titleLabel.stringValue = dayMon
         
         boxSunday.index = 1
         boxSaturday.index = 7
@@ -206,14 +223,8 @@ class blockingScheduleEditorVC: NSViewController {
         
         if shouldCreateNew{
             textFieldScheduleName.stringValue = ""
-            let today = Date()
-            let calendar = Calendar.current
-            let weekday = calendar.component(.weekday, from: today)
             for box in arrAllWeekDayBox{
-                if box.index == weekday{
-                    box.isSelected = true
-                    break;
-                }
+                box.isSelected = true
             }
             
             popUpBtnFocusMode.removeAllItems()
@@ -431,6 +442,7 @@ class blockingScheduleEditorVC: NSViewController {
     
     func createBlockingSchedule(blockingSchedule: customBlockingSchedule){
         customBlockingScheduleManagerObj.arrBlockingSchedule.append(blockingSchedule)
+        customBlockingScheduleManagerObj.saveBlockingSchedulesToLocal()
         customBlockingSchedulesVcObj?.scheduleAdded()
         allApiObject.capturePosthog(event: "add-blocking-schedule", metadata: [:])//2.27.421
         customBlockingScheduleManagerObj.addCustomBlockingScheduleAtIndex(customBlockingScheduleManagerObj.arrBlockingSchedule.count - 1)
@@ -447,6 +459,7 @@ class blockingScheduleEditorVC: NSViewController {
         customBlockingScheduleManagerObj.updateCustomBlockingScheduleAtIndex(currentFocusModeIndex)
         closeView()
         customBlockingScheduleManagerObj.updateEditedBlockingScheduleEndTimeIfRunning(index: currentFocusModeIndex)
+        customBlockingScheduleManagerObj.saveBlockingSchedulesToLocal()
     }
     
     func showOverlapAlert(for blockingSchedule: customBlockingSchedule) {

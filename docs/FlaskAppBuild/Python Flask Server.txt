@@ -45,6 +45,31 @@ Code Signing the Final Server Binary (macOS)
 		  "/Users/manish/Documents/Apps/Focus Bear/SRC-NEW/FocusBear/serverIntel"
 
 
+-------------------------------------------------------------------------------
+EASIEST: use the build script (venv + PyInstaller + signing + placing)
+-------------------------------------------------------------------------------
+
+    # ad-hoc sign (fine for local Debug / dev):
+    ./scripts/build-flask-server.sh
+
+    # Developer-ID sign for a release build (run on the machine that has the cert) —
+    # required for notarisation:
+    ./scripts/build-flask-server.sh "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)"
+
+This rebuilds from server.py and installs the result into both FocusBear/server and
+FocusBear/serverIntel (both are x86_64; the arm64 app runs `server` under Rosetta).
+
+PORT / dynamic port
+-------------------
+server.py binds the port from the PORT env var (default 50501). The macOS app
+(flaskServer.swift) picks the first free port at/after 50501, passes it via PORT, and
+uses that port everywhere, so a busy 50501 no longer hangs the app on "Loading...".
+
+NOTE: the committed binaries are currently AD-HOC signed (built on a machine without
+the Developer-ID cert). Before cutting a release, re-run the build script with the
+Developer-ID identity above (or re-sign) so the embedded server passes notarisation.
+
+
 
 
 

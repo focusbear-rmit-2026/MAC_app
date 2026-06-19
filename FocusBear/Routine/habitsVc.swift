@@ -81,6 +81,17 @@ class habitsVc: NSViewController {
         self.btnAbort.isHidden = false
     }
     
+    func stopPostponeEndTimer(){
+        if postponeTimer != nil{
+            postponeTimer?.invalidate()
+            postponeTimer = nil
+        }
+        if postponeNotificationTimer != nil{
+            postponeNotificationTimer?.invalidate()
+            postponeNotificationTimer = nil
+        }
+    }
+    
     @objc func showFocusSummaryView(){
         appdelegate!.checkSystemTimeAndShowWindow()
         if startTime == nil || shutOffTime == nil{
@@ -258,12 +269,14 @@ class habitsVc: NSViewController {
         }
         return false
     }
+    
     func showSkipHabitView(){
         addLog(text: "show SkipHabit View")
         self.view.addSubview(getSkipHabitVcObject().view)
         self.view.addConstraints(subView: getSkipHabitVcObject().view)
         getSkipHabitVcObject().resetView()
     }
+
     func showWhySkipHabitView(){
         addLog(text: "show whySkipHabit View")
         self.view.addSubview(getWhySkipHabitVcObject().view)
@@ -329,6 +342,11 @@ class habitsVc: NSViewController {
                 if timerViewcontrollerObj != nil {
                     if timerViewcontrollerObj?.timer != nil {
                         timerViewcontrollerObj?.timer?.invalidate()
+                        
+                        //focusButtonService---//
+                        focusButtonServiceObject.pauseHabit()
+                        //--------------//
+                        
                         enableSystemSleep()
                         if timerViewcontrollerObj?.isVideoLodded ?? false{
                             if !(timerViewcontrollerObj?.isActivityPaused ?? false){
@@ -393,11 +411,11 @@ class habitsVc: NSViewController {
             addLog(text: "current state is:- aborting")
         case ._FOCUS_SUMMARY_:
             addLog(text: "current state is:- focus summary")
-        case ._POSTPON_MORNING_HABIT_:
+        case ._POSTPONE_MORNING_HABIT_:
             addLog(text: "current state is:- postpone morning routine")
-        case ._POSTPON_EVENING_HABIT_:
+        case ._POSTPONE_EVENING_HABIT_:
             addLog(text: "current state is:- postpone evening routine")
-        case ._POSTPON_FOCUS_SUMMARY_:
+        case ._POSTPONE_FOCUS_SUMMARY_:
             addLog(text: "current state is:- postpone focus summary")
         case ._ONBOARDING_:
             addLog(text: "current state is:- ask app work")
@@ -534,10 +552,21 @@ class habitsVc: NSViewController {
                     if currentActivityPlaying != nil{
                         closePupUpBlockIfVisible()
                     }
+                    if (getHabitsVcObject().habitsView.subviews.contains(firstViewControllerObj!.view)){
+                        if firstViewControllerObj!.isTimerGoingOn{
+                            firstViewControllerObj?.stopTimer()// stop 5 seconds timer if clicked postpone
+                        }
+                    }
                 }else{
                     postponeBreakActivitiesFor(minutes: breakAfterMinutes, secondsToPostpone: nil, isFromBreakWarningWindow:false)
                 }
             }else{
+                if (getHabitsVcObject().habitsView.subviews.contains(firstViewControllerObj!.view)){
+                    if firstViewControllerObj!.isTimerGoingOn{
+                        firstViewControllerObj?.stopTimer()// stop 5 seconds timer if clicked postpone
+                    }
+                }
+                
                 if currentAction == ._START_{// start state sirf first activity ki start mi hi hoti h fir  second activity ki start mai "end state hoti hai "
                     showAskPostponeView()
                 }else{
@@ -621,6 +650,8 @@ class habitsVc: NSViewController {
         self.view.addConstraints(subView: enterPasswordVcObj!.view)
         enterPasswordVcObj?.removeConstraints()
         enterPasswordVcObj?.parentVc = nil
+        enterPasswordVcObj?.pendingAction = nil
+        enterPasswordVcObj?.cancelAction = nil
         addLog(text: "Showing enter password view")
     }
     
@@ -643,7 +674,7 @@ class habitsVc: NSViewController {
             case ._START_:
                 currentState = ._MICRO_BREAK_
                 currentAction = ._START_
-                thirdVcObj?.startBreakActivity()
+                activityCompletionVcObj?.startBreakActivity()
                 firstViewControllerObj?.isFirstTime = false
                 
                 habitsView.addSubview(firstViewControllerObj!.view)
@@ -661,8 +692,8 @@ class habitsVc: NSViewController {
             case ._END_:
                 self.showCloseButtons()
                 removeSubViews()
-                habitsView.addSubview(thirdVcObj!.view)
-                habitsView.addConstraints(subView: thirdVcObj!.view)
+                habitsView.addSubview(activityCompletionVcObj!.view)
+                habitsView.addConstraints(subView: activityCompletionVcObj!.view)
                 currentState = ._MICRO_BREAK_
                 currentAction = ._END_
                 break
@@ -672,8 +703,8 @@ class habitsVc: NSViewController {
                 currentState = ._MICRO_BREAK_
                 currentAction = ._BRAIN_DUMP_
                 
-                thirdVcObj?.startBreakActivity()
-                showBreaksBrainDump()
+                activityCompletionVcObj?.startBreakActivity()
+                //showBreaksBrainDump()
                 
                 break
             }
@@ -693,8 +724,8 @@ class habitsVc: NSViewController {
             case ._END_:
                 self.showCloseButtons()
                 removeSubViews()
-                habitsView.addSubview(thirdVcObj!.view)
-                habitsView.addConstraints(subView: thirdVcObj!.view)
+                habitsView.addSubview(activityCompletionVcObj!.view)
+                habitsView.addConstraints(subView: activityCompletionVcObj!.view)
                 currentState = ._MORNING_HABIT_
                 currentAction = ._END_
                 break
@@ -722,8 +753,8 @@ class habitsVc: NSViewController {
             case ._END_:
                 self.showCloseButtons()
                 removeSubViews()
-                habitsView.addSubview(thirdVcObj!.view)
-                habitsView.addConstraints(subView: thirdVcObj!.view)
+                habitsView.addSubview(activityCompletionVcObj!.view)
+                habitsView.addConstraints(subView: activityCompletionVcObj!.view)
                 currentState = ._EVENING_HABIT_
                 currentAction = ._END_
                 break
@@ -764,8 +795,8 @@ class habitsVc: NSViewController {
             case ._END_:
                 self.showCloseButtons()
                 removeSubViews()
-                habitsView.addSubview(thirdVcObj!.view)
-                habitsView.addConstraints(subView: thirdVcObj!.view)
+                habitsView.addSubview(activityCompletionVcObj!.view)
+                habitsView.addConstraints(subView: activityCompletionVcObj!.view)
                 currentState = ._CUSTOM_ROUTINE_
                 currentAction = ._END_
                 break
@@ -891,7 +922,7 @@ class habitsVc: NSViewController {
         habitsView.addConstraints(subView: getvisualizeInstructionsObject().view)
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
-    
+    /*
     func showBreaksBrainDump(){
         allApiObject.capturePosthog(event: "breaks-brain-dump-shown", metadata: [:])
         addLog(text: "show Breaks Brain Dump.")
@@ -903,6 +934,7 @@ class habitsVc: NSViewController {
         NSApplication.shared.activate(ignoringOtherApps: true)
         breaksBrainDumpVcObj?.resetBrainDump()
     }
+    */
     
     func showAllEveningHabits(){
         addLog(text: "func showAllEveningHabits:- Initiate and run Evening Habits.")
@@ -1010,10 +1042,11 @@ class habitsVc: NSViewController {
                 currentHabitIndex = -1
             }
             
-            
+            habitTotalCompletedSeconds = 0
             currentState = ._EVENING_HABIT_
             currentAction = ._START_
             firstViewControllerObj?.isFirstTime = false
+            firstViewControllerObj?.shouldIgnoreVisualizeInstructions = false
             habitsView.addSubview(firstViewControllerObj!.view)
             habitsView.addConstraints(subView: firstViewControllerObj!.view)
             NSApplication.shared.activate(ignoringOtherApps: true)
@@ -1023,6 +1056,7 @@ class habitsVc: NSViewController {
     
     func showAllEveningHabitsAbortCancel(){
         addLog(text: "Abort Cancel:-Initiate and run Evening Habits.")
+        habitTotalCompletedSeconds = 0
         isPromptToRememberHabitShowedInLastHabit = false
         self.showCloseButtons()
         removeSubViews()
@@ -1120,9 +1154,11 @@ class habitsVc: NSViewController {
             self.showCloseButtons()
             removeSubViews()
             currentHabitIndex = -1
+            habitTotalCompletedSeconds = 0
             currentState = ._MORNING_HABIT_
             currentAction = ._START_
             firstViewControllerObj?.isFirstTime = false
+            firstViewControllerObj?.shouldIgnoreVisualizeInstructions = false
             habitsView.addSubview(firstViewControllerObj!.view)
             habitsView.addConstraints(subView: firstViewControllerObj!.view)
             firstViewControllerObj?.checkMorningHabitDelayTime()
@@ -1134,6 +1170,7 @@ class habitsVc: NSViewController {
     
     func showAllMorningHabitsAbortCancel(){
         addLog(text: "Abort Cancel Showing morning habits.")
+        habitTotalCompletedSeconds = 0
         isPromptToRememberHabitShowedInLastHabit = false
         lastShownRandomChoiceDic = [String:activityChoice]()
         self.showCloseButtons()
@@ -1141,13 +1178,135 @@ class habitsVc: NSViewController {
         currentState = ._MORNING_HABIT_
         currentAction = ._START_
         firstViewControllerObj?.isFirstTime = false
+        firstViewControllerObj?.shouldIgnoreVisualizeInstructions = false
         habitsView.addSubview(firstViewControllerObj!.view)
         habitsView.addConstraints(subView: firstViewControllerObj!.view)
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
     
+    func removeCompletedHabitsForMorningEveningRoutine(){
+        if currentState == ._MORNING_HABIT_{
+            if currentHabitIndex != -1{
+                // remove habits which are completed
+                let tempHabits = arrFilteredMorningHabits
+                arrFilteredMorningHabits.removeAll()
+                
+                for i in currentHabitIndex+1..<tempHabits.count{
+                    arrFilteredMorningHabits.append(tempHabits[i])
+                }
+                
+                // now remove from main array
+                for i in 0...currentHabitIndex{
+                    let removedHabitId = tempHabits[i].id
+                    if let index = arrPreFilteredMorningHabits.firstIndex(where: { $0.id == removedHabitId }) {
+                        arrPreFilteredMorningHabits.remove(at: index)
+                    }
+                }
+            }
+            
+        }else if currentState == ._EVENING_HABIT_{
+            if currentHabitIndex != -1{
+                let tempHabits = arrFilteredEveningHabits
+                arrFilteredEveningHabits.removeAll()
+                
+                for i in currentHabitIndex+1..<tempHabits.count{
+                    arrFilteredEveningHabits.append(tempHabits[i])
+                }
+                
+                // now remove from main array
+                for i in 0...currentHabitIndex{
+                    let removedHabitId = tempHabits[i].id
+                    if let index = arrPreFilteredEveningHabits.firstIndex(where: { $0.id == removedHabitId }) {
+                        arrPreFilteredEveningHabits.remove(at: index)
+                    }
+                }
+            }
+        }
+    }
+    
+    func saveRemainingHabitIdForPostponedRoutineList(state:CURRENTSTATE){
+        removeCompletedHabitsForMorningEveningRoutine()
+        
+        if state == ._MORNING_HABIT_{
+            let ids = arrFilteredMorningHabits.map { $0.id }
+            let preFilteredIds = arrPreFilteredMorningHabits.map { $0.id }
+            UserDefaults.standard.set(ids, forKey: kUserdefaultsLastHabitsIdsBeforePostpone)
+            UserDefaults.standard.set(preFilteredIds, forKey: kUserdefaultsPrefilterLastHabitsIdsBeforePostpone)
+        }else if state == ._EVENING_HABIT_{
+            let ids = arrFilteredEveningHabits.map { $0.id }
+            let preFilteredIds = arrPreFilteredEveningHabits.map { $0.id }
+            UserDefaults.standard.set(ids, forKey: kUserdefaultsLastHabitsIdsBeforePostpone)
+            UserDefaults.standard.set(preFilteredIds, forKey: kUserdefaultsPrefilterLastHabitsIdsBeforePostpone)
+        }
+    }
+    
+    func showAllMorningEveningHabitsFromHabitCompleted(){
+        
+        removeCompletedHabitsForMorningEveningRoutine()
+        
+        addLog(text: "Showing morning/evening habits from habit completed back button.")
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+        isLastActivityStoppedInRunningState = false
+        isPromptToRememberHabitShowedInLastHabit = false
+        lastShownRandomChoiceDic = [String:activityChoice]()
+        self.showCloseButtons()
+        removeSubViews()
+        currentHabitIndex = -1
+        currentAction = ._START_
+        firstViewControllerObj?.isFirstTime = false
+        firstViewControllerObj?.shouldIgnoreVisualizeInstructions = true
+        habitsView.addSubview(firstViewControllerObj!.view)
+        habitsView.addConstraints(subView: firstViewControllerObj!.view)
+        NSApplication.shared.activate(ignoringOtherApps: true)
+    }
+    
+    func startMorningRouintHabitFromDeviceButton(name:String, shouldUpdateDeviceButton:Bool){
+        addLog(text: "Start Morning Rouint Habit From Device Button.")
+        if let mainWindowControllerObj = mainWindowControllerObj, !(mainWindowControllerObj.window?.isVisible ?? false){
+            mainWindowControllerObj.showWindow(self)
+        }
+        removeCompletedHabitsForMorningEveningRoutine()
+        for i in 0..<arrFilteredMorningHabits.count{
+            if arrFilteredMorningHabits[i].fakeIdForDevice == name || arrFilteredMorningHabits[i].name.lowercased() == name{
+                let habit = arrFilteredMorningHabits[i]
+                arrFilteredMorningHabits.remove(at: i)
+                arrFilteredMorningHabits.insert(habit, at: 0)
+                self.showCloseButtons()
+                removeSubViews()
+                currentHabitIndex = -1
+                currentState = ._MORNING_HABIT_
+                currentAction = ._INPROGRESS_
+                getHabitsVcObject().startFirstMorningHabit(shouldUpdateDeviceButton: shouldUpdateDeviceButton)
+                break;
+            }
+        }
+    }
+    
+    func startEveningRouintHabitFromDeviceButton(name:String, shouldUpdateDeviceButton:Bool){
+        addLog(text: "Start Evening Rouint Habit From Device Button.")
+        if let mainWindowControllerObj = mainWindowControllerObj, !(mainWindowControllerObj.window?.isVisible ?? false){
+            mainWindowControllerObj.showWindow(self)
+        }
+        removeCompletedHabitsForMorningEveningRoutine()
+        for i in 0..<arrFilteredEveningHabits.count{
+            if arrFilteredEveningHabits[i].fakeIdForDevice == name || arrFilteredEveningHabits[i].name.lowercased() == name{
+                let habit = arrFilteredEveningHabits[i]
+                arrFilteredEveningHabits.remove(at: i)
+                arrFilteredEveningHabits.insert(habit, at: 0)
+                self.showCloseButtons()
+                removeSubViews()
+                currentHabitIndex = -1
+                currentState = ._EVENING_HABIT_
+                currentAction = ._INPROGRESS_
+                getHabitsVcObject().startFirstEveningHabit(shouldUpdateDeviceButton: shouldUpdateDeviceButton)
+                break;
+            }
+        }
+    }
+    
     func showAllCustomRoutineHabitsAbortCancel(){
         addLog(text: "Abort Cancel Showing Custom Routine habits.")
+        habitTotalCompletedSeconds = 0
         isPromptToRememberHabitShowedInLastHabit = false
         lastShownRandomChoiceDic = [String:activityChoice]()
         self.showCloseButtons()
@@ -1160,21 +1319,21 @@ class habitsVc: NSViewController {
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
     
-    func startFirstMorningHabit() {
-        addLog(text:"current startFirstMorningHabit called")
+    func startFirstMorningHabit(shouldUpdateDeviceButton:Bool = true) {
+        addLog(text:"current startFirstMorningHabit from list called")
         self.showCloseButtons()
         removeSubViews()
         currentHabitIndex = 0
         habitsView.addSubview(timerViewcontrollerObj!.view)
         habitsView.addConstraints(subView: timerViewcontrollerObj!.view)
-        timerViewcontrollerObj?.tryStartTimerHabit(durationSeconds: arrFilteredMorningHabits[currentHabitIndex].durationSeconds, name: arrFilteredMorningHabits[currentHabitIndex].name!, currentHabit: arrFilteredMorningHabits[currentHabitIndex], currentTimerValue:0)
+        timerViewcontrollerObj?.tryStartTimerHabit(durationSeconds: arrFilteredMorningHabits[currentHabitIndex].durationSeconds, name: arrFilteredMorningHabits[currentHabitIndex].name!, currentHabit: arrFilteredMorningHabits[currentHabitIndex], currentTimerValue:0, shouldUpdateDeviceButton: shouldUpdateDeviceButton)
         currentState = ._MORNING_HABIT_
         currentAction = ._INPROGRESS_
         allApiObject.capturePosthog(event: "start-morning-routine", metadata: ["routine-type":"morning_routine"])
     }
     
-    func startFirstEveningHabit() {
-        addLog(text:"current startFirstEveningHabit called")
+    func startFirstEveningHabit(shouldUpdateDeviceButton:Bool = true) {
+        addLog(text:"current startFirstEveningHabit from list called")
         self.showCloseButtons()
         removeSubViews()
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
@@ -1200,7 +1359,7 @@ class habitsVc: NSViewController {
         
         habitsView.addSubview(timerViewcontrollerObj!.view)
         habitsView.addConstraints(subView: timerViewcontrollerObj!.view)
-        timerViewcontrollerObj?.tryStartTimerHabit(durationSeconds: arrFilteredEveningHabits[currentHabitIndex].durationSeconds, name: arrFilteredEveningHabits[currentHabitIndex].name!, currentHabit: arrFilteredEveningHabits[currentHabitIndex], currentTimerValue:0)
+        timerViewcontrollerObj?.tryStartTimerHabit(durationSeconds: arrFilteredEveningHabits[currentHabitIndex].durationSeconds, name: arrFilteredEveningHabits[currentHabitIndex].name!, currentHabit: arrFilteredEveningHabits[currentHabitIndex], currentTimerValue:0, shouldUpdateDeviceButton: shouldUpdateDeviceButton)
         currentState = ._EVENING_HABIT_
         currentAction = ._INPROGRESS_
         allApiObject.capturePosthog(event: "start-evening-routine", metadata: ["routine-type":"evening_routine"])
@@ -1237,9 +1396,9 @@ class habitsVc: NSViewController {
         addLog(text:"current breathing Habit Over called")
         hideCloseButtons()
         removeSubViews()
-        habitsView.addSubview(thirdVcObj!.view)
-        habitsView.addConstraints(subView: thirdVcObj!.view)
-        thirdVcObj!.breathingFinished(isSKipped: isSKipped)
+        habitsView.addSubview(activityCompletionVcObj!.view)
+        habitsView.addConstraints(subView: activityCompletionVcObj!.view)
+        activityCompletionVcObj!.breathingFinished(isSKipped: isSKipped)
         currentState = ._BREATHING_
         currentAction = ._END_
         allApiObject.capturePosthog(event: "complete-first-routine", metadata: ["routine-type":"first_routine"])
@@ -1282,9 +1441,9 @@ class habitsVc: NSViewController {
         addLog(text:"showCloseButtons passed")
         removeSubViews()
         addLog(text:"removeSubViews passed")
-        habitsView.addSubview(thirdVcObj!.view)
-        habitsView.addConstraints(subView: thirdVcObj!.view)
-        thirdVcObj!.morningHabitFinished(index: currentHabitIndex)
+        habitsView.addSubview(activityCompletionVcObj!.view)
+        habitsView.addConstraints(subView: activityCompletionVcObj!.view)
+        activityCompletionVcObj!.morningHabitFinished(index: currentHabitIndex)
         addLog(text:"morningHabitFinished passed")
         currentState = ._MORNING_HABIT_
         currentAction = ._END_
@@ -1400,10 +1559,10 @@ class habitsVc: NSViewController {
             if index == 0{
                 showAllMorningHabits()
             }else{
-                habitsView.addSubview(thirdVcObj!.view)
-                habitsView.addConstraints(subView: thirdVcObj!.view)
+                habitsView.addSubview(activityCompletionVcObj!.view)
+                habitsView.addConstraints(subView: activityCompletionVcObj!.view)
                 currentHabitIndex = index-1
-                thirdVcObj!.morningHabitFinishedAndStartIncompleteNew(index: currentHabitIndex, isLastActivitySkipped:isLastActivitySkipped)
+                activityCompletionVcObj!.morningHabitFinishedAndStartIncompleteNew(index: currentHabitIndex, isLastActivitySkipped:isLastActivitySkipped)
             }
             
         }
@@ -1420,7 +1579,7 @@ class habitsVc: NSViewController {
             addLog(text: "func showRoutineAllHabits:- current action is visualize:- return")
             return;
         }
-        
+        habitTotalCompletedSeconds = 0
         self.showCloseButtons()
         removeSubViews()
         currentHabitIndex = -1
@@ -1523,10 +1682,10 @@ class habitsVc: NSViewController {
             if index == 0{
                 showRoutineAllHabits(routineIndex: currentRoutineIndex)
             }else{
-                habitsView.addSubview(thirdVcObj!.view)
-                habitsView.addConstraints(subView: thirdVcObj!.view)
+                habitsView.addSubview(activityCompletionVcObj!.view)
+                habitsView.addConstraints(subView: activityCompletionVcObj!.view)
                 currentHabitIndex = index-1
-                thirdVcObj!.customRoutineHabitFinishedAndStartIncompleteNew(index: currentHabitIndex, isLastActivitySkipped:isLastActivitySkipped)
+                activityCompletionVcObj!.customRoutineHabitFinishedAndStartIncompleteNew(index: currentHabitIndex, isLastActivitySkipped:isLastActivitySkipped)
             }
             
         }
@@ -1535,12 +1694,13 @@ class habitsVc: NSViewController {
     
     func showThirdVc(){
         removeSubViews()
-        habitsView.addSubview(thirdVcObj!.view)
-        habitsView.addConstraints(subView: thirdVcObj!.view)
+        habitsView.addSubview(activityCompletionVcObj!.view)
+        habitsView.addConstraints(subView: activityCompletionVcObj!.view)
     }
     
     func eveningHabitOver() {// current evening habit over
         addLog(text:"current evening Habit Over called")
+        
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
         getHabitsVcObject().stopActivityTimer()
         if mainWindowControllerObj?.window?.isVisible == false{
@@ -1573,9 +1733,9 @@ class habitsVc: NSViewController {
         self.showCloseButtons()
         removeSubViews()
         //        if currentHabitIndex < arrFilteredEveningHabits.count-1 {
-        habitsView.addSubview(thirdVcObj!.view)
-        habitsView.addConstraints(subView: thirdVcObj!.view)
-        thirdVcObj!.eveningHabitFinished(index: currentHabitIndex)
+        habitsView.addSubview(activityCompletionVcObj!.view)
+        habitsView.addConstraints(subView: activityCompletionVcObj!.view)
+        activityCompletionVcObj!.eveningHabitFinished(index: currentHabitIndex)
         currentState = ._EVENING_HABIT_
         currentAction = ._END_
         
@@ -1720,9 +1880,9 @@ class habitsVc: NSViewController {
                     }
                 }
                 if currentHabitIndex != -1{
-                    habitsView.addSubview(thirdVcObj!.view)
-                    habitsView.addConstraints(subView: thirdVcObj!.view)
-                    thirdVcObj!.eveningHabitFinishedAndStartIncompleteNew(index: currentHabitIndex, isLastActivitySkipped:isLastActivitySkipped)
+                    habitsView.addSubview(activityCompletionVcObj!.view)
+                    habitsView.addConstraints(subView: activityCompletionVcObj!.view)
+                    activityCompletionVcObj!.eveningHabitFinishedAndStartIncompleteNew(index: currentHabitIndex, isLastActivitySkipped:isLastActivitySkipped)
                 }else{
                     showAllEveningHabits()
                 }
@@ -1785,9 +1945,9 @@ class habitsVc: NSViewController {
         appdelegate?.timerAllowAppForActivity?.invalidate()
         self.showCloseButtons()
         removeSubViews()
-        habitsView.addSubview(thirdVcObj!.view)
-        habitsView.addConstraints(subView: thirdVcObj!.view)
-        thirdVcObj!.activityFinished(index: currentActivityIndex)
+        habitsView.addSubview(activityCompletionVcObj!.view)
+        habitsView.addConstraints(subView: activityCompletionVcObj!.view)
+        activityCompletionVcObj!.activityFinished(index: currentActivityIndex)
         currentState = ._MICRO_BREAK_
         currentAction = ._END_
     }
@@ -1817,9 +1977,9 @@ class habitsVc: NSViewController {
         appdelegate?.timerAllowAppForActivity?.invalidate()
         self.showCloseButtons()
         removeSubViews()
-        habitsView.addSubview(thirdVcObj!.view)
-        habitsView.addConstraints(subView: thirdVcObj!.view)
-        thirdVcObj!.specialActivityFinished()
+        habitsView.addSubview(activityCompletionVcObj!.view)
+        habitsView.addConstraints(subView: activityCompletionVcObj!.view)
+        activityCompletionVcObj!.specialActivityFinished()
         currentState = ._SPECIAL_ACTIVITY_
         currentAction = ._END_
     }
@@ -1856,9 +2016,9 @@ class habitsVc: NSViewController {
         appdelegate?.timerAllowAppForActivity?.invalidate()
         self.showCloseButtons()
         removeSubViews()
-        habitsView.addSubview(thirdVcObj!.view)
-        habitsView.addConstraints(subView: thirdVcObj!.view)
-        thirdVcObj!.customRoutineHabitFinished(index: currentHabitIndex)
+        habitsView.addSubview(activityCompletionVcObj!.view)
+        habitsView.addConstraints(subView: activityCompletionVcObj!.view)
+        activityCompletionVcObj!.customRoutineHabitFinished(index: currentHabitIndex)
         currentState = ._CUSTOM_ROUTINE_
         currentAction = ._END_
     }
@@ -1935,7 +2095,7 @@ class habitsVc: NSViewController {
         closeEasyPostponeWindowIfVisible()
         if isFocusModeOnOrPaused(){
             addLog(text: "Special Activity start:- Focus Mode Finished")
-            appdelegate?.tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
+            appdelegate?.tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false, shouldUpdateFocusButton: true)
             
         }
         mainWindowControllerObj?.showWindow(self)
@@ -1969,6 +2129,9 @@ class habitsVc: NSViewController {
         habitsView.addSubview(timerViewcontrollerObj!.view)
         habitsView.addConstraints(subView: timerViewcontrollerObj!.view)
         currentActivityIndex += 1
+        if arrFinalBreakActivities.count <= currentActivityIndex{
+            currentActivityIndex = arrFinalBreakActivities.count - 1// crash solved
+        }
         let activity = arrFinalBreakActivities[currentActivityIndex]
         let currentActivity = activity.activity!
         if let randomChoice = activity.randomChoice{//currentActivity.choices.randomElement(){
@@ -2032,7 +2195,12 @@ class habitsVc: NSViewController {
         }
 
         currentState = ._NOTHING_
-
+        
+        // FIX: Moved leftMenuVcObj?.habitOver() above all return statements to prevent early exit bug present before v3.31.479
+        // (Previously placed below showSurveyWindow()'s return, causing habitOver() to be skipped)
+        // bug:- feedback_message: Blocked from starting focus session after completing morning routine
+        leftMenuVcObj?.habitOver()
+        
         let currentDate = Date()
         let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
         let diffDays = Calendar.current.dateComponents([.day], from: firstRunDate, to: currentDate).day ?? 0
@@ -2060,7 +2228,6 @@ class habitsVc: NSViewController {
                 showLateNoMoreWindow()
             }
         }
-        leftMenuVcObj?.habitOver()
     }
     
     
@@ -2200,12 +2367,12 @@ class habitsVc: NSViewController {
             appdelegate!.backgroundThread()
         }
         if isBreakActivityExecuteFromPostponeMorningHabit{
-            currentState = ._POSTPON_MORNING_HABIT_
+            currentState = ._POSTPONE_MORNING_HABIT_
             isBreakActivityExecuteFromPostponeMorningHabit = false
         }
         
         if isBreakActivityExecuteFromPostponeEveningHabit{
-            currentState = ._POSTPON_EVENING_HABIT_
+            currentState = ._POSTPONE_EVENING_HABIT_
             isBreakActivityExecuteFromPostponeEveningHabit = false
         }
         writeStringToHabitInfo(isFinishTime: true, activityName: "")
@@ -2252,12 +2419,12 @@ class habitsVc: NSViewController {
             appdelegate!.backgroundThread()
         }
         if isBreakActivityExecuteFromPostponeMorningHabit{
-            currentState = ._POSTPON_MORNING_HABIT_
+            currentState = ._POSTPONE_MORNING_HABIT_
             isBreakActivityExecuteFromPostponeMorningHabit = false
             addLog(text: "breaksScreenIsIdleResetBreaks:- activity was started from postpone morning habit. Try postpone Habit Routine")
         }
         if isBreakActivityExecuteFromPostponeEveningHabit{
-            currentState = ._POSTPON_EVENING_HABIT_
+            currentState = ._POSTPONE_EVENING_HABIT_
             isBreakActivityExecuteFromPostponeEveningHabit = false
             addLog(text: "breaksScreenIsIdleResetBreaks:- activity was started from postpone evening habit. Try postpone Habit Routine")
         }
@@ -2325,7 +2492,7 @@ class habitsVc: NSViewController {
             }
         }
     }
-    func postponeMorningHabitFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool, showAskIntention:Bool){
+    func postponeMorningHabitFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool, showAskIntention:Bool, isExtendingPostponeFromAppStart:Bool = false){
         var showAskIntention = showAskIntention
         
         if SettingsManagerObject.isStrictnessLevelSuperGentle(){
@@ -2362,15 +2529,18 @@ class habitsVc: NSViewController {
                     lastActivityRunningId = ""
                 }
                 //Extend postpone time not working for 2 minute warning popup#923
-                if currentState == ._POSTPON_MORNING_HABIT_{
+                if currentState == ._POSTPONE_MORNING_HABIT_{
                     closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
                 }
                 
                 if !isFocusModeOn(){
                     leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
                 }
-                currentState = ._POSTPON_MORNING_HABIT_
+                currentState = ._POSTPONE_MORNING_HABIT_
                 hideBlankWindowInSecondaryMonitor()
+                //focusButtonService-------//
+                focusButtonServiceObject.cancelHabit()
+                //---------//
             }
             
             closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
@@ -2416,7 +2586,7 @@ class habitsVc: NSViewController {
                     // saving postpone information //Remember postpone status when app is restarted #1582  v 2.28.454
                     let postponeEndDate = Date().addingTimeInterval(TimeInterval(seconds))
                     UserDefaults.standard.set(postponeEndDate, forKey: kUserDefaultsLastRoutinePostponeEndDate)
-                    UserDefaults.standard.set(CURRENTSTATE._POSTPON_MORNING_HABIT_.rawValue,forKey: kUserDefaultsLastRoutinePostponeState)
+                    UserDefaults.standard.set(CURRENTSTATE._POSTPONE_MORNING_HABIT_.rawValue,forKey: kUserDefaultsLastRoutinePostponeState)
                     
                     if seconds > 120{
                         setPostponeNotificationTimer(duration: ((seconds) - 120))
@@ -2449,7 +2619,9 @@ class habitsVc: NSViewController {
                 }
             }
             writeStringToHabitInfo(isFinishTime: true, activityName: "")
-            
+            if !isExtendingPostponeFromAppStart{
+                saveRemainingHabitIdForPostponedRoutineList(state: ._MORNING_HABIT_)
+            }
             menuViewControllerObj?.reloadIfNeeded()
             leftMenuVcObj?.habitOver()
         }
@@ -2524,7 +2696,7 @@ class habitsVc: NSViewController {
     }
     
     
-    func postponeEveningHabitFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool, showAskIntention:Bool){
+    func postponeEveningHabitFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool, showAskIntention:Bool, isExtendingPostponeFromAppStart:Bool = false){
         var showAskIntention = showAskIntention
         
         if SettingsManagerObject.isStrictnessLevelSuperGentle(){
@@ -2564,19 +2736,22 @@ class habitsVc: NSViewController {
             
             hideCloseButtons()
             //Extend postpone time not working for 2 minute warning popup#923
-            if currentState == ._POSTPON_EVENING_HABIT_{
+            if currentState == ._POSTPONE_EVENING_HABIT_{
                 closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
             }
             //
             if !isFocusModeOn(){
                 leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
             }
-            currentState = ._POSTPON_EVENING_HABIT_
+            currentState = ._POSTPONE_EVENING_HABIT_
             hideBlankWindowInSecondaryMonitor()
             if currentHabitPlaying != nil{
                 closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             }
             
+            //focusButtonService-------//
+            focusButtonServiceObject.cancelHabit()
+            //---------//
             
             if popUpCheckListWcObj != nil{
                 if popUpCheckListWcObj?.window?.isVisible ?? false{
@@ -2618,7 +2793,7 @@ class habitsVc: NSViewController {
                     // saving postpone information //Remember postpone status when app is restarted #1582  v 2.28.454
                     let postponeEndDate = Date().addingTimeInterval(TimeInterval(seconds))
                     UserDefaults.standard.set(postponeEndDate, forKey: kUserDefaultsLastRoutinePostponeEndDate)
-                    UserDefaults.standard.set(CURRENTSTATE._POSTPON_EVENING_HABIT_.rawValue,forKey: kUserDefaultsLastRoutinePostponeState)
+                    UserDefaults.standard.set(CURRENTSTATE._POSTPONE_EVENING_HABIT_.rawValue,forKey: kUserDefaultsLastRoutinePostponeState)
                     
                     
                     if seconds > 120{
@@ -2648,7 +2823,9 @@ class habitsVc: NSViewController {
                 habitsVcObj?.showHabitState()
             }
             writeStringToHabitInfo(isFinishTime: true, activityName: "")
-            
+            if !isExtendingPostponeFromAppStart{
+                saveRemainingHabitIdForPostponedRoutineList(state: ._EVENING_HABIT_)
+            }
             menuViewControllerObj?.reloadIfNeeded()
             leftMenuVcObj?.habitOver()
         }
@@ -2674,7 +2851,7 @@ class habitsVc: NSViewController {
         }else{
             hideCloseButtons()
             removeSubViews()
-            currentState = ._POSTPON_FOCUS_SUMMARY_
+            currentState = ._POSTPONE_FOCUS_SUMMARY_
             hideBlankWindowInSecondaryMonitor()
             DispatchQueue.global().sync{//async {
                 if self.postponeTimer != nil{
@@ -2689,7 +2866,7 @@ class habitsVc: NSViewController {
                 // saving postpone information //Remember postpone status when app is restarted #1582  v 2.28.454
                 let postponeEndDate = Date().addingTimeInterval(TimeInterval(minutes*60))
                 UserDefaults.standard.set(postponeEndDate, forKey: kUserDefaultsLastRoutinePostponeEndDate)
-                UserDefaults.standard.set(CURRENTSTATE._POSTPON_FOCUS_SUMMARY_.rawValue,forKey: kUserDefaultsLastRoutinePostponeState)
+                UserDefaults.standard.set(CURRENTSTATE._POSTPONE_FOCUS_SUMMARY_.rawValue,forKey: kUserDefaultsLastRoutinePostponeState)
                 
                 
                 if minutes > 2{
@@ -2732,7 +2909,7 @@ class habitsVc: NSViewController {
     }
     
     @objc func showPostponeEndNotification(){
-        if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_ || currentState == ._POSTPON_MORNING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit && !isCustomRoutineWasRunningBetweenMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit && !isCustomRoutineWasRunningBetweenEveningHabit){
+        if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_ || currentState == ._POSTPONE_MORNING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit && !isCustomRoutineWasRunningBetweenMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit && !isCustomRoutineWasRunningBetweenEveningHabit){
             var msg = "Habit resumes in"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
                 msg = common.value(forKey: "postponeEndsText") as? String ?? msg
@@ -2744,7 +2921,7 @@ class habitsVc: NSViewController {
     
     @objc func resumeMorningHabit(){// func name "backgrounThread" will do work for showing morning routing again we just need to false this (currentState) variable
         addLog(text: "Morning habits postpone finished")
-        if currentState == ._POSTPON_MORNING_HABIT_{
+        if currentState == ._POSTPONE_MORNING_HABIT_{
             currentState = ._NOTHING_
             stopActivityTimer()
             if appdelegate!.isActivityTimerPaused{// if habit is postponed and system goes to sleep then  it stops break activity timer and while system is in sleep mode at that time postpone  time finish so it need to change isActivityTimerPaused to false otherwise when system wakes up it will again set activity timer
@@ -2779,7 +2956,7 @@ class habitsVc: NSViewController {
     
     @objc func resumeEveningHabit(){// func name "backgrounThread" will do work for showing evening routing again we just need to false this (currentState) variable
         addLog(text: "Evening habits postpone finished")
-        if currentState == ._POSTPON_EVENING_HABIT_{
+        if currentState == ._POSTPONE_EVENING_HABIT_{
             currentState = ._NOTHING_
             stopActivityTimer()
             if appdelegate!.isActivityTimerPaused{// if habit is postponed and system goes to sleep then  it stops break activity timer and while system is in sleep mode at that time postpone  time finish so it need to change isActivityTimerPaused to false otherwise when system wakes up it will again set activity timer
@@ -2886,12 +3063,12 @@ class habitsVc: NSViewController {
             appdelegate!.backgroundThread()
         }
         if isBreakActivityExecuteFromPostponeMorningHabit{
-            currentState = ._POSTPON_MORNING_HABIT_
+            currentState = ._POSTPONE_MORNING_HABIT_
             isBreakActivityExecuteFromPostponeMorningHabit = false
             addLog(text: "Break Activity Finished:- activity was started from postpone morning habit. Try postpone Habit Routine")
         }
         if isBreakActivityExecuteFromPostponeEveningHabit{
-            currentState = ._POSTPON_EVENING_HABIT_
+            currentState = ._POSTPONE_EVENING_HABIT_
             isBreakActivityExecuteFromPostponeEveningHabit = false
             addLog(text: "Break Activity Finished:- activity was started from postpone evening habit. Try postpone Habit Routine")
         }
@@ -2972,7 +3149,7 @@ class habitsVc: NSViewController {
             }
             
             if isShutOffTimeGoing(){
-                if currentState == ._POSTPON_FOCUS_SUMMARY_ || currentState == ._POSTPON_EVENING_HABIT_{
+                if currentState == ._POSTPONE_FOCUS_SUMMARY_ || currentState == ._POSTPONE_EVENING_HABIT_{
                     if !SettingsManagerObject.IsShowBreaksInPostponeEnabled{
                         addLog(text: "Routine is postponed. Show breaks in Postpone not enabled, Break Activities cancelled.")
                         return;//agar kisi ne shutdown abort bhi kr diya to bhi kuch ni hoga// iise focus summary  k time per bhi rreturn ho jayga
@@ -3154,6 +3331,11 @@ class habitsVc: NSViewController {
                     if timerViewcontrollerObj != nil {
                         if timerViewcontrollerObj?.timer != nil {
                             timerViewcontrollerObj?.timer?.invalidate()
+                            
+                            //focusButtonService---//
+                            focusButtonServiceObject.pauseHabit()
+                            //--------------//
+                            
                             enableSystemSleep()
                             if timerViewcontrollerObj?.isVideoLodded ?? false{
                                 if !(timerViewcontrollerObj?.isActivityPaused ?? false){
@@ -3201,6 +3383,11 @@ class habitsVc: NSViewController {
                     if timerViewcontrollerObj != nil {
                         if timerViewcontrollerObj?.timer != nil {
                             timerViewcontrollerObj?.timer?.invalidate()
+                            
+                            //focusButtonService---//
+                            focusButtonServiceObject.pauseHabit()
+                            //--------------//
+                            
                             enableSystemSleep()
                             if timerViewcontrollerObj?.isVideoLodded ?? false{
                                 if !(timerViewcontrollerObj?.isActivityPaused ?? false){
@@ -3238,7 +3425,7 @@ class habitsVc: NSViewController {
                 self.setActivityTimer()//possible nahi hai
                 return;
             }
-            if currentState == ._POSTPON_MORNING_HABIT_{// ⚠️ do not change current state inside this block
+            if currentState == ._POSTPONE_MORNING_HABIT_{// ⚠️ do not change current state inside this block
                 // new work // 20/04/23
                 if SettingsManagerObject.IsShowBreaksInPostponeEnabled{
                     isBreakActivityExecuteFromPostponeMorningHabit = true// morning habit postpone over hua to activity timer bhi band hoga or agar activity chal rhi hui to vo bhi band hokar uska timer band hoga
@@ -3247,7 +3434,7 @@ class habitsVc: NSViewController {
                 }
             }
             
-            if currentState == ._POSTPON_EVENING_HABIT_{// ⚠️ do not change current state inside this block
+            if currentState == ._POSTPONE_EVENING_HABIT_{// ⚠️ do not change current state inside this block
                 if SettingsManagerObject.IsShowBreaksInPostponeEnabled{
                     isBreakActivityExecuteFromPostponeEveningHabit = true
                 }else{
@@ -3255,7 +3442,7 @@ class habitsVc: NSViewController {
                 }
             }
             
-            if currentState == ._POSTPON_FOCUS_SUMMARY_{// ⚠️ do not change current state inside this block
+            if currentState == ._POSTPONE_FOCUS_SUMMARY_{// ⚠️ do not change current state inside this block
                 if SettingsManagerObject.IsShowBreaksInPostponeEnabled{
                     isBreakActivityExecuteFromPostponeEveningHabit = true
                 }else{
@@ -3439,7 +3626,7 @@ class habitsVc: NSViewController {
         }else{
             addLog(text: "ok Clicked From Custom Message:- list break activity ")
             self.showCloseButtons()
-            thirdVcObj?.startBreakActivity()
+            activityCompletionVcObj?.startBreakActivity()
             showBreakActivityListView()
         }
     }
@@ -3448,20 +3635,24 @@ class habitsVc: NSViewController {
         addLog(text: "perform Break Activities")
         self.showCloseButtons()
         postponeBreaksFromBreaksWarningCount = 0
-        if !(thirdVcObj?.isViewLoaded ?? false){
-            thirdVcObj?.loadView()
+        if !(activityCompletionVcObj?.isViewLoaded ?? false){
+            activityCompletionVcObj?.loadView()
         }
-        thirdVcObj?.startBreakActivity()
+        activityCompletionVcObj?.startBreakActivity()
         mainWindowControllerObj?.window?.setIsVisible(true)
         showBlankWindowInSecondaryMonitor()
         
+        showBreakActivityListView()
         
+        /*
         if isBreakActivityShowingWhileMeeting{
             showBreakActivityListView()
         }else{
             currentAction = ._BRAIN_DUMP_//new work #502
             showBreaksBrainDump()
         }
+         */
+        
         shouldShowPomodoroAfterBreak = false
         leftMenuVcObj?.microBreaksStarted()
         NSApplication.shared.activate(ignoringOtherApps: true)

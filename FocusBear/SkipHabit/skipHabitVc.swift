@@ -17,6 +17,7 @@ class skipHabitVc: NSViewController {
     var timer:Timer?
     var currentTimer = 0
     var totalDuration = 0
+    var pendingAction: (() -> Void)?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -30,32 +31,50 @@ class skipHabitVc: NSViewController {
         }
         
     }
+    
+    override func viewWillDisappear() {
+        // will be for new work only
+        if pendingAction != nil{// add for one click skip on list view
+            self.lblTimer.isHidden = true
+            timer?.invalidate()
+            timer = nil
+            self.view.removeFromSuperview()
+            self.pendingAction = nil
+        }
+    }
+    
     func resetView(){
         addLog(text: "skipHabitVc - resetView")
-        
+        pendingAction = nil
         if SettingsManagerObject.isEasySkipEnabled{
             skipHabit()
         }else{
             startTimer(duration: 15)
         }
     }
+    
+    // add for one click skip on list view:- v 3.32.491
+    func requestAuthorization(action: @escaping () -> Void, onCancel: (() -> Void)? = nil) {
+        pendingAction = action
+        if SettingsManagerObject.isEasySkipEnabled{
+            skipHabit()
+        }else{
+            startTimer(duration: 15)
+        }
+    }
+    
     @IBAction func btnCloseClicked(_ sender: Any) {
         timer?.invalidate()
         timer = nil
         self.view.removeFromSuperview()
-        
-//        if currentHabitPlaying != nil{//it means allowed app activity
-//            mainWindowControllerObj?.window?.close()
-//            hideBlankWindowInSecondaryMonitor()
-//            currentState = ._NOTHING_
-//            appdelegate?.backgroundThread()
-//        }
     }
+    
     @IBAction func btnDoHabitClicked(_ sender: Any) {
         timer?.invalidate()
         timer = nil
         self.view.removeFromSuperview()
     }
+    
     func startTimer(duration:Int) {
         lblTimer.isHidden = false
         currentTimer = 0
@@ -102,13 +121,21 @@ class skipHabitVc: NSViewController {
     }
     
     func skipHabit(){
+        if let pendingAction = pendingAction{// add for one click skip on list view
+            pendingAction()
+            self.pendingAction = nil
+            self.lblTimer.isHidden = true
+            self.view.removeFromSuperview()
+            return;
+        }
+        
         self.lblTimer.isHidden = true
         self.view.removeFromSuperview()
         
         if rememberNextHabitVcObj != nil{
-            if thirdVcObj!.view.subviews.contains(rememberNextHabitVcObj!.view){
+            if activityCompletionVcObj!.view.subviews.contains(rememberNextHabitVcObj!.view){
                 rememberNextHabitVcObj!.view.removeFromSuperview()
-                thirdVcObj?.boxBg.isHidden = false
+                activityCompletionVcObj?.boxBg.isHidden = false
             }
         }
         if currentAction == ._VISUALIZE_{
@@ -122,13 +149,13 @@ class skipHabitVc: NSViewController {
         }
         
         if currentState == ._MICRO_BREAK_{
-            thirdVcObj?.activitySkipped()
+            activityCompletionVcObj?.activitySkipped()
         }else if currentState == ._MORNING_HABIT_{
-            thirdVcObj?.morningHabitSkipped()
+            activityCompletionVcObj?.morningHabitSkipped()
         }else if currentState == ._EVENING_HABIT_{
-            thirdVcObj?.eveningHabitSkipped()
+            activityCompletionVcObj?.eveningHabitSkipped()
         }else if currentState == ._CUSTOM_ROUTINE_{
-            thirdVcObj?.customRoutineHabitSkipped()
+            activityCompletionVcObj?.customRoutineHabitSkipped()
         }
     }
 }

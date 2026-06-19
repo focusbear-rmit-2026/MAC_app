@@ -1,0 +1,4 @@
+// Base config for the FBHelper target — Debug.
+// FBHelper is not a CocoaPods target, so only our shared Debug signing is included.
+
+#include "Signing-Debug.xcconfig"

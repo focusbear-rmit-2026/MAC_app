@@ -65,6 +65,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         webView.configuration.userContentController.add(handler, name: "get_selected_tasks")
         webView.configuration.userContentController.add(handler, name: "close_todo_task_ui")
         webView.configuration.userContentController.add(handler, name: "close_todo_focus_end_ui")
+        webView.configuration.userContentController.add(AccessTokenRequestHandler.shared, name: AccessTokenRequestHandler.messageName)
         
         btnEnableAdvancedAnalytics.titleColor = NSColor.systemBlue
         
@@ -368,11 +369,24 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         loadRequest()
     }
     
-    func setAccessTokenToWebView(){
+    // Re-inject the freshly refreshed token via the same loader used on initial
+    // load for the current mode (see webView(_:didFinish:)).
+    func applyRefreshedAccessToken(requestId: String) {
+        if isAddingTask {
+            setAccessTokenToWebView(requestId: requestId)
+        } else {
+            setAccessTokenAndTaksToWebView(requestId: requestId)
+        }
+    }
+
+    func setAccessTokenToWebView(requestId: String? = nil){
         let theme = getWindowTheme()
         
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
-        let stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\"}"
+        var stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\"}"
+        if let requestId = requestId {
+            stringJson = String(stringJson.dropLast()) + ",\"requestId\":\"\(requestId)\"}"
+        }
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadAccessTokenForToDo) { loadAccessTokenForToDo(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
         
         webView.evaluateJavaScript(settingsFunc,completionHandler: { (html: Any?, error: Error?) in
@@ -382,14 +396,17 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         })
     }
 
-    func setAccessTokenAndTaksToWebView(){
+    func setAccessTokenAndTaksToWebView(requestId: String? = nil){
         let theme = getWindowTheme()
         
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         
         let totalDuration = focusModeActualDurationPerformed / 60
         
-        let stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"tasks\":\(focusModeTaskString),\"total_duration\":\(totalDuration),\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\"}"
+        var stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"tasks\":\(focusModeTaskString),\"total_duration\":\(totalDuration),\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\"}"
+        if let requestId = requestId {
+            stringJson = String(stringJson.dropLast()) + ",\"requestId\":\"\(requestId)\"}"
+        }
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadTasks) { loadTasks(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
         
         webView.evaluateJavaScript(settingsFunc,completionHandler: { (html: Any?, error: Error?) in
@@ -408,7 +425,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
     
     @IBAction func btnExtendSessionClicked(_ sender: Any) {
         let totalMinutes = Int(popUpBtnSelectMinutes.title) ?? 0
-        if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+        if currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
             if getHabitsVcObject().postponeTimer != nil {
                 if getHabitsVcObject().postponeTimer!.isValid{
                     let currentTime = Date()
@@ -434,7 +451,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                         
                         alertExtendPostpone!.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                             if modalResponse == .alertFirstButtonReturn{
-                                if currentState == ._POSTPON_MORNING_HABIT_{
+                                if currentState == ._POSTPONE_MORNING_HABIT_{
                                     if SettingsManagerObject.isEasySkipEnabled{
                                         getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                         self.extendFocusMode()
@@ -447,20 +464,11 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                                             self.extendFocusMode()
                                         }
                                     }
-                                }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+                                }else if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
                                     
                                     var shouldAskPasswordForEvening = false
                                     if shouldAskPassword() &&  !SettingsManagerObject.isEasySkipEnabled{
-                                        var isCutOffTimeGoing = false
-                                        if cutOffTime != nil {
-                                            let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
-                                            let currentDate = Date()
-                                            if currentDate > cutOffDate{
-                                                isCutOffTimeGoing = true
-                                            }
-                                        }
-                                        
-                                        if isCutOffTimeGoing{
+                                        if isCutOffTimeGoing(){
                                             if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
                                                 shouldAskPasswordForEvening = true
                                             }
@@ -476,7 +484,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                                     }else{
                                         if currentState == ._EVENING_HABIT_{
                                             getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
-                                        }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
+                                        }else if currentState == ._POSTPONE_FOCUS_SUMMARY_{
                                             getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                                         }
                                         self.extendFocusMode()
@@ -524,21 +532,21 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         if let isAutoDoNotDisturbEnabled = arrFocusType[currentFocusModeIndex]["isAutoDoNotDisturbEnabled"] as? Bool{
             if isAutoDoNotDisturbEnabled{
                 if isAccessibilityEnabled(isPrompt: true){
-                    enableDND()
+                    DNDManager.shared.setDND(true)
                 }
             }
         }
-        if !isDndEnabled{
+        if !DNDManager.shared.isDndEnabled{
             if let isDeepWorkFocus = arrFocusType[currentFocusModeIndex]["isDeepWorkFocus"] as? Bool{
                 if  isDeepWorkFocus{
                     if isAccessibilityEnabled(isPrompt: true){
-                        enableDND()
+                        DNDManager.shared.setDND(true)
                     }
                 }
             }else if let isDefault = arrFocusType[currentFocusModeIndex]["isDefault"] as? Bool{
                 if  isDefault{
                     if isAccessibilityEnabled(isPrompt: true){
-                        enableDND()
+                        DNDManager.shared.setDND(true)
                     }
                 }
             }
@@ -552,7 +560,6 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         
         
         appdelegate?.setFocusModeTimerForExtendAfterComplete(hour: nil, minute: minutesToExtend)
-        closePomodoroWindowIOfVisible()
         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled && currentState != ._MICRO_BREAK_{
             showTaskPlayerWindow(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock, automatically:false)
             leftMenuVcObj?.focusModeOrFocusModeHabitStarted()

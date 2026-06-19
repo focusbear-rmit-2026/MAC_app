@@ -61,6 +61,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
         webview.configuration.userContentController.add(handler, name: "setting_saved")
         webview.configuration.userContentController.add(handler, name: "open_marketplace")
         webview.configuration.userContentController.add(handler, name: "detect_user_settings_change")
+        webview.configuration.userContentController.add(AccessTokenRequestHandler.shared, name: AccessTokenRequestHandler.messageName)
 
         loadWebView()
         
@@ -138,8 +139,8 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
     func reloadClicked(webView:WKWebView){
         loadWebView()
     }
-    
-    func setSettingsToWebView(){
+    var count = 0
+    func setSettingsToWebView(requestId: String? = nil){
         let theme = getWindowTheme()
         var flags = "[\"settings-updated\"]"
         if SettingsManagerObject.isGeekModeEnabled{
@@ -148,8 +149,15 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
             flags = "[\"settings-updated\",\"simple-mode\",\"save-settings-migrate-to-web\"]"
         }
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
-        let settingsJson = "{\"access_token\":\"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"flags\":\(flags)}"
-        
+        let accessToken = appdelegate!.credential?.accessToken ?? ""
+//        count += 1
+//        if count == 5{//todo rmeove 
+//            accessToken = accessToken + "1"
+//        }
+        var settingsJson = "{\"access_token\":\"\(accessToken)\",\"platform\":\"mac\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"flags\":\(flags)}"
+        if let requestId = requestId {
+            settingsJson = String(settingsJson.dropLast()) + ",\"requestId\":\"\(requestId)\"}"
+        }
         let javascript = "loadSettingsData(\(settingsJson));"
         
         webview?.evaluateJavaScript(javascript,completionHandler: { (html: Any?, error: Error?) in
@@ -251,7 +259,6 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
     
     override func viewWillAppear() {
         self.setSettingsToWebView()
-//        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault))
         allApiObject.capturePosthog(event: "edit-habits", metadata: [:])
     }
 
@@ -575,7 +582,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                                 }
                                 
                                 if currentAction == ._END_ && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_){
-                                    if (getHabitsVcObject().habitsView.subviews.contains(thirdVcObj!.view)){
+                                    if (getHabitsVcObject().habitsView.subviews.contains(activityCompletionVcObj!.view)){
                                         if focusCompletedForActivityVcObj != nil{
                                             if (getHabitsVcObject().view.subviews.contains((focusCompletedForActivityVcObj!.view))){
                                                 focusCompletedForActivityVcObj?.textFieldAchieve.stringValue = taskString

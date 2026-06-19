@@ -55,6 +55,12 @@ class pusherEvents:NSObject, PusherDelegate {
                                     let diffMinutes = Calendar.current.dateComponents([.minute], from: startTime, to: finishTime).minute ?? 0
                                     print(diffMinutes)
                                     if diffMinutes > 0{
+                                        addLog(text: "Start focus mode from pusher event")// v 2.32484
+                                        if !getTaskPlayerVcObject().isViewLoaded{
+                                            getTaskPlayerVcObject().loadView()
+                                        }
+                                        getTaskPlayerVcObject().loadRequest()
+                                        
                                         var currentFocusModeIndex = -1
                                         for i in 0..<arrFocusType.count{
                                             if arrFocusType[i]["id"] as? String  == focusModeId{
@@ -79,21 +85,21 @@ class pusherEvents:NSObject, PusherDelegate {
                                         if let isAutoDoNotDisturbEnabled = arrFocusType[currentFocusModeIndex]["isAutoDoNotDisturbEnabled"] as? Bool{
                                             if isAutoDoNotDisturbEnabled{
                                                 if isAccessibilityEnabled(isPrompt: true){
-                                                    enableDND()
+                                                    DNDManager.shared.setDND(true)
                                                 }
                                             }
                                         }
-                                        if !isDndEnabled{
+                                        if !DNDManager.shared.isDndEnabled{
                                             if let isDeepWorkFocus = arrFocusType[currentFocusModeIndex]["isDeepWorkFocus"] as? Bool{
                                                 if  isDeepWorkFocus{
                                                     if isAccessibilityEnabled(isPrompt: true){
-                                                        enableDND()
+                                                        DNDManager.shared.setDND(true)
                                                     }
                                                 }
                                             }else if let isDefault = arrFocusType[currentFocusModeIndex]["isDefault"] as? Bool{
                                                 if  isDefault{
                                                     if isAccessibilityEnabled(isPrompt: true){
-                                                        enableDND()
+                                                        DNDManager.shared.setDND(true)
                                                     }
                                                 }
                                             }
@@ -114,8 +120,28 @@ class pusherEvents:NSObject, PusherDelegate {
                                             timerForFocusModeEndNotification = nil
                                         }
                                         appdelegate?.setFocusModeTimer(hour: nil, minute: diffMinutes)
-                                        closePomodoroWindowIOfVisible()
+                                        
+
                                         whatToAchieveInFocusBlock = intention
+                                        
+                                        DispatchQueue.global().async {
+                                            sleep(1)
+                                            DispatchQueue.main.async {
+                                                if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
+                                                    showTaskPlayerWindow(totalDuration: diffMinutes, intention: whatToAchieveInFocusBlock, automatically:true)
+                                                }else{
+                                                    if !getTaskPlayerVcObject().isViewLoaded{
+                                                        getTaskPlayerVcObject().loadView()
+                                                    }
+                                                    taskPlayerVcObj?.reloadData(totalDuration: diffMinutes, intention: whatToAchieveInFocusBlock)
+                                                    shouldReloadTaskPlayer = false
+                                                    mainWindowControllerObj?.window?.close()
+                                                }
+                                            }
+                                        }
+                                        
+                                        //focusButtonService
+                                        focusButtonServiceObject.startFocusSession(seconds: diffMinutes*60)
                                         
                                         appdelegate!.focusModeStartted(isStartedByPusher: true)
   
@@ -147,39 +173,40 @@ class pusherEvents:NSObject, PusherDelegate {
                 if isFocusModeOnOrPaused() == false{
                     return;
                 }
+                taskPlayerVcObj?.getToDosFromPlayer()
                 
-//                if getEndFocusModeWindowControllerObj().window!.isVisible{
-//                    getEndFocusModeWindowControllerObj().window?.close()
-//                    return;
-//                }
-//                closeTaskPlayerWindowIfVisible()
-                isHardCorePomodoroModeOn = false
-
+                setAppIconForFocusModeScore(probability: nil)
                 isSkipBreakActivityDuringFocus = false
                 lastFocusModeTempInfo = nil
                 unfocusedTime = 0
                 
                 playFocusPomodorBreakEndsSound()
                 endFocusModeTime = nil
-
+                
                 if timerForFocusMode != nil{
                     timerForFocusMode?.invalidate()
                     timerForFocusMode = nil
                 }
                 if timerForFocusModeEndNotification != nil{
                     timerForFocusModeEndNotification?.invalidate()
-                    setAppIconForFocusModeScore(probability: nil)
                     timerForFocusModeEndNotification = nil
                 }
+
                 if focusEndWarningWcObj != nil{
                     if focusEndWarningWcObj?.window?.isVisible ?? false{
                         focusEndWarningWcObj?.window?.close()
                     }
                 }
+                
                 if isFocusModeOn(){// if is paused then already calculated, otherwise calculate
                     let totalSeconds = Int(Date().timeIntervalSince(startFocusModeTimeForPauseAndResume ?? Date()))
                     focusModeActualDurationPerformed += totalSeconds
                 }
+                
+                focusModeFinishedCapturePosthog()
+                
+                isHardCorePomodoroModeOn = false
+                
                 
                 var currentFocusModeName = ""
                 for i in 0..<arrFocusType.count{
@@ -187,33 +214,27 @@ class pusherEvents:NSObject, PusherDelegate {
                         arrFocusType[i]["isOn"] = false
                         arrFocusType[i]["isPaused"] = false
                         currentFocusModeName = arrFocusType[i]["name"] as? String ?? ""
-                        
-                        if let isAutoDoNotDisturbEnabled = arrFocusType[i]["isAutoDoNotDisturbEnabled"] as? Bool{
-                            if isAutoDoNotDisturbEnabled{
-                                if isAccessibilityEnabled(isPrompt: false){
-                                    disableDND()
-                                }
-                            }
+
+                        if DNDManager.shared.isDndEnabled{
+                            DNDManager.shared.setDND(true)
                         }
                         
                         workAfterFocusBegin(index: i)
                         break;
                     }
                 }
-                if timerForFocusMode != nil{
-                    timerForFocusMode?.invalidate()
-                }
-                closePupUpBlockIfVisible()
                 
+                isFocusModeRunning = false
+
                 appdelegate!.setStatusBarButtonColorForFocusMode(color: NSColor.clear, colorString: nil)
                 appdelegate!.statusbutton?.title = ""
                 
-//                if appdelegate!.timerAllowUrl != nil{
-//                    appdelegate!.timerAllowUrl!.invalidate()
-//                }
                 focusModeHelper.stopUrlTimer()
                 appdelegate!.timerCheckAllowedApps?.invalidate()
                 
+                //focusButtonService
+                focusButtonServiceObject.finishFocusSession()
+ 
                 arrKeywordsToAllowInFocus.removeAll()
 
 
@@ -222,8 +243,22 @@ class pusherEvents:NSObject, PusherDelegate {
 
                 appdelegate!.isAutoMeetingsModeStarted = false
                 appdelegate!.appUsedInAutoMeetingFocusMode = ""
-                refreshFocusModeData()
+                
+                
                 closePupUpBlockIfVisible()
+                menuViewControllerObj?.reloadIfNeeded()
+                closeNudgeFocusAlignmentScoreWindow()
+                
+                leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
+                leftMenuVcObj?.resetFocusModeTitle()
+                
+                if mainWindowControllerObj?.window?.isVisible ?? false{
+                    if leftMenuVcObj?.boxTodoPlayer.isSelected ?? false{
+                        leftMenuVcObj?.showTaskPlayer()
+                    }
+                }
+                
+                refreshFocusModeData()
             }
         })
         
@@ -231,29 +266,32 @@ class pusherEvents:NSObject, PusherDelegate {
         _ = channel.bind(eventName: "activity-completed", eventCallback: { (event: PusherEvent) in
             if let data = event.data {
                 print(data)
-                if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
-                    menuViewControllerObj?.btnResumeHabitsClicked(self)
-                    return;
-                }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
-                    menuViewControllerObj?.btnResumeHabitsClicked(self)
-                    return;
-                }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
-                    menuViewControllerObj?.btnResumeHabitsClicked(self)
-                    return;
-                }
+                
                 
                 if let data = data.data(using: .utf8) {
                     do {
                         if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]{
                             print(dictionary)
                             
-                            
                             var shouldIgnore = false
-                            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_{
-                                if dictionary["leader_device_id"] as? String == currentDeviceId{
-                                    shouldIgnore = true
+                            
+                            if dictionary["leader_device_id"] as? String == currentDeviceId{
+                                shouldIgnore = true
+                            }
+                            
+                            if !shouldIgnore {
+                                if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
+                                    menuViewControllerObj?.btnResumeHabitsClicked(self)
+                                    return;
+                                }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
+                                    menuViewControllerObj?.btnResumeHabitsClicked(self)
+                                    return;
+                                }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
+                                    menuViewControllerObj?.btnResumeHabitsClicked(self)
+                                    return;
                                 }
-                                if !shouldIgnore{
+     
+                                if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_{
                                     appdelegate!.abortAllProcess()
                                     currentState = ._NOTHING_
                                     appdelegate!.backgroundThread()
@@ -265,7 +303,6 @@ class pusherEvents:NSObject, PusherDelegate {
                                         }
                                     }
                                 }
-                                
                             }
                         }
                     }catch{

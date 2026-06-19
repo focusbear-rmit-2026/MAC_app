@@ -9,4 +9,7 @@ def home():
     return send_from_directory(app.static_folder, "focus-block.html")
 
 if __name__ == "__main__":
-    app.run(port=50501)
+    # Port is chosen by the host app and passed via the PORT env var so it can fall
+    # back to a free port when 50501 is already in use. Defaults to 50501 if unset.
+    port = int(os.environ.get("PORT", "50501"))
+    app.run(port=port)

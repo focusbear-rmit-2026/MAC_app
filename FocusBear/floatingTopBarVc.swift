@@ -11,6 +11,7 @@ import Cocoa
 
 class floatingTopBarVc: NSViewController {
 
+    @IBOutlet weak var imgViewSmallAppIcon: NSImageView!
     @IBOutlet weak var stackViewMoreItems: NSStackView!
     @IBOutlet weak var lblScheduleTime: NSTextField!
     @IBOutlet weak var lblScheduleName: NSTextField!
@@ -30,12 +31,12 @@ class floatingTopBarVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        
-        boxMainTrackingArea = NSTrackingArea.init(rect: boxMain.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        boxMain.addTrackingArea(boxMainTrackingArea!)
+
         boxTimer.isHidden = true
         boxCustomBlockingSchedule.isHidden = true
         normalWidth = self.view.frame.width
+        
+        imgViewSmallAppIcon.image = NSImage(named: "Bear-Small")
     }
     
     @IBAction func btnBarClicked(_ sender: Any) {
@@ -43,17 +44,6 @@ class floatingTopBarVc: NSViewController {
         appdelegate!.menuOpenedFromFloatingBar = true// always next to togglepopover
     }
     
-    override func mouseEntered(with event: NSEvent) {
-        if event.trackingArea == boxMainTrackingArea{
-//            isCustomBarIsInFocus = true
-        }
-    }
-    
-    override func mouseExited(with event: NSEvent) {
-        if event.trackingArea == boxMainTrackingArea{
-//            isCustomBarIsInFocus = false
-        }
-    }
     @IBAction func btnCloseClicked(_ sender: Any) {
         boxMain.isHidden = true
         boxMoreItems.isHidden = true
@@ -79,5 +69,13 @@ class floatingTopBarVc: NSViewController {
         smallCountDownVcObj?.isFocusBreak = isFocusBreak
         smallCountDownVcObj?.startTimerHabit(durationSeconds: durationSeconds, msg: msg, currentTimerValue:currentTimerValue)
         timerBoxShown()
+    }
+    
+    func showRecordingGif(){
+        imgViewSmallAppIcon.image = NSImage(named: "fb_recording")
+    }
+    
+    func hideRecordingGif(){
+        imgViewSmallAppIcon.image = NSImage(named: "Bear-Small")
     }
 }
