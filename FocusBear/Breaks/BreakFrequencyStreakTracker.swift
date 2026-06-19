@@ -97,12 +97,47 @@ final class BreakFrequencyStreakTracker {
         addLog(text: "BreakFrequencyStreakTracker: streak reset")
     }
 
-    /// Persist the new break frequency and reload it for the break timer.
+    /// Persist the new break frequency, sync it to the server, and reload it for the break timer.
     func saveNewBreakFrequency(_ minutes: Int) {
         UserDefaults.standard.set(minutes, forKey: kBreakFrequencyMinutes)
         // Update the live global used by the break timer
         breakAfterMinutes = minutes
         addLog(text: "BreakFrequencyStreakTracker: new break frequency saved — \(minutes) min")
+
+        // Sync to server — same pattern used by shutOffTimeVc / editHabitRoutineVc:
+        // load the cached settings blob, mutate the one field, PUT via isSettingsValid,
+        // then re-cache whatever the server returns.
+        var jsonResult = NSDictionary()
+        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String,
+            let data = stringDic.data(using: .utf8) {
+            do {
+                jsonResult = try JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? NSDictionary()
+            } catch {
+                addLog(text: "BreakFrequencyStreakTracker: failed to parse cached settings JSON — \(error.localizedDescription)")
+            }
+        }
+
+        if let mutableDic = jsonResult.mutableCopy() as? NSMutableDictionary {
+            mutableDic["break_after_minutes"] = minutes
+            allApiObject.isSettingsValid(settings: mutableDic, isOnboarding: false, completionHandler: { dic, statusCode in
+                if statusCode == 200, let dic = dic {
+                    addLog(text: "BreakFrequencyStreakTracker: break_after_minutes synced to server — \(minutes) min")
+                    do {
+                        let jsonData = try JSONSerialization.data(withJSONObject: dic, options: [])
+                        if let backToString = String(data: jsonData, encoding: .utf8) {
+                            UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                        }
+                    } catch {
+                        addLog(text: "BreakFrequencyStreakTracker: failed to re-cache settings JSON — \(error.localizedDescription)")
+                    }
+                } else {
+                    addLog(text: "BreakFrequencyStreakTracker: server sync failed — statusCode \(statusCode)")
+                }
+            })
+        } else {
+            addLog(text: "BreakFrequencyStreakTracker: no cached settings JSON found — could not sync break_after_minutes to server")
+        }
+
         // Restart the break timer so the new frequency takes effect immediately
         DispatchQueue.main.async {
             if getHabitsVcObject().breakTimer != nil {
