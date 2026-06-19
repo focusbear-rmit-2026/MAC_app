@@ -109,13 +109,13 @@ class suggestWorkFocusManager {
                     alertIsVisible = true
                     let name = arrFocusType[i]["name"] as? String ?? ""
                     DispatchQueue.main.async {
-                        var title = "You’re currently using a app allowed for <WORK> Focus Mode."//todo text
+                        var title = "You’re currently using a app allowed for <WORK> Focus Mode."
                         var subTitle = "Would you like to start Focus Mode now?"
                         var buttonYes = "Yes, Start"
                         var buttonNotNow = "Not Now"
                         
                         if let info = configjson.value(forKey: "alertStartWorkFocusMode") as? NSDictionary{
-                            //title = info.value(forKey: "title") as? String ?? title
+                            title = info.value(forKey: "titleApp") as? String ?? title
                             subTitle = info.value(forKey: "subTitle") as? String ?? subTitle
                             buttonYes = info.value(forKey: "buttonYes") as? String ?? buttonYes
                             buttonNotNow = info.value(forKey: "buttonNotNow") as? String ?? buttonNotNow

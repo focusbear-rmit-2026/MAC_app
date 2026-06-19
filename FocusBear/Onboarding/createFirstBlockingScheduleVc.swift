@@ -81,6 +81,14 @@ class createFirstBlockingScheduleVc: NSViewController {
         checkBoxAiEnabled.title = "Use Al to decide if websites should be allowed"
         lblTitleStrictnessLevel.stringValue = "Strictness level:"
         
+        var daySun = "Sun"
+        var daySat = "Sat"
+        var dayFri = "Fri"
+        var dayThu = "Thu"
+        var dayWed = "Wed"
+        var dayTue = "Tue"
+        var dayMon = "Mon"
+        
         if let blockingScheduleEditorVcInfo = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary{
             lblTitleScheduleName.stringValue = blockingScheduleEditorVcInfo.value(forKey: "titleScheduleName") as? String ?? lblTitleScheduleName.stringValue
             lblTitleScheduleDays.stringValue = blockingScheduleEditorVcInfo.value(forKey: "titleBlockingSchedule") as? String ?? lblTitleScheduleDays.stringValue
@@ -88,6 +96,14 @@ class createFirstBlockingScheduleVc: NSViewController {
             lblTitleTillTime.stringValue = blockingScheduleEditorVcInfo.value(forKey: "titleTillTime") as? String ?? lblTitleTillTime.stringValue
             checkBoxSkipMicroBreaks.title = blockingScheduleEditorVcInfo.value(forKey: "buttonSkipMicrobreaks") as? String ?? checkBoxSkipMicroBreaks.title
             checkBoxAiEnabled.title = blockingScheduleEditorVcInfo.value(forKey: "buttonEnableAi") as? String ?? checkBoxAiEnabled.title
+            
+            daySun = blockingScheduleEditorVcInfo.value(forKey: "daySun") as? String ?? daySun
+            daySat = blockingScheduleEditorVcInfo.value(forKey: "daySat") as? String ?? daySat
+            dayFri = blockingScheduleEditorVcInfo.value(forKey: "dayFri") as? String ?? dayFri
+            dayThu = blockingScheduleEditorVcInfo.value(forKey: "dayThu") as? String ?? dayThu
+            dayWed = blockingScheduleEditorVcInfo.value(forKey: "dayWed") as? String ?? dayWed
+            dayTue = blockingScheduleEditorVcInfo.value(forKey: "dayTue") as? String ?? dayTue
+            dayMon = blockingScheduleEditorVcInfo.value(forKey: "dayMon") as? String ?? dayMon
         }
         
         if let info = configjson.value(forKey: "createFirstBlockingScheduleVcInfo") as? NSDictionary{
@@ -119,13 +135,15 @@ class createFirstBlockingScheduleVc: NSViewController {
         lblStrictnessStrict.stringValue = "🟡 " + titleStrictMode
         lblStrictnessSuperStrict.stringValue = "🔴 " + titleSuperStrictMode
 
-        boxSunday.titleLabel.stringValue = "Sun"// todo need to  covert with some one
-        boxSaturday.titleLabel.stringValue = "Sat"
-        boxFriday.titleLabel.stringValue = "Fri"
-        boxThursday.titleLabel.stringValue = "Thu"
-        boxWednesday.titleLabel.stringValue = "Wed"
-        boxTuesday.titleLabel.stringValue = "Tue"
-        boxMonday.titleLabel.stringValue = "Mon"
+        
+        
+        boxSunday.titleLabel.stringValue = daySun
+        boxSaturday.titleLabel.stringValue = daySat
+        boxFriday.titleLabel.stringValue = dayFri
+        boxThursday.titleLabel.stringValue = dayThu
+        boxWednesday.titleLabel.stringValue = dayWed
+        boxTuesday.titleLabel.stringValue = dayTue
+        boxMonday.titleLabel.stringValue = dayMon
         
         boxSunday.index = 1
         boxSaturday.index = 7

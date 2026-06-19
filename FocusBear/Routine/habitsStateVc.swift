@@ -21,11 +21,20 @@ class habitsStateVc: NSViewController {
     
     var isFreeTimeBeforeShutoff = false
     var editRoutineButtonShowing = false
+    
+    
+    var buttonUncancelEveningRoutine = "Uncancel my evening routine"
+    var buttonUncancelMorningRoutine = "Uncancel my morning routine"
+    var restoreRoutineFailedText = "We couldn't restore your routine right now. Please try again."
+    var setSleepTimeCancelledEveningRoutineWithUndo = "You do not have sleep time set.\n\n(By the way, you cancelled your evening routine. if you changed your mind and want to do your evening habits click Uncancel my evening routine)"
+    var sleepTimeCancelledEveningRoutineWithUndo = "Your sleep time is <CUTOFFTIME>.\n\n(By the way, you cancelled your evening routine. if you changed your mind and want to do your evening habits click Uncancel my evening routine)"
+    var nextMorningRoutineStartText = "Your next morning routine starts at <STARTTIME>.\nRest well and recharge for a strong start tomorrow 💪"
+    var nextRoutineTimeCancelledMorningRoutineWithUndo = "Your next scheduled routine (<ROUTINE>) is set for <TIME>. Be ready to jump back in and continue building those healthy habits. You've got this!\n\n(By the way, you cancelled your morning routine. if you changed your mind and want to do your morning habits click Uncancel my morning routine)"
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        btnUnCancelRoutine.title = "Uncancel my evening routine"//todo text
-        
         lblTitle.stringValue = ""// v 2.28.453
         btnResumeHabits.title = "Resume Habits"
         
@@ -33,7 +42,17 @@ class habitsStateVc: NSViewController {
             morningRoutinePostponedText = habitsStateVcInfo.value(forKey: "morningRoutinePostponedText") as? String ?? morningRoutinePostponedText
             eveningRoutinePostponedText = habitsStateVcInfo.value(forKey: "eveningRoutinePostponedText") as? String ?? eveningRoutinePostponedText
             btnResumeHabits.title = habitsStateVcInfo.value(forKey: "buttonResumeHabits") as? String ?? btnResumeHabits.title
+            
+            
+            buttonUncancelEveningRoutine = habitsStateVcInfo.value(forKey: "buttonUncancelEveningRoutine") as? String ?? buttonUncancelEveningRoutine
+            buttonUncancelMorningRoutine = habitsStateVcInfo.value(forKey: "buttonUncancelMorningRoutine") as? String ?? buttonUncancelMorningRoutine
+            restoreRoutineFailedText = habitsStateVcInfo.value(forKey: "restoreRoutineFailedText") as? String ?? restoreRoutineFailedText
+            setSleepTimeCancelledEveningRoutineWithUndo = habitsStateVcInfo.value(forKey: "setSleepTimeCancelledEveningRoutineWithUndo") as? String ?? setSleepTimeCancelledEveningRoutineWithUndo
+            sleepTimeCancelledEveningRoutineWithUndo = habitsStateVcInfo.value(forKey: "sleepTimeCancelledEveningRoutineWithUndo") as? String ?? sleepTimeCancelledEveningRoutineWithUndo
+            nextMorningRoutineStartText = habitsStateVcInfo.value(forKey: "nextMorningRoutineStartText") as? String ?? nextMorningRoutineStartText
+            nextRoutineTimeCancelledMorningRoutineWithUndo = habitsStateVcInfo.value(forKey: "nextRoutineTimeCancelledMorningRoutineWithUndo") as? String ?? nextRoutineTimeCancelledMorningRoutineWithUndo
         }
+        btnUnCancelRoutine.title = buttonUncancelEveningRoutine
     }
     
     override func viewWillAppear() {
@@ -332,9 +351,9 @@ class habitsStateVc: NSViewController {
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutdownAborted)
                         appdelegate!.backgroundThread()
                     }else{
-                        showCustomAlert(title: "We couldn't restore your routine right now. Please try again.", body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: true, buttonLinkUrl: nil, buttonLinkText: nil, completionHandler: {_ in
+                        showCustomAlert(title: self.restoreRoutineFailedText, body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: true, buttonLinkUrl: nil, buttonLinkText: nil, completionHandler: {_ in
                             
-                        })//todo text
+                        })
                     }
                 }
             })
@@ -348,9 +367,9 @@ class habitsStateVc: NSViewController {
                         isHabitAlreadyShowed = false
                         appdelegate!.backgroundThread()
                     }else{
-                        showCustomAlert(title: "We couldn't restore your routine right now. Please try again.", body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: true, buttonLinkUrl: nil, buttonLinkText: nil, completionHandler: {_ in 
+                        showCustomAlert(title: self.restoreRoutineFailedText, body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: true, buttonLinkUrl: nil, buttonLinkText: nil, completionHandler: {_ in
                             
-                        })//todo text
+                        })
                     }
                 }
             })
@@ -396,12 +415,12 @@ class habitsStateVc: NSViewController {
                             if let cutOffTime = cutOffTime{
                                 let cutOffdate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date()) ?? Date()
                                 let cutOffDateString = getStringFromDate(date: cutOffdate, dateFormat: getSystemTimeFormat())
-                                var freeTimeText = "Your sleep time is <CUTOFFTIME>.\n\n(By the way, you cancelled your evening routine. if you changed your mind and want to do your evening habits click Uncancel my evening routine)"//todo text
+                                var freeTimeText = sleepTimeCancelledEveningRoutineWithUndo
                                 
                                 freeTimeText = freeTimeText.replacingOccurrences(of: "<CUTOFFTIME>", with: cutOffDateString)
                                 lblTitle.stringValue = freeTimeText
                             }else{
-                                var freeTimeText = "You do not have sleep time set.\n\n(By the way, you cancelled your evening routine. if you changed your mind and want to do your evening habits click Uncancel my evening routine)"//todo text
+                                var freeTimeText = setSleepTimeCancelledEveningRoutineWithUndo
                                 lblTitle.stringValue = freeTimeText
                                 
                             }
@@ -425,7 +444,7 @@ class habitsStateVc: NSViewController {
                             if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
                                 btnResumeHabits.title = habitsStateVcInfo.value(forKey: "buttonChangeTiming") as? String ?? btnResumeHabits.title
                             }
-                            btnUnCancelRoutine.title = "Uncancel my evening routine" //todo text
+                            btnUnCancelRoutine.title = buttonUncancelEveningRoutine
                             return;
                         }
                     }
@@ -434,21 +453,21 @@ class habitsStateVc: NSViewController {
                         if let cutOffTime = cutOffTime{
                             let cutOffdate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date()) ?? Date()
                             let cutOffDateString = getStringFromDate(date: cutOffdate, dateFormat: getSystemTimeFormat())
-                            var freeTimeText = "Your sleep time is <CUTOFFTIME>.\n\n(By the way, you cancelled your evening routine. if you changed your mind and want to do your evening habits click Uncancel my evening routine)"//todo text
+                            var freeTimeText = sleepTimeCancelledEveningRoutineWithUndo
                             
                             freeTimeText = freeTimeText.replacingOccurrences(of: "<CUTOFFTIME>", with: cutOffDateString)
                             lblTitle.stringValue = freeTimeText
                         }else{
-                            var freeTimeText = "You do not have sleep time set.\n\n(By the way, you cancelled your evening routine. if you changed your mind and want to do your evening habits click Uncancel my evening routine)"//todo text
+                            let freeTimeText = setSleepTimeCancelledEveningRoutineWithUndo
                             lblTitle.stringValue = freeTimeText
                             
                         }
                         
                         let startdate = Calendar.current.date(bySettingHour: startTime.hour, minute: startTime.minute, second: startTime.second, of: Date()) ?? Date()
                         let dateString = getStringFromDate(date: startdate, dateFormat: getSystemTimeFormat())
-                        lblDescription.stringValue = "Your next morning routine starts at <STARTTIME>.\nRest well and recharge for a strong start tomorrow 💪"//todo text
+                        lblDescription.stringValue = nextMorningRoutineStartText
                         lblDescription.stringValue = lblDescription.stringValue.replacingOccurrences(of: "<STARTTIME>", with: dateString)
-                        btnUnCancelRoutine.title = "Uncancel my evening routine" //todo text
+                        btnUnCancelRoutine.title = buttonUncancelEveningRoutine
                         lblDescription.isHidden = false
                     }
                 }else{
@@ -456,14 +475,11 @@ class habitsStateVc: NSViewController {
                     
                    
                     let (dateString) = getStringFromDate(date: nextRoutine, dateFormat: getSystemTimeFormat())
-                    var nextRoutineText = "Your next scheduled routine (<ROUTINE>) is set for <TIME>. Be ready to jump back in and continue building those healthy habits. You've got this!\n\n(By the way, you cancelled your morning routine. if you changed your mind and want to do your morning habits click Uncancel my morning routine)" // todo text
-                    if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
-                        //nextRoutineText = habitsStateVcInfo.value(forKey: "nextRoutineTimeCancelledMorninigRoutine") as? String ?? nextRoutineText
-                    }
+                    var nextRoutineText = nextRoutineTimeCancelledMorningRoutineWithUndo
                     nextRoutineText = nextRoutineText.replacingOccurrences(of: "<ROUTINE>", with: nextRoutineName)
                     nextRoutineText = nextRoutineText.replacingOccurrences(of: "<TIME>", with: dateString)
                     lblTitle.stringValue = nextRoutineText
-                    btnUnCancelRoutine.title = "Uncancel my morning routine" //todo text
+                    btnUnCancelRoutine.title = buttonUncancelMorningRoutine
                     if nextRoutineIsEveningRoutine{
                         if arrAllDaysEveningHabits.count == 0{
                            

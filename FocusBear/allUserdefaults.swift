@@ -225,7 +225,6 @@ var kUserDefaultsLastRoutinePostponeState = "kLastRoutinePostponeState"// mornin
 
 var kUserDefaultsBlockingScheduleAddedFirstTime = "kBlockingScheduleAddedFirstTime"// v2.29.461
 
-var kUserdefaultsIsGuestAccount = "kUserdefaultsIsGuestAccount"
 
 var kUserdefaultsLastFocusModeId = "kLastRunningFocusModeId"
 

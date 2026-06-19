@@ -174,6 +174,67 @@ class AllApi:NSObject {
         }
     }
     
+    /// Converts the current guest/anonymous account into a registered one (#1850) by
+    /// calling the cross-platform backend endpoint. The backend sets the new email +
+    /// password on the SAME account, so data is preserved, and sends a verification
+    /// email. `completionHandler` is called on the main thread with nil on success or
+    /// a user-facing error message on failure.
+    func convertGuestAccount(email: String, newPassword: String, completionHandler: @escaping(_ errorMessage: String?) -> ()){
+        addLog(text: "func call:- convertGuestAccount")
+        appdelegate!.credentialsManager.credentials { credentialsInfo in
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+
+            func finish(_ message: String?) {
+                DispatchQueue.main.async { completionHandler(message) }
+            }
+
+            guard appdelegate!.credential != nil else {
+                finish("You need to be signed in to create an account.")
+                return
+            }
+            guard let responsePathUrl = NSURL(string: "\(baseUrl)/auth/convert-guest") else {
+                finish("Something went wrong. Please try again.")
+                return
+            }
+
+            let request = makeRequest(responsePathUrl: responsePathUrl)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            let json: [String: Any] = ["email": email, "newPassword": newPassword]
+            request.httpBody = try? JSONSerialization.data(withJSONObject: json)
+
+            let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
+                if let error = error {
+                    addLog(text: "api call convert-guest error:- \(error.localizedDescription)")
+                    finish("Network error. Please check your connection and try again.")
+                    return
+                }
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    finish("Something went wrong. Please try again.")
+                    return
+                }
+                if (200...299).contains(httpResponse.statusCode) {
+                    addLog(text: "api call convert-guest success")
+                    finish(nil)
+                    return
+                }
+                var message = "Couldn't create your account (\(httpResponse.statusCode)). Please try again."
+                if let data = data,
+                   let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    if let m = obj["message"] as? String {
+                        message = m
+                    } else if let arr = obj["message"] as? [String], let first = arr.first {
+                        message = first
+                    }
+                }
+                addLog(text: "api call convert-guest Api error:- statusCode is \(httpResponse.statusCode)")
+                self.writeJsonInLog(data: data)
+                finish(message)
+            }
+            task.resume()
+        }
+    }
+
     func getDeviceId(completionHandler: @escaping(_ deviceId:String?) -> ()){
         addLog(text: "func call:- getDeviceId")
         

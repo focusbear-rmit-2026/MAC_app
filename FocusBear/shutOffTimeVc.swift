@@ -50,8 +50,8 @@ class shutOffTimeVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
         
-        lblUncancelRoutine.stringValue = "(By the way, you cancelled your evening routine. if you changed your mind and want to do your evening habits click resume evening routine)" //todo text
-        btnUncancelEveningRoutine.title = "Resume evening routine"// todo text
+        lblUncancelRoutine.stringValue = "(By the way, you cancelled your evening routine. if you changed your mind and want to do your evening habits click resume evening routine)"
+        btnUncancelEveningRoutine.title = "Resume evening routine"
         
         
         lblSelectMinutesToUSe.stringValue = "Select duration for unlock:"
@@ -71,6 +71,8 @@ class shutOffTimeVc: NSViewController {
             btnSleep.title = shutOffTimeInfo.value(forKey: "buttonSleepText") as? String ?? btnSleep.title
             lblSelectMinutesToUSe.stringValue = shutOffTimeInfo.value(forKey: "selectUnlockMinutesText") as? String ?? lblSelectMinutesToUSe.stringValue
             lblAlreadyUnlocked.stringValue = shutOffTimeInfo.value(forKey: "alreadyUnlockedText") as? String ?? lblAlreadyUnlocked.stringValue
+            lblUncancelRoutine.stringValue = shutOffTimeInfo.value(forKey: "cancelledEveningRoutineReminderText") as? String ?? lblUncancelRoutine.stringValue
+            btnUncancelEveningRoutine.title = shutOffTimeInfo.value(forKey: "buttonResumeEveningRoutine") as? String ?? btnUncancelEveningRoutine.title
         }
         
         lblAlreadyUnlocked.stringValue = lblAlreadyUnlocked.stringValue.replacingOccurrences(of: "<DURATION>", with: "30")
@@ -126,7 +128,11 @@ class shutOffTimeVc: NSViewController {
         }
         
         lblTitle.stringValue = "Time to wind down"
-        btnGetAccessNow.title = "Unlock cumputer"//todo text
+        btnGetAccessNow.title = "Unlock computer"
+        
+        if let shutOffTimeInfo = configjson.value(forKey: "shutOffTimeInfo") as? NSDictionary{
+            btnGetAccessNow.title = shutOffTimeInfo.value(forKey: "buttonUnlockComputer") as? String ?? btnGetAccessNow.title
+        }
         
         var timeFormat = "h:mm a"
         if let dict = UserDefaults.standard.persistentDomain(forName: "com.apple.menuextra.clock") {

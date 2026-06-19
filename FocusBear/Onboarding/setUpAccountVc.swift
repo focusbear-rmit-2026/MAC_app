@@ -128,10 +128,6 @@ class setUpAccountVc: NSViewController {
                                             getCustomLoginVcObject().loadView()
                                         }
                                         getCustomLoginVcObject().loginDone(credentials: credentials, isLogin: false)
-                                        if let user = appdelegate!.user{
-                                            let userdefaultId = kUserdefaultsIsGuestAccount  + (user.userId)
-                                            UserDefaults.standard.set(true, forKey: userdefaultId)
-                                        }
                                     }
                                 case .failure(let error):
                                     addLog(text: "login failed after signup")

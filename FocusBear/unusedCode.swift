@@ -1539,7 +1539,6 @@
                 
                 pomodoroSettingsVcObj?.lblrecordShorcutPomodoro.stringValue = "\(event.modifierFlags)\(char)"
                 SettingsManagerObject.startPomodoroShortcutFlags = flagsarr
-//                appdelegate?.registerPomodoroShortcut()
 
                 handled = true // likely we are interested with that key
                 pomodoroSettingsVcObj!.shortcutAdded()

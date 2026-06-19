@@ -994,9 +994,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 kUserDefaultsLastRoutinePostponeEndDate = kUserDefaultsLastRoutinePostponeEndDate + (self.user?.userId ?? "")
                 kUserDefaultsLastRoutinePostponeState = kUserDefaultsLastRoutinePostponeState + (self.user?.userId ?? "")
                 
-                
-                kUserdefaultsIsGuestAccount = kUserdefaultsIsGuestAccount  + (self.user?.userId ?? "")
-                
                 connectGlobalAndMacIDWithDistinctUserID()
                 
                 if let notes = UserDefaults.standard.object(forKey: "kUserdefaultsFocusModeNotes") as? String{// get notes from old key and remove it from old key
@@ -1119,20 +1116,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             
             DispatchQueue.main.async {
                 addLog(text: "work after getUserLocalDeviceSettings")
-                if !SettingsManagerObject.startPomodoroShortcutFlags.isEmpty || !SettingsManagerObject.startPomodoroShortcutChar.isEmpty{
-                    char = ""
-                    flags = NSEvent.modifierFlags
-                    
-                    char = SettingsManagerObject.startPomodoroShortcutChar
-                    
-                    let sflags = SettingsManagerObject.startPomodoroShortcutFlags
-                    updateFlags(sflags: sflags)
-                    
-                    
-                    if flags.isEmpty == false || char != "" {
-                        //self.registerPomodoroShortcut()//todo 
-                    }
-                }
 
                 // Register keyboard shortcuts for Brain Dump, Focus Music, Task List
                 HotkeyService.shared.registerAll()
@@ -1267,7 +1250,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     if dic != nil{
                         isEmailVerified = dic?.value(forKey: "email_verified") as? Bool ?? false
                         
-                        if UserDefaults.standard.object(forKey: kUserdefaultsIsGuestAccount) as? Bool == true{
+                        if isCurrentUserGuestAccount(){
                             addLog(text: "No need to verify email. Reason: Guest account.")
                             isEmailVerified = true
                         }
@@ -9402,3 +9385,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 }
 
 //  intel arraow bug
+
+// habit state
+// ucnomplete morning routine in shutoff
+// suggest focus mode alert  //todo check 
+
+// account vc new ai work add text
+// focus completed text is aadded in shutoff scrren in spanish file

@@ -47,6 +47,7 @@
 		1361D61F2E446DAD00601AB1 /* habitsStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1361D61E2E446DAD00601AB1 /* habitsStateVc.swift */; };
 		1361E6E52DB76A1900E6DE3F /* unverifiedEmailVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */; };
 		1364364B2DE1FA7400B90724 /* splashVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1364364A2DE1FA7400B90724 /* splashVc.swift */; };
+		136E96992FE42A2600380278 /* AnonymousAccountConversionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136E96982FE42A2600380278 /* AnonymousAccountConversionView.swift */; };
 		1372A9172F347DFD00A5B5BC /* messageBoxVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1372A9162F347DFD00A5B5BC /* messageBoxVc.swift */; };
 		13776EA32F764FEC0006A461 /* setScheduledDistractionBlockingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13776EA22F764FEC0006A461 /* setScheduledDistractionBlockingVc.swift */; };
 		13776EA52F7669E40006A461 /* distractionBlockingProgressVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13776EA42F7669E40006A461 /* distractionBlockingProgressVc.swift */; };
@@ -438,6 +439,7 @@
 		1361D61E2E446DAD00601AB1 /* habitsStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = habitsStateVc.swift; sourceTree = "<group>"; };
 		1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = unverifiedEmailVc.swift; sourceTree = "<group>"; };
 		1364364A2DE1FA7400B90724 /* splashVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = splashVc.swift; sourceTree = "<group>"; };
+		136E96982FE42A2600380278 /* AnonymousAccountConversionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnonymousAccountConversionView.swift; sourceTree = "<group>"; };
 		1372A9162F347DFD00A5B5BC /* messageBoxVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = messageBoxVc.swift; sourceTree = "<group>"; };
 		13776EA22F764FEC0006A461 /* setScheduledDistractionBlockingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = setScheduledDistractionBlockingVc.swift; sourceTree = "<group>"; };
 		13776EA42F7669E40006A461 /* distractionBlockingProgressVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = distractionBlockingProgressVc.swift; sourceTree = "<group>"; };
@@ -1500,6 +1502,7 @@
 				8F0A18552A8E4B5000AFA623 /* strictness */,
 				8F8C3FDD2A8CF5B0005CAF96 /* advanced */,
 				274C9A90289A8C900066F883 /* accountVc.swift */,
+				136E96982FE42A2600380278 /* AnonymousAccountConversionView.swift */,
 				130FE9582FA4C7B800E9C386 /* keyboardShortcutsSettingsVc.swift */,
 				8F892E5F2B3E91550030414C /* permissionsVc.swift */,
 				8F28E8312822B15A00310F4E /* uninstallVc.swift */,
@@ -1930,6 +1933,7 @@
 				8F9E5A112B69298C004814D1 /* onboardingProgressVc.swift in Sources */,
 				13219A8F2ED5CD8B00699D2E /* firefoxHttpServer.swift in Sources */,
 				1303D9AD2E4B085900FD5BEC /* breaksStateVc.swift in Sources */,
+				136E96992FE42A2600380278 /* AnonymousAccountConversionView.swift in Sources */,
 				8FAC6C9F2780748D008A4180 /* tblCellHabits.swift in Sources */,
 				8FABDDD327DA2ED600F6A58C /* enterPasswordVc.swift in Sources */,
 				8FABDDD527DA367100F6A58C /* passwordVc.swift in Sources */,
@@ -2220,6 +2224,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CODE_SIGN_ENTITLEMENTS = FBHelper/FBHelper.entitlements;
+				CODE_SIGN_IDENTITY = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
@@ -2238,6 +2243,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.focusbear.focusbearhelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = FocusBearHelperPersonalAcProfilePrashant;
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
@@ -2405,6 +2411,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Focus Bear.entitlements";
+				CODE_SIGN_IDENTITY = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 496;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
@@ -2424,6 +2432,7 @@
 				MARKETING_VERSION = 3.33;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = FocusBearMainAppProfile;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "FocusBear/FocusBear-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -2457,6 +2466,7 @@
 				MARKETING_VERSION = 3.33;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = FocusBearMainAppProfile;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "FocusBear/FocusBear-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;

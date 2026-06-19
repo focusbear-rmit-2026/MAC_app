@@ -28,13 +28,19 @@ class suggestFocusModeVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
         btnCancel.isSecondaryButton = true
-        lblTitleDuration.stringValue = "Focus duration:" // todo text
-        lblTitleMinutes.stringValue = "minutes" // todo text
-        lblTitleGoal.stringValue = "What do you want to achieve in this focus session?" // todo text
+        lblTitleDuration.stringValue = "Focus duration:"
+        lblTitleMinutes.stringValue = "minutes"
+        lblTitleGoal.stringValue = "What do you want to achieve in this focus session?"
         
         textFieldWorkDuration.formatter = IntegerFormatter()
         textFieldWorkDuration.integerValue = 25
         textViewGoal.delegate = self
+        
+        if let info = configjson.value(forKey: "alertStartWorkFocusMode") as? NSDictionary{
+            lblTitleDuration.stringValue = info.value(forKey: "focusDurationLabel") as? String ?? lblTitleDuration.stringValue
+            lblTitleMinutes.stringValue = info.value(forKey: "focusDurationUnit") as? String ?? lblTitleMinutes.stringValue
+            lblTitleGoal.stringValue = info.value(forKey: "sessionGoal") as? String ?? lblTitleGoal.stringValue
+        }
     }
     
     func resetData(title:String, body:String?, buttonOkText:String, buttonCancelText:String?, checkBoxText: String?, autoClose:Bool, completionHandler: @escaping (Bool, Int?, String?) -> Void){

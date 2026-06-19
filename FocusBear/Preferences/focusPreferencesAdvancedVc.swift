@@ -81,10 +81,10 @@ class focusPreferencesAdvancedVc: NSViewController {
         
         tokenField.delegate = self
         
-        btnCheckBoxSuggestWorkFocusMode.title = "Automatically suggest starting this focus mode when any allowed URL/App is opened" // todo text
+        btnCheckBoxSuggestWorkFocusMode.title = "Automatically suggest starting this focus mode when any allowed URL/App is opened"
         
         if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-            //btnCheckBoxSuggestWorkFocusMode.title = focusPreferencesInfo.value(forKey: "checkBoxSuggestWorkFocusMode") as? String ?? btnCheckBoxSuggestWorkFocusMode.title
+            btnCheckBoxSuggestWorkFocusMode.title = focusPreferencesInfo.value(forKey: "checkBoxSuggestWorkFocusMode") as? String ?? btnCheckBoxSuggestWorkFocusMode.title
         }
         
         lblFocusAlignmentScore.stringValue = "Show distracting site popup only when focus alignment score is less than"

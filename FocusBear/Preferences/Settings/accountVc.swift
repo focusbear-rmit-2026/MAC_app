@@ -8,6 +8,7 @@
 
 import Cocoa
 import Auth0
+import SwiftUI
 
 class accountVc: NSViewController {
 
@@ -87,7 +88,10 @@ class accountVc: NSViewController {
     
     override func viewWillAppear(){
         addLog(text: "accountVc:- viewWillAppear")
-        
+        reloadView()
+    }
+    
+    func reloadView(){
         if let userId = appdelegate!.user?.userId{
             lblUserId.stringValue = userId
         }else{
@@ -112,7 +116,7 @@ class accountVc: NSViewController {
 
             
             if daysremaining <= 0{
-                lblVersionState.stringValue = trialExpiredText 
+                lblVersionState.stringValue = trialExpiredText
             }else{
                 lblVersionState.stringValue = daysRemainingText.replacingOccurrences(of: "<DAYS>", with: "\(daysremaining)")//"Trial version - \(daysremaining) of 7 trial days remaining"//
             }
@@ -140,13 +144,114 @@ class accountVc: NSViewController {
             lblTitleMain.stringValue = ""
         }
         
-        if !isEmailVerified{//  
+        if !isEmailVerified{//
             boxEmailNotVerified.isHidden = false
             topSpaceUserId.constant = 78
         }else{
             boxEmailNotVerified.isHidden = true
             topSpaceUserId.constant = 20
         }
+
+        configureGuestConversionCard()
+    }
+
+    // MARK: - Guest account conversion (#1850)
+
+    private var guestConversionHostingView: NSHostingView<AnonymousAccountConversionView>?
+    private weak var guestConversionFormController: NSViewController?
+    private let guestCardTopInset: CGFloat = 16
+    private let guestCardSideInset: CGFloat = 22
+    /// Approx. card height; used only to reserve space below it. Verified visually.
+    private let guestCardReservedHeight: CGFloat = 96
+
+    /// For guest/anonymous users, shows a SwiftUI "create an account" card at the top
+    /// of the Account tab and reserves space so existing content sits below it.
+    /// No-op (and hidden) for registered users.
+    private func configureGuestConversionCard() {
+        let isGuest = isCurrentUserGuestAccount()
+        if isGuest, guestConversionHostingView == nil {
+            let card = AnonymousAccountConversionView(onCreateAccount: { [weak self] in
+                self?.presentGuestConversionForm()
+            })
+            let hosting = NSHostingView(rootView: card)
+            hosting.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(hosting)
+            NSLayoutConstraint.activate([
+                hosting.topAnchor.constraint(equalTo: view.topAnchor, constant: self.view.frame.height - boxEmailNotVerified.frame.minY - 20),
+                hosting.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: guestCardSideInset),
+                hosting.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -guestCardSideInset),
+            ])
+            guestConversionHostingView = hosting
+        }
+
+        guestConversionHostingView?.isHidden = !isGuest
+
+        // viewWillAppear re-sets topSpaceUserId to its base (20/78) each call, so this
+        // is not cumulative. Reserve enough room for the card above the account info.
+        if isGuest {
+            //topSpaceUserId.constant = max(topSpaceUserId.constant,
+                                          //guestCardTopInset + guestCardReservedHeight)
+            topSpaceUserId.constant = guestCardTopInset + guestCardReservedHeight + 20
+            boxEmailNotVerified.isHidden = true
+        }
+    }
+
+    /// Presents the email/password form sheet that calls the backend convert-guest
+    /// endpoint (mirrors the mobile guest-conversion flow; data is preserved server-side).
+    private func presentGuestConversionForm() {
+        addLog(text: "[user-action] accountVc:- guest create-account tapped")
+        let form = AnonymousAccountConversionFormView(
+            submit: { email, password, completion in
+                allApiObject.convertGuestAccount(email: email, newPassword: password, completionHandler: completion)
+            },
+            onSuccess: { [weak self] in
+                self?.handleGuestConversionSuccess()
+            },
+            onCancel: { [weak self] in
+                if let controller = self?.guestConversionFormController { self?.dismiss(controller) }
+            }
+        )
+        let controller = NSHostingController(rootView: form)
+        guestConversionFormController = controller
+        presentAsSheet(controller)
+    }
+
+    private func handleGuestConversionSuccess() {
+        if let controller = guestConversionFormController { dismiss(controller) }
+        let alert = NSAlert()
+        alert.setSharingType()
+        alert.messageText = "Almost there!"
+        alert.informativeText = "We've sent a verification email. Please confirm your email address to finish creating your account."
+        alert.alertStyle = .informational
+        if let window = view.window {
+            alert.beginSheetModal(for: window, completionHandler: nil)
+        } else {
+            alert.runModal()
+        }
+        getUserDetailsAgain()
+    }
+
+    func getUserDetailsAgain(){
+        allApiObject.getuserDetailsInfo(completionHandler: {dic in
+            if dic != nil{
+                isEmailVerified = dic?.value(forKey: "email_verified") as? Bool ?? false
+                
+                addLog(text:"isEmailVerified :- \(isEmailVerified)")
+                currentUserEmail = dic?.value(forKey: "email") as? String ?? ""
+                currentUserName = dic?.value(forKey: "username") as? String ?? ""
+                appdelegate!.sharedDefaults?.setValue(currentUserEmail, forKeyPath: kUserdefaultsSharedUserEmail)
+                appdelegate!.sharedDefaults?.setValue(currentUserName, forKeyPath: kUserdefaultsSharedUserName)
+                appdelegate!.sharedDefaults?.synchronize()
+                
+                if isCurrentUserGuestAccount(){
+                    addLog(text: "No need to verify email. Reason: Guest account.")
+                    isEmailVerified = true
+                }
+                DispatchQueue.main.async {
+                    self.reloadView()
+                }
+            }
+        })
     }
     
     @IBAction func btnLogoutClicked(_ sender: Any) {
@@ -185,6 +290,7 @@ class accountVc: NSViewController {
             
         })
     }
+
     
     @IBAction func btnResetPasswordClicked(_ sender: Any) {
         addLog(text: "[user-action] accountVc:- Reset Password Clicked")
@@ -197,7 +303,7 @@ class accountVc: NSViewController {
                     self.btnResetPassword.isEnabled = true
                     if dic != nil{
                         isEmailVerified = dic?.value(forKey: "email_verified") as? Bool ?? false
-                        if UserDefaults.standard.object(forKey: kUserdefaultsIsGuestAccount) as? Bool == true{
+                        if isCurrentUserGuestAccount(){
                             addLog(text: "No need to verify email. Reason: Guest account.")
                             isEmailVerified = true
                         }
