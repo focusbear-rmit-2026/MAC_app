@@ -2309,6 +2309,11 @@ class habitsVc: NSViewController {
     }
     var isBreakActivityPostponeInsideAllowedHabit = false// using this beacuse we dont want reset activity timer again (in resuming habit) if user has postponed activity inside allow app habit
     func postponeBreakActivitiesFor(minutes:Int, secondsToPostpone:Int?, isFromBreakWarningWindow:Bool){
+        // Postponing a running activity stops it — tell the Focus Button so it
+        // doesn't keep counting down (matches postponeMorning/EveningHabitFor).
+        if currentAction == ._INPROGRESS_ {
+            focusButtonServiceObject.cancelHabit()
+        }
         var seconds = 0
         if secondsToPostpone != nil{
             seconds = secondsToPostpone!
@@ -2634,7 +2639,11 @@ class habitsVc: NSViewController {
     }
     
     func postponeCustomRoutineFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool, showAskIntention:Bool, fromRoutineWarning:Bool){
-        
+        // Postponing a running activity stops it — tell the Focus Button so it
+        // doesn't keep counting down (matches postponeMorning/EveningHabitFor).
+        if currentAction == ._INPROGRESS_ {
+            focusButtonServiceObject.cancelHabit()
+        }
         var seconds = 0
         if secondsToPostpone != nil{
             seconds = secondsToPostpone!

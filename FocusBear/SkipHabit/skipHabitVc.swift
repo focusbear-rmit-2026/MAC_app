@@ -131,7 +131,14 @@ class skipHabitVc: NSViewController {
         
         self.lblTimer.isHidden = true
         self.view.removeFromSuperview()
-        
+
+        // A running habit is being skipped — stop it on the Focus Button too,
+        // otherwise the device keeps counting down the skipped habit (it only
+        // learns a habit ended via its own timer hitting 0 / EVENT|DONE).
+        if currentAction == ._INPROGRESS_ {
+            focusButtonServiceObject.cancelHabit()
+        }
+
         if rememberNextHabitVcObj != nil{
             if activityCompletionVcObj!.view.subviews.contains(rememberNextHabitVcObj!.view){
                 rememberNextHabitVcObj!.view.removeFromSuperview()
