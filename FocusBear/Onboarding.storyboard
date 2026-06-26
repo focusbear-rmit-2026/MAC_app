@@ -866,13 +866,13 @@
                                                             </view>
                                                         </box>
                                                         <box hidden="YES" boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="5PV-ED-2LN">
-                                                            <rect key="frame" x="0.0" y="63" width="400" height="21"/>
+                                                            <rect key="frame" x="0.0" y="43" width="400" height="41"/>
                                                             <view key="contentView" id="vMg-RO-YMl">
-                                                                <rect key="frame" x="0.0" y="0.0" width="400" height="21"/>
+                                                                <rect key="frame" x="0.0" y="0.0" width="400" height="41"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
                                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2Er-Nm-mfN">
-                                                                        <rect key="frame" x="11" y="3" width="367" height="15"/>
+                                                                        <rect key="frame" x="11" y="3" width="367" height="35"/>
                                                                         <constraints>
                                                                             <constraint firstAttribute="height" relation="lessThanOrEqual" constant="35" id="eDo-xP-TYQ"/>
                                                                         </constraints>
@@ -883,7 +883,7 @@
                                                                         </textFieldCell>
                                                                     </textField>
                                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="epq-EP-fT5">
-                                                                        <rect key="frame" x="-2" y="3" width="12" height="15"/>
+                                                                        <rect key="frame" x="-2" y="23" width="12" height="15"/>
                                                                         <textFieldCell key="cell" title="*" id="jcJ-vi-fy4">
                                                                             <font key="font" size="13" name="CourierNewPSMT"/>
                                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -891,7 +891,7 @@
                                                                         </textFieldCell>
                                                                     </textField>
                                                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="diQ-6n-BpF">
-                                                                        <rect key="frame" x="385" y="3" width="15" height="15"/>
+                                                                        <rect key="frame" x="385" y="23" width="15" height="15"/>
                                                                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="validIcon" id="cUZ-fV-ac9"/>
                                                                     </imageView>
                                                                 </subviews>
@@ -7647,8 +7647,8 @@ Edit setting -"search" in Firefox</string>
                                                                                                                     <rect key="frame" x="5" y="4" width="82" height="28"/>
                                                                                                                     <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="Des-YI-ybj">
                                                                                                                         <font key="font" metaFont="system"/>
-                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="802351230.82673001">
-                                                                                                                            <!--2026-06-05 11:20:30 +0000-->
+                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="803828226.892066">
+                                                                                                                            <!--2026-06-22 13:37:06 +0000-->
                                                                                                                         </date>
                                                                                                                         <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -7698,8 +7698,8 @@ Edit setting -"search" in Firefox</string>
                                                                                                                     <rect key="frame" x="5" y="4" width="82" height="28"/>
                                                                                                                     <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="z7A-mY-tK3">
                                                                                                                         <font key="font" metaFont="system"/>
-                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="802351230.83013999">
-                                                                                                                            <!--2026-06-05 11:20:30 +0000-->
+                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="803828226.89649999">
+                                                                                                                            <!--2026-06-22 13:37:06 +0000-->
                                                                                                                         </date>
                                                                                                                         <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>

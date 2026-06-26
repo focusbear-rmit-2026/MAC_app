@@ -9382,12 +9382,3 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
 
 }
-
-//  intel arraow bug
-
-// habit state
-// ucnomplete morning routine in shutoff
-// suggest focus mode alert  //todo check 
-
-// account vc new ai work add text
-// focus completed text is aadded in shutoff scrren in spanish file

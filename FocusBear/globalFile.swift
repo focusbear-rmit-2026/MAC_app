@@ -427,9 +427,9 @@ func playFocusPomodorBreakEndsSound(){
 }
 
 
-var arrStartingMorningEveningRoutineSound = ["Starting the Morning:Evening Routine_2",
-                                             "Starting the Morning:Evening Routine_4",
-                                             "Starting the Morning:Evening Routine_5"]
+var arrStartingMorningEveningRoutineSound = ["Starting the MorningEvening Routine_2",
+                                             "Starting the MorningEvening Routine_4",
+                                             "Starting the MorningEvening Routine_5"]
 
 var arrStartFocusSound = ["Start Focus Button_1",
                           "Start Focus Button_2"]

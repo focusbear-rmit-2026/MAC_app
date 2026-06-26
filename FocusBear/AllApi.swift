@@ -1898,7 +1898,6 @@ class AllApi:NSObject {
         addLog(text: "func call:- activitySkippedApi completed-activity")
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
-            
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
             let responsePath = "\(baseUrl)/completed-activity/skip"

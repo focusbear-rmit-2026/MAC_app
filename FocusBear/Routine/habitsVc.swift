@@ -575,6 +575,12 @@ class habitsVc: NSViewController {
             }
             
         }else if currentState == ._FOCUS_SUMMARY_{
+            // #1942: cancel any pending "one more minute" timer before opening the postpone
+            // dialog so it can't re-show the Focus Summary on top of / after the postpone,
+            // and close its countdown box so the "one minute timer" window doesn't linger.
+            timerGiveOneMoreMinut?.invalidate()
+            timerGiveOneMoreMinut = nil
+            closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             showAskPostponeView()
         }else if currentState == ._SPECIAL_ACTIVITY_{
             specialActivityFinish()
@@ -2833,7 +2839,15 @@ class habitsVc: NSViewController {
     
     func postponeFocusSummaryFor(minutes:Int, showAskIntention:Bool){
         addLog(text: "postpone Focus Summary Done:- \(minutes) minutes")
-        
+
+        // #1942: a pending "one more minute" timer (giveOneMoreMinuteBeforeShutOffMac)
+        // would otherwise fire showFocusSummaryViewAgain and re-display the Focus Summary
+        // a few seconds after postponing, resetting the state and defeating the postpone.
+        // Also close its countdown box so the "one minute timer" window doesn't linger.
+        timerGiveOneMoreMinut?.invalidate()
+        timerGiveOneMoreMinut = nil
+        closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
+
         var showAskIntention = showAskIntention
         
         if SettingsManagerObject.isStrictnessLevelSuperGentle(){

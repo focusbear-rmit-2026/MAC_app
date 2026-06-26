@@ -176,7 +176,8 @@ class focusButtonService: NSObject {
         if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_{
             return false // user is in postponed habit list so no need to remove completed
         }
-        if currentAction != ._START_{
+        // before v 3.33.498 check was wrong"- currentAction != ._START_
+        if currentAction == ._START_{
             return false // user is in firstvc habit list so no need to remove completed
         }
         for i in 0..<currentHabitIndex + 1{

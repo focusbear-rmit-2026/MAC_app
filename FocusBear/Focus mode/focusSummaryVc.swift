@@ -587,6 +587,13 @@ class focusSummaryVc: NSViewController {
         }
         
         UserDefaults.standard.removeObject(forKey: kUserdefaultsArrayBreaksDurations)
+
+        // #1942: clear any pending "one more minute" timer and its countdown box before
+        // proceeding, so it can't re-show the Focus Summary on top of the evening routine.
+        getHabitsVcObject().timerGiveOneMoreMinut?.invalidate()
+        getHabitsVcObject().timerGiveOneMoreMinut = nil
+        closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
+
         currentState = ._NOTHING_
         appdelegate?.shutOffMac()
         viewVisibleCount = 0
