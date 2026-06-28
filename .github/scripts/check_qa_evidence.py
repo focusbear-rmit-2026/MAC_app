@@ -940,6 +940,16 @@ Your goal is to assess clarity, not enforce strict formatting.
 If there is NO evidence comment at all (e.g. only automated bot messages, code review
 comments, or unrelated discussion), mark as failed.
 
+IMPORTANT — the following are explicitly ACCEPTABLE and must NEVER lower the score or be
+listed as a problem:
+- Testing on a NEWER app version than the one named in the issue report. QA tests on the
+  latest build; they are NOT expected to test on the old/reported version. A version
+  mismatch between the reported version and the test build is FINE.
+- NOT reproducing or showing the original failing state ("before" evidence). QA only needs
+  to demonstrate that the feature now works correctly on a current build. They do NOT need
+  to confirm the regression existed, show a before/after comparison, or run "negative"
+  testing that reproduces the old bug. Absence of before/regression evidence is FINE.
+
 **Scoring rubric — apply strictly (start at 10, deduct for each problem):**
 - **-3 points**: Device and OS mismatch without explanation
   (e.g. "MacBook M1, Windows 11" with no mention of VM or dual-boot).
@@ -958,8 +968,10 @@ comments, or unrelated discussion), mark as failed.
   that case evaluate based on text quality alone.
 - **-2 points**: Device is provided but model is missing (e.g. "iPhone", "MacBook").
 - **-2 points**: OS is provided but version is missing (e.g. "Android", "iOS").
-- **-1 point**: Only a single positive test case with no edge cases or negative testing
-  (e.g. not verifying the original bug is still reproduced without the fix).
+- **-1 point**: Only a single positive test case where the issue clearly warrants testing
+  multiple distinct scenarios or edge cases (e.g. several user flows / settings combinations).
+  Do NOT apply this penalty merely because the original bug was not reproduced or because no
+  "before"/negative test was shown — reproducing the regression is NOT required.
 - **-1 point**: Video frames available but the feature working is not clearly demonstrated.
 - **-1 point**: OS name is missing but can be inferred from device
   (e.g. "MacBook M1, OS 14" → macOS implied).
