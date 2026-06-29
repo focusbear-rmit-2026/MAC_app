@@ -1,0 +1,83 @@
+name: Unit Tests
+
+# Runs the Focus Bear logic unit tests (AppBlockingHelper / URLBlockingHelper /
+# urlValidation). These are pure-logic tests hosted in the app target; they do
+# NOT need the Developer-ID signing certs (we build Debug + ad-hoc) and they do
+# NOT include the XCUITest UI suite (which needs a real, permissioned desktop).
+
+on:
+  pull_request:
+    paths:
+      - 'FocusBear/**'
+      - 'FocusBearTests/**'
+      - 'FocusBear.xcodeproj/**'
+      - 'FocusBear.xcworkspace/**'
+      - 'Podfile'
+      - 'Podfile.lock'
+      - 'scripts/fetch-sparkle.sh'
+      - '.github/workflows/unit-tests.yml'
+  push:
+    branches:
+      - main-human-verified
+  workflow_dispatch:
+
+concurrency:
+  group: unit-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: Logic unit tests (macOS)
+    # Xcode 26 is what the project is developed against. Bump the image if the
+    # team moves Xcode versions (e.g. macos-26 when it is GA on Actions).
+    runs-on: macos-15
+    permissions:
+      contents: read
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select latest stable Xcode
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)" || true
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      # Sparkle.framework is not committed to the repo; fetch the pinned,
+      # checksum-verified build the project links/embeds.
+      - name: Fetch Sparkle.framework
+        run: ./scripts/fetch-sparkle.sh
+
+      - name: Run logic unit tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -workspace FocusBear.xcworkspace \
+            -scheme "Focus Bear" \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            -resultBundlePath TestResults.xcresult \
+            -only-testing:"Focus BearTests/AppBlockingTests" \
+            -only-testing:"Focus BearTests/URLBlockingTests" \
+            -only-testing:"Focus BearTests/validationTest" \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            DEVELOPMENT_TEAM="" \
+            SWIFT_ENABLE_EXPLICIT_MODULES=NO \
+            | tee xcodebuild.log
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            TestResults.xcresult
+            xcodebuild.log
+          if-no-files-found: ignore
+          retention-days: 7

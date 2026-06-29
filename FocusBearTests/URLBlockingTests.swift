@@ -117,4 +117,88 @@ class URLBlockingTests: XCTestCase {
         let result = URLBlockingHelper.isURLInAllowedList(url: "https://www.github.com", allowedURLs: [])
         XCTAssertFalse(result)
     }
+
+    // =========================================================================
+    // ADDED: case-insensitivity, keywords, paths, multi-entry lists
+    // =========================================================================
+    func test_always_blocked_is_case_insensitive() {
+        let result = URLBlockingHelper.isURLInAlwaysBlockedList(url: "HTTPS://TWITTER.COM", alwaysBlockedURLs: ["twitter.com"])
+        XCTAssertTrue(result)
+    }
+
+    func test_always_blocked_matches_keyword_without_dot() {
+        let result = URLBlockingHelper.isURLInAlwaysBlockedList(url: "https://m.facebook.com/messages", alwaysBlockedURLs: ["facebook"])
+        XCTAssertTrue(result)
+    }
+
+    func test_always_blocked_empty_url_does_not_match() {
+        let result = URLBlockingHelper.isURLInAlwaysBlockedList(url: "", alwaysBlockedURLs: ["facebook.com"])
+        XCTAssertFalse(result)
+    }
+
+    func test_allowed_list_matches_url_with_path() {
+        let result = URLBlockingHelper.isURLInAllowedList(url: "https://github.com/Focus-Bear/repo", allowedURLs: ["github.com"])
+        XCTAssertTrue(result)
+    }
+
+    func test_allowed_list_matches_second_entry() {
+        let result = URLBlockingHelper.isURLInAllowedList(url: "https://stackoverflow.com/q/1", allowedURLs: ["github.com", "stackoverflow.com"])
+        XCTAssertTrue(result)
+    }
+
+    // =========================================================================
+    // ADDED: shouldBlockURL decision matrix
+    // =========================================================================
+    func test_should_block_url_matches_blocked_keyword() {
+        let result = URLBlockingHelper.shouldBlockURL(
+            url: "https://reddit.com",
+            alwaysBlockedURLs: ["reddit"],
+            allowedURLs: [],
+            isAllowedListApproach: false
+        )
+        XCTAssertTrue(result, "Keyword in always-blocked list should block the URL")
+    }
+
+    func test_should_not_block_url_in_allowed_list_with_path() {
+        let result = URLBlockingHelper.shouldBlockURL(
+            url: "https://github.com/explore",
+            alwaysBlockedURLs: [],
+            allowedURLs: ["github.com"],
+            isAllowedListApproach: true
+        )
+        XCTAssertFalse(result, "URL whose domain is in the allowed list should not be blocked")
+    }
+
+    /// With the allowed-list approach an EMPTY allowed list blocks everything
+    /// (nothing is whitelisted). Contrast with `test_empty_pattern_matches_any_url`
+    /// in validationTest: an empty *list* is not the same as an empty *pattern*.
+    func test_should_block_url_when_allowed_list_is_empty_in_allowed_approach() {
+        let result = URLBlockingHelper.shouldBlockURL(
+            url: "https://github.com",
+            alwaysBlockedURLs: [],
+            allowedURLs: [],
+            isAllowedListApproach: true
+        )
+        XCTAssertTrue(result)
+    }
+
+    func test_should_not_block_unlisted_url_without_allowed_approach() {
+        let result = URLBlockingHelper.shouldBlockURL(
+            url: "https://anything.com",
+            alwaysBlockedURLs: ["reddit.com"],
+            allowedURLs: [],
+            isAllowedListApproach: false
+        )
+        XCTAssertFalse(result, "Without allowed-list approach, only always-blocked URLs are blocked")
+    }
+
+    func test_always_blocked_overrides_allowed_in_allowed_approach() {
+        let result = URLBlockingHelper.shouldBlockURL(
+            url: "https://x.com",
+            alwaysBlockedURLs: ["x.com"],
+            allowedURLs: ["x.com"],
+            isAllowedListApproach: true
+        )
+        XCTAssertTrue(result, "Always-blocked should win even when the URL is also in the allowed list")
+    }
 }
