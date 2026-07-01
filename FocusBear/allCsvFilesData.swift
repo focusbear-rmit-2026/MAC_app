@@ -270,6 +270,21 @@ func addEntriesInUsageTimingsExplanationCsv(arrAllCsvLinesToAdd:[String]){
 
 //
 
+/// Re-open the offline-activities CSV logger after a full-file rewrite.
+///
+/// `csv.write(to: offlineActivitiesCsvURL, atomically: true)` writes to a temp file and
+/// renames it over the original, which REPLACES the file's inode. CSVLogger caches a
+/// `FileHandle(forWritingTo:)` opened once at init, so after the rename its handle points at
+/// the orphaned old inode (and a stale end-of-file offset). The next `append(line:)` then
+/// writes the completion into the detached file — it never reaches the live CSV that
+/// `processOfflineData()` re-reads, so the queued activity is silently lost and never syncs.
+/// Re-creating the logger rebinds the handle to the new inode at the correct EOF offset.
+func reopenOfflineActivitiesCsvLogger(){
+    csvLoggerOfflineActivitiesCsv?.close()
+    csvLoggerOfflineActivitiesCsv = nil
+    csvLoggerOfflineActivitiesCsv = CSVLogger(fileURL: offlineActivitiesCsvURL)
+}
+
 //CSV replace Last entry
 func replaceLastEntryInActivitiesCsv(activity_id:String, duration_logged:String, device_id:String, activity_sequence_id:String, start_time:String, finish_time:String, skipped_did_complete:String, choice_id:String, quantity_logged:String, skipped_did_not_complete:String ){
     addLog(text: "Replace last entry in activities csv")
@@ -280,9 +295,10 @@ func replaceLastEntryInActivitiesCsv(activity_id:String, duration_logged:String,
         let csvString = "\(activity_id),\(duration_logged),\(device_id),\(activity_sequence_id),\(start_time),\(finish_time),\(skipped_did_complete),\(choice_id),\(quantity_logged),\(skipped_did_not_complete)\n"
         
         csv = csv.replaceLastLineWith(newLine: csvString)
-        
+
         do {
             try csv.write(to: offlineActivitiesCsvURL, atomically: true, encoding: .utf8)
+            reopenOfflineActivitiesCsvLogger()   // rebind logger handle after atomic rewrite
         } catch {
             addLog(text: "error write file")
         }
@@ -342,9 +358,10 @@ func removeEntryInActivitiesCsv(count:Int){
     do {
         var csv = try String(contentsOf: offlineActivitiesCsvURL, encoding: .utf8)
         csv = csv.removeEntries(count: count)
-        
+
         do {
             try csv.write(to: offlineActivitiesCsvURL, atomically: true, encoding: .utf8)
+            reopenOfflineActivitiesCsvLogger()   // rebind logger handle after atomic rewrite
         } catch {
             addLog(text: "error write file")
         }
@@ -364,17 +381,18 @@ func addNotesColumnInOfflineCsv(){
         }else{
             return;
         }
-        
-        
+
+
         do {
             try csv.write(to: offlineActivitiesCsvURL, atomically: true, encoding: .utf8)
+            reopenOfflineActivitiesCsvLogger()   // rebind logger handle after atomic rewrite
         } catch {
             addLog(text: "error write file")
         }
     }catch{
         addLog(text: "error write file:- \(error.localizedDescription)")
     }
-    
+
 }
 
 final class CSVLogger {
