@@ -4267,7 +4267,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         mainWindowControllerObj?.window?.close()
                         hideBlankWindowInSecondaryMonitor()
                         addLog(text: "Current State s activity: stop Break Activity Done")
-                        getHabitsVcObject().setActivityTimer()
+                        getHabitsVcObject().setActivityTimer(forceReset: true)
                     }
                 }
             }

@@ -2358,14 +2358,36 @@ class habitsVc: NSViewController {
         }
     }
     
-    func setActivityTimer(){
+    func setActivityTimer(forceReset: Bool = false){
+        // Only restart the break countdown to a full interval when the user actually takes a break (in
+        // Focus Bear or a natural break) or postpones one — those callers pass forceReset:true. Plain
+        // app-state transitions (focus mode changing, routine checks, waking from sleep, returning to
+        // idle, etc.) call this WITHOUT forceReset, so a break that's already counting down is not
+        // pushed back to a full interval each time the app re-evaluates state.
+        if !forceReset, let runningTimer = breakTimer, runningTimer.isValid {
+            addLog(text: "setActivityTimer: break countdown already running — keeping it (no forceReset).")
+            return
+        }
         addLog(text: "Break Activity Timer reset Done.")
         if arrAllbreakActivities.count != 0 {
             DispatchQueue.global().sync {
                 print("breakAfterMinutesxxxx")
                 stopActivityTimer()
                 self.breakTimer = Timer.scheduledTimer(timeInterval: TimeInterval(breakAfterMinutes*60), target: self, selector: #selector(self.timeToStartBreakActivities), userInfo: nil, repeats: false)
-                
+
+                RunLoop.main.add((breakTimer!), forMode: RunLoop.Mode.common)
+            }
+        }
+    }
+
+    /// A break came due but can't be shown right now (meeting / focus session / presentation / active
+    /// blocking schedule / routine in progress). The user hasn't taken a break, so don't reset to a full
+    /// interval — re-check shortly so the break fires soon after the blocking condition clears.
+    func rescheduleBreakSoonAfterBlocked(){
+        if arrAllbreakActivities.count != 0 {
+            DispatchQueue.global().sync {
+                stopActivityTimer()
+                self.breakTimer = Timer.scheduledTimer(timeInterval: TimeInterval(breakRetryWhenBlockedSeconds), target: self, selector: #selector(self.timeToStartBreakActivities), userInfo: nil, repeats: false)
                 RunLoop.main.add((breakTimer!), forMode: RunLoop.Mode.common)
             }
         }
@@ -3249,7 +3271,7 @@ class habitsVc: NSViewController {
             
             //
             if currentState == ._CUSTOM_ROUTINE_{
-                self.setActivityTimer()
+                self.rescheduleBreakSoonAfterBlocked()
                 addLog(text: "Custom routine is running :- Break Activities cancelled.")
                 return;
             }
@@ -3260,7 +3282,7 @@ class habitsVc: NSViewController {
                 return;
             }
             if currentState == ._SPECIAL_ACTIVITY_{
-                self.setActivityTimer()
+                self.rescheduleBreakSoonAfterBlocked()
                 addLog(text: "Special activity is running :- Break Activities cancelled.")
                 return;
             }
@@ -3274,15 +3296,15 @@ class habitsVc: NSViewController {
             
             let isFocusModeOn = isFocusModeOn()
             if isFocusModeOn && isFocusModeStartedFromPomodoroMode && isSkipBreakActivityDuringPomodoro{
-                self.setActivityTimer()
+                self.rescheduleBreakSoonAfterBlocked()
                 addLog(text: "Pomodoro mode is On and Skip Break Activity During Focus is enabled: Break Activities cancelled.")
                 return;
             }else if isHardCorePomodoroModeOn && isSkipBreakActivityDuringPomodoro{
-                self.setActivityTimer()
+                self.rescheduleBreakSoonAfterBlocked()
                 addLog(text: "Super Pomodoro mode is On and Skip Break Activity During Focus is enabled: Break Activities cancelled.")
                 return;
             }else if isFocusModeOn && isSkipBreakActivityDuringFocus{// will never return true beacuse isSkipBreakActivityDuringFocus is not in use now
-                self.setActivityTimer()
+                self.rescheduleBreakSoonAfterBlocked()
                 addLog(text: "Focus mode is On and Skip Break Activity During Focus is enabled: Break Activities cancelled.")
                 return;
             }
@@ -3290,7 +3312,7 @@ class habitsVc: NSViewController {
             
             if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                 if !customBlockingScheduleManagerObj.isMicroBreaksEnabled(){
-                    self.setActivityTimer()
+                    self.rescheduleBreakSoonAfterBlocked()
                     addLog(text: "Custom Blocking is On and Skip Break Activity During Custom Blocking is enabled: Break Activities cancelled.")
                     return;
                 }
@@ -3356,7 +3378,7 @@ class habitsVc: NSViewController {
             if appdelegate!.isUserOnMeeting{
                 if !SettingsManagerObject.IsShowBreaksInCallEnabled{
                     addLog(text: "isUserOnMeeting True: Break Activities cancelled.")
-                    self.setActivityTimer()
+                    self.rescheduleBreakSoonAfterBlocked()
                     isBreakActivityShowingWhileMeeting = false
                     return;
                 }else{
@@ -3369,7 +3391,7 @@ class habitsVc: NSViewController {
                     }
                     if !anyOfficeFriendlyActivityFound{
                         addLog(text: "User is On Meeting;- no office friendly activity found: Break Activities cancelled.")
-                        self.setActivityTimer()
+                        self.rescheduleBreakSoonAfterBlocked()
                         isBreakActivityShowingWhileMeeting = false
                         return;
                     }
@@ -3380,7 +3402,7 @@ class habitsVc: NSViewController {
             if isAnyPresentationOrVideoShowing(){
                 if !SettingsManagerObject.IsShowBreaksInCallEnabled{
                     addLog(text: "PresentationOrVideoShowing True: Break Activities cancelled.")
-                    self.setActivityTimer()
+                    self.rescheduleBreakSoonAfterBlocked()
                     isBreakActivityShowingWhileMeeting = false
                     return;
                 }else{
@@ -3393,7 +3415,7 @@ class habitsVc: NSViewController {
                     }
                     if !anyOfficeFriendlyActivityFound{
                         addLog(text: "User is On Meeting;- no office friendly activity found: Break Activities cancelled.")
-                        self.setActivityTimer()
+                        self.rescheduleBreakSoonAfterBlocked()
                         isBreakActivityShowingWhileMeeting = false
                         return;
                     }

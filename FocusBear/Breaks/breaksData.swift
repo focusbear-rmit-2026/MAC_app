@@ -7,6 +7,10 @@
 //
 
 var breakAfterMinutes = 0
+/// When a break comes due but can't be shown yet (in a meeting / focus session / presentation / active
+/// blocking schedule / routine), we re-check after this many seconds instead of pushing the break out a
+/// full `breakAfterMinutes` interval — so the break fires soon after the blocking condition clears.
+let breakRetryWhenBlockedSeconds = 60
 var arrAllbreakActivities = [breakActivity]()
 var arrFinalBreakActivities = [breakActivityFilter]()
 struct breakActivityFilter{
@@ -109,7 +113,7 @@ func writeNaturalBreak(){//2.28.444
         print("\(diffSeconds) seconds Last break recorded at \(now). It will be shown in the menu.")
         if currentState != ._MICRO_BREAK_{
             if getHabitsVcObject().breakTimer != nil{
-                getHabitsVcObject().setActivityTimer()
+                getHabitsVcObject().setActivityTimer(forceReset: true)   // a break was taken/recorded — reset to a full interval
             }
         }
     }
