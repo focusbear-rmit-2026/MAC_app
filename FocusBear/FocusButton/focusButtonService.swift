@@ -232,7 +232,12 @@ class focusButtonService: NSObject {
     
     func startHabit(habitId: String) {
         log("FocusButton: StartHabit() - \(habitId)")
-        sendCmd("SET|STARTHB|\(habitId)")
+        // Start by unique habit id, not list position. The value passed in is a
+        // fakeIdForDevice (the id sent in SET|HABITS), and the device list is a
+        // filtered subset (completed habits are skipped) so positions no longer
+        // match ids. SET|STARTHB takes a 1-based position and would start the
+        // wrong habit; SET|STARTHBID takes the id. Matches windows-app-v2.
+        sendCmd("SET|STARTHBID|\(habitId)")
         applyState(.running)
     }
 
