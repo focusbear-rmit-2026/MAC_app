@@ -7,6 +7,10 @@
 
 1. **Fetch Sparkle:** `./scripts/fetch-sparkle.sh` — downloads the official signed
    `Sparkle.framework` to the repo root (it is no longer committed to git).
+   - *(Optional)* `./scripts/fetch-esptool.sh` — vendors the universal `esptool`
+     binary the in-app Focus Button firmware flasher bundles. Only needed if you
+     want the Flash Firmware button to work; builds skip it (with a warning) when
+     absent. Release/CI builds should run it.
 2. **Open the workspace**, not the project: `open FocusBear.xcworkspace` (Pods are
    committed; run `pod install` only if you change `Podfile`).
 3. **Select the `Focus Bear` scheme and Run (⌘R).** Clean build folder (⇧⌘K) first if needed.

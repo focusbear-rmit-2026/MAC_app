@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Entitlements for the bundled `esptool` helper binary.
+
+  esptool is a PyInstaller-packaged executable: at launch it unpacks an embedded
+  Python runtime and loads dynamic libraries from a temporary directory. Under
+  the Hardened Runtime that requires these exceptions, otherwise the process is
+  killed on launch (Library Validation / executable-memory restrictions). They
+  apply ONLY to the separate esptool process, not to the Focus Bear app.
+-->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<true/>
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+	<key>com.apple.security.cs.allow-dyld-environment-variables</key>
+	<true/>
+</dict>
+</plist>

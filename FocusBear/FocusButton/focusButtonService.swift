@@ -57,7 +57,20 @@ class focusButtonService: NSObject {
     var onError: ((String) -> Void)?
     var onPortDisconnected: (() -> Void)?
     var onDeviceConnected: ((String) -> Void)?
-    
+
+    /// Firmware version reported by the connected device (e.g. "M50-1.5.0"),
+    /// or nil when not connected / not yet known. Updated from the device's
+    /// reply to GET|FIRMWAREVER. Observe `firmwareVersionDidChange` for updates.
+    private(set) var firmwareVersion: String?
+
+    /// Posted on the main thread whenever `firmwareVersion` changes (incl. to nil
+    /// on disconnect), so settings UI can refresh the displayed version.
+    static let firmwareVersionDidChange = Notification.Name("FocusButtonFirmwareVersionDidChange")
+
+    /// Path of the currently connected serial port (e.g. "/dev/cu.usbmodemXXXX"),
+    /// or nil when not connected. Needed to hand the port to the firmware flasher.
+    var connectedPortPath: String? { serialPort?.path }
+
     // MARK: - Public Methods
     
     func start() -> Bool {
@@ -320,10 +333,11 @@ class focusButtonService: NSObject {
         
         rxThread?.cancel()
         rxThread = nil
-        
+
         reconnectAttempts = 0
         isReconnecting = false
-        
+        setFirmwareVersion(nil)
+
         applyState(.disconnected)
         onPortDisconnected?()
         log("FocusButton: -- Disconnected")
@@ -425,9 +439,24 @@ class focusButtonService: NSObject {
                 // Handle habit received
                 onHabitsReceived?([(id: habitId, name: habitName, durationSeconds: duration)])
             }
-            
+
+        case "FIRMWAREVER":
+            // FIRMWAREVER|<hw>-<version>, e.g. "M50-1.5.0"
+            if parts.count >= 2 {
+                setFirmwareVersion(parts[1].trimmingCharacters(in: .whitespaces))
+            }
+
         default:
             break
+        }
+    }
+
+    private func setFirmwareVersion(_ version: String?) {
+        let newValue = (version?.isEmpty == true) ? nil : version
+        guard newValue != firmwareVersion else { return }
+        firmwareVersion = newValue
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: focusButtonService.firmwareVersionDidChange, object: self)
         }
     }
     
@@ -725,6 +754,7 @@ extension focusButtonService: ORSSerialPortDelegate {
             self.sendCmd("SET|TIME|\(localEpoch)")
             
             self.sendCmd("STATUS")
+            self.sendCmd("GET|FIRMWAREVER")
             self.sendCmd("GET|HABITCOUNT")
         }
         
@@ -774,6 +804,221 @@ extension focusButtonService: ORSSerialPortDelegate {
         log("FocusButton: Serial port removed")
         DispatchQueue.main.async { [weak self] in
             self?.disconnect()
+        }
+    }
+}
+
+
+// MARK: - Firmware update / flashing
+
+/// Checks Cloudflare R2 for newer Focus Button firmware and flashes it via esptool,
+/// mirroring the Windows in-app updater. The published `focusbuttonupdate.ini` (an
+/// `[application]` section with `program_version` and `program_url`) points at a
+/// `Firmware-<board>.zip` containing firmware.bin (flashed at 0x10000);
+/// bootloader/partitions are unchanged on an upgrade and a failed app-image
+/// write never touches the bootloader, so the device stays recoverable.
+final class FocusButtonFirmwareUpdater {
+    static let shared = FocusButtonFirmwareUpdater()
+
+    static let appOffset = "0x10000"
+
+    /// Cloudflare R2 INI describing the latest published firmware. This is the macOS
+    /// counterpart of the Windows app's `FocusButtonUpdateIniFileURL`, so both platforms
+    /// pull firmware from the same place.
+    private let updateIniURL = "https://downloads.focusbear.io/update/focusbutton/focusbuttonupdate.ini"
+
+    enum UpdaterError: LocalizedError {
+        case noReleaseFound
+        case downloadFailed
+        case firmwareBinMissing
+        case esptoolNotFound
+        case flashFailed(String)
+
+        var errorDescription: String? {
+            switch self {
+            case .noReleaseFound:        return "Couldn't find any Focus Button firmware update information."
+            case .downloadFailed:        return "Failed to download the firmware."
+            case .firmwareBinMissing:    return "The downloaded firmware package didn't contain firmware.bin."
+            case .esptoolNotFound:       return "esptool was not found. Install it with: brew install esptool"
+            case .flashFailed(let m):    return "Flashing failed: \(m)"
+            }
+        }
+    }
+
+    /// A published firmware build: its version and the zip URL to download it from.
+    struct Release { let version: String; let downloadURL: URL }
+
+    /// Split a "M50-1.5.0" firmware string into (hardware: "M50", version: "1.5.0").
+    static func parse(firmwareVersion: String) -> (hardware: String, version: String) {
+        if let dash = firmwareVersion.firstIndex(of: "-") {
+            return (String(firmwareVersion[..<dash]),
+                    String(firmwareVersion[firmwareVersion.index(after: dash)...]))
+        }
+        return ("", firmwareVersion)
+    }
+
+    /// True if `latest` is a strictly higher semantic version than `installed`.
+    /// Both may carry a leading "v"; missing components count as 0.
+    static func isNewer(_ latest: String, than installed: String) -> Bool {
+        func comps(_ s: String) -> [Int] {
+            s.trimmingCharacters(in: CharacterSet(charactersIn: "vV "))
+                .split(separator: ".").map { Int($0.prefix(while: \.isNumber)) ?? 0 }
+        }
+        let a = comps(latest), b = comps(installed)
+        for i in 0..<max(a.count, b.count) {
+            let x = i < a.count ? a[i] : 0
+            let y = i < b.count ? b[i] : 0
+            if x != y { return x > y }
+        }
+        return false
+    }
+
+    /// Fetch the latest published firmware build from the Cloudflare R2 INI.
+    /// Parses the `[application]` section's `program_version` and `program_url`,
+    /// mirroring the Windows app's `ReadUpdateDetails`.
+    func fetchLatestRelease() async throws -> Release {
+        guard let url = URL(string: updateIniURL) else { throw UpdaterError.noReleaseFound }
+        var req = URLRequest(url: url)
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        // URLSession.data(for:) requires macOS 12; deployment target is 11, so use dataTask.
+        let data = try await fetchData(for: req)
+        guard let text = String(data: data, encoding: .utf8) else { throw UpdaterError.noReleaseFound }
+        let ini = Self.parseINI(text)["application"] ?? [:]
+        guard let version = ini["program_version"], !version.isEmpty,
+              let urlStr = ini["program_url"], let downloadURL = URL(string: urlStr) else {
+            throw UpdaterError.noReleaseFound
+        }
+        return Release(version: version, downloadURL: downloadURL)
+    }
+
+    /// Minimal INI parser: `[section]` headers and `key=value` lines (values may contain
+    /// `=`). Comments (`;`/`#`) and blank lines are ignored; keys are lowercased.
+    static func parseINI(_ text: String) -> [String: [String: String]] {
+        var result: [String: [String: String]] = [:]
+        var section = ""
+        for rawLine in text.split(whereSeparator: { $0 == "\n" || $0 == "\r" }) {
+            let line = rawLine.trimmingCharacters(in: .whitespaces)
+            if line.isEmpty || line.hasPrefix(";") || line.hasPrefix("#") { continue }
+            if line.hasPrefix("[") && line.hasSuffix("]") {
+                section = String(line.dropFirst().dropLast()).trimmingCharacters(in: .whitespaces).lowercased()
+            } else if let eq = line.firstIndex(of: "=") {
+                let key = line[..<eq].trimmingCharacters(in: .whitespaces).lowercased()
+                let value = line[line.index(after: eq)...].trimmingCharacters(in: .whitespaces)
+                result[section, default: [:]][key] = value
+            }
+        }
+        return result
+    }
+
+    /// Download + unzip the firmware package and return the firmware.bin URL.
+    func downloadFirmwareBin(release: Release) async throws -> URL {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FocusButtonFirmware-\(release.version)", isDirectory: true)
+        try? FileManager.default.removeItem(at: dir)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let zip = dir.appendingPathComponent(release.downloadURL.lastPathComponent)
+        // URLSession.download(from:) requires macOS 12; the deployment target is 11, so use
+        // the downloadTask completion-handler API (macOS 10.9+) wrapped in a continuation.
+        try await downloadFile(from: release.downloadURL, to: zip)
+
+        let unzip = Process()
+        unzip.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
+        unzip.arguments = ["-o", zip.path, "-d", dir.path]
+        try unzip.run(); unzip.waitUntilExit()
+
+        let bin = dir.appendingPathComponent("firmware.bin")
+        guard FileManager.default.fileExists(atPath: bin.path) else {
+            throw UpdaterError.firmwareBinMissing
+        }
+        return bin
+    }
+
+    /// macOS 11-compatible data fetch. `URLSession.data(for:)` is macOS 12+, so this wraps the
+    /// older `dataTask(with:completionHandler:)`.
+    private func fetchData(for request: URLRequest) async throws -> Data {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                guard let data = data else {
+                    continuation.resume(throwing: URLError(.badServerResponse))
+                    return
+                }
+                continuation.resume(returning: data)
+            }
+            task.resume()
+        }
+    }
+
+    /// macOS 11-compatible file download. `URLSession.download(from:)` is macOS 12+, so this
+    /// wraps the older `downloadTask(with:completionHandler:)` and moves the downloaded temp
+    /// file to `destination` inside the handler (the temp file is removed once it returns).
+    private func downloadFile(from url: URL, to destination: URL) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let task = URLSession.shared.downloadTask(with: url) { tempURL, _, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                guard let tempURL = tempURL else {
+                    continuation.resume(throwing: URLError(.badServerResponse))
+                    return
+                }
+                do {
+                    try? FileManager.default.removeItem(at: destination)
+                    try FileManager.default.moveItem(at: tempURL, to: destination)
+                    continuation.resume(returning: ())
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+            task.resume()
+        }
+    }
+
+    /// Locate an esptool executable: app bundle, common Homebrew/pip locations, then PATH.
+    func resolveEsptool() -> String? {
+        if let bundled = Bundle.main.url(forResource: "esptool", withExtension: nil)?.path,
+           FileManager.default.isExecutableFile(atPath: bundled) {
+            return bundled
+        }
+        let candidates = ["/opt/homebrew/bin/esptool", "/usr/local/bin/esptool",
+                          "/opt/homebrew/bin/esptool.py", "/usr/local/bin/esptool.py"]
+        for c in candidates where FileManager.default.isExecutableFile(atPath: c) { return c }
+        for name in ["esptool", "esptool.py"] {
+            let which = Process()
+            which.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+            which.arguments = ["which", name]
+            let pipe = Pipe(); which.standardOutput = pipe
+            try? which.run(); which.waitUntilExit()
+            if which.terminationStatus == 0,
+               let out = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines), !out.isEmpty {
+                return out
+            }
+        }
+        return nil
+    }
+
+    /// Flash firmware.bin at the app offset. Blocking — call off the main thread.
+    /// The caller must release the serial port (focusButtonServiceObject.stop()) first.
+    func flash(firmwareBin: URL, port: String, baud: Int = 460800) throws {
+        guard let esptool = resolveEsptool() else { throw UpdaterError.esptoolNotFound }
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: esptool)
+        p.arguments = ["--port", port, "--baud", "\(baud)",
+                       "--before", "default_reset", "--after", "hard_reset",
+                       "write_flash", FocusButtonFirmwareUpdater.appOffset, firmwareBin.path]
+        let pipe = Pipe()
+        p.standardOutput = pipe; p.standardError = pipe
+        do { try p.run() } catch { throw UpdaterError.flashFailed(error.localizedDescription) }
+        let output = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+        p.waitUntilExit()
+        if p.terminationStatus != 0 {
+            let tail = output.split(separator: "\n").suffix(4).joined(separator: " ")
+            throw UpdaterError.flashFailed(tail.isEmpty ? "exit \(p.terminationStatus)" : tail)
         }
     }
 }

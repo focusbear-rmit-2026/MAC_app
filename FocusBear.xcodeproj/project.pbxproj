@@ -1684,6 +1684,7 @@
 				8F77575828DD96D9007A976D /* CopyFiles */,
 				3F268440EC1EB9CD7C1DB69B /* [CP] Embed Pods Frameworks */,
 				137CD6052D9D4ACC00A8385A /* Embed Frameworks */,
+				FBE57001FBE57001FBE57001 /* Embed esptool */,
 			);
 			buildRules = (
 			);
@@ -1859,6 +1860,25 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		FBE57001FBE57001FBE57001 /* Embed esptool */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/esptool",
+				"$(SRCROOT)/scripts/embed-esptool.sh",
+				"$(SRCROOT)/scripts/esptool.entitlements",
+			);
+			name = "Embed esptool";
+			outputPaths = (
+				"$(CODESIGNING_FOLDER_PATH)/Contents/Resources/esptool",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/scripts/embed-esptool.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		3F268440EC1EB9CD7C1DB69B /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;

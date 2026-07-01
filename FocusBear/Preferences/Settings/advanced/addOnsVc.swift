@@ -26,6 +26,13 @@ class addOnsVc: NSViewController {
     let timeTrackerEnabledItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
     var stackViewBottomForDownLoadFbtt:NSStackView?
     var btnDownLoad: underLineButton?
+    /// Shows the connected Focus Button's firmware version (e.g. "Firmware: M50-1.5.0").
+    var lblFirmwareVersion: NSTextField?
+    /// "Check for Updates" / "Flash Firmware" button (mirrors the Windows UI).
+    var btnFirmwareUpdate: NSButton?
+    /// Spinning indicator shown next to the firmware status while checking/downloading/flashing.
+    var firmwareSpinner: NSProgressIndicator?
+    private var isFlashingFirmware = false
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -69,11 +76,17 @@ class addOnsVc: NSViewController {
 //
         addDownLoadNowOptionFbtt()
 //
-        
+        // Status line first, so the firmware label can pin BELOW it (both used to pin to the Connect
+        // button's bottom and overlapped).
+        setupFocusButtonStatusUI()
+        setupFirmwareVersionLabel()
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(refreshFirmwareVersion),
+                                               name: focusButtonService.firmwareVersionDidChange,
+                                               object: nil)
+
         arrForSearchFromSettings.append(["title": timeTrackerEnabledItemVcObj!.lblTitle.stringValue, "tabId": idAddOns, "object": timeTrackerEnabledItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": lblTitleLateNoMore.stringValue, "tabId": idAddOns, "object": boxGetLateNoMore as Any])
-
-        setupFocusButtonStatusUI()
     }
 
     // MARK: - Focus Button connection status
@@ -120,7 +133,13 @@ class addOnsVc: NSViewController {
     }
 
     private func setFocusButtonStatus(_ text: String) {
-        lblConnectionStatus?.stringValue = text
+        // Some status strings (e.g. "Ports detected: …") get long enough that the wrapping label grows
+        // past the bottom of its container. Show at most the first 100 characters (with an ellipsis if
+        // truncated) and expose the full text as a hover tooltip.
+        let maxLength = 100
+        let display = text.count > maxLength ? String(text.prefix(maxLength)) + "…" : text
+        lblConnectionStatus?.stringValue = display
+        lblConnectionStatus?.toolTip = text
     }
 
     /// Button reflects the REAL state (never stuck disabled): Connect when idle, Cancel while
@@ -209,6 +228,174 @@ class addOnsVc: NSViewController {
         } else {
             setFocusButtonStatus("Ports detected: \(focusButtonServiceObject.availablePortsSummary)")
         }
+        refreshFirmwareVersion()
+    }
+
+    /// Creates the firmware-version label below the Connect button (hidden until
+    /// a device reports its version). Mirrors the Windows settings UI which
+    /// shows the installed firmware version.
+    private func setupFirmwareVersionLabel() {
+        guard lblFirmwareVersion == nil, let parent = btnConnect.superview else { return }
+        let label = NSTextField(labelWithString: "")
+        label.font = NSFont.systemFont(ofSize: 11)
+        label.textColor = NSColor.secondaryLabelColor
+        label.isHidden = true
+        label.translatesAutoresizingMaskIntoConstraints = false
+        parent.addSubview(label)
+
+        let button = NSButton(title: "Check for Updates", target: self,
+                              action: #selector(btnFirmwareUpdateClicked))
+        button.bezelStyle = .rounded
+        button.controlSize = .small
+        button.font = NSFont.systemFont(ofSize: 11)
+        button.isHidden = true
+        button.translatesAutoresizingMaskIntoConstraints = false
+        parent.addSubview(button)
+
+        // A spinner beside the status text, animated while checking / downloading / flashing.
+        let spinner = NSProgressIndicator()
+        spinner.style = .spinning
+        spinner.controlSize = .small
+        spinner.isDisplayedWhenStopped = false
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        parent.addSubview(spinner)
+
+        // Pin the firmware label BELOW the connection status line (falls back to the Connect button
+        // if the status label isn't set up yet) so the two no longer overlap.
+        let firmwareTop = lblConnectionStatus?.bottomAnchor ?? btnConnect.bottomAnchor
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: btnConnect.leadingAnchor),
+            label.topAnchor.constraint(equalTo: firmwareTop, constant: 6),
+            spinner.leadingAnchor.constraint(equalTo: label.trailingAnchor, constant: 8),
+            spinner.centerYAnchor.constraint(equalTo: label.centerYAnchor),
+            spinner.widthAnchor.constraint(equalToConstant: 14),
+            spinner.heightAnchor.constraint(equalToConstant: 14),
+            button.leadingAnchor.constraint(equalTo: btnConnect.leadingAnchor),
+            button.topAnchor.constraint(equalTo: label.bottomAnchor, constant: 6)
+        ])
+        lblFirmwareVersion = label
+        btnFirmwareUpdate = button
+        firmwareSpinner = spinner
+    }
+
+    @objc func refreshFirmwareVersion() {
+        guard let label = lblFirmwareVersion else { return }
+        // While a flash is in progress the update flow owns this label (Checking / Downloading /
+        // Flashing status). The device drops off the bus mid-flash, which posts firmwareVersionDidChange
+        // and would otherwise hit the `else` below and HIDE the label — wiping the progress text. Leave
+        // it alone until finishFirmwareUpdate() re-syncs the real state.
+        if isFlashingFirmware { return }
+        let connected = focusButtonServiceObject.isRunning
+        if connected, let version = focusButtonServiceObject.firmwareVersion {
+            label.stringValue = "Firmware: \(version)"
+            label.isHidden = false
+            btnFirmwareUpdate?.isHidden = false
+            btnFirmwareUpdate?.isEnabled = !isFlashingFirmware
+        } else {
+            label.isHidden = true
+            btnFirmwareUpdate?.isHidden = true
+        }
+    }
+
+    private func setFirmwareStatus(_ text: String) {
+        lblFirmwareVersion?.stringValue = text
+        lblFirmwareVersion?.isHidden = false
+    }
+
+    @objc func btnFirmwareUpdateClicked() {
+        guard !isFlashingFirmware,
+              focusButtonServiceObject.isRunning,
+              let installed = focusButtonServiceObject.firmwareVersion else { return }
+        let (_, installedVersion) = FocusButtonFirmwareUpdater.parse(firmwareVersion: installed)
+        isFlashingFirmware = true
+        btnFirmwareUpdate?.isEnabled = false
+        firmwareSpinner?.startAnimation(nil)
+        setFirmwareStatus("Checking for updates…")
+
+        Task { @MainActor in
+            let updater = FocusButtonFirmwareUpdater.shared
+            do {
+                let release = try await updater.fetchLatestRelease()
+                let latest = release.version.trimmingCharacters(in: CharacterSet(charactersIn: "vV "))
+                guard FocusButtonFirmwareUpdater.isNewer(latest, than: installedVersion) else {
+                    setFirmwareStatus("Firmware: \(installed)")
+                    self.showFirmwareAlert(title: "Up to date",
+                                           message: "The Focus Button is running the latest firmware (\(installedVersion)).")
+                    self.finishFirmwareUpdate()
+                    return
+                }
+                guard self.confirmFlash(from: installedVersion, to: latest) else {
+                    self.finishFirmwareUpdate(); return
+                }
+                setFirmwareStatus("Downloading firmware \(latest)…")
+                let bin = try await updater.downloadFirmwareBin(release: release)
+
+                guard let port = focusButtonServiceObject.connectedPortPath else {
+                    throw FocusButtonFirmwareUpdater.UpdaterError.flashFailed("device not connected")
+                }
+                setFirmwareStatus("Flashing firmware \(latest)…")
+                focusButtonServiceObject.stop()                 // release the serial port
+                try await Task.sleep(nanoseconds: 600_000_000)  // let the port settle
+
+                try await Task.detached(priority: .userInitiated) {
+                    try updater.flash(firmwareBin: bin, port: port)
+                }.value
+
+                try? await Task.sleep(nanoseconds: 2_000_000_000) // device re-enumerates
+                _ = focusButtonServiceObject.start()            // reconnect (re-reads version)
+                setFirmwareStatus("Updated to \(latest).")
+                self.showFirmwareAlert(title: "Firmware updated",
+                                       message: "The Focus Button was updated to \(latest).")
+            } catch FocusButtonFirmwareUpdater.UpdaterError.noReleaseFound {
+                // We couldn't read the firmware update info from Cloudflare R2 (e.g. the INI is
+                // missing/unreachable). This isn't a flashing failure, and we can't claim the
+                // device is up to date either — so tell the user we couldn't check rather than
+                // asserting either outcome.
+                setFirmwareStatus("Firmware: \(installed)")
+                self.showFirmwareAlert(title: "Couldn't check for updates",
+                                       message: "Couldn't retrieve the latest firmware information right now. Please try again later.")
+            } catch {
+                setFirmwareStatus("Firmware: \(installed)")
+                self.showFirmwareAlert(title: "Firmware update failed",
+                                       message: (error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+            }
+            self.finishFirmwareUpdate()
+        }
+    }
+
+    private func finishFirmwareUpdate() {
+        isFlashingFirmware = false
+        firmwareSpinner?.stopAnimation(nil)
+        refreshFirmwareVersion()
+    }
+
+    private func confirmFlash(from: String, to: String) -> Bool {
+        let alert = NSAlert()
+        alert.setSharingType()
+        alert.alertStyle = .informational
+        alert.messageText = "Update Focus Button firmware?"
+        alert.informativeText = "A new version (\(to)) is available — you have \(from). Flashing reboots the device, installs the firmware and restarts it. Your settings and habits are kept."
+        alert.addButton(withTitle: "Flash Firmware")
+        alert.addButton(withTitle: buttonCancelText)
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
+    private func showFirmwareAlert(title: String, message: String) {
+        let alert = NSAlert()
+        alert.setSharingType()
+        alert.alertStyle = .informational
+        alert.messageText = title
+        alert.informativeText = message
+        alert.addButton(withTitle: "OK")
+        if let window = self.view.window {
+            alert.beginSheetModal(for: window, completionHandler: nil)
+        } else {
+            alert.runModal()
+        }
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     @objc func btnDownLoadClicked(){
         print("btndownloadclicked")
