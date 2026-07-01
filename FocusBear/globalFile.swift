@@ -450,8 +450,9 @@ func playEveryActivitySound(){
             NSSound(named: sound)?.play()
         }
         addLog(text: "Play Every Activity Sound")
+        focusButtonServiceObject.beep()
     }
-    
+
 }
 
 func playAfterMorningEveningRoutineSound(isMorning:Bool){
@@ -472,6 +473,7 @@ func playAfterMorningEveningRoutineSound(isMorning:Bool){
             }
             addLog(text: "Play Evening Routine End Sound")
         }
+        focusButtonServiceObject.beep()
     }
 }
 
@@ -482,6 +484,7 @@ func playFocusModeStartedSound(){
             NSSound(named: sound)?.play()
         }
         addLog(text: "Play Focus Mode Started Sound")
+        focusButtonServiceObject.beep()
     }
 }
 func playStartMorningEveningRoutineSound(){
@@ -494,6 +497,7 @@ func playStartMorningEveningRoutineSound(){
             NSSound(named: sound)?.play()
         }
         addLog(text: "Play Start Morning Evening Routine Sound")
+        focusButtonServiceObject.beep()
     }
 }
 func playFocusPomodorBreakEndsSound(){
@@ -503,6 +507,7 @@ func playFocusPomodorBreakEndsSound(){
             NSSound(named: sound)?.play()
         }
         addLog(text: "Play Focus Pomodor Break Ends Sound")
+        focusButtonServiceObject.beep()
     }
 }
 

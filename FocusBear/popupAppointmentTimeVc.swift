@@ -99,6 +99,7 @@ class popupAppointmentTimeVc: NSViewController {
     
     func startAppointment(){
         addLog(text: "smallCountDownVc:- startAppointment")
+        focusButtonServiceObject.dismissNotification()
         let duration = Calendar.current.dateComponents([.second], from: Date(), to: endTime!).second ?? 0
         if lastCurrentState == ._MORNING_HABIT_{
             getHabitsVcObject().postponeMorningHabitFor(minutes: 0, secondsToPostpone: duration + 160, showAskFocusModeView:false, showAskIntention:false)
@@ -118,6 +119,7 @@ class popupAppointmentTimeVc: NSViewController {
     
     @IBAction func btnBackToHabitsClicked(_ sender: Any) {
         addLog(text: "[user-action] smallCountDownVc:- button back to habits clicked")
+        focusButtonServiceObject.dismissNotification()
         if timer != nil{
             timer?.invalidate()
             timer = nil

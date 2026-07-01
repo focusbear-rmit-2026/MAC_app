@@ -235,7 +235,46 @@ class focusButtonService: NSObject {
         sendCmd("SET|STARTHB|\(habitId)")
         applyState(.running)
     }
-    
+
+    /// Show a Late No More countdown on the device. The device counts down from
+    /// `countdownSeconds` (background ramps green→yellow→orange→red) and beeps
+    /// every 3s once it hits 0, until `dismissNotification()` is called.
+    /// No-op if the button isn't connected.
+    func showNotification(text: String, countdownSeconds: Int = 120) {
+        let sanitized = sanitizeForCommand(text)
+        guard !sanitized.isEmpty else { return }
+        log("FocusButton: showNotification() - \(sanitized) (\(countdownSeconds)s)")
+        if countdownSeconds > 0 {
+            sendCmd("SET|NOTIFY|\(sanitized)|\(countdownSeconds)")
+        } else {
+            sendCmd("SET|NOTIFY|\(sanitized)")
+        }
+    }
+
+    /// End the Late No More countdown on the device and restore its prior screen.
+    func dismissNotification() {
+        log("FocusButton: dismissNotification()")
+        sendCmd("SET|NOTIFYDISMISS")
+    }
+
+    /// Make the device beep, mirroring an audio alert the Mac just played.
+    /// No-op if the button isn't connected; silent on boards without a buzzer.
+    func beep() {
+        log("FocusButton: beep()")
+        sendCmd("SET|BEEP")
+    }
+
+    /// Strip characters that would break the pipe/newline-delimited serial
+    /// protocol and cap the length (the firmware copies into a 64-byte buffer).
+    private func sanitizeForCommand(_ text: String) -> String {
+        let cleaned = text
+            .replacingOccurrences(of: "|", with: " ")
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\r", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return cleaned.count > 60 ? String(cleaned.prefix(60)) : cleaned
+    }
+
     func pauseHabit() {
         log("FocusButton: PauseHabit()")
         sendCmd("SET|PAUSE")
