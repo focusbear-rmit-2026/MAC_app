@@ -140,6 +140,67 @@ var shutOffTime:Time?
 var cutOffTime:Time?
 var has_edited_settings = false
 
+let kDayPlanCompletedHabitIds = "kDayPlanCompletedHabitIds"
+let kDayPlanCompletedHabitIdsDate = "kDayPlanCompletedHabitIdsDate"
+
+/// Today's server-confirmed completed habit ids (both routines). The Day Plan filters these out so
+/// it never shows a habit the backend says is done — a safety net over the arrFiltered* arrays,
+/// which aren't always re-filtered on the remote-completion path. Reassigned on each routine refetch,
+/// persisted (with today's date) so the next launch can filter on the FIRST Day Plan render — before
+/// current-activity-props returns — and re-filters the visible Day Plan whenever it changes.
+var dayPlanCompletedHabitIds = Set<String>() {
+    didSet {
+        let today = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd")
+        UserDefaults.standard.set(Array(dayPlanCompletedHabitIds), forKey: kDayPlanCompletedHabitIds)
+        UserDefaults.standard.set(today, forKey: kDayPlanCompletedHabitIdsDate)
+        requestDayPlanRefresh()
+    }
+}
+
+/// Seed dayPlanCompletedHabitIds from the persisted cache (today only) so the first Day Plan render
+/// reflects already-completed habits before the current-activity-props refetch lands. No-op once the
+/// server data is present (so it never overrides fresher state).
+func loadPersistedDayPlanCompletedIds() {
+    guard dayPlanCompletedHabitIds.isEmpty else { return }
+    var ids = offlineCompletedHabitIds()   // unsynced offline completions (today)
+    // Plus the last server-confirmed set (the current-activity-props response isn't itself cached).
+    let today = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd")
+    if UserDefaults.standard.string(forKey: kDayPlanCompletedHabitIdsDate) == today,
+       let saved = UserDefaults.standard.array(forKey: kDayPlanCompletedHabitIds) as? [String] {
+        ids.formUnion(saved)
+    }
+    if !ids.isEmpty { dayPlanCompletedHabitIds = ids }
+}
+
+/// Today's completed/skipped habit ids from the offline activities CSV — the local cache of activity
+/// completions made while offline that the backend (and current-activity-props) doesn't know about
+/// yet. Folding these in keeps the Day Plan correct for offline completions until they sync.
+func offlineCompletedHabitIds() -> Set<String> {
+    guard let url = offlineActivitiesCsvURL,
+          let content = try? String(contentsOf: url, encoding: .utf8) else { return [] }
+    // CSV: activity_id,duration_logged,device_id,activity_sequence_id,start_time,finish_time,…
+    let todayUtc = getStringFromDateInUtc(date: Date(), dateFormat: "yyyy-MM-dd")
+    var ids = Set<String>()
+    for (i, row) in content.components(separatedBy: "\n").enumerated() where i > 0 && !row.isEmpty {
+        let cols = row.components(separatedBy: ",")
+        guard cols.count > 5, !cols[0].isEmpty, cols[5].hasPrefix(todayUtc) else { continue }
+        ids.insert(cols[0])
+    }
+    return ids
+}
+
+/// Capture today's completed habit ids from a `today_routine_progress` payload (both routines), unioned
+/// with the offline cache so unsynced completions stay filtered even after the server response lands.
+func captureDayPlanCompletedIds(_ progress: NSDictionary) {
+    var ids = Set<String>()
+    if let m = progress.value(forKey: "morning_routine") as? NSDictionary,
+       let arr = m.value(forKey: "completed_habit_ids") as? [String] { ids.formUnion(arr) }
+    if let e = progress.value(forKey: "evening_routine") as? NSDictionary,
+       let arr = e.value(forKey: "completed_habit_ids") as? [String] { ids.formUnion(arr) }
+    ids.formUnion(offlineCompletedHabitIds())
+    dayPlanCompletedHabitIds = ids
+}
+
 var isMainWindowLoaded = false
 
 
@@ -349,9 +410,28 @@ var currentState:CURRENTSTATE = ._NOTHING_{
                 leftMenuVcObj?.habitStarted()
             }
         }
+        if oldValue != currentState {
+            // Defer to the next runloop. Mutating the Schedule view's hierarchy synchronously here
+            // collides with the window style-mask change that follows in the same call stack during
+            // the break transition (activityOver → showBreaksView → showSmallSizeWindow), which
+            // crashes AppKit's AutoLayout engine. Deferring also lets the routine arrays settle so
+            // the schedule re-reads the *same* (completed-filtered) data the habit list shows —
+            // e.g. after a remote completion rebuilds the routine and flips the state back.
+            DispatchQueue.main.async {
+                firstViewControllerObj?.updateScheduleTabForState()
+                routinePostponedInfoVcObj?.updateScheduleTabForState()
+                firstViewControllerObj?.refreshScheduleIfVisible()
+                routinePostponedInfoVcObj?.refreshScheduleIfVisible()
+            }
+        }
     }
 }
 
+
+/// Set when a remote (other-device) habit completion arrives while the user is viewing the
+/// Schedule tab, so that after the routine re-syncs we return them to the schedule instead of
+/// navigating into the next habit.
+var pendingReturnToSchedule = false
 
 var currentAction:ACTION = ACTION._START_
 
@@ -1708,7 +1788,11 @@ let arrFont:[fontStyle] = [fontStyle(name: "System Font", regularFontName: "Syst
                            fontStyle(name: "Helvetica", regularFontName: "Helvetica", boldFontName: "Helvetica Bold", webFontName: "Helvetica"),
                            fontStyle(name: "IntelOneMono", regularFontName: "IntelOneMono-Regular", boldFontName: "IntelOneMono-Regular", webFontName: "Intel One Mono"),
                            fontStyle(name: "OpenDyslexic", regularFontName: "OpenDyslexicThree-Regular", boldFontName: "OpenDyslexicThree-Regular", webFontName: "Open Dyslexic"),
-                           fontStyle(name: "Poppins", regularFontName: "Poppins-Regular", boldFontName: "Poppins-Regular", webFontName: "Poppins")]
+                           fontStyle(name: "Poppins", regularFontName: "Poppins-Regular", boldFontName: "Poppins-Regular", webFontName: "Poppins"),
+                           fontStyle(name: "Lexend", regularFontName: "Lexend-Regular", boldFontName: "Lexend-Bold", webFontName: "Lexend")]
+
+/// Index of Lexend in arrFont — the app's default font.
+let lexendFontIndex = 10
 
 struct fontStyle{
     var name = ""

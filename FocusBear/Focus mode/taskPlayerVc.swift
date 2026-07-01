@@ -441,6 +441,36 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     }
     
     
+    /// Prepopulate the player with the day-plan tasks assigned to the current habit. Sent as one
+    /// `newTasks` batch; the JS waits for the player to be ready. Each task carries its source to-do id
+    /// where known, so a task already in the player isn't duplicated. No-op if there are none.
+    func prepopulateTasks(_ tasks: [[String: Any]]) {
+        guard !tasks.isEmpty else { return }
+        let payload: [String: Any] = ["todoPlayer": ["newTasks": tasks]]
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: payload, options: []),
+              let jsonString = String(data: jsonData, encoding: .utf8) else {
+            addLog(text: "prepopulateTasks: JSON serialization failed")
+            return
+        }
+        // Separate interval key from addTaskInCurrentList so the two don't clobber each other.
+        let jsFunction = """
+        (function() {
+            if (window.__prefillInterval) { clearInterval(window.__prefillInterval); }
+            window.__prefillInterval = setInterval(() => {
+                if (window.syncWithDevices) {
+                    try { syncWithDevices(\(jsonString)); }
+                    catch (error) { console.error('JS Error:', error); }
+                    clearInterval(window.__prefillInterval);
+                    delete window.__prefillInterval;
+                }
+            }, 100);
+        })();
+        """
+        webView.evaluateJavaScript(jsFunction) { _, error in
+            if let error = error { addLog(text: "prepopulateTasks JS error: \(error)") }
+        }
+    }
+
     func addTaskInCurrentList(taskName: String, id:String, duration:Int) {
         addLog(text: "func:- addTaskInCurrentList taskName: \(taskName), duration: \(duration), id: \(id)")
         let taskDic:[String:Any] = [

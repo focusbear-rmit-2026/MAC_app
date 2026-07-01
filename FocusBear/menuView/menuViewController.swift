@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import SwiftUI
 
 class menuViewController: NSViewController {
 
@@ -189,10 +190,19 @@ class menuViewController: NSViewController {
     
     
         
+    // SwiftUI menu redesign — opaque NSHostingView overlaid on the storyboard content.
+    // The storyboard outlets/logic stay intact (kept up to date in the background); the
+    // SwiftUI view reads a MenuModel that we refresh on each appearance.
+    var menuHostingView: NSView?
+    var menuModelRef: AnyObject?
+    var menuRefreshTimer: Timer?
+    var nextDayPlanHabitName: String?   // raw name of the Day Plan "next habit" (for the play button)
+
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
         addLog(text: "menuViewController viewdidload start")
+        if #available(macOS 11.0, *) { setupSwiftUIMenu() }
         
         lblTitleHabitStatus.stringValue = "✋Postponed"
         
@@ -635,6 +645,16 @@ class menuViewController: NSViewController {
         }
         self.view.window?.appearance = getAppAppearance()
         reloadData()
+        if #available(macOS 11.0, *) {
+            refreshSwiftUIMenu()
+            startMenuRefreshTimer()
+        }
+    }
+
+    override func viewDidDisappear() {
+        super.viewDidDisappear()
+        menuRefreshTimer?.invalidate()
+        menuRefreshTimer = nil
     }
     
     func checkPurchaseState(){
@@ -2132,6 +2152,9 @@ class menuViewController: NSViewController {
         }
         addLog(text: "Showing preferences")
         tabStrictnessContainerVcObj?.showCustomBlockingSchedulesView()////now super distarcting sites will block only in focus modes and custom blocking schedules  24/9/25 version 2.27.417
+        // Focus Bear is a menu-bar (accessory) app, so showWindow alone leaves the window behind other
+        // apps. Activate so it actually comes to the foreground (same as openDayPlanSchedule()).
+        NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
         closeMenuWindowIsVisible()
     }
     
@@ -2212,6 +2235,25 @@ class menuViewController: NSViewController {
             mainWindowControllerObj?.showWindow(self)
         }
         leftMenuVcObj?.showEditHabitsView()
+        NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
+        closeMenuWindowIsVisible()
+    }
+
+    /// "View full day plan" from the menu — opens the Habits / Day-Plan schedule timeline
+    /// (NOT the Preferences habit editor that btnEditHabitsClicked opens).
+    func openDayPlanSchedule() {
+        if !(mainWindowControllerObj?.window?.isVisible ?? false){
+            mainWindowControllerObj?.showWindow(self)
+        }
+        leftMenuVcObj?.showHabitsView()
+        // The Day Plan tab selection skips showHabitState() for morning/evening/focus-summary (to
+        // avoid a blank-screen regression), assuming the habit content is already up. But if the
+        // "Start Micro Break" tab had switched the habits area to the break state, that stale break
+        // content would remain under the now-selected Day Plan tab — so restore the Day Plan
+        // explicitly when the break state is what's currently showing.
+        if getHabitsVcObject().habitsView.subviews.contains(getBreaksStateVcObject().view) {
+            getHabitsVcObject().showHabitState()
+        }
         NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
         closeMenuWindowIsVisible()
     }
@@ -2312,6 +2354,460 @@ extension menuViewController{
     func collapseHabitInfo(){
         boxHabitsInfo.isHidden = true
         btnDropDownHabit.image = imageCollapsed
+    }
+}
+
+// MARK: - SwiftUI menu hosting (redesign)
+
+@available(macOS 11.0, *)
+extension menuViewController {
+
+    private var menuModel: MenuModel? { menuModelRef as? MenuModel }
+
+    /// Overlay the SwiftUI menu on top of the storyboard content. The storyboard views stay
+    /// loaded (and keep updating in the background) but are hidden behind the opaque host.
+    func setupSwiftUIMenu() {
+        let model = MenuModel()
+        wireMenuModel(model)
+        observeVoiceEvents(model)
+        menuModelRef = model
+
+        // The SwiftUI view reports its own height; we resize the popover to match so nothing clips
+        // (incl. when an accordion expands). Pin the host to all four edges and let the reported
+        // height drive the popover/window content size.
+        let root = FocusBearMenuView(model: model, onHeight: { [weak self] h in self?.applyMenuHeight(h) })
+        let host = NSHostingView(rootView: root)
+        host.translatesAutoresizingMaskIntoConstraints = false
+        for sub in view.subviews { sub.isHidden = true }
+        // Drop the storyboard's view-level constraints so the (hidden) storyboard subviews no longer
+        // force the view tall; the host fills the view and the SwiftUI content top-aligns within it.
+        NSLayoutConstraint.deactivate(view.constraints)
+        view.addSubview(host)
+        NSLayoutConstraint.activate([
+            host.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            host.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            host.topAnchor.constraint(equalTo: view.topAnchor),
+            host.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+        menuHostingView = host
+        // Only populate live (label-backed) fields at load time. The Day Plan summary calls
+        // getNextRoutineInfo()/DayPlanTaskStore, which aren't safe this early in app startup
+        // (viewDidLoad can run during focus-mode resume before routine data is loaded). The full
+        // refresh — including the Day Plan — runs in viewWillAppear, when the menu is actually shown.
+        updateLiveMenuFields(model)
+        model.micAvailable = isPurchased || daysLeft > 0
+    }
+
+    private var menuWidth: CGFloat { FocusBearMenuView.width }
+
+    /// Resize the popover/window to the height the SwiftUI view reports (also on accordion expand).
+    func applyMenuHeight(_ height: CGFloat) {
+        let size = NSSize(width: menuWidth, height: max(height.rounded(.up), 120))
+        preferredContentSize = size
+        // Popover path: setting contentSize re-anchors + grows the popover automatically.
+        appdelegate?.popover.contentSize = size
+        // Window path: resize and keep the top edge pinned under the status bar.
+        if let win = view.window {
+            let topLeft = NSPoint(x: win.frame.minX, y: win.frame.maxY)
+            win.setContentSize(size)
+            win.setFrameTopLeftPoint(topLeft)
+        }
+    }
+
+    func wireMenuModel(_ model: MenuModel) {
+        model.onStartFocus = { [weak self] in
+            guard let self = self else { return }
+            if SettingsManagerObject.isGeekModeEnabled {
+                appdelegate?.menuShowPomodoroModeView()
+            } else {
+                appdelegate?.menuShowSimplePomodoroModeView()
+            }
+            closeMenuWindowIsVisible()
+        }
+        model.onMic            = {
+            // Same flow as the Focus Button microphone (LISTEN|START → recorder). Keep the popover
+            // open so the voice UI stays visible while recording.
+            recorder.requestPermissionAndStartRecording()
+        }
+        model.onStopRecording  = { recorder.stopRecording() }
+        model.onCancelRecording = { recorder.cancelRecording() }
+        model.onOpenMicSettings = {
+            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") {
+                NSWorkspace.shared.open(url)
+            }
+        }
+        model.onShowStats      = { [weak self] in self?.btnPreferencesClicked(self as Any) }
+        model.onStopFocus      = { [weak self] in self?.stopFocusMode() }
+        model.onTogglePin      = { [weak self] in self?.btnPinClicked(self as Any) }   // popover <-> window
+        model.onOpenBreaks     = { [weak self] in self?.btnStartBreakClicked(self as Any) }
+        model.onOpenDayPlan    = { [weak self] in self?.openDayPlanSchedule() }
+        model.onOpenFocusMusic = { [weak self] in self?.btnFocusMusicClicked(self as Any) }
+        model.onToggleMusic    = { [weak self] in self?.btnCurrentTrackClicked(self as Any) }
+        model.onToggleTask     = { [weak self] id in
+            guard var t = DayPlanTaskStore.shared.tasks(for: Date()).first(where: { $0.id == id }) else { return }
+            t.done.toggle()
+            DayPlanTaskStore.shared.update(t, for: Date())
+            self?.refreshSwiftUIMenu()
+        }
+        model.onStartNextHabit = { [weak self] in self?.startNextDayPlanHabit() }
+        model.onSetUpBlocking  = { [weak self] in self?.btnSetBlockingScheduleFirstTimeClicked(self as Any) }
+        model.onDismissBlocking = { UserDefaults.standard.set(true, forKey: kUserDefaultsBlockingScheduleAddedFirstTime) }
+        model.onToggleBlockingSchedule = { [weak self] in self?.btnCustomBlockingClicked(self as Any) }
+        model.onOpenBlockingScheduleConfig = { [weak self] in self?.btnEditBlockingScheduleClicked(self as Any) }
+        model.onSaveIntention = { [weak self] newIntention in
+            // Persist via the canonical setter (updates whatToAchieveInFocusBlock + resets the
+            // convince-AI caches), then refresh the legacy label that feeds the menu and the in-focus
+            // to-do player — mirrors editing the intention from the focus screen.
+            updateFocusModeIntention(intention: newIntention)
+            self?.lblFocusModeIntention?.stringValue = newIntention
+            taskPlayerVcObj?.updateIntentionToPlayer()
+        }
+        model.onSkipHabit      = {
+            // The "why skip" flow renders inside the main window, so it's a no-op during an allowed-app
+            // habit (main window closed). Open the main window first so Skip actually prompts.
+            if !(mainWindowControllerObj?.window?.isVisible ?? false){
+                mainWindowControllerObj?.showWindow(nil)
+            }
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            timerViewcontrollerObj?.menuItemSkipHabitClicked()
+            closeMenuWindowIsVisible()
+        }
+        model.onPostponeHabit  = {
+            // Standalone postpone window (duration picker + password if required) — works even when the
+            // main window is closed (the same path the floating timer popup uses).
+            showEasyPostponeWindow()
+            closeMenuWindowIsVisible()
+        }
+        model.onOpenBrainDump  = { [weak self] in self?.btnBrainDumpClicked(self as Any) }
+        model.onOpenToDoPlayer = { [weak self] in self?.btnToDoPlayerClicked(self as Any) }
+        model.onPreferences    = { [weak self] in self?.btnPreferencesClicked(self as Any) }
+        model.onQuit           = { [weak self] in self?.btnQuitClicked(self as Any) }
+    }
+
+    /// Pull the latest values out of the (hidden) storyboard labels / app state into the model.
+    /// Observe recorder notifications so the voice screen can show progress + results.
+    private func observeVoiceEvents(_ model: MenuModel) {
+        let nc = NotificationCenter.default
+        nc.addObserver(forName: VoiceEvents.permissionDenied, object: nil, queue: .main) { _ in
+            model.voicePermissionDenied = true
+        }
+        nc.addObserver(forName: VoiceEvents.processing, object: nil, queue: .main) { _ in
+            model.voiceStatus = .processing
+            // Safety net: if transcription/intent never returns, don't hang on "Thinking…".
+            DispatchQueue.main.asyncAfter(deadline: .now() + 25) {
+                if model.voiceStatus == .processing {
+                    model.voiceResult = "Timed out. Please try again."
+                    model.voiceStatus = .error
+                }
+            }
+        }
+        nc.addObserver(forName: VoiceEvents.transcript, object: nil, queue: .main) { note in
+            model.voiceTranscript = note.userInfo?["text"] as? String ?? ""
+        }
+        nc.addObserver(forName: VoiceEvents.actionDone, object: nil, queue: .main) { note in
+            model.voiceResult = note.userInfo?["text"] as? String ?? "Done"
+            model.voiceStatus = .done
+        }
+        nc.addObserver(forName: VoiceEvents.error, object: nil, queue: .main) { note in
+            model.voiceResult = note.userInfo?["text"] as? String ?? "Something went wrong"
+            model.voiceStatus = .error
+        }
+    }
+
+    /// Full refresh (on menu open): live fields + mic gate + day-plan summary.
+    func refreshSwiftUIMenu() {
+        guard let model = menuModel else { return }
+        model.inVoiceMode = false   // opening the menu always starts on the menu, never a stale voice screen
+        updateLiveMenuFields(model)
+        model.micAvailable = isPurchased || daysLeft > 0
+        // Show the "set up distraction blocking" card only when there's no schedule AND the user
+        // hasn't already set one up or dismissed the card (persisted via the first-time flag) — so
+        // "Remove" sticks across restarts.
+        model.showBlockingBanner = customBlockingScheduleManagerObj.arrBlockingSchedule.count == 0
+            && UserDefaults.standard.object(forKey: kUserDefaultsBlockingScheduleAddedFirstTime) == nil
+        // (Active blocking-schedule card is populated in updateLiveMenuFields so it refreshes every tick.)
+        updateDayPlan(model)
+    }
+
+    /// Time-sensitive fields, refreshed every second while the menu is open (timer counts down,
+    /// "last break" grows, music play/pause state, etc.).
+    func tickMenu() {
+        guard let model = menuModel else { return }
+        // Don't churn the model while the voice screen is up — its updates can disrupt that view.
+        if model.inVoiceMode { return }
+        updateLiveMenuFields(model)
+    }
+
+    /// Live break subtitle for the SwiftUI menu. Returns the disable reason when breaks are currently
+    /// off (micro-breaks turned off, disabled-for-today, focus/super-focus session, an active blocking
+    /// schedule with skip-micro-breaks, a habit in progress, or a postponed routine), the
+    /// "Next break in: X" countdown when they're on, or nil to fall back to "Take a mindful break".
+    /// Mirrors the legacy gate in reloadData() but is evaluated fresh every tick so it never goes stale.
+    private func breakSubtitleForMenu() -> String? {
+        var isBreakEnabled = SettingsManagerObject.isMicroBreaksEnabled
+        var reason = microBreaksTurnedOff
+
+        if let d = UserDefaults.standard.object(forKey: kUserdefaultsDisableBreaksForToday) as? Date,
+           Calendar.current.isDateInToday(d) {
+            isBreakEnabled = false; reason = microBreaksDisabledForToday
+        }
+
+        guard let timer = getHabitsVcObject().breakTimer else { return isBreakEnabled ? nil : reason }
+
+        if isBreakEnabled {
+            if isFocusModeRunning && isFocusModeStartedFromPomodoroMode && isSkipBreakActivityDuringPomodoro {
+                isBreakEnabled = false; reason = breaksDisabledFocusSessionRunning
+            } else if isHardCorePomodoroModeOn && isSkipBreakActivityDuringPomodoro {
+                isBreakEnabled = false; reason = breaksDisabledSuperFocusSessionRunning
+            } else if customBlockingScheduleManagerObj.isAnyCustomScheduleOn {
+                if !customBlockingScheduleManagerObj.isMicroBreaksEnabled() {
+                    isBreakEnabled = false; reason = breaksDisabledBlockingScheduleActive
+                }
+            } else if currentState == ._CUSTOM_ROUTINE_ || currentState == ._SPECIAL_ACTIVITY_ {
+                isBreakEnabled = false; reason = breaksDisabledHabitInProgress
+            } else if currentState == ._POSTPONE_FOCUS_SUMMARY_ || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_ {
+                if !SettingsManagerObject.IsShowBreaksInPostponeEnabled {
+                    isBreakEnabled = false; reason = breaksDisabledRoutinePostponed
+                }
+            }
+        }
+
+        if !isBreakEnabled { return reason }
+        guard timer.isValid else { return nil }
+
+        let now = Date()
+        let diffMinute = Calendar.current.dateComponents([.minute], from: now, to: timer.fireDate).minute ?? 0
+        if diffMinute < 1 {
+            let diffSeconds = Calendar.current.dateComponents([.second], from: now, to: timer.fireDate).second ?? 0
+            if diffSeconds < 5 {
+                var waiting = "It's time for a break. Waiting for a good moment"
+                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary {
+                    waiting = menuInfo.value(forKey: "waitingBreakTimeText") as? String ?? waiting
+                }
+                return waiting
+            }
+        }
+        let timeText = diffMinute < 1 ? "< 1 \(minuteText)" : "\(diffMinute) \(minutesText)"
+        var nextBreakText = "Next break in: <DURATION>"
+        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary {
+            nextBreakText = menuInfo.value(forKey: "nextBreakText") as? String ?? nextBreakText
+        }
+        return nextBreakText.replacingOccurrences(of: "<DURATION>", with: timeText)
+    }
+
+    private func updateLiveMenuFields(_ model: MenuModel) {
+        // Reflect the current menu presentation so the header's pin icon matches reality
+        // (window/pinned vs popover). The pin button toggles between the two via btnPinClicked.
+        model.menuPinnedAsWindow = !SettingsManagerObject.isMenuPopoverEnabled
+        let running = isFocusModeOnOrPaused()
+        model.focusRunning     = running
+        model.focusPaused      = isFocusModePaused()
+        model.focusRemaining   = formatFocusRemaining(lblTimerFocusMode?.stringValue ?? "")
+        model.focusedTodayText = lblTotalFocusedTimeToday?.stringValue ?? ""
+        model.focusTaskTitle   = lblFocusModeIntention?.stringValue ?? ""
+        // The focus-alignment score only exists when AI blocking is on. The storyboard label is just
+        // a cache that the gated reloadData() paths refresh; it's never cleared when AI is off, so it
+        // retains a previous session's score (or its "xx…" placeholder). Gate on AI here — matching
+        // the boxFocusAlignmentScore gating — so a no-AI focus session doesn't surface a stale score.
+        let onTask = lblFocusAlignmentScore?.stringValue ?? ""
+        let aiScoreAvailable = SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn()
+        model.focusOnTaskText  = (running && aiScoreAvailable && !onTask.isEmpty) ? onTask : ""
+
+        // Breaks: normally subtitle = "next break in"; but during an allowed-app habit (breaks are
+        // paused) show "last break X ago" instead. The body shows the other one.
+        // Compute the break subtitle LIVE each tick (don't read the legacy lblNextBreakTime label —
+        // it's only refreshed inside reloadData(), so between reloads it goes stale and showed a
+        // "next break in X" countdown even while breaks were actually disabled by an active blocking
+        // schedule). This evaluates the same disable gate fresh, so the subtitle correctly reads e.g.
+        // "Blocking schedule is active. Breaks disabled." the moment that schedule is on.
+        let nextBreak = breakSubtitleForMenu() ?? ""
+        var lastBreakStr = ""
+        if let lastBreak = UserDefaults.standard.object(forKey: kUserdefaultsLastBreakEndTime) as? Date {
+            let secs = max(0, Int(Date().timeIntervalSince(lastBreak)))
+            lastBreakStr = menuLocalized("menuLastBreak", "Last break") + " " + getStringTimeFromSecondsWithoutSeconds(seconds: secs) + " " + menuLocalized("menuAgo", "ago")
+        }
+        let takeBreak = menuLocalized("menuTakeBreak", "Take a mindful break")
+        if isAnyAllowedFocusModeActivityRunning {
+            model.breaksSummary = lastBreakStr.isEmpty ? takeBreak : lastBreakStr
+            model.lastBreakText = ""
+        } else {
+            model.breaksSummary = nextBreak.isEmpty ? takeBreak : nextBreak
+            model.lastBreakText = lastBreakStr
+        }
+
+        // Active blocking-schedule card — refreshed every tick so it appears/updates as soon as a
+        // schedule turns on (or is loaded after the menu opened), not just on the initial open.
+        let blockingMgr = customBlockingScheduleManagerObj
+        if blockingMgr.isAnyCustomScheduleOn, let s = blockingMgr.arrBlockingSchedule.first(where: { $0.state == .on }) {
+            model.blockingScheduleActive = true
+            model.blockingSchedulePaused = false
+            model.blockingScheduleName = s.name
+            model.blockingScheduleTime = s.displayString
+        } else if blockingMgr.isAnyCustomSchedulePaused, let s = blockingMgr.arrBlockingSchedule.first(where: { $0.state == .pause }) {
+            model.blockingScheduleActive = true
+            model.blockingSchedulePaused = true
+            model.blockingScheduleName = s.name
+            model.blockingScheduleTime = s.displayString
+        } else {
+            model.blockingScheduleActive = false
+        }
+
+        // Focus music: current track name + playing/paused state (drives the play/pause control).
+        var trackName = ""
+        var playing = false
+        for t in arrAllTracks {
+            if t["isPlaying"] as? Bool == true { trackName = t["name"] as? String ?? ""; playing = true; break }
+            if t["isPaused"] as? Bool == true { trackName = t["name"] as? String ?? ""; playing = false }
+        }
+        model.musicTrackName = trackName
+        model.musicPlaying = playing
+
+        // Currently-playing habit → show the habit card (name + live timer + Skip/Postpone)
+        // instead of the Start Focus button.
+        let habitInProgress = currentHabitPlaying != nil
+            && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_)
+            && currentAction == ._INPROGRESS_
+        model.habitPlaying = habitInProgress
+        if habitInProgress {
+            model.habitName = currentHabitPlaying?.name ?? ""
+            model.habitTimer = timerViewcontrollerObj?.lblTimer?.stringValue ?? ""
+        }
+    }
+
+    /// Day Plan: next uncompleted habit in the active routine; if that routine is done, the next
+    /// routine's start time; plus today's top undone tasks.
+    private func updateDayPlan(_ model: MenuModel) {
+        let activeHabits: [habit]
+        switch currentState {
+        case ._EVENING_HABIT_, ._POSTPONE_EVENING_HABIT_:
+            activeHabits = arrFilteredEveningHabits
+        case ._CUSTOM_ROUTINE_:
+            activeHabits = currentRoutineIndex < arrAllCustomRoutine.count
+                ? arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits : []
+        default:
+            activeHabits = arrFilteredMorningHabits
+        }
+        let playingId = currentHabitPlaying?.id ?? ""
+        let nextHabit = activeHabits.first { h in
+            let id = h.id ?? ""
+            return id != playingId && !dayPlanCompletedHabitIds.contains(id)
+        }
+        if let nh = nextHabit {
+            model.dayPlanNextHabit = nh.nameWithoutIcon.isEmpty ? (nh.name ?? "") : nh.nameWithoutIcon
+            nextDayPlanHabitName = nh.name
+        } else if shutOffTime != nil {
+            nextDayPlanHabitName = nil
+            // All habits in the current routine are done — show the next routine's start.
+            // (getNextRoutineInfo() force-unwraps shutOffTime, so only call it once that's loaded.)
+            let (date, name, _) = getNextRoutineInfo()
+            model.dayPlanNextHabit = name + " " + menuLocalized("dayPlanStartsAt", "starts at") + " " + menuTimeString(date)
+        } else {
+            model.dayPlanNextHabit = ""
+            nextDayPlanHabitName = nil
+        }
+
+        // "Start" next to the next habit only makes sense when habits are postponed (you can resume them).
+        model.nextHabitStartable = (currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_)
+
+        // Date subtitle, e.g. "Tuesday, June 25".
+        let dateFmt = DateFormatter()
+        dateFmt.locale = Locale(identifier: currentLanguageCode)
+        dateFmt.dateFormat = "EEEE, MMMM d"
+        model.dayPlanDate = dateFmt.string(from: Date())
+
+        // Next calendar event (upcoming meeting), if any.
+        let now = Date()
+        if let nextMeeting = CalendarManager.shared.todaysMeetings()
+            .filter({ $0.start > now }).sorted(by: { $0.start < $1.start }).first {
+            model.dayPlanNextEventTitle = nextMeeting.title
+            model.dayPlanNextEventTime = menuTimeString(nextMeeting.start)
+            model.dayPlanNextEventRelative = relativeTimeString(to: nextMeeting.start)
+        } else {
+            model.dayPlanNextEventTitle = ""
+            model.dayPlanNextEventTime = ""
+            model.dayPlanNextEventRelative = ""
+        }
+
+        // Today's tasks, shown with tickable checkboxes (matches the Day Plan panel's order).
+        model.dayPlanTasks = topDayPlanTasks(limit: 4)
+    }
+
+    /// The first N "Tasks for today" in the same order the Day Plan side-panel shows them:
+    /// not-yet-time-boxed tasks (blockKey == nil), grouped by project in the user's project order,
+    /// with no-project tasks last.
+    private func topDayPlanTasks(limit: Int) -> [DayPlanMenuTask] {
+        // Uncompleted, not-yet-time-boxed tasks only (we don't show completed tasks in the menu).
+        let unboxed = DayPlanTaskStore.shared.tasks(for: Date()).filter { $0.blockKey == nil && !$0.done }
+        var order: [String] = []
+        var groups: [String: [DayPlanTask]] = [:]
+        var noProject: [DayPlanTask] = []
+        for t in unboxed {
+            if let p = t.project, !p.isEmpty {
+                if groups[p] == nil { groups[p] = []; order.append(p) }
+                groups[p]?.append(t)
+            } else {
+                noProject.append(t)
+            }
+        }
+        var ordered: [DayPlanTask] = []
+        for p in DayPlanTaskStore.shared.orderedProjects(order) { ordered.append(contentsOf: groups[p] ?? []) }
+        ordered.append(contentsOf: noProject)
+        return ordered.prefix(limit).map { DayPlanMenuTask(id: $0.id, title: $0.title, done: $0.done) }
+    }
+
+    /// Reformat a "HH:MM:SS" (or "MM:SS") countdown into "1h 1m 09s" style (seconds always 2 digits).
+    private func formatFocusRemaining(_ hms: String) -> String {
+        let parts = hms.split(separator: ":").compactMap { Int($0) }
+        var h = 0, m = 0, s = 0
+        if parts.count == 3 { h = parts[0]; m = parts[1]; s = parts[2] }
+        else if parts.count == 2 { m = parts[0]; s = parts[1] }
+        else { return hms }
+        var out = ""
+        if h > 0 { out += "\(h)h " }
+        if h > 0 || m > 0 { out += "\(m)m " }
+        out += String(format: "%02ds", s)
+        return out.trimmingCharacters(in: .whitespaces)
+    }
+
+    /// "in 40 min" / "in 1h 5m" until the given date.
+    private func relativeTimeString(to date: Date) -> String {
+        let mins = max(0, Int(date.timeIntervalSince(Date()) / 60))
+        let inWord = menuLocalized("dayPlanIn", "in")
+        if mins < 60 { return "\(inWord) \(mins) min" }
+        let h = mins / 60, m = mins % 60
+        return m > 0 ? "\(inWord) \(h)h \(m)m" : "\(inWord) \(h)h"
+    }
+
+    private func menuTimeString(_ date: Date) -> String {
+        let df = DateFormatter()
+        df.dateFormat = "h:mm a"
+        df.locale = Locale(identifier: currentLanguageCode)
+        return df.string(from: date)
+    }
+
+    /// Start the Day Plan "next habit" from its play button (mirrors the device-button habit start).
+    func startNextDayPlanHabit() {
+        guard let name = nextDayPlanHabitName?.lowercased(), !name.isEmpty else {
+            btnEditHabitsClicked(self as Any)   // no startable habit — open the full Day Plan instead
+            return
+        }
+        switch currentState {
+        case ._MORNING_HABIT_, ._POSTPONE_MORNING_HABIT_:
+            getHabitsVcObject().startMorningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
+        case ._EVENING_HABIT_, ._POSTPONE_EVENING_HABIT_:
+            getHabitsVcObject().startEveningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
+        default:
+            btnEditHabitsClicked(self as Any)
+            return
+        }
+        closeMenuWindowIsVisible()
+    }
+
+    func startMenuRefreshTimer() {
+        menuRefreshTimer?.invalidate()
+        menuRefreshTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.tickMenu()
+        }
     }
 }
 

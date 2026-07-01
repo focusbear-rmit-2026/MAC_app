@@ -466,9 +466,12 @@ func showBlurWindow(frame:NSRect, browser:BROWSER?){
 
 func showAllTracksWindow(){
     addLog(text:"showAllTracksWindow")
-    
+
     mainWindowControllerObj?.showWindow(nil)
     leftMenuVcObj?.showAllTracks()
+    // Focus Bear is a menu-bar (accessory) app, so showWindow alone leaves the window behind other
+    // apps — clicking "Focus Music" looked like nothing happened. Activate so it comes to the front.
+    NSApplication.shared.activate(ignoringOtherApps: true)
     return;
 }
 //-------------------------------------------------//
@@ -549,13 +552,23 @@ func showSurveyWindow(){
 //***********showTimeTrackerWindow***************//
 func showTimeTrackerWindow(showingAutomatically:Bool){
     addLog(text:"showTimeTrackerWindow")
-    getTimeTrackerWcObject().contentViewController = getTimeTrackerVcObject()
-    getTimeTrackerWcObject().window?.center()
-    getTimeTrackerWcObject().window?.title = appName
-    getTimeTrackerWcObject().window?.styleMask.remove(.closable)
-    getTimeTrackerWcObject().showWindow(nil)
+    let wc = getTimeTrackerWcObject()
+    // Once FBTT is installed and has tracked data, show the read-only Today view
+    // (reads FBTT's own SQLite store) instead of the promo/enable screen.
+    if FBTTReader.isFBTTInstalled, FBTTReader.hasData {
+        let today = getTodayTrackerVcObject()
+        wc.contentViewController = today
+        today.refresh()
+        wc.window?.styleMask.insert(.closable)   // a data view should be dismissable
+    } else {
+        wc.contentViewController = getTimeTrackerVcObject()
+        timeTrackerVcObj!.showingAutomatically = showingAutomatically
+        wc.window?.styleMask.remove(.closable)
+    }
+    wc.window?.center()
+    wc.window?.title = appName
+    wc.showWindow(nil)
     NSApplication.shared.activate(ignoringOtherApps: true)
-    timeTrackerVcObj!.showingAutomatically = showingAutomatically
     allApiObject.capturePosthog(event: "show-timetracker-window", metadata: [:])
 }
 //-------------------------------------------------//
@@ -731,9 +744,14 @@ func showAskLoginWindow(){
         leftMenuVcObj?.disableAllTabForOnboarding()
         mainViewControllerObj?.collapseLeftPanel()
         currentState = ._LOGIN_
+        // Logged out: the menu-bar click must foreground this window (it was a no-op because the
+        // action stayed nil on this screen). Set target + action explicitly so dispatch is guaranteed.
+        appdelegate!.statusbutton?.target = appdelegate
+        appdelegate!.statusbutton?.action = #selector(AppDelegate.bringMainWindowToForeground(_:))
         return;
     }
-    appdelegate!.statusbutton?.action = nil
+    appdelegate!.statusbutton?.target = appdelegate
+    appdelegate!.statusbutton?.action = #selector(AppDelegate.bringMainWindowToForeground(_:))
     getOnboardingVcObject().navigate(to: ._CREATE_ACCOUNT_)
 }
 //-------------------------------------------------//
@@ -758,14 +776,14 @@ func showCustomLoginWindow(isLogin:Bool){
         leftMenuVcObj?.disableAllTabForOnboarding()
         mainViewControllerObj?.collapseLeftPanel()
         customLoginVcObj?.isLogin = isLogin
-        appdelegate!.statusbutton?.action = nil
+        appdelegate!.statusbutton?.action = #selector(AppDelegate.bringMainWindowToForeground(_:))
         currentState = ._LOGIN_
         return;
     }
 
     customLoginVcObj?.isLogin = isLogin
     getOnboardingVcObject().navigate(to: ._LOGIN_)
-    appdelegate!.statusbutton?.action = nil
+    appdelegate!.statusbutton?.action = #selector(AppDelegate.bringMainWindowToForeground(_:))
 }
 //-------------------------------------------------//
 
@@ -1256,6 +1274,7 @@ func showFloatingTopBarWindow(windowTopMidPoint:NSPoint){
 
 
 func closeMenuWindowIsVisible(){
+    appdelegate?.removeMenuOutsideClickMonitors()
     if !SettingsManagerObject.isMenuPopoverEnabled{
         if menuWcObj != nil{
             if menuWcObj?.window?.isVisible ?? false{

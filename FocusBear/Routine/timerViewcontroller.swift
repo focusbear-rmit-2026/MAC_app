@@ -821,6 +821,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         
         
         isAnyAllowedFocusModeActivityRunning = false
+        isAllowedActivityHabitPlaying = false
         if !(getHabitsVcObject().isBreakActivityPostponeInsideAllowedHabit){
             getHabitsVcObject().stopActivityTimer()
         }
@@ -915,6 +916,16 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }else{
                  currentHabitPlaying = nil
             }
+        }
+        // Allowed-activity habits get the Habit Player | Day Plan tabs; normal habits hide them.
+        // The flag drives the postpone-free minimise (covers allow-URLs habits, where the
+        // currentHabitPlaying / focus-mode signals aren't set).
+        isAllowedActivityHabitPlaying = currentHabit.isAllowedActivityHabit
+        updateAllowedActivityScheduleTab(for: currentHabit)
+        // Seed the to-do player with any Day Plan tasks assigned to this habit. Deferred so the player
+        // has begun loading; the injection JS itself waits for the player to be ready. No-op if none.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            prepopulateDayPlanTasks(for: currentHabit)
         }
         boxButtonTabViews.isHidden = true
         tabCount = 0

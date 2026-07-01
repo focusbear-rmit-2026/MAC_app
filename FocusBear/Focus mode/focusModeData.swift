@@ -735,6 +735,14 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
         if dic != nil{
             if currentBrowserUrlForAi == checkedUrl{
                 DispatchQueue.main.async{
+                    // Race guard: if the user switched their To-Do task while this AI request was in
+                    // flight, the relevance score was computed for a now-stale task — ignore it so we
+                    // don't show a wrong "have you changed focus?" prompt (mirrors the URL guard above).
+                    if getCurrentTaskInFocusMode() != currentTaskInToDoPlayer {
+                        addLog(text: "checkUrlFromAi: To-Do task changed during request (\(currentTaskInToDoPlayer ?? "nil") -> \(getCurrentTaskInFocusMode() ?? "nil")); ignoring stale relevance result.")
+                        setFocusBearIconToNormal()
+                        return
+                    }
                     let reason = dic?.value(forKey: "reason") as? String ?? ""
                     setFocusBearIconToNormal()
                     if var dProbability = dic?.value(forKey: "allowed_probability") as? Double{
@@ -1137,6 +1145,13 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
         if dic != nil{
             if currentRunningAppNameForAi == checkedApp{
                 DispatchQueue.main.async{
+                    // Race guard: ignore the result if the user switched their To-Do task while the
+                    // request was in flight (the score is for a stale task).
+                    if getCurrentTaskInFocusMode() != currentTaskInToDoPlayer {
+                        addLog(text: "checkAppFromAi: To-Do task changed during request; ignoring stale relevance result.")
+                        setFocusBearIconToNormal()
+                        return
+                    }
                     let reason = dic?.value(forKey: "reason") as? String ?? ""
                     setFocusBearIconToNormal()
                     if var dProbability = dic?.value(forKey: "allowed_probability") as? Double{

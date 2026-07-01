@@ -219,7 +219,7 @@ class smallCountDownVc: NSViewController {
             if let common = configjson.value(forKey: "common") as? NSDictionary{
                 btnPostpone.title = common.value(forKey: "buttonPostponeText") as? String ?? btnPostpone.title
             }
-            btnSkip.isHidden = true
+            btnSkip.isHidden = false   // allow skipping a postponed/allowed-app habit too
         }else{
            // lblTimerTopSpaceConstraint.constant = lblTopSpaceDefault
             btnPostpone.isHidden = true

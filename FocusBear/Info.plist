@@ -46,6 +46,10 @@
 	</dict>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>This is needed to block distracting websites.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Focus Bear uses your calendar to build your daily timetable — showing when your habits will finish and when you have free time for deep work around your meetings.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Focus Bear uses your calendar to build your daily timetable — showing when your habits will finish and when you have free time for deep work around your meetings.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2022-2026 Focus Bear Pty Ltd, All rights reserved</string>
 	<key>NSMainStoryboardFile</key>

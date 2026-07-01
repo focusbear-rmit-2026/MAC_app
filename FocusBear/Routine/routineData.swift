@@ -47,7 +47,7 @@ var eveningRoutineLastPostponeTime:Date?
 var focusSummaryLastPostponeTime:Date?
 
 
-var arrAllCustomRoutine = [routine]()
+var arrAllCustomRoutine = [routine]() { didSet { requestDayPlanRefresh() } }
 struct routine {
     var title:String
     var sequenceId:String
@@ -70,8 +70,23 @@ var arrAllDaysEveningHabits = [habit]()
 var arrPreFilteredMorningHabits = [habit]()
 var arrPreFilteredEveningHabits = [habit]()
 
-var arrFilteredMorningHabits = [habit]()
-var arrFilteredEveningHabits = [habit]()
+/// Coalesced Day Plan refresh. arrFiltered{Morning,Evening}Habits and arrAllCustomRoutine are mutated
+/// from many paths (the server progress filtering that runs on launch, skip/done, the resort loop), and
+/// the Day Plan reads those same arrays. Their didSet re-renders the Day Plan so it always matches the
+/// habit table by construction — debounced to the next runloop tick so a burst of mutations triggers a
+/// single refresh instead of one per element.
+var dayPlanRefreshPending = false
+func requestDayPlanRefresh() {
+    if dayPlanRefreshPending { return }
+    dayPlanRefreshPending = true
+    DispatchQueue.main.async {
+        dayPlanRefreshPending = false
+        firstViewControllerObj?.refreshScheduleIfVisible()
+    }
+}
+
+var arrFilteredMorningHabits = [habit]() { didSet { requestDayPlanRefresh() } }
+var arrFilteredEveningHabits = [habit]() { didSet { requestDayPlanRefresh() } }
 var isLastActivityStoppedInRunningState = false// only use ful in morning habit evening habit
 var lastActivityRunningId = ""// only use ful in morning habit evening habit
 var lastActivityStoppedTimerCount = 0
@@ -125,9 +140,35 @@ struct habit {
         self.checkList = checkList
         self.tutorial = tutorial
     }
+
+    /// True for "allowed activity" habits — ones that intentionally let you use other apps / sites
+    /// during them (an allowed-apps habit, an allowed-websites habit, or an allowed focus mode).
+    /// These get the Habit Player | Day Plan tabs and a postpone-free minimise.
+    var isAllowedActivityHabit: Bool {
+        (allowApps?.count ?? 0) > 0
+            || (allowUrls?.count ?? 0) > 0
+            || !((allowedFocusMode ?? "").isEmpty)
+    }
 }
 
 var isHighPrioritySequenceGoing = false
+
+/// True while the habit currently being played is an "allowed activity" habit (see
+/// habit.isAllowedActivityHabit). Set in timerViewcontroller.startTimerHabit and used by the window
+/// close/minimise logic so these habits — which run in the background — minimise without the postpone
+/// prompt. Covers allow-URLs habits too, where currentHabitPlaying is nil.
+var isAllowedActivityHabitPlaying = false
+
+/// Robust "is an allowed-activity habit currently running" check used by the close/minimise paths.
+/// The per-habit flag above is the primary signal, but it isn't set if the habit was started on a
+/// prior build/session; the focus-mode + currentHabitPlaying/currentRelaxHabitPlaying signals are the
+/// safety net so minimise/close reliably backgrounds the window instead of prompting to postpone.
+var isAllowedActivityHabitCurrentlyRunning: Bool {
+    isAllowedActivityHabitPlaying
+        || isAnyAllowedFocusModeActivityRunning
+        || (currentHabitPlaying?.isAllowedActivityHabit ?? false)
+        || (currentRelaxHabitPlaying?.isAllowedActivityHabit ?? false)
+}
 
 
 var introActivity:habit?

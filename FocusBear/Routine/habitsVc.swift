@@ -42,7 +42,12 @@ class habitsVc: NSViewController {
     
     var dateTimeTimer:Timer?
     func startDateTimer() {
-        lblCurrentDateTime.isHidden = false
+        // Time-of-day clock shown above the habit name on the habit player. It must stay hidden while a
+        // Day Plan is on screen (the Day Plan has its own clock and the label overlaps its tasks panel).
+        // Entering full screen calls this, so don't force it visible — only show it when a habit player
+        // is the front content. The player/Day-Plan transitions (setDateTimeClockHidden /
+        // updateScheduleTabForState) keep it in sync afterwards.
+        refreshDateTimeClockVisibility()
         if dateTimeTimer != nil{
             dateTimeTimer?.invalidate()
             dateTimeTimer = nil
@@ -54,8 +59,40 @@ class habitsVc: NSViewController {
             RunLoop.main.add((self.dateTimeTimer!), forMode: RunLoop.Mode.common)
         }
     }
+
+    /// True when an activity player is the front content of the habits area: the habit / custom-
+    /// routine timer (timerViewcontroller) or a running micro-break activity (activityCompletionVc).
+    /// The time-of-day clock belongs to these, so Day-Plan visibility code must not hide it.
+    var isActivityPlayerFront: Bool {
+        let players = [timerViewcontrollerObj?.view, activityCompletionVcObj?.view].compactMap { $0 }
+        return players.contains { habitsView.subviews.contains($0) }
+    }
+
+    /// Set the clock's visibility from what's actually on screen. It is shown ONLY when the app's
+    /// "Play habits in full screen mode" setting is enabled AND an activity is running in full screen
+    /// — a habit, a custom-routine habit, or a micro-break activity — and not on the habit player's
+    /// own Day Plan tab (which has its own clock and overlaps the tasks panel). Hidden in every other
+    /// case: no activity running, the Day Plan list, the small window, the setting off, etc.
+    /// Use this instead of `setDateTimeClockHidden(!isBreak)`: the host Day Plans stay "selected"
+    /// (their scheduleVC isn't hidden) while a player runs on top, so a state change into a *running*
+    /// activity would otherwise hide the clock the player just showed.
+    func refreshDateTimeClockVisibility() {
+        let onDayPlanTab = timerViewcontrollerObj?.isAllowedActivityDayPlanFront ?? false
+        let show = checkIsFullScreenEnabled() && isActivityPlayerFront && !onDayPlanTab
+        lblCurrentDateTime?.isHidden = !show
+    }
+
+    /// Hide/show the time-of-day clock. Hidden while a Day Plan is the visible content (its tasks panel
+    /// overlaps this label and it has its own clock); shown on the habit player.
+    func setDateTimeClockHidden(_ hidden: Bool) {
+        lblCurrentDateTime?.isHidden = hidden
+    }
     
     @objc func setDateTime(){
+        // Keep visibility in sync each tick: an activity can become the front content without a state
+        // change (e.g. a micro-break activity starting mid-break), which wouldn't otherwise re-run the
+        // visibility logic. The timer only runs in full screen, so this is cheap and self-correcting.
+        refreshDateTimeClockVisibility()
         if let dict = UserDefaults.standard.persistentDomain(forName: "com.apple.menuextra.clock") {
             print(dict)
             lblCurrentDateTime.stringValue = getStringFromDate(date: Date(), dateFormat: dict["DateFormat"] as? String ?? "EEE d MMM h:mm:ss")
@@ -285,8 +322,16 @@ class habitsVc: NSViewController {
     
     func showAskPostponeView(){
         addLog(text: "show AskPostpone View")
-        self.view.addSubview(getAskPostponeVcObject().view)
-        self.view.addConstraints(subView: getAskPostponeVcObject().view)
+        // Host on the window's content view (always window-sized and on top) rather than habitsVc.view,
+        // which grows to the full Day Plan height — there the centred dialog landed off-screen, and it
+        // wasn't visible at all from the Tools/Help screens. Idempotent so re-triggers don't stack it.
+        let host = mainWindowControllerObj?.window?.contentView ?? self.view
+        let dialog = getAskPostponeVcObject().view
+        if dialog.superview !== host {
+            dialog.removeFromSuperview()
+            host.addSubview(dialog)
+            host.addConstraints(subView: dialog)
+        }
         getAskPostponeVcObject().resetView()
     }
     
@@ -470,9 +515,21 @@ class habitsVc: NSViewController {
             
         }else if currentState == ._EVENING_HABIT_{
             refreshLastPostponeCount()
-            
-            if SettingsManagerObject.isEasySkipEnabled{
-                
+
+            // Minimise/abort leads to the POSTPONE popup, so after cutoff it must honour the *postpone*
+            // cutoff password setting (not the skip one) — and ask the password FIRST, before the popup,
+            // regardless of easy-skip. Without this, easy-skip/the skip-gated path showed the postpone
+            // popup with no password even though "require password to postpone after cutoff" was on.
+            if isCutOffTimeGoing() && shouldAskPassword()
+                && SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff {
+                stopActivityTimer()
+                showPasswordView()
+                enterPasswordVcObj?.parentVc = getAskPostponeVcObject()
+                return
+            }
+
+            if SettingsManagerObject.isEasySkipEnabled {
+
                 if currentHabitPlaying != nil{
                     closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
                 }
@@ -652,8 +709,14 @@ class habitsVc: NSViewController {
     }
     
     func showPasswordView(){
-        self.view.addSubview(enterPasswordVcObj!.view)
-        self.view.addConstraints(subView: enterPasswordVcObj!.view)
+        // Same window-content-view hosting as showAskPostponeView so the prompt is centred on-screen
+        // and visible regardless of which screen (Day Plan / Tools / Help) is showing.
+        let host = mainWindowControllerObj?.window?.contentView ?? self.view
+        if enterPasswordVcObj!.view.superview !== host {
+            enterPasswordVcObj!.view.removeFromSuperview()
+            host.addSubview(enterPasswordVcObj!.view)
+            host.addConstraints(subView: enterPasswordVcObj!.view)
+        }
         enterPasswordVcObj?.removeConstraints()
         enterPasswordVcObj?.parentVc = nil
         enterPasswordVcObj?.pendingAction = nil

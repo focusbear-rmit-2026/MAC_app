@@ -118,7 +118,12 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         }
         
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._CUSTOM_ROUTINE_{
-            if isAnyAllowedFocusModeActivityRunning && !(leftMenuVcObj?.boxHabits.isSelected ?? false){ // allowed focus mode habit will be running in background
+            // Allowed-activity habits (allowed apps / websites / focus mode) keep running in the
+            // background, so minimising or closing the window should just background it — never the
+            // postpone prompt (which only makes sense for normal timer habits). This used to be gated
+            // on the Habits tab not being selected, so it leaked into the postpone flow whenever the
+            // user was actually looking at the player.
+            if isAllowedActivityHabitCurrentlyRunning { // allowed-activity habit runs in background; window can go
                 if currentAction == ._INPROGRESS_{
                     if timerViewcontrollerObj?.isActivityPaused ?? false{
                         leftMenuVcObj?.showHabitsView()
@@ -441,6 +446,10 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     }
     
     func windowDidMiniaturize(_ notification: Notification) {
+        // Allowed-activity habits run in the background, so a minimise should just leave the window
+        // minimised in the Dock — don't slam it closed (closing here is what fed normal habits into
+        // the close→postpone path). The habit keeps running either way.
+        if isAllowedActivityHabitCurrentlyRunning { return }
         self.window?.close()
     }
     

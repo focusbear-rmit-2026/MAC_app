@@ -72,6 +72,68 @@ class addOnsVc: NSViewController {
         
         arrForSearchFromSettings.append(["title": timeTrackerEnabledItemVcObj!.lblTitle.stringValue, "tabId": idAddOns, "object": timeTrackerEnabledItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": lblTitleLateNoMore.stringValue, "tabId": idAddOns, "object": boxGetLateNoMore as Any])
+
+        setupFocusButtonStatusUI()
+    }
+
+    // MARK: - Focus Button connection status
+
+    private var lblConnectionStatus: NSTextField?
+
+    /// Add a live status line under the Connect button and wire the service callbacks so the user can
+    /// see what's happening (which ports are seen, connected/failed) instead of a silent grey button.
+    private func setupFocusButtonStatusUI() {
+        let status = NSTextField(labelWithString: "")
+        status.font = .systemFont(ofSize: 11)
+        status.textColor = .secondaryLabelColor
+        status.lineBreakMode = .byWordWrapping
+        status.maximumNumberOfLines = 0
+        status.translatesAutoresizingMaskIntoConstraints = false
+        if let container = btnConnect.superview {
+            container.addSubview(status)
+            NSLayoutConstraint.activate([
+                status.topAnchor.constraint(equalTo: btnConnect.bottomAnchor, constant: 8),
+                status.leadingAnchor.constraint(equalTo: btnConnect.leadingAnchor),
+                status.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -12),
+            ])
+        }
+        lblConnectionStatus = status
+
+        focusButtonServiceObject.onDeviceConnected = { [weak self] path in
+            DispatchQueue.main.async {
+                self?.setFocusButtonStatus("✓ Connected to \(path.replacingOccurrences(of: "/dev/", with: ""))")
+                self?.updateFocusButtonUI()
+            }
+        }
+        focusButtonServiceObject.onError = { [weak self] message in
+            DispatchQueue.main.async {
+                self?.setFocusButtonStatus("⚠️ \(message)")
+                self?.updateFocusButtonUI()
+            }
+        }
+        focusButtonServiceObject.onPortDisconnected = { [weak self] in
+            DispatchQueue.main.async {
+                self?.setFocusButtonStatus("Disconnected.")
+                self?.updateFocusButtonUI()
+            }
+        }
+    }
+
+    private func setFocusButtonStatus(_ text: String) {
+        lblConnectionStatus?.stringValue = text
+    }
+
+    /// Button reflects the REAL state (never stuck disabled): Connect when idle, Cancel while
+    /// attempting, Disconnect once the port is actually open.
+    private func updateFocusButtonUI() {
+        btnConnect.isEnabled = true
+        if focusButtonServiceObject.isConnected {
+            btnConnect.title = "Disconnect"
+        } else if focusButtonServiceObject.isRunning {
+            btnConnect.title = "Cancel"
+        } else {
+            btnConnect.title = "Connect"
+        }
     }
     
     func addDownLoadNowOptionFbtt(){
@@ -141,10 +203,11 @@ class addOnsVc: NSViewController {
             stackViewBottomForDownLoadFbtt?.isHidden = false
         }
 
-        if focusButtonServiceObject.isRunning{
-            btnConnect.isEnabled = false
-        }else{
-            btnConnect.isEnabled = true
+        updateFocusButtonUI()
+        if focusButtonServiceObject.isConnected {
+            setFocusButtonStatus("✓ Connected.")
+        } else {
+            setFocusButtonStatus("Ports detected: \(focusButtonServiceObject.availablePortsSummary)")
         }
     }
     @objc func btnDownLoadClicked(){
@@ -183,23 +246,26 @@ class addOnsVc: NSViewController {
     
     @IBAction func btnConnectClicked(_ sender: Any) {
         addLog(text: "addOnsVc: button Connect Clicked")
-        if !focusButtonServiceObject.isRunning{
-            btnConnect.isEnabled = false
-            if focusButtonServiceObject.start() {
-                addLog(text: "addOnsVc: FocusButton: service started successfully")
+        // Already connected (or mid-attempt) → this button doubles as Disconnect / Cancel.
+        if focusButtonServiceObject.isConnected || focusButtonServiceObject.isRunning {
+            focusButtonServiceObject.stop()
+            setFocusButtonStatus("Disconnected.")
+            updateFocusButtonUI()
+            return
+        }
+        setFocusButtonStatus("Connecting…\nPorts detected: \(focusButtonServiceObject.availablePortsSummary)")
+        if !focusButtonServiceObject.start() {
+            // start() returns false only when no candidate port was found.
+            setFocusButtonStatus("No Focus Button device found.\nPorts detected: \(focusButtonServiceObject.availablePortsSummary)\nPlug the device in via USB and click Connect again.")
+        }
+        updateFocusButtonUI()
+        // If the open neither succeeds nor errors within a few seconds, say so (rather than spinning).
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
+            guard let self = self else { return }
+            if focusButtonServiceObject.isRunning && !focusButtonServiceObject.isConnected {
+                self.setFocusButtonStatus("Still connecting to \(focusButtonServiceObject.availablePortsSummary)…\nIf this doesn't finish, the device may be held by another app or need re-plugging. Click Cancel to retry.")
             }
-            DispatchQueue.global().async {
-                sleep(2)
-                DispatchQueue.main.async { [self] in
-                    if focusButtonServiceObject.isRunning{
-                        btnConnect.isEnabled = false
-                        addLog(text: "addOnsVc: service running")
-                    }else{
-                        btnConnect.isEnabled = true
-                        addLog(text: "addOnsVc: service not running")
-                    }
-                }
-            }
+            self.updateFocusButtonUI()
         }
     }
 }

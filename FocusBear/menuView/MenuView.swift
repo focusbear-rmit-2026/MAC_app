@@ -1,0 +1,1172 @@
+//
+//  MenuView.swift
+//  Focus Bear
+//
+//  SwiftUI redesign of the menu-bar popover (replacing the storyboard-driven menuViewController
+//  content). Built from the Figma "Sid Focus Bear Design" — a compact list: a header with icon
+//  buttons, a primary Start/Focus area, then Breaks / Day Plan / Focus Tools as accordion rows
+//  (collapsed by default, one open at a time) that expand inline on tap.
+//
+//  The AppKit menuViewController owns a MenuModel and populates it from existing app state; this
+//  view only renders + fires callbacks. It reports its content height back so the host can size
+//  the popover to fit (incl. when an accordion expands), so nothing is ever clipped.
+//
+
+import SwiftUI
+
+/// Notifications posted by the audio recorder so the menu's voice UI can show progress/results.
+enum VoiceEvents {
+    static let permissionDenied = Notification.Name("fbVoicePermissionDenied")
+    static let processing = Notification.Name("fbVoiceProcessing")
+    static let transcript = Notification.Name("fbVoiceTranscript")
+    static let actionDone = Notification.Name("fbVoiceActionDone")
+    static let error = Notification.Name("fbVoiceError")
+}
+
+/// Menu strings, resolved from the app config (`menuView` section in the assets `config.json`,
+/// keyed per language) with an English fallback so the code is i18n-ready before translations land.
+func menuLocalized(_ key: String, _ fallback: String) -> String {
+    if let dict = configjson.value(forKey: "menuView") as? NSDictionary,
+       let s = dict.value(forKey: key) as? String, !s.isEmpty {
+        return s
+    }
+    return fallback
+}
+
+// MARK: - Design system
+
+@available(macOS 11.0, *)
+enum MenuTheme {
+    static let orange = Color(hex: 0xDE7400)
+    static let cream = Color(hex: 0xFFEDC9)
+    static let darkBg = Color(hex: 0x18181B)
+    static let darkCard = Color(hex: 0x27272A)
+
+    static func background(_ s: ColorScheme) -> Color { s == .dark ? darkBg : .white }
+    static func cardBg(_ s: ColorScheme) -> Color { s == .dark ? darkCard : .white }
+    static func chipBg(_ s: ColorScheme) -> Color { s == .dark ? orange.opacity(0.22) : Color(hex: 0xFFF1DA) }
+    static func border(_ s: ColorScheme) -> Color { s == .dark ? Color.white.opacity(0.08) : Color.black.opacity(0.07) }
+    static func primaryText(_ s: ColorScheme) -> Color { s == .dark ? .white : Color(hex: 0x18181B) }
+    static func subtitle(_ s: ColorScheme) -> Color { primaryText(s).opacity(0.55) }
+    static func iconButtonBg(_ s: ColorScheme) -> Color { s == .dark ? Color.white.opacity(0.10) : Color.black.opacity(0.05) }
+
+    // Use the app's SELECTED font (respects the user's font / accessibility choice).
+    static func font(_ size: CGFloat, _ weight: Weight = .regular) -> Font {
+        let nsFont: NSFont
+        switch weight {
+        case .regular:  nsFont = getRegularFont(size: size)
+        case .medium:   nsFont = getMediumFont(size: size)
+        case .semibold: nsFont = getSemiBoldFont(size: size)
+        case .bold:     nsFont = getBoldFont(size: size)
+        }
+        return Font(nsFont)
+    }
+    enum Weight { case regular, medium, semibold, bold }
+}
+
+@available(macOS 11.0, *)
+extension Color {
+    init(hex: UInt32) {
+        self.init(.sRGB,
+                  red: Double((hex >> 16) & 0xFF) / 255,
+                  green: Double((hex >> 8) & 0xFF) / 255,
+                  blue: Double(hex & 0xFF) / 255,
+                  opacity: 1)
+    }
+}
+
+// MARK: - View model
+
+@available(macOS 11.0, *)
+final class MenuModel: ObservableObject {
+    @Published var focusRunning = false
+    @Published var focusPaused = false
+    @Published var focusTaskTitle = ""
+    var onSaveIntention: (String) -> Void = { _ in }   // edit the running focus session's intention
+    @Published var focusOnTaskText = ""
+    @Published var focusRemaining = ""
+    @Published var focusedTodayText = ""
+
+    @Published var breaksSummary = ""       // subtitle: "Next break in 28 minutes"
+    @Published var lastBreakText = ""       // expanded body: "Last break 5m ago"
+
+    // Currently-playing habit (replaces the Start Focus button while a habit runs)
+    @Published var habitPlaying = false
+    @Published var habitName = ""
+    @Published var habitTimer = ""
+    var onSkipHabit: () -> Void = {}
+    var onPostponeHabit: () -> Void = {}
+    @Published var dayPlanDate = ""             // "Tuesday, June 25" (collapsed subtitle)
+    @Published var dayPlanNextEventTitle = ""   // next calendar event title (may be empty)
+    @Published var dayPlanNextEventTime = ""    // its start time, e.g. "5:00 PM"
+    @Published var dayPlanNextEventRelative = "" // "in 40 min"
+    @Published var dayPlanNextHabit = ""    // next habit (raw, no prefix) or "Evening Routine starts at 5pm"
+    @Published var nextHabitStartable = false // show the "Start" button only when habits are postponed
+    @Published var dayPlanTasks: [DayPlanMenuTask] = []
+
+    // Focus music
+    @Published var musicTrackName = ""      // non-empty when a track is loaded (playing or paused)
+    @Published var musicPlaying = false
+
+    // Voice/mic is only offered to trial/subscription users.
+    @Published var micAvailable = true
+
+    // "Set up distraction blocking" banner — shown when no blocking schedule exists.
+    @Published var showBlockingBanner = false
+    var onSetUpBlocking: () -> Void = {}
+    var onDismissBlocking: () -> Void = {}   // persist the "Remove" dismissal so the card stays hidden
+
+    // Active blocking-schedule card (name + day/time + pause/resume toggle) — restores info the old
+    // menu showed.
+    @Published var blockingScheduleActive = false
+    @Published var blockingScheduleName = ""
+    @Published var blockingScheduleTime = ""
+    @Published var blockingSchedulePaused = false
+    var onToggleBlockingSchedule: () -> Void = {}
+    var onOpenBlockingScheduleConfig: () -> Void = {}   // tap the card → blocking-schedule settings
+
+    // Voice screen state
+    @Published var inVoiceMode = false
+    @Published var voicePermissionDenied = false
+    @Published var voiceStatus: VoiceStatus = .listening
+    @Published var voiceTranscript = ""
+    @Published var voiceResult = ""          // action description or error message
+
+    var onMic: () -> Void = {}              // start voice recording
+    var onStopRecording: () -> Void = {}    // stop + transcribe + act
+    var onCancelRecording: () -> Void = {}  // stop + discard
+    var onOpenMicSettings: () -> Void = {}  // open System Settings → Microphone
+    var onShowStats: () -> Void = {}        // "How's my focus today?"
+    var onToggleMusic: () -> Void = {}
+    var onToggleTask: (String) -> Void = { _ in }   // task id
+    var onStartNextHabit: () -> Void = {}
+    var onStartFocus: () -> Void = {}
+    var onStopFocus: () -> Void = {}
+    var onOpenBreaks: () -> Void = {}
+    var onOpenDayPlan: () -> Void = {}
+    var onOpenFocusMusic: () -> Void = {}
+    var onOpenBrainDump: () -> Void = {}
+    var onOpenToDoPlayer: () -> Void = {}
+    var onPreferences: () -> Void = {}
+    var onQuit: () -> Void = {}
+    var onTogglePin: () -> Void = {}            // switch the menu between popover and window (pinned) mode
+    @Published var menuPinnedAsWindow = false   // true = shown as a detached window; false = popover
+}
+
+struct DayPlanMenuTask: Identifiable {
+    let id: String
+    let title: String
+    let done: Bool
+}
+
+enum VoiceStatus { case listening, processing, done, error }
+
+// Reports the content height up to the AppKit host so it can size the popover to fit.
+@available(macOS 11.0, *)
+private struct MenuHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
+// MARK: - Root view
+
+@available(macOS 11.0, *)
+struct FocusBearMenuView: View {
+    @ObservedObject var model: MenuModel
+    @Environment(\.colorScheme) private var scheme
+
+    enum Section { case focus, breaks, dayPlan, tools }
+    enum Mode { case menu, voice }
+    @SwiftUI.State private var expanded: Section?
+    @SwiftUI.State private var mode: Mode = .menu
+    @SwiftUI.State private var blockingBannerDismissed = false
+    @SwiftUI.State private var editingIntention = false
+    @SwiftUI.State private var intentionDraft = ""
+
+    static let width: CGFloat = 320
+
+    /// Called with the measured content height whenever it changes (so the host resizes the popover).
+    var onHeight: (CGFloat) -> Void = { _ in }
+    /// Snapshot helper: open one section for the off-screen render.
+    var initialExpanded: Section?
+    /// Snapshot helper: start in voice mode.
+    var initialMode: Mode = .menu
+
+    var body: some View {
+        // Top-align the content and fill whatever space the host gives us, so the header (settings
+        // buttons) always sits at the very top — no centring, no top white-space — even before the
+        // popover shrinks to the reported content height.
+        VStack(spacing: 0) {
+            if mode == .voice {
+                VoiceView(model: model, scheme: scheme, onClose: {
+                    model.onCancelRecording()
+                    model.inVoiceMode = false
+                    mode = .menu
+                })
+            } else {
+                measuredContent
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)   // natural height — never maxHeight:.infinity (feedback loop)
+        .background(MenuTheme.background(scheme))
+        .onPreferenceChange(MenuHeightKey.self) { onHeight($0) }
+        .onChange(of: model.inVoiceMode) { active in
+            // Reset to the menu whenever voice mode is cleared (e.g. the popover reopened).
+            if !active { mode = .menu }
+        }
+        .onAppear {
+            if expanded == nil { expanded = initialExpanded }
+            mode = initialMode
+        }
+    }
+
+    private func startVoice() {
+        model.inVoiceMode = true
+        model.voicePermissionDenied = false
+        model.voiceStatus = .listening
+        model.voiceTranscript = ""
+        model.voiceResult = ""
+        model.onMic()
+        mode = .voice
+    }
+
+    /// The accordion that currently shows the orange highlight: whichever one is open, or — when
+    /// nothing is open — the Focus card while a focus session is running.
+    private var highlightedSection: Section? {
+        expanded ?? (model.focusRunning ? .focus : nil)
+    }
+
+    private var measuredContent: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            header
+
+            if model.showBlockingBanner && !blockingBannerDismissed {
+                BlockingBanner(scheme: scheme,
+                               onSetUp: model.onSetUpBlocking,
+                               onDismiss: { blockingBannerDismissed = true; model.onDismissBlocking() })
+            }
+
+            if model.focusRunning {
+                focusAccordion
+            } else if model.habitPlaying {
+                habitCard
+            } else {
+                startButton
+            }
+
+            if model.blockingScheduleActive {
+                blockingScheduleCard
+            }
+
+            AccordionRow(icon: "cup.and.saucer.fill",
+                         title: menuLocalized("menuBreaks", "Breaks"),
+                         subtitle: model.breaksSummary.isEmpty ? menuLocalized("menuTakeBreak", "Take a mindful break") : model.breaksSummary,
+                         solid: highlightedSection == .breaks,
+                         isOpen: binding(.breaks), scheme: scheme) {
+                VStack(alignment: .leading, spacing: 8) {
+                    if !model.lastBreakText.isEmpty {
+                        Text(model.lastBreakText)
+                            .font(MenuTheme.font(12, .regular))
+                            .foregroundColor(MenuTheme.subtitle(scheme))
+                    }
+                    LinkButton(title: menuLocalized("menuStartBreak", "Start a break now"), scheme: scheme, action: model.onOpenBreaks)
+                }
+            }
+
+            AccordionRow(icon: "calendar",
+                         title: menuLocalized("menuDayPlan", "Day Plan"),
+                         subtitle: dayPlanSubtitle,
+                         solid: highlightedSection == .dayPlan,
+                         isOpen: binding(.dayPlan), scheme: scheme) {
+                dayPlanBody
+            }
+
+            AccordionRow(icon: "ellipsis",
+                         title: menuLocalized("menuFocusTools", "Focus Tools"),
+                         subtitle: menuLocalized("menuFocusToolsSubtitle", "Music, brain dump & to-dos"),
+                         solid: highlightedSection == .tools,
+                         isOpen: binding(.tools), scheme: scheme) {
+                VStack(spacing: 8) {
+                    if model.musicTrackName.isEmpty {
+                        ToolButton(icon: "music.note", title: menuLocalized("menuFocusMusic", "Focus Music"), scheme: scheme, action: model.onOpenFocusMusic)
+                    } else {
+                        // A track is loaded: play/pause icon on the left + the track name.
+                        ToolButton(icon: model.musicPlaying ? "pause.fill" : "play.fill",
+                                   title: model.musicTrackName, scheme: scheme, action: model.onToggleMusic)
+                    }
+                    ToolButton(icon: "brain", title: menuLocalized("menuBrainDump", "Brain Dump"), scheme: scheme, action: model.onOpenBrainDump)
+                    ToolButton(icon: "checklist", title: menuLocalized("menuToDoPlayer", "To-Do Player"), scheme: scheme, action: model.onOpenToDoPlayer)
+                }
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(GeometryReader { g in
+            Color.clear.preference(key: MenuHeightKey.self, value: g.size.height)
+        })
+    }
+
+    private func binding(_ s: Section) -> Binding<Bool> {
+        // No animation: animating the expand resizes the popover every frame, which feels laggy.
+        Binding(get: { expanded == s }, set: { newVal in expanded = newVal ? s : nil })
+    }
+
+    // MARK: Header
+    private var header: some View {
+        HStack(spacing: 8) {
+            Text("Focus Bear")
+                .font(MenuTheme.font(17, .bold))
+                .foregroundColor(MenuTheme.primaryText(scheme))
+            Spacer()
+            if model.micAvailable {
+                IconButton(systemName: "mic", scheme: scheme, action: startVoice)
+            }
+            IconButton(systemName: model.menuPinnedAsWindow ? "pin.fill" : "pin", scheme: scheme, action: model.onTogglePin)
+            IconButton(systemName: "gearshape", scheme: scheme, action: model.onPreferences)
+            IconButton(systemName: "power", scheme: scheme, action: model.onQuit)
+        }
+        .padding(.bottom, 2)
+    }
+
+    // MARK: Start button (idle)
+    private var startButton: some View {
+        SwiftUI.Button(action: model.onStartFocus) {
+            HStack(spacing: 8) {
+                Image(systemName: "play.fill").font(.system(size: 12, weight: .bold))
+                Text(menuLocalized("menuStartFocus", "START FOCUS SESSION"))
+                    .font(MenuTheme.font(14, .bold))
+                    .tracking(0.5)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(MenuTheme.orange)
+            .foregroundColor(.white)
+            .cornerRadius(12)
+            .shadow(color: MenuTheme.orange.opacity(0.30), radius: 5, x: 0, y: 2)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+
+    // MARK: Habit-playing card (replaces Start Focus while a habit runs; Skip / Postpone inline)
+    private var habitCard: some View {
+        VStack(spacing: 10) {
+            Text(model.habitName)
+                .font(MenuTheme.font(15, .semibold))
+                .foregroundColor(MenuTheme.primaryText(scheme))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .frame(maxWidth: .infinity)
+            if !model.habitTimer.isEmpty {
+                Text(model.habitTimer)
+                    .font(MenuTheme.font(30, .bold))
+                    .foregroundColor(MenuTheme.orange)
+            }
+            HStack(spacing: 8) {
+                habitActionButton(menuLocalized("menuSkip", "Skip"), action: model.onSkipHabit)
+                habitActionButton(menuLocalized("menuPostpone", "Postpone"), action: model.onPostponeHabit)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity)
+        .background(MenuTheme.orange.opacity(scheme == .dark ? 0.18 : 0.10))
+        .cornerRadius(13)
+        .overlay(RoundedRectangle(cornerRadius: 13).stroke(MenuTheme.orange.opacity(0.3), lineWidth: 1))
+    }
+
+    /// Active blocking-schedule card: name + day/time + a Pause/Resume toggle. Shown whenever a
+    /// custom blocking schedule is on or paused (the old menu surfaced this; the redesign dropped it).
+    private var blockingScheduleCard: some View {
+        HStack(spacing: 10) {
+            // The icon + text region is a Button (reliable hit-testing inside the popover, unlike
+            // .onTapGesture) that opens the blocking-schedule config. Pause/Resume is a SEPARATE
+            // sibling button (not nested) so its tap toggles the schedule instead of opening settings.
+            SwiftUI.Button(action: model.onOpenBlockingScheduleConfig) {
+                HStack(spacing: 10) {
+                    Image(systemName: "shield.lefthalf.filled")
+                        .font(.system(size: 18))
+                        .foregroundColor(model.blockingSchedulePaused ? MenuTheme.subtitle(scheme) : MenuTheme.orange)
+                    // Title / name / time each on their own row. The title is fixed ("Blocking schedule
+                    // active/paused") and scales down slightly rather than truncating ("…a…"); the name
+                    // sits below it, and the day/time below that, wrapping so the full window shows.
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(model.blockingSchedulePaused
+                             ? menuLocalized("menuBlockingSchedulePaused", "Blocking schedule paused")
+                             : menuLocalized("menuBlockingScheduleActive", "Blocking schedule active"))
+                            .font(MenuTheme.font(14, .semibold))
+                            .foregroundColor(MenuTheme.primaryText(scheme))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+                        if !model.blockingScheduleName.isEmpty {
+                            Text(model.blockingScheduleName)
+                                .font(MenuTheme.font(12, .regular))
+                                .foregroundColor(MenuTheme.subtitle(scheme))
+                                .lineLimit(1)
+                        }
+                        Text(model.blockingScheduleTime)
+                            .font(MenuTheme.font(12, .regular))
+                            .foregroundColor(MenuTheme.subtitle(scheme))
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 8)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(PlainButtonStyle())
+
+            SwiftUI.Button(action: model.onToggleBlockingSchedule) {
+                Text(model.blockingSchedulePaused ? menuLocalized("menuResume", "Resume")
+                                                  : menuLocalized("menuPause", "Pause"))
+                    .font(MenuTheme.font(12, .semibold))
+                    .foregroundColor(MenuTheme.orange)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(MenuTheme.orange.opacity(0.15))
+                    .cornerRadius(8)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .fixedSize()
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity)
+        .background(MenuTheme.cardBg(scheme))
+        .cornerRadius(13)
+        .overlay(RoundedRectangle(cornerRadius: 13).stroke(MenuTheme.orange.opacity(0.3), lineWidth: 1))
+    }
+
+    private func habitActionButton(_ title: String, action: @escaping () -> Void) -> some View {
+        SwiftUI.Button(action: action) {
+            Text(title)
+                .font(MenuTheme.font(13, .semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .background(MenuTheme.cardBg(scheme))
+                .foregroundColor(MenuTheme.primaryText(scheme))
+                .cornerRadius(9)
+                .overlay(RoundedRectangle(cornerRadius: 9).stroke(MenuTheme.border(scheme), lineWidth: 1))
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+
+    // MARK: Focus accordion (running)
+    private var focusAccordion: some View {
+        AccordionRow(icon: "timer",
+                     title: menuLocalized("menuFocus", "Focus"),
+                     subtitle: focusSubtitle,
+                     solid: highlightedSection == .focus,
+                     isOpen: binding(.focus), scheme: scheme) {
+            VStack(alignment: .leading, spacing: 8) {
+                intentionEditor
+                if !model.focusOnTaskText.isEmpty {
+                    Text(model.focusOnTaskText)
+                        .font(MenuTheme.font(12, .regular))
+                        .foregroundColor(MenuTheme.subtitle(scheme))
+                }
+                if !model.focusedTodayText.isEmpty {
+                    Text(menuLocalized("menuFocusedToday", "Focused today") + ": \(model.focusedTodayText)")
+                        .font(MenuTheme.font(12, .regular))
+                        .foregroundColor(MenuTheme.subtitle(scheme))
+                }
+                SwiftUI.Button(action: model.onStopFocus) {
+                    Text(menuLocalized("menuStopSession", "Stop session"))
+                        .font(MenuTheme.font(13, .semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                        .background(MenuTheme.orange)
+                        .foregroundColor(.white)
+                        .cornerRadius(9)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+    }
+
+    /// The focus-session intention: tap it (dotted underline signals it's editable) to type a new one,
+    /// confirm with the tick. Saving routes through onSaveIntention → updateFocusModeIntention.
+    @ViewBuilder private var intentionEditor: some View {
+        if editingIntention {
+            HStack(spacing: 6) {
+                TextField("", text: $intentionDraft, onCommit: saveIntention)
+                    .textFieldStyle(PlainTextFieldStyle())
+                    .font(MenuTheme.font(13, .medium))
+                    .foregroundColor(MenuTheme.primaryText(scheme))
+                    .padding(.horizontal, 6).padding(.vertical, 3)
+                    .background(MenuTheme.orange.opacity(0.12))
+                    .cornerRadius(6)
+                SwiftUI.Button(action: saveIntention) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 17))
+                        .foregroundColor(MenuTheme.orange)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .help(menuLocalized("menuSaveIntention", "Save"))
+            }
+        } else if !model.focusTaskTitle.isEmpty {
+            SwiftUI.Button(action: { intentionDraft = model.focusTaskTitle; editingIntention = true }) {
+                Text(model.focusTaskTitle)
+                    .font(MenuTheme.font(13, .medium))
+                    .foregroundColor(MenuTheme.primaryText(scheme))
+                    .lineLimit(2)
+                    .padding(.bottom, 2)
+                    .overlay(
+                        DashedUnderline()
+                            .stroke(MenuTheme.orange.opacity(0.75),
+                                    style: StrokeStyle(lineWidth: 1, dash: [2.5, 2.5]))
+                            .frame(height: 1),
+                        alignment: .bottom
+                    )
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PlainButtonStyle())
+            .help(menuLocalized("menuEditIntention", "Edit intention"))
+        }
+    }
+
+    private func saveIntention() {
+        let trimmed = intentionDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty { model.onSaveIntention(trimmed) }
+        editingIntention = false
+    }
+
+    private var focusSubtitle: String {
+        model.focusRemaining.isEmpty
+            ? menuLocalized("menuSessionRunning", "Session running")
+            : "\(model.focusRemaining) " + menuLocalized("menuRemaining", "remaining")
+    }
+
+    // MARK: Day Plan body
+    private var dayPlanSubtitle: String {
+        model.dayPlanDate.isEmpty ? menuLocalized("menuDayPlan", "Day Plan") : model.dayPlanDate
+    }
+
+    private let dpBlue = Color(hex: 0x3B82F6)
+
+    private func dpChip(icon: String, color: Color) -> some View {
+        RoundedRectangle(cornerRadius: 9)
+            .fill(color.opacity(0.15))
+            .frame(width: 34, height: 34)
+            .overlay(Image(systemName: icon).font(.system(size: 14, weight: .medium)).foregroundColor(color))
+    }
+
+    private var dayPlanBody: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // NEXT EVENT
+            if !model.dayPlanNextEventTitle.isEmpty {
+                HStack(spacing: 10) {
+                    dpChip(icon: "calendar", color: dpBlue)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(menuLocalized("menuNextEventLabel", "NEXT EVENT"))
+                            .font(MenuTheme.font(9, .semibold)).tracking(0.6)
+                            .foregroundColor(dpBlue)
+                        Text(model.dayPlanNextEventTitle)
+                            .font(MenuTheme.font(14, .semibold))
+                            .foregroundColor(MenuTheme.primaryText(scheme))
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 8)
+                    VStack(alignment: .trailing, spacing: 1) {
+                        Text(model.dayPlanNextEventTime)
+                            .font(MenuTheme.font(13, .semibold))
+                            .foregroundColor(MenuTheme.primaryText(scheme))
+                        if !model.dayPlanNextEventRelative.isEmpty {
+                            Text(model.dayPlanNextEventRelative)
+                                .font(MenuTheme.font(10, .regular))
+                                .foregroundColor(MenuTheme.subtitle(scheme))
+                        }
+                    }
+                }
+            }
+
+            // NEXT HABIT
+            if !model.dayPlanNextHabit.isEmpty {
+                HStack(spacing: 10) {
+                    dpChip(icon: "arrow.triangle.2.circlepath", color: MenuTheme.orange)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(menuLocalized("menuNextHabitLabel", "NEXT HABIT"))
+                            .font(MenuTheme.font(9, .semibold)).tracking(0.6)
+                            .foregroundColor(MenuTheme.orange)
+                        Text(model.dayPlanNextHabit)
+                            .font(MenuTheme.font(14, .semibold))
+                            .foregroundColor(MenuTheme.primaryText(scheme))
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 8)
+                    if model.nextHabitStartable {
+                        SwiftUI.Button(action: model.onStartNextHabit) {
+                            Text(menuLocalized("menuStart", "Start"))
+                                .font(MenuTheme.font(12, .semibold))
+                                .padding(.horizontal, 16).padding(.vertical, 6)
+                                .background(Capsule().fill(MenuTheme.orange))
+                                .foregroundColor(.white)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+            }
+
+            // TASKS FOR TODAY (uncompleted only)
+            if !model.dayPlanTasks.isEmpty {
+                Divider().padding(.vertical, 1)
+                Text(menuLocalized("menuTasksForToday", "TASKS FOR TODAY"))
+                    .font(MenuTheme.font(10, .semibold))
+                    .foregroundColor(MenuTheme.subtitle(scheme))
+                    .tracking(0.8)
+                ForEach(model.dayPlanTasks) { task in
+                    SwiftUI.Button(action: { model.onToggleTask(task.id) }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "circle")
+                                .font(.system(size: 15))
+                                .foregroundColor(MenuTheme.subtitle(scheme))
+                            Text(task.title)
+                                .font(MenuTheme.font(13, .regular))
+                                .foregroundColor(MenuTheme.primaryText(scheme))
+                                .lineLimit(1)
+                            Spacer(minLength: 0)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+
+            if model.dayPlanNextEventTitle.isEmpty && model.dayPlanNextHabit.isEmpty && model.dayPlanTasks.isEmpty {
+                Text(menuLocalized("menuNothingScheduled", "Nothing scheduled right now"))
+                    .font(MenuTheme.font(12, .regular))
+                    .foregroundColor(MenuTheme.subtitle(scheme))
+            }
+            LinkButton(title: menuLocalized("menuViewFullDayPlan", "View full day plan"), scheme: scheme, action: model.onOpenDayPlan)
+        }
+    }
+}
+
+// MARK: - Voice command screen (mic)
+
+@available(macOS 11.0, *)
+private struct VoiceView: View {
+    @ObservedObject var model: MenuModel
+    let scheme: ColorScheme
+    let onClose: () -> Void
+    @SwiftUI.State private var pulse = false
+
+    var body: some View {
+        VStack(spacing: 12) {
+            header
+            if model.voicePermissionDenied {
+                permissionDenied
+            } else {
+                recording
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(GeometryReader { g in
+            Color.clear.preference(key: MenuHeightKey.self, value: g.size.height)
+        })
+        .onAppear { pulse = true }
+    }
+
+    private var header: some View {
+        HStack(spacing: 8) {
+            Text("Focus Bear")
+                .font(MenuTheme.font(17, .bold))
+                .foregroundColor(MenuTheme.primaryText(scheme))
+            Spacer()
+            IconButton(systemName: "house", scheme: scheme, action: onClose)
+            IconButton(systemName: model.menuPinnedAsWindow ? "pin.fill" : "pin", scheme: scheme, action: model.onTogglePin)
+            IconButton(systemName: "gearshape", scheme: scheme, action: model.onPreferences)
+            IconButton(systemName: "power", scheme: scheme, action: model.onQuit)
+        }
+    }
+
+    // MARK: Permission-denied state
+    private var permissionDenied: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "mic.slash.fill")
+                .font(.system(size: 34)).foregroundColor(MenuTheme.orange)
+                .padding(.top, 10)
+            Text(menuLocalized("voicePermTitle", "Microphone access needed"))
+                .font(MenuTheme.font(15, .semibold))
+                .foregroundColor(MenuTheme.primaryText(scheme))
+                .multilineTextAlignment(.center)
+            Text(menuLocalized("voicePermBody", "Focus Bear needs microphone access to hear your voice commands. Turn it on in System Settings → Privacy & Security → Microphone."))
+                .font(MenuTheme.font(12, .regular))
+                .foregroundColor(MenuTheme.subtitle(scheme))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            SwiftUI.Button(action: model.onOpenMicSettings) {
+                Text(menuLocalized("voiceOpenSettings", "Open System Settings"))
+                    .font(MenuTheme.font(14, .semibold))
+                    .frame(maxWidth: .infinity).padding(.vertical, 12)
+                    .background(MenuTheme.orange).foregroundColor(.white).cornerRadius(11)
+            }
+            .buttonStyle(PlainButtonStyle())
+            secondaryButton(menuLocalized("voiceBack", "Back"), action: onClose)
+        }
+        .padding(.top, 4)
+    }
+
+    // MARK: Recording / processing / result state
+    private var recording: some View {
+        VStack(spacing: 12) {
+            Text(promptText)
+                .font(MenuTheme.font(13, .regular))
+                .foregroundColor(MenuTheme.subtitle(scheme))
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 4)
+
+            micArea.padding(.vertical, 4)
+
+            if !model.voiceTranscript.isEmpty {
+                Text("“\(model.voiceTranscript)”")
+                    .font(MenuTheme.font(13, .medium))
+                    .foregroundColor(MenuTheme.primaryText(scheme))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if (model.voiceStatus == .done || model.voiceStatus == .error) && !model.voiceResult.isEmpty {
+                Text(model.voiceResult)
+                    .font(MenuTheme.font(12, .medium))
+                    .foregroundColor(model.voiceStatus == .error ? Color(hex: 0xD2453B) : MenuTheme.orange)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            switch model.voiceStatus {
+            case .done, .error:
+                primaryButton(menuLocalized("voiceDone", "Done")) { onClose() }
+            case .listening:
+                // Done = finish speaking → transcribe + act. Cancel = discard.
+                primaryButton(menuLocalized("voiceDone", "Done")) { model.onStopRecording() }
+                secondaryButton(menuLocalized("voiceCancel", "Cancel"), icon: "xmark") {
+                    model.onCancelRecording(); onClose()
+                }
+            case .processing:
+                secondaryButton(menuLocalized("voiceCancel", "Cancel"), icon: "xmark") {
+                    model.onCancelRecording(); onClose()
+                }
+            }
+
+            if model.voiceStatus == .listening {
+                Divider().padding(.vertical, 2)
+                Text(menuLocalized("voiceTrySaying", "TRY SAYING:"))
+                    .font(MenuTheme.font(10, .semibold)).tracking(0.8)
+                    .foregroundColor(MenuTheme.subtitle(scheme))
+                    .frame(maxWidth: .infinity)
+                suggestion(menuLocalized("voiceSuggestFocus", "Start a 25 minute focus session"), model.onStartFocus)
+                suggestion(menuLocalized("voiceSuggestStats", "How's my focus today?"), model.onShowStats)
+                suggestion(menuLocalized("voiceSuggestRemind", "Remind me to…"), model.onOpenToDoPlayer)
+            }
+        }
+    }
+
+    private var promptText: String {
+        switch model.voiceStatus {
+        case .listening: return menuLocalized("voicePrompt", "Tell me your plans for the day…")
+        case .processing: return menuLocalized("voiceThinking", "Thinking…")
+        case .done: return menuLocalized("voiceGotIt", "Got it!")
+        case .error: return menuLocalized("voiceOops", "Hmm…")
+        }
+    }
+
+    private var micArea: some View {
+        SwiftUI.Button(action: {
+            switch model.voiceStatus {
+            case .listening: model.onStopRecording()             // stop → transcribe + act
+            case .done, .error: restart()                        // tap to try again
+            case .processing: break
+            }
+        }) {
+            ZStack {
+                Circle().fill(MenuTheme.orange.opacity(0.12)).frame(width: 96, height: 96)
+                Circle().fill(MenuTheme.orange.opacity(0.22)).frame(width: 74, height: 74)
+                    .scaleEffect(model.voiceStatus == .listening && pulse ? 1.12 : 1.0)
+                    .animation(model.voiceStatus == .listening ? .easeInOut(duration: 0.9).repeatForever(autoreverses: true) : .default, value: pulse)
+                Circle().fill(MenuTheme.orange).frame(width: 56, height: 56)
+                micGlyph
+            }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+
+    @ViewBuilder private var micGlyph: some View {
+        switch model.voiceStatus {
+        case .listening:
+            Image(systemName: "mic.fill").font(.system(size: 22, weight: .medium)).foregroundColor(.white)
+        case .processing:
+            ProgressView().scaleEffect(0.8).colorScheme(.dark)
+        case .done:
+            Image(systemName: "checkmark").font(.system(size: 24, weight: .bold)).foregroundColor(.white)
+        case .error:
+            Image(systemName: "arrow.clockwise").font(.system(size: 22, weight: .bold)).foregroundColor(.white)
+        }
+    }
+
+    private func restart() {
+        model.voiceTranscript = ""
+        model.voiceResult = ""
+        model.voiceStatus = .listening
+        model.onMic()
+    }
+
+    private func primaryButton(_ title: String, action: @escaping () -> Void) -> some View {
+        SwiftUI.Button(action: action) {
+            Text(title)
+                .font(MenuTheme.font(14, .semibold))
+                .frame(maxWidth: .infinity).padding(.vertical, 11)
+                .background(MenuTheme.orange).foregroundColor(.white).cornerRadius(11)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+
+    private func secondaryButton(_ title: String, icon: String? = nil, action: @escaping () -> Void) -> some View {
+        SwiftUI.Button(action: action) {
+            HStack(spacing: 6) {
+                if let icon = icon { Image(systemName: icon).font(.system(size: 11, weight: .semibold)) }
+                Text(title).font(MenuTheme.font(13, .semibold)).tracking(0.3)
+            }
+            .frame(maxWidth: .infinity).padding(.vertical, 11)
+            .background(MenuTheme.cardBg(scheme))
+            .foregroundColor(MenuTheme.primaryText(scheme))
+            .cornerRadius(11)
+            .overlay(RoundedRectangle(cornerRadius: 11).stroke(MenuTheme.border(scheme), lineWidth: 1))
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+
+    private func suggestion(_ text: String, _ action: @escaping () -> Void) -> some View {
+        SwiftUI.Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: "quote.bubble.fill").font(.system(size: 13)).foregroundColor(MenuTheme.orange)
+                Text(text)
+                    .font(MenuTheme.font(12, .medium))
+                    .foregroundColor(MenuTheme.primaryText(scheme))
+                    .lineLimit(2)
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundColor(MenuTheme.subtitle(scheme))
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(MenuTheme.cardBg(scheme))
+            .cornerRadius(11)
+            .overlay(RoundedRectangle(cornerRadius: 11).stroke(MenuTheme.border(scheme), lineWidth: 1))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - "Set up distraction blocking" banner
+
+@available(macOS 11.0, *)
+private func menuBundledImage(_ name: String) -> NSImage? {
+    if let img = NSImage(named: name) { return img }
+    if let url = Bundle.main.url(forResource: name, withExtension: "png") { return NSImage(contentsOf: url) }
+    return nil
+}
+
+@available(macOS 11.0, *)
+private struct BlockingBanner: View {
+    let scheme: ColorScheme
+    let onSetUp: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            SwiftUI.Button(action: onSetUp) {
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 14).fill(Color(hex: 0xFFEDC9))
+                        if let bear = menuBundledImage("blocking_bear") {
+                            Image(nsImage: bear).resizable().aspectRatio(contentMode: .fit).frame(width: 42, height: 42)
+                        } else {
+                            Text("🐻").font(.system(size: 28))
+                        }
+                    }
+                    .frame(width: 56, height: 56)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(menuLocalized("blockingBannerTitle", "Set up distraction blocking to protect your focus session"))
+                            .font(MenuTheme.font(14, .semibold))
+                            .foregroundColor(.white)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .multilineTextAlignment(.leading)
+                        HStack(spacing: 4) {
+                            Image(systemName: "timer").font(.system(size: 11, weight: .semibold))
+                            Text(menuLocalized("blockingBannerTask", "3 MIN TASK"))
+                                .font(MenuTheme.font(11, .semibold)).tracking(0.5)
+                        }
+                        .foregroundColor(Color(hex: 0xFFB661))
+                    }
+                    Spacer(minLength: 18)   // leave room for the close button
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(PlainButtonStyle())
+
+            SwiftUI.Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(Color(hex: 0xFFB661))
+                    .padding(8)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .background(
+            LinearGradient(colors: [Color(hex: 0x7A5733), Color(hex: 0x553D22)],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+        )
+        .cornerRadius(16)
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xE48E24).opacity(0.4), lineWidth: 1))
+    }
+}
+
+// MARK: - Components
+
+/// A single horizontal line drawn at the bottom of its rect — stroked with a dash pattern to make
+/// the editable intention's dotted underline.
+private struct DashedUnderline: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: 0, y: rect.maxY))
+        p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        return p
+    }
+}
+
+@available(macOS 11.0, *)
+private struct AccordionRow<Body: View>: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    var accent: Bool = false
+    var bgColor: Color? = nil
+    var solid: Bool = false      // solid orange card with white text (used for the running Focus card)
+    @Binding var isOpen: Bool
+    let scheme: ColorScheme
+    @ViewBuilder var content: () -> Body
+
+    private var titleColor: Color { solid ? .white : (accent ? MenuTheme.orange : MenuTheme.primaryText(scheme)) }
+    private var subColor: Color { solid ? Color.white.opacity(0.9) : MenuTheme.subtitle(scheme) }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // The entire padded header is one hit target (contentShape), so anywhere on the top
+            // row toggles expand/collapse.
+            SwiftUI.Button(action: { isOpen.toggle() }) {
+                HStack(spacing: 12) {
+                    IconChip(systemName: icon, scheme: scheme, onSolid: solid)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(title)
+                            .font(MenuTheme.font(14, .semibold))
+                            .foregroundColor(titleColor)
+                        Text(subtitle)
+                            .font(MenuTheme.font(12, .regular))
+                            .foregroundColor(subColor)
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(subColor)
+                        .rotationEffect(.degrees(isOpen ? 90 : 0))
+                }
+                .padding(13)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                // The orange "highlight" lives on the HEADER only, so the open accordion's body stays
+                // a readable normal card. Collapsed, the header IS the whole card → fully orange.
+                .background(solid ? (bgColor ?? MenuTheme.orange) : Color.clear)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(PlainButtonStyle())
+
+            if isOpen {
+                content()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 13)
+                    .padding(.top, solid ? 11 : 0)   // breathing room below the orange header
+                    .padding(.bottom, 13)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MenuTheme.cardBg(scheme))
+        .cornerRadius(13)
+        .overlay(RoundedRectangle(cornerRadius: 13).stroke(solid ? MenuTheme.orange : MenuTheme.border(scheme), lineWidth: 1))
+        .shadow(color: Color.black.opacity(scheme == .dark ? 0 : (solid ? 0.12 : 0.05)), radius: solid ? 6 : 5, x: 0, y: 2)
+    }
+}
+
+@available(macOS 11.0, *)
+private struct IconChip: View {
+    let systemName: String
+    let scheme: ColorScheme
+    var onSolid: Bool = false
+    var body: some View {
+        RoundedRectangle(cornerRadius: 9)
+            .fill(onSolid ? Color.white.opacity(0.22) : MenuTheme.chipBg(scheme))
+            .frame(width: 36, height: 36)
+            .overlay(
+                Image(systemName: systemName)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(onSolid ? .white : MenuTheme.orange)
+            )
+    }
+}
+
+@available(macOS 11.0, *)
+private struct LinkButton: View {
+    let title: String
+    let scheme: ColorScheme
+    let action: () -> Void
+    var body: some View {
+        SwiftUI.Button(action: action) {
+            Text(title)
+                .font(MenuTheme.font(12, .semibold))
+                .foregroundColor(MenuTheme.orange)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+@available(macOS 11.0, *)
+private struct ToolButton: View {
+    let icon: String
+    let title: String
+    let scheme: ColorScheme
+    let action: () -> Void
+    var body: some View {
+        SwiftUI.Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: icon).font(.system(size: 14))
+                    .foregroundColor(MenuTheme.orange).frame(width: 20)
+                Text(title)
+                    .font(MenuTheme.font(13, .medium))
+                    .foregroundColor(MenuTheme.primaryText(scheme))
+                Spacer()
+            }
+            .padding(.vertical, 9).padding(.horizontal, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(MenuTheme.chipBg(scheme).opacity(0.5))
+            .cornerRadius(9)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+@available(macOS 11.0, *)
+private struct IconButton: View {
+    let systemName: String
+    let scheme: ColorScheme
+    let action: () -> Void
+    var body: some View {
+        SwiftUI.Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(MenuTheme.primaryText(scheme).opacity(0.7))
+                .frame(width: 30, height: 30)
+                .background(MenuTheme.iconButtonBg(scheme))
+                .clipShape(Circle())
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Off-screen snapshot (dev self-check, no popover needed)
+
+@available(macOS 13.0, *)
+@MainActor
+enum MenuSnapshot {
+    static func renderIfRequested() {
+        guard ProcessInfo.processInfo.environment["FB_SNAPSHOT_MENU"] == "1" else { return }
+        let dir = ProcessInfo.processInfo.environment["FB_SNAPSHOT_DIR"] ?? NSTemporaryDirectory()
+        render(running(), expand: .focus, to: dir + "/menu_running.png")
+        render(idle(), expand: nil, to: dir + "/menu_idle.png")
+        render(idle(), expand: .dayPlan, to: dir + "/menu_dayplan.png")
+        let banner = idle(); banner.showBlockingBanner = true
+        render(banner, expand: nil, to: dir + "/menu_banner.png")
+        let habit = idle()
+        habit.habitPlaying = true
+        habit.habitName = "🎲 (STIM) Do numbers"
+        habit.habitTimer = "16:20"
+        render(habit, expand: nil, to: dir + "/menu_habit.png")
+        render(idle(), expand: nil, mode: .voice, to: dir + "/menu_voice.png")
+        let perm = idle(); perm.voicePermissionDenied = true
+        render(perm, expand: nil, mode: .voice, to: dir + "/menu_voice_permission.png")
+        let done = idle()
+        done.voiceStatus = .done
+        done.voiceTranscript = "Start a 25 minute focus session"
+        done.voiceResult = "Starting a 25-minute focus session"
+        render(done, expand: nil, mode: .voice, to: dir + "/menu_voice_done.png")
+        renderTracker(access: true, to: dir + "/tracker_today.png")
+        renderTracker(access: false, to: dir + "/tracker_upgrade.png")
+        NSLog("[MenuSnapshot] wrote menu PNGs to \(dir)")
+    }
+
+    private static func renderTracker(access: Bool, to path: String) {
+        let m = TodayTrackerViewModel()
+        m.hasAccess = access
+        m.isLoading = false
+        m.updatedAt = "16:37"
+        if access {
+            m.summary = FBTTTodaySummary(totalSeconds: 8 * 3600 + 52 * 60,
+                projects: [
+                    FBTTSlice(label: "Break/rest", seconds: 3 * 3600 + 5 * 60, color: .blue),
+                    FBTTSlice(label: "Focus Bear - coding", seconds: 78 * 60, color: .yellow),
+                    FBTTSlice(label: "Systematic review", seconds: 35 * 60, color: .purple),
+                    FBTTSlice(label: "Habits", seconds: 31 * 60, color: .green),
+                ],
+                apps: [
+                    FBTTSlice(label: "iTerm2", seconds: 4 * 3600 + 14 * 60, color: nil),
+                    FBTTSlice(label: "Google Chrome", seconds: 119 * 60, color: nil),
+                ])
+        }
+        let renderer = ImageRenderer(content: FBTTTodayView(model: m).frame(width: 520, height: 600))
+        renderer.scale = 2
+        guard let img = renderer.nsImage,
+              let tiff = img.tiffRepresentation,
+              let rep = NSBitmapImageRep(data: tiff),
+              let png = rep.representation(using: NSBitmapImageRep.FileType.png, properties: [:]) else { return }
+        try? png.write(to: URL(fileURLWithPath: path))
+    }
+
+    private static func render(_ model: MenuModel, expand: FocusBearMenuView.Section?, mode: FocusBearMenuView.Mode = .menu, to path: String) {
+        let renderer = ImageRenderer(content: FocusBearMenuView(model: model, initialExpanded: expand, initialMode: mode).frame(width: FocusBearMenuView.width))
+        renderer.scale = 2
+        guard let img = renderer.nsImage,
+              let tiff = img.tiffRepresentation,
+              let rep = NSBitmapImageRep(data: tiff),
+              let png = rep.representation(using: NSBitmapImageRep.FileType.png, properties: [:]) else { return }
+        try? png.write(to: URL(fileURLWithPath: path))
+    }
+
+    private static func running() -> MenuModel {
+        let m = MenuModel()
+        m.focusRunning = true
+        m.focusTaskTitle = "systematic review"
+        m.focusOnTaskText = "100% on task"
+        m.focusRemaining = "00:13:43"
+        m.focusedTodayText = "0h 35m"
+        m.breaksSummary = "Last break 12m ago"
+        m.dayPlanNextHabit = "Make bed"
+        return m
+    }
+
+    private static func idle() -> MenuModel {
+        let m = MenuModel()
+        m.breaksSummary = "Last break 12m ago"
+        m.dayPlanDate = "Tuesday, June 25"
+        m.dayPlanNextEventTitle = "E call"
+        m.dayPlanNextEventTime = "5:00 PM"
+        m.dayPlanNextEventRelative = "in 40 min"
+        m.dayPlanNextHabit = "Make bed"
+        m.dayPlanTasks = [
+            DayPlanMenuTask(id: "1", title: "DSCP? grant", done: false),
+            DayPlanMenuTask(id: "2", title: "Look at MRFF carefully", done: false),
+            DayPlanMenuTask(id: "3", title: "Send button to Aaron", done: false),
+        ]
+        return m
+    }
+}

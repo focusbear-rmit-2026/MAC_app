@@ -292,6 +292,12 @@ class pusherEvents:NSObject, PusherDelegate {
                                 }
      
                                 if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_{
+                                    // If the user is looking at the Schedule tab, keep them there
+                                    // after the re-sync rather than navigating into the next habit.
+                                    if firstViewControllerObj?.isScheduleTabSelected == true
+                                        || routinePostponedInfoVcObj?.isScheduleTabSelected == true {
+                                        pendingReturnToSchedule = true
+                                    }
                                     appdelegate!.abortAllProcess()
                                     currentState = ._NOTHING_
                                     appdelegate!.backgroundThread()

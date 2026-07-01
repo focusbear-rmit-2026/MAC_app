@@ -57,7 +57,7 @@ class easyPostponeVc: NSViewController {
         if currentState == ._POSTPONE_EVENING_HABIT_ && !SettingsManagerObject.isEasySkipEnabled{
             if cutOffTime != nil{
                 if shouldAskPassword(){
-                    if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                    if SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff{
                         if isCutOffTimeGoing(){
                             if self.view.window != nil{
                                 self.presentAsSheet(enterPasswordVcObj!)

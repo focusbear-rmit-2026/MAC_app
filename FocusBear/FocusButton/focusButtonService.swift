@@ -82,7 +82,18 @@ class focusButtonService: NSObject {
     func stop() {
         disconnect()
     }
-    
+
+    /// True only once the serial port is actually open (unlike `isRunning`, which is set optimistically
+    /// the moment a connection attempt begins).
+    var isConnected: Bool { serialPort?.isOpen == true }
+
+    /// Human-readable summary of the USB serial devices macOS currently sees, for the settings UI.
+    var availablePortsSummary: String {
+        let ports = getUSBSerialPorts()
+        guard !ports.isEmpty else { return "no USB serial devices found" }
+        return ports.map { $0.path.replacingOccurrences(of: "/dev/", with: "") }.joined(separator: ", ")
+    }
+
     func getAvailablePorts() -> [String] {
         let ports = ORSSerialPortManager.shared().availablePorts
         return ports.map { $0.path }
@@ -263,10 +274,14 @@ class focusButtonService: NSObject {
         port.numberOfStopBits = 1
         port.numberOfDataBits = 8
         port.shouldEchoReceivedData = false
-        
-        port.dtr = true  // Data Terminal Ready
-        port.rts = true  // Request to Send
-        
+
+        // Do NOT assert DTR/RTS. On ESP32 boards these lines drive EN (reset) and GPIO0 via the
+        // auto-reset circuit, so holding them high holds the chip in reset — the Focus Button freezes
+        // on its splash screen for as long as the app is connected. Leaving them deasserted lets the
+        // device boot and run its firmware normally.
+        port.dtr = false
+        port.rts = false
+
         port.delegate = self
         
         port.open()
@@ -589,20 +604,14 @@ class focusButtonService: NSObject {
         var espPort: String? = nil
         var m5Port: String? = nil
         var kwPort: String? = nil
-        var firstPort: String? = nil
-        
+
         let ports = ORSSerialPortManager.shared().availablePorts
         
         for port in ports {
             let portPath = port.path
             let portName = port.name.uppercased()
             let portPathUpper = portPath.uppercased()
-            
-            // Store first port as fallback
-            if firstPort == nil {
-                firstPort = portPath
-            }
-            
+
             log("FocusButton: Checking port: \(portPath) - Name: \(port.name)")
             
             // Priority 1: FocusButton exact match (by name)
@@ -656,23 +665,22 @@ class focusButtonService: NSObject {
             }
         }
         
-        // Return in priority order
-        let detectedPort = fbPort ?? espPort ?? m5Port ?? kwPort ?? firstPort
-        
+        // Return in priority order. We deliberately do NOT fall back to `firstPort` — connecting to
+        // an arbitrary serial device (another USB-serial adapter, a Bluetooth modem, etc.) is wrong
+        // and ORSSerialPort.open() can hang on a misbehaving one.
+        let detectedPort = fbPort ?? espPort ?? m5Port ?? kwPort
+
+        // Previously this only accepted ports whose path contained "cu.usbmodem", which silently
+        // rejected the (very common) ESP32 boards that enumerate through a USB-UART bridge as
+        // cu.usbserial-*, cu.wchusbserial-*, or cu.SLAB_USBtoUART — so "Connect" did nothing. Trust
+        // the priority heuristics above (FocusButton / Espressif / M5Stack / known UART-bridge chips).
         if let port = detectedPort {
-            log("FocusButton: Priority: \(fbPort != nil ? "FocusButton" : espPort != nil ? "Espressif" : m5Port != nil ? "M5Stack" : kwPort != nil ? "Keyword" : "First port")")
-            
-            if detectedPort?.lowercased().contains("cu.usbmodem") ?? false{
-                log("FocusButton: Auto-detected port: \(port)")
-                return detectedPort
-            }else{
-                log("FocusButton: No port detected reason name did not match usbmodem101")
-            }
-            
-        } else {
-            log("FocusButton: No port detected")
+            let priority = fbPort != nil ? "FocusButton" : espPort != nil ? "Espressif" : m5Port != nil ? "M5Stack" : "Keyword"
+            log("FocusButton: Auto-detected port (\(priority)): \(port)")
+            return port
         }
-        
+
+        log("FocusButton: No Focus Button port detected among \(ports.count) serial port(s)")
         return nil
     }
     
@@ -755,7 +763,9 @@ extension focusButtonService: ORSSerialPortDelegate {
     
     func serialPort(_ serialPort: ORSSerialPort, didEncounterError error: Error) {
         log("FocusButton: Serial port error: \(error.localizedDescription)")
+        let message = error.localizedDescription
         DispatchQueue.main.async { [weak self] in
+            self?.onError?("Connection error: \(message)")   // surface it to the settings UI
             self?.disconnect()
         }
     }

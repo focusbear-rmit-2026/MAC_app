@@ -27,7 +27,11 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     @IBOutlet weak var boxTodoPlayer: mainWindowListBox!
     @IBOutlet weak var boxToolsItems: accordionBox!
     @IBOutlet weak var boxBrowsersTabAudit: mainWindowListBox!
-    
+    // Programmatically-added TOOLS items, surfaced out of Settings > Add-Ons.
+    var boxFocusButtonTool: mainWindowListBox?
+    var boxTimeTrackerTool: mainWindowListBox?
+    var boxLateNoMoreTool: mainWindowListBox?
+
     @IBOutlet weak var boxCustomRoutine: mainWindowListBox!
     @IBOutlet weak var boxMainItems: accordionBox!
     @IBOutlet weak var boxMicroBreaks: mainWindowListBox!
@@ -55,9 +59,15 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         
         boxDashboard.isHidden = true
         
-        boxHabits.imageIcon = NSImage(named: "play_circle")
-        boxHabits.title = "Habits"
-        
+        if #available(macOS 11.0, *) {
+            boxHabits.imageIcon = NSImage(systemSymbolName: "calendar", accessibilityDescription: nil)
+        } else {
+            boxHabits.imageIcon = NSImage(named: "play_circle")
+        }
+        boxHabits.title = "Day Plan"
+        boxHabits.imageView?.image?.isTemplate = true
+        boxHabits.imageView?.contentTintColor = NSColor(named: "dark_OrangeColor") ?? NSColor.orange   // match the other menu icons' orange tint
+
         
         boxCustomRoutine.imageIcon = NSImage(named: "play_circle")
         boxCustomRoutine.title = "Custom Routine"
@@ -76,6 +86,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxMicroBreaks.title = "Start Micro Break"
         
         boxTodoPlayer.imageIcon = NSImage(named: "validIcon")
+        boxTodoPlayer.alwaysEnabled = true   // Todo List must always stay reachable (never greyed out)
         
         if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             boxTodoPlayer.title = "Todo Player"
@@ -123,11 +134,11 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxEditHabits.imageView?.contentTintColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
 
         if #available(macOS 11.0, *) {
-            boxMotivation.imageIcon = NSImage(systemSymbolName: "person", accessibilityDescription: nil)
+            boxMotivation.imageIcon = NSImage(systemSymbolName: "chart.bar.xaxis", accessibilityDescription: nil)
         } else {
             boxMotivation.imageIcon = NSImage(named: "NSTouchBarUserTemplate")
         }
-        boxMotivation.title = "Motivation"
+        boxMotivation.title = "Stats"
         boxMotivation.imageView?.contentTintColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
 
         boxHelpAndSupport.imageIcon = NSImage(named: NSImage.infoName)
@@ -144,11 +155,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 self.boxMicroBreaks.isHidden = false
                 self.boxFocusSession.isHidden = false
                 self.boxHabits.isHidden = false
-                if arrAllCustomRoutine.count == 0{
-                    self.boxCustomRoutine.isHidden = true
-                }else{
-                    self.boxCustomRoutine.isHidden = false
-                }
+                // Custom routines now live in the Day Plan's Custom Routines panel, so the menu item
+                // is removed.
+                self.boxCustomRoutine.isHidden = true
             }else{
                 self.boxMicroBreaks.isHidden = true
                 self.boxFocusSession.isHidden = true
@@ -157,23 +166,26 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             }
         }
         
+        installToolsAddOnItems()
+        ensureMenuScrolls()
+
+        // Tab Audit and Custom Routine are removed from the menu. setExpanded(true) above runs before
+        // the accordion's onStateChanged is assigned, so the closures don't hide them on first load —
+        // hide them explicitly here, and leave them out of the show/hide closures below.
+        boxBrowsersTabAudit.isHidden = true
+        boxCustomRoutine.isHidden = true
+
         boxToolsItems.setExpanded(true)
         boxToolsItems.onStateChanged = { isExpanded in
             print("Tools is now \(isExpanded ? "expanded" : "collapsed")")
-            if isExpanded{
-                self.boxFocusMusic.isHidden = false
-                self.boxBrainDump.isHidden = false
-                self.boxTodoPlayer.isHidden = false
-                self.boxMotivation.isHidden = false
-                self.boxBrowsersTabAudit.isHidden = false
-            }else{
-                self.boxFocusMusic.isHidden = true
-                self.boxBrainDump.isHidden = true
-                self.boxTodoPlayer.isHidden = true
-                self.boxMotivation.isHidden = true
-                self.boxBrowsersTabAudit.isHidden = true
-            }
-            
+            let hidden = !isExpanded
+            self.boxFocusMusic.isHidden = hidden
+            self.boxBrainDump.isHidden = hidden
+            self.boxTodoPlayer.isHidden = hidden
+            self.boxMotivation.isHidden = hidden
+            self.boxFocusButtonTool?.isHidden = hidden
+            self.boxTimeTrackerTool?.isHidden = hidden
+            self.boxLateNoMoreTool?.isHidden = hidden
         }
         
         boxPreferences.setExpanded(true)
@@ -213,7 +225,10 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             boxPreferences.title = leftMenuVcInfo.value(forKey: "titlePreferences") as? String ?? boxPreferences.title
             
 
-            boxHabits.title = leftMenuVcInfo.value(forKey: "menuHabits") as? String ?? boxHabits.title
+            // Mac-only "Day Plan" label — a NEW key, NOT menuHabits (which other platforms still
+            // use for their Habits view). Falls back to the hardcoded "Day Plan" (set above), never
+            // to menuHabits, so the Mac never shows "Habits" here even before the new key ships.
+            boxHabits.title = (leftMenuVcInfo.value(forKey: "menuDayPlan") as? String) ?? boxHabits.title
             boxCustomRoutine.title = leftMenuVcInfo.value(forKey: "menuCustomRoutine") as? String ?? boxCustomRoutine.title
             boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuStartFocusSession") as? String ?? boxFocusSession.title
             boxMicroBreaks.title = leftMenuVcInfo.value(forKey: "menuStartMicroBreak") as? String ?? boxMicroBreaks.title
@@ -230,7 +245,10 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             boxBlocks.title = leftMenuVcInfo.value(forKey: "menuBlocksPreferences") as? String ?? boxFocusMusic.title
             boxSettings.title = leftMenuVcInfo.value(forKey: "menuSettings") as? String ?? boxFocusMusic.title
             boxEditHabits.title = leftMenuVcInfo.value(forKey: "menuEditHabits") as? String ?? boxFocusMusic.title
-            boxMotivation.title = leftMenuVcInfo.value(forKey: "menuMotivation") as? String ?? boxFocusMusic.title
+            // Renamed to "Stats". Hardcoded (not config-driven) because the synced/cached config can
+            // still carry the old "Motivation" label; the bundled + assets config also say "Stats" now,
+            // so this can revert to the config value once that has propagated.
+            boxMotivation.title = "Stats"
             boxHelpAndSupport.title = leftMenuVcInfo.value(forKey: "menuHelpAndSupport") as? String ?? boxFocusMusic.title
             boxUpgradeNow.title = leftMenuVcInfo.value(forKey: "menuUpgradeNow") as? String ?? boxFocusMusic.title
             
@@ -300,7 +318,60 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         }
     }
     
+    /// Adds Focus Button / Time Tracker / Late No More to the TOOLS group programmatically, so the
+    /// storyboard left-menu stack stays untouched. Inserted right after Stats (Tab Audit is removed).
+    private func installToolsAddOnItems() {
+        guard boxFocusButtonTool == nil,
+              let stack = boxMotivation.superview as? NSStackView else { return }
+        let focusBtn = makeToolBox(title: "Focus Button", systemIcon: "button.programmable")
+        let timeTracker = makeToolBox(title: "Time Tracker", systemIcon: "clock")
+        let lateNoMore = makeToolBox(title: "Late No More", systemIcon: "calendar.badge.clock")
+        boxFocusButtonTool = focusBtn
+        boxTimeTrackerTool = timeTracker
+        boxLateNoMoreTool = lateNoMore
+        let after = stack.arrangedSubviews.firstIndex(of: boxMotivation) ?? (stack.arrangedSubviews.count - 1)
+        stack.insertArrangedSubview(focusBtn, at: after + 1)
+        stack.insertArrangedSubview(timeTracker, at: after + 2)
+        stack.insertArrangedSubview(lateNoMore, at: after + 3)
+        for box in [focusBtn, timeTracker, lateNoMore] {
+            box.heightAnchor.constraint(equalToConstant: 32).isActive = true
+            // Pin leading/trailing to an existing item so the row lines up exactly with it.
+            box.leadingAnchor.constraint(equalTo: boxMotivation.leadingAnchor).isActive = true
+            box.trailingAnchor.constraint(equalTo: boxMotivation.trailingAnchor).isActive = true
+        }
+    }
+
+    /// Make the menu scroll when its items are taller than the window (the document view already grows
+    /// with the stack content; this just enables the scroller and lets it scroll past the visible area).
+    private func ensureMenuScrolls() {
+        guard let scroll = boxMotivation.enclosingScrollView else { return }
+        scroll.hasVerticalScroller = true
+        scroll.verticalScrollElasticity = .allowed
+        scroll.drawsBackground = false
+    }
+
+    private func makeToolBox(title: String, systemIcon: String) -> mainWindowListBox {
+        let box = mainWindowListBox(frame: .zero)
+        box.translatesAutoresizingMaskIntoConstraints = false
+        box.contentViewMargins = NSSize(width: 0, height: 0)   // match storyboard items (no extra inset)
+        box.title = title
+        if #available(macOS 11.0, *) {
+            // Fixed point size + centred scaling so the three symbols line up consistently with each
+            // other (raw SF Symbols have differing aspect ratios and render at different visual sizes).
+            let config = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
+            box.imageIcon = NSImage(systemSymbolName: systemIcon, accessibilityDescription: title)?
+                .withSymbolConfiguration(config)
+            box.imageView?.imageScaling = .scaleProportionallyDown
+        }
+        box.imageView?.contentTintColor = NSColor(named: "dark_OrangeColor") ?? NSColor.orange
+        box.delegate = self
+        return box
+    }
+
     func selectableListBoxDidChangeSelectionByUser(_ box: mainWindowListBox) {
+        if box == boxFocusButtonTool { mainViewControllerObj?.showFocusButtonToolView(); return }
+        if box == boxTimeTrackerTool { mainViewControllerObj?.showTimeTrackerToolView(); return }
+        if box == boxLateNoMoreTool { mainViewControllerObj?.showLateNoMoreToolView(); return }
         switch box{
             
         case boxHabits:
@@ -531,6 +602,11 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             checkScreenSizeIfFullScreenHabitIsRunning()
         case boxHelpAndSupport:
             checkScreenSizeIfFullScreenHabitIsRunning()
+        case boxFocusButtonTool, boxTimeTrackerTool, boxLateNoMoreTool:
+            // These tool tabs had no sizing case, so the window kept the (often full-screen-tall)
+            // size from the previous state and ran past the bottom of the screen. Shrink to the
+            // standard small window like the other inline tabs (Blocks / Settings).
+            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         default:
             break;
         }

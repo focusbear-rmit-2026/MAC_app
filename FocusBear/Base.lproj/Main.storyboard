@@ -722,7 +722,7 @@
                                             </textFieldCell>
                                         </textField>
                                         <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="CcH-4c-8gV">
-                                            <rect key="frame" x="182" y="262" width="53" height="17"/>
+                                            <rect key="frame" x="265" y="276" width="53" height="17"/>
                                             <textFieldCell key="cell" lineBreakMode="clipping" title="1:57:40" id="R0p-PO-5wJ">
                                                 <font key="font" metaFont="system" size="14"/>
                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -730,14 +730,14 @@
                                             </textFieldCell>
                                         </textField>
                                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Xx0-Ac-qso" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
-                                            <rect key="frame" x="243" y="250" width="197" height="40"/>
+                                            <rect key="frame" x="326" y="271" width="114" height="26"/>
                                             <buttonCell key="cell" type="square" title="xxPlease spare me" bezelStyle="shadowlessSquare" image="spareIcon" imagePosition="left" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="zdT-5E-MTp">
                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                                <font key="font" size="14" name="CourierNewPSMT"/>
+                                                <font key="font" size="11" name="CourierNewPSMT"/>
                                             </buttonCell>
                                             <constraints>
-                                                <constraint firstAttribute="width" relation="lessThanOrEqual" constant="300" id="4MT-bS-ERN"/>
-                                                <constraint firstAttribute="height" constant="40" id="evD-qp-sUv"/>
+                                                <constraint firstAttribute="width" relation="lessThanOrEqual" constant="150" id="4MT-bS-ERN"/>
+                                                <constraint firstAttribute="height" constant="26" id="evD-qp-sUv"/>
                                             </constraints>
                                             <connections>
                                                 <action selector="btnAbortClicked:" target="aiJ-Ty-3mS" id="LkA-Qf-nEt"/>
@@ -748,7 +748,7 @@
                                         <constraint firstItem="k7J-95-1Hf" firstAttribute="centerY" secondItem="rry-U3-FPg" secondAttribute="centerY" id="1Zm-Fq-0rK"/>
                                         <constraint firstItem="k7J-95-1Hf" firstAttribute="leading" secondItem="rry-U3-FPg" secondAttribute="leading" constant="100" id="4bp-eE-FzU"/>
                                         <constraint firstAttribute="trailing" secondItem="grY-sA-7bq" secondAttribute="trailing" id="6tx-RE-ZQv"/>
-                                        <constraint firstItem="Xx0-Ac-qso" firstAttribute="top" secondItem="rry-U3-FPg" secondAttribute="top" constant="10" id="HGx-cy-CAe"/>
+                                        <constraint firstItem="Xx0-Ac-qso" firstAttribute="top" secondItem="rry-U3-FPg" secondAttribute="top" constant="3" id="HGx-cy-CAe"/>
                                         <constraint firstItem="Xx0-Ac-qso" firstAttribute="leading" secondItem="CcH-4c-8gV" secondAttribute="trailing" constant="10" id="TAM-sP-L4f"/>
                                         <constraint firstAttribute="trailing" secondItem="Xx0-Ac-qso" secondAttribute="trailing" constant="10" id="g5S-vy-36u"/>
                                         <constraint firstItem="grY-sA-7bq" firstAttribute="top" secondItem="rry-U3-FPg" secondAttribute="top" id="gIX-w8-aXN"/>
@@ -2261,13 +2261,13 @@
                                                             <color key="borderColor" name="separatorColor" catalog="System" colorSpace="catalog"/>
                                                         </box>
                                                         <box boxType="custom" borderType="line" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="RBM-ww-eoK">
-                                                            <rect key="frame" x="1291" y="465" width="249" height="84"/>
+                                                            <rect key="frame" x="1291" y="466" width="249" height="82"/>
                                                             <view key="contentView" id="FSl-QV-9pN">
-                                                                <rect key="frame" x="1" y="1" width="247" height="82"/>
+                                                                <rect key="frame" x="1" y="1" width="247" height="80"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
                                                                     <box boxType="custom" borderType="line" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="vcm-4q-hdK">
-                                                                        <rect key="frame" x="0.0" y="32" width="247" height="50"/>
+                                                                        <rect key="frame" x="0.0" y="30" width="247" height="50"/>
                                                                         <view key="contentView" id="UWt-4W-6gw">
                                                                             <rect key="frame" x="0.0" y="0.0" width="247" height="50"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -2300,9 +2300,9 @@
                                                                         <color key="fillColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                     </box>
                                                                     <scrollView horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" borderType="none" autohidesScrollers="YES" horizontalLineScroll="40" horizontalPageScroll="10" verticalLineScroll="40" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="BmC-FB-q29">
-                                                                        <rect key="frame" x="0.0" y="0.0" width="247" height="32"/>
+                                                                        <rect key="frame" x="0.0" y="0.0" width="247" height="30"/>
                                                                         <clipView key="contentView" id="xse-cV-tNZ">
-                                                                            <rect key="frame" x="0.0" y="0.0" width="247" height="32"/>
+                                                                            <rect key="frame" x="0.0" y="0.0" width="247" height="30"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
                                                                                 <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" selectionHighlightStyle="none" multipleSelection="NO" autosaveColumns="NO" rowHeight="40" rowSizeStyle="automatic" viewBased="YES" id="vNa-fU-S7L">
@@ -11007,7 +11007,7 @@ Gw
                                                     <constraint firstItem="U79-hf-kvR" firstAttribute="centerX" secondItem="T1X-Uq-Sp1" secondAttribute="centerX" id="OmF-SI-jme"/>
                                                     <constraint firstAttribute="bottom" secondItem="yuu-QZ-co0" secondAttribute="bottom" constant="18" id="QTH-Ff-B69"/>
                                                     <constraint firstItem="2mC-Kb-tJg" firstAttribute="centerX" secondItem="T1X-Uq-Sp1" secondAttribute="centerX" id="QfN-8D-oED"/>
-                                                    <constraint firstItem="U79-hf-kvR" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="T1X-Uq-Sp1" secondAttribute="leading" constant="50" id="UgT-Mv-60Z"/>
+                                                    <constraint firstItem="U79-hf-kvR" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="T1X-Uq-Sp1" secondAttribute="leading" constant="10" id="UgT-Mv-60Z"/>
                                                     <constraint firstItem="I9b-nm-deN" firstAttribute="centerX" secondItem="T1X-Uq-Sp1" secondAttribute="centerX" id="UqB-2C-pPJ"/>
                                                     <constraint firstAttribute="trailing" secondItem="qAC-W6-Gwl" secondAttribute="trailing" constant="7" id="XzN-mz-Qpx"/>
                                                     <constraint firstItem="bBB-wQ-CYP" firstAttribute="top" secondItem="U79-hf-kvR" secondAttribute="bottom" constant="10" id="Ycl-uC-7wg"/>

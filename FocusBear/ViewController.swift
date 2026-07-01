@@ -6,6 +6,7 @@
 
 
 import Cocoa
+import SwiftUI
 
 
 class ViewController: NSViewController {
@@ -32,6 +33,19 @@ class ViewController: NSViewController {
         splitViewItemLeftView.subviews.removeAll()
         splitViewItemLeftView.addSubview(getLeftMenuVcObject().view)
         splitViewItemLeftView.addConstraints(subView: getLeftMenuVcObject().view)
+
+        // The sidebar's IB width (230) is a design-time placeholder, so at runtime the split view has
+        // nothing pinning the left pane and collapses it (~113pt), clipping the menu labels ("Day
+        // Plan", "Stop Focus Sess…", etc.). Give it a sensible *initial* width via the divider position
+        // (once, after first layout) and let the left pane hold its width when the window resizes —
+        // rather than a required width constraint, which pinned the pane (no manual resize) and
+        // conflicted with the collapse/expand width changes ("Unable to simultaneously satisfy
+        // constraints"). The user can still drag the divider to resize.
+        splitView.setHoldingPriority(NSLayoutConstraint.Priority(260), forSubviewAt: 0)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, self.splitView.subviews.count >= 2 else { return }
+            self.splitView.setPosition(230, ofDividerAt: 0)
+        }
 
         splitViewItemLeftView.addObserver(self, forKeyPath: "frame", options: [.old, .new], context: nil)
     }
@@ -195,11 +209,30 @@ class ViewController: NSViewController {
     @IBAction func btnMinimizeClicked(_ sender: Any) {
         addLog(text: "[user-action] button Minimize Clicked")// added on 10/4/25 in 1.21.356
         
+        let fullScreen = mainWindowControllerObj?.window?.styleMask.contains(.fullScreen) ?? false
+        let isPaused = timerViewcontrollerObj?.isActivityPaused ?? false
+        addLog(text: "minimise: allowedActivity=\(isAllowedActivityHabitCurrentlyRunning) paused=\(isPaused) flag=\(isAllowedActivityHabitPlaying) focusAllowed=\(isAnyAllowedFocusModeActivityRunning) fullScreen=\(fullScreen) subviews=\(getHabitsVcObject().view.subviews.count)")
+
+        // While an allowed-activity habit is ACTIVELY running, a floating timer keeps it going in the
+        // background, so the minimise button should just get the main window out of the way — never the
+        // abort/postpone flow. Check this BEFORE the subviews guard below so it works regardless of
+        // what's layered in the habits view. The habit window is borderless (kiosk-style), so
+        // miniaturize() is a no-op on it — close it instead; the floating timer keeps the habit running
+        // and the user can reopen from the Dock. If the habit is PAUSED, the user isn't doing the
+        // allowed activity, so fall through to the normal postpone flow instead.
+        if isAllowedActivityHabitCurrentlyRunning && !isPaused {
+            mainWindowControllerObj?.window?.close()
+            return
+        }
+
+        // Otherwise minimise must go through the abort/postpone prompt — full-screen mode exists to
+        // remove escape loopholes, so the window must NOT silently minimise from Help/Settings/Tools or
+        // any other screen unless an allowed-activity habit is playing (handled above).
         let views = getHabitsVcObject().view.subviews
         if views.count != 1{// it means sub views are added so nothing will happen, user will need to close subviews first(logquantity view, password box)
             return
         }
-        
+
         habitsVcObj?.abortCurrentState()
     }
 
@@ -549,6 +582,100 @@ class ViewController: NSViewController {
         containerView.addSubview(getSettingsSplitViewControllerObject().view)
         containerView.addConstraints(subView: getSettingsSplitViewControllerObject().view)
     }
+
+    // MARK: - Tools (surfaced in the left-menu TOOLS group, out of Settings > Add-Ons)
+
+    func showFocusButtonToolView(){
+        self.removeSubViews()
+        if #available(macOS 11.0, *) {
+            let host = NSHostingView(rootView: FocusButtonToolView(model: FocusButtonToolModel()))
+            host.translatesAutoresizingMaskIntoConstraints = false
+            containerView.addSubview(host)
+            containerView.addConstraints(subView: host)
+        }
+    }
+
+    func showTimeTrackerToolView(){
+        self.removeSubViews()
+        // Time Tracker is a Pro feature — gate to trial or subscription; otherwise show the upgrade screen.
+        if #available(macOS 11.0, *), !(isPurchased || daysLeft > 0) {
+            let model = TodayTrackerViewModel()
+            model.hasAccess = false
+            model.isLoading = false
+            model.onUpgrade = { showUpgradeNowWindow() }
+            hostScrolledFBTT(model)
+            return
+        }
+        // If FBTT is installed and has tracked data, show its read-only Today view inline (PR #1956).
+        // Host the SwiftUI view directly (not via TodayTrackerVc) so its window-oriented
+        // preferredContentSize / fixed container frame don't resize the main window.
+        if FBTTReader.isFBTTInstalled, FBTTReader.hasData, #available(macOS 11.0, *) {
+            let model = TodayTrackerViewModel()
+            model.onOpenFBTT = { openFBTTApp() }
+            hostScrolledFBTT(model)
+            DispatchQueue.global(qos: .userInitiated).async {
+                let summary = FBTTReader.todaySummary()
+                let f = DateFormatter(); f.dateFormat = "HH:mm"
+                let stamp = f.string(from: Date())
+                DispatchQueue.main.async {
+                    model.summary = summary; model.updatedAt = stamp; model.isLoading = false
+                }
+            }
+            return
+        }
+        guard #available(macOS 11.0, *) else { return }
+        let view = ExternalToolView(
+            title: "Time Tracker",
+            description: "Focus Bear Time Tracker analyses your productivity by tracking time spent on websites and apps, and can auto-categorise logs into projects.",
+            model: ExternalToolModel(appPath: "/Applications/Focus Bear Time Tracker.app",
+                                     runningMatch: "focus bear time tracker"),
+            primaryAction: {
+                if FileManager.default.fileExists(atPath: "/Applications/Focus Bear Time Tracker.app") {
+                    enableTimeTracker()
+                } else if let url = URL(string: "https://downloads.focusbear.io/fbtt/FocusBearTimeTracker.dmg") {
+                    NSWorkspace.shared.open(url)
+                }
+            })
+        hostToolView(view)
+    }
+
+    func showLateNoMoreToolView(){
+        self.removeSubViews()
+        guard #available(macOS 11.0, *) else { return }
+        let view = ExternalToolView(
+            title: "Late No More",
+            description: "An ADHD-friendly calendar notification app. Alerts escalate in intensity as the start time approaches, with verbal alerts (or a song) once you're late.",
+            model: ExternalToolModel(appPath: "/Applications/Late No More.app",
+                                     runningMatch: "late no more"),
+            primaryAction: {
+                let path = "/Applications/Late No More.app"
+                if FileManager.default.fileExists(atPath: path) {
+                    NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: path), configuration: NSWorkspace.OpenConfiguration())
+                } else if let url = URL(string: "https://www.focusbear.io/late-no-more") {
+                    NSWorkspace.shared.open(url)
+                }
+            })
+        hostToolView(view)
+    }
+
+    @available(macOS 11.0, *)
+    private func hostToolView<V: View>(_ view: V) {
+        let host = NSHostingView(rootView: view)
+        host.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(host)
+        containerView.addConstraints(subView: host)
+    }
+
+    /// Host FBTTTodayView inline in the Tools pane. The pane's container hugs the hosting view's
+    /// height, and FBTTTodayView normally fills its parent (maxHeight: .infinity), which made the
+    /// pane grow past the bottom of the window. Render it at natural height (fillsParent: false)
+    /// inside a ScrollView so tall content scrolls instead of overflowing.
+    @available(macOS 11.0, *)
+    private func hostScrolledFBTT(_ model: TodayTrackerViewModel) {
+        let root = ScrollView { FBTTTodayView(model: model, fillsParent: false) }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        hostToolView(root)
+    }
     
     func showEditHabitsView(){
         allApiObject.capturePosthog(event: "open-edit-habits", metadata: [:])
@@ -652,5 +779,175 @@ class ViewController: NSViewController {
         addLog(text: "Onboarding completed: Forcefully writing user local device settings for first-time setup")
         SettingsManagerObject.isSettingsChanged = true
         SettingsManagerObject.putUserLocalDeviceSettings()
+    }
+}
+
+// MARK: - Focus Button tool screen (SwiftUI)
+//
+// Surfaces the Focus Button connection UI as a first-class Tools screen (out of Settings > Add-Ons).
+// `SwiftUI.Button` is qualified because the app declares its own `Button` type.
+
+@available(macOS 11.0, *)
+final class FocusButtonToolModel: ObservableObject {
+    @Published var isConnected = false
+    @Published var statusMessage = ""
+    @Published var connecting = false
+    private var timer: Timer?
+    private var savedOnError: ((String) -> Void)?
+    private var savedOnConnected: ((String) -> Void)?
+
+    func start() {
+        // Remember the app's existing callbacks so leaving the screen doesn't clobber them.
+        savedOnError = focusButtonServiceObject.onError
+        savedOnConnected = focusButtonServiceObject.onDeviceConnected
+        refresh()
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in self?.refresh() }
+    }
+    func stop() {
+        timer?.invalidate(); timer = nil
+        focusButtonServiceObject.onError = savedOnError
+        focusButtonServiceObject.onDeviceConnected = savedOnConnected
+    }
+    func refresh() { isConnected = focusButtonServiceObject.isRunning }
+
+    func connect() {
+        connecting = true
+        statusMessage = "Searching for a connected Focus Button…"
+        focusButtonServiceObject.onDeviceConnected = { [weak self] _ in
+            DispatchQueue.main.async { self?.connecting = false; self?.statusMessage = ""; self?.refresh() }
+        }
+        attemptConnect(retriesLeft: 4)
+    }
+
+    /// The serial port list (ORSSerialPortManager) can lag a second or two after a device is plugged
+    /// in — the device often enumerates as cu.usbmodem* just AFTER the first scan — so re-scan a few
+    /// times before giving up rather than failing on the first miss.
+    private func attemptConnect(retriesLeft: Int) {
+        focusButtonServiceObject.onError = { _ in }   // suppress per-attempt errors; we retry
+        if focusButtonServiceObject.start() {
+            // A port was found; the open/handshake is async — confirm shortly after.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                guard let self = self else { return }
+                self.refresh()
+                self.connecting = false
+                self.statusMessage = self.isConnected
+                    ? ""
+                    : "Found the device but couldn't open the connection — try unplugging and replugging it."
+            }
+            return
+        }
+        if retriesLeft > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+                self?.attemptConnect(retriesLeft: retriesLeft - 1)
+            }
+        } else {
+            connecting = false
+            statusMessage = "No Focus Button found. Make sure it's plugged in with a data USB cable (not charge-only), then tap Connect again."
+        }
+    }
+}
+
+@available(macOS 11.0, *)
+struct FocusButtonToolView: View {
+    @ObservedObject var model: FocusButtonToolModel
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Focus Button").font(.system(size: 24, weight: .bold))
+                HStack(spacing: 8) {
+                    Circle().fill(model.isConnected ? Color.green : Color.gray).frame(width: 10, height: 10)
+                    Text(model.isConnected ? "Connected" : "Not connected").foregroundColor(.secondary)
+                }
+                HStack(spacing: 10) {
+                    SwiftUI.Button(model.isConnected ? "Connected" : "Connect") { model.connect() }
+                        .disabled(model.isConnected || model.connecting)
+                    if model.connecting { ProgressView().scaleEffect(0.5).frame(width: 16, height: 16) }
+                }
+                if !model.statusMessage.isEmpty {
+                    Text(model.statusMessage).font(.callout).foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Divider().padding(.vertical, 8)
+                Text("Don't have a Focus Button yet? It's a physical timer for your desk that triggers focus sessions here.")
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let url = URL(string: "https://button.focusbear.io") {
+                    SwiftUI.Link("Get yours from button.focusbear.io", destination: url)
+                }
+            }
+            .padding(28)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear { model.start() }
+        .onDisappear { model.stop() }
+    }
+}
+
+// MARK: - External-app tool screen (Time Tracker / Late No More)
+
+@available(macOS 11.0, *)
+final class ExternalToolModel: ObservableObject {
+    let appPath: String
+    let runningMatch: String
+    @Published var isInstalled = false
+    @Published var isRunning = false
+    private var timer: Timer?
+
+    init(appPath: String, runningMatch: String) {
+        self.appPath = appPath
+        self.runningMatch = runningMatch
+    }
+    func start() {
+        refresh()
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in self?.refresh() }
+    }
+    func stop() { timer?.invalidate(); timer = nil }
+    func refresh() {
+        isInstalled = FileManager.default.fileExists(atPath: appPath)
+        isRunning = NSWorkspace.shared.runningApplications.contains {
+            ($0.localizedName ?? "").lowercased().contains(runningMatch)
+        }
+    }
+}
+
+@available(macOS 11.0, *)
+struct ExternalToolView: View {
+    let title: String
+    let description: String
+    @ObservedObject var model: ExternalToolModel
+    let primaryAction: () -> Void
+
+    private var statusText: String {
+        if model.isRunning { return "Running" }
+        if model.isInstalled { return "Installed (not running)" }
+        return "Not installed"
+    }
+    private var statusColor: Color {
+        if model.isRunning { return .green }
+        if model.isInstalled { return .orange }
+        return .gray
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(title).font(.system(size: 24, weight: .bold))
+                HStack(spacing: 8) {
+                    Circle().fill(statusColor).frame(width: 10, height: 10)
+                    Text(statusText).foregroundColor(.secondary)
+                }
+                Text(description).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
+                SwiftUI.Button(model.isInstalled ? "Open" : "Download") { primaryAction() }
+            }
+            .padding(28)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear { model.start() }
+        .onDisappear { model.stop() }
     }
 }

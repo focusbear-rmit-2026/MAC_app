@@ -8,6 +8,23 @@
 
 import Foundation
 
+/// Run an AppleScript source and return its result descriptor, ALWAYS on the main thread.
+/// NSAppleScript is not thread-safe; executing it on a background queue (e.g. the URL/tab timer)
+/// intermittently segfaults inside Apple's AppleScript compiler — that was the browser-tab-count crash.
+func runBrowserAppleScript(_ source: String) -> NSAppleEventDescriptor? {
+    func run() -> NSAppleEventDescriptor? {
+        guard let s = NSAppleScript(source: source) else { return nil }
+        var errors: NSDictionary?
+        let desc = s.executeAndReturnError(&errors)
+        if errors != nil { print(errors as Any) }
+        return desc
+    }
+    if Thread.isMainThread { return run() }
+    var result: NSAppleEventDescriptor?
+    DispatchQueue.main.sync { result = run() }
+    return result
+}
+
 //*****************all browsers Active Tab Url and Titlle*********************//
 
 enum BROWSER:Int{
@@ -81,13 +98,7 @@ func getBrowserAllTabUrl(browser:BROWSER)->[String]?{
     }
     
     
-    if let appleScript = NSAppleScript(source: script) {
-        
-        var errors : NSDictionary? = nil
-        let desc = appleScript.executeAndReturnError(&errors)
-        if errors != nil {
-            print(errors)
-        }
+    if let desc = runBrowserAppleScript(script) {
         return desc.toStringArray()
     }
     return nil
@@ -186,13 +197,7 @@ func getBrowserAllTabUrlAndTitle(browser:BROWSER)->[(title: String, url: String)
 
     
     
-    if let appleScript = NSAppleScript(source: script) {
-        
-        var errors : NSDictionary? = nil
-        let desc = appleScript.executeAndReturnError(&errors)
-        if errors != nil {
-            print(errors as Any)
-        }
+    if let desc = runBrowserAppleScript(script) {
         return desc.toTwoColumnStringArray()
     }
     return nil
@@ -540,17 +545,10 @@ func getBrowserAllWindowStruct(browser:BROWSER)->[String:[String]]?{
     }
     
     
-    if let appleScript = NSAppleScript(source: script) {
-        
-        var errors : NSDictionary? = nil
-        let desc = appleScript.executeAndReturnError(&errors)
-        if errors != nil {
-            print(errors)
-        }
+    if let desc = runBrowserAppleScript(script) {
         if browser == ._ARC_{
             return ["window": desc.toStringArray()]
         }
-        
         return desc.toAnyArray()
     }
     return nil

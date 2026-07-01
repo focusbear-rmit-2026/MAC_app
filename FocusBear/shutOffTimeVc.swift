@@ -129,7 +129,7 @@ class shutOffTimeVc: NSViewController {
         
         lblTitle.stringValue = "Time to wind down"
         btnGetAccessNow.title = "Unlock computer"
-        
+
         if let shutOffTimeInfo = configjson.value(forKey: "shutOffTimeInfo") as? NSDictionary{
             btnGetAccessNow.title = shutOffTimeInfo.value(forKey: "buttonUnlockComputer") as? String ?? btnGetAccessNow.title
         }

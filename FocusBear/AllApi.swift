@@ -5648,6 +5648,101 @@ class AllApi:NSObject {
         }
     }
     
+    /// Fetches the to-do list in the backend's SMART (TOP-score) priority order. Unlike
+    /// /to-do/recent (recency, plain array), this endpoint is paginated and already prioritised,
+    /// so the Day Plan picker shows the same order as the web to-do list. Handles both a plain
+    /// array and a `{ data: [...] }` wrapper response.
+    func getSmartTasks(completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
+        addLog(text: "func call:- getSmartTasks")
+        appdelegate!.credentialsManager.credentials { credentialsInfo in
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            guard appdelegate!.credential != nil else { completionHandler(nil); return }
+            let responsePath = "\(baseUrl)/to-do?page=1&take=50&status=NOT_STARTED&order=DESC&sort_mode=SMART"
+            guard let responsePathUrl = NSURL(string: responsePath) else { completionHandler(nil); return }
+            addLog(text: "api call getSmartTasks \(responsePathUrl)")
+            let request = makeRequest(responsePathUrl: responsePathUrl)
+            request.httpMethod = "GET"
+            let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
+                guard let httpResponse = response as? HTTPURLResponse else { completionHandler(nil); return }
+                guard httpResponse.statusCode == 200, let data = data else {
+                    addLog(text: "getSmartTasks statusCode \((response as? HTTPURLResponse)?.statusCode ?? -1)")
+                    completionHandler(nil); return
+                }
+                do {
+                    let json = try JSONSerialization.jsonObject(with: data, options: .mutableContainers)
+                    if let arr = json as? [NSDictionary] { completionHandler(arr); return }
+                    if let obj = json as? NSDictionary, let arr = obj.value(forKey: "data") as? [NSDictionary] {
+                        completionHandler(arr); return
+                    }
+                    addLog(text: "getSmartTasks: unexpected response shape")
+                } catch {
+                    addLog(text: "error getSmartTasks parse: \(error.localizedDescription)")
+                }
+                completionHandler(nil)
+            }
+            task.resume()
+        }
+    }
+
+    /// Fetch ALL of the user's projects (used by the Day Plan `#project` autocomplete). The
+    /// `/projects` response is `{ data: [page], projects: [...], total_count, meta }`; we take the
+    /// larger of `data`/`projects` and, if that's still short of `total_count`, page with `?page=N`
+    /// (no `take` — a large `take` makes the endpoint return empty) until we've collected them all.
+    func getProjectsList(completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
+        addLog(text: "func call:- getProjectsList")
+        fetchProjectsPage(page: 1, accumulated: [], completionHandler: completionHandler)
+    }
+
+    private func fetchProjectsPage(page: Int, accumulated: [NSDictionary],
+                                   completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
+        appdelegate!.credentialsManager.credentials { credentialsInfo in
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            guard appdelegate!.credential != nil else {
+                completionHandler(accumulated.isEmpty ? nil : accumulated); return
+            }
+            let responsePath = page == 1 ? "\(baseUrl)/projects" : "\(baseUrl)/projects?page=\(page)"
+            guard let responsePathUrl = NSURL(string: responsePath) else {
+                completionHandler(accumulated.isEmpty ? nil : accumulated); return
+            }
+            addLog(text: "api call getProjectsList \(responsePathUrl)")
+            let request = makeRequest(responsePathUrl: responsePathUrl)
+            request.httpMethod = "GET"
+            let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
+                guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200, let data = data else {
+                    addLog(text: "getProjectsList statusCode \((response as? HTTPURLResponse)?.statusCode ?? -1)")
+                    completionHandler(accumulated.isEmpty ? nil : accumulated); return
+                }
+                var pageItems: [NSDictionary] = []
+                var totalCount = 0
+                if let json = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) {
+                    if let arr = json as? [NSDictionary] {
+                        pageItems = arr
+                    } else if let obj = json as? NSDictionary {
+                        let dataArr = obj.value(forKey: "data") as? [NSDictionary] ?? []
+                        let projArr = obj.value(forKey: "projects") as? [NSDictionary] ?? []
+                        pageItems = projArr.count > dataArr.count ? projArr : dataArr
+                        totalCount = (obj.value(forKey: "total_count") as? Int)
+                            ?? ((obj.value(forKey: "meta") as? NSDictionary)?.value(forKey: "total") as? Int) ?? 0
+                    }
+                }
+                // Dedupe by id so we stop cleanly even if `?page=` is ignored and the same set repeats.
+                let existingIds = Set(accumulated.compactMap { $0.value(forKey: "id") as? String })
+                let newItems = pageItems.filter {
+                    guard let id = $0.value(forKey: "id") as? String else { return true }
+                    return !existingIds.contains(id)
+                }
+                let all = accumulated + newItems
+                let more = !newItems.isEmpty && (totalCount == 0 || all.count < totalCount)
+                if more, page < 50 {
+                    self.fetchProjectsPage(page: page + 1, accumulated: all, completionHandler: completionHandler)
+                } else {
+                    completionHandler(all)
+                }
+            }
+            task.resume()
+        }
+    }
+
     func getAllBlockingSchedules(completionHandler: @escaping(_ result: Data?) -> ()) {
         addLog(text: "func call:- getAllBlockingSchedules")
         
@@ -6404,6 +6499,7 @@ class AllApi:NSObject {
         - start_habit
         - pause_habit
         - resume_habit
+        - get_focus_stats
 
         **Create task**  
         Fields: task (string), datetime (local system datetime or relative like "tomorrow 9am", "tomorrow", "in 2 hours", "next thursday"), optional repeat.
@@ -6423,9 +6519,12 @@ class AllApi:NSObject {
         **Pause habit**  
         Fields: none.
 
-        **Resume habit**  
+        **Resume habit**
         Fields: none.
-        
+
+        **Get focus stats**
+        Fields: none. Use when the user asks how they're doing, how much they've focused, or how many hours of deep work they've done today (e.g. "how's my focus today?", "how much deep work have I done?").
+
         Rules:
         - Infer missing details sensibly. If no duration for focus, default to 25 min.
         - Assume current datetime is \(dateString) and format is "yyyy-MM-dd HH:mm:ss".
@@ -6437,7 +6536,7 @@ class AllApi:NSObject {
         Output format (JSON only, no extra text):
 
         {
-          "action": "create_task | start_focus | pause_focus | stop_focus | start_habit",
+          "action": "create_task | start_focus | pause_focus | stop_focus | start_habit | get_focus_stats",
           "parameters": {
             // action-specific fields
           },

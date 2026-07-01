@@ -14,8 +14,16 @@ class mainWindowListBox: NSBox {
     
     let kBorderColor = NSColor(red: 232/255, green: 136/255, blue: 0/255, alpha: 1)
     private var hovered = false
+    /// When true, this item refuses disable requests so it always stays clickable. Used for the
+    /// Todo List, which must always be reachable. Onboarding is exempt — it deliberately locks the
+    /// whole menu, so we don't fight it there.
+    var alwaysEnabled = false
     var isEnabled: Bool = true{
         didSet {
+            if alwaysEnabled, !isEnabled, currentState != ._ONBOARDING_ {
+                isEnabled = true   // re-entrant set; guard above prevents recursion
+                return
+            }
             if oldValue != isEnabled {
                 if isEnabled{
                     if !isSelected{

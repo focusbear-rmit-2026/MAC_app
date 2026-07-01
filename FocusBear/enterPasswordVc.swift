@@ -542,6 +542,15 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 return;
             }else if parentVc == firstViewControllerObj{
                 self.view.removeFromSuperview()
+                // Clicking Done/Skip hid the routine action buttons before prompting for the password;
+                // cancelling must bring them back. Re-render the Day Plan routine cards (and the habit
+                // list's action bar) so the Done button reappears.
+                firstViewControllerObj?.refreshScheduleIfVisible()
+                if let tbl = firstViewControllerObj?.tblViewHabits {
+                    let sel = tbl.selectedRow
+                    tbl.reloadData()
+                    if sel >= 0 { tbl.selectRowIndexes(IndexSet(integer: sel), byExtendingSelection: false) }
+                }
                 return;
             }
             

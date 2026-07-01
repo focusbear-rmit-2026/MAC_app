@@ -100,6 +100,13 @@
 		274E0F4928902CF1000234A3 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E0F4828902CF1000234A3 /* User.swift */; };
 		274E0F4C28902E29000234A3 /* Auth0.plist in Resources */ = {isa = PBXBuildFile; fileRef = 274E0F4B28902E28000234A3 /* Auth0.plist */; };
 		274E671628951DDD0030163F /* AllApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E671528951DDC0030163F /* AllApi.swift */; };
+		52E1363556E99AFB2A80EAD6 /* FBTTTodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC187A9D44C75F344A462A1 /* FBTTTodayView.swift */; };
+		44893728E4D2BE20B7672984 /* ScheduleKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9989E00FEA15521B6C3FE5FE /* ScheduleKit.swift */; };
+		7476A99B06ABC3EB040F5633 /* DayPlanTasks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 060DBE94CCB418D4071A43CB /* DayPlanTasks.swift */; };
+		5790A2029EF7B5F4A5EF47B8 /* routinePostponedInfoVc+Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE3FA8163BBB36B02EF947DD /* routinePostponedInfoVc+Schedule.swift */; };
+		57ED7D19F5DC0C0735C2F34B /* ScheduleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B215C30047E6A2A37A923150 /* ScheduleViewController.swift */; };
+		64206D6037E4BA7EA7DD14DA /* CalendarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6917674BE2A776D2F47EDE3 /* CalendarManager.swift */; };
+		7DC90FC77F5432F8C21012C0 /* firstViewController+Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DEF19BEE8458F980B62C5C3 /* firstViewController+Schedule.swift */; };
 		8F02AF422A751A5200BA6536 /* blockedAppsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F02AF412A751A5200BA6536 /* blockedAppsVc.swift */; };
 		8F0419442C353B9C00481ACD /* breakSurveyVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0419432C353B9C00481ACD /* breakSurveyVc.swift */; };
 		8F0419462C353D4100481ACD /* getViewControllersObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0419452C353D4100481ACD /* getViewControllersObject.swift */; };
@@ -218,6 +225,7 @@
 		8F6AC5E029E1540F002EBC99 /* welcomeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F6AC5DF29E1540F002EBC99 /* welcomeVc.swift */; };
 		8F6B1E2B2B07769900552211 /* timeTrackerVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F6B1E2A2B07769900552211 /* timeTrackerVc.swift */; };
 		8F6C10F427BD37F00013972F /* menuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F6C10F327BD37F00013972F /* menuViewController.swift */; };
+		1A2B3C4D5E6F000000000A01 /* MenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F000000000A02 /* MenuView.swift */; };
 		8F6DAD842B32A84400CB210B /* lateNoMorePopUpVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F6DAD832B32A84400CB210B /* lateNoMorePopUpVc.swift */; };
 		8F6DD76A2A8A4EE300096F08 /* settingsSideBarVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F6DD7692A8A4EE300096F08 /* settingsSideBarVc.swift */; };
 		8F6DD76C2A8A5B4C00096F08 /* settingsContainerVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F6DD76B2A8A5B4C00096F08 /* settingsContainerVc.swift */; };
@@ -318,6 +326,11 @@
 		8FB84AF2284DE2550075180B /* config-es.json in Resources */ = {isa = PBXBuildFile; fileRef = 8FB84AF1284DE2550075180B /* config-es.json */; };
 		8FB970AB2B71F7A500A38F17 /* chooseCommunityVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FB970AA2B71F7A500A38F17 /* chooseCommunityVc.swift */; };
 		8FBB72152A568965004F52EA /* Poppins-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8FBB72142A568965004F52EA /* Poppins-Regular.ttf */; };
+		LEXR0001 /* Lexend-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = LEXF0001 /* Lexend-Regular.ttf */; };
+		BEAR0001 /* blocking_bear.png in Resources */ = {isa = PBXBuildFile; fileRef = BEARF001 /* blocking_bear.png */; };
+		LEXR0002 /* Lexend-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = LEXF0002 /* Lexend-Medium.ttf */; };
+		LEXR0003 /* Lexend-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = LEXF0003 /* Lexend-SemiBold.ttf */; };
+		LEXR0004 /* Lexend-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = LEXF0004 /* Lexend-Bold.ttf */; };
 		8FBB72172A56E107004F52EA /* menuTourVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FBB72162A56E107004F52EA /* menuTourVc.swift */; };
 		8FBD6DFC2B6A0DCB00CC9430 /* tblCellSettingsSideBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FBD6DFB2B6A0DCB00CC9430 /* tblCellSettingsSideBar.swift */; };
 		8FBD6DFE2B6A760000CC9430 /* lateMorningHabitPopupVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FBD6DFD2B6A760000CC9430 /* lateMorningHabitPopupVc.swift */; };
@@ -358,6 +371,7 @@
 		AAW00002 /* alwaysAllowedAppsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAW00001 /* alwaysAllowedAppsVc.swift */; };
 		ABH00001 /* AppBlockingHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00002 /* AppBlockingHelper.swift */; };
 		ABH00003 /* AppBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00004 /* AppBlockingTests.swift */; };
+		ABH00010 /* ScheduleKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00011 /* ScheduleKitTests.swift */; };
 		BEED37F6C1373AFCB67BCF04 /* Pods_Focus_Bear.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E339C651791746EA3D066A6A /* Pods_Focus_Bear.framework */; };
 		UBT00001 /* URLBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = UBT00002 /* URLBlockingTests.swift */; };
 /* End PBXBuildFile section */
@@ -488,7 +502,9 @@
 		274E0F4828902CF1000234A3 /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		274E0F4B28902E28000234A3 /* Auth0.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Auth0.plist; sourceTree = "<group>"; };
 		274E671528951DDC0030163F /* AllApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllApi.swift; sourceTree = "<group>"; };
+		2DEF19BEE8458F980B62C5C3 /* firstViewController+Schedule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "firstViewController+Schedule.swift"; sourceTree = "<group>"; };
 		5F7C4CC4D1F38E18CC9D5E55 /* FocusBear-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "FocusBear-Release.xcconfig"; sourceTree = "<group>"; };
+		6EC187A9D44C75F344A462A1 /* FBTTTodayView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FBTTTodayView.swift; sourceTree = "<group>"; };
 		889FCE3E1080DC22C97AB6D8 /* Pods-Focus Bear.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Focus Bear.debug.xcconfig"; path = "Target Support Files/Pods-Focus Bear/Pods-Focus Bear.debug.xcconfig"; sourceTree = "<group>"; };
 		8E5DEAA96AD3FCA949FF525B /* Local.xcconfig.example */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = Local.xcconfig.example; sourceTree = "<group>"; };
 		8F02AF412A751A5200BA6536 /* blockedAppsVc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = blockedAppsVc.swift; sourceTree = "<group>"; };
@@ -621,6 +637,7 @@
 		8F6AC5DF29E1540F002EBC99 /* welcomeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = welcomeVc.swift; sourceTree = "<group>"; };
 		8F6B1E2A2B07769900552211 /* timeTrackerVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = timeTrackerVc.swift; sourceTree = "<group>"; };
 		8F6C10F327BD37F00013972F /* menuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = menuViewController.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F000000000A02 /* MenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuView.swift; sourceTree = "<group>"; };
 		8F6DAD832B32A84400CB210B /* lateNoMorePopUpVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = lateNoMorePopUpVc.swift; sourceTree = "<group>"; };
 		8F6DD7692A8A4EE300096F08 /* settingsSideBarVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = settingsSideBarVc.swift; sourceTree = "<group>"; };
 		8F6DD76B2A8A5B4C00096F08 /* settingsContainerVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = settingsContainerVc.swift; sourceTree = "<group>"; };
@@ -723,6 +740,11 @@
 		8FB84AF1284DE2550075180B /* config-es.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "config-es.json"; sourceTree = "<group>"; };
 		8FB970AA2B71F7A500A38F17 /* chooseCommunityVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = chooseCommunityVc.swift; sourceTree = "<group>"; };
 		8FBB72142A568965004F52EA /* Poppins-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Poppins-Regular.ttf"; sourceTree = "<group>"; };
+		LEXF0001 /* Lexend-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Lexend-Regular.ttf"; sourceTree = "<group>"; };
+		BEARF001 /* blocking_bear.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = blocking_bear.png; sourceTree = "<group>"; };
+		LEXF0002 /* Lexend-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Lexend-Medium.ttf"; sourceTree = "<group>"; };
+		LEXF0003 /* Lexend-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Lexend-SemiBold.ttf"; sourceTree = "<group>"; };
+		LEXF0004 /* Lexend-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Lexend-Bold.ttf"; sourceTree = "<group>"; };
 		8FBB72162A56E107004F52EA /* menuTourVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = menuTourVc.swift; sourceTree = "<group>"; };
 		8FBD6DFB2B6A0DCB00CC9430 /* tblCellSettingsSideBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tblCellSettingsSideBar.swift; sourceTree = "<group>"; };
 		8FBD6DFD2B6A760000CC9430 /* lateMorningHabitPopupVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = lateMorningHabitPopupVc.swift; sourceTree = "<group>"; };
@@ -763,14 +785,20 @@
 		8FFBCE8928549EB1004B77D9 /* PopoverViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PopoverViewController.swift; sourceTree = "<group>"; };
 		8FFF70622858A13200164E2B /* GraphTimeDuration.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = GraphTimeDuration.html; sourceTree = "<group>"; };
 		8FFF70642858A59800164E2B /* GraphDaysDuration.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = GraphDaysDuration.html; sourceTree = "<group>"; };
+		9989E00FEA15521B6C3FE5FE /* ScheduleKit.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScheduleKit.swift; sourceTree = "<group>"; };
+		060DBE94CCB418D4071A43CB /* DayPlanTasks.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DayPlanTasks.swift; sourceTree = "<group>"; };
 		A3571BB6ACEBCB217ABDB57F /* FocusBear-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "FocusBear-Debug.xcconfig"; sourceTree = "<group>"; };
 		AAW00001 /* alwaysAllowedAppsVc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = alwaysAllowedAppsVc.swift; sourceTree = "<group>"; };
 		ABH00002 /* AppBlockingHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingHelper.swift; sourceTree = "<group>"; };
 		ABH00004 /* AppBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingTests.swift; sourceTree = "<group>"; };
+		ABH00011 /* ScheduleKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleKitTests.swift; sourceTree = "<group>"; };
+		B215C30047E6A2A37A923150 /* ScheduleViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScheduleViewController.swift; sourceTree = "<group>"; };
+		B6917674BE2A776D2F47EDE3 /* CalendarManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarManager.swift; sourceTree = "<group>"; };
 		E339C651791746EA3D066A6A /* Pods_Focus_Bear.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Focus_Bear.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F0AB749FD8D6F7D5A64D9CB8 /* Signing-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Signing-Release.xcconfig"; sourceTree = "<group>"; };
 		F2A250D6DD50DF2749899D48 /* FBHelper-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "FBHelper-Debug.xcconfig"; sourceTree = "<group>"; };
 		F4A04585FA1D0F1940D23631 /* Pods-Focus Bear.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Focus Bear.release.xcconfig"; path = "Target Support Files/Pods-Focus Bear/Pods-Focus Bear.release.xcconfig"; sourceTree = "<group>"; };
+		FE3FA8163BBB36B02EF947DD /* routinePostponedInfoVc+Schedule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "routinePostponedInfoVc+Schedule.swift"; sourceTree = "<group>"; };
 		UBT00002 /* URLBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLBlockingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -959,6 +987,10 @@
 				8F762D282A431FA800E24FE2 /* OpenDyslexic3-Regular.ttf */,
 				8F1333922A44389A004EDE65 /* intelone-mono-font-family-regular.ttf */,
 				8FBB72142A568965004F52EA /* Poppins-Regular.ttf */,
+				LEXF0001 /* Lexend-Regular.ttf */,
+				LEXF0002 /* Lexend-Medium.ttf */,
+				LEXF0003 /* Lexend-SemiBold.ttf */,
+				LEXF0004 /* Lexend-Bold.ttf */,
 			);
 			path = Fonts;
 			sourceTree = "<group>";
@@ -1418,6 +1450,8 @@
 				8FABDDC527D9E2D900F6A58C /* new Gifs */,
 				8F8A53F027AA4ABB00A01E2D /* gifs */,
 				8FBE2E152B65191100482A6E /* FB-Firefox.mov */,
+				6EC187A9D44C75F344A462A1 /* FBTTTodayView.swift */,
+				FD7C1298E1FEC6F3419C2616 /* Schedule */,
 			);
 			path = FocusBear;
 			sourceTree = "<group>";
@@ -1468,6 +1502,8 @@
 			isa = PBXGroup;
 			children = (
 				8F6C10F327BD37F00013972F /* menuViewController.swift */,
+				1A2B3C4D5E6F000000000A02 /* MenuView.swift */,
+				BEARF001 /* blocking_bear.png */,
 				8F8869CD2AE3AD4E0089E109 /* todoListToolVc.swift */,
 			);
 			path = menuView;
@@ -1518,6 +1554,7 @@
 				8FD1053E27EEE44100B7728E /* Focus_BearTests.swift */,
 				8FD1054A27EF221800B7728E /* validationTest.swift */,
 				ABH00004 /* AppBlockingTests.swift */,
+				ABH00011 /* ScheduleKitTests.swift */,
 				UBT00002 /* URLBlockingTests.swift */,
 				8FD1054027EEE44100B7728E /* Info.plist */,
 			);
@@ -1600,6 +1637,20 @@
 				F4A04585FA1D0F1940D23631 /* Pods-Focus Bear.release.xcconfig */,
 			);
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		FD7C1298E1FEC6F3419C2616 /* Schedule */ = {
+			isa = PBXGroup;
+			children = (
+				9989E00FEA15521B6C3FE5FE /* ScheduleKit.swift */,
+				060DBE94CCB418D4071A43CB /* DayPlanTasks.swift */,
+				B6917674BE2A776D2F47EDE3 /* CalendarManager.swift */,
+				B215C30047E6A2A37A923150 /* ScheduleViewController.swift */,
+				2DEF19BEE8458F980B62C5C3 /* firstViewController+Schedule.swift */,
+				FE3FA8163BBB36B02EF947DD /* routinePostponedInfoVc+Schedule.swift */,
+			);
+			name = Schedule;
+			path = Schedule;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1700,7 +1751,7 @@
 			);
 			mainGroup = 8FAC6C7A27805F6D008A4180;
 			packageReferences = (
-				274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0" */,
+				274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0.swift" */,
 				13F8278C2ED5EC8B006C0BEF /* XCRemoteSwiftPackageReference "swifter" */,
 				13C6BF092FB19C210074DD63 /* XCRemoteSwiftPackageReference "ORSSerialPort" */,
 			);
@@ -1789,6 +1840,11 @@
 				8F461B2028C0EDD60082B0A2 /* Start Focus Button_1.wav in Resources */,
 				8F59952529714197009D49CD /* audio Wave.gif in Resources */,
 				8FBB72152A568965004F52EA /* Poppins-Regular.ttf in Resources */,
+				LEXR0001 /* Lexend-Regular.ttf in Resources */,
+				BEAR0001 /* blocking_bear.png in Resources */,
+				LEXR0002 /* Lexend-Medium.ttf in Resources */,
+				LEXR0003 /* Lexend-SemiBold.ttf in Resources */,
+				LEXR0004 /* Lexend-Bold.ttf in Resources */,
 				8F1DC4A82BC13A1900A51383 /* collectionViewItemOccupation.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1866,6 +1922,7 @@
 				134D1DEC2E41E52300328E84 /* leftMenuVc.swift in Sources */,
 				8FA2A8962846262100675DFF /* smallCountDownVc.swift in Sources */,
 				8F6C10F427BD37F00013972F /* menuViewController.swift in Sources */,
+				1A2B3C4D5E6F000000000A01 /* MenuView.swift in Sources */,
 				8FBB72172A56E107004F52EA /* menuTourVc.swift in Sources */,
 				13BBEEE02F7547060073B58E /* holdOnVc.swift in Sources */,
 				8FE558802CEC7E1F00C44387 /* bellSuggestionsVc.swift in Sources */,
@@ -2139,6 +2196,13 @@
 				8F02AF422A751A5200BA6536 /* blockedAppsVc.swift in Sources */,
 				AAW00002 /* alwaysAllowedAppsVc.swift in Sources */,
 				ABH00001 /* AppBlockingHelper.swift in Sources */,
+				52E1363556E99AFB2A80EAD6 /* FBTTTodayView.swift in Sources */,
+				44893728E4D2BE20B7672984 /* ScheduleKit.swift in Sources */,
+				7476A99B06ABC3EB040F5633 /* DayPlanTasks.swift in Sources */,
+				64206D6037E4BA7EA7DD14DA /* CalendarManager.swift in Sources */,
+				57ED7D19F5DC0C0735C2F34B /* ScheduleViewController.swift in Sources */,
+				7DC90FC77F5432F8C21012C0 /* firstViewController+Schedule.swift in Sources */,
+				5790A2029EF7B5F4A5EF47B8 /* routinePostponedInfoVc+Schedule.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2149,6 +2213,7 @@
 				8FD1054B27EF221800B7728E /* validationTest.swift in Sources */,
 				8FD1053F27EEE44100B7728E /* Focus_BearTests.swift in Sources */,
 				ABH00003 /* AppBlockingTests.swift in Sources */,
+				ABH00010 /* ScheduleKitTests.swift in Sources */,
 				UBT00001 /* URLBlockingTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2224,11 +2289,10 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CODE_SIGN_ENTITLEMENTS = FBHelper/FBHelper.entitlements;
-				CODE_SIGN_IDENTITY = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
-				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_HARDENED_RUNTIME = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FBHelper/Info.plist;
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -2243,7 +2307,6 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.focusbear.focusbearhelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = FocusBearHelperPersonalAcProfilePrashant;
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
@@ -2411,13 +2474,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Focus Bear.entitlements";
-				CODE_SIGN_IDENTITY = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 497;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
-				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_HARDENED_RUNTIME = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -2432,7 +2493,6 @@
 				MARKETING_VERSION = 3.33;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = FocusBearMainAppProfile;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "FocusBear/FocusBear-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -2575,7 +2635,7 @@
 				minimumVersion = 1.5.0;
 			};
 		};
-		274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0" */ = {
+		274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0.swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/auth0/Auth0.swift";
 			requirement = {
@@ -2598,7 +2658,7 @@
 		};
 		274E0F462890291D000234A3 /* Auth0 */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0" */;
+			package = 274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0.swift" */;
 			productName = Auth0;
 		};
 /* End XCSwiftPackageProductDependency section */

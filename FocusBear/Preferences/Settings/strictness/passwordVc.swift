@@ -75,14 +75,14 @@ class passwordVc: NSViewController {
         lblCheckBoxQuitApp.stringValue = "Quitting/deactivating app"
         lblCheckBoxStopPomodoro.stringValue = "Stopping Super pomodoro mode"
         lblCheckBoxAbortingShutoff.stringValue = "Aborting shutoff"
-        lblCheckBoxSkipEveningHabit.stringValue = "Postponing/skipping evening routine"
-        lblCheckBoxSkipMorningHabit.stringValue = "Postponing/skipping morning routine"
+        lblCheckBoxSkipEveningHabit.stringValue = "Skipping evening routine"
+        lblCheckBoxSkipMorningHabit.stringValue = "Skipping morning routine"
         lblCheckBoxChangeSettings.stringValue = "Changing settings"
         
         
         lblCheckBoxCircumventingBlocks.stringValue = "Changing settings that allow circumventing blocks"
         btnDisablePassword.title = "Disable Password"
-        lblCheckBoxSkipEveningHabitAfterCutOff.stringValue = "Postponing/skipping evening routine after cutoff time"
+        lblCheckBoxSkipEveningHabitAfterCutOff.stringValue = "Skipping evening routine after cutoff time"
         
         lblCheckBoxOpenPreferencesAfterCutOff.stringValue = "Require password for opening Preferences after cutoff time"
         
@@ -129,8 +129,57 @@ class passwordVc: NSViewController {
         checkBoxCircumventingBlocks.toolTip = lblCheckBoxCircumventingBlocks.stringValue
         
         checkBoxOpenPreferencesAfterCutOff.toolTip = lblCheckBoxOpenPreferencesAfterCutOff.stringValue
+
+        setupPostponeCheckboxes()
     }
-    
+
+    // MARK: Postpone password checkboxes (separate from Skip) — added in code, just below the skip
+    // rows. Local device settings, persisted to UserDefaults.
+    private var checkBoxPostponeMorning: NSButton?
+    private var checkBoxPostponeEvening: NSButton?
+    private var checkBoxPostponeAfterCutOff: NSButton?
+
+    private func setupPostponeCheckboxes() {
+        // Walk up from a skip checkbox to its enclosing vertical stack.
+        var v: NSView? = checkBoxSkipEveningHabitAfterCutOff
+        var vstack: NSStackView?
+        while let cur = v { if let s = cur as? NSStackView, s.orientation == .vertical { vstack = s; break }; v = cur.superview }
+        guard let stack = vstack else { return }
+        func make(_ title: String, _ action: Selector) -> NSButton {
+            let cb = NSButton(checkboxWithTitle: title, target: self, action: action)
+            cb.translatesAutoresizingMaskIntoConstraints = false
+            return cb
+        }
+        let m = make("Postponing morning routine", #selector(checkBoxPostponeMorningClicked))
+        let e = make("Postponing evening routine", #selector(checkBoxPostponeEveningClicked))
+        let c = make("Postponing evening routine after cutoff time", #selector(checkBoxPostponeAfterCutOffClicked))
+        checkBoxPostponeMorning = m; checkBoxPostponeEvening = e; checkBoxPostponeAfterCutOff = c
+        for cb in [m, e, c] { stack.addArrangedSubview(cb) }
+        refreshPostponeCheckboxStates()
+    }
+
+    private func refreshPostponeCheckboxStates() {
+        checkBoxPostponeMorning?.state = SettingsManagerObject.isPasswordRequireInPostponeMorning ? .on : .off
+        checkBoxPostponeEvening?.state = SettingsManagerObject.isPasswordRequireInPostponeEvening ? .on : .off
+        checkBoxPostponeAfterCutOff?.state = SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff ? .on : .off
+    }
+
+    private func setPostpone(_ value: Bool, key: String, set: (Bool) -> Void) {
+        SettingsManagerObject.isSettingsChanged = true
+        set(value)
+        UserDefaults.standard.set(value, forKey: key)
+    }
+
+    @objc private func checkBoxPostponeMorningClicked() {
+        setPostpone(checkBoxPostponeMorning?.state == .on, key: SettingsManagerObject.kUserdefaultsPasswordRequireInPostponeMorning) { SettingsManagerObject.isPasswordRequireInPostponeMorning = $0 }
+    }
+    @objc private func checkBoxPostponeEveningClicked() {
+        setPostpone(checkBoxPostponeEvening?.state == .on, key: SettingsManagerObject.kUserdefaultsPasswordRequireInPostponeEvening) { SettingsManagerObject.isPasswordRequireInPostponeEvening = $0 }
+    }
+    @objc private func checkBoxPostponeAfterCutOffClicked() {
+        setPostpone(checkBoxPostponeAfterCutOff?.state == .on, key: SettingsManagerObject.kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff) { SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff = $0 }
+    }
+
     override func viewWillAppear() {
         if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
 //            preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
@@ -265,6 +314,7 @@ class passwordVc: NSViewController {
         }else{
             checkBoxSkipEveningHabitAfterCutOff.state = .off
         }
+        refreshPostponeCheckboxStates()
         
         if SettingsManagerObject.isPasswordRequireInAbortShutoff{
             checkBoxAbortingShutoff.state = .on

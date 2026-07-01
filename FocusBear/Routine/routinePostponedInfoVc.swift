@@ -28,6 +28,9 @@ class routinePostponedInfoVc: NSViewController {
             actionBarItemDone = activityInfo.value(forKey: "actionBarItemDone") as? String ?? actionBarItemDone
             actionBarItemSkip = activityInfo.value(forKey: "actionBarItemSkip") as? String ?? actionBarItemSkip
         }
+
+        // Schedule view: adds the "Schedule | Habits" tab over this postponed habit screen.
+        setupScheduleTab()
     }
     
     
@@ -83,7 +86,10 @@ class routinePostponedInfoVc: NSViewController {
     
     override func viewDidAppear() {
         tblViewHabits.reloadData()
-        
+        // viewWillAppear re-shows the habit list; re-hide it behind the Day Plan so its occluded
+        // cells can't fire hover/clicks (stray hand cursor / starting the selected habit).
+        updateScheduleTabForState()
+
         if lCurrentState == ._MORNING_HABIT_{
             getMorningHabitsListAgain()
             //focusButtonService-------//

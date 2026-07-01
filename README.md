@@ -25,7 +25,6 @@ identity, Debug is ad-hoc; to sign Debug with your own team copy
 > (universal Python on M-Series does not produce a working Intel binary).  Both binaries
 > must also be signed with the Focus Bear Developer-ID certificate before being committed.
 > If a new build is required, contact lead developer.
-
 ---
 
 ### 📆 Steps to Build and Create a Notarized DMG for macOS App

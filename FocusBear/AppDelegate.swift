@@ -27,6 +27,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     let client = TrueTimeClient.sharedInstance
     let popover = NSPopover()
+    // Outside-click dismissal for the menu when it's shown as a window (isMenuPopoverEnabled == false).
+    // A .transient NSPopover dismisses itself; the custom window doesn't, so we watch for clicks
+    // outside it and close it manually to match popover behaviour.
+    var menuOutsideClickMonitorGlobal: Any?
+    var menuOutsideClickMonitorLocal: Any?
     var terminateFromSelf = false
     var needToCheckEmailVerification = false
     var hotKeyClearUserdefaults: HotKey? {
@@ -225,7 +230,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             _ = CTFontManagerRegisterFontsForURL(fontPathUrl as CFURL, .process, &errorRef)
             print(errorRef)
         }
-        
+
+        // Lexend (Google Fonts, OFL) — the default app font.
+        for weight in ["Lexend-Regular", "Lexend-Medium", "Lexend-SemiBold", "Lexend-Bold"] {
+            if let fontPath = Bundle.main.path(forResource: weight, ofType: "ttf") {
+                var errorRef: Unmanaged<CFError>?
+                _ = CTFontManagerRegisterFontsForURL(URL(fileURLWithPath: fontPath) as CFURL, .process, &errorRef)
+                print(errorRef as Any)
+            }
+        }
+
         let fontFamilies = NSFontManager.shared.availableFontFamilies.sorted()
         for family in fontFamilies {
             print(family)
@@ -1305,7 +1319,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Insert code here to initialize your application
-        
+
+#if DEBUG
+        // Offscreen Day Plan mockup render (DEBUG-only; no-op unless FB_MOCKUP_FILE is set); quits when done.
+        DayPlanMockup.runIfRequested()
+        // Offscreen SwiftUI menu render (DEBUG-only; no-op unless FB_SNAPSHOT_MENU=1). Lets us verify the
+        // redesigned menu layout without opening the menu-bar popover.
+        if #available(macOS 13.0, *) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                MenuSnapshot.renderIfRequested()
+                if ProcessInfo.processInfo.environment["FB_SNAPSHOT_MENU"] == "1" { NSApp.terminate(nil) }
+            }
+        }
+        // "Create Claude debug task…" Help-menu item (one user only). The user loads asynchronously after
+        // launch, so install once it's available.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { ClaudeDebugTaskMenu.installIfAllowed() }
+#endif
     }
     func pauseHabitActivityIfRunning(){
         addLog(text: "func:- pauseHabitActivityIfRunning")
@@ -2654,6 +2683,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 }
                             }
                         }else if event.keyCode == 36 || event.keyCode == 76{
+                            // If the user is editing a Day Plan task field (name / duration) or the
+                            // snooze input, let the field handle Return — never start/advance a habit.
+                            // Scoped by identifier so OTHER editable fields (e.g. the Log Quantity
+                            // dialog) keep their existing Enter behaviour. Uses keyWindow so the snooze
+                            // popover (its own window) is covered too.
+                            if let editor = NSApp.keyWindow?.firstResponder as? NSText,
+                               let edited = editor.delegate as? NSView,
+                               let fid = edited.identifier?.rawValue,
+                               fid.hasPrefix("name:") || fid.hasPrefix("dur:") || fid == "snoozeInput" {
+                                return event
+                            }
                             if mainWindowControllerObj?.window?.isVisible ?? false && (leftMenuVcObj?.boxHabits.isSelected ?? false || leftMenuVcObj?.boxCustomRoutine.isSelected ?? false || leftMenuVcObj?.boxMicroBreaks.isSelected ?? false){
                                 if currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                                     if askPostponeVcObj != nil{
@@ -2808,7 +2848,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     @objc func togglePopoverFromButton(_ sender: Any?) {
         togglePopover(true) // or true, depending on case
     }
-    
+
+    /// Menu-bar click handler used while logged out / on the login screen. The login flows clear the
+    /// status button's action (so the popover can't open before sign-in), which left a click doing
+    /// nothing. Instead, bring the main app window (login) to the foreground.
+    @objc func bringMainWindowToForeground(_ sender: Any?) {
+        addLog(text: "[user-action] menu-bar click while logged out — foregrounding main window")
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        mainWindowControllerObj?.showWindow(nil)
+        mainWindowControllerObj?.window?.makeKeyAndOrderFront(nil)
+        mainWindowControllerObj?.window?.center()
+    }
+
     @objc func togglePopover(_ isDefaultButton:Bool = true) {
         addLog(text: "togglePopover start")
         menuOpenedFromFloatingBar = false
@@ -2858,8 +2909,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if isDefaultButton{
             if let button = statusItem.button{
                 if SettingsManagerObject.isMenuPopoverEnabled{
-                    button.window?.becomeKey()
                     popover.show(relativeTo: button.bounds, of: button, preferredEdge: NSRectEdge.minY)
+                    // Make the POPOVER'S own window key (not the status button's). The old
+                    // `button.window?.becomeKey()` left the status-item window key and the popover
+                    // non-key, so the .transient popover never armed its outside-click auto-dismiss —
+                    // clicking away didn't close the menu. This matches the floating-bar path below.
+                    menuViewControllerObj?.view.window?.makeKey()
                 }else{
                     getMenuWindowObject().showWindow(self)
                     NSApplication.shared.activate(ignoringOtherApps: true)
@@ -2901,15 +2956,49 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 break;
             }
         }
+
+        // Window mode is a pinned, detached window: it should stay open until the user explicitly
+        // closes it (a menu action, the pin toggle, or clicking the status item) — so we no longer
+        // auto-dismiss it on an outside click, which made window mode behave just like the popover.
+        // Popover mode keeps its own .transient auto-dismiss; nothing to install here.
     }
     
     func closePopover() {
         addLog(text: "closePopover")
+        removeMenuOutsideClickMonitors()
         if SettingsManagerObject.isMenuPopoverEnabled{
             popover.performClose(nil)
         }else{
             getMenuWindowObject().window?.close()
         }
+    }
+
+    /// Watch for clicks outside the menu window and close it (the window doesn't auto-dismiss like a
+    /// .transient popover). Global monitor catches clicks in other apps; local monitor catches clicks
+    /// elsewhere in our own app. Only used in window mode.
+    func installMenuOutsideClickMonitors() {
+        guard !SettingsManagerObject.isMenuPopoverEnabled else { return }
+        removeMenuOutsideClickMonitors()
+        menuOutsideClickMonitorGlobal = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            self?.closeMenuIfClickedOutside(nil)
+        }
+        menuOutsideClickMonitorLocal = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
+            self?.closeMenuIfClickedOutside(event)
+            return event
+        }
+    }
+
+    func removeMenuOutsideClickMonitors() {
+        if let m = menuOutsideClickMonitorGlobal { NSEvent.removeMonitor(m); menuOutsideClickMonitorGlobal = nil }
+        if let m = menuOutsideClickMonitorLocal { NSEvent.removeMonitor(m); menuOutsideClickMonitorLocal = nil }
+    }
+
+    private func closeMenuIfClickedOutside(_ localEvent: NSEvent?) {
+        guard let menuWindow = menuWcObj?.window, menuWindow.isVisible else { removeMenuOutsideClickMonitors(); return }
+        // A local click inside the menu window itself must not dismiss it.
+        if let event = localEvent, event.window == menuWindow { return }
+        closeMenuWindowIsVisible()
+        removeMenuOutsideClickMonitors()
     }
     
     @objc func menuItem_Reactivate(){
@@ -3264,11 +3353,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if !(mainViewControllerObj?.isViewLoaded ?? false){
             mainViewControllerObj?.loadView()
         }
-        if arrAllCustomRoutine.count == 0{
-            leftMenuVcObj?.boxCustomRoutine.isHidden = true
-        }else{
-            leftMenuVcObj?.boxCustomRoutine.isHidden = false
-        }
+        // Custom Routine is removed from the menu (it lives in the Day Plan's Custom Routines panel),
+        // so keep it hidden regardless of whether the user has custom routines.
+        leftMenuVcObj?.boxCustomRoutine.isHidden = true
         mainViewControllerObj?.expandLeftPanel()
         leftMenuVcObj?.enableAllItems()
         // show floating bar
@@ -4149,6 +4236,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 addLog(text: "Appointment popup is visible :- return.")
                 if macGoesInSleepTime != nil{// it means popup comes after mac goes to sleep
                     popupAppointmentTimeWcObj?.window?.close()// // added on 2/9/25 on version 2.27.409 . before today it was returning from here
+                }else if isShutOffTimeGoing() || isCutOffTimeGoing(){
+                    // SECURITY: a Late No More appointment popup must NOT suppress shut-off / cut-off
+                    // enforcement — otherwise unlocking past cut-off lets the user straight in without
+                    // the required password. Close the popup and fall through to the enforcement below.
+                    addLog(text: "Appointment popup visible but past shut-off/cut-off — enforcing password instead of returning.")
+                    popupAppointmentTimeWcObj?.window?.close()
                 }else{
                     return;
                 }
@@ -4239,7 +4332,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     
     
-    var isProcessingHabitRoutine = false
+    var isProcessingHabitRoutine = false {
+        didSet {
+            // When a routine refetch finishes, the filtered habit arrays are now finalized
+            // (completed habits filtered out) — refresh the Schedule tab so it picks up the
+            // same source the habit list does, instead of waiting for its next timer tick.
+            if oldValue && !isProcessingHabitRoutine {
+                DispatchQueue.main.async {
+                    if pendingReturnToSchedule {
+                        pendingReturnToSchedule = false
+                        firstViewControllerObj?.selectScheduleTab()
+                        routinePostponedInfoVcObj?.selectScheduleTab()
+                    }
+                    firstViewControllerObj?.refreshScheduleIfVisible()
+                    routinePostponedInfoVcObj?.refreshScheduleIfVisible()
+                }
+            }
+        }
+    }
     var isProcesssingOfflineData = false
     
     func processOfflineData(){// move it in routine data
@@ -5342,6 +5452,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                             
                                             
                                             if let todayRoutineProgress = json?.value(forKey: "today_routine_progress") as? NSDictionary{
+                                                captureDayPlanCompletedIds(todayRoutineProgress)
                                                 if let morningRoutine = todayRoutineProgress.value(forKey: "morning_routine") as? NSDictionary,let sequenceID = arrFilteredMorningHabits.first?.activity_sequence_id{
                                                     if let todaySequenceId = morningRoutine.value(forKey: "sequence_id") as? String, let status = morningRoutine.value(forKey: "status") as? String{
                                                         if todaySequenceId == sequenceID && status.lowercased() == "completed"{
@@ -5373,10 +5484,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                             // new work  26/4/25 / cehck from "today_routine_progress" in app version 1.22.362
                                             
                                             if let todayRoutineProgress = json?.value(forKey: "today_routine_progress") as? NSDictionary{
+                                                captureDayPlanCompletedIds(todayRoutineProgress)
                                                 if let morningRoutine = todayRoutineProgress.value(forKey: "morning_routine") as? NSDictionary,let sequenceID = arrFilteredMorningHabits.first?.activity_sequence_id{
                                                     if let todaySequenceId = morningRoutine.value(forKey: "sequence_id") as? String, let status = morningRoutine.value(forKey: "status") as? String{
                                                         let statusLowerCased = status.lowercased()
-                                                        if todaySequenceId == sequenceID && (statusLowerCased == "in_progress" || statusLowerCased == "postponed"){
+                                                        if todaySequenceId == sequenceID && (statusLowerCased == "in_progress" || statusLowerCased == "postponed") && currentState != ._CUSTOM_ROUTINE_{
                                                             
                                                             
                                                             addLog(text: "morning habit sequnce is pending. start from current pending habit")
@@ -6183,6 +6295,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                         
                         if let todayRoutineProgress = json?.value(forKey: "today_routine_progress") as? NSDictionary{
+                            captureDayPlanCompletedIds(todayRoutineProgress)
                             if let eveningRoutine = todayRoutineProgress.value(forKey: "evening_routine") as? NSDictionary,let sequenceID = arrFilteredEveningHabits.first?.activity_sequence_id{
                                 if let todaySequenceId = eveningRoutine.value(forKey: "sequence_id") as? String, let status = eveningRoutine.value(forKey: "status") as? String{
                                     if todaySequenceId == sequenceID && status.lowercased() == "completed"{
@@ -6219,6 +6332,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                         
                         if let todayRoutineProgress = json?.value(forKey: "today_routine_progress") as? NSDictionary{
+                            captureDayPlanCompletedIds(todayRoutineProgress)
                             if let morningRoutine = todayRoutineProgress.value(forKey: "evening_routine") as? NSDictionary,let sequenceID = arrFilteredEveningHabits.first?.activity_sequence_id{
                                 if let todaySequenceId = morningRoutine.value(forKey: "sequence_id") as? String, let status = morningRoutine.value(forKey: "status") as? String{
                                     let statusLowerCased = status.lowercased()
@@ -9382,3 +9496,86 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
 
 }
+#if DEBUG
+// MARK: - Claude debug task (one user only)
+//
+// Adds a Help-menu item that bundles the current debug logs into a timestamped folder and writes a
+// TASK.md describing the issue, ready to hand to Claude. Gated to a single user ID AND compiled out of
+// Release builds, so it never appears for anyone else.
+final class ClaudeDebugTaskMenu: NSObject {
+    static let shared = ClaudeDebugTaskMenu()
+    private static let allowedUserId = "9884b0af-dc9f-4207-964e-e4db537a2234"
+    private static let menuTitle = "Create Claude debug task…"
+
+    /// Installs the Help-menu item if the logged-in user matches. Idempotent.
+    static func installIfAllowed() {
+        guard (appdelegate?.user?.userId ?? "") == allowedUserId else { return }
+        guard let helpMenu = NSApp.mainMenu?.items.compactMap({ $0.submenu }).first(where: { $0.title == "Help" }) else { return }
+        guard !helpMenu.items.contains(where: { $0.title == menuTitle }) else { return }
+        helpMenu.addItem(.separator())
+        let item = NSMenuItem(title: menuTitle, action: #selector(shared.createTask), keyEquivalent: "")
+        item.target = shared
+        helpMenu.addItem(item)
+    }
+
+    @objc func createTask() {
+        // Ask what Claude should look into.
+        let alert = NSAlert()
+        alert.messageText = "Create a Claude debug task"
+        alert.informativeText = "Describe what went wrong / what Claude should investigate. The current logs are bundled into a folder with this note."
+        alert.addButton(withTitle: "Create")
+        alert.addButton(withTitle: "Cancel")
+        let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 380, height: 110))
+        textView.font = .systemFont(ofSize: 12)
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 380, height: 110))
+        scroll.documentView = textView
+        scroll.hasVerticalScroller = true
+        scroll.borderType = .bezelBorder
+        alert.accessoryView = scroll
+        alert.window.initialFirstResponder = textView
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let note = textView.string.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let fm = FileManager.default
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+        let stamp = f.string(from: Date())
+        let folder = fm.homeDirectoryForCurrentUser.appendingPathComponent("FocusBear-Claude-Tasks/\(stamp)")
+        try? fm.createDirectory(at: folder, withIntermediateDirectories: true)
+
+        // Bundle the debug logs.
+        var copied: [String] = []
+        if let logsURL = DebugLogsFolderURL,
+           let items = try? fm.contentsOfDirectory(at: logsURL, includingPropertiesForKeys: nil) {
+            let logsDst = folder.appendingPathComponent("logs")
+            try? fm.createDirectory(at: logsDst, withIntermediateDirectories: true)
+            for src in items where src.pathExtension == "txt" {
+                let dst = logsDst.appendingPathComponent(src.lastPathComponent)
+                try? fm.copyItem(at: src, to: dst)
+                copied.append("logs/\(src.lastPathComponent)")
+            }
+        }
+
+        let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? appVersion
+        let build = (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? ""
+        let task = """
+        # Focus Bear — Claude debug task
+
+        - Created: \(stamp)
+        - App version: \(version) (\(build))
+        - User: \(appdelegate?.user?.userId ?? "")
+
+        ## What to investigate
+        \(note.isEmpty ? "_(no description provided)_" : note)
+
+        ## Logs
+        \(copied.isEmpty ? "_(no logs found)_" : copied.map { "- \($0)" }.joined(separator: "\n"))
+
+        ---
+        Hand this to Claude with: "work on the task in \(folder.path)"
+        """
+        try? task.write(to: folder.appendingPathComponent("TASK.md"), atomically: true, encoding: .utf8)
+        // Intentionally not revealing the folder in Finder — repeated reports piled up windows for
+        // the user to close. The report still lands in ~/FocusBear-Claude-Tasks for Claude to pick up.
+    }
+}
+#endif

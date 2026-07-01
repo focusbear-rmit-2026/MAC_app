@@ -1,0 +1,99 @@
+{
+  "title": "High school student — a school day",
+  "baseDate": "2026-06-22",
+  "dayStart": "07:00",
+  "dayEnd": "21:00",
+  "morningStart": "07:00",
+  "eveningStart": "20:00",
+  "deepWorkCutoff": "17:00",
+  "sprintWorkMinutes": 25,
+  "sprintBreakMinutes": 5,
+
+  "routines": [
+    {
+      "name": "🌅 Morning routine",
+      "start": "07:00",
+      "end": "08:00",
+      "habits": [
+        { "title": "🛏️ Make bed", "minutes": 5 },
+        { "title": "🚿 Shower", "minutes": 15 },
+        { "title": "🍳 Breakfast", "minutes": 15 },
+        { "title": "🦷 Brush teeth", "minutes": 5 },
+        { "title": "🎒 Pack school bag", "minutes": 10 }
+      ]
+    },
+    {
+      "name": "🌙 Evening routine",
+      "start": "20:00",
+      "end": "21:00",
+      "habits": [
+        { "title": "📵 Phone on charger (out of room)", "minutes": 5 },
+        { "title": "🪥 Brush teeth", "minutes": 5 },
+        { "title": "📖 Read", "minutes": 20 },
+        { "title": "😴 Lights out", "minutes": 5 }
+      ]
+    }
+  ],
+
+  "events": [
+    { "title": "🚌 Bus to school", "start": "08:00", "end": "08:30" },
+    { "title": "📐 Period 1 — Maths", "start": "08:30", "end": "09:30" },
+    { "title": "📖 Period 2 — English", "start": "09:30", "end": "10:30" },
+    { "title": "☕ Recess", "start": "10:30", "end": "10:50" },
+    { "title": "🔬 Period 3 — Science", "start": "10:50", "end": "11:50" },
+    { "title": "🌏 Period 4 — History", "start": "11:50", "end": "12:50" },
+    { "title": "🥪 Lunch", "start": "12:50", "end": "13:30" },
+    { "title": "🏃 Period 5 — PE", "start": "13:30", "end": "14:30" },
+    { "title": "🎨 Period 6 — Art", "start": "14:30", "end": "15:00" },
+    { "title": "🎮 Gaming time", "start": "17:00", "end": "18:00" },
+    { "title": "🍽️ Dinner with family", "start": "18:00", "end": "18:45" }
+  ],
+
+  "tasks": [
+    {
+      "title": "Algebra problem set (Ch. 5)",
+      "minutes": 30,
+      "project": "Maths",
+      "outcome": 7,
+      "at": "15:00",
+      "subtasks": ["Questions 1–10", "Check answers at back"]
+    },
+    {
+      "title": "Science: write up the titration lab report",
+      "minutes": 40,
+      "project": "Science",
+      "outcome": 8,
+      "at": "15:30",
+      "subtasks": ["Method + results", "Graph the data", "Conclusion"]
+    },
+    {
+      "title": "Read 2 chapters of To Kill a Mockingbird",
+      "minutes": 25,
+      "project": "English",
+      "outcome": 6,
+      "at": "16:00"
+    },
+    {
+      "title": "Study for Friday's history quiz",
+      "minutes": 20,
+      "project": "History",
+      "outcome": 5,
+      "at": "16:30"
+    },
+    {
+      "title": "Spanish vocab flashcards",
+      "minutes": 15,
+      "project": "Spanish",
+      "outcome": 4,
+      "done": true,
+      "at": "16:30"
+    },
+    {
+      "title": "Practice guitar",
+      "minutes": 20,
+      "project": "Music",
+      "outcome": 3,
+      "at": "16:00"
+    }
+  ]
+}

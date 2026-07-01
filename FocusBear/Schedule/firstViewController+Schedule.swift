@@ -1,0 +1,221 @@
+//
+//  firstViewController+Schedule.swift
+//  Focus Bear
+//
+//  Adds the "Schedule | Habits" tab to the normal habit-list screen and makes it a
+//  ScheduleHost so the Schedule cards drive its existing Start/Done/Skip logic. Done as
+//  an extension (with associated objects for the added views) so the storyboard and the
+//  3.6k-line firstViewController stay untouched apart from one setup call in viewDidLoad.
+//
+
+import Cocoa
+
+private var fvcScheduleVCKey: UInt8 = 0
+private var fvcTitleHeightKey: UInt8 = 0
+
+extension firstViewController: ScheduleHost {
+
+    private var scheduleVC: scheduleViewController? {
+        get { objc_getAssociatedObject(self, &fvcScheduleVCKey) as? scheduleViewController }
+        set { objc_setAssociatedObject(self, &fvcScheduleVCKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
+    }
+
+    /// Height-0 constraint that collapses lblTitle while the Day Plan fronts the habit list. Kept so
+    /// it can be deactivated during a micro break, where lblTitle is the list's header (the
+    /// "It's time to micro break…" title that was reported missing).
+    private var dayPlanTitleHeight: NSLayoutConstraint? {
+        get { objc_getAssociatedObject(self, &fvcTitleHeightKey) as? NSLayoutConstraint }
+        set { objc_setAssociatedObject(self, &fvcTitleHeightKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
+    }
+
+    /// Installs the Day Plan container (shown by default). Idempotent.
+    func setupScheduleTab() {
+        guard scheduleVC == nil else { return }
+        // Seed completed-habit ids from the persisted cache so the first render hides already-done
+        // habits even before current-activity-props returns (the old habit UI's source of truth).
+        loadPersistedDayPlanCompletedIds()
+        let sched = ScheduleTab.install(in: self)
+        sched.host = self
+        scheduleVC = sched
+        // Collapse the routine greeting + "select the habit…" line so they don't overlap the Day Plan.
+        // lblSelectHabits stays collapsed always; lblTitle is restored during a micro break (its
+        // header), so keep a handle to its height constraint to toggle in updateScheduleTabForState.
+        if let l = lblSelectHabits {
+            l.isHidden = true
+            l.stringValue = ""
+            let h = l.heightAnchor.constraint(equalToConstant: 0); h.priority = .required; h.isActive = true
+        }
+        if let l = lblTitle {
+            l.isHidden = true
+            l.stringValue = ""
+            let h = l.heightAnchor.constraint(equalToConstant: 0); h.priority = .required; h.isActive = true
+            dayPlanTitleHeight = h
+        }
+        updateScheduleTabForState()            // sync visibility with the current state
+    }
+
+    func refreshScheduleIfVisible() {
+        if scheduleVC?.view.isHidden == false { scheduleVC?.reload() }
+    }
+
+    /// Whether the Day Plan (not the Habits view) is currently showing.
+    var isScheduleTabSelected: Bool { scheduleVC?.view.isHidden == false }
+
+    /// Show the Day Plan and refresh it (used to keep the user on it after a remote completion
+    /// re-syncs the routine instead of yanking them into the next habit).
+    func selectScheduleTab() {
+        scheduleVC?.view.isHidden = false
+        setHabitListHiddenForDayPlan(true)
+        scheduleVC?.startAutoRefresh()
+    }
+
+    /// Hide the habit list while the Day Plan covers it. A visible-but-occluded NSTableView still
+    /// installs its cells' `activeAlways` tracking areas (which is why a hand cursor appeared over
+    /// "blank" Day Plan areas) and stays hit-testable (so clicks fell through and started the
+    /// selected habit). Hidden views neither track nor hit-test; the Day Plan still drives the
+    /// table programmatically (reloadData/selectRowIndexes work while hidden).
+    private func setHabitListHiddenForDayPlan(_ hidden: Bool) {
+        // The legacy habit-selection controls behind the Day Plan (custom Button / cursorButton /
+        // underLineButton classes) keep firing their activeAlways tracking areas (hand cursor) and
+        // stay hit-testable (stray clicks — e.g. starting the selected habit), so suppress them while
+        // the Day Plan fronts the list. The Day Plan's own buttons and the programmatic start (the
+        // action is called directly) are unaffected.
+        //
+        // SHARED controls (Start button + habit table) are reused by the micro-break UI, so toggle
+        // them symmetrically — they must be restored (un-hidden) when the Day Plan isn't fronting
+        // the list, otherwise the break's Start button / activity list stay hidden.
+        scrollViewHabits?.isHidden = hidden
+        tblViewHabits?.isHidden = hidden
+        btnStartFirstHabit?.isHidden = hidden
+        // Habit-select-only controls — hide-only. The legacy state code (viewWillAppear) keeps these
+        // hidden in break states anyway, so there's nothing to restore.
+        if hidden {
+            btnEditHabits?.isHidden = true
+            btnSelectHabitsToDo?.isHidden = true
+            btnInfo?.isHidden = true
+            boxSegmentControlOfficeMode?.isHidden = true
+        }
+    }
+
+    /// The Day Plan is shown for routine planning, but break activities (micro breaks / breathing)
+    /// aren't part of planning — hide it then so the Habits view underneath shows instead.
+    func updateScheduleTabForState() {
+        guard let sched = scheduleVC else { return }
+        let isBreak = currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_
+        sched.view.isHidden = isBreak
+        // Restore lblTitle as the micro-break list's header (the "It's time to micro break…" title);
+        // it's collapsed in every other state because the Day Plan covers it.
+        let showMicroBreakTitle = currentState == ._MICRO_BREAK_
+        lblTitle?.isHidden = !showMicroBreakTitle
+        dayPlanTitleHeight?.isActive = !showMicroBreakTitle
+        // Hide the host habit list only when the Day Plan is actually COVERING it — i.e. visible
+        // (not a break) AND showing its own content. In the custom-routine "Custom routine" tab the
+        // Day Plan content is hidden to reveal this list, so it must stay visible (otherwise both are
+        // hidden = blank screen). Onboarding reuses this screen with its own controls — leave them.
+        let dayPlanCovering = !isBreak && !sched.isDayPlanContentHidden
+        if currentState != ._ONBOARDING_ { setHabitListHiddenForDayPlan(dayPlanCovering) }
+        // Drop any stale manual habit pick so the highlight follows the in-progress habit (now at the
+        // top of the reordered list) when we return to the Day Plan after starting/pausing a habit.
+        sched.clearSelectedHabit()
+        if isBreak { sched.stopAutoRefresh() } else { sched.startAutoRefresh() }
+        // Sync the player's time-of-day clock with what's actually on screen. (Don't use
+        // setDateTimeClockHidden(!isBreak) — that hid the clock on the state change into a *playing*
+        // habit, e.g. starting from the Postponed list, since this state isn't a break.)
+        habitsVcObj?.refreshDateTimeClockVisibility()
+    }
+
+    /// Lightweight list-visibility re-sync (no reload/auto-refresh) — safe to call from within the
+    /// Day Plan's reload, unlike updateScheduleTabForState().
+    func refreshHabitListVisibilityForDayPlan() {
+        guard let sched = scheduleVC else { return }
+        let isBreak = currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_
+        let dayPlanCovering = !isBreak && !sched.isDayPlanContentHidden
+        if currentState != ._ONBOARDING_ { setHabitListHiddenForDayPlan(dayPlanCovering) }
+    }
+
+    // MARK: - ScheduleHost
+
+    /// The habit array currently backing the Day Plan, matching the on-screen routine state. Shared by
+    /// scheduleSegments (render) and scheduleStart (so the tapped index maps to the same habit).
+    private var scheduleSourceHabits: [habit] {
+        switch currentState {
+        case ._EVENING_HABIT_, ._POSTPONE_EVENING_HABIT_:
+            return arrFilteredEveningHabits
+        case ._CUSTOM_ROUTINE_:
+            let valid = currentRoutineIndex < arrAllCustomRoutine.count
+            return valid ? arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits : []
+        default:
+            return arrFilteredMorningHabits
+        }
+    }
+
+    func scheduleSegments(now: Date) -> [ScheduleRoutineSegment] {
+        let source = scheduleSourceHabits
+        let name: String
+        let isMorning: Bool
+        switch currentState {
+        case ._EVENING_HABIT_, ._POSTPONE_EVENING_HABIT_:
+            name = ScheduleText.eveningRoutineHabits; isMorning = false
+        case ._CUSTOM_ROUTINE_:
+            let valid = currentRoutineIndex < arrAllCustomRoutine.count
+            name = valid ? "\(arrAllCustomRoutine[currentRoutineIndex].title) \(ScheduleText.habitsSuffix)" : ScheduleText.morningRoutineHabits
+            isMorning = false
+        default:
+            name = ScheduleText.morningRoutineHabits; isMorning = true
+        }
+        return ScheduleTab.standardSegments(activeName: name,
+                                            activeHabits: ScheduleTab.habitInputs(from: source, now: now),
+                                            isMorningActive: isMorning, now: now)
+    }
+
+    /// Whether `index` is still a valid row in the live habit table. The Day Plan can hand back a stale
+    /// index (e.g. the habit list shrank from a skip/refresh between render and tap); acting on it would
+    /// index past the habit array and crash (sortMorningHabitsBySelectedFirst etc.), so callers re-sync
+    /// the Day Plan instead of starting/finishing the wrong habit.
+    private func isLiveScheduleIndex(_ index: Int) -> Bool {
+        guard let tbl = tblViewHabits else { return false }
+        // NSTableView caches its row count, so a Day Plan index can pass an index >= the live habit
+        // array even when numberOfRows looks fine — then viewFor:row: / the start handlers index past
+        // the array and crash. reloadData() re-syncs the cached count to the live array first.
+        tbl.reloadData()
+        return index >= 0 && index < tbl.numberOfRows
+    }
+
+    func scheduleStart(index: Int) {
+        guard isLiveScheduleIndex(index) else { refreshScheduleIfVisible(); return }
+        // If the tapped habit is the one currently RUNNING as an allowed-activity habit, don't restart
+        // it — just switch back to its Habit Player tab. But when it's PAUSED, fall through so tapping
+        // Play resumes it (previously this early-return showed the player without resuming, so pausing
+        // an allowed-app habit and tapping Play did nothing).
+        let source = scheduleSourceHabits
+        if index < source.count, let playing = currentHabitPlaying,
+           playing.isAllowedActivityHabit, let pid = playing.id, source[index].id == pid,
+           !(timerViewcontrollerObj?.isActivityPaused ?? false) {
+            timerViewcontrollerObj?.showAllowedActivityPlayerTab()
+            return
+        }
+        tblViewHabits?.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
+        btnStartFirstHabitClicked(self)
+    }
+
+    func scheduleDone(index: Int) {
+        guard isLiveScheduleIndex(index) else { refreshScheduleIfVisible(); return }
+        let proxy = NSButton(); proxy.tag = index
+        btnDoneClicked(sender: proxy)
+        // Reflect the completion straight away rather than waiting for the next refresh tick.
+        DispatchQueue.main.async { [weak self] in self?.refreshScheduleIfVisible() }
+    }
+
+    func scheduleSkip(index: Int) {
+        guard isLiveScheduleIndex(index) else { refreshScheduleIfVisible(); return }
+        let proxy = NSButton(); proxy.tag = index
+        btnSkipClicked(sender: proxy)
+        DispatchQueue.main.async { [weak self] in self?.refreshScheduleIfVisible() }
+    }
+
+    /// Opens the same "choose which habits to do today" sheet as the Habits view's
+    /// "I don't have time for all these habits" button.
+    func scheduleSkipRoutineForToday() {
+        showChooseHabitsView()
+    }
+}

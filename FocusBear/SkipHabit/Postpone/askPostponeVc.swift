@@ -286,11 +286,11 @@ class askPostponeVc: NSViewController {
         if currentState == ._MORNING_HABIT_{
             if activityPostponeCount == 0 && postponeTime > 15{//when user clicks Please spare me for the first time, if the user selects to postpones for longer than 15 then the password will be asked.//#441
                 
-                if shouldAskPassword() && SettingsManagerObject.isPasswordRequireInSkipMorning{
+                if shouldAskPassword() && SettingsManagerObject.isPasswordRequireInPostponeMorning{
                     self.view.removeFromSuperview()
                     getHabitsVcObject().showPasswordView()
                     enterPasswordVcObj?.parentVc = self
-                    
+
                 }else{
                     activityPostponeCount += 1
                     self.view.removeFromSuperview()
@@ -304,37 +304,30 @@ class askPostponeVc: NSViewController {
             }
             
         }else if currentState == ._EVENING_HABIT_{
-            if activityPostponeCount == 0 && postponeTime > 15{//when user clicks Please spare me for the first time, if the user selects to postpones for longer than 15 then the password will be asked.//#441
-                
-                if shouldAskPassword(){
-                    if isCutOffTimeGoing(){// changed in 2.27.422  : isHighPrioritySequenceGoing->isCutOffTimeGoing()// allready asked password if high Priority Sequence is Going
-                        self.view.removeFromSuperview()
-                        activityPostponeCount += 1
-                        getHabitsVcObject().postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
-                        
-                    }else{
-                        if SettingsManagerObject.isPasswordRequireInSkipEvening{
-                            self.view.removeFromSuperview()
-                            getHabitsVcObject().showPasswordView()
-                            enterPasswordVcObj?.parentVc = self
-                        }else{
-                            activityPostponeCount += 1
-                            self.view.removeFromSuperview()
-                            getHabitsVcObject().postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
-                        }
-                    }
-                }else{
-                    activityPostponeCount += 1
-                    self.view.removeFromSuperview()
-                    getHabitsVcObject().postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
+            // Decide whether THIS postpone needs the password. After the cutoff time the
+            // "require password to postpone evening after cutoff" rule applies for ANY postpone
+            // length — previously this branch assumed the password had already been asked and let
+            // every after-cutoff postpone (incl. the ≤15-minute ones) through for free. Before cutoff,
+            // only the first >15-minute postpone is gated (#441). shouldAskPassword()'s 2-minute window
+            // still prevents a double prompt if a password was just entered.
+            var requirePassword = false
+            if shouldAskPassword(){
+                if isCutOffTimeGoing(){// changed in 2.27.422 : isHighPrioritySequenceGoing -> isCutOffTimeGoing()
+                    requirePassword = SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff
+                }else if activityPostponeCount == 0 && postponeTime > 15{
+                    requirePassword = SettingsManagerObject.isPasswordRequireInPostponeEvening
                 }
-                
-            }else{
+            }
+            if requirePassword{
                 self.view.removeFromSuperview()
+                getHabitsVcObject().showPasswordView()
+                enterPasswordVcObj?.parentVc = self
+            }else{
                 activityPostponeCount += 1
+                self.view.removeFromSuperview()
                 getHabitsVcObject().postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
             }
-            
+
         }else if currentState == ._MICRO_BREAK_{
             if isShowingAskOfficeModeView{
                 addLog(text: "Ask postpone view - Show Activity postpone View")
@@ -352,16 +345,16 @@ class askPostponeVc: NSViewController {
                 var shouldShowPasswordView = false
                 if cutOffTime != nil{
                     if isCutOffTimeGoing(){
-                        if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                        if SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff{
                             shouldShowPasswordView = true
                         }
                     }else{
-                        if SettingsManagerObject.isPasswordRequireInSkipEvening{
+                        if SettingsManagerObject.isPasswordRequireInPostponeEvening{
                             shouldShowPasswordView = true
                         }
                     }
                 }else{
-                    if SettingsManagerObject.isPasswordRequireInSkipEvening{
+                    if SettingsManagerObject.isPasswordRequireInPostponeEvening{
                         shouldShowPasswordView = true
                     }
                 }

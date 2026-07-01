@@ -90,11 +90,51 @@ class accessibilityPermissionVc: NSViewController {
         getDistractionBlockingProgressVcObj().setProgress(level: 3, progress: 0.25)
 
         imgViewTick.isHidden = true
-        
+
         //progress
         self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
         self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
         getDistractionBlockingProgressVcObj().setProgress(level: 3, progress: 0.5)
+
+        // Make the System-Settings mock image a shortcut: clicking it opens the Accessibility pane
+        // directly so the user doesn't have to navigate System Settings by hand. Tooltip + pointing-
+        // hand cursor signal that it's clickable.
+        imgViewPermission.toolTip = "Open Accessibility settings"
+        imgViewPermission.addGestureRecognizer(
+            NSClickGestureRecognizer(target: self, action: #selector(imgPermissionClicked)))
+        imgViewPermission.addTrackingArea(
+            NSTrackingArea(rect: .zero, options: [.activeAlways, .mouseEnteredAndExited, .inVisibleRect],
+                           owner: self, userInfo: nil))
+
+        // Explicit text link below the image — same action — for users who don't realise the image
+        // itself is clickable.
+        let linkText = (configjson["accessibilityPermissionVcInfoNew"] as? [String: Any])?["openSettingsLink"] as? String
+            ?? "Open Accessibility settings"
+        let openSettingsLink = NSButton(title: linkText, target: self, action: #selector(imgPermissionClicked))
+        openSettingsLink.isBordered = false
+        openSettingsLink.bezelStyle = .inline
+        openSettingsLink.translatesAutoresizingMaskIntoConstraints = false
+        openSettingsLink.attributedTitle = NSAttributedString(string: linkText, attributes: [
+            .foregroundColor: NSColor(named: "dark_OrangeColor") ?? NSColor.systemOrange,
+            .underlineStyle: NSUnderlineStyle.single.rawValue,
+            .font: NSFont.systemFont(ofSize: 13, weight: .medium),
+        ])
+        view.addSubview(openSettingsLink)
+        NSLayoutConstraint.activate([
+            openSettingsLink.centerXAnchor.constraint(equalTo: imgViewPermission.centerXAnchor),
+            openSettingsLink.topAnchor.constraint(equalTo: imgViewPermission.bottomAnchor, constant: 8),
+        ])
+    }
+
+    override func mouseEntered(with event: NSEvent) { NSCursor.pointingHand.set() }
+    override func mouseExited(with event: NSEvent) { NSCursor.arrow.set() }
+
+    /// Opens System Settings → Privacy & Security → Accessibility (matches firefoxPermissionsVc).
+    @objc func imgPermissionClicked() {
+        addLog(text: "[user-action] accessibilityPermissionVc:- permission image clicked → open Accessibility settings")
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     override func viewWillAppear() {

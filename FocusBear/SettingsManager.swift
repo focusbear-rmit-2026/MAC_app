@@ -35,6 +35,11 @@ class SettingsManager:NSObject{
     var isPasswordRequireInSkipMorning = true
     var isPasswordRequireInSkipEvening = true
     var isPasswordRequireInSkipEveningAfterCutOff = true
+    // Separate password rules for POSTPONE (vs Skip). Local device settings; default OFF (set per
+    // user via the Settings checkboxes). See kUserdefaultsPasswordRequireInPostpone*.
+    var isPasswordRequireInPostponeMorning = false
+    var isPasswordRequireInPostponeEvening = false
+    var isPasswordRequireInPostponeEveningAfterCutOff = false
     var isPasswordRequireInAbortShutoff = true
     var isPasswordRequireInStopPomodoro = true
     var isPasswordRequireInQuitApp = true
@@ -114,6 +119,9 @@ class SettingsManager:NSObject{
     var kUserdefaultsPasswordRequireInSkipMorning = "kUserdefaultsPasswordRequireInSkipMorning"
     var kUserdefaultsPasswordRequireInSkipEvening = "kUserdefaultsPasswordRequireInSkipEvening"
     var kUserdefaultsPasswordRequireInSkipEveningAfterCutOff = "kUserdefaultsPasswordRequireInSkipEveningAfterCutOff"
+    var kUserdefaultsPasswordRequireInPostponeMorning = "kUserdefaultsPasswordRequireInPostponeMorning"
+    var kUserdefaultsPasswordRequireInPostponeEvening = "kUserdefaultsPasswordRequireInPostponeEvening"
+    var kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff = "kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff"
     var kUserdefaultsPasswordRequireInAbortShutoff = "kUserdefaultsPasswordRequireInAbortShutoff"
     var kUserdefaultsPasswordRequireInStopPomodoro = "kUserdefaultsPasswordRequireInStopPomodoro"
     var kUserdefaultsPasswordRequireInQuitApp = "kUserdefaultsPasswordRequireInQuitApp"
@@ -238,6 +246,9 @@ class SettingsManager:NSObject{
         kUserdefaultsPasswordRequireInSkipMorning = kUserdefaultsPasswordRequireInSkipMorning + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInSkipEvening = kUserdefaultsPasswordRequireInSkipEvening + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInSkipEveningAfterCutOff = kUserdefaultsPasswordRequireInSkipEveningAfterCutOff + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsPasswordRequireInPostponeMorning = kUserdefaultsPasswordRequireInPostponeMorning + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsPasswordRequireInPostponeEvening = kUserdefaultsPasswordRequireInPostponeEvening + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff = kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInAbortShutoff = kUserdefaultsPasswordRequireInAbortShutoff + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInStopPomodoro = kUserdefaultsPasswordRequireInStopPomodoro + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInQuitApp = kUserdefaultsPasswordRequireInQuitApp + (appdelegate?.user?.userId ?? "")
@@ -390,6 +401,9 @@ class SettingsManager:NSObject{
                 let kIsPasswordRequireInSkipMorning = "kIsPasswordRequireInSkipMorning"
                 let kIsPasswordRequireInSkipEvening = "kIsPasswordRequireInSkipEvening"
                 let kIsPasswordRequireInSkipEveningAfterCutOff = "kIsPasswordRequireInSkipEveningAfterCutOff"
+                let kIsPasswordRequireInPostponeMorning = "kIsPasswordRequireInPostponeMorning"
+                let kIsPasswordRequireInPostponeEvening = "kIsPasswordRequireInPostponeEvening"
+                let kIsPasswordRequireInPostponeEveningAfterCutOff = "kIsPasswordRequireInPostponeEveningAfterCutOff"
                 let kIsPasswordRequireInAbortShutoff = "kIsPasswordRequireInAbortShutoff"
                 let kIsPasswordRequireInStopPomodoro = "kIsPasswordRequireInStopPomodoro"
                 let kIsPasswordRequireInQuitApp = "kIsPasswordRequireInQuitApp"
@@ -491,7 +505,16 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kIsPasswordRequireInSkipEveningAfterCutOff) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInSkipEveningAfterCutOff)
                 }
-                
+                if let val = settings.value(forKey: kIsPasswordRequireInPostponeMorning) as? Bool{
+                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInPostponeMorning)
+                }
+                if let val = settings.value(forKey: kIsPasswordRequireInPostponeEvening) as? Bool{
+                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInPostponeEvening)
+                }
+                if let val = settings.value(forKey: kIsPasswordRequireInPostponeEveningAfterCutOff) as? Bool{
+                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff)
+                }
+
                 if let val = settings.value(forKey: kIsPasswordRequireInAbortShutoff) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInAbortShutoff)
                 }
@@ -857,7 +880,25 @@ class SettingsManager:NSObject{
             }else{
                 UserDefaults.standard.set(isPasswordRequireInSkipEveningAfterCutOff, forKey: kUserdefaultsPasswordRequireInSkipEveningAfterCutOff)
             }
-            
+
+            // Postpone password rules — separate from Skip (default ON so postpone stays protected
+            // while Skip is open). Persisted as local device settings so a toggle can sync later.
+            if let v = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInPostponeMorning) as? Bool {
+                isPasswordRequireInPostponeMorning = v
+            } else {
+                UserDefaults.standard.set(isPasswordRequireInPostponeMorning, forKey: kUserdefaultsPasswordRequireInPostponeMorning)
+            }
+            if let v = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInPostponeEvening) as? Bool {
+                isPasswordRequireInPostponeEvening = v
+            } else {
+                UserDefaults.standard.set(isPasswordRequireInPostponeEvening, forKey: kUserdefaultsPasswordRequireInPostponeEvening)
+            }
+            if let v = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff) as? Bool {
+                isPasswordRequireInPostponeEveningAfterCutOff = v
+            } else {
+                UserDefaults.standard.set(isPasswordRequireInPostponeEveningAfterCutOff, forKey: kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff)
+            }
+
             
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInAbortShutoff) as? Bool{
                 if isEnabled{
@@ -991,6 +1032,15 @@ class SettingsManager:NSObject{
                 selectedFontIndex = font
             }else{
                 UserDefaults.standard.set(selectedFontIndex, forKey: kUserdefaultsselectedFontIndex)
+            }
+            // The short-lived "Lexend as default" migration was reverted — undo it once so anyone it had
+            // auto-switched goes back to System (Lexend stays available as a manual choice). Self-removing.
+            if UserDefaults.standard.bool(forKey: "kLexendDefaultMigrated") {
+                if selectedFontIndex == lexendFontIndex {
+                    selectedFontIndex = systemFontIndex
+                    UserDefaults.standard.set(systemFontIndex, forKey: kUserdefaultsselectedFontIndex)
+                }
+                UserDefaults.standard.removeObject(forKey: "kLexendDefaultMigrated")
             }
             addLog(text: "Parse selectedFontIndex")
             //  ---------------------------SETTINGS Progress Count--------------------------
@@ -1244,6 +1294,9 @@ class SettingsManager:NSObject{
         let kIsPasswordRequireInSkipMorning = "kIsPasswordRequireInSkipMorning"
         let kIsPasswordRequireInSkipEvening = "kIsPasswordRequireInSkipEvening"
         let kIsPasswordRequireInSkipEveningAfterCutOff = "kIsPasswordRequireInSkipEveningAfterCutOff"
+        let kIsPasswordRequireInPostponeMorning = "kIsPasswordRequireInPostponeMorning"
+        let kIsPasswordRequireInPostponeEvening = "kIsPasswordRequireInPostponeEvening"
+        let kIsPasswordRequireInPostponeEveningAfterCutOff = "kIsPasswordRequireInPostponeEveningAfterCutOff"
         let kIsPasswordRequireInAbortShutoff = "kIsPasswordRequireInAbortShutoff"
         let kIsPasswordRequireInStopPomodoro = "kIsPasswordRequireInStopPomodoro"
         let kIsPasswordRequireInQuitApp = "kIsPasswordRequireInQuitApp"
@@ -1330,6 +1383,9 @@ class SettingsManager:NSObject{
             kIsPasswordRequireInSkipMorning:isPasswordRequireInSkipMorning,
             kIsPasswordRequireInSkipEvening:isPasswordRequireInSkipEvening,
             kIsPasswordRequireInSkipEveningAfterCutOff:isPasswordRequireInSkipEveningAfterCutOff,
+            kIsPasswordRequireInPostponeMorning:isPasswordRequireInPostponeMorning,
+            kIsPasswordRequireInPostponeEvening:isPasswordRequireInPostponeEvening,
+            kIsPasswordRequireInPostponeEveningAfterCutOff:isPasswordRequireInPostponeEveningAfterCutOff,
             kIsPasswordRequireInAbortShutoff:isPasswordRequireInAbortShutoff,
             kIsPasswordRequireInStopPomodoro:isPasswordRequireInStopPomodoro,
             kIsPasswordRequireInQuitApp:isPasswordRequireInQuitApp,

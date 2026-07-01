@@ -3709,6 +3709,7 @@
 		0AE172D8F2A4843BFACAD21A0ED26541 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -3772,6 +3773,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 6E00DAB9FEC82463391587AE84E7CFFC /* Pods-Focus Bear.debug.xcconfig */;
 			buildSettings = {
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
@@ -3813,6 +3815,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 3DFFF0BFE9E1636BFD08E6CCDFEAAA66 /* NWWebSocket.debug.xcconfig */;
 			buildSettings = {
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
@@ -3854,6 +3857,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 43D05361E6849FCE831EB891723F74C1 /* TrueTime.release.xcconfig */;
 			buildSettings = {
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
@@ -3895,6 +3899,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 511A4A446F857B3BED784E3EE05DB0C0 /* PusherSwift.release.xcconfig */;
 			buildSettings = {
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
@@ -3936,6 +3941,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 850462474E7DA77BA4C7BE188D918887 /* Pods-Focus Bear.release.xcconfig */;
 			buildSettings = {
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
@@ -3977,6 +3983,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 065C5A438D57AFB103B6B1286CA1C21F /* PusherSwift.debug.xcconfig */;
 			buildSettings = {
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
@@ -4017,6 +4024,7 @@
 		808E544862838153672EA12FCC127D9A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -4084,6 +4092,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 556CCB2803FAE9EA96BD3A9EEF44F440 /* Sentry.release.xcconfig */;
 			buildSettings = {
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				CODE_SIGNING_ALLOWED = NO;
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/Sentry";
@@ -4103,6 +4112,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8ECC1CEC65AD7DA684CB33BF64438754 /* NWWebSocket.release.xcconfig */;
 			buildSettings = {
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
@@ -4144,6 +4154,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 556CCB2803FAE9EA96BD3A9EEF44F440 /* Sentry.release.xcconfig */;
 			buildSettings = {
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
@@ -4185,6 +4196,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 18C26D7E930BA7EB41D606DD021CCD19 /* TweetNacl.release.xcconfig */;
 			buildSettings = {
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
@@ -4225,6 +4237,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 28B6EBCF8A9FC3BD91D03B39123FDEAD /* TrueTime.debug.xcconfig */;
 			buildSettings = {
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
@@ -4266,6 +4279,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = BC575BF86C52A47F3376FA3144C2CF6F /* Sentry.debug.xcconfig */;
 			buildSettings = {
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				CODE_SIGNING_ALLOWED = NO;
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/Sentry";
@@ -4285,6 +4299,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 84BD185886B2E66CEB42407FC73F79B0 /* TweetNacl.debug.xcconfig */;
 			buildSettings = {
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
@@ -4325,6 +4340,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = BC575BF86C52A47F3376FA3144C2CF6F /* Sentry.debug.xcconfig */;
 			buildSettings = {
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
