@@ -964,16 +964,10 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
             return
         }
         if let bar = makeBulkBar() { stack.addArrangedSubview(bar) }   // bulk action bar at the top
-        // All tasks stay in the panel, grouped first by whether they've been dropped onto a block,
-        // then by project within each section.
-        let boxed = all.filter { $0.blockKey != nil }
-        let unboxed = all.filter { $0.blockKey == nil }
-        if !boxed.isEmpty {
-            addSectionHeader(ScheduleText.tasksTimeBoxed)
-            addProjectGroups(boxed)
-        }
-        addSectionHeader(ScheduleText.tasksNotTimeBoxed)
-        addProjectGroups(unboxed)
+        // Single combined list — no "time boxed" / "not yet time boxed" split. Time-boxed tasks
+        // (dropped onto a schedule block, blockKey != nil) are flagged with a clock badge on their
+        // row instead of living under a separate section header. Tasks stay grouped by project.
+        addProjectGroups(all)
     }
 
     /// Sub-group a section's tasks by project (first-appearance order; "No project" last) and render
@@ -1059,16 +1053,10 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         if let rowStack = row as? NSStackView,
            let col = rowStack.arrangedSubviews.first(where: {
                $0.identifier?.rawValue.hasPrefix("namecol:") == true }) {
-            let c = col.widthAnchor.constraint(equalTo: row.widthAnchor, constant: -120)
+            let c = col.widthAnchor.constraint(equalTo: row.widthAnchor, constant: -142)   // -120 fixed cols + 16 time-boxed badge + 6 spacing
             c.priority = NSLayoutConstraint.Priority(999)   // just below required so it can't conflict
             c.isActive = true
         }
-    }
-
-    private func addSectionHeader(_ text: String) {
-        let h = label(text.uppercased(), size: 10, bold: true)
-        h.textColor = .tertiaryLabelColor
-        stack.addArrangedSubview(h)
     }
 
     // MARK: Rows
@@ -1177,12 +1165,26 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
             self?.moveDragVisual(to: screenPoint)
         }
 
+        // Time-boxed badge: a clock on tasks that have been dropped onto a schedule block
+        // (blockKey != nil). The column is always present — image nil when un-boxed — so the
+        // duration column stays aligned across every row. Replaces the old separate section header.
+        let timeBadge = NSImageView()
+        timeBadge.translatesAutoresizingMaskIntoConstraints = false
+        timeBadge.imageScaling = .scaleProportionallyDown
+        timeBadge.contentTintColor = .secondaryLabelColor
+        timeBadge.widthAnchor.constraint(equalToConstant: 16).isActive = true
+        if task.blockKey != nil, #available(macOS 11.0, *) {
+            timeBadge.image = NSImage(systemSymbolName: "clock", accessibilityDescription: "Time-boxed")
+            timeBadge.toolTip = ScheduleText.tasksTimeBoxed
+        }
+
         // Importance: tint the whole task row with the band colour and draw its text in a
         // high-contrast colour (instead of a small dot).
         let importanceBG = DayPlanTask.outcomeColor(task.outcome)
         if let fg = DayPlanTask.outcomeForeground(task.outcome) {
             if !task.done { name.textColor = fg }
             dur.textColor = fg.withAlphaComponent(0.85)
+            if task.blockKey != nil { timeBadge.contentTintColor = fg }
             // The subtask count also needs the high-contrast colour, else it's unreadable on the
             // saturated importance band (reported on red/orange cards).
             if let cb = subtaskCountBtn {
@@ -1192,7 +1194,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
                 ])
             }
         }
-        let row = TaskReorderRow(views: [handle, check, nameColumn, dur])
+        let row = TaskReorderRow(views: [handle, check, nameColumn, timeBadge, dur])
         row.orientation = .horizontal
         row.alignment = .top   // top-align so a wrapped (multi-line) name keeps the controls aligned
         row.spacing = 6
