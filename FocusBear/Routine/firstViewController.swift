@@ -787,11 +787,18 @@ class firstViewController: NSViewController {
         }
     }
     func sortMorningHabitsBySelectedFirst(){
-        if tblViewHabits.selectedRow != 0 && tblViewHabits.selectedRow != -1{
+        // The table view outlet can be nil here when this is reached
+        // programmatically (e.g. scheduleStart -> btnStartFirstHabitClicked)
+        // before/after the view is in the hierarchy, which previously crashed
+        // with an implicit-unwrap nil. Also bounds-check the selected row
+        // against the backing array. See Sentry FOCUS-BEAR-MACOS-10S.
+        guard let tblViewHabits = tblViewHabits else { return }
+        let selectedRow = tblViewHabits.selectedRow
+        if selectedRow > 0 && selectedRow < arrFilteredMorningHabits.count{
             var tempArr = arrFilteredMorningHabits
             arrFilteredMorningHabits.removeAll()
-            arrFilteredMorningHabits.append(tempArr[tblViewHabits.selectedRow])
-            tempArr.remove(at: tblViewHabits.selectedRow)
+            arrFilteredMorningHabits.append(tempArr[selectedRow])
+            tempArr.remove(at: selectedRow)
             for item in tempArr{
                 arrFilteredMorningHabits.append(item)
             }
@@ -1238,6 +1245,14 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
     
     
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        // AppKit can ask for a row that no longer matches our backing arrays
+        // (e.g. while the habit list is re-sorted/cleared during scheduleStart,
+        // before reloadData catches up), which previously crashed with
+        // "Index out of range". numberOfRows(in:) is the source of truth for
+        // the current state's array. See Sentry FOCUS-BEAR-MACOS-10W.
+        guard row >= 0 && row < numberOfRows(in: tableView) else {
+            return NSTableCellView()
+        }
         if let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "tblCellHabits"), owner: nil) as? tblCellHabits {
             cell.boxBg.fillColor = NSColor.clear
             cell.lblTitle.textColor = NSColor.labelColor
