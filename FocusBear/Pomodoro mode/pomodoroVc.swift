@@ -101,6 +101,10 @@ class pomodoroVc: NSViewController {
     var arrTourMessages: [[String : String]] = []
     var currentTourIndex = 0
     var isIntentionFromMorningPostpone = false
+    /// True once the user has manually edited the goal field this session, so switching the block-list
+    /// dropdown won't overwrite what they typed. Reset in viewWillDisappear (like
+    /// isIntentionFromMorningPostpone) so the block's last-used intention is auto-filled again next open.
+    var hasUserTypedIntention = false
     var timerMoveWindowToCenter:Timer?
     var intentionToShowAgain = ""
     var titleBreaksOff = "Micro-breaks off"
@@ -142,6 +146,7 @@ class pomodoroVc: NSViewController {
         textFieldWorkDuration.formatter = IntegerFormatter()
         textFieldWorkDuration.delegate = self
         textFieldBreakDuration.delegate = self
+        textViewAchieve.delegate = self   // detect manual goal edits (see hasUserTypedIntention)
         lblTitleWorkDuration.stringValue = "Focus Mode duration:"
         lblTitleBreakDuration.stringValue = "Break duration:"
         lblMinutesWorkDuration.stringValue = "minutes"
@@ -587,7 +592,7 @@ class pomodoroVc: NSViewController {
         updateWorkBreakRatio()
         getTaskPlayerVcObject().loadView()
         getTaskPlayerVcObject().loadRequest()
-        reFillFocusTypeList()
+        reFillFocusTypeList(restoreLastUsedOnOpen: true)
 
         isFrictionLevelHigh = false
         
@@ -902,14 +907,17 @@ class pomodoroVc: NSViewController {
     }
 
     
-    func reFillFocusTypeList(){
+    /// `restoreLastUsedOnOpen` — pass true when (re)opening the screen (viewWillAppear) so the dropdown
+    /// defaults to the block list the user ran their last focus session with; pass false for in-place
+    /// refreshes (e.g. focus types reloaded from the server) so the user's current pick is preserved.
+    func reFillFocusTypeList(restoreLastUsedOnOpen: Bool = false){
         arrFocusTypeForPomodoro.removeAll()
         for i in 0..<arrFocusType.count{
             if !(arrFocusType[i]["isMeetings"] as? Bool ?? false == true){
                 arrFocusTypeForPomodoro.append(arrFocusType[i])
             }
         }
-        
+
         var index = popUpBtnFocusType.indexOfSelectedItem
         if index == noItemSelectedIndex{
             index = defaultIndex
@@ -922,6 +930,13 @@ class pomodoroVc: NSViewController {
         }
         if arrFocusTypeForPomodoro.count <= index{
             index = defaultIndex
+        }
+        // On a fresh open, default to the block list the user picked for their last focus session from
+        // this screen — otherwise it always reset to the first list.
+        if restoreLastUsedOnOpen,
+           let lastId = UserDefaults.standard.string(forKey: kUserdefaultsLastPomodoroFocusModeId),
+           let lastIndex = arrFocusTypeForPomodoro.firstIndex(where: { ($0["id"] as? String) == lastId }) {
+            index = lastIndex
         }
         popUpBtnFocusType.selectItem(at: index)
         
@@ -968,8 +983,13 @@ class pomodoroVc: NSViewController {
         }
         let lastIntentionUsed = arrFocusTypeForPomodoro[index]["lastIntentionUsed"] as? String ?? ""
 
-        textViewAchieve.string = ""
-        textViewAchieve.string = lastIntentionUsed
+        // Pre-fill the goal with this block list's last-used intention as a convenience — but only while
+        // the user hasn't typed their own this session. hasUserTypedIntention is set on manual edits
+        // (textDidChange) and reset on close, so switching the dropdown won't wipe a goal/postpone reason
+        // they just entered, yet the last-used intention is still restored the next time the screen opens.
+        if !hasUserTypedIntention {
+            textViewAchieve.string = lastIntentionUsed
+        }
     }
     
     @IBAction func btnEditFocusModeClicked(_ sender: Any) {
@@ -1041,7 +1061,17 @@ class pomodoroVc: NSViewController {
             UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
             return;
         }
-        
+
+        // Remember the block list the user is starting this session with so the dropdown defaults to it
+        // next time (see reFillFocusTypeList). Saved on the common path so it applies to BOTH hardcore
+        // and simple pomodoro — it used to live only in the hardcore branch, so simple sessions never
+        // recorded (and therefore never restored) their last-used list.
+        let selectedFocusIndex = popUpBtnFocusType.indexOfSelectedItem
+        if selectedFocusIndex >= 0, selectedFocusIndex < arrFocusTypeForPomodoro.count,
+           let focusModeId = arrFocusTypeForPomodoro[selectedFocusIndex]["id"] as? String {
+            UserDefaults.standard.set(focusModeId, forKey: kUserdefaultsLastPomodoroFocusModeId)
+        }
+
         if isHardCorePomodoroModeOn{
             whatToAchieveInFocusBlock = textViewAchieve.string
             appdelegate!.setStatusBarButtonTitleForFocusMode(title: whatToAchieveInFocusBlock)
@@ -1058,6 +1088,7 @@ class pomodoroVc: NSViewController {
             }
             
             if let focusModeId = arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["id"] as? String{
+                // (Last-used block list is saved on the common path above, for both hardcore and simple.)
                 for i in 0..<arrFocusType.count{
                     if arrFocusType[i]["id"] as? String ?? "" == focusModeId{
                         updateFocusModeTask(taskString: arrFocusType[i]["lastTaskUsed"] as? String ?? "")
@@ -1066,7 +1097,7 @@ class pomodoroVc: NSViewController {
                         }else{
                             arrFocusType[i]["lastIntentionUsed"] = ""
                         }
-                        
+
                         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                         updateAllFocusModes()
                         break;
@@ -1434,6 +1465,7 @@ class pomodoroVc: NSViewController {
 //        removeTimerMoveWindowToCenter()
         
         isIntentionFromMorningPostpone = false
+        hasUserTypedIntention = false   // next open should auto-fill the block's last-used intention again
         timer?.invalidate()
         timer = nil
         if alertExtendPostpone != nil{
@@ -1707,6 +1739,17 @@ class IntegerFormatter: NumberFormatter {
 }
 
 
+
+extension pomodoroVc: NSTextViewDelegate {
+    // Fires on manual edits to the goal field only (programmatic `.string = …` doesn't trigger it).
+    // Track whether the user currently has their own text: non-empty → protect it from being
+    // overwritten; cleared back to empty → allow the block's last-used intention to auto-fill again.
+    func textDidChange(_ notification: Notification) {
+        if (notification.object as? NSTextView) === textViewAchieve {
+            hasUserTypedIntention = !textViewAchieve.string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+    }
+}
 
 extension pomodoroVc: NSTextFieldDelegate{
     func controlTextDidChange(_ obj: Notification) {
