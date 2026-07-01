@@ -385,6 +385,15 @@ class focusButtonService: NSObject {
     // MARK: - Serial Communication
     
     private func sendCmd(_ cmd: String) {
+        // The serial write and the watchdog Timer scheduled below are run-loop bound, so every
+        // command must go out on the main thread. The local "start focus" path already runs on the
+        // main thread; the remote path (Pusher "focus-mode-started" handler) can fire on a background
+        // thread, where the Timer never arms and the write silently no-ops — which is why starting a
+        // session from the phone correctly started it on the Mac but never signalled the Focus Button.
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in self?.sendCmd(cmd) }
+            return
+        }
         guard let port = serialPort, port.isOpen, !isConnecting else {
             log("FocusButton: Cannot send command - port not open")
             return
