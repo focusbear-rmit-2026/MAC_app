@@ -1761,9 +1761,18 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         self.webView.load(request)
     }
     @objc func performTimerCount() {
-        currentTimer += 1 
+        currentTimer += 1
         if isAnyAllowedFocusModeActivityRunning{
             addEntryInProductivityStatsCsv()
+        }
+        // Re-sync the Focus Button to the Mac's authoritative remaining time every 15s. The device
+        // runs its own countdown and can drift; until now it was only told the duration once at
+        // habit start, so any device drift accumulated over the whole habit (reported ~33s slow on a
+        // 15-min habit). This keeps it aligned to within the re-sync window. No-op if not connected.
+        // Only while a morning/evening habit is actually running — this timer also drives breaks,
+        // focus mode and custom routines, where the habit-duration signal doesn't apply.
+        if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_) && currentTimer % 15 == 0 {
+            focusButtonServiceObject.updateHabitDuration(seconds: self.totalDuration - currentTimer)
         }
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         
