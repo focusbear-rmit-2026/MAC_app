@@ -1738,15 +1738,12 @@ func checkDocBarState()->String?{
     end tell
     """
     
-    if let appleScript = NSAppleScript(source: script) {
-        var errors : NSDictionary? = nil
-        let desc = appleScript.executeAndReturnError(&errors)
-        if errors != nil {
-            print(errors!)
-        }
-        return desc.stringValue
+    var errors : NSDictionary? = nil
+    let desc = runAppleScriptSafely(script, errors: &errors)
+    if errors != nil {
+        print(errors!)
     }
-    return nil
+    return desc?.stringValue
 }
 
 
@@ -2231,33 +2228,61 @@ var shouldEndPomodoroBreakAtTime:Date?
 var arrFocusBlockNotificationShownForApps = [""]
 
 
-func executeScript(script:String){
-    if let appleScript = NSAppleScript(source: script) {
-        var errors : NSDictionary? = nil
-        appleScript.executeAndReturnError(&errors)
-        if errors != nil {
-            print(errors!)
+/// Dedicated serial queue that owns ALL AppleScript execution. NSAppleScript is NOT thread-safe —
+/// compiling/running it from more than one thread at once corrupts the shared AppleScript component
+/// (the EXC_BAD_ACCESS segfault inside Apple's AppleScript compiler). Funnelling every script through
+/// one serial queue means two scripts never run concurrently, which removes the crash — without
+/// pinning the work to the main thread (the frequent focus-timer / browser detection scripts run on
+/// this background queue and never block the UI).
+private let appleScriptSerialQueue = DispatchQueue(label: "com.focusbear.applescript")
+
+/// Single safe entry point for running AppleScript. Serialised on `appleScriptSerialQueue` (see above)
+/// so it can't run concurrently from multiple threads. The source is wrapped in `with timeout of N
+/// seconds`, and we additionally guard with a wall-clock timeout so an unresponsive target app can't
+/// wedge the queue or block the caller indefinitely.
+@discardableResult
+func runAppleScriptSafely(_ source: String, timeoutSeconds: Int = 5, errors: inout NSDictionary?) -> NSAppleEventDescriptor? {
+    let bounded = "with timeout of \(timeoutSeconds) seconds\n" + source + "\nend timeout\n"
+    var capturedErrors: NSDictionary?
+    var result: NSAppleEventDescriptor?
+    let done = DispatchSemaphore(value: 0)
+    appleScriptSerialQueue.async {
+        if let appleScript = NSAppleScript(source: bounded) {
+            result = appleScript.executeAndReturnError(&capturedErrors)
         }
+        done.signal()
+    }
+    // Wall-clock guard a little longer than the AppleScript `with timeout`, so the script normally
+    // finishes first. On timeout we return without reading the still-running block's outputs.
+    if done.wait(timeout: .now() + .seconds(timeoutSeconds + 2)) == .timedOut {
+        errors = nil
+        return nil
+    }
+    errors = capturedErrors
+    return result
+}
+
+func executeScript(script:String){
+    var errors : NSDictionary? = nil
+    runAppleScriptSafely(script, errors: &errors)
+    if errors != nil {
+        print(errors!)
     }
 }
 
 func executeScriptAndReturnBool(script:String)->Bool{
-    if let appleScript = NSAppleScript(source: script) {
-        var errors : NSDictionary? = nil
-        let desc = appleScript.executeAndReturnError(&errors)
-        if errors != nil {
-            print(errors!)
-        }
-        return desc.booleanValue
+    var errors : NSDictionary? = nil
+    let desc = runAppleScriptSafely(script, errors: &errors)
+    if errors != nil {
+        print(errors!)
     }
-    return false
+    return desc?.booleanValue ?? false
 }
 
 func executeScriptAndReturnString(script:String)->String?{
-    if let appleScript = NSAppleScript(source: script) {
-        var errors : NSDictionary? = nil
-        let desc = appleScript.executeAndReturnError(&errors)
-        if errors != nil {
+    var errors : NSDictionary? = nil
+    guard let desc = runAppleScriptSafely(script, errors: &errors) else { return nil }
+    if errors != nil {
             print(errors!)
             if let appName = errors?.value(forKey: "NSAppleScriptErrorAppName") as? String, let errorCode = errors?.value(forKey: "NSAppleScriptErrorNumber") as? Int{
                 let lowerCaseAppName = appName.lowercased()
@@ -2281,9 +2306,7 @@ func executeScriptAndReturnString(script:String)->String?{
                 }
             }
         }
-        return desc.stringValue ?? ""
-    }
-    return nil
+    return desc.stringValue ?? ""
 }
 
 func showFocusAppBlockNotification(appName:String){
@@ -2778,16 +2801,12 @@ func shutDownMac() {
             shut down
         end tell
         """
-    if let appleScript = NSAppleScript(source: script) {
-        var error: NSDictionary?
-        appleScript.executeAndReturnError(&error)
-        if let error = error {
-            print("Error: \(error)")
-        } else {
-            print("Shutdown command executed successfully.")
-        }
+    var error: NSDictionary?
+    runAppleScriptSafely(script, errors: &error)
+    if let error = error {
+        print("Error: \(error)")
     } else {
-        print("Failed to create AppleScript.")
+        print("Shutdown command executed successfully.")
     }
 }
 
@@ -2799,16 +2818,12 @@ func sleepMac() {
             sleep
         end tell
         """
-    if let appleScript = NSAppleScript(source: script) {
-        var error: NSDictionary?
-        appleScript.executeAndReturnError(&error)
-        if let error = error {
-            print("Error: \(error)")
-        } else {
-            print("sleep command executed successfully.")
-        }
+    var error: NSDictionary?
+    runAppleScriptSafely(script, errors: &error)
+    if let error = error {
+        print("Error: \(error)")
     } else {
-        print("Failed to create AppleScript.")
+        print("sleep command executed successfully.")
     }
 }
 

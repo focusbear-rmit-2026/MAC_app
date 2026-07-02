@@ -11,9 +11,12 @@ import Foundation
 /// Run an AppleScript source and return its result descriptor, ALWAYS on the main thread.
 /// NSAppleScript is not thread-safe; executing it on a background queue (e.g. the URL/tab timer)
 /// intermittently segfaults inside Apple's AppleScript compiler — that was the browser-tab-count crash.
-func runBrowserAppleScript(_ source: String) -> NSAppleEventDescriptor? {
+/// The source is wrapped in an AppleScript `with timeout` block so a hung/unresponsive browser
+/// can't freeze the main thread indefinitely while we wait on `executeAndReturnError`.
+func runBrowserAppleScript(_ source: String, timeoutSeconds: Int = 5) -> NSAppleEventDescriptor? {
+    let bounded = "with timeout of \(timeoutSeconds) seconds\n" + source + "\nend timeout\n"
     func run() -> NSAppleEventDescriptor? {
-        guard let s = NSAppleScript(source: source) else { return nil }
+        guard let s = NSAppleScript(source: bounded) else { return nil }
         var errors: NSDictionary?
         let desc = s.executeAndReturnError(&errors)
         if errors != nil { print(errors as Any) }
