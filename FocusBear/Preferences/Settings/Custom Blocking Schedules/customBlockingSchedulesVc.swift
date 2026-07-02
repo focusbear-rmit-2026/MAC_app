@@ -166,7 +166,7 @@ extension customBlockingSchedulesVc: NSTableViewDelegate, NSTableViewDataSource{
             }else{
                 cell.boxBlockingSchedule.isHidden = false
                 cell.boxAddSchedule.isHidden = true
-                cell.lblTitle.stringValue = customBlockingScheduleManagerObj.arrBlockingSchedule[row].name
+                cell.lblTitle.stringValue = customBlockingScheduleManagerObj.arrBlockingSchedule[row].titleWithEmoji
                 cell.lblTime.stringValue = customBlockingScheduleManagerObj.arrBlockingSchedule[row].displayString
                 cell.lblBlockMode.stringValue = customBlockingScheduleManagerObj.arrBlockingSchedule[row].blockLevelString
                 

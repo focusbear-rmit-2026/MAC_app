@@ -37,9 +37,29 @@ struct customBlockingSchedule: Codable, Identifiable {
     var blockLevel: FOCUSMODESTRICTNESS
     var isAIBlockingEnabled: Bool
     var isMicroBreaksEnabled: Bool
+    var emoji: String?          // backend top-level per-schedule emoji (nullable, ≤32 chars). backend#2094
     var state:State = .off
     var displayString: String {
         "\(daysOfWeek.formattedDays()), \(startTime.formattedTime()) to \(endTime.formattedTime())"
+    }
+
+    /// Emoji to show for this schedule: the explicit one, else a leading emoji already present in the
+    /// name, else a shield default. Keeps a sensible icon even before the user picks one.
+    var displayEmoji: String {
+        if let e = emoji?.trimmingCharacters(in: .whitespaces), !e.isEmpty { return e }
+        if nameHasLeadingEmoji { return String(name.trimmingCharacters(in: .whitespaces).unicodeScalars.first!) }
+        return "🛡️"
+    }
+
+    private var nameHasLeadingEmoji: Bool {
+        guard let first = name.trimmingCharacters(in: .whitespaces).unicodeScalars.first else { return false }
+        return first.properties.isEmoji && first.value > 0x2300   // skip ASCII digits/letters
+    }
+
+    /// Schedule name with its emoji in front for list display — uses the explicit/default emoji, but
+    /// leaves the name untouched when it already starts with one (so we never double the emoji).
+    var titleWithEmoji: String {
+        nameHasLeadingEmoji ? name : "\(displayEmoji) \(name)"
     }
     
     
@@ -187,6 +207,7 @@ struct customBlockingSchedule: Codable, Identifiable {
         case blockLevel = "block_level"
         case isAIBlockingEnabled = "is_ai_blocking_enabled"
         case isMicroBreaksEnabled = "is_micro_breaks_enabled"
+        case emoji = "emoji"
         case metadata = "metadata"
     }
     
@@ -253,6 +274,7 @@ struct customBlockingSchedule: Codable, Identifiable {
         if let metadata = try container.decodeIfPresent([String: Bool].self, forKey: .metadata) {
             isMicroBreaksEnabled = metadata["is_micro_breaks_enabled"] ?? false
         }
+        emoji = try container.decodeIfPresent(String.self, forKey: .emoji)
     }
     
     func encode(to encoder: Encoder) throws {
@@ -281,6 +303,8 @@ struct customBlockingSchedule: Codable, Identifiable {
         
         try container.encode(startTimeString, forKey: .startTime)
         try container.encode(endTimeString, forKey: .endTime)
+        // Top-level emoji (nullable). Full-replace semantics on the backend — encode null to clear.
+        try container.encode(emoji, forKey: .emoji)
         //var dic = [String:Any]()
         let metadata = ["is_micro_breaks_enabled": isMicroBreaksEnabled]
         try container.encode(metadata, forKey: .metadata)
@@ -338,10 +362,12 @@ extension customBlockingSchedule {
         //        pauseFriction: PauseFriction,
         blockLevel: FOCUSMODESTRICTNESS,
         isAIBlockingEnabled: Bool,
-        isMicroBreaksEnabled:Bool
+        isMicroBreaksEnabled:Bool,
+        emoji: String? = nil
     ) {
         self.id = id
         self.name = name
+        self.emoji = emoji
         self.startTimeString = start
         self.endTimeString = end
         self.startTime = Self.parseTime(start) ?? Date()

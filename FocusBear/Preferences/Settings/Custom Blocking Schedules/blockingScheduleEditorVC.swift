@@ -424,7 +424,9 @@ class blockingScheduleEditorVC: NSViewController {
                 focusModeID: focusModeId,
                 //pauseFriction: .timer,
                 blockLevel: blockMode,
-                isAIBlockingEnabled: checkBoxAiEnabled.state == .on, isMicroBreaksEnabled: checkBoxSkipMicroBreaks.state != .on
+                isAIBlockingEnabled: checkBoxAiEnabled.state == .on, isMicroBreaksEnabled: checkBoxSkipMicroBreaks.state != .on,
+                // Carry over any per-schedule emoji set on another device — don't drop it on a Mac edit.
+                emoji: customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex].emoji
             )
             blockingSchedule.state = customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex].state
             
