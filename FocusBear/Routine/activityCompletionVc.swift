@@ -2315,14 +2315,24 @@ class activityCompletionVc: NSViewController {
         lblProgress.isHidden = false
         boxBreathingFinished.isHidden = true
         lastHabitIndex = index
-        let lastHabit = arrFilteredMorningHabits[lastHabitIndex].name
+        // arrFilteredMorningHabits can shrink (completed habits are removed) between this call and the
+        // async getActivityStats completion below, so `index`/lastHabitIndex may be stale by then.
+        // Guard on entry and capture the finished habit once, then reuse it in the closure instead of
+        // re-subscripting — fixes an out-of-range crash (EXC_BREAKPOINT in the completion accessing
+        // arrFilteredMorningHabits[self.lastHabitIndex]).
+        guard arrFilteredMorningHabits.indices.contains(lastHabitIndex) else {
+            addLog(text: "morningHabitFinishedAndStartIncompleteNew: index \(index) out of range (count \(arrFilteredMorningHabits.count)); skipping")
+            return
+        }
+        let finishedHabit = arrFilteredMorningHabits[lastHabitIndex]
+        let lastHabit = finishedHabit.name
         stackViewGraph.isHidden = false
         self.webViewGraph1.isHidden = true
         self.webViewGraph2.isHidden = true
-        
-        allApiObject.getACtivityStats(activityId: arrFilteredMorningHabits[lastHabitIndex].id, activityChoiceId: nil, completionHandler: {dic in
+
+        allApiObject.getACtivityStats(activityId: finishedHabit.id, activityChoiceId: nil, completionHandler: {dic in
             DispatchQueue.main.async {
-                self.loadGraph(activityId: arrFilteredMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: arrFilteredMorningHabits[self.lastHabitIndex].logQuantity, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
+                self.loadGraph(activityId: finishedHabit.id, activityName: lastHabit ?? "", logQuantity: finishedHabit.logQuantity, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
             }
         })
         
