@@ -520,7 +520,7 @@ class habitsVc: NSViewController {
             // cutoff password setting (not the skip one) — and ask the password FIRST, before the popup,
             // regardless of easy-skip. Without this, easy-skip/the skip-gated path showed the postpone
             // popup with no password even though "require password to postpone after cutoff" was on.
-            if isCutOffTimeGoing() && shouldAskPassword()
+            if isCutOffTimeGoing() && shouldAskPassword(forPostpone: true)
                 && SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff {
                 stopActivityTimer()
                 showPasswordView()

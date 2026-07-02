@@ -164,7 +164,7 @@ class focusEndWarningVc: NSViewController {
                                         getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                         self.extendFocusMode()
                                     }else{
-                                        if SettingsManagerObject.isPasswordRequireInSkipMorning && shouldAskPassword(){
+                                        if SettingsManagerObject.isPasswordRequireInSkipMorning && shouldAskPassword(forPostpone: true){
                                             self.presentAsSheet(self.enterPasswordVcObj!)
                                             self.enterPasswordVcObj?.parentVc = self
                                         }else{
@@ -175,7 +175,7 @@ class focusEndWarningVc: NSViewController {
                                 }else if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
                                     
                                     var shouldAskPasswordForEvening = false
-                                    if shouldAskPassword() &&  !SettingsManagerObject.isEasySkipEnabled{
+                                    if shouldAskPassword(forPostpone: true) &&  !SettingsManagerObject.isEasySkipEnabled{
                                         if isCutOffTimeGoing(){
                                             if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
                                                 shouldAskPasswordForEvening = true

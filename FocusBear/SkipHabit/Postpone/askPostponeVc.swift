@@ -286,7 +286,7 @@ class askPostponeVc: NSViewController {
         if currentState == ._MORNING_HABIT_{
             if activityPostponeCount == 0 && postponeTime > 15{//when user clicks Please spare me for the first time, if the user selects to postpones for longer than 15 then the password will be asked.//#441
                 
-                if shouldAskPassword() && SettingsManagerObject.isPasswordRequireInPostponeMorning{
+                if shouldAskPassword(forPostpone: true) && SettingsManagerObject.isPasswordRequireInPostponeMorning{
                     self.view.removeFromSuperview()
                     getHabitsVcObject().showPasswordView()
                     enterPasswordVcObj?.parentVc = self
@@ -311,7 +311,7 @@ class askPostponeVc: NSViewController {
             // only the first >15-minute postpone is gated (#441). shouldAskPassword()'s 2-minute window
             // still prevents a double prompt if a password was just entered.
             var requirePassword = false
-            if shouldAskPassword(){
+            if shouldAskPassword(forPostpone: true){
                 if isCutOffTimeGoing(){// changed in 2.27.422 : isHighPrioritySequenceGoing -> isCutOffTimeGoing()
                     requirePassword = SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff
                 }else if activityPostponeCount == 0 && postponeTime > 15{
@@ -341,7 +341,7 @@ class askPostponeVc: NSViewController {
         }else if currentState == ._FOCUS_SUMMARY_{
             self.view.removeFromSuperview()
             
-            if shouldAskPassword() && !SettingsManagerObject.isEasySkipEnabled{
+            if shouldAskPassword(forPostpone: true) && !SettingsManagerObject.isEasySkipEnabled{
                 var shouldShowPasswordView = false
                 if cutOffTime != nil{
                     if isCutOffTimeGoing(){

@@ -2478,13 +2478,32 @@ func enableTimeTracker(){
 var lastAppUnlockTime:Date?
 var lastUnlockTimeByAccountabilityBuddy:Date?
 
-func shouldAskPassword()->Bool{
-    if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{
-        if Date() < lastUnlockTimeByAccountabilityBuddy{
-            return false
+/// Returns true if a full-screen (locked) window is currently on screen. Used to suppress the
+/// password grace period there — full-screen habit/focus mode is exactly when accountability
+/// matters most, so a recent unlock shouldn't be reusable to slip past the lock.
+func isFullScreenWindowCurrentlyShowing()->Bool{
+    if mainWindowControllerObj?.window?.styleMask.contains(.fullScreen) ?? false{ return true }
+    if mainWindowControllerObj?.isFullScreenVisible ?? false{ return true }
+    return false
+}
+
+/// - Parameter forPostpone: pass `true` from postpone / extend-postpone gates. Postponing must never
+///   reuse a grace window — otherwise a single unlock (e.g. an accountability buddy granting 10 min)
+///   can be leveraged into a much longer postpone by extending it within the grace period.
+func shouldAskPassword(forPostpone:Bool = false)->Bool{
+    // No grace when postponing, or while a full-screen (locked) window is showing: always re-ask.
+    let bypassGrace = forPostpone || isFullScreenWindowCurrentlyShowing()
+    if !bypassGrace{
+        if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{
+            if Date() < lastUnlockTimeByAccountabilityBuddy{
+                return false
+            }
         }
     }
     if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+        if bypassGrace{
+            return true
+        }
         if let lastAppUnlockTime = lastAppUnlockTime{
             let diffSeconds = Calendar.current.dateComponents([.second], from: lastAppUnlockTime, to: Date()).second ?? 0
             if diffSeconds > 120{
