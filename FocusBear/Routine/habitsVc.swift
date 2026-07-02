@@ -1398,6 +1398,13 @@ class habitsVc: NSViewController {
         timerViewcontrollerObj?.tryStartTimerHabit(durationSeconds: arrFilteredMorningHabits[currentHabitIndex].durationSeconds, name: arrFilteredMorningHabits[currentHabitIndex].name!, currentHabit: arrFilteredMorningHabits[currentHabitIndex], currentTimerValue:0, shouldUpdateDeviceButton: shouldUpdateDeviceButton)
         currentState = ._MORNING_HABIT_
         currentAction = ._INPROGRESS_
+
+        // #1982 follow-up: the user is starting the morning routine now — clear any saved
+        // postponed-routine state so a stale postpone isn't restored as a postponed habit list on the
+        // next app launch.
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+        
         allApiObject.capturePosthog(event: "start-morning-routine", metadata: ["routine-type":"morning_routine"])
     }
     
@@ -1431,6 +1438,13 @@ class habitsVc: NSViewController {
         timerViewcontrollerObj?.tryStartTimerHabit(durationSeconds: arrFilteredEveningHabits[currentHabitIndex].durationSeconds, name: arrFilteredEveningHabits[currentHabitIndex].name!, currentHabit: arrFilteredEveningHabits[currentHabitIndex], currentTimerValue:0, shouldUpdateDeviceButton: shouldUpdateDeviceButton)
         currentState = ._EVENING_HABIT_
         currentAction = ._INPROGRESS_
+
+        // #1982 follow-up: the user is starting the evening routine now — clear any saved
+        // postponed-routine state so a stale postpone isn't restored as a postponed habit list on the
+        // next app launch.
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+        
         allApiObject.capturePosthog(event: "start-evening-routine", metadata: ["routine-type":"evening_routine"])
     }
     
@@ -1961,6 +1975,11 @@ class habitsVc: NSViewController {
     
     func eveningHabitFinishShowUnlock(){//evening habit Sequence Finished
         addLog(text: "eveningHabitFinishShowUnlock")
+        // #1982 follow-up: evening routine completed — clear the saved postponed-routine state so the
+        // app doesn't restore the postponed habit list on the next launch.
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+        
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
@@ -1971,6 +1990,11 @@ class habitsVc: NSViewController {
     
     func eveningHabitFinishShowShutOff(){//evening habit Sequence Finished
         addLog(text: "evening habit Finished")
+        // #1982 follow-up: evening routine completed — clear the saved postponed-routine state so the
+        // app doesn't restore the postponed habit list on the next launch.
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+        
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
@@ -2237,6 +2261,12 @@ class habitsVc: NSViewController {
     
     func habitsFinishedUnlockMachine() {
         addLog(text: "morning habit Finished")
+
+        // #1982 follow-up: morning routine completed — clear the saved postponed-routine state so the
+        // app doesn't restore the postponed habit list on the next launch.
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+        
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)

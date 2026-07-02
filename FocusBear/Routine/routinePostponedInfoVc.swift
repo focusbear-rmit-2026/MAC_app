@@ -146,6 +146,36 @@ class routinePostponedInfoVc: NSViewController {
                         }
                     }
                     
+                    
+                    // #1982 follow-up: while loading the pending postponed habits, if the backend reports
+                    // today's morning routine as already completed, the postponed state is stale. Clear it
+                    // (postpone keys + break durations), mark the routine done (isHabitAlreadyShowed),
+                    // reset to ._NOTHING_ and reload the Habits tab so the Day Plan shows the correct
+                    // state instead of the postponed habit list.
+                    if let todayRoutineProgress = json?.value(forKey: "today_routine_progress") as? NSDictionary{
+                        if let morningRoutine = todayRoutineProgress.value(forKey: "morning_routine") as? NSDictionary,let sequenceID = arrFilteredMorningHabits.first?.activity_sequence_id{
+                            if let todaySequenceId = morningRoutine.value(forKey: "sequence_id") as? String, let status = morningRoutine.value(forKey: "status") as? String{
+                                if todaySequenceId == sequenceID && status.lowercased() == "completed"{
+                                    addLog(text: "morning habit already shown for today - reason (backend return status is completed)")
+                                    
+                                    UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
+                                    UserDefaults.standard.removeObject(forKey: kUserdefaultsArrayBreaksDurations)
+                                    
+                                    UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+                                    UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+                                    
+                                    isHabitAlreadyShowed = true
+                                    currentState = ._NOTHING_
+                                    if leftMenuVcObj?.boxHabits.isSelected ?? false{
+                                        leftMenuVcObj?.selectableListBoxDidChangeSelectionByUser(leftMenuVcObj!.boxHabits)
+                                    }
+                                    addLog(text: "morning habit already Done for today")
+                                    return
+                                }
+                            }
+                        }
+                    }
+                    
                     // new work  26/4/25 / cehck from "today_routine_progress" in app version 1.22.362
                     
                     if let todayRoutineProgress = json?.value(forKey: "today_routine_progress") as? NSDictionary{
@@ -291,6 +321,47 @@ class routinePostponedInfoVc: NSViewController {
                             
                             for i in 0..<activitiesCountInExpireApp{
                                 arrFilteredEveningHabits.append(arrTempFilteredEveningHabits[i])
+                            }
+                        }
+                    }
+                    
+                    // #1982 follow-up: while loading the pending postponed habits, if the backend reports
+                    // today's evening routine as already completed, the postponed state is stale. Record
+                    // how long the evening routine counts as done via kUserdefaultsEveningHabitsShowedTillDate
+                    // (next start time — tomorrow's if we're past shut-off, today's if we're before start),
+                    // clear the postpone keys, reset to ._NOTHING_ and reload the Habits tab so the Day
+                    // Plan shows the correct state instead of the postponed habit list.
+                    if let todayRoutineProgress = json?.value(forKey: "today_routine_progress") as? NSDictionary{
+                        if let eveningRoutine = todayRoutineProgress.value(forKey: "evening_routine") as? NSDictionary,let sequenceID = arrFilteredEveningHabits.first?.activity_sequence_id{
+                            if let todaySequenceId = eveningRoutine.value(forKey: "sequence_id") as? String, let status = eveningRoutine.value(forKey: "status") as? String{
+                                if todaySequenceId == sequenceID && status.lowercased() == "completed"{
+                                    addLog(text: "evening habit already shown for today - reason (backend return status is completed)")
+                                    
+                                    
+                                    let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+                                    let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+                                    
+                                    let curreentDate = Date()
+                                    if curreentDate > shutOffdate{
+                                        let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+                                        let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
+                                        UserDefaults.standard.set(startDate, forKey: kUserdefaultsEveningHabitsShowedTillDate)
+                                    }else if curreentDate < startDate{
+                                        UserDefaults.standard.set(startDate, forKey: kUserdefaultsEveningHabitsShowedTillDate)
+                                    }
+                                    
+                                    UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+                                    UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+                                    
+                                    isHabitAlreadyShowed = false
+                                    currentState = ._NOTHING_
+                                    if leftMenuVcObj?.boxHabits.isSelected ?? false{
+                                        leftMenuVcObj?.selectableListBoxDidChangeSelectionByUser(leftMenuVcObj!.boxHabits)
+                                    }
+                                    
+                                    addLog(text: "evening habit already Done for today")
+                                    return
+                                }
                             }
                         }
                     }

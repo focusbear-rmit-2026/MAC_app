@@ -1079,12 +1079,34 @@ func restorePostponeStateIfNeeded() {
         let remainingSeconds = Int(remaining)
         if state == CURRENTSTATE._POSTPONE_MORNING_HABIT_.rawValue{
             addLog(text: "Restored morning postpone: \(remainingSeconds)s left")
-            getHabitsVcObject().postponeMorningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false, isExtendingPostponeFromAppStart: true)
-
+            // #1982 follow-up: only re-arm the postpone if the morning routine hasn't already been
+            // completed today. If it has (isHabitAlreadyShowed), the saved postpone is stale — clear it
+            // so launch doesn't restore the postponed habit list.
+            if !isHabitAlreadyShowed{
+                getHabitsVcObject().postponeMorningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false, isExtendingPostponeFromAppStart: true)
+            }else{
+                addLog(text: "Restored morning postpone cancelled: morning habit already completed for today.")
+                UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+                UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+            }
         }else if state == CURRENTSTATE._POSTPONE_EVENING_HABIT_.rawValue{
             addLog(text: "Restored evening postpone: \(remainingSeconds)s left")
             if isShutOffTimeGoing(){
-                getHabitsVcObject().postponeEveningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false, isExtendingPostponeFromAppStart: true)
+                // #1982 follow-up: kUserdefaultsEveningHabitsShowedTillDate marks the point up to which
+                // today's evening routine is considered already done. If now is still before that point,
+                // the saved postpone is stale (routine already completed) — clear it; only re-arm the
+                // postpone once we're past it. (No marker → restore as before.)
+                if let date = UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date{
+                    if Date().compare(date) == .orderedDescending {
+                        getHabitsVcObject().postponeEveningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false, isExtendingPostponeFromAppStart: true)
+                    }else{
+                        addLog(text: "Restored evening postpone cancelled: evening habit already completed for today.")
+                        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+                        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+                    }
+                }else{
+                    getHabitsVcObject().postponeEveningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false, isExtendingPostponeFromAppStart: true)
+                }
             }else{
                 UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
                 UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
