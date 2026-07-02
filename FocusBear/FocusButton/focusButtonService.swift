@@ -44,7 +44,22 @@ class focusButtonService: NSObject {
     private let maxReconnectAttempts = 3
     private var isReconnecting = false
     private var isConnecting = false
-    
+
+    /// Repeating poll that transparently reconnects the button after an involuntary drop
+    /// (unplug/replug, sleep, serial glitch like "Device not configured"). Armed by start();
+    /// see startReconnectMonitor(). A tick is free while connected — it returns before doing
+    /// any port scan — so a short interval costs almost nothing; the only work happens while
+    /// disconnected (a lightweight IOKit port enumeration).
+    private var reconnectPollTimer: Timer?
+    private let reconnectPollInterval: TimeInterval = 10
+    private let hasEverConnectedKey = "focusButtonHasEverConnected"
+    /// True once the button has successfully opened at least once (persisted across launches),
+    /// so we only auto-scan for people who actually use the device.
+    private var hasEverConnected: Bool {
+        get { UserDefaults.standard.bool(forKey: hasEverConnectedKey) }
+        set { UserDefaults.standard.set(newValue, forKey: hasEverConnectedKey) }
+    }
+
     // Regex patterns
     private let tsPfx = try? NSRegularExpression(pattern: "^\\d+\\.\\d+\\|", options: [])
     private let espLog = try? NSRegularExpression(pattern: "^[EWIDV] \\(\\d+|^\\[?\\d+\\]?\\s*\\[?[EWIDV]\\]|^\\[LOG\\]", options: [])
@@ -57,6 +72,13 @@ class focusButtonService: NSObject {
     var onError: ((String) -> Void)?
     var onPortDisconnected: (() -> Void)?
     var onDeviceConnected: ((String) -> Void)?
+
+    /// Fired after the device (re)connects and the handshake is sent, so the app can re-push the
+    /// current session/habit state onto it. Separate from `onDeviceConnected` (which the settings
+    /// screen reassigns) so a persistent app-level restore hook is never clobbered. Without this,
+    /// auto-reconnect brings the serial link back but the device stays idle — a focus session/habit
+    /// that started while it was disconnected never reappears, and SET|UPDATE (extend) no-ops.
+    var onDeviceConnectedRestore: (() -> Void)?
 
     /// Firmware version reported by the connected device (e.g. "M50-1.5.0"),
     /// or nil when not connected / not yet known. Updated from the device's
@@ -75,15 +97,43 @@ class focusButtonService: NSObject {
     
     func start() -> Bool {
         log("FocusButton: Start()")
-        
+        startReconnectMonitor()   // keep trying in the background even if this attempt finds no port
+
         guard let portName = autoDetectPort() else {
             log("FocusButton: No serial port found")
             onError?("No Focus Button device found. Please check USB connection.")
             return false
         }
-        
+
         connect(portName: portName)
         return true
+    }
+
+    /// Arm a repeating poll that reconnects the Focus Button after an involuntary drop, so long as
+    /// it has connected at least once before. Without this, a drop (unplug/replug, sleep, or a serial
+    /// glitch) leaves the button offline until the app is relaunched — which silently no-op's Late No
+    /// More device countdowns and habit signals (they only send when connected). Idempotent; the tick
+    /// is a cheap no-op while connected/connecting.
+    func startReconnectMonitor() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, self.reconnectPollTimer == nil else { return }
+            self.log("FocusButton: reconnect monitor armed (every \(Int(self.reconnectPollInterval))s)")
+            let timer = Timer.scheduledTimer(withTimeInterval: self.reconnectPollInterval, repeats: true) { [weak self] _ in
+                self?.attemptAutoReconnect()
+            }
+            timer.tolerance = self.reconnectPollInterval / 2   // let the OS coalesce wakeups; not time-critical
+            self.reconnectPollTimer = timer
+        }
+    }
+
+    private func attemptAutoReconnect() {
+        guard hasEverConnected else { return }             // never auto-scan for non-button users
+        guard !isConnected, !isConnecting else { return }  // already connected / attempt in flight
+        // Only try when a device is actually present, so we don't spam start()'s "not found" error
+        // (or churn) every tick while the button is simply unplugged.
+        guard autoDetectPort() != nil else { return }
+        log("FocusButton: auto-reconnect — button offline but present, reconnecting")
+        _ = start()
     }
     
     func start(withPort portName: String) -> Bool {
@@ -93,6 +143,10 @@ class focusButtonService: NSObject {
     }
     
     func stop() {
+        // Explicit stop (e.g. user turned the add-on off) — halt auto-reconnect too. Involuntary
+        // drops go through disconnect() directly, which leaves the monitor armed so it reconnects.
+        reconnectPollTimer?.invalidate()
+        reconnectPollTimer = nil
         disconnect()
     }
 
@@ -794,8 +848,9 @@ extension focusButtonService: ORSSerialPortDelegate {
     
     func serialPortWasOpened(_ serialPort: ORSSerialPort) {
         log("FocusButton: Serial port opened")
-        
+
         isConnecting = false
+        hasEverConnected = true   // remember (persisted) so auto-reconnect kicks in after future drops
         
         // Wait a moment for the device to stabilize
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
@@ -809,6 +864,9 @@ extension focusButtonService: ORSSerialPortDelegate {
             self.sendCmd("STATUS")
             self.sendCmd("GET|FIRMWAREVER")
             self.sendCmd("GET|HABITCOUNT")
+            // Now that the clock is set, let the app re-push whatever's running (focus session /
+            // habit) so a session that began while the button was disconnected reappears on device.
+            self.onDeviceConnectedRestore?()
         }
         
         applyState(.idle)

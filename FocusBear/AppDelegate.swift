@@ -3449,7 +3449,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 print("Received habit: \(habit.name) (\(habit.durationSeconds)s)")
             }
         }
-        
+
+        // Persistent restore hook: when the button (re)connects, re-push the currently-running focus
+        // session so it reappears on device. Uses a dedicated slot (not onDeviceConnected, which the
+        // settings screen reassigns). Fixes: a session that started while the button was disconnected
+        // left the device idle → "no focus session" and extend's SET|UPDATE no-op'd.
+        focusButtonServiceObject.onDeviceConnectedRestore = { [weak self] in
+            self?.reSyncFocusButtonOnConnect()
+        }
+
         // Start the service off the main thread. The Focus Button is an optional USB
         // accessory and ORSSerialPort's open() can block in the kernel for a
         // misbehaving / unrelated serial device (e.g. a USB hub's modem interface).
@@ -3462,8 +3470,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
 
     }
-    
-    
+
+    /// Re-push the currently-running focus session to the Focus Button when it (re)connects, so a
+    /// session that began while the button was offline reappears on device — and later SET|UPDATE
+    /// extends land, since the firmware only updates a RUNNING/PAUSED session (an idle device
+    /// ignores UPDATE). Invoked from the connect handshake once the device clock is set.
+    func reSyncFocusButtonOnConnect() {
+        guard isFocusModeRunning, let end = endFocusModeTime else { return }
+        let remaining = Int(end.timeIntervalSinceNow)
+        guard remaining > 0 else { return }
+        addLog(text: "FocusButton: re-pushing running focus session on connect (\(remaining)s remaining)")
+        focusButtonServiceObject.startFocusSession(seconds: remaining)
+    }
+
+
     func checkLastHabitShowDate(lastHabitShowDate:Date){
         isHabitAlreadyShowed = true
         var currentDate = Date()
