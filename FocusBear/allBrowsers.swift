@@ -11,21 +11,17 @@ import Foundation
 /// Run an AppleScript source and return its result descriptor, ALWAYS on the main thread.
 /// NSAppleScript is not thread-safe; executing it on a background queue (e.g. the URL/tab timer)
 /// intermittently segfaults inside Apple's AppleScript compiler — that was the browser-tab-count crash.
-/// The source is wrapped in an AppleScript `with timeout` block so a hung/unresponsive browser
-/// can't freeze the main thread indefinitely while we wait on `executeAndReturnError`.
+/// Routes through `runAppleScriptSafely`, the single serialised AppleScript entry point, so browser
+/// scripts never execute concurrently with other NSAppleScript on a different thread. NSAppleScript
+/// is not thread-safe: running browser scripts on the main thread (as this used to) while other
+/// scripts ran on the AppleScript serial queue segfaulted inside Apple's AppleScript compiler
+/// (EXC_BAD_ACCESS during compile). The `with timeout` guard (#1950) prevents hangs but not that
+/// crash — serialising every NSAppleScript execution onto one queue does.
 func runBrowserAppleScript(_ source: String, timeoutSeconds: Int = 5) -> NSAppleEventDescriptor? {
-    let bounded = "with timeout of \(timeoutSeconds) seconds\n" + source + "\nend timeout\n"
-    func run() -> NSAppleEventDescriptor? {
-        guard let s = NSAppleScript(source: bounded) else { return nil }
-        var errors: NSDictionary?
-        let desc = s.executeAndReturnError(&errors)
-        if errors != nil { print(errors as Any) }
-        return desc
-    }
-    if Thread.isMainThread { return run() }
-    var result: NSAppleEventDescriptor?
-    DispatchQueue.main.sync { result = run() }
-    return result
+    var errors: NSDictionary?
+    let desc = runAppleScriptSafely(source, timeoutSeconds: timeoutSeconds, errors: &errors)
+    if errors != nil { print(errors as Any) }
+    return desc
 }
 
 //*****************all browsers Active Tab Url and Titlle*********************//
