@@ -89,13 +89,43 @@ class tabStrictnessContainerVc: NSViewController {
         self.containerView.addSubview(getCustomBlockingSchedulesVcObject().view)
         self.containerView.addConstraints(subView: getCustomBlockingSchedulesVcObject().view)
         getCustomBlockingSchedulesVcObject().tblView.reloadData()
+        getCustomBlockingSchedulesVcObject().refreshData()
     }
-    
+
     func showBlockingSchedulesView(index:Int, shouldCreateNew:Bool){
         removeSubViews()
         self.containerView.addSubview(getBlockingScheduleEditorVCObject().view)
         self.containerView.addConstraints(subView: getBlockingScheduleEditorVCObject().view)
         getBlockingScheduleEditorVCObject().resetData(index: index, shouldCreateNew: shouldCreateNew)
+    }
+
+    /// Open the editor pre-filled for a schedule drag-created on the calendar.
+    func showBlockingScheduleEditorPrefilled(weekday:Int, startMinutes:Int, endMinutes:Int){
+        let editor = getBlockingScheduleEditorVCObject()
+        editor.prefillDays = [weekday]
+        editor.prefillStart = customBlockingSchedule.parseTime(BlockingScheduleStore.hhmm(fromMinutes: startMinutes))
+        editor.prefillEnd = customBlockingSchedule.parseTime(BlockingScheduleStore.hhmm(fromMinutes: endMinutes))
+        removeSubViews()
+        self.containerView.addSubview(editor.view)
+        self.containerView.addConstraints(subView: editor.view)
+        editor.resetData(index: -1, shouldCreateNew: true)
+    }
+
+    /// Open the editor pre-filled from a Quick-Start preset.
+    func showBlockingScheduleEditorPreset(_ preset: SchedulePreset){
+        let editor = getBlockingScheduleEditorVCObject()
+        if !preset.isCustom {
+            editor.prefillName = preset.name
+            editor.prefillDays = preset.days
+            editor.prefillStart = customBlockingSchedule.parseTime(BlockingScheduleStore.hhmm(fromMinutes: preset.startMinutes))
+            editor.prefillEnd = customBlockingSchedule.parseTime(BlockingScheduleStore.hhmm(fromMinutes: preset.endMinutes))
+            editor.prefillStrictness = preset.strictness
+            editor.prefillEmoji = preset.emoji
+        }
+        removeSubViews()
+        self.containerView.addSubview(editor.view)
+        self.containerView.addConstraints(subView: editor.view)
+        editor.resetData(index: -1, shouldCreateNew: true)
     }
     
     func showFocusPreferences(){

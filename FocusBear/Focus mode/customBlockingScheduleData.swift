@@ -259,6 +259,7 @@ struct customBlockingSchedule: Codable, Identifiable {
         
         isAIBlockingEnabled = try container.decodeIfPresent(Bool.self, forKey: .isAIBlockingEnabled) ?? false
         isMicroBreaksEnabled = false
+        emoji = try container.decodeIfPresent(String.self, forKey: .emoji)
         
         startTimeString = try container.decodeIfPresent(String.self, forKey: .startTime) ?? "09:00"
         endTimeString = try container.decodeIfPresent(String.self, forKey: .endTime) ?? "18:00"
@@ -299,6 +300,8 @@ struct customBlockingSchedule: Codable, Identifiable {
         try container.encode(blockLevelString, forKey: .blockLevel)
         
         try container.encode(isAIBlockingEnabled, forKey: .isAIBlockingEnabled)
+        // full-replace semantics: omit emoji to clear it (backend#2093)
+        try container.encodeIfPresent(emoji, forKey: .emoji)
        // try container.encode(isMicroBreaksEnabled, forKey: .isMicroBreaksEnabled)
         
         try container.encode(startTimeString, forKey: .startTime)
@@ -378,6 +381,7 @@ extension customBlockingSchedule {
         self.blockLevel = blockLevel
         self.isAIBlockingEnabled = isAIBlockingEnabled
         self.isMicroBreaksEnabled = isMicroBreaksEnabled
+        self.emoji = emoji
     }
 }
 

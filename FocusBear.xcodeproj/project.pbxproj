@@ -38,6 +38,12 @@
 		135A8A532E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8A522E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift */; };
 		135A8A552E7EB27A00A96A8E /* customBlockingScheduleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8A542E7EB27A00A96A8E /* customBlockingScheduleData.swift */; };
 		135A8A572E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8A562E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift */; };
+		FB0000000000000000000012 /* BlockingScheduleEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0000000000000000000011 /* BlockingScheduleEditorView.swift */; };
+		FB0000000000000000000010 /* BlockingSchedulePresetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0000000000000000000009 /* BlockingSchedulePresetsView.swift */; };
+		FB0000000000000000000002 /* BlockingScheduleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0000000000000000000001 /* BlockingScheduleStore.swift */; };
+		FB0000000000000000000004 /* BlockingScheduleListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0000000000000000000003 /* BlockingScheduleListView.swift */; };
+		FB0000000000000000000006 /* BlockingScheduleCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0000000000000000000005 /* BlockingScheduleCalendarView.swift */; };
+		FB0000000000000000000008 /* BlockingScheduleHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0000000000000000000007 /* BlockingScheduleHomeView.swift */; };
 		135A8A592E7ECE4000A96A8E /* toggleTitledBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8A582E7ECE4000A96A8E /* toggleTitledBox.swift */; };
 		135ABA6D2E5345A300D133F2 /* focusModeStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135ABA6C2E5345A300D133F2 /* focusModeStateVc.swift */; };
 		135ABEFD2E013254007ED73A /* breaksData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135ABEFC2E01324D007ED73A /* breaksData.swift */; };
@@ -447,6 +453,12 @@
 		135A8A522E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tblCellCustomBlockingSchedules.swift; sourceTree = "<group>"; };
 		135A8A542E7EB27A00A96A8E /* customBlockingScheduleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customBlockingScheduleData.swift; sourceTree = "<group>"; };
 		135A8A562E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = blockingScheduleEditorVC.swift; sourceTree = "<group>"; };
+		FB0000000000000000000011 /* BlockingScheduleEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockingScheduleEditorView.swift; sourceTree = "<group>"; };
+		FB0000000000000000000009 /* BlockingSchedulePresetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockingSchedulePresetsView.swift; sourceTree = "<group>"; };
+		FB0000000000000000000001 /* BlockingScheduleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockingScheduleStore.swift; sourceTree = "<group>"; };
+		FB0000000000000000000003 /* BlockingScheduleListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockingScheduleListView.swift; sourceTree = "<group>"; };
+		FB0000000000000000000005 /* BlockingScheduleCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockingScheduleCalendarView.swift; sourceTree = "<group>"; };
+		FB0000000000000000000007 /* BlockingScheduleHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockingScheduleHomeView.swift; sourceTree = "<group>"; };
 		135A8A582E7ECE4000A96A8E /* toggleTitledBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = toggleTitledBox.swift; sourceTree = "<group>"; };
 		135ABA6C2E5345A300D133F2 /* focusModeStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusModeStateVc.swift; sourceTree = "<group>"; };
 		135ABEFC2E01324D007ED73A /* breaksData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breaksData.swift; sourceTree = "<group>"; };
@@ -865,6 +877,12 @@
 				135A8A502E7E8E6A00A96A8E /* customBlockingSchedulesVc.swift */,
 				135A8A522E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift */,
 				135A8A562E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift */,
+				FB0000000000000000000011 /* BlockingScheduleEditorView.swift */,
+				FB0000000000000000000009 /* BlockingSchedulePresetsView.swift */,
+				FB0000000000000000000001 /* BlockingScheduleStore.swift */,
+				FB0000000000000000000003 /* BlockingScheduleListView.swift */,
+				FB0000000000000000000005 /* BlockingScheduleCalendarView.swift */,
+				FB0000000000000000000007 /* BlockingScheduleHomeView.swift */,
 				135A8A582E7ECE4000A96A8E /* toggleTitledBox.swift */,
 			);
 			path = "Custom Blocking Schedules";
@@ -2207,6 +2225,12 @@
 				13C6BF082FB199E70074DD63 /* focusButtonService.swift in Sources */,
 				8F23A1DC2CAE508C0042CE2A /* explainingPermissionsVc.swift in Sources */,
 				135A8A572E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift in Sources */,
+				FB0000000000000000000012 /* BlockingScheduleEditorView.swift in Sources */,
+				FB0000000000000000000010 /* BlockingSchedulePresetsView.swift in Sources */,
+				FB0000000000000000000002 /* BlockingScheduleStore.swift in Sources */,
+				FB0000000000000000000004 /* BlockingScheduleListView.swift in Sources */,
+				FB0000000000000000000006 /* BlockingScheduleCalendarView.swift in Sources */,
+				FB0000000000000000000008 /* BlockingScheduleHomeView.swift in Sources */,
 				8F36D517297AB32800A7E4AD /* addFocusTempUrlsOrAppsVc.swift in Sources */,
 				13C6BF0E2FB211CA0074DD63 /* audioRecorder.swift in Sources */,
 				8F19BCA5293F360D00F70544 /* whySkipHabitVc.swift in Sources */,

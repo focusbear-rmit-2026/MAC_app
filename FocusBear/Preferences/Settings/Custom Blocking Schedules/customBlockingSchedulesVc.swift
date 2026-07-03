@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import SwiftUI
 
 class customBlockingSchedulesVc: NSViewController {
 
@@ -18,11 +19,18 @@ class customBlockingSchedulesVc: NSViewController {
     @IBOutlet weak var tblView: NSTableView!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var btnBack: cursorButton!
-    
+
+    // SwiftUI redesign (List + Calendar). Hosted on top of the legacy storyboard
+    // content, which we hide. We keep this VC (rather than a new one) so the
+    // editor's `customBlockingSchedulesVcObj?.scheduleAdded()` etc. still work.
+    private var scheduleStore: Any?            // BlockingScheduleStore (macOS 11+)
+    private var swiftUIHostingView: NSView?
+
     var boxPermissionTrackingArea: NSTrackingArea?
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        setupSwiftUIRedesign()
         lblTitle.stringValue = "Custom Blocking"
         lblAddNewBlock.stringValue = "➕ Add new block"
         tblView.enclosingScrollView?.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: 50, right: 0)
@@ -50,6 +58,7 @@ class customBlockingSchedulesVc: NSViewController {
     
     override func viewWillAppear() {
         checkPermissions()
+        updatePermissionsState()
     }
     
     func checkPermissions(){
@@ -108,11 +117,99 @@ class customBlockingSchedulesVc: NSViewController {
     
     func scheduleAdded(){
         tblView.reloadData()
-        tblView.scrollRowToVisible(tblView.numberOfRows - 1)
+        if tblView.numberOfRows > 0 {
+            tblView.scrollRowToVisible(tblView.numberOfRows - 1)
+        }
+        refreshData()
     }
-    
+
     func scheduleEditedAt(_ index:Int){
         tblView.reloadData(forRowIndexes: IndexSet(arrayLiteral: index), columnIndexes: IndexSet(arrayLiteral: 0))
+        refreshData()
+    }
+
+    // MARK: - SwiftUI redesign hosting
+
+    /// Build the SwiftUI List/Calendar UI and host it over the legacy storyboard
+    /// content. All navigation routes through `tabStrictnessContainerVcObj` so the
+    /// existing AppKit editor + permission flows are reused unchanged.
+    func setupSwiftUIRedesign() {
+        guard #available(macOS 11.0, *) else { return }
+
+        // Hide the legacy storyboard controls before overlaying the SwiftUI UI, so they don't render
+        // or intercept hover/clicks behind it (the hosting view is added afterwards, so it stays
+        // visible). Outlets still exist for any code that reads them; on macOS < 11 the storyboard UI
+        // is used untouched (this is inside the availability guard).
+        view.subviews.forEach { $0.isHidden = true }
+
+        let store = BlockingScheduleStore()
+        scheduleStore = store
+
+        let root = BlockingScheduleHomeView(
+            store: store,
+            onBack: { [weak self] in self?.backFromRedesign() },
+            onSelectIndex: { index in
+                tabStrictnessContainerVcObj?.showBlockingSchedulesView(index: index, shouldCreateNew: false)
+            },
+            onSelectScheduleID: { id in
+                if let index = customBlockingScheduleManagerObj.arrBlockingSchedule.firstIndex(where: { $0.id == id }) {
+                    tabStrictnessContainerVcObj?.showBlockingSchedulesView(index: index, shouldCreateNew: false)
+                }
+            },
+            onAdd: {
+                tabStrictnessContainerVcObj?.showBlockingSchedulesView(index: -1, shouldCreateNew: true)
+            },
+            onPickPreset: { preset in
+                tabStrictnessContainerVcObj?.showBlockingScheduleEditorPreset(preset)
+            },
+            onCreate: { weekday, startMinutes, endMinutes in
+                tabStrictnessContainerVcObj?.showBlockingScheduleEditorPrefilled(
+                    weekday: weekday, startMinutes: startMinutes, endMinutes: endMinutes)
+            },
+            onEnablePermissions: { [weak self] in
+                self?.btnFixItClicked(self as Any)
+            })
+
+        updatePermissionsState()
+
+        let hosting = NSHostingView(rootView: root)
+        hosting.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(hosting)
+        NSLayoutConstraint.activate([
+            hosting.topAnchor.constraint(equalTo: view.topAnchor),
+            hosting.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            hosting.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hosting.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+        ])
+        swiftUIHostingView = hosting
+    }
+
+    private func backFromRedesign() {
+        if leftMenuVcObj?.boxBlocks.isSelected ?? false {
+            tabStrictnessContainerVcObj?.showStrictnessView()
+        }
+    }
+
+    /// Re-pull schedules into the SwiftUI store (after add/edit/delete or when
+    /// the screen is shown again).
+    func refreshData() {
+        guard #available(macOS 11.0, *), let store = scheduleStore as? BlockingScheduleStore else { return }
+        store.reload()
+        updatePermissionsState()
+    }
+
+    /// Reflect current blocking-permission state into the SwiftUI banner.
+    func updatePermissionsState() {
+        guard #available(macOS 11.0, *), let store = scheduleStore as? BlockingScheduleStore else { return }
+        store.permissionsNeeded = computePermissionsNeeded()
+    }
+
+    private func computePermissionsNeeded() -> Bool {
+        if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil { return true }
+        if !(menuViewControllerObj?.browserPermissionGiven ?? false) { return true }
+        if !(menuViewControllerObj?.accessibilityPermissionGiven ?? false) { return true }
+        if !(menuViewControllerObj?.systemEventsPermissionGiven ?? false) { return true }
+        return false
     }
     
     
