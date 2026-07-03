@@ -224,4 +224,10 @@ class settingsContainerVc: NSViewController {
         self.containerView.addSubview(vc.view)
         self.containerView.addConstraints(subView: vc.view)
     }
+    
+    func showOfficeModeSettingsView(){
+        removeSubViews()
+        self.containerView.addSubview(getOfficeModeSettingsVcObject().view)
+        self.containerView.addConstraints(subView: getOfficeModeSettingsVcObject().view)
+    }
 }

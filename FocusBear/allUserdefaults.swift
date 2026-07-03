@@ -235,3 +235,8 @@ var kUserdefaultsLastHabitsIdsBeforePostpone = "kRemainingHabitIdsBeforePostpone
 var kUserdefaultsPrefilterLastHabitsIdsBeforePostpone = "kPrefilterRemainingHabitIdsBeforePostpone"
 
 var kUserdefaultsLastRunningFocusModeInfo = "kLastRunningFocusModeInfo"
+
+var kUserdefaultsIsGuestAccount = "kUserdefaultsIsGuestAccount"
+
+// WiFi profile auto-switching (#1000)
+let kUserdefaultsWiFiProfileMappings = "kFBWiFiProfileMappings"

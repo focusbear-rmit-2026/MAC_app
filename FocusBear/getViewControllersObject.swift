@@ -2096,3 +2096,13 @@ func getMessageBoxVcObject()->messageBoxVc{
     return messageBoxVcObj!
 }
 
+
+// officeModeSettingsVcObj — Office Mode settings: direct Office/WFH toggle + Wi-Fi auto-switching (#1000)
+// Note: officeModeSettingsVc creates its UI programmatically; no storyboard scene required.
+var officeModeSettingsVcObj: officeModeSettingsVc?
+func getOfficeModeSettingsVcObject() -> officeModeSettingsVc {
+    if officeModeSettingsVcObj == nil {
+        officeModeSettingsVcObj = officeModeSettingsVc()
+    }
+    return officeModeSettingsVcObj!
+}

@@ -3079,6 +3079,28 @@
         "taskListTitle": "Open Task List:",
         "focusSessionTitle": "Start focus session:"
     },
+    "officeModeSettingsVcInfo": {
+        "settingTitle": "Office Mode",
+        "descriptionText": "During office mode, Focus Bear will only give you office friendly break habits (e.g. stretching vs pushups).",
+        "officeModeOptionText": "Office Mode",
+        "wfhModeOptionText": "WFH Mode",
+        "autoSwitchSectionTitle": "Switch automatically using Wi-Fi networks",
+        "autoSwitchDescription": "Focus Bear defaults to Office mode and switches to WFH mode only on the Wi-Fi networks you mark as WFH below (e.g. your home network).",
+        "addBtnTitle": "Add",
+        "addCurrentBtnTitle": "Use Current Network",
+        "removeBtnTitle": "Remove Selected",
+        "colSSIDTitle": "Wi-Fi Network (SSID)",
+        "colProfileTitle": "Mode (WFH / Office)",
+        "alertAddTitle": "Add Wi-Fi Profile Mapping",
+        "alertAddInfo": "Enter the Wi-Fi network name (SSID) and the mode to switch to.",
+        "alertSSIDPlaceholder": "Wi-Fi network name (SSID)",
+        "alertModeLabel": "Mode:",
+        "alertBtnAdd": "Add",
+        "alertBtnCancel": "Cancel",
+        "alertNotConnectedTitle": "Not Connected",
+        "alertNotConnectedMessage": "Focus Bear couldn't read your current Wi-Fi network. Make sure Location Services are enabled for Focus Bear.",
+        "permissionWarningText": "⚠️ Location permission required to read Wi-Fi network name. Enable it in System Settings → Privacy & Security → Location Services."
+    },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",
     "WindowsSpecific": {

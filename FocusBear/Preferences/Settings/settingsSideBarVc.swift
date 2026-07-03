@@ -30,6 +30,7 @@ var idPermissions = "permissions"
 var idToDoList = "todolist"
 var idResearch = "research"
 var idKeyboardShortcuts = "keyboardshortcuts"
+var idOfficeMode = "officeMode"
 
 import Cocoa
 
@@ -71,7 +72,8 @@ class settingsSideBarVc: NSViewController {
         var uninstallSettingTitle = "Uninstall"
         var permissionsSettingTitle = "Permissions"
         var keyboardShortcutsSettingTitle = "Keyboard Shortcuts"
-        
+        var officeModeSettingTitle = "Office Mode"
+
         
         if let settingsNew = configjson.value(forKey: "settingsNew") as? NSDictionary{
             uiSettingTitle = settingsNew.value(forKey: "uiSettingTitle") as? String ?? uiSettingTitle
@@ -91,6 +93,9 @@ class settingsSideBarVc: NSViewController {
         if let keyboardShortcutsSettingsVcInfo = configjson.value(forKey: "keyboardShortcutsSettingsVcInfo") as? NSDictionary{
             keyboardShortcutsSettingTitle = keyboardShortcutsSettingsVcInfo.value(forKey: "keyboardShortcutsSettingTitle") as? String ?? keyboardShortcutsSettingTitle
         }
+        if let officeModeSettingsVcInfo = configjson.value(forKey: "officeModeSettingsVcInfo") as? NSDictionary{
+            officeModeSettingTitle = officeModeSettingsVcInfo.value(forKey: "settingTitle") as? String ?? officeModeSettingTitle
+        }
         var iconAccount:NSImage?
         var iconUi:NSImage?
         var iconAccessibility:NSImage?
@@ -103,6 +108,7 @@ class settingsSideBarVc: NSViewController {
         var iconBreaks:NSImage?
         var iconToDoList:NSImage?
         var iconKeyboard:NSImage?
+        var iconWiFiProfiles:NSImage?
         if #available(macOS 11.0, *) {
             iconUi = NSImage(systemSymbolName: "text.and.command.macwindow", accessibilityDescription: nil)
             iconAccessibility = NSImage(systemSymbolName: "figure.walk.circle", accessibilityDescription: nil)
@@ -116,6 +122,7 @@ class settingsSideBarVc: NSViewController {
             iconBreaks = NSImage(systemSymbolName: "clock.arrow.2.circlepath", accessibilityDescription: nil)
             iconToDoList = NSImage(systemSymbolName: "checkmark.circle", accessibilityDescription: nil)
             iconKeyboard = NSImage(systemSymbolName: "keyboard", accessibilityDescription: nil)
+            iconWiFiProfiles = NSImage(systemSymbolName: "wifi", accessibilityDescription: nil)
         } else {
             iconUi = NSImage(named: NSImage.homeTemplateName)
             iconAccessibility = NSImage(named: NSImage.preferencesGeneralName)
@@ -129,6 +136,7 @@ class settingsSideBarVc: NSViewController {
             iconBreaks = NSImage(named: NSImage.touchBarAlarmTemplateName)
             iconToDoList = NSImage(named: NSImage.menuOnStateTemplateName)
             iconKeyboard = NSImage(named: NSImage.preferencesGeneralName)
+            iconWiFiProfiles = NSImage(named: NSImage.networkName)
         }
         
         
@@ -142,6 +150,7 @@ class settingsSideBarVc: NSViewController {
                                       ["title": toDoListSettingTitle, "icon": iconToDoList as Any, "id": idToDoList],
                                       ["title": pomodoroSettingTitle, "icon": iconPomodoro as Any, "id": idPomodoro],
                                       ["title": keyboardShortcutsSettingTitle, "icon": iconKeyboard as Any, "id": idKeyboardShortcuts],
+                                      ["title": officeModeSettingTitle, "icon": iconWiFiProfiles as Any, "id": idOfficeMode],
                                       ["title": advancedSettingTitle, "icon": iconAdvanced as Any, "id": idAdvanced],
                                       ["title": permissionsSettingTitle, "icon": iconPermission as Any, "id": idPermissions],
                                       ["title": accountSettingTitle, "icon": iconAccount as Any, "id": idAccount],
@@ -154,6 +163,7 @@ class settingsSideBarVc: NSViewController {
                                         ["title": aISettingTitle, "icon": iconAi as Any, "id": idAi],
                                         ["title": breaksSettingTitle, "icon": iconBreaks as Any, "id": idMicroBreaks],
                                         ["title": toDoListSettingTitle, "icon": iconToDoList as Any, "id": idToDoList],
+                                        ["title": officeModeSettingTitle, "icon": iconWiFiProfiles as Any, "id": idOfficeMode],
                                         ["title": permissionsSettingTitle, "icon": iconPermission as Any, "id": idPermissions],
                                         ["title": accountSettingTitle, "icon": iconAccount as Any, "id": idAccount],
                                         ["title": uninstallSettingTitle, "icon": iconUninstall as Any, "id": idUninstall]]
@@ -535,6 +545,8 @@ extension settingsSideBarVc: NSTableViewDelegate, NSTableViewDataSource{
                 settingsContainerVcObj.showTodoListSettingView()
             case idKeyboardShortcuts:
                 settingsContainerVcObj.showKeyboardShortcutsView()
+            case idOfficeMode:
+                settingsContainerVcObj.showOfficeModeSettingsView()
             default:
                 break;
             }

@@ -64,5 +64,7 @@
 	<string>https://downloads.focusbear.io/update/mac/new/latest-version.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>BjFdAh+PpAgaUh6D+xJIDjLUTa298QU5JF6kNyy3H38=</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Focus Bear needs Location access to read your Wi-Fi network name (SSID) in order to automatically switch your profile when you move between networks (e.g. home to office).</string>
 </dict>
 </plist>

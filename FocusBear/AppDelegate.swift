@@ -1320,6 +1320,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Insert code here to initialize your application
 
+        // Start Wi-Fi profile auto-switching (#1000)
+        WiFiMonitorService.shared.startMonitoring()
+
 #if DEBUG
         // Offscreen Day Plan mockup render (DEBUG-only; no-op unless FB_MOCKUP_FILE is set); quits when done.
         DayPlanMockup.runIfRequested()

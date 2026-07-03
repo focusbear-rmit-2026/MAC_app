@@ -100,6 +100,9 @@
 		274E0F4928902CF1000234A3 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E0F4828902CF1000234A3 /* User.swift */; };
 		274E0F4C28902E29000234A3 /* Auth0.plist in Resources */ = {isa = PBXBuildFile; fileRef = 274E0F4B28902E28000234A3 /* Auth0.plist */; };
 		274E671628951DDD0030163F /* AllApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E671528951DDC0030163F /* AllApi.swift */; };
+		5AA6CC882FBC0A1F007BD5D1 /* WiFiMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA6CC872FBC0A1F007BD5D1 /* WiFiMonitorService.swift */; };
+		5AA6CC8A2FBC0A49007BD5D1 /* WiFiProfileMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA6CC892FBC0A49007BD5D1 /* WiFiProfileMapping.swift */; };
+		5AA6CC8C2FBC0A91007BD5D1 /* officeModeSettingsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA6CC8B2FBC0A91007BD5D1 /* officeModeSettingsVc.swift */; };
 		52E1363556E99AFB2A80EAD6 /* FBTTTodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC187A9D44C75F344A462A1 /* FBTTTodayView.swift */; };
 		44893728E4D2BE20B7672984 /* ScheduleKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9989E00FEA15521B6C3FE5FE /* ScheduleKit.swift */; };
 		7476A99B06ABC3EB040F5633 /* DayPlanTasks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 060DBE94CCB418D4071A43CB /* DayPlanTasks.swift */; };
@@ -502,6 +505,9 @@
 		274E0F4828902CF1000234A3 /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		274E0F4B28902E28000234A3 /* Auth0.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Auth0.plist; sourceTree = "<group>"; };
 		274E671528951DDC0030163F /* AllApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllApi.swift; sourceTree = "<group>"; };
+		5AA6CC872FBC0A1F007BD5D1 /* WiFiMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiMonitorService.swift; sourceTree = "<group>"; };
+		5AA6CC892FBC0A49007BD5D1 /* WiFiProfileMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiProfileMapping.swift; sourceTree = "<group>"; };
+		5AA6CC8B2FBC0A91007BD5D1 /* officeModeSettingsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = officeModeSettingsVc.swift; sourceTree = "<group>"; };
 		2DEF19BEE8458F980B62C5C3 /* firstViewController+Schedule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "firstViewController+Schedule.swift"; sourceTree = "<group>"; };
 		5F7C4CC4D1F38E18CC9D5E55 /* FocusBear-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "FocusBear-Release.xcconfig"; sourceTree = "<group>"; };
 		6EC187A9D44C75F344A462A1 /* FBTTTodayView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FBTTTodayView.swift; sourceTree = "<group>"; };
@@ -1343,6 +1349,9 @@
 		8FAC6C8527805F6D008A4180 /* FocusBear */ = {
 			isa = PBXGroup;
 			children = (
+				5AA6CC8B2FBC0A91007BD5D1 /* officeModeSettingsVc.swift */,
+				5AA6CC892FBC0A49007BD5D1 /* WiFiProfileMapping.swift */,
+				5AA6CC872FBC0A1F007BD5D1 /* WiFiMonitorService.swift */,
 				13188D712DEED55800E67A44 /* server */,
 				13188D752DEF162D00E67A44 /* serverIntel */,
 				8FAC6C8627805F6D008A4180 /* AppDelegate.swift */,
@@ -2152,6 +2161,7 @@
 				8F3F1F29299BB96400E67F42 /* breaksBrainDumpVc.swift in Sources */,
 				8F250F542CC63E460058DC85 /* allBrowsers.swift in Sources */,
 				8F270CB029435EB100E91015 /* onboardingBlockedUrlsVc.swift in Sources */,
+				5AA6CC8C2FBC0A91007BD5D1 /* officeModeSettingsVc.swift in Sources */,
 				8F4BD8C727883FBE00ABAEF5 /* HotKeysController.swift in Sources */,
 				8F35B27E2D1185D50000EB70 /* askDetailsNotBlockingVc.swift in Sources */,
 				8F2F1625291BAC0600F8EFCD /* skipHabitVc.swift in Sources */,
@@ -2171,6 +2181,7 @@
 				8FF8E0FF291686EF002938B8 /* popUpBlockConfirmVc.swift in Sources */,
 				8F99C8D62A13AE1D00FD2403 /* editHabitRoutineVc.swift in Sources */,
 				135A8A512E7E8E6A00A96A8E /* customBlockingSchedulesVc.swift in Sources */,
+				5AA6CC8A2FBC0A49007BD5D1 /* WiFiProfileMapping.swift in Sources */,
 				8F0419462C353D4100481ACD /* getViewControllersObject.swift in Sources */,
 				8F3D784D2A6A70A300CE936B /* intentionBlockedUrlsVc.swift in Sources */,
 				13E09A402F77F38600E6D3F3 /* askPermissionsVc.swift in Sources */,
@@ -2214,6 +2225,7 @@
 				8F0A184E2A8DE76100AFA623 /* accessibilityVc.swift in Sources */,
 				8F94EF892836094400355E66 /* rememberNextHabitVc.swift in Sources */,
 				8F02AF422A751A5200BA6536 /* blockedAppsVc.swift in Sources */,
+				5AA6CC882FBC0A1F007BD5D1 /* WiFiMonitorService.swift in Sources */,
 				AAW00002 /* alwaysAllowedAppsVc.swift in Sources */,
 				ABH00001 /* AppBlockingHelper.swift in Sources */,
 				52E1363556E99AFB2A80EAD6 /* FBTTTodayView.swift in Sources */,

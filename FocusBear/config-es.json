@@ -3040,6 +3040,28 @@
         "taskListTitle": "Abrir lista de tareas:",
         "focusSessionTitle": "Iniciar sesión de enfoque:"
     },
+    "officeModeSettingsVcInfo": {
+        "settingTitle": "Modo de Oficina",
+        "descriptionText": "Durante el modo de oficina, Focus Bear solo te dará hábitos de descanso aptos para la oficina (p. ej. estiramientos en vez de flexiones).",
+        "officeModeOptionText": "Modo de Oficina",
+        "wfhModeOptionText": "Modo Trabajo Desde Casa",
+        "autoSwitchSectionTitle": "Cambiar automáticamente usando redes Wi-Fi",
+        "autoSwitchDescription": "Focus Bear usa el modo de Oficina por defecto y cambia al modo Trabajo Desde Casa solo en las redes Wi-Fi que marques como WFH abajo (p. ej. tu red de casa).",
+        "addBtnTitle": "Añadir",
+        "addCurrentBtnTitle": "Usar red actual",
+        "removeBtnTitle": "Eliminar selección",
+        "colSSIDTitle": "Red Wi-Fi (SSID)",
+        "colProfileTitle": "Modo (WFH / Oficina)",
+        "alertAddTitle": "Añadir asignación Wi-Fi",
+        "alertAddInfo": "Introduce el nombre de la red Wi-Fi (SSID) y el modo al que cambiar.",
+        "alertSSIDPlaceholder": "Nombre de la red Wi-Fi (SSID)",
+        "alertModeLabel": "Modo:",
+        "alertBtnAdd": "Añadir",
+        "alertBtnCancel": "Cancelar",
+        "alertNotConnectedTitle": "Sin conexión",
+        "alertNotConnectedMessage": "Focus Bear no pudo leer tu red Wi-Fi actual. Asegúrate de que los Servicios de Ubicación estén habilitados para Focus Bear.",
+        "permissionWarningText": "⚠️ Se necesita permiso de ubicación para leer el nombre de la red Wi-Fi. Actívalo en Configuración del sistema → Privacidad y seguridad → Servicios de ubicación."
+    },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",
     "WindowsSpecific": {
