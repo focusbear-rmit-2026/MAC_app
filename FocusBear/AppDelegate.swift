@@ -7059,6 +7059,71 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
+    /// Start a focus session directly from the menu-bar overlay with a chosen block list (focus
+    /// mode), duration and intention — no config window. Mirrors the tail of the simple-pomodoro
+    /// start so blocking (`workBeforeFocusBegin`), DND, the timers, the Focus Button and
+    /// `focusModeStartted` all engage exactly as they do from the pomodoro flow.
+    @objc func startFocusFromMenu(focusModeId: String, minutes: Int, intention: String) {
+        let minute = max(1, minutes)
+        endFocusModeTime = Calendar.current.date(byAdding: .minute, value: minute, to: Date())
+
+        minFocusAlignmentScoreToShowDistractingPopUp = 99.9
+        if SettingsManagerObject.isDataCollectionModeEnabled {
+            minFocusAlignmentScoreToShowDistractingPopUp = 0
+        }
+
+        // The focus modes may not be loaded into the global yet (the pomodoro screen normally does it),
+        // so hydrate from UserDefaults first — otherwise the menu could start nothing.
+        if arrFocusType.isEmpty, let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrFocusTypes) as? [[String:Any]] {
+            arrFocusType = arr
+        }
+        // Resolve which block list / focus mode to run: the chosen id, else the default one, else the
+        // deep-work one, else the first available. This mirrors how the pomodoro flow picks a default.
+        var startedIndex = arrFocusType.firstIndex { ($0["id"] as? String ?? "") == focusModeId }
+        if startedIndex == nil { startedIndex = arrFocusType.firstIndex { ($0["isDefault"] as? Bool) == true } }
+        if startedIndex == nil { startedIndex = arrFocusType.firstIndex { ($0["isDeepWorkFocus"] as? Bool) == true } }
+        if startedIndex == nil, !arrFocusType.isEmpty { startedIndex = 0 }
+        guard let i = startedIndex else {
+            addLog(text: "startFocusFromMenu: no focus modes available; aborting")
+            return
+        }
+        arrFocusType[i]["isOn"] = true
+        arrFocusType[i]["lastStartedDate"] = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+        if let end = endFocusModeTime {
+            arrFocusType[i]["lastScheduledEndDate"] = getStringFromDate(date: end, dateFormat: "yyyy-MM-dd HH:mm:ss")
+        }
+        arrFocusType[i]["lastIntentionUsed"] = intention
+        if isAccessibilityEnabled(isPrompt: true) {
+            DNDManager.shared.setDND(true)
+        }
+        workBeforeFocusBegin(index: i)
+        setStatusBarButtonColorForFocusMode(color: nil, colorString: arrFocusType[i]["color"] as? String ?? "")
+        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        updateAllFocusModes()
+
+        isFocusModeRunning = true
+        setStatusBarButtonTitleForFocusMode(title: intention)
+        statusbutton?.imagePosition = .imageLeft
+
+        timerForFocusMode?.invalidate(); timerForFocusMode = nil
+        timerForFocusModeEndNotification?.invalidate(); timerForFocusModeEndNotification = nil
+
+        setFocusModeTimer(hour: nil, minute: minute)
+        focusButtonServiceObject.startFocusSession(seconds: minute * 60)
+
+        isFocusModeStartedFromPomodoroMode = true
+        isSkipBreakActivityDuringPomodoro = true
+        whatToAchieveInFocusBlock = intention
+        focusModeStartted(isStartedByPusher: false)
+
+        // Remember this duration so the menu defaults to it next time.
+        UserDefaults.standard.set(minute, forKey: kUserdefaultsLastFocusModeMinutes)
+
+        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled {
+            showTaskPlayerWindow(totalDuration: minute, intention: intention, automatically: true)
+        }
+    }
+
     func setFocusModeTimerForExtendAfterComplete(hour:Int?, minute:Int?){
         addLog(text: "setFocusModeTimer")
         DispatchQueue.global().sync {

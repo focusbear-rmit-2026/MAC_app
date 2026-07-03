@@ -95,6 +95,7 @@ var kUserdefaultsAllFocusModesTags = "kUserdefaultsAllFocusModesTags"
 var kUserdefaultsIsAppEnabled = "kUserdefaultsIsAppEnabled"
 var kUserdefaultsLastAppAbortedDate = "kUserdefaultsLastAppAbortedDate"
 var kUserdefaultsLastFocusModeDoneDate = "kUserdefaultsLastFocusModeDoneDate"
+var kUserdefaultsLastFocusModeMinutes = "kUserdefaultsLastFocusModeMinutes"   // menu quick-start default duration
 
 var kUserdefaultsLastInactivityNagShowDate = "kUserdefaultsLastInactivityNagShowDate"
 

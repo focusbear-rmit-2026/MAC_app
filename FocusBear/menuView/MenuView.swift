@@ -13,6 +13,7 @@
 //
 
 import SwiftUI
+import AppKit
 
 /// Notifications posted by the audio recorder so the menu's voice UI can show progress/results.
 enum VoiceEvents {
@@ -141,6 +142,15 @@ final class MenuModel: ObservableObject {
     var onToggleTask: (String) -> Void = { _ in }   // task id
     var onStartNextHabit: () -> Void = {}
     var onStartFocus: () -> Void = {}
+
+    // Inline focus starter — the Start button expands into a duration stepper (+/-, hold to change a
+    // lot), an intention field and a block-list picker, then starts the session directly.
+    @Published var focusMinutes: Int = 15               // defaults to the last session's duration
+    @Published var focusStarterExpanded = false         // tap once to reveal intention + block list, tap again to start
+    @Published var focusIntentionDraft = ""
+    @Published var focusBlockLists: [MenuBlockList] = [] // choosable block lists / focus modes
+    @Published var selectedBlockListId = ""
+    var onStartFocusConfigured: (Int, String, String) -> Void = { _, _, _ in }   // minutes, intention, blockListId
     var onStopFocus: () -> Void = {}
     var onOpenBreaks: () -> Void = {}
     var onOpenDayPlan: () -> Void = {}
@@ -157,6 +167,117 @@ struct DayPlanMenuTask: Identifiable {
     let id: String
     let title: String
     let done: Bool
+}
+
+struct MenuBlockList: Identifiable {
+    let id: String
+    let name: String
+}
+
+/// A +/- button that fires once on tap and then auto-repeats while held, accelerating the longer
+/// you hold it — so you can change the focus duration by a lot with a press-and-hold.
+@available(macOS 11.0, *)
+private struct HoldRepeatButton: View {
+    let systemName: String
+    let action: () -> Void
+    @SwiftUI.State private var timer: Timer?
+    @SwiftUI.State private var interval: Double = 0.35
+    @SwiftUI.State private var pressing = false
+
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.system(size: 15, weight: .bold))
+            .foregroundColor(.white)
+            .frame(width: 42, height: 30)
+            .contentShape(Rectangle())
+            .opacity(pressing ? 0.55 : 1)
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        guard !pressing else { return }
+                        pressing = true
+                        action()                       // immediate first step
+                        interval = 0.35
+                        scheduleNext()
+                    }
+                    .onEnded { _ in stop() }
+            )
+    }
+
+    private func scheduleNext() {
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { _ in
+            action()
+            interval = max(0.05, interval * 0.75)      // accelerate while held
+            scheduleNext()
+        }
+    }
+
+    private func stop() {
+        pressing = false
+        timer?.invalidate(); timer = nil
+        interval = 0.35
+    }
+}
+
+/// A typeahead block-list picker backed by AppKit's NSComboBox — type to autocomplete a block list
+/// (or open the dropdown). Nicer than a plain menu when there are several lists.
+@available(macOS 11.0, *)
+struct BlockListComboBox: NSViewRepresentable {
+    let items: [MenuBlockList]
+    @Binding var selectedId: String
+
+    func makeNSView(context: Context) -> NSComboBox {
+        let box = NSComboBox()
+        box.completes = true                 // typeahead autocomplete as you type
+        box.isEditable = true
+        box.usesDataSource = false
+        box.isBordered = false
+        box.drawsBackground = false
+        box.focusRingType = .none
+        box.font = .systemFont(ofSize: 13)
+        box.numberOfVisibleItems = 8
+        box.delegate = context.coordinator
+        box.placeholderString = "Block list"
+        return box
+    }
+
+    func updateNSView(_ box: NSComboBox, context: Context) {
+        context.coordinator.parent = self
+        let names = items.map { $0.name }
+        if (box.objectValues as? [String]) != names {
+            box.removeAllItems()
+            box.addItems(withObjectValues: names)
+        }
+        if let name = items.first(where: { $0.id == selectedId })?.name, box.stringValue != name {
+            box.stringValue = name
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    final class Coordinator: NSObject, NSComboBoxDelegate {
+        var parent: BlockListComboBox
+        init(_ parent: BlockListComboBox) { self.parent = parent }
+
+        func comboBoxSelectionDidChange(_ notification: Notification) {
+            guard let box = notification.object as? NSComboBox else { return }
+            // The selection isn't reflected in stringValue until the run loop turns; read the index next tick.
+            DispatchQueue.main.async {
+                let idx = box.indexOfSelectedItem
+                if idx >= 0 && idx < self.parent.items.count {
+                    self.parent.selectedId = self.parent.items[idx].id
+                }
+            }
+        }
+
+        func controlTextDidEndEditing(_ obj: Notification) {
+            guard let box = obj.object as? NSComboBox else { return }
+            if let match = parent.items.first(where: { $0.name.caseInsensitiveCompare(box.stringValue) == .orderedSame }) {
+                parent.selectedId = match.id
+            }
+        }
+    }
 }
 
 enum VoiceStatus { case listening, processing, done, error }
@@ -329,22 +450,109 @@ struct FocusBearMenuView: View {
     }
 
     // MARK: Start button (idle)
+    // Collapsed: a plain START FOCUS SESSION button. Tapping it expands the card to a "Focus Goal?"
+    // + block-list box and a duration stepper; tapping the stepper (or ▶) then starts the session.
     private var startButton: some View {
-        SwiftUI.Button(action: model.onStartFocus) {
-            HStack(spacing: 8) {
-                Image(systemName: "play.fill").font(.system(size: 12, weight: .bold))
-                Text(menuLocalized("menuStartFocus", "START FOCUS SESSION"))
-                    .font(MenuTheme.font(14, .bold))
-                    .tracking(0.5)
+        VStack(spacing: 8) {
+            if model.focusStarterExpanded {
+                // Focus Goal + block-list dropdown grouped together in one box.
+                VStack(spacing: 0) {
+                    HStack(spacing: 8) {
+                        TextField(menuLocalized("menuFocusGoalPlaceholder", "Enter Focus Goal here"),
+                                  text: $model.focusIntentionDraft)
+                            .textFieldStyle(PlainTextFieldStyle())
+                            .font(MenuTheme.font(13, .regular))
+                            .foregroundColor(MenuTheme.primaryText(scheme))
+                        // Advanced (icon only): open the main window's Start Focus Session view for the
+                        // full set of options. Reuses the existing onStartFocus action.
+                        SwiftUI.Button(action: model.onStartFocus) {
+                            Image(systemName: "wrench.and.screwdriver")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(MenuTheme.orange)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .help(menuLocalized("menuAdvancedFocus", "Advanced"))
+                    }
+                    .padding(10)
+                    if !model.focusBlockLists.isEmpty {
+                        Divider()
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(menuLocalized("menuSelectFocusMode", "Select Focus Mode"))
+                                .font(MenuTheme.font(11, .semibold))
+                                .foregroundColor(MenuTheme.subtitle(scheme))
+                            HStack(spacing: 8) {
+                                Image(systemName: "shield.lefthalf.filled").foregroundColor(MenuTheme.orange)
+                                // Typeahead combo box: type to autocomplete a block list, or open the dropdown.
+                                BlockListComboBox(items: model.focusBlockLists, selectedId: $model.selectedBlockListId)
+                                    .frame(height: 24)
+                            }
+                        }
+                        .padding(10)
+                    }
+                }
+                .background(MenuTheme.cardBg(scheme))
+                .cornerRadius(9)
+                .overlay(RoundedRectangle(cornerRadius: 9).stroke(MenuTheme.border(scheme), lineWidth: 1))
+                .transition(.opacity)
+
+                // Duration bar:  [ − ]   N MIN / TAP TO START   [ + ]   [ ▶ ]
+                HStack(spacing: 0) {
+                    HoldRepeatButton(systemName: "minus") { adjustFocusMinutes(-5) }
+                    SwiftUI.Button(action: startFocusNow) {
+                        VStack(spacing: 1) {
+                            Text(String(format: menuLocalized("menuFocusMinutes", "%d MIN"), model.focusMinutes))
+                                .font(MenuTheme.font(16, .bold))
+                            Text(menuLocalized("menuTapToStart", "TAP TO START"))
+                                .font(MenuTheme.font(9, .semibold)).tracking(0.5).opacity(0.9)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    HoldRepeatButton(systemName: "plus") { adjustFocusMinutes(5) }
+                    SwiftUI.Button(action: startFocusNow) {
+                        Image(systemName: "play.fill").font(.system(size: 13, weight: .bold))
+                            .frame(width: 34).contentShape(Rectangle())
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+                .padding(.vertical, 12)
+                .background(MenuTheme.orange)
+                .foregroundColor(.white)
+                .cornerRadius(12)
+                .shadow(color: MenuTheme.orange.opacity(0.30), radius: 5, x: 0, y: 2)
+
+                Text(menuLocalized("menuChangeTimeHint", "CHANGE THE TIME WITH + AND -"))
+                    .font(MenuTheme.font(9, .semibold)).tracking(0.5)
+                    .foregroundColor(MenuTheme.subtitle(scheme))
+            } else {
+                // Initial state: the plain button. Tapping it reveals the goal box + duration stepper.
+                SwiftUI.Button(action: { withAnimation(.easeInOut(duration: 0.15)) { model.focusStarterExpanded = true } }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "play.fill").font(.system(size: 12, weight: .bold))
+                        Text(menuLocalized("menuStartFocus", "START FOCUS SESSION"))
+                            .font(MenuTheme.font(14, .bold)).tracking(0.5)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(MenuTheme.orange)
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+                    .shadow(color: MenuTheme.orange.opacity(0.30), radius: 5, x: 0, y: 2)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(MenuTheme.orange)
-            .foregroundColor(.white)
-            .cornerRadius(12)
-            .shadow(color: MenuTheme.orange.opacity(0.30), radius: 5, x: 0, y: 2)
         }
-        .buttonStyle(PlainButtonStyle())
+    }
+
+    private func adjustFocusMinutes(_ delta: Int) {
+        model.focusMinutes = min(180, max(5, model.focusMinutes + delta))
+    }
+
+    private func startFocusNow() {
+        model.onStartFocusConfigured(model.focusMinutes, model.focusIntentionDraft, model.selectedBlockListId)
+        model.focusStarterExpanded = false   // collapse back to the plain button for next time
     }
 
     // MARK: Habit-playing card (replaces Start Focus while a habit runs; Skip / Postpone inline)
@@ -450,7 +658,8 @@ struct FocusBearMenuView: View {
     // MARK: Focus accordion (running)
     private var focusAccordion: some View {
         AccordionRow(icon: "timer",
-                     title: menuLocalized("menuFocus", "Focus"),
+                     // Show the focus goal as the section title once one is set; fall back to "Focus".
+                     title: model.focusTaskTitle.isEmpty ? menuLocalized("menuFocus", "Focus") : model.focusTaskTitle,
                      subtitle: focusSubtitle,
                      solid: highlightedSection == .focus,
                      isOpen: binding(.focus), scheme: scheme) {

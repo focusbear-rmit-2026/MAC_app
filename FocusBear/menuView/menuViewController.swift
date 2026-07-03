@@ -2424,6 +2424,13 @@ extension menuViewController {
             }
             closeMenuWindowIsVisible()
         }
+        // Inline quick-start: begin a focus session directly with the chosen minutes/intention/block list.
+        model.onStartFocusConfigured = { [weak self] minutes, intention, blockListId in
+            guard let self = self else { return }
+            let id = blockListId.isEmpty ? (model.focusBlockLists.first?.id ?? "") : blockListId
+            appdelegate?.startFocusFromMenu(focusModeId: id, minutes: minutes, intention: intention)
+            closeMenuWindowIsVisible()
+        }
         model.onMic            = {
             // Same flow as the Focus Button microphone (LISTEN|START → recorder). Keep the popover
             // open so the voice UI stays visible while recording.
@@ -2605,6 +2612,31 @@ extension menuViewController {
         model.focusRemaining   = formatFocusRemaining(lblTimerFocusMode?.stringValue ?? "")
         model.focusedTodayText = lblTotalFocusedTimeToday?.stringValue ?? ""
         model.focusTaskTitle   = lblFocusModeIntention?.stringValue ?? ""
+
+        // Inline focus-starter: offer the available block lists (focus modes) and default the duration
+        // to the last session's. Only sync the duration/selection while the card is collapsed so a
+        // live refresh doesn't wipe an in-progress customisation.
+        // The focus modes may not be loaded into the global yet (that normally happens when the
+        // pomodoro screen appears), so fall back to UserDefaults — otherwise the dropdown is empty.
+        var focusTypes = arrFocusType
+        if focusTypes.isEmpty {
+            focusTypes = (UserDefaults.standard.object(forKey: kUserdefaultsArrFocusTypes) as? [[String: Any]]) ?? []
+        }
+        model.focusBlockLists = focusTypes.compactMap { ft in
+            guard let id = ft["id"] as? String, let name = ft["name"] as? String, !name.isEmpty else { return nil }
+            return MenuBlockList(id: id, name: name)
+        }
+        if !model.focusStarterExpanded {
+            if model.selectedBlockListId.isEmpty || !model.focusBlockLists.contains(where: { $0.id == model.selectedBlockListId }) {
+                let lastId = UserDefaults.standard.string(forKey: kUserdefaultsLastFocusModeId) ?? ""
+                let defaultId = focusTypes.first(where: { ($0["isDefault"] as? Bool) == true })?["id"] as? String ?? ""
+                model.selectedBlockListId = model.focusBlockLists.first(where: { $0.id == lastId })?.id
+                    ?? model.focusBlockLists.first(where: { $0.id == defaultId })?.id
+                    ?? model.focusBlockLists.first?.id ?? ""
+            }
+            let lastMinutes = UserDefaults.standard.integer(forKey: kUserdefaultsLastFocusModeMinutes)
+            if lastMinutes > 0 { model.focusMinutes = min(180, max(5, lastMinutes)) }
+        }
         // The focus-alignment score only exists when AI blocking is on. The storyboard label is just
         // a cache that the gated reloadData() paths refresh; it's never cleared when AI is off, so it
         // retains a previous session's score (or its "xx…" placeholder). Gate on AI here — matching
