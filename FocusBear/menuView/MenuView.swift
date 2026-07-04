@@ -95,6 +95,9 @@ final class MenuModel: ObservableObject {
     @Published var habitPlaying = false
     @Published var habitName = ""
     @Published var habitTimer = ""
+    /// For non-timer habits (those with a completion requirement), the requirement text to show in
+    /// place of the countdown — their duration is a 24h fallback that would otherwise read ~23:59:59.
+    @Published var habitCompletionRequirement = ""
     var onSkipHabit: () -> Void = {}
     var onPostponeHabit: () -> Void = {}
     @Published var dayPlanDate = ""             // "Tuesday, June 25" (collapsed subtitle)
@@ -568,6 +571,14 @@ struct FocusBearMenuView: View {
                 Text(model.habitTimer)
                     .font(MenuTheme.font(30, .bold))
                     .foregroundColor(MenuTheme.orange)
+            } else if !model.habitCompletionRequirement.isEmpty {
+                // Non-timer habit: show what completes it instead of a meaningless 24h countdown.
+                Text(model.habitCompletionRequirement)
+                    .font(MenuTheme.font(15, .semibold))
+                    .foregroundColor(MenuTheme.orange)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
             }
             HStack(spacing: 8) {
                 habitActionButton(menuLocalized("menuSkip", "Skip"), action: model.onSkipHabit)

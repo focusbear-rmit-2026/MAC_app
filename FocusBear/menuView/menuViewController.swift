@@ -2702,7 +2702,19 @@ extension menuViewController {
         model.habitPlaying = habitInProgress
         if habitInProgress {
             model.habitName = currentHabitPlaying?.name ?? ""
-            model.habitTimer = timerViewcontrollerObj?.lblTimer?.stringValue ?? ""
+            let requirement = (currentHabitPlaying?.completion_requirements ?? "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if requirement.isEmpty {
+                // Timer-based habit → live countdown.
+                model.habitTimer = timerViewcontrollerObj?.lblTimer?.stringValue ?? ""
+                model.habitCompletionRequirement = ""
+            } else {
+                // Non-timer habit → show the completion requirement instead of the 24h fallback timer.
+                model.habitTimer = ""
+                model.habitCompletionRequirement = requirement
+            }
+        } else {
+            model.habitCompletionRequirement = ""
         }
     }
 
