@@ -25,10 +25,15 @@ class confirmRoutineDurationVc: NSViewController {
     
     var totalSeconds = 0
     var btnTitleLetsDoIt = "Let's do it"
+
+    /// Round a duration up to the next whole minute, so the readout shows e.g. "2h 47m"
+    /// instead of "2h 46m 59s".
+    private func roundedUpToMinute(_ seconds: Int) -> Int { ((seconds + 59) / 60) * 60 }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        
+
         lblTitle.stringValue = "How much time do you have for your habits today?"
         if let confirmRoutineDurationVcInfo = configjson.value(forKey: "confirmRoutineDurationVcInfo") as? NSDictionary{
             lblTitle.stringValue = confirmRoutineDurationVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
@@ -43,7 +48,7 @@ class confirmRoutineDurationVc: NSViewController {
     }
     
     func resetData(totalSeconds:Int){
-        lblMaximumDuration.stringValue = getStringTimeFromSeconds(seconds: totalSeconds)
+        lblMaximumDuration.stringValue = getStringTimeFromSeconds(seconds: roundedUpToMinute(totalSeconds))
         slider.maxValue = Double(totalSeconds)
         slider.integerValue = totalSeconds
         self.totalSeconds = totalSeconds
@@ -124,7 +129,8 @@ class confirmRoutineDurationVc: NSViewController {
     }
     
     @IBAction func sliderClicked(_ sender: Any) {
-        lblCurrentDuration.stringValue = getStringTimeFromSeconds(seconds: slider.integerValue)
+        let display = getStringTimeFromSeconds(seconds: roundedUpToMinute(slider.integerValue))
+        lblCurrentDuration.stringValue = display
         if slider.integerValue == 0{
             stackViewButtons.isHidden = false
             btnYes.isHidden = false

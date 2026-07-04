@@ -655,8 +655,11 @@ func showLateNoMoreWindow(){
     getLateNoMorePopUpWcObject().window?.center()
     getLateNoMorePopUpWcObject().window?.title = appName
     getLateNoMorePopUpWcObject().window?.styleMask.remove(.closable)
+    getLateNoMorePopUpWcObject().window?.level = .floating
     getLateNoMorePopUpWcObject().showWindow(nil)
-    NSApplication.shared.activate(ignoringOtherApps: true)
+    // Float the reminder above the user's current app WITHOUT activating Focus Bear — calling
+    // NSApp.activate here also dragged the main window to the foreground over the user's work.
+    getLateNoMorePopUpWcObject().window?.orderFrontRegardless()
     allApiObject.capturePosthog(event: "show-latenomore-window", metadata: [:])
 }
 //-------------------------------------------------//
