@@ -59,9 +59,19 @@ class popupAppointmentTimeVc: NSViewController {
         if Focus_Bear.shouldAskPassword(){
             if currentState == ._MORNING_HABIT_ && SettingsManagerObject.isPasswordRequireInSkipMorning{
                 shouldAskPassword = true
-            }else if currentState == ._EVENING_HABIT_ && SettingsManagerObject.isPasswordRequireInSkipEvening && !isHighPrioritySequenceGoing{
+            }else if currentState == ._EVENING_HABIT_ && SettingsManagerObject.isPasswordRequireInSkipEvening && !isHighPrioritySequenceGoing && !isCutOffTimeGoing(){
+                // This is the BEFORE-cutoff evening branch. Exclude cutoff time here so it doesn't
+                // short-circuit the else-if and prevent the after-cutoff branch below from running.
                 shouldAskPassword = true
-            }else if currentState == ._EVENING_HABIT_ && SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff && isHighPrioritySequenceGoing{
+            }else if currentState == ._EVENING_HABIT_ && SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff && (isHighPrioritySequenceGoing || isCutOffTimeGoing()){
+                // isPasswordRequireInSkipEveningAfterCutOff is an Evening-Habit-specific setting, so this
+                // branch only governs postponing the evening habit — when a meeting/high-priority
+                // sequence is running or it's past the cutoff time.
+                // NOTE (tradeoff): this intentionally no longer requires the password past cutoff in
+                // NON-evening states (shutoff / custom routine / break). An earlier version kept this
+                // branch state-independent so a meeting popup appearing past cutoff in those states
+                // couldn't be dismissed without a password. If that cross-state protection is still
+                // wanted, gate each state on its own skip-password setting rather than the evening one.
                 shouldAskPassword = true
             }
         }
