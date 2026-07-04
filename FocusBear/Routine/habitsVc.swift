@@ -2398,12 +2398,26 @@ class habitsVc: NSViewController {
             addLog(text: "setActivityTimer: break countdown already running — keeping it (no forceReset).")
             return
         }
-        addLog(text: "Break Activity Timer reset Done.")
         if arrAllbreakActivities.count != 0 {
+            // Carry over time already elapsed since the last break (persisted across restarts,
+            // and including natural/idle breaks) instead of always restarting the full
+            // interval — otherwise relaunching the app keeps resetting the break countdown so a
+            // break is never due. See: "Focus Bear isn't prompting breaks".
+            let fullInterval = TimeInterval(breakAfterMinutes * 60)
+            var interval = fullInterval
+            // On a forced reset (the user just took/finished a break or postponed one) always use the
+            // full interval — ignore the previous break time entirely. Otherwise, only carry over a
+            // RECENT break (one within the current interval): if the last break is older than a full
+            // interval (e.g. from a previous day, or after the app was closed / idle a long time) it's
+            // stale, so schedule a fresh full interval instead of collapsing to the 60s floor — a
+            // yesterday break must not make today's first break fire ~60s after launch.
+            if !forceReset, let elapsed = secondsSinceLastBreakEnd(), elapsed > 0, elapsed < Int(fullInterval) {
+                interval = max(fullInterval - Double(elapsed), 60)
+            }
+            addLog(text: "Break Activity Timer reset Done. Next break in \(Int(interval))s (interval \(breakAfterMinutes)m, carrying over time since last break).")
             DispatchQueue.global().sync {
-                print("breakAfterMinutesxxxx")
                 stopActivityTimer()
-                self.breakTimer = Timer.scheduledTimer(timeInterval: TimeInterval(breakAfterMinutes*60), target: self, selector: #selector(self.timeToStartBreakActivities), userInfo: nil, repeats: false)
+                self.breakTimer = Timer.scheduledTimer(timeInterval: interval, target: self, selector: #selector(self.timeToStartBreakActivities), userInfo: nil, repeats: false)
 
                 RunLoop.main.add((breakTimer!), forMode: RunLoop.Mode.common)
             }

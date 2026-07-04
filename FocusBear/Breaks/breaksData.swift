@@ -198,6 +198,24 @@ func closeNatutalBreakIfRunning(){
     }
 }
 
+/// Seconds since the last break ended, read from the persisted `kUserdefaultsLastBreakEndTime`
+/// (which is updated by both real breaks and natural/idle breaks). Clamped to today's routine
+/// start so time before the day began — or overnight after a restart — doesn't count.
+/// Returns nil when there's no recorded break to carry over from.
+func secondsSinceLastBreakEnd() -> Int? {
+    guard let lastEnd = UserDefaults.standard.object(forKey: kUserdefaultsLastBreakEndTime) as? Date else {
+        return nil
+    }
+    var effective = lastEnd
+    if let s = startTime {
+        var startDate = Calendar.current.date(bySettingHour: s.hour, minute: s.minute, second: s.second, of: Date()) ?? Date()
+        if Date() < startDate { startDate = Calendar.current.date(byAdding: .day, value: -1, to: startDate) ?? startDate }
+        if effective < startDate { effective = startDate }
+    }
+    let seconds = Int(Date().timeIntervalSince(effective))
+    return seconds >= 0 ? seconds : nil
+}
+
 func getTimeSinceLastBreak()->String?{
     var breaksEndTime = UserDefaults.standard.object(forKey: kUserdefaultsLastBreakEndTime) as? Date
     if breaksEndTime == nil{
