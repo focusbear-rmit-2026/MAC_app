@@ -62,6 +62,7 @@ enum ScheduleText {
     static var editEventTitle: String { t("editEventTitle", "Edit event") }
     static var eventRepeatLabel: String { t("eventRepeatLabel", "Repeat") }
     static var eventColorLabel: String { t("eventColorLabel", "Colour") }
+    static var eventParticipantsLabel: String { t("eventParticipantsLabel", "Participants") }
     static var eventNotesLabel: String { t("eventNotesLabel", "Description (shared with other attendees)") }
     static var eventPrivateNotesLabel: String { t("eventPrivateNotesLabel", "My private notes (only you)") }
     static var freeTimeToday: String { t("freeTimeToday", "🕒 %@ free") }
@@ -1020,7 +1021,28 @@ class scheduleViewController: NSViewController {
         buttonRow.orientation = .horizontal
         buttonRow.spacing = 8
 
-        let form = NSStackView(views: [
+        // Participants — read-only list of the event's attendees, so you can see who you're meeting
+        // with. Only shown when the calendar event actually has attendees (skipped for solo/new
+        // events). Prefer the other attendees; fall back to the full list if that leaves it empty.
+        var attendeeViews: [NSView] = []
+        if let attendees = existing?.attendees, !attendees.isEmpty {
+            let others = attendees.filter { !$0.isCurrentUser }
+            let people = others.isEmpty ? attendees : others
+            let names: [String] = people.map { p in
+                if let n = p.name?.trimmingCharacters(in: .whitespacesAndNewlines), !n.isEmpty { return n }
+                let s = p.url.absoluteString
+                return s.hasPrefix("mailto:") ? String(s.dropFirst("mailto:".count)) : s
+            }
+            let value = makeLabel(names.joined(separator: ", "), size: 13, bold: false)
+            value.translatesAutoresizingMaskIntoConstraints = false
+            value.usesSingleLineMode = false
+            value.lineBreakMode = .byWordWrapping
+            value.preferredMaxLayoutWidth = 300
+            value.widthAnchor.constraint(equalToConstant: 300).isActive = true
+            attendeeViews = [makeLabel(ScheduleText.eventParticipantsLabel, size: 12, bold: false), value]
+        }
+
+        var formViews: [NSView] = [
             header,
             titleField,
             row(ScheduleText.eventCalendarLabel, calendarPopup),
@@ -1028,13 +1050,17 @@ class scheduleViewController: NSViewController {
             row(ScheduleText.eventEndsLabel, endPicker),
             row(ScheduleText.eventRepeatLabel, recurrencePopup),
             row(ScheduleText.eventColorLabel, colorStack),
+        ]
+        formViews += attendeeViews
+        formViews += [
             makeLabel(ScheduleText.eventNotesLabel, size: 12, bold: false),
             notesScroll,
             makeLabel(ScheduleText.eventPrivateNotesLabel, size: 12, bold: false),
             privateScroll,
             errorLabel,
             buttonRow,
-        ])
+        ]
+        let form = NSStackView(views: formViews)
         form.orientation = .vertical
         form.alignment = .leading
         form.spacing = 10
