@@ -10,6 +10,7 @@
 import Cocoa
 import Sentry
 import Sparkle
+import ORSSerial
 import Auth0
 import TrueTime
 import CoreMedia
@@ -3460,6 +3461,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         focusButtonServiceObject.onDeviceConnectedRestore = { [weak self] in
             self?.reSyncFocusButtonOnConnect()
         }
+
+        // Create the serial-port manager on the MAIN thread FIRST. ORSSerialPortManager registers its
+        // USB connect/disconnect (IOKit hotplug) notifications on the run loop of the thread that first
+        // creates the shared instance (CFRunLoopGetCurrent). start() below runs on a background/utility
+        // queue whose run loop never runs — so if it created the manager first, those events would never
+        // fire and `availablePorts` would be frozen at whatever was present at launch (the button is only
+        // ever detected if plugged in before launch, and never removed once gone). Forcing creation here,
+        // on the main run loop, makes `availablePorts` update live as the button is plugged/unplugged.
+        _ = ORSSerialPortManager.shared()
 
         // Start the service off the main thread. The Focus Button is an optional USB
         // accessory and ORSSerialPort's open() can block in the kernel for a

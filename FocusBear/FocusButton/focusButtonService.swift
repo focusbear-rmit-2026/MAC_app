@@ -52,6 +52,15 @@ class focusButtonService: NSObject {
     /// disconnected (a lightweight IOKit port enumeration).
     private var reconnectPollTimer: Timer?
     private let reconnectPollInterval: TimeInterval = 10
+
+    /// While a focus session is running, poll the device (STATUS) periodically; if it reports IDLE
+    /// (dropped back to the splash/idle screen) we re-push SET|START so the countdown reappears —
+    /// the device doesn't always hold the running screen (firmware glitch / stray command).
+    private var focusResyncTimer: Timer?
+    private let focusResyncInterval: TimeInterval = 15
+    /// True while a Late No More notification is taking over the device screen (SET|NOTIFY). The focus
+    /// resync must not re-push SET|START during this, or it would clobber the notification takeover.
+    private var isShowingNotification = false
     private let hasEverConnectedKey = "focusButtonHasEverConnected"
     /// True once the button has successfully opened at least once (persisted across launches),
     /// so we only auto-scan for people who actually use the device.
@@ -59,6 +68,27 @@ class focusButtonService: NSObject {
         get { UserDefaults.standard.bool(forKey: hasEverConnectedKey) }
         set { UserDefaults.standard.set(newValue, forKey: hasEverConnectedKey) }
     }
+
+    // MARK: - Device validation (don't hold the port unless it's a Focus device)
+    //
+    // Any ESP32 native-USB board (VID 0x303a) enumerates as an identical
+    // /dev/cu.usbmodem* device, so USB descriptors can't tell a Focus Button
+    // (M5Dial) apart from other ESP32-S3 gadgets on the same Mac (e.g. a StickS3
+    // breathing sensor). Instead we probe on open: a Focus device answers
+    // GET|FIRMWAREVER with "FIRMWAREVER|M50-…" (M50 = M5Dial, C30 = VIEWE C3) and
+    // STATUS with "INFO|…"; a non-Focus device answers neither. We only keep the
+    // port (and send it any commands) once it has identified itself, otherwise we
+    // release it so other apps can use it and move on to the next candidate port.
+    private var isValidatedFocusDevice = false
+    private var validationTimer: Timer?
+    private let validationTimeout: TimeInterval = 2.0
+    // Accepted hardware-version prefixes from GET|FIRMWAREVER (see focus-button
+    // protocol.md). M50 = M5Dial, C30 = VIEWE C3.
+    private let acceptedHardwarePrefixes = ["M50", "C30"]
+    // Remaining ports to try this connection attempt, and ports already rejected
+    // this session so we don't keep re-grabbing a non-Focus device.
+    private var pendingCandidatePorts: [String] = []
+    private var rejectedPorts: Set<String> = []
 
     // Regex patterns
     private let tsPfx = try? NSRegularExpression(pattern: "^\\d+\\.\\d+\\|", options: [])
@@ -99,14 +129,33 @@ class focusButtonService: NSObject {
         log("FocusButton: Start()")
         startReconnectMonitor()   // keep trying in the background even if this attempt finds no port
 
-        guard let portName = autoDetectPort() else {
+        // Fresh attempt: forget ports rejected on a previous attempt so a device
+        // that was transiently unresponsive can be probed again.
+        rejectedPorts.removeAll()
+        pendingCandidatePorts = candidatePorts()
+        guard !pendingCandidatePorts.isEmpty else {
             log("FocusButton: No serial port found")
             onError?("No Focus Button device found. Please check USB connection.")
             return false
         }
 
-        connect(portName: portName)
+        tryNextCandidate()
         return true
+    }
+
+    /// Connect to the next candidate port and probe it. If none remain, all
+    /// detected ports failed validation (no Focus device present).
+    private func tryNextCandidate() {
+        while let next = pendingCandidatePorts.first, rejectedPorts.contains(next) {
+            pendingCandidatePorts.removeFirst()
+        }
+        guard !pendingCandidatePorts.isEmpty else {
+            log("FocusButton: No Focus Button device responded on any candidate port")
+            onError?("No Focus Button device found. Please check USB connection.")
+            return
+        }
+        let portName = pendingCandidatePorts.removeFirst()
+        connect(portName: portName)
     }
 
     /// Arm a repeating poll that reconnects the Focus Button after an involuntary drop, so long as
@@ -130,8 +179,9 @@ class focusButtonService: NSObject {
         guard hasEverConnected else { return }             // never auto-scan for non-button users
         guard !isConnected, !isConnecting else { return }  // already connected / attempt in flight
         // Only try when a device is actually present, so we don't spam start()'s "not found" error
-        // (or churn) every tick while the button is simply unplugged.
-        guard autoDetectPort() != nil else { return }
+        // (or churn) every tick while the button is simply unplugged. candidatePorts() returns any
+        // plausible ports; start()'s validation then rejects them if they aren't a Focus device.
+        guard !candidatePorts().isEmpty else { return }
         log("FocusButton: auto-reconnect — button offline but present, reconnecting")
         _ = start()
     }
@@ -147,6 +197,7 @@ class focusButtonService: NSObject {
         // drops go through disconnect() directly, which leaves the monitor armed so it reconnects.
         reconnectPollTimer?.invalidate()
         reconnectPollTimer = nil
+        stopFocusResync()
         disconnect()
     }
 
@@ -187,8 +238,36 @@ class focusButtonService: NSObject {
         log("FocusButton: StartFocusSession()")
         sendCmd("SET|START|\(seconds)")
         applyState(.running)
+        armFocusResync()
     }
-    
+
+    /// Arm the periodic focus-session resync (idempotent). Each tick only polls STATUS — a silent read.
+    /// handleInfo then re-pushes SET|START if the device reports IDLE (dropped back to the splash/idle
+    /// screen while a session is still running). We deliberately do NOT re-push SET|START while the
+    /// device is already RUNNING: SET|START plays a beep on the device (handle_start_cmd → play_beep),
+    /// so re-pushing every tick would beep repeatedly. Stops when the session ends / device disconnects.
+    private func armFocusResync() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, self.focusResyncTimer == nil else { return }
+            let t = Timer.scheduledTimer(withTimeInterval: self.focusResyncInterval, repeats: true) { [weak self] _ in
+                guard let self = self else { return }
+                guard isFocusModeRunning, self.isConnected else {
+                    self.stopFocusResync(); return
+                }
+                // Leave a Late No More takeover alone — don't poke the device while it's showing.
+                if self.isShowingNotification { return }
+                self.sendCmd("STATUS")   // → INFO|<state>|<remaining>… ; handleInfo re-establishes if IDLE
+            }
+            t.tolerance = self.focusResyncInterval / 3
+            self.focusResyncTimer = t
+        }
+    }
+
+    private func stopFocusResync() {
+        focusResyncTimer?.invalidate()
+        focusResyncTimer = nil
+    }
+
     func pauseFocusSession() {
         log("FocusButton: PauseFocusSession()")
         sendCmd("SET|PAUSE")
@@ -203,6 +282,7 @@ class focusButtonService: NSObject {
     
     func finishFocusSession() {
         log("FocusButton: FinishFocusSession()")
+        stopFocusResync()
         sendCmd("SET|CANCEL")
         applyState(.idle)
     }
@@ -220,6 +300,16 @@ class focusButtonService: NSObject {
     }
     
     func sendMorningHabitsToFocusDevice(){
+        // Don't refresh the habit list while the device is showing a running/paused session — the
+        // SET|CLEARHABITS + SET|HABITS clobbers it (a focus SET|START countdown goes blank; a running
+        // SET|STARTHBID habit finishes immediately / returns to idle). NOTE: this leaves the list stale
+        // during a routine, so if a habit is started whose id isn't already in the device's list the
+        // device rejects SET|STARTHBID with ERROR|invalid_state. Proper fix (WIP): push the full routine
+        // list once while idle at routine start so every id is present, or self-heal on invalid_state.
+        guard state != .running, state != .paused else {
+            log("FocusButton: skip sendMorningHabits — a session is showing on the device")
+            return
+        }
         log("FocusButton: sendMorningHabitsToFocusDevice()")
         clearHabits()
         var arrHabits = [(id: String, name: String, durationSeconds: Int)]()
@@ -234,19 +324,30 @@ class focusButtonService: NSObject {
     }
     
     func sendEveningHabitsToFocusDevice(){
+        // See sendMorningHabitsToFocusDevice — don't clobber a running/paused session on the device.
+        guard state != .running, state != .paused else {
+            log("FocusButton: skip sendEveningHabits — a session is showing on the device")
+            return
+        }
         log("FocusButton: sendEveningHabitsToFocusDevice()")
         clearHabits()
         var arrHabits = [(id: String, name: String, durationSeconds: Int)]()
+        let runningLate = isCutOffTimeGoing()
         for i in 0..<arrFilteredEveningHabits.count{
             let id = arrFilteredEveningHabits[i].id ?? ""
             let isActivityCompleted = isActivityCompleted(id: id, habits: arrFilteredEveningHabits)
             if !isActivityCompleted{
+                // Match the Day Plan / playback: once past the cutoff the evening routine skips
+                // non-high-priority habits (AppDelegate: "evening habit skipped — running late"), so
+                // don't send those to the device either. Sending the full list left the button out of
+                // sync with the habits that actually run (a skipped habit starts then finishes at once).
+                if runningLate && !arrFilteredEveningHabits[i].isPriorityHigh { continue }
                 arrHabits.append((id: arrFilteredEveningHabits[i].fakeIdForDevice, name: arrFilteredEveningHabits[i].nameWithoutIcon, durationSeconds: arrFilteredEveningHabits[i].durationSeconds))
             }
         }
         sendHabits(habits: arrHabits)
     }
-    
+
     func isActivityCompleted(id:String, habits:[habit])->Bool{
         if currentHabitIndex == -1{
             return false
@@ -303,16 +404,46 @@ class focusButtonService: NSObject {
         let sanitized = sanitizeForCommand(text)
         guard !sanitized.isEmpty else { return }
         log("FocusButton: showNotification() - \(sanitized) (\(countdownSeconds)s)")
+        // A Late No More notification takes over the device screen (firmware saves the prior state).
+        // Mark it so the focus resync pauses — otherwise its periodic SET|START would switch the
+        // device back to the focus countdown and the notification would never stick.
+        isShowingNotification = true
         if countdownSeconds > 0 {
             sendCmd("SET|NOTIFY|\(sanitized)|\(countdownSeconds)")
         } else {
             sendCmd("SET|NOTIFY|\(sanitized)")
+        }
+        // Once the countdown hits 0:00 the firmware alarm-beeps every 3s until SET|NOTIFYDISMISS, and
+        // the app only dismisses when the user acts on the reminder popup — so an ignored reminder
+        // beeps the button indefinitely. Cap it: auto-dismiss a short grace after the countdown ends.
+        armNotificationAutoDismiss(afterCountdown: countdownSeconds > 0 ? countdownSeconds : 120)
+    }
+
+    private var notifyAutoDismissTimer: Timer?
+    /// How long the device alarm may beep past 0:00 before we force a dismiss on an unacknowledged
+    /// reminder (5 min — matches the firmware alarm cap NOTIFY_ALARM_MAX_S).
+    private let notifyAlarmGraceSeconds = 300
+    private func armNotificationAutoDismiss(afterCountdown countdownSeconds: Int) {
+        let total = TimeInterval(max(countdownSeconds, 0) + notifyAlarmGraceSeconds)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.notifyAutoDismissTimer?.invalidate()
+            let t = Timer.scheduledTimer(withTimeInterval: total, repeats: false) { [weak self] _ in
+                guard let self = self, self.isShowingNotification else { return }
+                self.log("FocusButton: auto-dismissing Late No More notification (unacknowledged, alarm beeping)")
+                self.dismissNotification()
+            }
+            t.tolerance = 2
+            self.notifyAutoDismissTimer = t
         }
     }
 
     /// End the Late No More countdown on the device and restore its prior screen.
     func dismissNotification() {
         log("FocusButton: dismissNotification()")
+        isShowingNotification = false
+        notifyAutoDismissTimer?.invalidate()
+        notifyAutoDismissTimer = nil
         sendCmd("SET|NOTIFYDISMISS")
     }
 
@@ -378,8 +509,9 @@ class focusButtonService: NSObject {
         }
         
         isConnecting = true
+        isValidatedFocusDevice = false
         serialPort = port
-        
+
         port.baudRate = 115200//2000000
         port.parity = .none
         port.numberOfStopBits = 1
@@ -415,12 +547,29 @@ class focusButtonService: NSObject {
     
     private func disconnect() {
         log("FocusButton: Disconnect()")
-        
+
+        teardownPort()
+
+        reconnectAttempts = 0
+        isReconnecting = false
+        pendingCandidatePorts.removeAll()
+
+        applyState(.disconnected)
+        onPortDisconnected?()
+        log("FocusButton: -- Disconnected")
+    }
+
+    /// Close and release the current serial port + RX thread + timers, without
+    /// resetting the candidate list or notifying disconnect. Shared by
+    /// disconnect() and the "reject this port, try the next one" path.
+    private func teardownPort() {
         isRunning = false
         isConnecting = false
         responseCheckTimer?.invalidate()
         responseCheckTimer = nil
-        
+        validationTimer?.invalidate()
+        validationTimer = nil
+
         if let port = serialPort {
             port.delegate = nil
             if port.isOpen {
@@ -428,12 +577,15 @@ class focusButtonService: NSObject {
             }
             serialPort = nil
         }
-        
+
         rxThread?.cancel()
         rxThread = nil
 
         reconnectAttempts = 0
         isReconnecting = false
+        isValidatedFocusDevice = false
+        validationTimer?.invalidate()
+        validationTimer = nil
         setFirmwareVersion(nil)
 
         applyState(.disconnected)
@@ -526,9 +678,26 @@ class focusButtonService: NSObject {
         guard parts.count > 0 else { return }
         
         switch parts[0].uppercased() {
+        case "FIRMWAREVER":
+            // Reply to GET|FIRMWAREVER, e.g. "FIRMWAREVER|M50-1.5.0". The hardware prefix identifies
+            // the Focus device (M50 = M5Dial, C30 = VIEWE C3) — anything else is not one of our
+            // devices. Also record the version for the settings display.
+            if parts.count >= 2 {
+                setFirmwareVersion(parts[1].trimmingCharacters(in: .whitespaces))
+                let hw = parts[1].uppercased()
+                if acceptedHardwarePrefixes.contains(where: { hw.hasPrefix($0) }) {
+                    markValidatedFocusDevice(parts[1])
+                } else {
+                    log("FocusButton: Unrecognised FIRMWAREVER '\(parts[1])' — not a Focus device")
+                }
+            }
+
         case "INFO":
+            // A STATUS reply also proves this is a Focus device (covers older
+            // firmware that predates GET|FIRMWAREVER).
+            markValidatedFocusDevice("INFO")
             handleInfo(parts)
-            
+
         case "EVENT":
             handleEvent(parts)
             
@@ -545,12 +714,6 @@ class focusButtonService: NSObject {
                 let habitName = parts[2]
                 // Handle habit received
                 onHabitsReceived?([(id: habitId, name: habitName, durationSeconds: duration)])
-            }
-
-        case "FIRMWAREVER":
-            // FIRMWAREVER|<hw>-<version>, e.g. "M50-1.5.0"
-            if parts.count >= 2 {
-                setFirmwareVersion(parts[1].trimmingCharacters(in: .whitespaces))
             }
 
         default:
@@ -582,9 +745,20 @@ class focusButtonService: NSObject {
             remainingSeconds = rem
             onRemainingTimeChanged?(rem)
         }
-        
-        
+
+
         applyState(newState)
+
+        // If the device has fallen back to IDLE (splash) while a focus session is still running in
+        // the app, re-establish the countdown so the button keeps showing the session.
+        if newState == .idle, isFocusModeRunning, let end = endFocusModeTime {
+            let remaining = Int(end.timeIntervalSinceNow)
+            if remaining > 0 {
+                log("FocusButton: device idle during a running focus session — re-pushing SET|START|\(remaining)")
+                sendCmd("SET|START|\(remaining)")
+                applyState(.running)
+            }
+        }
     }
     
     private func handleEvent(_ parts: [String]) {
@@ -714,20 +888,21 @@ class focusButtonService: NSObject {
         onStateChanged?(newState)
     }
     
-    private func autoDetectPort() -> String? {
-        log("FocusButton: AutoDetectPort()")
-        
-        // Priority:
-        // 1. FocusButton exact match (by name pattern)
-        // 2. Espressif devices (ESP32)
-        // 3. M5Stack devices
-        // 4. Keywords (CP210, CH34, FTDI, etc.)
-        // 5. First detected port
-        
+    /// All plausible Focus Button ports, in priority order, de-duplicated.
+    ///
+    /// Previously this returned a single "best" port and the caller held it
+    /// blindly. It now returns every candidate so start()/tryNextCandidate() can
+    /// probe each one and keep only the port that actually identifies as a Focus
+    /// device — important when a non-Focus ESP32-S3 board (e.g. a StickS3) is
+    /// plugged in alongside a real M5Dial. Only cu.usbmodem* ports qualify,
+    /// matching the original behaviour.
+    private func candidatePorts() -> [String] {
+        log("FocusButton: candidatePorts()")
+
+        // Priority buckets (highest first).
         let focusKeywords = ["FOCUSBUTTON", "FOCUS-BUTTON", "FOCUS BUTTON"]
         let espKeywords = ["ESP32", "ESP8266", "ESPRESSIF"]
         let m5Keywords = ["M5STACK", "M5 STACK"]
-        
         let serialKeywords = [
             "CP210", "CP2102", "CP2104", "CP2105", "CP2108",
             "CH34", "CH340", "CH341", "CH343", "CH344", "CH347", "CH348", "CH349", "CH9101", "CH9102", "CH9103", "CH9104",
@@ -735,89 +910,38 @@ class focusButtonService: NSObject {
             "SILICON LABS",
             "PROLIFIC", "PL2303"
         ]
-        
-        var fbPort: String? = nil
-        var espPort: String? = nil
-        var m5Port: String? = nil
-        var kwPort: String? = nil
 
-        let ports = ORSSerialPortManager.shared().availablePorts
-        
-        for port in ports {
+        var fb: [String] = [], esp: [String] = [], m5: [String] = [], kw: [String] = [], other: [String] = []
+
+        for port in ORSSerialPortManager.shared().availablePorts {
             let portPath = port.path
+            // Only cu.usbmodem* ports are eligible (as before).
+            guard portPath.lowercased().contains("cu.usbmodem") else { continue }
+
             let portName = port.name.uppercased()
             let portPathUpper = portPath.uppercased()
-
             log("FocusButton: Checking port: \(portPath) - Name: \(port.name)")
-            
-            // Priority 1: FocusButton exact match (by name)
-            if fbPort == nil {
-                if focusKeywords.contains(where: { portName.contains($0) }) {
-                    fbPort = portPath
-                    log("FocusButton: Found FocusButton device: \(portPath)")
-                    continue
-                }
-            }
-            
-            // Priority 2: Espressif devices
-            if espPort == nil {
-                if espKeywords.contains(where: { portName.contains($0) }) ||
-                    portPathUpper.contains("ESP") {
-                    espPort = portPath
-                    log("FocusButton: Found Espressif device: \(portPath)")
-                    continue
-                }
-            }
-            
-            // Priority 3: M5Stack devices
-            if m5Port == nil {
-                if m5Keywords.contains(where: { portName.contains($0) }) {
-                    m5Port = portPath
-                    log("FocusButton: Found M5Stack device: \(portPath)")
-                    continue
-                }
-            }
-            
-            // Priority 4: Keyword matching
-            if kwPort == nil {
-                if serialKeywords.contains(where: { keyword in
-                    portName.contains(keyword) || portPathUpper.contains(keyword)
-                }) {
-                    kwPort = portPath
-                    log("FocusButton: Found keyword match: \(portPath)")
-                }
-            }
-        }
-        
-        // Also check USB modem patterns which are common for ESP32 devices
-        if fbPort == nil && espPort == nil && m5Port == nil && kwPort == nil {
-            for port in ports {
-                let portPath = port.path
-                if portPath.contains("usbmodem") || portPath.contains("usbserial") {
-                    kwPort = portPath
-                    log("FocusButton: Found USB modem/serial port: \(portPath)")
-                    break
-                }
-            }
-        }
-        
-        // Return in priority order. We deliberately do NOT fall back to `firstPort` — connecting to
-        // an arbitrary serial device (another USB-serial adapter, a Bluetooth modem, etc.) is wrong
-        // and ORSSerialPort.open() can hang on a misbehaving one.
-        let detectedPort = fbPort ?? espPort ?? m5Port ?? kwPort
 
-        // Previously this only accepted ports whose path contained "cu.usbmodem", which silently
-        // rejected the (very common) ESP32 boards that enumerate through a USB-UART bridge as
-        // cu.usbserial-*, cu.wchusbserial-*, or cu.SLAB_USBtoUART — so "Connect" did nothing. Trust
-        // the priority heuristics above (FocusButton / Espressif / M5Stack / known UART-bridge chips).
-        if let port = detectedPort {
-            let priority = fbPort != nil ? "FocusButton" : espPort != nil ? "Espressif" : m5Port != nil ? "M5Stack" : "Keyword"
-            log("FocusButton: Auto-detected port (\(priority)): \(port)")
-            return port
+            if focusKeywords.contains(where: { portName.contains($0) }) {
+                fb.append(portPath)
+            } else if espKeywords.contains(where: { portName.contains($0) }) || portPathUpper.contains("ESP") {
+                esp.append(portPath)
+            } else if m5Keywords.contains(where: { portName.contains($0) }) {
+                m5.append(portPath)
+            } else if serialKeywords.contains(where: { portName.contains($0) || portPathUpper.contains($0) }) {
+                kw.append(portPath)
+            } else {
+                // A bare usbmodem device (native-USB ESP32 boards report no
+                // useful name) — still a candidate, just lowest priority.
+                other.append(portPath)
+            }
         }
 
-        log("FocusButton: No Focus Button port detected among \(ports.count) serial port(s)")
-        return nil
+        // Concatenate in priority order, keeping first occurrence of each path.
+        var seen = Set<String>()
+        let ordered = (fb + esp + m5 + kw + other).filter { seen.insert($0).inserted }
+        log("FocusButton: candidate ports (priority order): \(ordered)")
+        return ordered
     }
     
     private func extractHexValue(from string: String) -> String? {
@@ -847,33 +971,72 @@ class focusButtonService: NSObject {
 extension focusButtonService: ORSSerialPortDelegate {
     
     func serialPortWasOpened(_ serialPort: ORSSerialPort) {
-        log("FocusButton: Serial port opened")
+        log("FocusButton: Serial port opened — probing device identity")
 
         isConnecting = false
-        hasEverConnected = true   // remember (persisted) so auto-reconnect kicks in after future drops
-        
-        // Wait a moment for the device to stabilize
+        isValidatedFocusDevice = false
+
+        // Probe the device before trusting it. We do NOT send SET|TIME or hold
+        // the port for the app yet — that only happens once the device answers
+        // as a Focus device (see markValidatedFocusDevice / handleLine). Sending
+        // SET|TIME to an unknown board could poke a non-Focus device (e.g. a
+        // StickS3 breathing sensor) we have no business writing to.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             guard let self = self, self.serialPort?.isOpen == true else { return }
+            self.sendCmd("GET|FIRMWAREVER")   // → FIRMWAREVER|M50-… on a Focus device
+            self.sendCmd("STATUS")            // → INFO|… on a Focus device
+        }
 
-            let localDate = Date()
-            let timezoneOffset = TimeZone.current.secondsFromGMT()
-            let localEpoch = Int64(localDate.timeIntervalSince1970) + Int64(timezoneOffset)
-            self.sendCmd("SET|TIME|\(localEpoch)")
-            
-            self.sendCmd("STATUS")
-            self.sendCmd("GET|FIRMWAREVER")
-            self.sendCmd("GET|HABITCOUNT")
-            // Now that the clock is set, let the app re-push whatever's running (focus session /
-            // habit) so a session that began while the button was disconnected reappears on device.
-            self.onDeviceConnectedRestore?()
+        // If nothing identifies as a Focus device in time, release this port and
+        // move on to the next candidate.
+        validationTimer?.invalidate()
+        validationTimer = Timer.scheduledTimer(withTimeInterval: validationTimeout, repeats: false) { [weak self] _ in
+            self?.validationTimedOut()
         }
-        
+    }
+
+    /// Called once the connected device has identified itself as a Focus device
+    /// (via FIRMWAREVER M50/C30 or a STATUS→INFO reply). Only now do we perform
+    /// the real connection setup and tell the app we're connected.
+    private func markValidatedFocusDevice(_ hardware: String) {
+        guard !isValidatedFocusDevice else { return }
+        isValidatedFocusDevice = true
+        validationTimer?.invalidate()
+        validationTimer = nil
+        pendingCandidatePorts.removeAll()   // found our device; stop probing others
+        let path = serialPort?.path ?? "?"
+        log("FocusButton: Validated Focus device (\(hardware)) on \(path)")
+
+        guard let port = serialPort, port.isOpen else { return }
+
+        let localDate = Date()
+        let timezoneOffset = TimeZone.current.secondsFromGMT()
+        let localEpoch = Int64(localDate.timeIntervalSince1970) + Int64(timezoneOffset)
+        sendCmd("SET|TIME|\(localEpoch)")
+        sendCmd("GET|HABITCOUNT")
+
         applyState(.idle)
-        
+        hasEverConnected = true   // remember (persisted) so auto-reconnect kicks in after future drops
         DispatchQueue.main.async { [weak self] in
-            self?.onDeviceConnected?(serialPort.path)
+            self?.onDeviceConnected?(path)
+            self?.onDeviceConnectedRestore?()   // re-push the running session/habit onto the device
         }
+    }
+
+    /// No Focus device identified on this port within the timeout — release it
+    /// (so esptool/loggers/other apps can use it) and try the next candidate.
+    private func validationTimedOut() {
+        validationTimer?.invalidate()
+        validationTimer = nil
+        guard !isValidatedFocusDevice else { return }
+
+        let path = serialPort?.path
+        log("FocusButton: Port \(path ?? "?") did not identify as a Focus Button — releasing it")
+        if let path = path {
+            rejectedPorts.insert(path)   // don't re-grab this non-Focus device
+        }
+        teardownPort()
+        tryNextCandidate()
     }
     
     func serialPortWasClosed(_ serialPort: ORSSerialPort) {
