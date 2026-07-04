@@ -456,11 +456,12 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     func windowDidExitFullScreen(_ notification: Notification) {
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_ || currentState == ._CUSTOM_ROUTINE_{
             if checkIsFullScreenEnabled(){
-                if let leftMenuVcObj = leftMenuVcObj{
-                    if leftMenuVcObj.boxHabits.isSelected || leftMenuVcObj.boxMicroBreaks.isSelected || leftMenuVcObj.boxCustomRoutine.isSelected{
-                        mainViewControllerObj?.checkIsFullScreenNeeded()
-                    }
-                }
+                // Re-enter full screen on ANY exit while a locked habit / micro-break / routine /
+                // shut-off is active — not only when the Habits tab happens to be selected. Otherwise
+                // navigating to Settings (or another sidebar tab) deselects the Habits box and lets the
+                // full-screen lock drop, which is a way to escape the block. The legitimate way out is
+                // ending / skipping the activity, which changes currentState so this guard stops firing.
+                mainViewControllerObj?.checkIsFullScreenNeeded()
             }
         }
     }

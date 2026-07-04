@@ -603,10 +603,12 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         case boxHelpAndSupport:
             checkScreenSizeIfFullScreenHabitIsRunning()
         case boxFocusButtonTool, boxTimeTrackerTool, boxLateNoMoreTool:
-            // These tool tabs had no sizing case, so the window kept the (often full-screen-tall)
-            // size from the previous state and ran past the bottom of the screen. Shrink to the
-            // standard small window like the other inline tabs (Blocks / Settings).
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            // Keep the full-size window while a full-screen habit/routine/break/shut-off is running —
+            // these tool tabs were unconditionally shrinking it, which let the user drop out of a
+            // full-screen activity (and expose the desktop) by opening a tool. checkScreenSize… shrinks
+            // to the standard small window when no full-screen activity is active, matching the other
+            // inline tabs (Todo Player / Brain Dump).
+            checkScreenSizeIfFullScreenHabitIsRunning()
         default:
             break;
         }
