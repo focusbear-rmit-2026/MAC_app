@@ -56,6 +56,9 @@ enum ScheduleText {
     static var eventCancel: String { t("eventCancel", "Cancel") }
     static var eventSaveError: String { t("eventSaveError", "Couldn't save the event. Check calendar access and try again.") }
     static var showEarlierEvents: String { t("showEarlierEvents", "Show events from earlier today") }
+    static var hideDeepWork: String { t("hideDeepWork", "Hide deep work blocks") }
+    static var showHabits: String { t("showHabits", "Show habits") }
+    static var hideHabits: String { t("hideHabits", "Hide habits") }
     static var scheduleSettings: String { t("scheduleSettings", "Schedule settings") }
     static var hideEarlierEvents: String { t("hideEarlierEvents", "Hide events from earlier today") }
     static var viewTomorrow: String { t("viewTomorrow", "View tomorrow's schedule") }
@@ -449,6 +452,32 @@ class scheduleViewController: NSViewController {
 
     /// When viewing today, also show calendar events that already finished earlier in the day.
     private var showEarlierEvents = false
+
+    /// Persisted setting: hide deep-work blocks in the Day Plan, so it's easier to just see
+    /// appointments. Deep-work time still counts as free/taskable; the blocks are just not drawn.
+    private var hideDeepWorkBlocks: Bool {
+        get { UserDefaults.standard.bool(forKey: "kUserdefaultsHideDeepWorkInDayPlan") }
+        set { UserDefaults.standard.set(newValue, forKey: "kUserdefaultsHideDeepWorkInDayPlan") }
+    }
+
+    /// Explicit expand/collapse overrides for routine sections (accordions), keyed by
+    /// "routineName|dayOrdinal". Absent → default: collapsed on future days, expanded today/past.
+    private var routineCollapseOverrides: [String: Bool] = [:]
+
+    private func routineCollapseKey(_ name: String, date: Date) -> String {
+        "\(name)|\(Int(date.timeIntervalSince1970 / 86400))"
+    }
+    private func isRoutineCollapsed(name: String, date: Date) -> Bool {
+        if let explicit = routineCollapseOverrides[routineCollapseKey(name, date: date)] { return explicit }
+        // Default: future days start collapsed; today (and past) stay expanded.
+        return Calendar.current.compare(date, to: Date(), toGranularity: .day) == .orderedDescending
+    }
+    private func toggleRoutineCollapsed(name: String, date: Date) {
+        let key = routineCollapseKey(name, date: date)
+        routineCollapseOverrides[key] = !isRoutineCollapsed(name: name, date: date)
+        lastRenderSignature = nil
+        reload()
+    }
     /// Whether the "Show/Hide events from earlier today" toggle is relevant for what's on screen.
     private var canShowEarlierToggle = false
 
@@ -1556,7 +1585,8 @@ class scheduleViewController: NSViewController {
         // the cache key so an appearance flip forces a rebuild instead of being skipped here —
         // otherwise the selected habit unit (Play/Done/Skip) keeps its old colors and goes invisible.
         let appearanceName = ((isViewLoaded ? view.effectiveAppearance : nil) ?? NSApp.effectiveAppearance).name.rawValue
-        let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(canShowEarlierToggle)\(showEarlierEvents)|\(taskSig)|"
+        let collapseSig = routineCollapseOverrides.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
+        let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(collapseSig)|\(taskSig)|"
             + blocks.map { "\($0.kind)\($0.title)\(Int($0.start.timeIntervalSince1970))\(Int($0.end.timeIntervalSince1970))\($0.isCurrent)\($0.isActionable)" }.joined(separator: ";")
         if signature == lastRenderSignature, !stackView.arrangedSubviews.isEmpty { return }
         lastRenderSignature = signature
@@ -1605,6 +1635,13 @@ class scheduleViewController: NSViewController {
                 addCard(makeHabitGroupCard(group))
             } else {
                 let block = blocks[i]
+                // Hide-deep-work setting: skip the deep-work card (and its nested tasks) entirely, so
+                // the plan shows just appointments/routines. Keep dwOrdinal in step with dwBlocks.
+                if block.kind == .deepWork, hideDeepWorkBlocks {
+                    dwOrdinal += 1
+                    i += 1
+                    continue
+                }
                 let card = makeCard(for: block)
                 let key = blockKey(for: block)
                 if let key = key {
@@ -1746,7 +1783,10 @@ class scheduleViewController: NSViewController {
                              target: self, action: #selector(toggleEarlierEvents(_:)))
         check.state = showEarlierEvents ? .on : .off
         check.isEnabled = canShowEarlierToggle   // only meaningful when today has earlier events
-        let form = NSStackView(views: [heading, check])
+        let hideDW = NSButton(checkboxWithTitle: ScheduleText.hideDeepWork,
+                              target: self, action: #selector(toggleHideDeepWork(_:)))
+        hideDW.state = hideDeepWorkBlocks ? .on : .off
+        let form = NSStackView(views: [heading, check, hideDW])
         form.orientation = .vertical; form.alignment = .leading; form.spacing = 10
         form.translatesAutoresizingMaskIntoConstraints = false
         let container = NSView(); container.addSubview(form)
@@ -1764,6 +1804,12 @@ class scheduleViewController: NSViewController {
 
     @objc private func toggleEarlierEvents(_ sender: NSButton) {
         showEarlierEvents = (sender.state == .on)
+        lastRenderSignature = nil
+        reload()
+    }
+
+    @objc private func toggleHideDeepWork(_ sender: NSButton) {
+        hideDeepWorkBlocks = (sender.state == .on)
         lastRenderSignature = nil
         reload()
     }
@@ -1810,31 +1856,38 @@ class scheduleViewController: NSViewController {
         // "Skip routine for today" action on its header — the Day Plan equivalent of the Habits
         // view's "I don't have time for all these habits".
         let isActiveRoutine = habits.contains { $0.isActionable }
+        // Routine sections are accordions: the header toggles collapse (chevron ▸/▾). They start
+        // collapsed on future days so the plan is easy to scan for appointments.
+        let routineName = habits.first?.routineName ?? "Habits"
+        let dateForToggle = selectedDate
+        let collapsed = isRoutineCollapsed(name: routineName, date: dateForToggle)
         if let first = habits.first, let last = habits.last {
-            let name = first.routineName ?? "Habits"
-            let header = makeLabel("🧩 \(name)  ·  \(timeString(first.start))–\(timeString(last.end))", size: 15, bold: false)
+            let chevron = collapsed ? "▸" : "▾"
+            let header = makeLabel("\(chevron) 🧩 \(routineName)  ·  \(timeString(first.start))–\(timeString(last.end))", size: 15, bold: false)
             header.textColor = .labelColor
+            // Title stretches to fill and TRUNCATES in a narrow window; the skip button keeps its
+            // intrinsic width pinned to the trailing edge.
+            header.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            header.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            header.lineBreakMode = .byTruncatingTail
+
+            let headerRow = ClickableStack()
+            headerRow.orientation = .horizontal
+            headerRow.alignment = .centerY
+            headerRow.spacing = 8
+            headerRow.distribution = .fill
+            headerRow.translatesAutoresizingMaskIntoConstraints = false
+            headerRow.addArrangedSubview(header)
             if isActiveRoutine {
                 let skipBtn = makeSkipRoutineButton()
-                let headerRow = NSStackView(views: [header, skipBtn])
-                headerRow.orientation = .horizontal
-                headerRow.alignment = .centerY
-                headerRow.spacing = 8
-                headerRow.distribution = .fill   // let the title stretch so the button pins right
-                headerRow.translatesAutoresizingMaskIntoConstraints = false
-                // Title stretches to fill and TRUNCATES in a narrow window; the button keeps its
-                // intrinsic width pinned to the trailing edge. Without the low compression
-                // resistance the long title pushed the button off-screen except in full screen.
-                header.setContentHuggingPriority(.defaultLow, for: .horizontal)
-                header.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-                header.lineBreakMode = .byTruncatingTail
                 skipBtn.setContentHuggingPriority(.required, for: .horizontal)
                 skipBtn.setContentCompressionResistancePriority(.required, for: .horizontal)
-                inner.addArrangedSubview(headerRow)
-                headerRow.widthAnchor.constraint(equalTo: inner.widthAnchor).isActive = true
-            } else {
-                inner.addArrangedSubview(header)
+                headerRow.addArrangedSubview(skipBtn)
             }
+            headerRow.onClick = { [weak self] in self?.toggleRoutineCollapsed(name: routineName, date: dateForToggle) }
+            headerRow.toolTip = collapsed ? ScheduleText.showHabits : ScheduleText.hideHabits
+            inner.addArrangedSubview(headerRow)
+            headerRow.widthAnchor.constraint(equalTo: inner.widthAnchor).isActive = true
         }
 
         // Default selection = the next-up habit; keep the user's pick if it's still valid.
@@ -1842,7 +1895,7 @@ class scheduleViewController: NSViewController {
         let currentIdx = habits.first { $0.isCurrent }?.habitIndex
         let selected: Int? = (selectedHabitIndex.flatMap { actionableIdxs.contains($0) ? $0 : nil }) ?? currentIdx
 
-        for h in habits {
+        for h in habits where !collapsed {
             let isSel = h.isActionable && h.habitIndex == selected
             let rowView: NSView
             if isSel, let idx = h.habitIndex {

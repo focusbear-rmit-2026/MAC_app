@@ -286,6 +286,20 @@ final class TaskDragHandle: NSImageView {
 }
 
 /// A schedule card that accepts a dragged task. `onDrop` returns true if the task was accepted.
+/// An NSStackView whose empty areas act as a button — used for the collapsible routine-section
+/// header (clicking the title toggles the accordion; nested controls like the skip button still
+/// receive their own clicks).
+final class ClickableStack: NSStackView {
+    var onClick: (() -> Void)?
+    override func mouseDown(with event: NSEvent) {
+        if onClick != nil { onClick?() } else { super.mouseDown(with: event) }
+    }
+    override func resetCursorRects() {
+        super.resetCursorRects()
+        if onClick != nil { addCursorRect(bounds, cursor: .pointingHand) }
+    }
+}
+
 final class DropTargetView: NSView {
     var onDrop: ((String) -> Bool)?
     private var highlighted = false { didSet { needsDisplay = true } }
