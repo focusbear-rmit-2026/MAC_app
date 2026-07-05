@@ -487,6 +487,7 @@
         "toolTipLockedFocus": "Use this if you want to focus on using one app/reading one article. We'll detect the current app + site you have open and block everything else.",
         "menuItemOpenChecklistTitle": "Open checklist",
         "menuItemMeetingDetectionBreaksOnTitle": "Meeting active - breaks on",
+        "menuItemMeetingDetectionBreaksOnTooltip": "Breaks are still on during this meeting because you've turned on \"Show breaks in call\". You can turn that off in Settings if you'd rather not be interrupted while presenting.",
         "menuItemPauseFocusModeTitle": "Pause this focus mode",
         "menuItemStopFocusModeTitle": "Stop this focus mode",
         "menuItemResumeFocusModeTitle": "Resume this focus mode",

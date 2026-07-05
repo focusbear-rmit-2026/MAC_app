@@ -499,6 +499,7 @@
         "toolTipLockedFocus": "Usa esto si quieres enfocarte en usar una aplicación/leer un artículo. Detectaremos la aplicación + el sitio que tengas abiertos y bloquearemos todo lo demás.",
         "menuItemOpenChecklistTitle": "Abrir Lista de Control",
         "menuItemMeetingDetectionBreaksOnTitle": "Reunión activa - descansos activos",
+        "menuItemMeetingDetectionBreaksOnTooltip": "Los descansos siguen activos durante esta reunión porque tienes activado \"Mostrar descansos en llamadas\". Puedes desactivarlo en Ajustes si prefieres que no te interrumpan mientras presentas.",
         "menuItemPauseFocusModeTitle": "Pausar este Modo de Enfoque",
         "menuItemStopFocusModeTitle": "Detener este Modo de Enfoque",
         "menuItemResumeFocusModeTitle": "Reanudar este Modo de Enfoque",

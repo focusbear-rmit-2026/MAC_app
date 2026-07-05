@@ -507,11 +507,20 @@ class menuViewController: NSViewController {
     }
     
     @IBAction func btnMeetingDetectionClicked(_ sender: Any) {
-        var videoCallText = "Looks like you're in a video call. I won't interrupt you with micro-breaks during the meeting to avoid embarrassing screensharing moments. Enjoy the meeting!"
-        if let common = configjson.value(forKey: "common") as? NSDictionary{
-            videoCallText = common.value(forKey: "notificationVideoCallText") as? String ?? videoCallText
+        // Explain WHY breaks are off/on during the meeting — text depends on the current state.
+        var msg: String
+        if SettingsManagerObject.IsShowBreaksInCallEnabled {
+            msg = "Breaks are still on during this meeting because you've turned on \"Show breaks in call\". You can turn that off in Settings if you'd rather not be interrupted while presenting."
+            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary {
+                msg = menuInfo.value(forKey: "menuItemMeetingDetectionBreaksOnTooltip") as? String ?? msg
+            }
+        } else {
+            msg = "Looks like you're in a video call. I won't interrupt you with micro-breaks during the meeting to avoid embarrassing screensharing moments. Enjoy the meeting!"
+            if let common = configjson.value(forKey: "common") as? NSDictionary {
+                msg = common.value(forKey: "notificationVideoCallText") as? String ?? msg
+            }
         }
-        showTooltip(sender: btnMeetingDetection, msg: videoCallText, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
+        showTooltip(sender: btnMeetingDetection, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnSetFocusModesClicked(_ sender: Any) {
@@ -1104,7 +1113,9 @@ class menuViewController: NSViewController {
             if appdelegate!.isUserOnMeeting{
                 boxMeetingDetection.isHidden = false
                 if SettingsManagerObject.IsShowBreaksInCallEnabled{
-                    btnMeetingDetection.isHidden = true
+                    // Keep the info button visible so the "why" is reachable (hover/click) in the
+                    // breaks-on state too — previously it was hidden, leaving no explanation.
+                    btnMeetingDetection.isHidden = false
                     lblMeetingDetection.stringValue = "Meeting active - breaks on"
                     if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
                         lblMeetingDetection.stringValue = menuInfo.value(forKey: "menuItemMeetingDetectionBreaksOnTitle") as? String ?? lblMeetingDetection.stringValue
