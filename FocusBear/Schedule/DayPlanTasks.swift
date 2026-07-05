@@ -552,10 +552,17 @@ final class DayPlanTaskStore {
     /// their original day (history); rolled tasks lose their time-box (yesterday's blocks are gone)
     /// and land under "Not yet time boxed". Idempotent — guarded by a stored last-rollover day.
     private let lastRolloverKey = "dayPlanLastRolloverDay"
+    // Re-entrancy guard: the dedup check below calls contains() -> tasks(for:) -> rollOverIfNeeded(),
+    // and the once-per-day flag is only written at the end, so without this the midnight rollover
+    // recurses until the stack overflows (crash 2026-07-06). Break the cycle explicitly.
+    private var isRollingOver = false
     func rollOverIfNeeded() {
         if Self.mockMode { return }
+        if isRollingOver { return }
         let todayKey = dayKey(Date())
         if UserDefaults.standard.string(forKey: lastRolloverKey) == todayKey { return }
+        isRollingOver = true
+        defer { isRollingOver = false }
         var changed = false
         for (dayK, tasks) in byDay where dayK < todayKey {   // yyyy-MM-dd sorts chronologically
             let incomplete = tasks.filter { !$0.done }
