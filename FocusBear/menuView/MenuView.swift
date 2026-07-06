@@ -531,7 +531,9 @@ struct FocusBearMenuView: View {
                     .foregroundColor(MenuTheme.subtitle(scheme))
             } else {
                 // Initial state: the plain button. Tapping it reveals the goal box + duration stepper.
-                SwiftUI.Button(action: { withAnimation(.easeInOut(duration: 0.15)) { model.focusStarterExpanded = true } }) {
+                // Collapse any open accordion (Day Plan / Breaks / Tools) so the focus starter takes
+                // over cleanly and nothing else keeps refreshing underneath it.
+                SwiftUI.Button(action: { withAnimation(.easeInOut(duration: 0.15)) { expanded = nil; model.focusStarterExpanded = true } }) {
                     HStack(spacing: 8) {
                         Image(systemName: "play.fill").font(.system(size: 12, weight: .bold))
                         Text(menuLocalized("menuStartFocus", "START FOCUS SESSION"))
@@ -554,6 +556,7 @@ struct FocusBearMenuView: View {
     }
 
     private func startFocusNow() {
+        expanded = nil                       // keep the other accordions collapsed when a session starts
         model.onStartFocusConfigured(model.focusMinutes, model.focusIntentionDraft, model.selectedBlockListId)
         model.focusStarterExpanded = false   // collapse back to the plain button for next time
     }

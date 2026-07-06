@@ -820,37 +820,16 @@ func blockAlwaysBlockUrl(currentBrowser:BROWSER, url:String, runningApp:NSRunnin
 
 
 func getURLSafeInBackground(browser: BROWSER) -> String? {
-    var resultURL: String? = nil
-    
-    let semaphore = DispatchSemaphore(value: 0)
-    
-    // AppleScript must run on MAIN
-    DispatchQueue.main.async {
-        resultURL = getActiveTabUrlForBlocking(browser: browser)
-        semaphore.signal()
-    }
-    
-    // Wait for the main thread to finish
-    semaphore.wait()
-    
-    return resultURL
+    // Call directly on the caller's (background) thread. runAppleScriptSafely already runs the script
+    // off the main thread on its own serial queue, so the old DispatchQueue.main bounce was unnecessary
+    // AND harmful: it forced the blocking browser AppleScript onto the main thread (~5–7s per call),
+    // freezing the UI — the cause of the AppHangs / blank Day Plan.
+    return getActiveTabUrlForBlocking(browser: browser)
 }
 
 func getTabTitleSafeInBackground(browser: BROWSER) -> String? {
-    var resultTitle: String? = nil
-    
-    let semaphore = DispatchSemaphore(value: 0)
-    
-    // AppleScript must run on MAIN
-    DispatchQueue.main.async {
-        resultTitle = getActiveTabTitleOf(browser: browser)
-        semaphore.signal()
-    }
-    
-    // Wait for the main thread to finish
-    semaphore.wait()
-    
-    return resultTitle
+    // See getURLSafeInBackground — do not bounce to the main thread; the script runs off-main already.
+    return getActiveTabTitleOf(browser: browser)
 }
 
 
