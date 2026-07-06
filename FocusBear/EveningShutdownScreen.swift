@@ -31,19 +31,19 @@ struct EveningShutdownView: View {
                 .multilineTextAlignment(.center)
 
             HStack(spacing: 16) {
-                Button(action: onSleep) {
+                SwiftUI.Button(action: onSleep) {
                     Text(sleepLabel).frame(minWidth: 130)
                 }
                 .keyboardShortcut(.defaultAction)
 
-                Button(action: onShutDown) {
+                SwiftUI.Button(action: onShutDown) {
                     Text(shutDownLabel).frame(minWidth: 130)
                 }
             }
             .controlSize(.large)
             .padding(.top, 8)
 
-            Button(action: onDismiss) {
+            SwiftUI.Button(action: onDismiss) {
                 Text(notNowLabel).foregroundColor(.secondary)
             }
             .buttonStyle(.plain)
