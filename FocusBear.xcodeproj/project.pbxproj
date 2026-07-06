@@ -115,6 +115,7 @@
 		44893728E4D2BE20B7672984 /* ScheduleKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9989E00FEA15521B6C3FE5FE /* ScheduleKit.swift */; };
 		7476A99B06ABC3EB040F5633 /* DayPlanTasks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 060DBE94CCB418D4071A43CB /* DayPlanTasks.swift */; };
 		5790A2029EF7B5F4A5EF47B8 /* routinePostponedInfoVc+Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE3FA8163BBB36B02EF947DD /* routinePostponedInfoVc+Schedule.swift */; };
+		HSS00001 /* habitsStateVc+Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = HSS00002 /* habitsStateVc+Schedule.swift */; };
 		57ED7D19F5DC0C0735C2F34B /* ScheduleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B215C30047E6A2A37A923150 /* ScheduleViewController.swift */; };
 		64206D6037E4BA7EA7DD14DA /* CalendarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6917674BE2A776D2F47EDE3 /* CalendarManager.swift */; };
 		7DC90FC77F5432F8C21012C0 /* firstViewController+Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DEF19BEE8458F980B62C5C3 /* firstViewController+Schedule.swift */; };
@@ -821,6 +822,7 @@
 		F2A250D6DD50DF2749899D48 /* FBHelper-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "FBHelper-Debug.xcconfig"; sourceTree = "<group>"; };
 		F4A04585FA1D0F1940D23631 /* Pods-Focus Bear.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Focus Bear.release.xcconfig"; path = "Target Support Files/Pods-Focus Bear/Pods-Focus Bear.release.xcconfig"; sourceTree = "<group>"; };
 		FE3FA8163BBB36B02EF947DD /* routinePostponedInfoVc+Schedule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "routinePostponedInfoVc+Schedule.swift"; sourceTree = "<group>"; };
+		HSS00002 /* habitsStateVc+Schedule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "habitsStateVc+Schedule.swift"; sourceTree = "<group>"; };
 		UBT00002 /* URLBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLBlockingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -1681,6 +1683,7 @@
 				B215C30047E6A2A37A923150 /* ScheduleViewController.swift */,
 				2DEF19BEE8458F980B62C5C3 /* firstViewController+Schedule.swift */,
 				FE3FA8163BBB36B02EF947DD /* routinePostponedInfoVc+Schedule.swift */,
+				HSS00002 /* habitsStateVc+Schedule.swift */,
 			);
 			name = Schedule;
 			path = Schedule;
@@ -2267,6 +2270,7 @@
 				57ED7D19F5DC0C0735C2F34B /* ScheduleViewController.swift in Sources */,
 				7DC90FC77F5432F8C21012C0 /* firstViewController+Schedule.swift in Sources */,
 				5790A2029EF7B5F4A5EF47B8 /* routinePostponedInfoVc+Schedule.swift in Sources */,
+				HSS00001 /* habitsStateVc+Schedule.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

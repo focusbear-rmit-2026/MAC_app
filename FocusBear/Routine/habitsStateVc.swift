@@ -53,6 +53,10 @@ class habitsStateVc: NSViewController {
             nextRoutineTimeCancelledMorningRoutineWithUndo = habitsStateVcInfo.value(forKey: "nextRoutineTimeCancelledMorningRoutineWithUndo") as? String ?? nextRoutineTimeCancelledMorningRoutineWithUndo
         }
         btnUnCancelRoutine.title = buttonUncancelEveningRoutine
+
+        // #2010: show the Day Plan schedule over this "between routines" state instead of just the
+        // "next routine" message, so a completed routine stays visible (with a force-uncomplete action).
+        setupScheduleTab()
     }
     
     override func viewWillAppear() {
@@ -405,6 +409,9 @@ class habitsStateVc: NSViewController {
             
             DispatchQueue.main.async { [self] in
                 self.btnUnCancelRoutine.isHidden = !shouldShowButton
+                // #2010: a cancelled (force-completed) routine shows the uncancel message; any other
+                // state keeps the Day Plan visible.
+                self.applyDayPlanVisibility(cancelled: shouldShowButton)
                 btnResumeHabits.isSecondaryButton = true
                 if isEveningRoutine{
                     

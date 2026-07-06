@@ -1439,7 +1439,7 @@ class scheduleViewController: NSViewController {
         let now: Date = isToday ? Date()
             : (ScheduleTab.timeOnDate(startTime, date: selectedDate) ?? Calendar.current.startOfDay(for: selectedDate))
 
-        let segments: [ScheduleRoutineSegment]
+        var segments: [ScheduleRoutineSegment]
         if !isToday {
             // Read-only preview for another day: habits by that weekday + custom routines.
             segments = ScheduleTab.segmentsForDate(selectedDate)
@@ -1469,9 +1469,32 @@ class scheduleViewController: NSViewController {
         // "Show events from earlier today" only makes sense on today, and only when there actually
         // are meetings that already finished. Other days already show their whole timetable.
         let earlierEvents = isToday ? meetings.filter { $0.end <= Date() } : []
-        canShowEarlierToggle = !earlierEvents.isEmpty
+
+        // #2010: a *past* morning routine (we're now in the evening routine) is also "earlier today".
+        // Surface it under the same toggle as a collapsed accordion so completed morning habits are
+        // visible — and (once wired) markable — instead of vanishing once the morning is done. Only when
+        // the active list on screen isn't already the morning routine (avoid duplicating it).
+        let morningStart = ScheduleTab.timeOnDate(startTime, date: selectedDate)
+        let pastMorningHabits: [ScheduleHabitInput] = {
+            guard isToday,
+                  !segments.contains(where: { $0.name == ScheduleText.morningRoutineHabits }) else { return [] }
+            // dropCompleted:false so already-done morning habits still render (with a strikethrough — TODO).
+            return ScheduleTab.habitInputs(
+                from: ScheduleTab.filterByWeekday(arrAllDaysMorningHabits, weekday: selectedDate.dayOfWeek()),
+                now: morningStart ?? now, dropCompleted: false)
+        }()
+
+        canShowEarlierToggle = !earlierEvents.isEmpty || !pastMorningHabits.isEmpty
         if !canShowEarlierToggle { showEarlierEvents = false }
         let meetingsFrom = (isToday && showEarlierEvents) ? cal.startOfDay(for: selectedDate) : now
+
+        if showEarlierEvents, !pastMorningHabits.isEmpty, let ms = morningStart {
+            let morningSeg = ScheduleRoutineSegment(
+                name: ScheduleText.morningRoutineHabits, habits: pastMorningHabits,
+                windowStart: ms, windowEnd: ScheduleTab.timeOnDate(shutOffTime, date: selectedDate) ?? ms,
+                actionable: false)
+            segments = [morningSeg] + segments
+        }
 
         // Break duration can be 0 (no enforced screen-break time) — but for the Day Plan we still
         // want deep-work blocks split at the break *frequency*, so fall back to 5 min so the split
