@@ -86,6 +86,7 @@
 		13C6BF0B2FB19D750074DD63 /* ORSSerial in Frameworks */ = {isa = PBXBuildFile; productRef = 13C6BF0A2FB19D750074DD63 /* ORSSerial */; };
 		13C6BF0E2FB211CA0074DD63 /* audioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */; };
 		13C6C2A22FE2615E00B1F278 /* BreakWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */; };
+		ESD00001 /* EveningShutdownScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = ESD00002 /* EveningShutdownScreen.swift */; };
 		13CBE7652F07E9660025544E /* enableAIBlockingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */; };
 		13D5D0112FD0396E00AB474C /* micMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D5D0102FD0396E00AB474C /* micMonitor.swift */; };
 		13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */; };
@@ -498,6 +499,7 @@
 		13C6BF072FB199E70074DD63 /* focusButtonService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusButtonService.swift; sourceTree = "<group>"; };
 		13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = audioRecorder.swift; sourceTree = "<group>"; };
 		13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakWarningView.swift; sourceTree = "<group>"; };
+		ESD00002 /* EveningShutdownScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EveningShutdownScreen.swift; path = FocusBear/EveningShutdownScreen.swift; sourceTree = SOURCE_ROOT; };
 		13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = enableAIBlockingVc.swift; sourceTree = "<group>"; };
 		13D5D0102FD0396E00AB474C /* micMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = micMonitor.swift; sourceTree = "<group>"; };
 		13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineStateVc.swift; sourceTree = "<group>"; };
@@ -1050,6 +1052,7 @@
 			children = (
 				8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */,
 				13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */,
+				ESD00002 /* EveningShutdownScreen.swift */,
 				8F3F1F28299BB96400E67F42 /* breaksBrainDumpVc.swift */,
 				8F1FBAE529F2A46000AA1979 /* naturalBreaksDetectionVc.swift */,
 				8F3A28982C22A46F002AD2E3 /* deactivateBreaksVc.swift */,
@@ -2166,6 +2169,7 @@
 				8F3DD01629F3B4CA00E23715 /* AHAuthorizer.m in Sources */,
 				274C9A91289A8C910066F883 /* accountVc.swift in Sources */,
 				13C6C2A22FE2615E00B1F278 /* BreakWarningView.swift in Sources */,
+				ESD00001 /* EveningShutdownScreen.swift in Sources */,
 				8FA692FD2B90B31600FF4862 /* confirmRunScriptVc.swift in Sources */,
 				8F6DAD842B32A84400CB210B /* lateNoMorePopUpVc.swift in Sources */,
 				8FC31BFE28C757B400E2DD4C /* brainDumpVc.swift in Sources */,

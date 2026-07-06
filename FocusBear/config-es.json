@@ -1136,6 +1136,13 @@
         "buttonDontHaveTimeText": "No tengo tiempo",
         "buttonInTheOffIceText": "Estoy en la oficina"
     },
+    "eveningShutdownInfo": {
+        "title": "Bien hecho por terminar tu rutina nocturna",
+        "subtitle": "Que descanses bien",
+        "buttonSleepText": "Suspender",
+        "buttonShutDownText": "Apagar",
+        "buttonNotNowText": "Ahora no"
+    },
     "brainDumpVcInfo": {
         "title": "Focus Bear - Volcado de cerebros",
         "titleIntentionText": "Intención de bloque de enfoque:",
