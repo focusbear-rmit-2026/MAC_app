@@ -202,12 +202,14 @@ enum ScheduleTab {
         return habits.enumerated().compactMap { idx, h in
             if dropCompleted, let id = h.id, dayPlanCompletedHabitIds.contains(id) { return nil }
             let playing = currentHabitPlaying?.id != nil && currentHabitPlaying?.id == h.id
+            let done = h.id.map { dayPlanCompletedHabitIds.contains($0) } ?? false
             return ScheduleHabitInput(index: idx,
                                       title: h.name ?? "Habit",
                                       durationSeconds: estimatedDuration(for: h),
                                       isPlaying: playing,
                                       elapsedSeconds: 0,
-                                      cutoff: timeToday(h.cutOffTime, now: now))
+                                      cutoff: timeToday(h.cutOffTime, now: now),
+                                      isDone: done)
         }
     }
 
@@ -484,11 +486,19 @@ class scheduleViewController: NSViewController {
     /// "routineName|dayOrdinal". Absent → default: collapsed on future days, expanded today/past.
     private var routineCollapseOverrides: [String: Bool] = [:]
 
+    /// #2010: routine sections surfaced as *earlier today* items under the "Show events from earlier
+    /// today" toggle (currently the past morning routine, once the evening routine has started). They
+    /// default to collapsed even on today — they're history, shown alongside the earlier meetings —
+    /// unlike the active routine. Rebuilt each reload(); a user click still overrides (see below).
+    private var earlierRoutineNames: Set<String> = []
+
     private func routineCollapseKey(_ name: String, date: Date) -> String {
         "\(name)|\(Int(date.timeIntervalSince1970 / 86400))"
     }
     private func isRoutineCollapsed(name: String, date: Date) -> Bool {
         if let explicit = routineCollapseOverrides[routineCollapseKey(name, date: date)] { return explicit }
+        // Past routines shown under the "earlier today" toggle start collapsed even on today.
+        if earlierRoutineNames.contains(name) { return true }
         // Default: future days start collapsed; today (and past) stay expanded.
         return Calendar.current.compare(date, to: Date(), toGranularity: .day) == .orderedDescending
     }
@@ -1495,7 +1505,8 @@ class scheduleViewController: NSViewController {
         let pastMorningHabits: [ScheduleHabitInput] = {
             guard isToday,
                   !segments.contains(where: { $0.name == ScheduleText.morningRoutineHabits }) else { return [] }
-            // dropCompleted:false so already-done morning habits still render (with a strikethrough — TODO).
+            // dropCompleted:false so already-done morning habits still render (struck through — the
+            // isDone flag flows through to makeHabitRow).
             return ScheduleTab.habitInputs(
                 from: ScheduleTab.filterByWeekday(arrAllDaysMorningHabits, weekday: selectedDate.dayOfWeek()),
                 now: morningStart ?? now, dropCompleted: false)
@@ -1505,12 +1516,15 @@ class scheduleViewController: NSViewController {
         if !canShowEarlierToggle { showEarlierEvents = false }
         let meetingsFrom = (isToday && showEarlierEvents) ? cal.startOfDay(for: selectedDate) : now
 
+        earlierRoutineNames = []
         if showEarlierEvents, !pastMorningHabits.isEmpty, let ms = morningStart {
             let morningSeg = ScheduleRoutineSegment(
                 name: ScheduleText.morningRoutineHabits, habits: pastMorningHabits,
                 windowStart: ms, windowEnd: ScheduleTab.timeOnDate(shutOffTime, date: selectedDate) ?? ms,
-                actionable: false)
+                actionable: false, isEarlier: true)
             segments = [morningSeg] + segments
+            // Show it collapsed by default — it's an "earlier today" item, not the active routine.
+            earlierRoutineNames.insert(ScheduleText.morningRoutineHabits)
         }
 
         // Break duration can be 0 (no enforced screen-break time) — but for the Day Plan we still
@@ -2142,7 +2156,17 @@ class scheduleViewController: NSViewController {
                                             time: "\(timeString(block.start))–\(timeString(block.end))",
                                             title: block.title, leadingInset: 6, vPad: 6,
                                             timeColor: .secondaryLabelColor, titleColor: .labelColor)
-        if block.didOverflow { titleLabel.textColor = .systemRed }
+        if block.isDone {
+            // Completed earlier today: strike it through (same style as a done nested task). Use the
+            // label's own text — layoutColumns splits the emoji into a separate leading label, so
+            // block.title (emoji + name) would render the emoji twice.
+            titleLabel.attributedStringValue = NSAttributedString(string: titleLabel.stringValue, attributes: [
+                .strikethroughStyle: NSUnderlineStyle.single.rawValue,
+                .foregroundColor: NSColor.secondaryLabelColor,
+                .font: titleLabel.font ?? NSFont.systemFont(ofSize: 13)])
+        } else if block.didOverflow {
+            titleLabel.textColor = .systemRed
+        }
         return container
     }
 

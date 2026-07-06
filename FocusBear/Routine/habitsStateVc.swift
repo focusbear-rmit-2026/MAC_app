@@ -73,6 +73,10 @@ class habitsStateVc: NSViewController {
         addLog(text:"habitsStateVc:- reloadData")
         isFreeTimeBeforeShutoff = false
         editRoutineButtonShowing = false
+        // Default to showing this VC's own Day Plan overlay. The postpone / break-from-postpone branches
+        // below embed routinePostponedInfoVc (which owns its own working Day Plan) and hide this overlay
+        // via showRutinePostponedInfoView, so its Play/Done/Skip aren't swallowed (#2010 regression).
+        setOwnDayPlanHidden(false)
         
         btnResumeHabits.isHidden = false
         lblTitle.isHidden = false
@@ -299,6 +303,9 @@ class habitsStateVc: NSViewController {
         btnResumeHabits.isHidden = true
         lblTitle.isHidden = true
         customView.isHidden = false
+        // Hide this VC's own Day Plan overlay so the embedded routinePostponedInfoVc (which owns a
+        // working Day Plan) is the interactive one; otherwise the overlay's no-op Play/Done/Skip win.
+        setOwnDayPlanHidden(true)
         customView.addSubview(getRutinePostponedInfoVcObject().view)
         customView.addConstraints(subView: getRutinePostponedInfoVcObject().view)
         getRutinePostponedInfoVcObject().lCurrentState = state

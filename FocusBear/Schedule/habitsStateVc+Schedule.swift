@@ -42,6 +42,16 @@ extension habitsStateVc: ScheduleHost {
         if scheduleVC?.view.isHidden == false { scheduleVC?.reload() }
     }
 
+    /// Show/hide this VC's OWN Day Plan overlay. habitsStateVc is a container: for postpone /
+    /// break-from-postpone it embeds routinePostponedInfoVc (via showRutinePostponedInfoView), which
+    /// owns its own fully-working Day Plan. This overlay is pinned on top of that embedded view, so it
+    /// must be hidden in those states — otherwise its no-op Play/Done/Skip swallow the clicks (the
+    /// ScheduleHost actions here are intentionally empty, correct only for the read-only ._NOTHING_
+    /// state). Shown for the states habitsStateVc renders itself (completed / next-routine / cancelled).
+    func setOwnDayPlanHidden(_ hidden: Bool) {
+        scheduleVC?.view.isHidden = hidden
+    }
+
     // MARK: - ScheduleHost
 
     func scheduleSegments(now: Date) -> [ScheduleRoutineSegment] {
