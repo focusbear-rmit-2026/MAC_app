@@ -75,15 +75,31 @@ extension habitsStateVc: ScheduleHost {
 
     func refreshHabitListVisibilityForDayPlan() { }
 
-    /// Gate the Day Plan by state: a CANCELLED (force-completed) routine shows the uncancel message
-    /// instead of the Day Plan; every other state (genuinely complete / postponed / next-routine) keeps
-    /// the Day Plan up. Called from updateUncancelRoutineButtonVisibility once the backend reports
-    /// was_force_completed for today's routine.
+    /// #2010: when a routine is force-cancelled we keep the whole Day Plan visible and replace only that
+    /// routine's section with an uncancel message + button. Return the section (its routineName, matched
+    /// in makeHabitGroupCard) plus the morning/evening message + button text, or nil when nothing is
+    /// cancelled. Driven by `cancelledRoutineName`, set in updateUncancelRoutineButtonVisibility.
+    func cancelledRoutine() -> (sectionName: String, message: String, buttonTitle: String)? {
+        guard let name = cancelledRoutineName else { return nil }
+        let isEvening = (name == ScheduleText.eveningRoutineHabits)
+        return (sectionName: name,
+                message: isEvening ? ScheduleText.cancelledEveningRoutineMessage : ScheduleText.cancelledMorningRoutineMessage,
+                buttonTitle: isEvening ? ScheduleText.uncancelEveningRoutineButton : ScheduleText.uncancelMorningRoutineButton)
+    }
+
+    /// The uncancel button in that section — force-uncompletes the routine (handles morning/evening).
+    func uncancelRoutine() {
+        btnUnCancelRoutineClicked(self)
+    }
+
+    /// #2010: the Day Plan now stays visible in ALL states — a cancelled routine is handled inline (its
+    /// section becomes the uncancel message, see cancelledRoutine()), not by hiding the whole plan. So
+    /// this only ever keeps the Day Plan up; the legacy message / resume views stay hidden.
     func applyDayPlanVisibility(cancelled: Bool) {
-        scheduleVC?.view.isHidden = cancelled
-        lblTitle?.isHidden = !cancelled
-        lblDescription?.isHidden = !cancelled
-        btnResumeHabits?.isHidden = !cancelled
-        if !cancelled { scheduleVC?.startAutoRefresh() } else { scheduleVC?.stopAutoRefresh() }
+        scheduleVC?.view.isHidden = false
+        lblTitle?.isHidden = true
+        lblDescription?.isHidden = true
+        btnResumeHabits?.isHidden = true
+        scheduleVC?.startAutoRefresh()
     }
 }

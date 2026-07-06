@@ -62,6 +62,10 @@ enum ScheduleText {
     static var deepWorkSession: String { t("deepWorkSession", "Deep work") }
     static var showDeepWorkBreakdown: String { t("showDeepWorkBreakdown", "Show deep work breakdown") }
     static var hideDeepWorkBreakdown: String { t("hideDeepWorkBreakdown", "Hide deep work breakdown") }
+    static var cancelledMorningRoutineMessage: String { t("cancelledMorningRoutineMessage", "You cancelled your morning routine. If you changed your mind, click \"Uncancel My Morning Routine\" to continue your morning habits.") }
+    static var cancelledEveningRoutineMessage: String { t("cancelledEveningRoutineMessage", "You cancelled your evening routine. If you changed your mind, click \"Uncancel My Evening Routine\" to continue your evening habits.") }
+    static var uncancelMorningRoutineButton: String { t("uncancelMorningRoutineButton", "Uncancel My Morning Routine") }
+    static var uncancelEveningRoutineButton: String { t("uncancelEveningRoutineButton", "Uncancel My Evening Routine") }
     static var scheduleSettings: String { t("scheduleSettings", "Schedule settings") }
     static var hideEarlierEvents: String { t("hideEarlierEvents", "Hide events from earlier today") }
     static var viewTomorrow: String { t("viewTomorrow", "View tomorrow's schedule") }
@@ -144,6 +148,19 @@ protocol ScheduleHost: AnyObject {
     /// visibility. Unlike updateScheduleTabForState() this does NOT reload/auto-refresh, so it's safe
     /// to call from within a reload (setDayPlanContentHidden) without recursing.
     func refreshHabitListVisibilityForDayPlan()
+
+    /// #2010: when a routine is force-cancelled we keep the whole Day Plan visible, but replace THAT
+    /// routine's section with an "uncancel" message + button. Return the section to replace (its
+    /// `routineName`, matched in makeHabitGroupCard) plus the message/button text, or nil if nothing is
+    /// cancelled. Default: nil (only the between-routines state uses this).
+    func cancelledRoutine() -> (sectionName: String, message: String, buttonTitle: String)?
+    /// Perform the uncancel (force-uncomplete) for the cancelled routine — fired by that button.
+    func uncancelRoutine()
+}
+
+extension ScheduleHost {
+    func cancelledRoutine() -> (sectionName: String, message: String, buttonTitle: String)? { nil }
+    func uncancelRoutine() {}
 }
 
 /// Shared helpers for installing the Schedule tab into a host habit screen. Each host
@@ -1630,7 +1647,10 @@ class scheduleViewController: NSViewController {
         let appearanceName = ((isViewLoaded ? view.effectiveAppearance : nil) ?? NSApp.effectiveAppearance).name.rawValue
         let collapseSig = routineCollapseOverrides.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
         let dwCollapseSig = deepWorkCollapseOverrides.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
-        let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(collapseSig)|\(dwCollapseSig)|\(taskSig)|"
+        // #2010: a cancelled routine swaps its section for an uncancel message — include it so toggling
+        // cancel/uncancel forces a re-render instead of being cached away.
+        let cancelledSig = host?.cancelledRoutine()?.sectionName ?? ""
+        let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(collapseSig)|\(dwCollapseSig)|\(cancelledSig)|\(taskSig)|"
             + blocks.map { "\($0.kind)\($0.title)\(Int($0.start.timeIntervalSince1970))\(Int($0.end.timeIntervalSince1970))\($0.isCurrent)\($0.isActionable)" }.joined(separator: ";")
         if signature == lastRenderSignature, !stackView.arrangedSubviews.isEmpty { return }
         lastRenderSignature = signature
@@ -1964,6 +1984,10 @@ class scheduleViewController: NSViewController {
         let routineName = habits.first?.routineName ?? "Habits"
         let dateForToggle = selectedDate
         let collapsed = isRoutineCollapsed(name: routineName, date: dateForToggle)
+        // #2010: is THIS routine's section force-cancelled? Drives the uncancel message and hides the
+        // "Skip routine for today" action (there's nothing to skip once it's cancelled).
+        let cancel = host?.cancelledRoutine()
+        let isCancelled = (cancel?.sectionName == routineName)
         if let first = habits.first, let last = habits.last {
             let chevron = collapsed ? "▸" : "▾"
             let header = makeLabel("\(chevron) 🧩 \(routineName)  ·  \(timeString(first.start))–\(timeString(last.end))", size: 15, bold: false)
@@ -1981,7 +2005,7 @@ class scheduleViewController: NSViewController {
             headerRow.distribution = .fill
             headerRow.translatesAutoresizingMaskIntoConstraints = false
             headerRow.addArrangedSubview(header)
-            if isActiveRoutine {
+            if isActiveRoutine && !isCancelled {
                 let skipBtn = makeSkipRoutineButton()
                 skipBtn.setContentHuggingPriority(.required, for: .horizontal)
                 skipBtn.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -1991,6 +2015,26 @@ class scheduleViewController: NSViewController {
             headerRow.toolTip = collapsed ? ScheduleText.showHabits : ScheduleText.hideHabits
             inner.addArrangedSubview(headerRow)
             headerRow.widthAnchor.constraint(equalTo: inner.widthAnchor).isActive = true
+        }
+
+        // #2010: a force-cancelled routine keeps its section (and accordion header) but swaps the habit
+        // rows for an "uncancel" message with the button on its own line below it — the Day Plan stays visible.
+        if isCancelled, let cancel = cancel {
+            if !collapsed {
+                let msg = makeLabel(cancel.message, size: 13, bold: false)
+                msg.textColor = .secondaryLabelColor
+                msg.maximumNumberOfLines = 0
+                msg.lineBreakMode = .byWordWrapping
+                msg.setContentHuggingPriority(.defaultLow, for: .horizontal)
+                msg.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+                inner.addArrangedSubview(msg)
+                msg.widthAnchor.constraint(equalTo: inner.widthAnchor).isActive = true
+
+                let btn = makeUncancelButton(title: cancel.buttonTitle)
+                inner.addArrangedSubview(btn)
+            }
+            return styledCard(fill: NSColor.systemOrange.withAlphaComponent(0.05),
+                              border: NSColor.separatorColor, hasBorder: true, content: inner)
         }
 
         // Default selection = the next-up habit; keep the user's pick if it's still valid.
@@ -2056,6 +2100,25 @@ class scheduleViewController: NSViewController {
 
     @objc private func skipRoutineForTodayClicked() {
         host?.scheduleSkipRoutineForToday()
+    }
+
+    /// The "Uncancel My Morning/Evening Routine" link shown in place of a force-cancelled routine's
+    /// habits (#2010). Fires host.uncancelRoutine().
+    private func makeUncancelButton(title: String) -> NSButton {
+        // cursorButton shows the pointing-hand cursor on hover (via resetCursorRects/addCursorRect).
+        let btn = cursorButton(title: title, target: self, action: #selector(uncancelRoutineClicked))
+        btn.isBordered = false
+        btn.bezelStyle = .inline
+        btn.attributedTitle = NSAttributedString(
+            string: title,
+            attributes: [.foregroundColor: NSColor.systemBlue,
+                         .font: NSFont.systemFont(ofSize: 13, weight: .semibold),
+                         .underlineStyle: NSUnderlineStyle.single.rawValue])
+        return btn
+    }
+
+    @objc private func uncancelRoutineClicked() {
+        host?.uncancelRoutine()
     }
 
     /// A single tappable habit line: time · emoji · name. No inline buttons — selecting it

@@ -344,6 +344,10 @@ class habitsStateVc: NSViewController {
     }
     
     
+    /// #2010: name of the routine section (morning/evening habits) that was force-cancelled — the Day
+    /// Plan replaces just that section with the uncancel message. nil when nothing is cancelled.
+    var cancelledRoutineName: String?
+
     @IBAction func btnUnCancelRoutineClicked(_ sender: Any) {
         mainViewControllerObj?.showLoaderView()
         if isShutOffTimeGoing(){
@@ -409,9 +413,15 @@ class habitsStateVc: NSViewController {
             
             DispatchQueue.main.async { [self] in
                 self.btnUnCancelRoutine.isHidden = !shouldShowButton
-                // #2010: a cancelled (force-completed) routine shows the uncancel message; any other
-                // state keeps the Day Plan visible.
-                self.applyDayPlanVisibility(cancelled: shouldShowButton)
+                // #2010: keep the Day Plan fully visible even when the routine is cancelled — the
+                // cancelled routine's SECTION is replaced with the uncancel message + button (see
+                // cancelledRoutine() / makeHabitGroupCard). Record which section is cancelled, keep the
+                // Day Plan up, and re-render so the section swaps to the message.
+                self.cancelledRoutineName = shouldShowButton
+                    ? (isEveningRoutine ? ScheduleText.eveningRoutineHabits : ScheduleText.morningRoutineHabits)
+                    : nil
+                self.applyDayPlanVisibility(cancelled: false)
+                self.refreshScheduleIfVisible()
                 btnResumeHabits.isSecondaryButton = true
                 if isEveningRoutine{
                     
