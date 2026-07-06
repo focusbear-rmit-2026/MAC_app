@@ -1137,6 +1137,13 @@
         "buttonDontHaveTimeText": "I don't have time",
         "buttonInTheOffIceText": "I'm in the offIce"
     },
+    "eveningShutdownInfo": {
+        "title": "Well done on finishing your evening routine",
+        "subtitle": "Have a restful sleep",
+        "buttonSleepText": "Sleep",
+        "buttonShutDownText": "Shut Down",
+        "buttonNotNowText": "Not now"
+    },
     "brainDumpVcInfo": {
         "title": "Focus Bear - Brain dump",
         "titleIntentionText": "Focus Block intention:",
