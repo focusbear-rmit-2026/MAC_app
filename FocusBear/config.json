@@ -2154,7 +2154,9 @@
         "title": "Hiya, do you still want to do your morning routine today or skip it?",
         "subTitle": "(Asking because it's <HOUR> hours since your routine start time and it might not make sense to do it today)",
         "buttonSkipText": "Skip it",
-        "buttonDoHabitsText": "Do my habits"
+        "buttonDoHabitsText": "Do my habits",
+        "buttonPostponeText": "Not now",
+        "buttonSkipRoutineText": "Skip routine for today"
     },
     "settingsMeetingDetactionVcInfo": {
         "descriptionSuggestMeetingsFocusMode": "When you start a video call, Focus Bear can prompt you to start the Meeting focus mode to help you stay focused during the meeting",

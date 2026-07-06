@@ -2152,7 +2152,9 @@
         "title": "Hola, ¿todavía quieres hacer tu rutina matutina hoy o saltártela?",
         "subTitle": "(Pregunto porque son <HOUR> horas desde la hora de inicio de tu rutina y puede que no tenga sentido hacerlo hoy)",
         "buttonSkipText": "Saltarla",
-        "buttonDoHabitsText": "Hacer mis hábitos"
+        "buttonDoHabitsText": "Hacer mis hábitos",
+        "buttonPostponeText": "Ahora no",
+        "buttonSkipRoutineText": "Saltar rutina por hoy"
     },
     "settingsMeetingDetactionVcInfo": {
         "descriptionSuggestMeetingsFocusMode": "Al iniciar una videollamada, Focus Bear puede avisarte que inicies el modo de enfoque Reunión para ayudarte a mantener la concentración durante la reunión",
