@@ -2316,7 +2316,10 @@ final class CustomRoutinesPanel: NSView {
     /// stays visible there.
     private var hiddenForActiveRoutine: Bool {
         switch currentState {
-        case ._MORNING_HABIT_, ._EVENING_HABIT_, ._FOCUS_SUMMARY_, ._SHUTOFFMAC_:
+        // Keep the on-demand Custom Routines panel reachable while a morning/evening routine runs —
+        // that's exactly when the Day Plan is shown full-screen, and it was previously hidden there.
+        // Still hide it on the end-of-routine summary and the shutdown screen, where it has no place.
+        case ._FOCUS_SUMMARY_, ._SHUTOFFMAC_:
             return true
         default:
             return false
