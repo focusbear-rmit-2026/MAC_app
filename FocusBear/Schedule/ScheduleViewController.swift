@@ -59,6 +59,9 @@ enum ScheduleText {
     static var hideDeepWork: String { t("hideDeepWork", "Hide deep work blocks") }
     static var showHabits: String { t("showHabits", "Show habits") }
     static var hideHabits: String { t("hideHabits", "Hide habits") }
+    static var deepWorkSession: String { t("deepWorkSession", "Deep work") }
+    static var showDeepWorkBreakdown: String { t("showDeepWorkBreakdown", "Show deep work breakdown") }
+    static var hideDeepWorkBreakdown: String { t("hideDeepWorkBreakdown", "Hide deep work breakdown") }
     static var scheduleSettings: String { t("scheduleSettings", "Schedule settings") }
     static var hideEarlierEvents: String { t("hideEarlierEvents", "Hide events from earlier today") }
     static var viewTomorrow: String { t("viewTomorrow", "View tomorrow's schedule") }
@@ -475,6 +478,23 @@ class scheduleViewController: NSViewController {
     private func toggleRoutineCollapsed(name: String, date: Date) {
         let key = routineCollapseKey(name, date: date)
         routineCollapseOverrides[key] = !isRoutineCollapsed(name: name, date: date)
+        lastRenderSignature = nil
+        reload()
+    }
+
+    /// Expand/collapse overrides for deep-work sessions (a consecutive run of deep-work + break
+    /// blocks), keyed by "dayOrdinal|dw|runIndex". Runs collapse into one accordion row by default so
+    /// the plan shows a single "Deep work · 9:03am–12pm" line instead of every sprint and break.
+    private var deepWorkCollapseOverrides: [String: Bool] = [:]
+    private func deepWorkCollapseKey(runIndex: Int, date: Date) -> String {
+        "\(Int(date.timeIntervalSince1970 / 86400))|dw|\(runIndex)"
+    }
+    private func isDeepWorkCollapsed(runIndex: Int, date: Date) -> Bool {
+        deepWorkCollapseOverrides[deepWorkCollapseKey(runIndex: runIndex, date: date)] ?? true   // collapsed by default
+    }
+    private func toggleDeepWorkCollapsed(runIndex: Int, date: Date) {
+        let key = deepWorkCollapseKey(runIndex: runIndex, date: date)
+        deepWorkCollapseOverrides[key] = !isDeepWorkCollapsed(runIndex: runIndex, date: date)
         lastRenderSignature = nil
         reload()
     }
@@ -1586,7 +1606,8 @@ class scheduleViewController: NSViewController {
         // otherwise the selected habit unit (Play/Done/Skip) keeps its old colors and goes invisible.
         let appearanceName = ((isViewLoaded ? view.effectiveAppearance : nil) ?? NSApp.effectiveAppearance).name.rawValue
         let collapseSig = routineCollapseOverrides.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
-        let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(collapseSig)|\(taskSig)|"
+        let dwCollapseSig = deepWorkCollapseOverrides.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
+        let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(collapseSig)|\(dwCollapseSig)|\(taskSig)|"
             + blocks.map { "\($0.kind)\($0.title)\(Int($0.start.timeIntervalSince1970))\(Int($0.end.timeIntervalSince1970))\($0.isCurrent)\($0.isActionable)" }.joined(separator: ";")
         if signature == lastRenderSignature, !stackView.arrangedSubviews.isEmpty { return }
         lastRenderSignature = signature
@@ -1624,6 +1645,7 @@ class scheduleViewController: NSViewController {
 
         var i = 0
         var dwOrdinal = 0
+        var dwRunIndex = 0
         while i < blocks.count {
             if blocks[i].kind == .habit {
                 let name = blocks[i].routineName
@@ -1633,6 +1655,16 @@ class scheduleViewController: NSViewController {
                 }
                 // Each habit inside the group is its own drop target (handled in makeHabitGroupCard).
                 addCard(makeHabitGroupCard(group))
+            } else if !hideDeepWorkBlocks, blocks[i].kind == .deepWork {
+                // A consecutive run of deep-work + break blocks collapses into one accordion row
+                // ("Deep work · 9:03am–12pm"); expanding shows the individual sprints and breaks.
+                var run = [ScheduleBlock]()
+                while i < blocks.count, blocks[i].kind == .deepWork || blocks[i].kind == .breakSprint {
+                    run.append(blocks[i]); i += 1
+                }
+                renderDeepWorkRun(run, runIndex: dwRunIndex, dwOrdinal: &dwOrdinal,
+                                  dwTasksByOrdinal: dwTasksByOrdinal)
+                dwRunIndex += 1
             } else {
                 let block = blocks[i]
                 // Hide-deep-work setting: skip the deep-work card (and its nested tasks) entirely, so
@@ -1660,6 +1692,54 @@ class scheduleViewController: NSViewController {
 
         // The day ends at 11:59pm; offer a jump to the next day's schedule.
         stackView.addArrangedSubview(makeViewTomorrowButton())
+    }
+
+    /// Render a run of consecutive deep-work + break blocks as one accordion: a header row
+    /// ("▸ 🧠 Deep work · 9:03am–12pm") that toggles collapse, and — when expanded — the individual
+    /// sprint/break cards (with nested deep-work tasks) exactly as they render standalone. `dwOrdinal`
+    /// is advanced for every deep-work block whether collapsed or not, to stay in step with dwBlocks.
+    private func renderDeepWorkRun(_ run: [ScheduleBlock], runIndex: Int, dwOrdinal: inout Int,
+                                   dwTasksByOrdinal: [Int: [DayPlanTask]]) {
+        guard let first = run.first, let last = run.last else { return }
+        let dateForToggle = selectedDate
+        let collapsed = isDeepWorkCollapsed(runIndex: runIndex, date: dateForToggle)
+        let chevron = collapsed ? "▸" : "▾"
+        let header = makeLabel("\(chevron) 🧠 \(ScheduleText.deepWorkSession)  ·  \(timeString(first.start))–\(timeString(last.end))",
+                               size: 15, bold: false)
+        header.textColor = .labelColor
+        header.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        header.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        header.lineBreakMode = .byTruncatingTail
+        let headerRow = ClickableStack()
+        headerRow.orientation = .horizontal
+        headerRow.alignment = .centerY
+        headerRow.spacing = 8
+        headerRow.distribution = .fill
+        headerRow.translatesAutoresizingMaskIntoConstraints = false
+        headerRow.addArrangedSubview(header)
+        headerRow.onClick = { [weak self] in self?.toggleDeepWorkCollapsed(runIndex: runIndex, date: dateForToggle) }
+        headerRow.toolTip = collapsed ? ScheduleText.showDeepWorkBreakdown : ScheduleText.hideDeepWorkBreakdown
+        addCard(styledCard(fill: NSColor.systemGreen.withAlphaComponent(0.05),
+                           border: NSColor.separatorColor, hasBorder: true, content: headerRow))
+
+        for block in run {
+            if collapsed {
+                if block.kind == .deepWork { dwOrdinal += 1 }
+                continue
+            }
+            let card = makeCard(for: block)
+            let key = blockKey(for: block)
+            if let key = key {
+                card.onDrop = { [weak self] tid in self?.assignTask(tid, toKey: key) ?? false }
+            }
+            addCard(card)
+            if block.kind == .deepWork {
+                for task in dwTasksByOrdinal[dwOrdinal] ?? [] { addCard(makeNestedTaskRow(task)) }
+                dwOrdinal += 1
+            } else if let key = key {
+                addNestedTasks(forKey: key)
+            }
+        }
     }
 
     /// Stable key a task is nested under for a given block. Deep-work sprints are keyed by start
