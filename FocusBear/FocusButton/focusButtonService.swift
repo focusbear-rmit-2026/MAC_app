@@ -45,6 +45,11 @@ class focusButtonService: NSObject {
     private var isReconnecting = false
     private var isConnecting = false
 
+    /// Set when the user (or an external process via FocusButtonCommandChannel) asks to stay
+    /// disconnected — suppresses auto-reconnect so /dev/cu.usbmodem* stays free (e.g. so firmware can
+    /// be reflashed) until an explicit reconnect/start.
+    private var userRequestedStayDisconnected = false
+
     /// Repeating poll that transparently reconnects the button after an involuntary drop
     /// (unplug/replug, sleep, serial glitch like "Device not configured"). Armed by start();
     /// see startReconnectMonitor(). A tick is free while connected — it returns before doing
@@ -127,6 +132,7 @@ class focusButtonService: NSObject {
     
     func start() -> Bool {
         log("FocusButton: Start()")
+        userRequestedStayDisconnected = false   // an explicit start/connect clears a prior manual disconnect
         startReconnectMonitor()   // keep trying in the background even if this attempt finds no port
 
         // Fresh attempt: forget ports rejected on a previous attempt so a device
@@ -176,6 +182,7 @@ class focusButtonService: NSObject {
     }
 
     private func attemptAutoReconnect() {
+        guard !userRequestedStayDisconnected else { return }  // user/external asked to stay disconnected (e.g. reflashing)
         guard hasEverConnected else { return }             // never auto-scan for non-button users
         guard !isConnected, !isConnecting else { return }  // already connected / attempt in flight
         // Only try when a device is actually present, so we don't spam start()'s "not found" error
@@ -557,6 +564,33 @@ class focusButtonService: NSObject {
         applyState(.disconnected)
         onPortDisconnected?()
         log("FocusButton: -- Disconnected")
+    }
+
+    // MARK: - Manual (user / external) disconnect
+
+    /// True while a manual disconnect is in effect (auto-reconnect suppressed).
+    var isManuallyDisconnected: Bool { userRequestedStayDisconnected }
+
+    /// Manually disconnect and STAY disconnected: closes the serial port (releasing /dev/cu.usbmodem*,
+    /// e.g. so firmware can be reflashed) and suppresses auto-reconnect until an explicit reconnect/
+    /// start. Triggerable from the UI or from another process via FocusButtonCommandChannel.
+    func manualDisconnect() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.log("FocusButton: manualDisconnect() — staying disconnected, suppressing auto-reconnect")
+            self.userRequestedStayDisconnected = true
+            self.disconnect()
+        }
+    }
+
+    /// Clear a manual disconnect and reconnect.
+    func manualReconnect() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.log("FocusButton: manualReconnect()")
+            self.userRequestedStayDisconnected = false
+            _ = self.start()
+        }
     }
 
     /// Close and release the current serial port + RX thread + timers, without

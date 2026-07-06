@@ -83,6 +83,7 @@
 		13BBEEE22F7561580073B58E /* setUpHabitsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13BBEEE12F7561580073B58E /* setUpHabitsVc.swift */; };
 		13BBEEE42F7567F10073B58E /* startSetUpHabitsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13BBEEE32F7567F10073B58E /* startSetUpHabitsVc.swift */; };
 		13C6BF082FB199E70074DD63 /* focusButtonService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6BF072FB199E70074DD63 /* focusButtonService.swift */; };
+		FBC00001 /* FocusButtonCommandChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBC00002 /* FocusButtonCommandChannel.swift */; };
 		13C6BF0B2FB19D750074DD63 /* ORSSerial in Frameworks */ = {isa = PBXBuildFile; productRef = 13C6BF0A2FB19D750074DD63 /* ORSSerial */; };
 		13C6BF0E2FB211CA0074DD63 /* audioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */; };
 		13C6C2A22FE2615E00B1F278 /* BreakWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */; };
@@ -497,6 +498,7 @@
 		13BBEEE12F7561580073B58E /* setUpHabitsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = setUpHabitsVc.swift; sourceTree = "<group>"; };
 		13BBEEE32F7567F10073B58E /* startSetUpHabitsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = startSetUpHabitsVc.swift; sourceTree = "<group>"; };
 		13C6BF072FB199E70074DD63 /* focusButtonService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusButtonService.swift; sourceTree = "<group>"; };
+		FBC00002 /* FocusButtonCommandChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusButtonCommandChannel.swift; sourceTree = "<group>"; };
 		13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = audioRecorder.swift; sourceTree = "<group>"; };
 		13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakWarningView.swift; sourceTree = "<group>"; };
 		ESD00002 /* EveningShutdownScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EveningShutdownScreen.swift; path = FocusBear/EveningShutdownScreen.swift; sourceTree = SOURCE_ROOT; };
@@ -926,6 +928,7 @@
 			isa = PBXGroup;
 			children = (
 				13C6BF072FB199E70074DD63 /* focusButtonService.swift */,
+				FBC00002 /* FocusButtonCommandChannel.swift */,
 				13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */,
 			);
 			path = FocusButton;
@@ -2227,6 +2230,7 @@
 				13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */,
 				8F09ACC129703C5B00A0F1D0 /* tblCellTracks.swift in Sources */,
 				13C6BF082FB199E70074DD63 /* focusButtonService.swift in Sources */,
+				FBC00001 /* FocusButtonCommandChannel.swift in Sources */,
 				8F23A1DC2CAE508C0042CE2A /* explainingPermissionsVc.swift in Sources */,
 				135A8A572E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift in Sources */,
 				FB0000000000000000000012 /* BlockingScheduleEditorView.swift in Sources */,

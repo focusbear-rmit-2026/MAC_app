@@ -811,6 +811,15 @@ final class FocusButtonToolModel: ObservableObject {
     }
     func refresh() { isConnected = focusButtonServiceObject.isRunning }
 
+    /// Manually disconnect: closes the serial port and stays disconnected (frees it for reflashing);
+    /// tapping Connect again reconnects.
+    func disconnect() {
+        focusButtonServiceObject.manualDisconnect()
+        connecting = false
+        statusMessage = ""
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in self?.refresh() }
+    }
+
     func connect() {
         connecting = true
         statusMessage = "Searching for a connected Focus Button…"
@@ -861,8 +870,12 @@ struct FocusButtonToolView: View {
                     Text(model.isConnected ? "Connected" : "Not connected").foregroundColor(.secondary)
                 }
                 HStack(spacing: 10) {
-                    SwiftUI.Button(model.isConnected ? "Connected" : "Connect") { model.connect() }
-                        .disabled(model.isConnected || model.connecting)
+                    if model.isConnected {
+                        SwiftUI.Button("Disconnect") { model.disconnect() }
+                    } else {
+                        SwiftUI.Button("Connect") { model.connect() }
+                            .disabled(model.connecting)
+                    }
                     if model.connecting { ProgressView().scaleEffect(0.5).frame(width: 16, height: 16) }
                 }
                 if !model.statusMessage.isEmpty {
