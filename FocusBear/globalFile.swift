@@ -157,6 +157,14 @@ var dayPlanCompletedHabitIds = Set<String>() {
     }
 }
 
+/// #2012: mark a past morning habit done in the Day Plan after a by-id completion (direct API, or via
+/// the log-quantity / take-notes popups). Inserting into dayPlanCompletedHabitIds persists it and, via
+/// the didSet above, requests a schedule refresh — so the "earlier today" accordion strikes it through.
+func markPastHabitDoneInDayPlan(id: String?) {
+    guard let id = id, !id.isEmpty else { return }
+    dayPlanCompletedHabitIds.insert(id)
+}
+
 /// Seed dayPlanCompletedHabitIds from the persisted cache (today only) so the first Day Plan render
 /// reflects already-completed habits before the current-activity-props refetch lands. No-op once the
 /// server data is present (so it never overrides fresher state).

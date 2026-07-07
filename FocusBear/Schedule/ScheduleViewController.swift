@@ -62,6 +62,10 @@ enum ScheduleText {
     static var deepWorkSession: String { t("deepWorkSession", "Deep work") }
     static var showDeepWorkBreakdown: String { t("showDeepWorkBreakdown", "Show deep work breakdown") }
     static var hideDeepWorkBreakdown: String { t("hideDeepWorkBreakdown", "Hide deep work breakdown") }
+    static var cancelledMorningRoutineMessage: String { t("cancelledMorningRoutineMessage", "You cancelled your morning routine. If you changed your mind, click \"Uncancel My Morning Routine\" to continue your morning habits.") }
+    static var cancelledEveningRoutineMessage: String { t("cancelledEveningRoutineMessage", "You cancelled your evening routine. If you changed your mind, click \"Uncancel My Evening Routine\" to continue your evening habits.") }
+    static var uncancelMorningRoutineButton: String { t("uncancelMorningRoutineButton", "Uncancel My Morning Routine") }
+    static var uncancelEveningRoutineButton: String { t("uncancelEveningRoutineButton", "Uncancel My Evening Routine") }
     static var scheduleSettings: String { t("scheduleSettings", "Schedule settings") }
     static var hideEarlierEvents: String { t("hideEarlierEvents", "Hide events from earlier today") }
     static var viewTomorrow: String { t("viewTomorrow", "View tomorrow's schedule") }
@@ -144,6 +148,28 @@ protocol ScheduleHost: AnyObject {
     /// visibility. Unlike updateScheduleTabForState() this does NOT reload/auto-refresh, so it's safe
     /// to call from within a reload (setDayPlanContentHidden) without recursing.
     func refreshHabitListVisibilityForDayPlan()
+
+    /// #2010: when a routine is force-cancelled we keep the whole Day Plan visible, but replace THAT
+    /// routine's section with an "uncancel" message + button. Return the section to replace (its
+    /// `routineName`, matched in makeHabitGroupCard) plus the message/button text, or nil if nothing is
+    /// cancelled. Default: nil (only the between-routines state uses this).
+    func cancelledRoutine() -> (sectionName: String, message: String, buttonTitle: String)?
+    /// Perform the uncancel (force-uncomplete) for the cancelled routine — fired by that button.
+    func uncancelRoutine()
+    /// Mark a PAST morning habit (surfaced in the "Show events from earlier today" accordion) as done
+    /// **by id**, without disturbing the live routine. No Play (you can't start a past habit) and no
+    /// Skip (an un-struck earlier-today habit is already evidently un-done). Default no-op; only the
+    /// active-routine host (`firstViewController`) implements it (PR #2012 / Prashant's by-id design).
+    /// See `firstViewController.completePastMorningHabit`.
+    func schedulePastHabitDone(id: String)
+}
+
+extension ScheduleHost {
+    func cancelledRoutine() -> (sectionName: String, message: String, buttonTitle: String)? { nil }
+    func uncancelRoutine() {}
+    // Default no-op so hosts that don't surface past habits (routinePostponedInfoVc, habitsStateVc)
+    // needn't implement it — the earlier-today accordion is only actionable on the active host.
+    func schedulePastHabitDone(id: String) {}
 }
 
 /// Shared helpers for installing the Schedule tab into a host habit screen. Each host
@@ -185,12 +211,15 @@ enum ScheduleTab {
         return habits.enumerated().compactMap { idx, h in
             if dropCompleted, let id = h.id, dayPlanCompletedHabitIds.contains(id) { return nil }
             let playing = currentHabitPlaying?.id != nil && currentHabitPlaying?.id == h.id
+            let done = h.id.map { dayPlanCompletedHabitIds.contains($0) } ?? false
             return ScheduleHabitInput(index: idx,
                                       title: h.name ?? "Habit",
                                       durationSeconds: estimatedDuration(for: h),
                                       isPlaying: playing,
                                       elapsedSeconds: 0,
-                                      cutoff: timeToday(h.cutOffTime, now: now))
+                                      cutoff: timeToday(h.cutOffTime, now: now),
+                                      isDone: done,
+                                      id: h.id)
         }
     }
 
@@ -467,11 +496,19 @@ class scheduleViewController: NSViewController {
     /// "routineName|dayOrdinal". Absent → default: collapsed on future days, expanded today/past.
     private var routineCollapseOverrides: [String: Bool] = [:]
 
+    /// #2010: routine sections surfaced as *earlier today* items under the "Show events from earlier
+    /// today" toggle (currently the past morning routine, once the evening routine has started). They
+    /// default to collapsed even on today — they're history, shown alongside the earlier meetings —
+    /// unlike the active routine. Rebuilt each reload(); a user click still overrides (see below).
+    private var earlierRoutineNames: Set<String> = []
+
     private func routineCollapseKey(_ name: String, date: Date) -> String {
         "\(name)|\(Int(date.timeIntervalSince1970 / 86400))"
     }
     private func isRoutineCollapsed(name: String, date: Date) -> Bool {
         if let explicit = routineCollapseOverrides[routineCollapseKey(name, date: date)] { return explicit }
+        // Past routines shown under the "earlier today" toggle start collapsed even on today.
+        if earlierRoutineNames.contains(name) { return true }
         // Default: future days start collapsed; today (and past) stay expanded.
         return Calendar.current.compare(date, to: Date(), toGranularity: .day) == .orderedDescending
     }
@@ -1439,7 +1476,7 @@ class scheduleViewController: NSViewController {
         let now: Date = isToday ? Date()
             : (ScheduleTab.timeOnDate(startTime, date: selectedDate) ?? Calendar.current.startOfDay(for: selectedDate))
 
-        let segments: [ScheduleRoutineSegment]
+        var segments: [ScheduleRoutineSegment]
         if !isToday {
             // Read-only preview for another day: habits by that weekday + custom routines.
             segments = ScheduleTab.segmentsForDate(selectedDate)
@@ -1469,9 +1506,36 @@ class scheduleViewController: NSViewController {
         // "Show events from earlier today" only makes sense on today, and only when there actually
         // are meetings that already finished. Other days already show their whole timetable.
         let earlierEvents = isToday ? meetings.filter { $0.end <= Date() } : []
-        canShowEarlierToggle = !earlierEvents.isEmpty
+
+        // #2010: a *past* morning routine (we're now in the evening routine) is also "earlier today".
+        // Surface it under the same toggle as a collapsed accordion so completed morning habits are
+        // visible — and (once wired) markable — instead of vanishing once the morning is done. Only when
+        // the active list on screen isn't already the morning routine (avoid duplicating it).
+        let morningStart = ScheduleTab.timeOnDate(startTime, date: selectedDate)
+        let pastMorningHabits: [ScheduleHabitInput] = {
+            guard isToday,
+                  !segments.contains(where: { $0.name == ScheduleText.morningRoutineHabits }) else { return [] }
+            // dropCompleted:false so already-done morning habits still render (struck through — the
+            // isDone flag flows through to makeHabitRow).
+            return ScheduleTab.habitInputs(
+                from: ScheduleTab.filterByWeekday(arrAllDaysMorningHabits, weekday: selectedDate.dayOfWeek()),
+                now: morningStart ?? now, dropCompleted: false)
+        }()
+
+        canShowEarlierToggle = !earlierEvents.isEmpty || !pastMorningHabits.isEmpty
         if !canShowEarlierToggle { showEarlierEvents = false }
         let meetingsFrom = (isToday && showEarlierEvents) ? cal.startOfDay(for: selectedDate) : now
+
+        earlierRoutineNames = []
+        if showEarlierEvents, !pastMorningHabits.isEmpty, let ms = morningStart {
+            let morningSeg = ScheduleRoutineSegment(
+                name: ScheduleText.morningRoutineHabits, habits: pastMorningHabits,
+                windowStart: ms, windowEnd: ScheduleTab.timeOnDate(shutOffTime, date: selectedDate) ?? ms,
+                actionable: false, isEarlier: true)
+            segments = [morningSeg] + segments
+            // Show it collapsed by default — it's an "earlier today" item, not the active routine.
+            earlierRoutineNames.insert(ScheduleText.morningRoutineHabits)
+        }
 
         // Break duration can be 0 (no enforced screen-break time) — but for the Day Plan we still
         // want deep-work blocks split at the break *frequency*, so fall back to 5 min so the split
@@ -1607,7 +1671,10 @@ class scheduleViewController: NSViewController {
         let appearanceName = ((isViewLoaded ? view.effectiveAppearance : nil) ?? NSApp.effectiveAppearance).name.rawValue
         let collapseSig = routineCollapseOverrides.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
         let dwCollapseSig = deepWorkCollapseOverrides.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
-        let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(collapseSig)|\(dwCollapseSig)|\(taskSig)|"
+        // #2010: a cancelled routine swaps its section for an uncancel message — include it so toggling
+        // cancel/uncancel forces a re-render instead of being cached away.
+        let cancelledSig = host?.cancelledRoutine()?.sectionName ?? ""
+        let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(collapseSig)|\(dwCollapseSig)|\(cancelledSig)|\(taskSig)|"
             + blocks.map { "\($0.kind)\($0.title)\(Int($0.start.timeIntervalSince1970))\(Int($0.end.timeIntervalSince1970))\($0.isCurrent)\($0.isActionable)" }.joined(separator: ";")
         if signature == lastRenderSignature, !stackView.arrangedSubviews.isEmpty { return }
         lastRenderSignature = signature
@@ -1941,6 +2008,10 @@ class scheduleViewController: NSViewController {
         let routineName = habits.first?.routineName ?? "Habits"
         let dateForToggle = selectedDate
         let collapsed = isRoutineCollapsed(name: routineName, date: dateForToggle)
+        // #2010: is THIS routine's section force-cancelled? Drives the uncancel message and hides the
+        // "Skip routine for today" action (there's nothing to skip once it's cancelled).
+        let cancel = host?.cancelledRoutine()
+        let isCancelled = (cancel?.sectionName == routineName)
         if let first = habits.first, let last = habits.last {
             let chevron = collapsed ? "▸" : "▾"
             let header = makeLabel("\(chevron) 🧩 \(routineName)  ·  \(timeString(first.start))–\(timeString(last.end))", size: 15, bold: false)
@@ -1958,7 +2029,7 @@ class scheduleViewController: NSViewController {
             headerRow.distribution = .fill
             headerRow.translatesAutoresizingMaskIntoConstraints = false
             headerRow.addArrangedSubview(header)
-            if isActiveRoutine {
+            if isActiveRoutine && !isCancelled {
                 let skipBtn = makeSkipRoutineButton()
                 skipBtn.setContentHuggingPriority(.required, for: .horizontal)
                 skipBtn.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -1970,6 +2041,26 @@ class scheduleViewController: NSViewController {
             headerRow.widthAnchor.constraint(equalTo: inner.widthAnchor).isActive = true
         }
 
+        // #2010: a force-cancelled routine keeps its section (and accordion header) but swaps the habit
+        // rows for an "uncancel" message with the button on its own line below it — the Day Plan stays visible.
+        if isCancelled, let cancel = cancel {
+            if !collapsed {
+                let msg = makeLabel(cancel.message, size: 13, bold: false)
+                msg.textColor = .secondaryLabelColor
+                msg.maximumNumberOfLines = 0
+                msg.lineBreakMode = .byWordWrapping
+                msg.setContentHuggingPriority(.defaultLow, for: .horizontal)
+                msg.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+                inner.addArrangedSubview(msg)
+                msg.widthAnchor.constraint(equalTo: inner.widthAnchor).isActive = true
+
+                let btn = makeUncancelButton(title: cancel.buttonTitle)
+                inner.addArrangedSubview(btn)
+            }
+            return styledCard(fill: NSColor.systemOrange.withAlphaComponent(0.05),
+                              border: NSColor.separatorColor, hasBorder: true, content: inner)
+        }
+
         // Default selection = the next-up habit; keep the user's pick if it's still valid.
         let actionableIdxs = habits.filter { $0.isActionable }.compactMap { $0.habitIndex }
         let currentIdx = habits.first { $0.isCurrent }?.habitIndex
@@ -1978,7 +2069,12 @@ class scheduleViewController: NSViewController {
         for h in habits where !collapsed {
             let isSel = h.isActionable && h.habitIndex == selected
             let rowView: NSView
-            if isSel, let idx = h.habitIndex {
+            if h.isEarlier, !h.isDone, let id = h.habitId {
+                // #2012: a PAST morning habit that wasn't logged — offer a Done/Skip bar so it can be
+                // marked retroactively. Completed by id (schedulePastHabitDone/Skip), never the
+                // index-based live-routine path, which would target the running evening routine.
+                rowView = makePastHabitUnit(h, id: id)
+            } else if isSel, let idx = h.habitIndex {
                 // Selected: render as one connected orange unit (header + action bar, no gap),
                 // matching the habit view.
                 rowView = makeSelectedHabitUnit(h, idx: idx)
@@ -2035,6 +2131,25 @@ class scheduleViewController: NSViewController {
         host?.scheduleSkipRoutineForToday()
     }
 
+    /// The "Uncancel My Morning/Evening Routine" link shown in place of a force-cancelled routine's
+    /// habits (#2010). Fires host.uncancelRoutine().
+    private func makeUncancelButton(title: String) -> NSButton {
+        // cursorButton shows the pointing-hand cursor on hover (via resetCursorRects/addCursorRect).
+        let btn = cursorButton(title: title, target: self, action: #selector(uncancelRoutineClicked))
+        btn.isBordered = false
+        btn.bezelStyle = .inline
+        btn.attributedTitle = NSAttributedString(
+            string: title,
+            attributes: [.foregroundColor: NSColor.systemBlue,
+                         .font: NSFont.systemFont(ofSize: 13, weight: .semibold),
+                         .underlineStyle: NSUnderlineStyle.single.rawValue])
+        return btn
+    }
+
+    @objc private func uncancelRoutineClicked() {
+        host?.uncancelRoutine()
+    }
+
     /// A single tappable habit line: time · emoji · name. No inline buttons — selecting it
     /// reveals the action bar underneath (see makeHabitGroupCard).
     private func makeHabitRow(_ block: ScheduleBlock, isSelected: Bool) -> NSView {
@@ -2056,7 +2171,17 @@ class scheduleViewController: NSViewController {
                                             time: "\(timeString(block.start))–\(timeString(block.end))",
                                             title: block.title, leadingInset: 6, vPad: 6,
                                             timeColor: .secondaryLabelColor, titleColor: .labelColor)
-        if block.didOverflow { titleLabel.textColor = .systemRed }
+        if block.isDone {
+            // Completed earlier today: strike it through (same style as a done nested task). Use the
+            // label's own text — layoutColumns splits the emoji into a separate leading label, so
+            // block.title (emoji + name) would render the emoji twice.
+            titleLabel.attributedStringValue = NSAttributedString(string: titleLabel.stringValue, attributes: [
+                .strikethroughStyle: NSUnderlineStyle.single.rawValue,
+                .foregroundColor: NSColor.secondaryLabelColor,
+                .font: titleLabel.font ?? NSFont.systemFont(ofSize: 13)])
+        } else if block.didOverflow {
+            titleLabel.textColor = .systemRed
+        }
         return container
     }
 
@@ -2136,6 +2261,110 @@ class scheduleViewController: NSViewController {
             bar.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor),
         ])
         return container
+    }
+
+    /// #2012: a past (earlier-today) morning habit that hasn't been logged yet — the normal row plus
+    /// a compact Done/Skip bar so it can be completed/skipped retroactively. No Play (you can't
+    /// "start" a habit in the past); completion runs through the by-id host path, never the
+    /// index-based live-routine one.
+    private func makePastHabitUnit(_ block: ScheduleBlock, id: String) -> NSView {
+        let row = makeHabitRow(block, isSelected: false)
+        let bar = makePastActionBar(habitId: id)
+        let unit = NSStackView(views: [row, bar])
+        unit.orientation = .vertical
+        unit.alignment = .leading
+        unit.spacing = 2
+        unit.translatesAutoresizingMaskIntoConstraints = false
+        row.widthAnchor.constraint(equalTo: unit.widthAnchor).isActive = true
+        return unit
+    }
+
+    /// A Done-only bar for retroactively logging a past morning habit — there's no Skip because an
+    /// un-struck earlier-today habit is already evidently un-done. The button carries the habit id in
+    /// its identifier so the tap dispatches host.schedulePastHabitDone(id:).
+    private func makePastActionBar(habitId: String) -> NSView {
+        func column(_ symbol: String, _ fallback: String, _ label: String, _ tag: String) -> NSView {
+            let btn = makePastActionButton(symbol: symbol, fallback: fallback, habitId: habitId, tag: tag,
+                                           diameter: 30, fill: NSColor.systemGray.withAlphaComponent(0.3))
+            let lbl = makeLabel(label, size: 11, bold: false)
+            lbl.textColor = .secondaryLabelColor
+            let col = NSStackView(views: [btn, lbl])
+            col.orientation = .vertical; col.alignment = .centerX; col.spacing = 2
+            col.translatesAutoresizingMaskIntoConstraints = false
+            return col
+        }
+        let bar = NSStackView(views: [
+            column("checkmark", "✓", ScheduleText.done, "pastdone"),
+        ])
+        bar.orientation = .horizontal
+        bar.alignment = .top
+        bar.spacing = 22
+        bar.translatesAutoresizingMaskIntoConstraints = false
+
+        let container = NSView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(bar)
+        NSLayoutConstraint.activate([
+            bar.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 20),
+            bar.topAnchor.constraint(equalTo: container.topAnchor, constant: 2),
+            bar.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -8),
+            bar.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor),
+        ])
+        return container
+    }
+
+    /// Like makeActionButton but keyed by habit id (in the identifier) rather than a row index,
+    /// dispatching to pastActionButtonClicked. `tag` is "pastdone" / "pastskip".
+    private func makePastActionButton(symbol: String, fallback: String, habitId: String, tag: String,
+                                      diameter: CGFloat = 30, fill: NSColor? = nil) -> NSView {
+        let disc = NSView()
+        disc.wantsLayer = true
+        disc.layer?.backgroundColor = (fill ?? .clear).cgColor
+        disc.layer?.cornerRadius = diameter / 2
+        disc.layer?.masksToBounds = true
+        disc.translatesAutoresizingMaskIntoConstraints = false
+
+        let btn = NSButton(title: "", target: self, action: #selector(pastActionButtonClicked(_:)))
+        btn.imagePosition = .imageOnly
+        btn.isBordered = false
+        btn.wantsLayer = true
+        if #available(macOS 11.0, *), let base = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) {
+            let cfg = NSImage.SymbolConfiguration(pointSize: diameter * 0.42, weight: .semibold)
+            btn.image = base.withSymbolConfiguration(cfg) ?? base
+        } else {
+            btn.title = fallback
+        }
+        btn.contentTintColor = .labelColor
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        // Encode kind + id; the id can itself contain no ":" collisions because we split on the first.
+        btn.identifier = NSUserInterfaceItemIdentifier("\(tag):\(habitId)")
+
+        disc.addSubview(btn)
+        NSLayoutConstraint.activate([
+            disc.widthAnchor.constraint(equalToConstant: diameter),
+            disc.heightAnchor.constraint(equalToConstant: diameter),
+            btn.leadingAnchor.constraint(equalTo: disc.leadingAnchor),
+            btn.trailingAnchor.constraint(equalTo: disc.trailingAnchor),
+            btn.topAnchor.constraint(equalTo: disc.topAnchor),
+            btn.bottomAnchor.constraint(equalTo: disc.bottomAnchor),
+        ])
+        disc.setContentHuggingPriority(.required, for: .horizontal)
+        disc.setContentCompressionResistancePriority(.required, for: .horizontal)
+        return disc
+    }
+
+    @objc private func pastActionButtonClicked(_ sender: NSButton) {
+        guard let raw = sender.identifier?.rawValue,
+              let sep = raw.firstIndex(of: ":") else { return }
+        let kind = String(raw[..<sep])
+        let id = String(raw[raw.index(after: sep)...])
+        guard !id.isEmpty else { return }
+        switch kind {
+        case "pastdone":
+            host?.schedulePastHabitDone(id: id)
+            scheduleReload(after: 0.3)
+        default: break
+        }
     }
 
     // MARK: Non-habit cards (meeting / deep work / markers)
