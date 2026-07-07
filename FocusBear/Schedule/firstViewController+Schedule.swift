@@ -213,11 +213,11 @@ extension firstViewController: ScheduleHost {
         DispatchQueue.main.async { [weak self] in self?.refreshScheduleIfVisible() }
     }
 
-    // A past morning habit from the "earlier today" accordion completes BY ID — never through the
-    // index-based btnDoneClicked path above, which targets the live routine (it would complete the
-    // wrong habit while the evening routine runs). See firstViewController.completePastMorningHabit.
-    // There's no past-habit Skip: an un-struck earlier-today habit is already evidently un-done.
-    func schedulePastHabitDone(id: String) { completePastMorningHabit(id: id) }
+    // A past morning habit (today's "earlier today" accordion or a previous calendar day) completes BY
+    // ID — never through the index-based btnDoneClicked path above, which targets the live routine (it
+    // would complete the wrong habit while the evening routine runs). `performedAt` is that habit's slot
+    // on the viewed day, sent as the backdated completion time. See completePastMorningHabit.
+    func schedulePastHabitDone(id: String, performedAt: Date) { completePastMorningHabit(id: id, performedAt: performedAt) }
 
     /// Opens the same "choose which habits to do today" sheet as the Habits view's
     /// "I don't have time for all these habits" button.

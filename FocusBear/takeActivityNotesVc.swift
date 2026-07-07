@@ -43,11 +43,13 @@ class takeActivityNotesVc: NSViewController {
     // should_not_update_current_activity + marks the habit done in the Day Plan on completion.
     var isPastHabit = false
     var pastHabitId: String?
+    var pastHabitDayKey: String?      // yyyy-MM-dd of the backdated completion (for per-day strike-through)
 
     func resetData(durationInSeconds:Int, quantity_logged:Double?, activity_id:String, activity_sequence_id:String, activityChoiceId:String?, log_quantity_answers: [[String : Any]]){
         self.is_skipped = false
         self.isPastHabit = false          // cleared each open; the past-habit caller re-sets it after resetData
         self.pastHabitId = nil
+        self.pastHabitDayKey = nil
         self.activityChoiceId = nil
         self.activityChoiceId = activityChoiceId
         self.activity_id = activity_id
@@ -70,21 +72,24 @@ class takeActivityNotesVc: NSViewController {
             getHabitsVcObject().showFocusCompletedView()
             focusModeActualDurationPerformed = durationInSeconds
             focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: durationInSeconds, quantity_logged:quantity_logged, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: log_quantity_answers, notes: textViewNotes.string)
+        }else if isPastHabit{
+            // #2012: a PAST habit → offline-sync (/completed-activity/sync) so it lands on the right
+            // date's sequence log (with that day's stats) and never disturbs the live routine.
+            recordPastHabitCompletionViaOfflineSync(activity_id: activity_id, activity_sequence_id: activity_sequence_id, performedAt: lastActivityPerformedTime!, duration: durationInSeconds, quantity: quantity_logged, notes: textViewNotes.string, dayKey: pastHabitDayKey ?? "")
         }else{
-            if currentState == ._EVENING_HABIT_ && !isPastHabit{
+            if currentState == ._EVENING_HABIT_{
                 if activityCompletionVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
                     activityCompletionVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
                 }
             }
             var should_not_update_current_activity = false
-            if currentState == ._SPECIAL_ACTIVITY_ || isPastHabit{   // #2012: past habit never touches the live routine
+            if currentState == ._SPECIAL_ACTIVITY_{
                 should_not_update_current_activity = true
             }
 
-            let pastId = isPastHabit ? pastHabitId : nil
             allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:quantity_logged, duration_logged:durationInSeconds, choice_id: activityChoiceId, is_skipped: is_skipped, notes: textViewNotes.string, should_not_update_current_activity: should_not_update_current_activity, log_quantity_answers: log_quantity_answers, completionHandler: {dic  in
                 DispatchQueue.main.async {
-                    markPastHabitDoneInDayPlan(id: pastId)
+
                 }
 
                 print(dic)

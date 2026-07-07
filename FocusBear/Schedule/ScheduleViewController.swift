@@ -156,20 +156,22 @@ protocol ScheduleHost: AnyObject {
     func cancelledRoutine() -> (sectionName: String, message: String, buttonTitle: String)?
     /// Perform the uncancel (force-uncomplete) for the cancelled routine — fired by that button.
     func uncancelRoutine()
-    /// Mark a PAST morning habit (surfaced in the "Show events from earlier today" accordion) as done
-    /// **by id**, without disturbing the live routine. No Play (you can't start a past habit) and no
-    /// Skip (an un-struck earlier-today habit is already evidently un-done). Default no-op; only the
-    /// active-routine host (`firstViewController`) implements it (PR #2012 / Prashant's by-id design).
+    /// Mark a PAST morning habit as done **by id**, without disturbing the live routine. No Play (you
+    /// can't start a past habit) and no Skip (an un-struck past habit is already evidently un-done).
+    /// Surfaced both in today's "earlier today" accordion and when viewing a previous calendar day.
+    /// `performedAt` is the habit's slot on that day, sent as the backdated completion time so the
+    /// backend records it against the right date (via /completed-activity, same timestamps the offline
+    /// activity-sync uses). Default no-op; only the active host (`firstViewController`) implements it.
     /// See `firstViewController.completePastMorningHabit`.
-    func schedulePastHabitDone(id: String)
+    func schedulePastHabitDone(id: String, performedAt: Date)
 }
 
 extension ScheduleHost {
     func cancelledRoutine() -> (sectionName: String, message: String, buttonTitle: String)? { nil }
     func uncancelRoutine() {}
     // Default no-op so hosts that don't surface past habits (routinePostponedInfoVc, habitsStateVc)
-    // needn't implement it — the earlier-today accordion is only actionable on the active host.
-    func schedulePastHabitDone(id: String) {}
+    // needn't implement it — past-habit completion is only actionable on the active host.
+    func schedulePastHabitDone(id: String, performedAt: Date) {}
 }
 
 /// Shared helpers for installing the Schedule tab into a host habit screen. Each host
@@ -208,10 +210,13 @@ enum ScheduleTab {
     /// must be false, or tomorrow's routine would hide whatever you finished *today*. The original
     /// index is preserved on the kept habits so Play/Done/Skip still target the right row.
     static func habitInputs(from habits: [habit], now: Date, dropCompleted: Bool = true) -> [ScheduleHabitInput] {
+        // Completion is per-day: derive the day from `now` so a PAST-day view reflects that day's
+        // (backdated) completions, not only today's — dayPlanCompletedHabitIds is today-only.
+        let dayKey = getStringFromDate(date: now, dateFormat: "yyyy-MM-dd")
         return habits.enumerated().compactMap { idx, h in
-            if dropCompleted, let id = h.id, dayPlanCompletedHabitIds.contains(id) { return nil }
+            if dropCompleted, let id = h.id, isHabitDoneForDay(id, dayKey: dayKey) { return nil }
             let playing = currentHabitPlaying?.id != nil && currentHabitPlaying?.id == h.id
-            let done = h.id.map { dayPlanCompletedHabitIds.contains($0) } ?? false
+            let done = h.id.map { isHabitDoneForDay($0, dayKey: dayKey) } ?? false
             return ScheduleHabitInput(index: idx,
                                       title: h.name ?? "Habit",
                                       durationSeconds: estimatedDuration(for: h),
@@ -2070,14 +2075,17 @@ class scheduleViewController: NSViewController {
         let currentIdx = habits.first { $0.isCurrent }?.habitIndex
         let selected: Int? = (selectedHabitIndex.flatMap { actionableIdxs.contains($0) ? $0 : nil }) ?? currentIdx
 
+        // A whole previous calendar day is in the past (so its habits are retroactively completable),
+        // as is today's "earlier today" accordion (h.isEarlier). A future day is neither.
+        let isPastDay = Calendar.current.startOfDay(for: selectedDate) < Calendar.current.startOfDay(for: Date())
         for h in habits where !collapsed {
             let isSel = h.isActionable && h.habitIndex == selected
             let rowView: NSView
-            if h.isEarlier, !h.isDone, let id = h.habitId {
-                // #2012: a PAST morning habit that wasn't logged — offer a Done/Skip bar so it can be
-                // marked retroactively. Completed by id (schedulePastHabitDone/Skip), never the
-                // index-based live-routine path, which would target the running evening routine.
-                rowView = makePastHabitUnit(h, id: id)
+            if (h.isEarlier || isPastDay), !h.isDone, let id = h.habitId {
+                // #2012: a PAST morning habit that wasn't logged — offer a Done bar so it can be marked
+                // retroactively. Completed by id with a backdated `performedAt` (this habit's slot on the
+                // viewed day), never the index-based live-routine path (which targets the running routine).
+                rowView = makePastHabitUnit(h, id: id, performedAt: h.start)
             } else if isSel, let idx = h.habitIndex {
                 // Selected: render as one connected orange unit (header + action bar, no gap),
                 // matching the habit view.
@@ -2132,16 +2140,16 @@ class scheduleViewController: NSViewController {
         return iv
     }
 
-    /// A compact red "skip routine for today" ICON button (forward-to-end) for the active routine
-    /// header — the text link was replaced with an icon. Tooltip carries the meaning for discoverability.
+    /// A compact red "skip routine for today" ICON button (an ✕) for the active routine header — the
+    /// text link was replaced with an icon. Tooltip spells out the action so the ✕ isn't ambiguous.
     private func makeSkipRoutineButton() -> NSButton {
         let btn = NSButton(title: "", target: self, action: #selector(skipRoutineForTodayClicked))
         btn.isBordered = false
         btn.bezelStyle = .inline
         btn.imagePosition = .imageOnly
         btn.contentTintColor = .systemRed
-        if #available(macOS 11.0, *), let base = NSImage(systemSymbolName: "forward.end.fill", accessibilityDescription: ScheduleText.skipRoutineForToday) {
-            let cfg = NSImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
+        if #available(macOS 11.0, *), let base = NSImage(systemSymbolName: "xmark.circle", accessibilityDescription: ScheduleText.skipRoutineForToday) {
+            let cfg = NSImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
             btn.image = base.withSymbolConfiguration(cfg) ?? base
         } else {
             // Pre-11 fallback: keep the (red) text so the action stays reachable.
@@ -2297,9 +2305,9 @@ class scheduleViewController: NSViewController {
     /// a compact Done/Skip bar so it can be completed/skipped retroactively. No Play (you can't
     /// "start" a habit in the past); completion runs through the by-id host path, never the
     /// index-based live-routine one.
-    private func makePastHabitUnit(_ block: ScheduleBlock, id: String) -> NSView {
+    private func makePastHabitUnit(_ block: ScheduleBlock, id: String, performedAt: Date) -> NSView {
         let row = makeHabitRow(block, isSelected: false)
-        let bar = makePastActionBar(habitId: id)
+        let bar = makePastActionBar(habitId: id, performedAt: performedAt)
         let unit = NSStackView(views: [row, bar])
         unit.orientation = .vertical
         unit.alignment = .leading
@@ -2312,9 +2320,10 @@ class scheduleViewController: NSViewController {
     /// A Done-only bar for retroactively logging a past morning habit — there's no Skip because an
     /// un-struck earlier-today habit is already evidently un-done. The button carries the habit id in
     /// its identifier so the tap dispatches host.schedulePastHabitDone(id:).
-    private func makePastActionBar(habitId: String) -> NSView {
+    private func makePastActionBar(habitId: String, performedAt: Date) -> NSView {
         func column(_ symbol: String, _ fallback: String, _ label: String, _ tag: String) -> NSView {
-            let btn = makePastActionButton(symbol: symbol, fallback: fallback, habitId: habitId, tag: tag,
+            let btn = makePastActionButton(symbol: symbol, fallback: fallback, habitId: habitId,
+                                           performedAt: performedAt, tag: tag,
                                            diameter: 30, fill: NSColor.systemGray.withAlphaComponent(0.3))
             let lbl = makeLabel(label, size: 11, bold: false)
             lbl.textColor = .secondaryLabelColor
@@ -2343,10 +2352,10 @@ class scheduleViewController: NSViewController {
         return container
     }
 
-    /// Like makeActionButton but keyed by habit id (in the identifier) rather than a row index,
-    /// dispatching to pastActionButtonClicked. `tag` is "pastdone" / "pastskip".
-    private func makePastActionButton(symbol: String, fallback: String, habitId: String, tag: String,
-                                      diameter: CGFloat = 30, fill: NSColor? = nil) -> NSView {
+    /// Like makeActionButton but keyed by habit id + backdated completion time (in the identifier)
+    /// rather than a row index, dispatching to pastActionButtonClicked. `tag` is "pastdone".
+    private func makePastActionButton(symbol: String, fallback: String, habitId: String, performedAt: Date,
+                                      tag: String, diameter: CGFloat = 30, fill: NSColor? = nil) -> NSView {
         let disc = NSView()
         disc.wantsLayer = true
         disc.layer?.backgroundColor = (fill ?? .clear).cgColor
@@ -2366,8 +2375,9 @@ class scheduleViewController: NSViewController {
         }
         btn.contentTintColor = .labelColor
         btn.translatesAutoresizingMaskIntoConstraints = false
-        // Encode kind + id; the id can itself contain no ":" collisions because we split on the first.
-        btn.identifier = NSUserInterfaceItemIdentifier("\(tag):\(habitId)")
+        // Encode kind + backdated epoch + id. Parsed on the first two ":" so the id (which never
+        // contains ":") is the remainder — carries the completion date without extra plumbing.
+        btn.identifier = NSUserInterfaceItemIdentifier("\(tag):\(Int(performedAt.timeIntervalSince1970)):\(habitId)")
 
         disc.addSubview(btn)
         NSLayoutConstraint.activate([
@@ -2384,14 +2394,15 @@ class scheduleViewController: NSViewController {
     }
 
     @objc private func pastActionButtonClicked(_ sender: NSButton) {
-        guard let raw = sender.identifier?.rawValue,
-              let sep = raw.firstIndex(of: ":") else { return }
-        let kind = String(raw[..<sep])
-        let id = String(raw[raw.index(after: sep)...])
+        // identifier = "<kind>:<epoch>:<habitId>" (habitId never contains ":").
+        guard let raw = sender.identifier?.rawValue else { return }
+        let parts = raw.split(separator: ":", maxSplits: 2, omittingEmptySubsequences: false)
+        guard parts.count == 3, let epoch = TimeInterval(parts[1]) else { return }
+        let kind = String(parts[0]); let id = String(parts[2])
         guard !id.isEmpty else { return }
         switch kind {
         case "pastdone":
-            host?.schedulePastHabitDone(id: id)
+            host?.schedulePastHabitDone(id: id, performedAt: Date(timeIntervalSince1970: epoch))
             scheduleReload(after: 0.3)
         default: break
         }

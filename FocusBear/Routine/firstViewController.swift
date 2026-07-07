@@ -61,6 +61,7 @@ class firstViewController: NSViewController {
     // by state — it dispatches on this flag + the stashed id instead.
     var passwordWindowShowingForPastHabit = false
     var pendingPastHabitId: String?
+    var pendingPastHabitPerformedAt: Date?
     var actionBarItemPlay = "Play"
     var actionBarItemDone = "Done"
     var actionBarItemSkip = "Skip"
@@ -760,7 +761,11 @@ class firstViewController: NSViewController {
         // so the state-based branches below can't distinguish it).
         if passwordWindowShowingForPastHabit {
             passwordWindowShowingForPastHabit = false
-            if let id = pendingPastHabitId { pendingPastHabitId = nil; performPastMorningHabitCompletion(id: id) }
+            if let id = pendingPastHabitId {
+                let performedAt = pendingPastHabitPerformedAt ?? Date()
+                pendingPastHabitId = nil; pendingPastHabitPerformedAt = nil
+                performPastMorningHabitCompletion(id: id, performedAt: performedAt)
+            }
             return
         }
         if passwordWindowShowingForMarkHabitComplete{
@@ -1072,17 +1077,18 @@ class firstViewController: NSViewController {
     /// honours the same password rule as skipping a morning habit (isPasswordRequireInSkipMorning).
     /// After the gate, `performPastMorningHabitCompletion` runs the real completion — through the
     /// log-quantity / notes popups when the habit has them, exactly like the live "already done" action.
-    func completePastMorningHabit(id: String) {
-        addLog(text: "action bar (past habit):- completePastMorningHabit id=\(id)")
+    func completePastMorningHabit(id: String, performedAt: Date) {
+        addLog(text: "action bar (past habit):- completePastMorningHabit id=\(id) performedAt=\(performedAt)")
         if shouldAskPassword() && SettingsManagerObject.isPasswordRequireInSkipMorning {
             passwordWindowShowingForMarkHabitComplete = false
             passwordWindowShowingForMarkHabitSkip = false
             passwordWindowShowingForPastHabit = true
             pendingPastHabitId = id
+            pendingPastHabitPerformedAt = performedAt
             mainViewControllerObj?.showPasswordView()
             enterPasswordVcObj?.parentVc = self
         } else {
-            performPastMorningHabitCompletion(id: id)
+            performPastMorningHabitCompletion(id: id, performedAt: performedAt)
         }
     }
 
@@ -1093,10 +1099,14 @@ class firstViewController: NSViewController {
     /// forces `should_not_update_current_activity: true` (via the popups' `isPastHabit` flag, or directly)
     /// so the running evening routine is untouched. Looks the habit up in `arrAllDaysMorningHabits`
     /// (survives array clearing / skip-for-today).
-    func performPastMorningHabitCompletion(id: String) {
+    func performPastMorningHabitCompletion(id: String, performedAt: Date) {
         guard let habit = arrAllDaysMorningHabits.first(where: { $0.id == id }) else { return }
-        addLog(text: "action bar (past habit):- performPastMorningHabitCompletion id=\(id)")
-        lastActivityPerformedTime = Date()
+        addLog(text: "action bar (past habit):- performPastMorningHabitCompletion id=\(id) performedAt=\(performedAt)")
+        // Backdate the completion to the habit's slot on the viewed day so the backend records it against
+        // the right date (via /completed-activity's start_time/finish_time — the same fields the offline
+        // activity-sync replays). dayKey drives the local per-day strike-through.
+        lastActivityPerformedTime = performedAt
+        let dayKey = getStringFromDate(date: performedAt, dateFormat: "yyyy-MM-dd")
         let duration = getLastHabitDoneDuration(lastHabit: habit)
 
         if habit.logQuantity {
@@ -1111,6 +1121,7 @@ class firstViewController: NSViewController {
             logQuantityVcObj?.is_skipped = true          // "already done" marker, matching the live flow
             logQuantityVcObj?.isPastHabit = true         // forces should_not_update + marks the Day Plan done
             logQuantityVcObj?.pastHabitId = habit.id
+            logQuantityVcObj?.pastHabitDayKey = dayKey
         } else if habit.take_notes == END_OF_ACTIVITY {
             getHabitsVcObject().showTakeNotesView()
             takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged: nil,
@@ -1119,17 +1130,11 @@ class firstViewController: NSViewController {
             takeActivityNotesVcObj?.is_skipped = true
             takeActivityNotesVcObj?.isPastHabit = true
             takeActivityNotesVcObj?.pastHabitId = habit.id
+            takeActivityNotesVcObj?.pastHabitDayKey = dayKey
         } else {
-            allApiObject.activityCompletedApi(
+            recordPastHabitCompletionViaOfflineSync(
                 activity_id: habit.id, activity_sequence_id: habit.activity_sequence_id,
-                start_time: lastActivityPerformedTime!, quantity_logged: nil, duration_logged: duration,
-                choice_id: nil, is_skipped: true, notes: "", should_not_update_current_activity: true,
-                log_quantity_answers: [],
-                completionHandler: { _ in
-                    DispatchQueue.main.async {
-                        markPastHabitDoneInDayPlan(id: habit.id)
-                    }
-                })
+                performedAt: performedAt, duration: duration, quantity: nil, notes: "", dayKey: dayKey)
         }
     }
 
