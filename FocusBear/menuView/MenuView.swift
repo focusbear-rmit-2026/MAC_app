@@ -22,6 +22,9 @@ enum VoiceEvents {
     static let transcript = Notification.Name("fbVoiceTranscript")
     static let actionDone = Notification.Name("fbVoiceActionDone")
     static let error = Notification.Name("fbVoiceError")
+    /// A recording was started by the Focus Button (device mic press) rather than from the menu —
+    /// the menu should surface itself in listening state so the flow isn't invisible.
+    static let deviceListening = Notification.Name("fbVoiceDeviceListening")
 }
 
 /// Menu strings, resolved from the app config (`menuView` section in the assets `config.json`,

@@ -2519,12 +2519,32 @@ extension menuViewController {
             model.voiceResult = note.userInfo?["text"] as? String ?? "Something went wrong"
             model.voiceStatus = .error
         }
+        nc.addObserver(forName: VoiceEvents.deviceListening, object: nil, queue: .main) { _ in
+            // The Focus Button mic started a recording with the menu closed — open the popover and
+            // land on the voice screen so the user can watch the transcript/result. Setting the
+            // model after showPopover() wins over refreshSwiftUIMenu()'s inVoiceMode reset (which
+            // runs during the popover's viewWillAppear).
+            if !isFocusBearMenuVisible() {
+                appdelegate?.showPopover()
+            }
+            model.inVoiceMode = true
+            model.voiceStatus = .listening
+            model.voiceTranscript = ""
+            model.voiceResult = ""
+        }
     }
 
     /// Full refresh (on menu open): live fields + mic gate + day-plan summary.
     func refreshSwiftUIMenu() {
         guard let model = menuModel else { return }
-        model.inVoiceMode = false   // opening the menu always starts on the menu, never a stale voice screen
+        if recorder.isRecording {
+            // A recording is in progress (e.g. the Focus Button mic) — land on the voice screen so
+            // the capture is visible, instead of resetting to the menu.
+            model.inVoiceMode = true
+            model.voiceStatus = .listening
+        } else {
+            model.inVoiceMode = false   // opening the menu always starts on the menu, never a stale voice screen
+        }
         updateLiveMenuFields(model)
         model.micAvailable = isPurchased || daysLeft > 0
         // Show the "set up distraction blocking" card only when there's no schedule AND the user
