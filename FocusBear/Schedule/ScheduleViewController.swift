@@ -10,6 +10,7 @@
 //
 
 import Cocoa
+import SwiftUI
 
 /// All user-facing strings for the Schedule tab, read from the `scheduleViewInfo` config block
 /// (with English fallbacks) so they can be translated like the rest of the app.
@@ -1695,7 +1696,7 @@ class scheduleViewController: NSViewController {
         // since completion is append-only per day.
         let dayKey = getStringFromDate(date: selectedDate, dateFormat: "yyyy-MM-dd")
         let completedSig = "\(dayPlanCompletedHabitIds.count)-\(dayPlanCompletedHabitIdsByDay[dayKey]?.count ?? 0)"
-        let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(selectedPastHabitId ?? "-")|\(completedSig)|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(collapseSig)|\(dwCollapseSig)|\(cancelledSig)|\(taskSig)|"
+        let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(selectedPastHabitId ?? "-")|\(completedSig)|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(collapseSig)|\(dwCollapseSig)|\(cancelledSig)|\(shouldShowEveningShutdownPrompt())|\(taskSig)|"
             + blocks.map { "\($0.kind)\($0.title)\(Int($0.start.timeIntervalSince1970))\(Int($0.end.timeIntervalSince1970))\($0.isCurrent)\($0.isActionable)" }.joined(separator: ";")
         if signature == lastRenderSignature, !stackView.arrangedSubviews.isEmpty { return }
         lastRenderSignature = signature
@@ -1776,6 +1777,13 @@ class scheduleViewController: NSViewController {
                 }
                 i += 1
             }
+        }
+
+        // #2005 part 4: once the evening routine is done, the "well done — sleep / shut down" prompt sits
+        // at the bottom of today's plan (not a standalone popup). "Not now" dismisses it for the day.
+        if isViewingToday, shouldShowEveningShutdownPrompt() {
+            let hosting = NSHostingView(rootView: makeEveningShutdownView(onDismiss: { dismissEveningShutdownPrompt() }))
+            addCard(hosting)
         }
 
         // The day ends at 11:59pm; offer a jump to the next day's schedule.

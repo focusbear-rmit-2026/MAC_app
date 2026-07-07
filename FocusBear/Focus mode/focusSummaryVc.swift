@@ -595,9 +595,8 @@ class focusSummaryVc: NSViewController {
         closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
 
         currentState = ._NOTHING_
-        // After the evening routine, show the friendly "well done — sleep / shut down" screen and let
-        // the user choose, instead of an automatic shut-off (#2005 part 4).
-        showEveningShutdownScreen()
+        // Surface the "well done — sleep / shut down" prompt at the bottom of the Day Plan (#2005 part 4).
+        markEveningRoutineDoneForShutdownPrompt()
         viewVisibleCount = 0
     }
     

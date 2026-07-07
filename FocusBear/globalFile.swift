@@ -210,6 +210,22 @@ func recordPastHabitCompletionViaOfflineSync(activity_id: String, activity_seque
     markPastHabitDoneInDayPlan(id: activity_id, dayKey: dayKey)
 }
 
+let kEveningShutdownPromptDate = "kEveningShutdownPromptDate"
+
+/// The evening routine finished today → the Day Plan shows the shutdown prompt at its bottom (#2005
+/// part 4). Not a standalone window — only inside the Day Plan, only for the rest of today.
+func markEveningRoutineDoneForShutdownPrompt() {
+    UserDefaults.standard.set(getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd"), forKey: kEveningShutdownPromptDate)
+    requestDayPlanRefresh()
+}
+func shouldShowEveningShutdownPrompt() -> Bool {
+    UserDefaults.standard.string(forKey: kEveningShutdownPromptDate) == getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd")
+}
+func dismissEveningShutdownPrompt() {
+    UserDefaults.standard.removeObject(forKey: kEveningShutdownPromptDate)
+    requestDayPlanRefresh()
+}
+
 func markPastHabitDoneInDayPlan(id: String?, dayKey: String? = nil) {
     guard let id = id, !id.isEmpty else { return }
     let todayKey = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd")
