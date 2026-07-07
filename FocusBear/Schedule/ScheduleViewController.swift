@@ -36,6 +36,9 @@ enum ScheduleText {
     static var habitPlayerTab: String { t("habitPlayerTab", "Habit Player") }   // allowed-activity player tabs
     static var dayPlanTab: String { t("dayPlanTab", "Day Plan") }
     static var skipRoutineForToday: String { t("skipRoutineForToday", "Skip routine for today") }
+    // Past-habit retroactive completion (Day Plan "earlier today" / previous days).
+    static var pastHabitComplete: String { t("pastHabitComplete", "Complete") }
+    static var pastHabitCompleteHint: String { t("pastHabitCompleteHint", "I actually did it but forgot to log it 😅") }
     static var engineLabels: ScheduleBuilder.Labels {
         ScheduleBuilder.Labels(
             deepWork: "🧠 " + t("deepWork", "Deep work"),
@@ -2367,33 +2370,33 @@ class scheduleViewController: NSViewController {
     /// un-struck earlier-today habit is already evidently un-done. The button carries the habit id in
     /// its identifier so the tap dispatches host.schedulePastHabitDone(id:).
     private func makePastActionBar(habitId: String, performedAt: Date) -> NSView {
-        func column(_ symbol: String, _ fallback: String, _ label: String, _ tag: String) -> NSView {
-            let btn = makePastActionButton(symbol: symbol, fallback: fallback, habitId: habitId,
-                                           performedAt: performedAt, tag: tag,
-                                           diameter: 40, fill: NSColor.systemGray.withAlphaComponent(0.3))
-            let lbl = makeLabel(label, size: 12, bold: false)
-            lbl.textColor = .secondaryLabelColor
-            let col = NSStackView(views: [btn, lbl])
-            col.orientation = .vertical; col.alignment = .centerX; col.spacing = 3
-            col.translatesAutoresizingMaskIntoConstraints = false
-            return col
-        }
-        let bar = NSStackView(views: [
-            column("checkmark", "✓", ScheduleText.done, "pastdone"),
-        ])
-        bar.orientation = .horizontal
-        bar.alignment = .top
-        bar.spacing = 28
-        bar.translatesAutoresizingMaskIntoConstraints = false
+        // Orange (primary) tick — it's the ONLY action here, so it gets the same emphasis Play gets in
+        // the live bar (grey read as disabled). Label "Complete" + a reassuring micro-copy line.
+        let btn = makePastActionButton(symbol: "checkmark", fallback: "✓", habitId: habitId,
+                                       performedAt: performedAt, tag: "pastdone",
+                                       diameter: 40, fill: .systemOrange)
+        let title = makeLabel(ScheduleText.pastHabitComplete, size: 13, bold: true)
+        title.textColor = .labelColor
+        let hint = makeLabel(ScheduleText.pastHabitCompleteHint, size: 11, bold: false)
+        hint.textColor = .secondaryLabelColor
+        hint.lineBreakMode = .byTruncatingTail
+        hint.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let textStack = NSStackView(views: [title, hint])
+        textStack.orientation = .vertical; textStack.alignment = .leading; textStack.spacing = 1
+        textStack.translatesAutoresizingMaskIntoConstraints = false
+
+        let row = NSStackView(views: [btn, textStack])
+        row.orientation = .horizontal; row.alignment = .centerY; row.spacing = 10
+        row.translatesAutoresizingMaskIntoConstraints = false
 
         let container = NSView()
         container.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(bar)
+        container.addSubview(row)
         NSLayoutConstraint.activate([
-            bar.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 14),
-            bar.topAnchor.constraint(equalTo: container.topAnchor, constant: 14),
-            bar.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -10),
-            bar.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor),
+            row.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 14),
+            row.topAnchor.constraint(equalTo: container.topAnchor, constant: 12),
+            row.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12),
+            row.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -12),
         ])
         return container
     }
@@ -2419,7 +2422,7 @@ class scheduleViewController: NSViewController {
         } else {
             btn.title = fallback
         }
-        btn.contentTintColor = .labelColor
+        btn.contentTintColor = .white   // white tick on the orange (primary) disc
         btn.translatesAutoresizingMaskIntoConstraints = false
         // Encode kind + backdated epoch + id. Parsed on the first two ":" so the id (which never
         // contains ":") is the remainder — carries the completion date without extra plumbing.

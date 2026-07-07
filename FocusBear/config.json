@@ -2740,6 +2740,8 @@
         "play": "Play",
         "done": "Done",
         "skip": "Skip",
+        "pastHabitComplete": "Complete",
+        "pastHabitCompleteHint": "I actually did it but forgot to log it 😅",
         "habitsDone": "Habits done",
         "meeting": "meeting",
         "meetingDefaultTitle": "Meeting",

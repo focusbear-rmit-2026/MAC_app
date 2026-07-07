@@ -1110,7 +1110,10 @@ class firstViewController: NSViewController {
         let duration = getLastHabitDoneDuration(lastHabit: habit)
 
         if habit.logQuantity {
-            getHabitsVcObject().showLogQuantityView()
+            // Present on the Day Plan's own visible view (this VC), NOT habitsVc — the routine player is
+            // hidden behind the Day Plan when completing a past habit, so showLogQuantityView() (which
+            // attaches there) would put the popup off-screen and it'd look like nothing happened.
+            presentPastHabitPopup(logQuantityVcObj?.view)
             logQuantityVcObj?.isReviseQuantity = false
             logQuantityVcObj?.resetData(name: habit.name, durationInSeconds: "\(duration)",
                                         logQuantityQuestion: habit.logQuantityQuestion,
@@ -1123,7 +1126,7 @@ class firstViewController: NSViewController {
             logQuantityVcObj?.pastHabitId = habit.id
             logQuantityVcObj?.pastHabitDayKey = dayKey
         } else if habit.take_notes == END_OF_ACTIVITY {
-            getHabitsVcObject().showTakeNotesView()
+            presentPastHabitPopup(takeActivityNotesVcObj?.view)
             takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged: nil,
                                               activity_id: habit.id, activity_sequence_id: habit.activity_sequence_id,
                                               activityChoiceId: nil, log_quantity_answers: [])
@@ -1136,6 +1139,15 @@ class firstViewController: NSViewController {
                 activity_id: habit.id, activity_sequence_id: habit.activity_sequence_id,
                 performedAt: performedAt, duration: duration, quantity: nil, notes: "", dayKey: dayKey)
         }
+    }
+
+    /// Add a log-quantity / take-notes popup over the Day Plan (this VC's own view), so it's visible when
+    /// completing a PAST habit — the normal showLogQuantityView()/showTakeNotesView() attach to the
+    /// hidden routine-player view. The popups remove themselves from their superview on OK/Cancel.
+    private func presentPastHabitPopup(_ popupView: NSView?) {
+        guard let popupView = popupView else { return }
+        view.addSubview(popupView)
+        view.addConstraints(subView: popupView)
     }
 
     func eveningHabitAlreadyDoneClicked(){
