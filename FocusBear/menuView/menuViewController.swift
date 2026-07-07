@@ -196,6 +196,11 @@ class menuViewController: NSViewController {
     var menuHostingView: NSView?
     var menuModelRef: AnyObject?
     var menuRefreshTimer: Timer?
+    /// #2025: a device-mic (LISTEN|START) recording is starting — the recorder starts async, so it may
+    /// not be `isRecording` yet when the popover appears and refreshSwiftUIMenu() runs. This one-shot flag
+    /// keeps that first refresh on the listening screen instead of resetting to the menu (the race that
+    /// made the mic "open the menu but not go into listening state"). Consumed by refreshSwiftUIMenu().
+    var pendingDeviceListening = false
     var nextDayPlanHabitName: String?   // raw name of the Day Plan "next habit" (for the play button)
 
     override func viewDidLoad() {
@@ -2530,11 +2535,13 @@ extension menuViewController {
             model.voiceResult = note.userInfo?["text"] as? String ?? "Something went wrong"
             model.voiceStatus = .error
         }
-        nc.addObserver(forName: VoiceEvents.deviceListening, object: nil, queue: .main) { _ in
+        nc.addObserver(forName: VoiceEvents.deviceListening, object: nil, queue: .main) { [weak self] _ in
             // The Focus Button mic started a recording with the menu closed — open the popover and
-            // land on the voice screen so the user can watch the transcript/result. Setting the
-            // model after showPopover() wins over refreshSwiftUIMenu()'s inVoiceMode reset (which
-            // runs during the popover's viewWillAppear).
+            // land on the voice screen so the user can watch the transcript/result. The recorder starts
+            // async (permission + start), so it may not be isRecording yet when the popover appears and
+            // refreshSwiftUIMenu() runs during viewWillAppear — set a one-shot flag it honours, else that
+            // refresh resets inVoiceMode and the menu opens but never enters listening state.
+            self?.pendingDeviceListening = true
             if !isFocusBearMenuVisible() {
                 appdelegate?.showPopover()
             }
@@ -2548,9 +2555,11 @@ extension menuViewController {
     /// Full refresh (on menu open): live fields + mic gate + day-plan summary.
     func refreshSwiftUIMenu() {
         guard let model = menuModel else { return }
-        if recorder.isRecording {
-            // A recording is in progress (e.g. the Focus Button mic) — land on the voice screen so
-            // the capture is visible, instead of resetting to the menu.
+        if recorder.isRecording || pendingDeviceListening {
+            // A recording is in progress — or a device-mic one is just starting (pendingDeviceListening,
+            // set before the recorder flips isRecording) — land on the voice screen so the capture is
+            // visible, instead of resetting to the menu. One-shot: consume the flag.
+            pendingDeviceListening = false
             model.inVoiceMode = true
             model.voiceStatus = .listening
         } else {
