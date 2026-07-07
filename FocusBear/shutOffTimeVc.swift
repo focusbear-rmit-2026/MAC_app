@@ -301,7 +301,11 @@ class shutOffTimeVc: NSViewController {
         }
         
         if shouldAskPassword(){
-            if SettingsManagerObject.isPasswordRequireInAbortShutoff{
+            // Unlocking the computer after cutoff is a "postpone evening routine after cutoff" action, so
+            // honour that specific rule too — not only the abort-shutoff one. Without this, a user with
+            // only the postpone-after-cutoff password rule on could unlock past cutoff with no password.
+            let postponeAfterCutoff = isCutOffTimeGoing() && SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff
+            if SettingsManagerObject.isPasswordRequireInAbortShutoff || postponeAfterCutoff{
                 showPasswordReason = passwordReason._ABORT_SHUTOFF_
                 mainViewControllerObj!.showPasswordView()
             }else{
