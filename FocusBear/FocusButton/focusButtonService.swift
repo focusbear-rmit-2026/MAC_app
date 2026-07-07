@@ -871,6 +871,12 @@ class focusButtonService: NSObject {
             if parts.count >= 3 {
                 if parts[2].uppercased() == "START"{
                     recorder.requestPermissionAndStartRecording()
+                    // A device-initiated recording runs with the menu closed, so the whole voice
+                    // flow (listening → transcript → action/error) is invisible; tell the menu to
+                    // surface itself in listening state.
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name: VoiceEvents.deviceListening, object: nil)
+                    }
                 }else if parts[2].uppercased() == "END"{
                     recorder.stopRecording()
                 }
