@@ -229,6 +229,31 @@ struct activityChoice {
 
 var currentRoutineIndex = 0
 func startCustomRoutine(index:Int, isOnDemand:Bool){
+    // On-demand start (Custom Routines panel / menu) while a Morning/Evening routine is active:
+    // postpone that routine first — mirroring menuItemStartCustomRoutineClicked — otherwise it
+    // reasserts within a few seconds and replaces the custom routine. On-demand, so no
+    // isCustomRoutineTime gate. Postpone by the custom routine's own length (timer habits use their
+    // duration; non-timer habits count as 5 min, matching isCustomRoutineTime) so the Morning/Evening
+    // routine resumes right after the custom routine. Placed before the flag block below: once
+    // currentState is set to ._CUSTOM_ROUTINE_ here, that block leaves these resume flags intact.
+    if isOnDemand && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_) {
+        var secondsToPostpone = 0
+        for h in arrAllCustomRoutine[index].arrAllHabits {
+            secondsToPostpone += h.useTimer ? h.durationSeconds : 5 * 60
+        }
+        isCustomRoutineWasRunningInPostponeMorningHabit = false
+        isCustomRoutineWasRunningInPostponeEveningHabit = false
+        mainWindowControllerObj?.window?.close()
+        hideBlankWindowInSecondaryMonitor()
+        if currentState == ._MORNING_HABIT_ {
+            getHabitsVcObject().postponeMorningHabitFor(minutes: 0, secondsToPostpone: secondsToPostpone, showAskFocusModeView: false, showAskIntention: false)
+            isCustomRoutineWasRunningInPostponeMorningHabit = true
+        } else {
+            getHabitsVcObject().postponeEveningHabitFor(minutes: 0, secondsToPostpone: secondsToPostpone, showAskFocusModeView: false, showAskIntention: false)
+            isCustomRoutineWasRunningInPostponeEveningHabit = true
+        }
+        currentState = ._CUSTOM_ROUTINE_
+    }
     isCustomRoutineWasRunningBetweenMorningHabit = false
     isCustomRoutineWasRunningBetweenEveningHabit = false
     if currentState == ._POSTPONE_MORNING_HABIT_{
@@ -272,8 +297,12 @@ func startCustomRoutine(index:Int, isOnDemand:Bool){
         showBlankWindowInSecondaryMonitor()
         leftMenuVcObj?.showCustomRoutineView()
         getHabitsVcObject().showRoutineAllHabits(routineIndex: index)
+        // Reload the Day Plan now (currentState is already ._CUSTOM_ROUTINE_) so the Custom Routines
+        // panel hides immediately — it's gated on ._CUSTOM_ROUTINE_ — instead of lingering until the
+        // next auto-refresh tick (~30s).
+        firstViewControllerObj?.refreshScheduleIfVisible()
     }
-    
+
     getHabitsVcObject().showLoaderView()
     leftMenuVcObj?.customRoutineStarted()
     

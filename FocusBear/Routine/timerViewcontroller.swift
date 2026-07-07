@@ -1970,7 +1970,15 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                     saveCurrentHabitCurrentDurationDone(id: arrFilteredEveningHabits[currentHabitIndex].id, duration: currentTimer)
                     enableMenuForStartCustomRoutine()
                 }else if currentState == ._CUSTOM_ROUTINE_{
-                    if currentHabitIndex == arrAllCustomRoutine[currentHabitIndex].arrAllFilteredHabits.count - 1{
+                    // arrAllCustomRoutine is indexed by the ROUTINE, not the habit — use
+                    // currentRoutineIndex. (Was arrAllCustomRoutine[currentHabitIndex], an out-of-bounds
+                    // trap once a custom routine actually ran to its last habit — e.g. an on-demand one
+                    // started over a Morning/Evening routine.) Bounds-guarded so a stale index can't
+                    // crash; a bad index just falls back to showing the "Select Another Habit" menu.
+                    let isLastCustomHabit = currentRoutineIndex >= 0
+                        && currentRoutineIndex < arrAllCustomRoutine.count
+                        && currentHabitIndex == arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.count - 1
+                    if isLastCustomHabit{
                         menuItemChooseHabit.isHidden = true
                         addLog(text:"Hide menu Item Select Another Habit")
                     }else{
