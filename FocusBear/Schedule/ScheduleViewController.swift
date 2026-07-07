@@ -476,6 +476,9 @@ class scheduleViewController: NSViewController {
 
     /// Routine-array index of the habit whose action bar is shown (nil = the next-up habit).
     private var selectedHabitIndex: Int?
+    /// Habit id of the PAST habit whose Done action bar is shown (click-to-reveal, like the live view).
+    /// Kept separate from selectedHabitIndex because past habits are keyed by id, not live-array index.
+    private var selectedPastHabitId: String?
 
     // Temporary full-screen exit while granting calendar permission.
     private var grantCountdownWindow: NSWindow?
@@ -891,6 +894,7 @@ class scheduleViewController: NSViewController {
         guard let d = Calendar.current.date(byAdding: .day, value: days, to: selectedDate) else { return }
         selectedDate = d
         selectedHabitIndex = nil
+        selectedPastHabitId = nil       // a past selection is date-specific
         lastRenderSignature = nil
         reload()
     }
@@ -908,7 +912,7 @@ class scheduleViewController: NSViewController {
     @objc private func prevDayClicked() { changeDay(by: -1) }
     @objc private func nextDayClicked() { changeDay(by: 1) }
     @objc private func goTodayClicked() {
-        selectedDate = Date(); selectedHabitIndex = nil; lastRenderSignature = nil; reload()
+        selectedDate = Date(); selectedHabitIndex = nil; selectedPastHabitId = nil; lastRenderSignature = nil; reload()
     }
 
     @objc private func pickDateClicked() {
@@ -936,6 +940,7 @@ class scheduleViewController: NSViewController {
     @objc private func datePicked(_ sender: NSDatePicker) {
         selectedDate = sender.dateValue
         selectedHabitIndex = nil
+        selectedPastHabitId = nil
         lastRenderSignature = nil
         reload()
     }
@@ -1679,7 +1684,7 @@ class scheduleViewController: NSViewController {
         // #2010: a cancelled routine swaps its section for an uncancel message — include it so toggling
         // cancel/uncancel forces a re-render instead of being cached away.
         let cancelledSig = host?.cancelledRoutine()?.sectionName ?? ""
-        let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(collapseSig)|\(dwCollapseSig)|\(cancelledSig)|\(taskSig)|"
+        let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(selectedPastHabitId ?? "-")|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(collapseSig)|\(dwCollapseSig)|\(cancelledSig)|\(taskSig)|"
             + blocks.map { "\($0.kind)\($0.title)\(Int($0.start.timeIntervalSince1970))\(Int($0.end.timeIntervalSince1970))\($0.isCurrent)\($0.isActionable)" }.joined(separator: ";")
         if signature == lastRenderSignature, !stackView.arrangedSubviews.isEmpty { return }
         lastRenderSignature = signature
@@ -2080,12 +2085,23 @@ class scheduleViewController: NSViewController {
         let isPastDay = Calendar.current.startOfDay(for: selectedDate) < Calendar.current.startOfDay(for: Date())
         for h in habits where !collapsed {
             let isSel = h.isActionable && h.habitIndex == selected
+            let isPastCompletable = (h.isEarlier || isPastDay) && !h.isDone && h.habitId != nil
             let rowView: NSView
-            if (h.isEarlier || isPastDay), !h.isDone, let id = h.habitId {
-                // #2012: a PAST morning habit that wasn't logged — offer a Done bar so it can be marked
-                // retroactively. Completed by id with a backdated `performedAt` (this habit's slot on the
-                // viewed day), never the index-based live-routine path (which targets the running routine).
-                rowView = makePastHabitUnit(h, id: id, performedAt: h.start)
+            if isPastCompletable, let id = h.habitId {
+                // #2012: a PAST habit that wasn't logged. Click-to-reveal, exactly like the live view —
+                // a plain row until selected, then an orange unit with a Done-only bar (no wall of Done
+                // buttons). Completed by id with a backdated `performedAt` (its slot on the viewed day),
+                // never the index-based live-routine path. Done habits fall through → struck-through row.
+                if selectedPastHabitId == id {
+                    rowView = makeSelectedPastHabitUnit(h, id: id, performedAt: h.start)
+                } else {
+                    rowView = makeHabitRow(h, isSelected: false, onSelect: { [weak self] in
+                        self?.selectedHabitIndex = nil
+                        self?.selectedPastHabitId = id
+                        self?.lastRenderSignature = nil
+                        self?.reload()
+                    })
+                }
             } else if isSel, let idx = h.habitIndex {
                 // Selected: render as one connected orange unit (header + action bar, no gap),
                 // matching the habit view.
@@ -2190,7 +2206,7 @@ class scheduleViewController: NSViewController {
 
     /// A single tappable habit line: time · emoji · name. No inline buttons — selecting it
     /// reveals the action bar underneath (see makeHabitGroupCard).
-    private func makeHabitRow(_ block: ScheduleBlock, isSelected: Bool) -> NSView {
+    private func makeHabitRow(_ block: ScheduleBlock, isSelected: Bool, onSelect: (() -> Void)? = nil) -> NSView {
         let container = ClickableRowView()
         container.wantsLayer = true
         container.translatesAutoresizingMaskIntoConstraints = false
@@ -2198,7 +2214,11 @@ class scheduleViewController: NSViewController {
             container.layer?.backgroundColor = NSColor.systemOrange.withAlphaComponent(0.16).cgColor
             container.layer?.cornerRadius = 6
         }
-        if block.isActionable, let idx = block.habitIndex {
+        // A caller-supplied select handler (past-habit rows) wins; otherwise the live-routine row
+        // selects itself by index.
+        if let onSelect = onSelect {
+            container.onClick = onSelect
+        } else if block.isActionable, let idx = block.habitIndex {
             container.onClick = { [weak self] in
                 self?.selectedHabitIndex = idx
                 self?.reload()
@@ -2301,20 +2321,46 @@ class scheduleViewController: NSViewController {
         return container
     }
 
-    /// #2012: a past (earlier-today) morning habit that hasn't been logged yet — the normal row plus
-    /// a compact Done/Skip bar so it can be completed/skipped retroactively. No Play (you can't
-    /// "start" a habit in the past); completion runs through the by-id host path, never the
-    /// index-based live-routine one.
-    private func makePastHabitUnit(_ block: ScheduleBlock, id: String, performedAt: Date) -> NSView {
-        let row = makeHabitRow(block, isSelected: false)
+    /// #2012: the SELECTED past habit — same connected orange unit as the live selected habit
+    /// (makeSelectedHabitUnit), but with a Done-ONLY action bar (no Play/Skip: you can't start a past
+    /// habit, and an un-struck one is already evidently un-done). Shown only when the user has clicked
+    /// the row; other past rows are plain (click-to-reveal), so there's no wall of Done buttons.
+    /// Completion is by id with the backdated `performedAt`.
+    private func makeSelectedPastHabitUnit(_ block: ScheduleBlock, id: String, performedAt: Date) -> NSView {
+        let header = NSView()
+        header.wantsLayer = true
+        header.layer?.backgroundColor = NSColor.systemOrange.cgColor
+        header.translatesAutoresizingMaskIntoConstraints = false
+        layoutColumns(in: header, time: "\(timeString(block.start))–\(timeString(block.end))",
+                      title: block.title, leadingInset: 6, vPad: 8,
+                      timeColor: .white, titleColor: .white)
+
         let bar = makePastActionBar(habitId: id, performedAt: performedAt)
-        let unit = NSStackView(views: [row, bar])
+
+        let unit = NSStackView(views: [header, bar])
         unit.orientation = .vertical
         unit.alignment = .leading
-        unit.spacing = 2
+        unit.spacing = 0
         unit.translatesAutoresizingMaskIntoConstraints = false
-        row.widthAnchor.constraint(equalTo: unit.widthAnchor).isActive = true
-        return unit
+        header.widthAnchor.constraint(equalTo: unit.widthAnchor).isActive = true
+        bar.widthAnchor.constraint(equalTo: unit.widthAnchor).isActive = true
+
+        let card = NSView()
+        card.wantsLayer = true
+        card.layer?.cornerRadius = 8
+        card.layer?.masksToBounds = true
+        card.layer?.borderWidth = 2
+        card.layer?.borderColor = NSColor.systemOrange.cgColor
+        card.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(unit)
+        NSLayoutConstraint.activate([
+            unit.leadingAnchor.constraint(equalTo: card.leadingAnchor),
+            unit.trailingAnchor.constraint(equalTo: card.trailingAnchor),
+            unit.topAnchor.constraint(equalTo: card.topAnchor),
+            unit.bottomAnchor.constraint(equalTo: card.bottomAnchor),
+        ])
+        return card
     }
 
     /// A Done-only bar for retroactively logging a past morning habit — there's no Skip because an
@@ -2324,11 +2370,11 @@ class scheduleViewController: NSViewController {
         func column(_ symbol: String, _ fallback: String, _ label: String, _ tag: String) -> NSView {
             let btn = makePastActionButton(symbol: symbol, fallback: fallback, habitId: habitId,
                                            performedAt: performedAt, tag: tag,
-                                           diameter: 30, fill: NSColor.systemGray.withAlphaComponent(0.3))
-            let lbl = makeLabel(label, size: 11, bold: false)
+                                           diameter: 40, fill: NSColor.systemGray.withAlphaComponent(0.3))
+            let lbl = makeLabel(label, size: 12, bold: false)
             lbl.textColor = .secondaryLabelColor
             let col = NSStackView(views: [btn, lbl])
-            col.orientation = .vertical; col.alignment = .centerX; col.spacing = 2
+            col.orientation = .vertical; col.alignment = .centerX; col.spacing = 3
             col.translatesAutoresizingMaskIntoConstraints = false
             return col
         }
@@ -2337,16 +2383,16 @@ class scheduleViewController: NSViewController {
         ])
         bar.orientation = .horizontal
         bar.alignment = .top
-        bar.spacing = 22
+        bar.spacing = 28
         bar.translatesAutoresizingMaskIntoConstraints = false
 
         let container = NSView()
         container.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(bar)
         NSLayoutConstraint.activate([
-            bar.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 20),
-            bar.topAnchor.constraint(equalTo: container.topAnchor, constant: 2),
-            bar.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -8),
+            bar.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 14),
+            bar.topAnchor.constraint(equalTo: container.topAnchor, constant: 14),
+            bar.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -10),
             bar.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor),
         ])
         return container
@@ -2403,6 +2449,7 @@ class scheduleViewController: NSViewController {
         switch kind {
         case "pastdone":
             host?.schedulePastHabitDone(id: id, performedAt: Date(timeIntervalSince1970: epoch))
+            selectedPastHabitId = nil   // it's now done → next render strikes it through, no action bar
             scheduleReload(after: 0.3)
         default: break
         }
