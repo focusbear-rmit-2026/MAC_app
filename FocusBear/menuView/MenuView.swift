@@ -757,8 +757,16 @@ struct FocusBearMenuView: View {
     }
 
     // MARK: Day Plan body
+    /// Collapsed-row subtitle: surface what's actually coming up (next event, else next habit) so the
+    /// row is useful at a glance instead of just repeating "Day Plan"/the date. Falls back to the date,
+    /// then "Day Plan". No new i18n key needed — the values are already localized upstream.
     private var dayPlanSubtitle: String {
-        model.dayPlanDate.isEmpty ? menuLocalized("menuDayPlan", "Day Plan") : model.dayPlanDate
+        if !model.dayPlanNextEventTitle.isEmpty {
+            let time = model.dayPlanNextEventTime.isEmpty ? "" : "  ·  \(model.dayPlanNextEventTime)"
+            return model.dayPlanNextEventTitle + time
+        }
+        if !model.dayPlanNextHabit.isEmpty { return model.dayPlanNextHabit }
+        return model.dayPlanDate.isEmpty ? menuLocalized("menuDayPlan", "Day Plan") : model.dayPlanDate
     }
 
     private let dpBlue = Color(hex: 0x3B82F6)
