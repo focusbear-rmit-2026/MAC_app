@@ -2,6 +2,10 @@
 
 Knowledge accumulated while working on this repo so future sessions don't re-derive it.
 
+Start with [`ARCHITECTURE.md`](ARCHITECTURE.md) for how the app is structured (subsystems, data
+flow, the global-singleton/state-machine/view-swapping patterns) and [`TECH_DEBT.md`](TECH_DEBT.md)
+for the known-problems register before "fixing" anything that looks odd.
+
 ## Building
 
 - **Workspace, not project:** always build via `FocusBear.xcworkspace` (it pulls in Pods + SPM).
