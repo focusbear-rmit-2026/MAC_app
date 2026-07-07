@@ -338,12 +338,18 @@ struct FocusBearMenuView: View {
         .background(MenuTheme.background(scheme))
         .onPreferenceChange(MenuHeightKey.self) { onHeight($0) }
         .onChange(of: model.inVoiceMode) { active in
-            // Reset to the menu whenever voice mode is cleared (e.g. the popover reopened).
-            if !active { mode = .menu }
+            // Mirror voice mode into the local screen state: ENTER the voice screen when a recording
+            // starts and EXIT to the menu when it clears. Previously this only handled the exit (`if
+            // !active`), so the DEVICE mic — which drives the voice UI purely via model.inVoiceMode (set
+            // by the deviceListening observer), unlike the in-app mic's startVoice() which sets `mode`
+            // directly — opened the menu but never switched to the voice screen.
+            mode = active ? .voice : .menu
         }
         .onAppear {
             if expanded == nil { expanded = initialExpanded }
-            mode = initialMode
+            // If a recording is already active when the popover appears (the device mic opened the menu),
+            // start on the voice screen instead of the menu.
+            mode = model.inVoiceMode ? .voice : initialMode
         }
     }
 
