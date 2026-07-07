@@ -2501,8 +2501,13 @@ func isFullScreenWindowCurrentlyShowing()->Bool{
 ///   reuse a grace window — otherwise a single unlock (e.g. an accountability buddy granting 10 min)
 ///   can be leveraged into a much longer postpone by extending it within the grace period.
 func shouldAskPassword(forPostpone:Bool = false)->Bool{
-    // No grace when postponing, or while a full-screen (locked) window is showing: always re-ask.
-    let bypassGrace = forPostpone || isFullScreenWindowCurrentlyShowing()
+    // A full-screen (locked) window always re-asks. Postponing used to bypass the grace too, but that
+    // re-prompted even moments after the password was entered for the SAME postpone (the flow gates twice:
+    // once before the duration picker, once when applying the chosen duration) — so it never unlocked and
+    // looped (bug report 2026-07-06). Now a postpone honours the recent-unlock grace: the password is
+    // asked once, then again only after the grace (~2 min) — "unlock for the postpone, ask next time".
+    _ = forPostpone
+    let bypassGrace = isFullScreenWindowCurrentlyShowing()
     if !bypassGrace{
         if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{
             if Date() < lastUnlockTimeByAccountabilityBuddy{
