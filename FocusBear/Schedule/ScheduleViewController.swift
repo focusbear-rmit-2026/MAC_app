@@ -156,11 +156,21 @@ protocol ScheduleHost: AnyObject {
     func cancelledRoutine() -> (sectionName: String, message: String, buttonTitle: String)?
     /// Perform the uncancel (force-uncomplete) for the cancelled routine — fired by that button.
     func uncancelRoutine()
+    /// Complete / skip a PAST morning habit (surfaced in the "Show events from earlier today" accordion)
+    /// **by id**, without disturbing the live routine. No Play — you can't start a past habit. Default
+    /// no-op; only the active-routine host (`firstViewController`) implements these for now (staged per
+    /// PR #2012 / Prashant's by-id design). See `firstViewController.completePastMorningHabit`.
+    func schedulePastHabitDone(id: String)
+    func schedulePastHabitSkip(id: String)
 }
 
 extension ScheduleHost {
     func cancelledRoutine() -> (sectionName: String, message: String, buttonTitle: String)? { nil }
     func uncancelRoutine() {}
+    // Default no-ops so hosts that don't surface past habits (routinePostponedInfoVc, habitsStateVc)
+    // needn't implement them — the earlier-today accordion is only actionable on the active host.
+    func schedulePastHabitDone(id: String) {}
+    func schedulePastHabitSkip(id: String) {}
 }
 
 /// Shared helpers for installing the Schedule tab into a host habit screen. Each host

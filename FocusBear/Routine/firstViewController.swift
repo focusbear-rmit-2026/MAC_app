@@ -1048,7 +1048,35 @@ class firstViewController: NSViewController {
         focusButtonServiceObject.sendMorningHabitsToFocusDevice()
         //---------//
     }
-    
+
+    /// Complete or skip a PAST morning habit (the ones surfaced in the Day Plan's "Show events from
+    /// earlier today" accordion) **by id**, without disturbing the live (evening) routine — per
+    /// Prashant's #2012 design. Deliberately does NOT index into `arrFilteredMorningHabits`, mutate the
+    /// active array, or push the routine-completion screens (thirdVc / activityCompletion): those are the
+    /// active-routine flow and are unsafe for a past habit while the evening routine runs. Looks the habit
+    /// up in `arrAllDaysMorningHabits` (survives array clearing / skip-for-today) and completes it with
+    /// `should_not_update_current_activity: true` so the live routine is untouched.
+    ///
+    /// First cut: completes directly via the API. TODO (team decision, Prashant leaning full-flow): route
+    /// through logQuantityVc / takeActivityNotesVc when `logQuantity` / `take_notes == END_OF_ACTIVITY`,
+    /// once those screens pass `should_not_update_current_activity: true` for this by-id path.
+    func completePastMorningHabit(id: String, isSkipped: Bool) {
+        addLog(text: "action bar (past habit):- completePastMorningHabit id=\(id) skipped=\(isSkipped)")
+        guard let habit = arrAllDaysMorningHabits.first(where: { $0.id == id }) else { return }
+        let performedTime = Date()
+        let duration = getLastHabitDoneDuration(lastHabit: habit)
+        allApiObject.activityCompletedApi(
+            activity_id: habit.id, activity_sequence_id: habit.activity_sequence_id,
+            start_time: performedTime, quantity_logged: nil, duration_logged: duration, choice_id: nil,
+            is_skipped: isSkipped, notes: "", should_not_update_current_activity: true, log_quantity_answers: [],
+            completionHandler: { _ in
+                DispatchQueue.main.async {
+                    if let id = habit.id { dayPlanCompletedHabitIds.insert(id) }
+                    self.refreshScheduleIfVisible()   // re-render → the accordion strikes the habit through
+                }
+            })
+    }
+
     func eveningHabitAlreadyDoneClicked(){
         addLog(text: "action bar:- eveningHabitAlreadyDoneClicked")
         let lastHabitIndex = currentHabitIndex
