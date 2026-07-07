@@ -81,7 +81,14 @@ func requestDayPlanRefresh() {
     dayPlanRefreshPending = true
     DispatchQueue.main.async {
         dayPlanRefreshPending = false
+        // Refresh whichever Day Plan host is on screen — it varies by app state (firstViewController
+        // normally, routinePostponedInfoVc when the routine is postponed, habitsStateVc between
+        // routines). Each refreshScheduleIfVisible() reloads only if its OWN scheduleVC is visible, so
+        // calling all three is safe. (Was firstViewController-only, so a past-habit completion made in
+        // the postponed state didn't strike through until the next manual reload.)
         firstViewControllerObj?.refreshScheduleIfVisible()
+        routinePostponedInfoVcObj?.refreshScheduleIfVisible()
+        habitsStateVcObj?.refreshScheduleIfVisible()
     }
 }
 
