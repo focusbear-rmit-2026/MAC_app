@@ -3678,7 +3678,7 @@ Feel free to write an explanation here:</string>
                                                                         <constraint firstAttribute="height" constant="34" id="XRR-gD-noX"/>
                                                                         <constraint firstAttribute="width" constant="34" id="aTM-si-nxK"/>
                                                                     </constraints>
-                                                                    <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyDown" image="icon 130" id="95b-bo-i5v"/>
+                                                                    <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyDown" image="icon34" id="95b-bo-i5v"/>
                                                                 </imageView>
                                                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1Pu-ub-KKq">
                                                                     <rect key="frame" x="57" y="28" width="165" height="25"/>
@@ -15454,7 +15454,7 @@ f
         <image name="close" width="25" height="25"/>
         <image name="crosshair_transparent" width="360" height="360"/>
         <image name="figure.walk.circle.fill" catalog="system" width="19" height="19"/>
-        <image name="icon 130" width="130" height="130"/>
+        <image name="icon34" width="34" height="34"/>
         <image name="music_note_2" width="40" height="40"/>
         <image name="openChecklist" width="23" height="23"/>
         <image name="pauseBlocking" width="23" height="23"/>
