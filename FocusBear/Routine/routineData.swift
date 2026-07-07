@@ -340,9 +340,27 @@ func startCustomRoutine(index:Int, isOnDemand:Bool){
 }
 
 
+/// Whether a server days-of-week list ("all" / "weekdays" / "weekend" / day names like
+/// "MON"…"SUN") includes the given weekday. Weekend = Saturday or Sunday.
+func isScheduledForWeekday(_ daysOfWeek: [String], currentWeekDay: String) -> Bool {
+    let isWeekend = currentWeekDay.localizedCaseInsensitiveContains("sat")
+        || currentWeekDay.localizedCaseInsensitiveContains("sun")
+    if daysOfWeek.contains(where: {$0.compare("all", options: .caseInsensitive) == .orderedSame}) {
+        return true
+    }
+    if daysOfWeek.contains(where: {$0.compare("weekdays", options: .caseInsensitive) == .orderedSame}) {
+        return !isWeekend
+    }
+    if daysOfWeek.contains(where: {$0.compare("weekend", options: .caseInsensitive) == .orderedSame}) {
+        return isWeekend
+    }
+    return daysOfWeek.contains(where: {$0.compare(currentWeekDay, options: .caseInsensitive) == .orderedSame})
+}
+
+
 func checkCustomRoutineTime(){
     // will not excute during morning routine and shutoff time
-    
+
     if isPurchased == false && daysLeft <= 0{//
         // will execute custom rouine if app subscription is active
         return;
@@ -381,21 +399,7 @@ func checkCustomRoutineTime(){
                 // check is current routine is allowd for today or not
                  
                 let currentWeekDay = Date().dayOfWeek()
-                var isAllowedCurrentRoutine = false
-                
-                if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("all", options: .caseInsensitive) == .orderedSame}) {
-                    isAllowedCurrentRoutine = true
-                }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("weekdays", options: .caseInsensitive) == .orderedSame}) {
-                    if !currentWeekDay.localizedCaseInsensitiveContains("sat") && !currentWeekDay.localizedCaseInsensitiveContains("sat"){
-                        isAllowedCurrentRoutine = true
-                    }
-                }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("weekend", options: .caseInsensitive) == .orderedSame}) {
-                    if currentWeekDay.localizedCaseInsensitiveContains("sat") || currentWeekDay.localizedCaseInsensitiveContains("sat"){
-                        isAllowedCurrentRoutine = true
-                    }
-                }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare(currentWeekDay, options: .caseInsensitive) == .orderedSame}) {
-                    isAllowedCurrentRoutine = true
-                }
+                let isAllowedCurrentRoutine = isScheduledForWeekday(arrAllCustomRoutine[i].days_of_week, currentWeekDay: currentWeekDay)
                  
                  
                 if !isAllowedCurrentRoutine{
@@ -539,21 +543,7 @@ func getListCustomRoutineTime()->[routine]{
             // check is current routine is allowd for today or not
             
             let currentWeekDay = Date().dayOfWeek()
-            var isAllowedCurrentRoutine = false
-            
-            if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("all", options: .caseInsensitive) == .orderedSame}) {
-                isAllowedCurrentRoutine = true
-            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("weekdays", options: .caseInsensitive) == .orderedSame}) {
-                if !currentWeekDay.localizedCaseInsensitiveContains("sat") && !currentWeekDay.localizedCaseInsensitiveContains("sat"){
-                    isAllowedCurrentRoutine = true
-                }
-            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("weekend", options: .caseInsensitive) == .orderedSame}) {
-                if currentWeekDay.localizedCaseInsensitiveContains("sat") || currentWeekDay.localizedCaseInsensitiveContains("sat"){
-                    isAllowedCurrentRoutine = true
-                }
-            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare(currentWeekDay, options: .caseInsensitive) == .orderedSame}) {
-                isAllowedCurrentRoutine = true
-            }
+            let isAllowedCurrentRoutine = isScheduledForWeekday(arrAllCustomRoutine[i].days_of_week, currentWeekDay: currentWeekDay)
             
             
             if !isAllowedCurrentRoutine{
@@ -945,21 +935,7 @@ func getNextRoutineInfo()->(Date, String, Bool){
             // check is current routine is allowd for today or not
              
             let currentWeekDay = Date().dayOfWeek()
-            var isAllowedCurrentRoutine = false
-            
-            if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("all", options: .caseInsensitive) == .orderedSame}) {
-                isAllowedCurrentRoutine = true
-            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("weekdays", options: .caseInsensitive) == .orderedSame}) {
-                if !currentWeekDay.localizedCaseInsensitiveContains("sat") && !currentWeekDay.localizedCaseInsensitiveContains("sat"){
-                    isAllowedCurrentRoutine = true
-                }
-            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("weekend", options: .caseInsensitive) == .orderedSame}) {
-                if currentWeekDay.localizedCaseInsensitiveContains("sat") || currentWeekDay.localizedCaseInsensitiveContains("sat"){
-                    isAllowedCurrentRoutine = true
-                }
-            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare(currentWeekDay, options: .caseInsensitive) == .orderedSame}) {
-                isAllowedCurrentRoutine = true
-            }
+            let isAllowedCurrentRoutine = isScheduledForWeekday(arrAllCustomRoutine[i].days_of_week, currentWeekDay: currentWeekDay)
              
              
             if !isAllowedCurrentRoutine{

@@ -78,9 +78,11 @@ extension Date {
     
     func dayOfWeek() -> String{
         let dateFormatter = DateFormatter()
+        // Fixed locale: the result is matched against English server values ("MON"…"SUN",
+        // "weekdays", "weekend") — a localized day name (e.g. Spanish "SÁB") never matches.
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         dateFormatter.dateFormat = "EEE"
         return dateFormatter.string(from: self).uppercased()
-        // or use capitalized(with: locale) if you want
     }
     
     func interval(ofComponent comp: Calendar.Component, fromDate date: Date) -> Int {

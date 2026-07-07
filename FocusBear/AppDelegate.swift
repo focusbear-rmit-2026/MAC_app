@@ -5356,17 +5356,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 let currentWeekDay = Date().dayOfWeek()
                                 
                                 for habit in arrAllDaysMorningHabits{
-                                    if habit.days_of_week.contains(where: {$0.compare("all", options: .caseInsensitive) == .orderedSame}) {
-                                        arrFilteredMorningHabits.append(habit)
-                                    }else if habit.days_of_week.contains(where: {$0.compare("weekdays", options: .caseInsensitive) == .orderedSame}) {
-                                        if !currentWeekDay.localizedCaseInsensitiveContains("sat") && !currentWeekDay.localizedCaseInsensitiveContains("sat"){
-                                            arrFilteredMorningHabits.append(habit)
-                                        }
-                                    }else if habit.days_of_week.contains(where: {$0.compare("weekend", options: .caseInsensitive) == .orderedSame}) {
-                                        if currentWeekDay.localizedCaseInsensitiveContains("sat") || currentWeekDay.localizedCaseInsensitiveContains("sat"){
-                                            arrFilteredMorningHabits.append(habit)
-                                        }
-                                    }else if habit.days_of_week.contains(where: {$0.compare(currentWeekDay, options: .caseInsensitive) == .orderedSame}) {
+                                    if isScheduledForWeekday(habit.days_of_week, currentWeekDay: currentWeekDay) {
                                         arrFilteredMorningHabits.append(habit)
                                     }
                                 }
@@ -6125,21 +6115,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }
                 }
             }
-            if habit.days_of_week.contains(where: {$0.compare("all", options: .caseInsensitive) == .orderedSame}) {
-                arrFilteredEveningHabits.append(habit)
-            }else if habit.days_of_week.contains(where: {$0.compare("weekdays", options: .caseInsensitive) == .orderedSame}) {
-                if !currentWeekDay.localizedCaseInsensitiveContains("sat"){
-                    arrFilteredEveningHabits.append(habit)
-                }else{
-                    addLog(text: "evening habit skipped:- current day is not from weekdays:- \(habit.name)  \(habit.id)") // remove this
-                }
-            }else if habit.days_of_week.contains(where: {$0.compare("weekend", options: .caseInsensitive) == .orderedSame}) {
-                if currentWeekDay.localizedCaseInsensitiveContains("sat"){
-                    arrFilteredEveningHabits.append(habit)
-                }else{
-                    addLog(text: "evening habit skipped:- current day is not from weekend:- \(habit.name)  \(habit.id)") // remove this
-                }
-            }else if habit.days_of_week.contains(where: {$0.compare(currentWeekDay, options: .caseInsensitive) == .orderedSame}) {
+            if isScheduledForWeekday(habit.days_of_week, currentWeekDay: currentWeekDay) {
                 arrFilteredEveningHabits.append(habit)
             }else{
                 addLog(text: "evening habit skipped:- current day is not from selected days \(habit.days_of_week):- \(habit.name)  \(habit.id)") // remove this
