@@ -1152,8 +1152,10 @@ class firstViewController: NSViewController {
             return
         }
         popupView.removeFromSuperview()   // detach if it was still attached to habitsVc from a live use
-        let host = view.window?.contentView ?? mainViewControllerObj?.view ?? view
-        addLog(text: "past-habit popup: presenting on \(view.window != nil ? "window.contentView" : "fallback")")
+        // Present on the KEY window's content view — the front-most visible container regardless of which
+        // Day Plan host (firstViewController / routinePostponedInfoVc / habitsStateVc) is on screen.
+        let host = NSApp.keyWindow?.contentView ?? view.window?.contentView ?? mainViewControllerObj?.view ?? view
+        addLog(text: "past-habit popup: presenting on \(NSApp.keyWindow != nil ? "keyWindow" : "fallback")")
         host.addSubview(popupView)
         host.addConstraints(subView: popupView)
     }

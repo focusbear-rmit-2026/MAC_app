@@ -75,6 +75,12 @@ extension habitsStateVc: ScheduleHost {
     func scheduleDone(index: Int)  { }
     func scheduleSkip(index: Int)  { }
     func scheduleSkipRoutineForToday() { }
+    // A PAST habit completes BY ID, independent of the live routine state — so it's valid even here
+    // (between-routines). Forward to the shared firstViewController flow (backdated /sync + popup on the
+    // key window). Without this the default no-op ate the tap and nothing happened. See Mac #2005/#2012.
+    func schedulePastHabitDone(id: String, performedAt: Date) {
+        firstViewControllerObj?.completePastMorningHabit(id: id, performedAt: performedAt)
+    }
 
     func updateScheduleTabForState() {
         guard let sched = scheduleVC else { return }
