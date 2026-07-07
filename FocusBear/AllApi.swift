@@ -136,7 +136,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call isSettingsValid Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil, httpResponse.statusCode)
                                 return
                             }
@@ -287,7 +286,6 @@ class AllApi:NSObject {
                                         
                                     }catch{
                                         addLog(text: "api call getDeviceId error:- \(error.localizedDescription)")
-                                        addLog(text: "accessToken is:- \(token)")
                                         completionHandler(nil)
                                         print(error)
                                         return;
@@ -598,7 +596,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call get Settings Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -672,7 +669,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call user-local-device-settings Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -813,7 +809,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getLastActivityInfo Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -902,7 +897,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getuserDetailsInfo Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -993,7 +987,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getuserDetailsSummary Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -1085,7 +1078,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getuserLongTermGoals Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -1176,7 +1168,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getFocusTemplateInfo Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -1267,7 +1258,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getAllFocusModes Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -1358,7 +1348,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getUserSubscriptionInfo Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil, httpResponse.statusCode)
                                 return
                             }
@@ -1446,7 +1435,6 @@ class AllApi:NSObject {
                     }else{
                         addLog(text: "api call getHabitPacksInfo Api error:- statusCode is \(httpResponse.statusCode)")
                         self.writeJsonInLog(data: data)
-                        //addLog(text: "accessToken is:- \(token)")
                         completionHandler(nil)
                         return
                     }
@@ -1530,7 +1518,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call putUserLocalDeviceSettings Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -1693,7 +1680,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call activityCompletedApi error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             
                             
                             if httpResponse.statusCode == 500{
@@ -1850,7 +1836,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call activity Completed Revise Api error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             completionHandler(nil)
                             return
                         }
@@ -1938,7 +1923,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call activitySkippedApi error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             
                             if httpResponse.statusCode == 500{
                                 let calendar = Calendar.current
@@ -2075,7 +2059,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call activitysyncApi error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             //Deon asked that if the request fails with a 400 error, we should not try again
                              //So we will return json here so that the entries are removed from the offline csv file
                             if (httpResponse.statusCode != 408 && (httpResponse.statusCode >= 400 && httpResponse.statusCode <= 426 )){
@@ -2168,7 +2151,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call forceCompleteCurrentSequence error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             completionHandler(nil)
                             return
                         }
@@ -2270,7 +2252,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call uncompleteCurrentSequence error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             completionHandler(nil)
                             return
                         }
@@ -2363,7 +2344,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getAllTracks error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -2445,7 +2425,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getActivityStats error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -2561,7 +2540,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getACtivityCurrentDayStats error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -2676,7 +2654,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getActivityCurrentDayQuestionsStats error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -2768,7 +2745,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getAllActivityDaySummary error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -2889,7 +2865,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call addFocusMode error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return;
                             }
@@ -2962,7 +2937,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call deleteFocusMode error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return
                             }
@@ -3083,7 +3057,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call editFocusMode error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -3178,7 +3151,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call updateAllFocusMode error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -3288,7 +3260,6 @@ class AllApi:NSObject {
                                         }else{
                                             addLog(text: "api call startFocusMode Api error:- statusCode is \(httpResponse.statusCode)")
                                             self.writeJsonInLog(data: data)
-                                            addLog(text: "accessToken is:- \(token)")
                                             if httpResponse.statusCode == 400{//it means may be a focus mode is already running so complete it
                                                 finishOldFocusModeIfRunning(startNewFocusId: id, intention: intention, start_time: start_time, finish_time: finish_time)
                                             }
@@ -3428,7 +3399,6 @@ class AllApi:NSObject {
                                         }else{
                                             addLog(text: "api call finishFocusMode Api error:- statusCode is \(httpResponse.statusCode)")
                                             self.writeJsonInLog(data: data)
-                                            addLog(text: "accessToken is:- \(token)")
                                             completionHandler(nil)
                                             return
                                         }
@@ -3553,7 +3523,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call extendFocusMode Api error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             completionHandler(nil)
                             return
                         }
@@ -3874,7 +3843,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getKeyWords Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -3965,7 +3933,6 @@ class AllApi:NSObject {
                                         }else{
                                             addLog(text: "api call chatGPTIsURLSafe Api error:- statusCode is \(httpResponse.statusCode)")
                                             self.writeJsonInLog(data: data)
-                                            addLog(text: "accessToken is:- \(token)")
                                             completionHandler(nil, url, json)
                                             return
                                         }
@@ -4068,7 +4035,6 @@ class AllApi:NSObject {
                                         }else{
                                             addLog(text: "api call chatGPTIsURLSafeWithNewIntention Api error:- statusCode is \(httpResponse.statusCode)")
                                             self.writeJsonInLog(data: data)
-                                            addLog(text: "accessToken is:- \(token)")
                                             completionHandler(nil, url, json)
                                             return
                                         }
@@ -4181,7 +4147,6 @@ class AllApi:NSObject {
                                         }else{
                                             addLog(text: "api call chatGPTIsAppSafe Api error:- statusCode is \(httpResponse.statusCode)")
                                             self.writeJsonInLog(data: data)
-                                            addLog(text: "accessToken is:- \(token)")
                                             completionHandler(nil, appName, json)
                                             return
                                         }
@@ -4279,7 +4244,6 @@ class AllApi:NSObject {
                                         }else{
                                             addLog(text: "api call chatGPTIsAppSafeWithNewIntention Api error:- statusCode is \(httpResponse.statusCode)")
                                             self.writeJsonInLog(data: data)
-                                            addLog(text: "accessToken is:- \(token)")
                                             completionHandler(nil, appName, json)
                                             return
                                         }
@@ -4360,7 +4324,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call postTermsService error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                             }
                         }
                         
@@ -4469,7 +4432,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getFocusModeTags Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -4555,7 +4517,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call postSavedWebsiteApi error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             completionHandler(nil)
                             return
                         }
@@ -4642,7 +4603,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call getSavedWebsiteApi error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             completionHandler(nil)
                             return
                         }
@@ -4717,7 +4677,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call deleteSavedWebsiteApi error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             completionHandler(false)
                             return
                         }
@@ -5102,7 +5061,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call addTask error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false, nil)
                                 return;
                             }
@@ -5174,7 +5132,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getProjects error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -5264,7 +5221,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call get getUploadLogUrl Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false, nil)
                                 return
                             }
@@ -5384,7 +5340,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call notifyUploadLogsSuccess Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return
                             }
@@ -5442,7 +5397,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call emailConfirmation Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return
                             }
@@ -5508,7 +5462,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call resetPassword Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 
                                 if data != nil{
                                     do {
@@ -5608,7 +5561,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getAllTasks Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -5776,7 +5728,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getAllBlockingSchedules Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -5848,7 +5799,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call addBlockingSchedule error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return;
                             }
@@ -5924,7 +5874,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call updateBlockingSchedule error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return;
                             }
@@ -5997,7 +5946,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call deleteBlockingSchedule error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return;
                             }
@@ -6088,7 +6036,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getAllBuddies Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -6169,7 +6116,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call unlockRequest error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return;
                             }
@@ -6273,7 +6219,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call generateOccupationRelevantSites error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return;
                             }
@@ -6369,7 +6314,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getUnlockRequestStatus Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }

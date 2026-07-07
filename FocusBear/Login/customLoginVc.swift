@@ -480,7 +480,7 @@ class customLoginVc: NSViewController {
                 }
                 switch result {
                 case .success(let credentials):
-                    print("Obtained credentials: \(credentials)")
+                    addLog(text: "Obtained credentials")
                     DispatchQueue.main.async {
                         self.loginDone(credentials: credentials, isLogin: true)
                     }
@@ -734,7 +734,7 @@ class customLoginVc: NSViewController {
                             }
                             switch result {
                             case .success(let credentials):
-                                print("Obtained credentials: \(credentials)")
+                                addLog(text: "Obtained credentials")
                                 DispatchQueue.main.async {
                                     self.loginDone(credentials: credentials, isLogin: false)
                                 }

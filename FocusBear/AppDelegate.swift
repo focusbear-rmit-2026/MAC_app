@@ -186,11 +186,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func applicationWillFinishLaunching(_ notification: Notification) {
         SentrySDK.start { options in
             options.dsn = "https://85574080eb088006a0f2b0f5d326d6ff@o4509122919006208.ingest.us.sentry.io/4509122992275456"
-            options.debug = true // Enabled debug when first installing is always helpful
+            #if DEBUG
+            options.debug = true
+            #endif
             options.attachStacktrace = true// line added on 5/3/25
             options.enableSwizzling = false
             options.enableAutoSessionTracking = false
-            options.sendDefaultPii = true // Enables sending personally identifiable information
+            options.sendDefaultPii = false // do not send PII (IP address, request bodies) by default
         }
        
         //doing this because if app is started after quit by user then  helper app will know that main app is restarted
@@ -726,8 +728,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         switch result {
                         case .success(let credentials):
                             addLog(text: "renew Token successfully")
-                            print(self.credential?.accessToken)
-                            print(credentials.accessToken)
                             if credentials.accessToken != newCredential.accessToken{
                                 addLog(text: "accessToken updated:- update cedential in credentialsManager")
                                 self.credential = credentials
@@ -761,7 +761,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 return;
             }
             if self.credential != nil{
-                print(self.credential!.accessToken)
                 sharedDefaults?.setValue(self.user?.userId ?? "", forKeyPath: kUserdefaultsSharedUserId)
                 sharedDefaults?.setValue(self.credential!.accessToken, forKeyPath: kUserdefaultsSharedAccessToken)
                 sharedDefaults?.setValue(appVersion, forKeyPath: kUserdefaultsSharedAppVersion)
