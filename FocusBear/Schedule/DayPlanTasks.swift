@@ -584,16 +584,19 @@ final class DayPlanTaskStore {
         // Never add the same imported to-do twice on a day.
         if let sid = task.sourceTaskId, contains(sourceTaskId: sid, for: date) { return }
         byDay[dayKey(date), default: []].append(task); save()
+        DayPlanSync.shared.saveTask(task, on: date)   // #2148: mirror new task to backend
     }
 
     func update(_ task: DayPlanTask, for date: Date) {
         let k = dayKey(date)
         guard let i = byDay[k]?.firstIndex(where: { $0.id == task.id }) else { return }
         byDay[k]?[i] = task; save()
+        DayPlanSync.shared.saveTask(task, on: date)   // #2148: mirror completion/edits to backend so ticks persist cross-device
     }
 
     func delete(id: String, for date: Date) {
         byDay[dayKey(date)]?.removeAll { $0.id == id }; save()
+        DayPlanSync.shared.deleteTask(id, on: date)
     }
 
     /// True if the to-do item is already on the given day (so the picker can avoid duplicates).
