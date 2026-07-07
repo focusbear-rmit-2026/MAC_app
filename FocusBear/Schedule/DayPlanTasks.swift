@@ -415,6 +415,10 @@ struct DayPlanTask: Codable, Equatable {
     var subtasks: [DayPlanSubtask]?
     /// Importance / "outcome" (1–10, higher = more important; maps to a to-do's `outcome`). nil = unset.
     var outcome: Int?
+    /// The source to-do's Eisenhower quadrant (1–4), captured at import. Required to echo back on the
+    /// `PUT /to-do` upsert (plan / complete) without clobbering it. nil for from-scratch tasks and for
+    /// tasks imported before this field existed — sync is skipped in that case rather than risk a clobber.
+    var eisenhowerQuadrant: Int?
 
     /// Sub-tasks as a non-optional list, for convenient counting/rendering.
     var subtaskList: [DayPlanSubtask] { subtasks ?? [] }
@@ -422,11 +426,11 @@ struct DayPlanTask: Codable, Equatable {
     init(id: String = UUID().uuidString, title: String, durationMinutes: Int = 15,
          done: Bool = false, sourceTaskId: String? = nil, blockKey: String? = nil,
          project: String? = nil, notes: String? = nil, subtasks: [DayPlanSubtask]? = nil,
-         outcome: Int? = nil) {
+         outcome: Int? = nil, eisenhowerQuadrant: Int? = nil) {
         self.id = id; self.title = title; self.durationMinutes = durationMinutes
         self.done = done; self.sourceTaskId = sourceTaskId; self.blockKey = blockKey
         self.project = project; self.notes = notes; self.subtasks = subtasks
-        self.outcome = outcome
+        self.outcome = outcome; self.eisenhowerQuadrant = eisenhowerQuadrant
     }
 
     /// Colour for an importance value, banded into 4 (higher = hotter). nil when unset.
@@ -584,19 +588,82 @@ final class DayPlanTaskStore {
         // Never add the same imported to-do twice on a day.
         if let sid = task.sourceTaskId, contains(sourceTaskId: sid, for: date) { return }
         byDay[dayKey(date), default: []].append(task); save()
-        DayPlanSync.shared.saveTask(task, on: date)   // #2148: mirror new task to backend
+        // #2148: a Day Plan task backed by a to-do is planned via `planned_date` (the pointer model);
+        // this makes it show on GET /day-plan/day and hydrate on other devices. From-scratch tasks
+        // (no sourceTaskId / no captured quadrant) stay local-only — the pointer model has nowhere to
+        // put them without minting a to-do.
+        if let sid = task.sourceTaskId, let q = task.eisenhowerQuadrant {
+            DayPlanSync.shared.setTodoPlanned(todoID: sid, title: task.title, quadrant: q,
+                                              plannedDate: date, blockKey: task.blockKey, order: nil)
+        }
     }
 
     func update(_ task: DayPlanTask, for date: Date) {
         let k = dayKey(date)
         guard let i = byDay[k]?.firstIndex(where: { $0.id == task.id }) else { return }
+        let wasDone = byDay[k]![i].done
         byDay[k]?[i] = task; save()
-        DayPlanSync.shared.saveTask(task, on: date)   // #2148: mirror completion/edits to backend so ticks persist cross-device
+        // #2148: reflect a completion flip onto the underlying to-do's status so web/mobile update.
+        // Only on an actual done transition, and only when we can echo the to-do's title + quadrant
+        // back (else we'd risk clobbering them on the upsert).
+        if task.done != wasDone, let sid = task.sourceTaskId, let q = task.eisenhowerQuadrant {
+            DayPlanSync.shared.setTodoStatus(todoID: sid, title: task.title, quadrant: q, completed: task.done)
+        }
     }
 
     func delete(id: String, for date: Date) {
+        let removed = byDay[dayKey(date)]?.first { $0.id == id }
         byDay[dayKey(date)]?.removeAll { $0.id == id }; save()
-        DayPlanSync.shared.deleteTask(id, on: date)
+        // Removing a to-do-backed task from the Day Plan just unplans it (clears planned_date); the
+        // to-do itself is kept. From-scratch tasks have no backend row to clear.
+        if let sid = removed?.sourceTaskId, let q = removed?.eisenhowerQuadrant {
+            DayPlanSync.shared.setTodoPlanned(todoID: sid, title: removed!.title, quadrant: q,
+                                              plannedDate: nil, blockKey: nil, order: nil)
+        }
+    }
+
+    /// Pull the day's planned to-dos from the backend and reconcile them into the local store, so a
+    /// task ticked (or planned) on another device shows correctly here (#2148 follow-up: the cross-
+    /// device *read*). `GET /day-plan/day/:day` returns `tasks: ToDo[]` — the to-dos whose
+    /// `planned_date` is this day. Matching is by `sourceTaskId == to-do id`; backend `status` wins
+    /// for the `done` flag; a planned to-do we don't have locally is brought onto the Day Plan.
+    /// Local from-scratch tasks (no sourceTaskId) are never touched. Returns true if anything changed.
+    func loadAndHydrate(for date: Date, onChange: @escaping () -> Void) {
+        DayPlanSync.shared.loadDay(date) { [weak self] _, raw in
+            guard let self = self, let raw = raw else { return }
+            if self.hydrate(fromDay: raw, for: date) { onChange() }
+        }
+    }
+
+    @discardableResult
+    func hydrate(fromDay raw: NSDictionary, for date: Date) -> Bool {
+        guard let arr = raw["tasks"] as? [[String: Any]] else { return false }
+        let k = dayKey(date)
+        var list = byDay[k] ?? []
+        var indexBySource = [String: Int]()
+        for (i, t) in list.enumerated() { if let s = t.sourceTaskId { indexBySource[s] = i } }
+        var changed = false
+        for obj in arr {
+            guard let id = obj["id"] as? String else { continue }
+            let done = ((obj["status"] as? String) ?? "") == "COMPLETED"
+            if let idx = indexBySource[id] {
+                if list[idx].done != done { list[idx].done = done; changed = true }   // sync completion only; keep local edits
+            } else {
+                let title = (obj["title"] as? String) ?? "Task"
+                let secs = (obj["duration"] as? Int) ?? 0
+                let minutes = secs > 0 ? max(1, secs / 60) : 15
+                let quadrant = obj["eisenhower_quadrant"] as? Int
+                let blockKey = obj["planned_block_key"] as? String
+                let tags = (obj["tags"] as? [[String: Any]]) ?? []
+                let project = tags.first?["text"] as? String
+                list.append(DayPlanTask(title: title, durationMinutes: minutes, done: done,
+                                        sourceTaskId: id, blockKey: blockKey, project: project,
+                                        eisenhowerQuadrant: quadrant))
+                changed = true
+            }
+        }
+        if changed { byDay[k] = list; save() }
+        return changed
     }
 
     /// True if the to-do item is already on the given day (so the picker can avoid duplicates).

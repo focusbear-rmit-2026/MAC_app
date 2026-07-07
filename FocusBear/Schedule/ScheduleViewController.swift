@@ -1439,6 +1439,9 @@ class scheduleViewController: NSViewController {
     /// The day the schedule is showing (defaults to today). Past/future days are read-only.
     var selectedDate = Date()
     var isViewingToday: Bool { Calendar.current.isDateInToday(selectedDate) }
+    /// Last day we pulled the backend Day Plan for, so hydration fires once per day shown (not on
+    /// every timer-driven reload). Reset when the selected day changes.
+    private var lastHydratedDay: Date?
 
 #if DEBUG
     /// When set, reload() renders this fixed mock data instead of the live routine/calendar state
@@ -1474,7 +1477,18 @@ class scheduleViewController: NSViewController {
             return
         }
 #endif
+        hydrateTasksIfNeeded()
         reloadLive()
+    }
+
+    /// Pull the day's planned to-dos from the backend once per day shown, then refresh the panel so
+    /// completions/plans made on other devices appear. Throttled by `lastHydratedDay`.
+    private func hydrateTasksIfNeeded() {
+        if let d = lastHydratedDay, Calendar.current.isDate(d, inSameDayAs: selectedDate) { return }
+        lastHydratedDay = selectedDate
+        DayPlanTaskStore.shared.loadAndHydrate(for: selectedDate) { [weak self] in
+            self?.tasksPanel.reload()
+        }
     }
 
     /// Rebuild the timetable from the live routine + calendar state.
@@ -2877,7 +2891,12 @@ class scheduleViewController: NSViewController {
             // Group imported tasks under their to-do's first tag (its "project").
             let tags = (task.value(forKey: "tags") as? [[String: String]]) ?? []
             let project = tags.first?["text"]
-            DayPlanTaskStore.shared.add(DayPlanTask(title: title, durationMinutes: minutes, sourceTaskId: id, project: project), for: selectedDate)
+            // Capture the to-do's Eisenhower quadrant so completion/planning can round-trip through
+            // the `PUT /to-do` upsert (which requires it) without clobbering it.
+            let quadrant = (task.value(forKey: "eisenhower_quadrant") as? Int)
+            DayPlanTaskStore.shared.add(DayPlanTask(title: title, durationMinutes: minutes, sourceTaskId: id,
+                                                    project: project, eisenhowerQuadrant: quadrant),
+                                        for: selectedDate)
         }
         closeTodoPicker()
         tasksPanel.reload()

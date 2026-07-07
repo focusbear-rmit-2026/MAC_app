@@ -352,24 +352,23 @@ final class DayPlanSync {
         send(req, label: "undismissEvent")
     }
 
-    // MARK: Day Plan tasks (per day) — #2104 backs completion/time-box so it syncs across devices.
-    /// Upsert a Day Plan task (incl. its `done` state) to the backend so ticking a task is preserved.
-    func saveTask(_ task: DayPlanTask, on date: Date) {
-        var body: [String: Any] = [
-            "id": task.id,
-            "title": task.title,
-            "duration_minutes": task.durationMinutes,
-            "done": task.done,
-        ]
-        if let src = task.sourceTaskId { body["source_task_id"] = src }
-        if let bk = task.blockKey { body["block_key"] = bk }
-        guard let req = request("/day-plan/day/\(dayString(date))/task", method: "PUT", body: body) else { return }
-        send(req, label: "saveTask")
-    }
+    // MARK: Day Plan tasks (per day)
+    // #2104 (final) makes the Day Plan a POINTER into to-dos via `planned_date`, not a copy table —
+    // there is no `/day-plan/day/:day/task` route. So a Day Plan task that came from a to-do syncs
+    // through the normal `PUT /to-do` upsert: `setTodoPlanned` (below) plans/unplans it and
+    // `setTodoStatus` marks it complete. From-scratch tasks (no `sourceTaskId`) stay local-only.
 
-    func deleteTask(_ taskID: String, on date: Date) {
-        guard let req = request("/day-plan/day/\(dayString(date))/task/\(encodedEventID(taskID))", method: "DELETE") else { return }
-        send(req, label: "deleteTask")
+    /// Reflect a Day Plan task's completion onto its backend to-do so web/mobile lists update too.
+    /// The upsert reuses the create DTO, so `title` + `quadrant` are echoed back to avoid clobbering.
+    func setTodoStatus(todoID: String, title: String, quadrant: Int, completed: Bool) {
+        let body: [String: Any] = [
+            "id": todoID,
+            "title": title,
+            "eisenhower_quadrant": quadrant,
+            "status": completed ? "COMPLETED" : "NOT_STARTED",
+        ]
+        guard let req = request("/to-do", method: "PUT", body: body) else { return }
+        send(req, label: "setTodoStatus")
     }
 
     // MARK: Event colours (global, per event)
