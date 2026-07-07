@@ -1323,6 +1323,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         // Start Wi-Fi profile auto-switching (#1000)
         WiFiMonitorService.shared.startMonitoring()
 
+        // Let another local process (e.g. a firmware flashing tool) ask us to release the Focus Button
+        // serial port via ~/.focusbear/focus-button-command (#1947 / Focus-Button#15,#21).
+        FocusButtonCommandChannel.shared.start()
+
 #if DEBUG
         // Offscreen Day Plan mockup render (DEBUG-only; no-op unless FB_MOCKUP_FILE is set); quits when done.
         DayPlanMockup.runIfRequested()
