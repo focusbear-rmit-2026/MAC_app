@@ -1770,8 +1770,8 @@ class scheduleViewController: NSViewController {
         guard let first = run.first, let last = run.last else { return }
         let dateForToggle = selectedDate
         let collapsed = isDeepWorkCollapsed(runIndex: runIndex, date: dateForToggle)
-        let chevron = collapsed ? "▸" : "▾"
-        let header = makeLabel("\(chevron) 🧠 \(ScheduleText.deepWorkSession)  ·  \(timeString(first.start))–\(timeString(last.end))",
+        let chevron = makeDisclosureChevron(collapsed: collapsed)
+        let header = makeLabel("🧠 \(ScheduleText.deepWorkSession)  ·  \(timeString(first.start))–\(timeString(last.end))",
                                size: 15, bold: false)
         header.textColor = .labelColor
         header.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -1783,6 +1783,7 @@ class scheduleViewController: NSViewController {
         headerRow.spacing = 8
         headerRow.distribution = .fill
         headerRow.translatesAutoresizingMaskIntoConstraints = false
+        headerRow.addArrangedSubview(chevron)
         headerRow.addArrangedSubview(header)
         headerRow.onClick = { [weak self] in self?.toggleDeepWorkCollapsed(runIndex: runIndex, date: dateForToggle) }
         headerRow.toolTip = collapsed ? ScheduleText.showDeepWorkBreakdown : ScheduleText.hideDeepWorkBreakdown
@@ -2013,8 +2014,10 @@ class scheduleViewController: NSViewController {
         let cancel = host?.cancelledRoutine()
         let isCancelled = (cancel?.sectionName == routineName)
         if let first = habits.first, let last = habits.last {
-            let chevron = collapsed ? "▸" : "▾"
-            let header = makeLabel("\(chevron) 🧩 \(routineName)  ·  \(timeString(first.start))–\(timeString(last.end))", size: 15, bold: false)
+            // A proper disclosure chevron (SF Symbol) instead of a tiny ▸/▾ glyph buried in the label —
+            // it was too small to read as a tap target for collapse/expand.
+            let chevron = makeDisclosureChevron(collapsed: collapsed)
+            let header = makeLabel("🧩 \(routineName)  ·  \(timeString(first.start))–\(timeString(last.end))", size: 15, bold: false)
             header.textColor = .labelColor
             // Title stretches to fill and TRUNCATES in a narrow window; the skip button keeps its
             // intrinsic width pinned to the trailing edge.
@@ -2028,6 +2031,7 @@ class scheduleViewController: NSViewController {
             headerRow.spacing = 8
             headerRow.distribution = .fill
             headerRow.translatesAutoresizingMaskIntoConstraints = false
+            headerRow.addArrangedSubview(chevron)
             headerRow.addArrangedSubview(header)
             if isActiveRoutine && !isCancelled {
                 let skipBtn = makeSkipRoutineButton()
@@ -2109,19 +2113,45 @@ class scheduleViewController: NSViewController {
                           hasBorder: true, content: inner)
     }
 
-    /// A compact red "Skip routine for today" text button for the active routine header.
+    /// A larger, sharper disclosure chevron for a routine/section accordion header (replaces the tiny
+    /// ▸/▾ text glyph). Points right when collapsed, down when expanded.
+    private func makeDisclosureChevron(collapsed: Bool) -> NSView {
+        let iv = NSImageView()
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        let symbol = collapsed ? "chevron.forward" : "chevron.down"
+        if #available(macOS 11.0, *), let base = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) {
+            let cfg = NSImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
+            iv.image = base.withSymbolConfiguration(cfg) ?? base
+        } else {
+            iv.image = nil
+        }
+        iv.contentTintColor = .secondaryLabelColor
+        iv.setContentHuggingPriority(.required, for: .horizontal)
+        iv.setContentCompressionResistancePriority(.required, for: .horizontal)
+        iv.widthAnchor.constraint(equalToConstant: 16).isActive = true
+        return iv
+    }
+
+    /// A compact red "skip routine for today" ICON button (forward-to-end) for the active routine
+    /// header — the text link was replaced with an icon. Tooltip carries the meaning for discoverability.
     private func makeSkipRoutineButton() -> NSButton {
-        let btn = NSButton(title: ScheduleText.skipRoutineForToday, target: self,
-                           action: #selector(skipRoutineForTodayClicked))
+        let btn = NSButton(title: "", target: self, action: #selector(skipRoutineForTodayClicked))
         btn.isBordered = false
         btn.bezelStyle = .inline
-        // Borderless NSButtons colour their title via attributedTitle, not contentTintColor.
-        // Underlined so it reads as a tappable link.
-        btn.attributedTitle = NSAttributedString(
-            string: ScheduleText.skipRoutineForToday,
-            attributes: [.foregroundColor: NSColor.systemRed,
-                         .font: NSFont.systemFont(ofSize: 12, weight: .semibold),
-                         .underlineStyle: NSUnderlineStyle.single.rawValue])
+        btn.imagePosition = .imageOnly
+        btn.contentTintColor = .systemRed
+        if #available(macOS 11.0, *), let base = NSImage(systemSymbolName: "forward.end.fill", accessibilityDescription: ScheduleText.skipRoutineForToday) {
+            let cfg = NSImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
+            btn.image = base.withSymbolConfiguration(cfg) ?? base
+        } else {
+            // Pre-11 fallback: keep the (red) text so the action stays reachable.
+            btn.attributedTitle = NSAttributedString(
+                string: ScheduleText.skipRoutineForToday,
+                attributes: [.foregroundColor: NSColor.systemRed,
+                             .font: NSFont.systemFont(ofSize: 12, weight: .semibold),
+                             .underlineStyle: NSUnderlineStyle.single.rawValue])
+        }
+        btn.toolTip = ScheduleText.skipRoutineForToday
         btn.setContentHuggingPriority(.required, for: .horizontal)
         btn.setContentCompressionResistancePriority(.required, for: .horizontal)
         return btn
