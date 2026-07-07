@@ -223,5 +223,6 @@ extension firstViewController: ScheduleHost {
     /// "I don't have time for all these habits" button.
     func scheduleSkipRoutineForToday() {
         showChooseHabitsView()
+        chooseHabitsVCObj?.openedFromDayPlan = true   // keep the window open on skip (planning, not in-routine)
     }
 }

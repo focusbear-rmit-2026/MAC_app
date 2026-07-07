@@ -132,6 +132,7 @@ extension routinePostponedInfoVc: ScheduleHost {
         guard let vc = mainStoryboard.instantiateController(
             withIdentifier: NSStoryboard.SceneIdentifier("chooseHabitsVC")) as? chooseHabitsVC else { return }
         vc.currentHabitIndex = -1
+        vc.openedFromDayPlan = true   // keep the window open on skip (planning, not in-routine)
         presentAsSheet(vc)
     }
 }

@@ -922,10 +922,11 @@ class firstViewController: NSViewController {
                 chooseHabitsVCObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("chooseHabitsVC")) as? chooseHabitsVC
             }
             chooseHabitsVCObj!.currentHabitIndex = currentHabitIndex
+            chooseHabitsVCObj!.openedFromDayPlan = false   // default; the Day Plan path sets it true after
             self.presentAsSheet(chooseHabitsVCObj!)
         }
     }
-    
+
     @IBAction func segmentControlOfficeModeClicked(_ sender: Any) {
         addLog(text:"[user-action] firstViewController:- btnEnableOfficeModeClicked")
         

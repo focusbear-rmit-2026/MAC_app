@@ -30,6 +30,10 @@ class chooseHabitsVC: NSViewController {
         var habit:habit!
         var state:Bool!
     }
+    /// Opened from the Day Plan's "skip routine for today" (vs the in-routine Habits view). When true, the
+    /// skip must NOT close the main window — the user is planning, not in the routine — it just refreshes
+    /// the Day Plan in place.
+    var openedFromDayPlan = false
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -368,14 +372,19 @@ class chooseHabitsVC: NSViewController {
         
         
         self.dismiss(self)
-        
+
         UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
         isHabitAlreadyShowed = true
-        mainWindowControllerObj?.window?.close()
+        // Skipping from the Day Plan keeps the window open (planning, not in the routine); the in-routine
+        // skip closes it as before.
+        if !openedFromDayPlan {
+            mainWindowControllerObj?.window?.close()
+        }
         hideBlankWindowInSecondaryMonitor()
         currentState = ._NOTHING_
         getHabitsVcObject().setActivityTimer()
         leftMenuVcObj?.habitOver()
+        if openedFromDayPlan { requestDayPlanRefresh() }   // reflect the skip in the still-open Day Plan
         addLog(text: "Routine skipped by user")//addLog(text: "morning habit skipped by user")
     }
     
