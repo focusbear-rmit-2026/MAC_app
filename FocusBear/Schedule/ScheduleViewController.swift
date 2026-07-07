@@ -1571,6 +1571,9 @@ class scheduleViewController: NSViewController {
             sprintBreakSeconds: dwBreakMinutes * 60,
             labels: ScheduleText.engineLabels)
 
+        // Diagnostic for the reported blank Day Plan: capture the state that produced this render so a
+        // reproduction pinpoints an empty/hidden plan (host nil → no segments, wrong state, etc.).
+        addLog(text: "dayplan reload: state=\(currentState) host=\(host != nil ? String(describing: type(of: host!)) : "NIL") isToday=\(isToday) segs=\(segments.count) blocks=\(blocks.count) viewHidden=\(view.isHidden) contentHidden=\(isDayPlanContentHidden)")
         render(blocks: blocks)
         updateDateBar()
         updateFullScreenInsets()   // self-correct if full-screen state changed
