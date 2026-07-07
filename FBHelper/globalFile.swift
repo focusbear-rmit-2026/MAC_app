@@ -162,7 +162,17 @@ class Button: NSButton {
     }
 }
 
-let sharedDefaults = UserDefaults(suiteName: "TCUD568B3U.group.com.focusbear.fbmac")
+// Suite name shared with the main app — must derive identically in both targets.
+// The team prefix comes from the build's DEVELOPMENT_TEAM (via FBTeamIdentifierPrefix in
+// Info.plist) so a contributor building under their own team still gets a matching suite.
+let fbSharedDefaultsSuiteName: String = {
+    if let team = Bundle.main.object(forInfoDictionaryKey: "FBTeamIdentifierPrefix") as? String, !team.isEmpty {
+        return "\(team).group.com.focusbear.fbmac"
+    }
+    return "TCUD568B3U.group.com.focusbear.fbmac"
+}()
+
+let sharedDefaults = UserDefaults(suiteName: fbSharedDefaultsSuiteName)
 let kUserdefaultsAppQuitForUser = "kUserdefaultsAppQuitForUser"
 let kUserdefaultsStartHabitNagCount = "kUserdefaultsStartHabitNagCount"
 let kUserdefaultsLastNagShowDate = "kUserdefaultsLastNagShowDate"

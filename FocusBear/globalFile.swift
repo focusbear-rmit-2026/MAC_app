@@ -18,6 +18,16 @@ let recorder = audioRecorder()
 
 let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
 
+// Suite name shared with FBHelper — must derive identically in both targets.
+// The team prefix comes from the build's DEVELOPMENT_TEAM (via FBTeamIdentifierPrefix in
+// Info.plist) so a contributor building under their own team still gets a matching suite.
+let fbSharedDefaultsSuiteName: String = {
+    if let team = Bundle.main.object(forInfoDictionaryKey: "FBTeamIdentifierPrefix") as? String, !team.isEmpty {
+        return "\(team).group.com.focusbear.fbmac"
+    }
+    return "TCUD568B3U.group.com.focusbear.fbmac"
+}()
+
 
 func getBlockedUrlsToBlock()->[String]{
     if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{

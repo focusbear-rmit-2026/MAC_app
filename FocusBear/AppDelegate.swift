@@ -18,7 +18,7 @@ import CoreMedia
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDelegate, SPUUpdaterDelegate {
     
-    let sharedDefaults = UserDefaults(suiteName: "TCUD568B3U.group.com.focusbear.fbmac")
+    let sharedDefaults = UserDefaults(suiteName: fbSharedDefaultsSuiteName)
     @IBOutlet weak var menuItemUninstall: NSMenuItem!
     
     let statusItem = NSStatusBar.system.statusItem(withLength:NSStatusItem.variableLength)
