@@ -64,6 +64,7 @@ jobs:
             -only-testing:"Focus BearTests/AppBlockingTests" \
             -only-testing:"Focus BearTests/URLBlockingTests" \
             -only-testing:"Focus BearTests/validationTest" \
+            -only-testing:"Focus BearTests/ScheduleKitTests" \
             -only-testing:"Focus BearTests/DaysOfWeekTests" \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGN_STYLE=Manual \
