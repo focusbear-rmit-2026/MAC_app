@@ -35,6 +35,8 @@ struct ScheduleBlock {
     var eventID: String?       // calendar event identifier (for meetings, so they can be dismissed)
     var routineName: String?   // for habits: which routine they belong to (used to group them)
     var isDone: Bool = false   // habit completed today — rendered struck through (earlier-today sections)
+    var habitId: String?       // the habit's server id — used to complete/skip a PAST habit by id
+    var isEarlier: Bool = false // from an "earlier today" section (past routine); actioned by id, not index
 
     init(kind: ScheduleBlockKind, title: String, start: Date, end: Date,
          habitIndex: Int? = nil, isActionable: Bool = false, isCurrent: Bool = false,
@@ -64,6 +66,7 @@ struct ScheduleHabitInput {
     let elapsedSeconds: Int     // already elapsed (for the playing habit)
     let cutoff: Date?           // latest time it must be finished by; dropped if it can't be
     var isDone: Bool = false    // completed today — rendered struck through (earlier-today sections)
+    var id: String?             // the habit's server id — needed to complete/skip a PAST habit by id
 }
 
 struct ScheduleMeetingInput {
@@ -182,6 +185,8 @@ enum ScheduleBuilder {
                                       habitIndex: h.index, routineName: seg.name)
                 b.isActionable = seg.actionable
                 b.isDone = h.isDone
+                b.habitId = h.id
+                b.isEarlier = seg.isEarlier
                 blocks.append(b)
                 placed.append(blocks.count - 1)
                 occupied.append((start, end))

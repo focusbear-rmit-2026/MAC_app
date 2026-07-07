@@ -219,7 +219,8 @@ enum ScheduleTab {
                                       isPlaying: playing,
                                       elapsedSeconds: 0,
                                       cutoff: timeToday(h.cutOffTime, now: now),
-                                      isDone: done)
+                                      isDone: done,
+                                      id: h.id)
         }
     }
 
@@ -2069,7 +2070,12 @@ class scheduleViewController: NSViewController {
         for h in habits where !collapsed {
             let isSel = h.isActionable && h.habitIndex == selected
             let rowView: NSView
-            if isSel, let idx = h.habitIndex {
+            if h.isEarlier, !h.isDone, let id = h.habitId {
+                // #2012: a PAST morning habit that wasn't logged — offer a Done/Skip bar so it can be
+                // marked retroactively. Completed by id (schedulePastHabitDone/Skip), never the
+                // index-based live-routine path, which would target the running evening routine.
+                rowView = makePastHabitUnit(h, id: id)
+            } else if isSel, let idx = h.habitIndex {
                 // Selected: render as one connected orange unit (header + action bar, no gap),
                 // matching the habit view.
                 rowView = makeSelectedHabitUnit(h, idx: idx)
@@ -2256,6 +2262,113 @@ class scheduleViewController: NSViewController {
             bar.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor),
         ])
         return container
+    }
+
+    /// #2012: a past (earlier-today) morning habit that hasn't been logged yet — the normal row plus
+    /// a compact Done/Skip bar so it can be completed/skipped retroactively. No Play (you can't
+    /// "start" a habit in the past); completion runs through the by-id host path, never the
+    /// index-based live-routine one.
+    private func makePastHabitUnit(_ block: ScheduleBlock, id: String) -> NSView {
+        let row = makeHabitRow(block, isSelected: false)
+        let bar = makePastActionBar(habitId: id)
+        let unit = NSStackView(views: [row, bar])
+        unit.orientation = .vertical
+        unit.alignment = .leading
+        unit.spacing = 2
+        unit.translatesAutoresizingMaskIntoConstraints = false
+        row.widthAnchor.constraint(equalTo: unit.widthAnchor).isActive = true
+        return unit
+    }
+
+    /// A Done/Skip-only bar for retroactively logging a past morning habit. Each button carries the
+    /// habit id in its identifier so the tap dispatches host.schedulePastHabitDone/Skip(id:).
+    private func makePastActionBar(habitId: String) -> NSView {
+        func column(_ symbol: String, _ fallback: String, _ label: String, _ tag: String) -> NSView {
+            let btn = makePastActionButton(symbol: symbol, fallback: fallback, habitId: habitId, tag: tag,
+                                           diameter: 30, fill: NSColor.systemGray.withAlphaComponent(0.3))
+            let lbl = makeLabel(label, size: 11, bold: false)
+            lbl.textColor = .secondaryLabelColor
+            let col = NSStackView(views: [btn, lbl])
+            col.orientation = .vertical; col.alignment = .centerX; col.spacing = 2
+            col.translatesAutoresizingMaskIntoConstraints = false
+            return col
+        }
+        let bar = NSStackView(views: [
+            column("checkmark", "✓", ScheduleText.done, "pastdone"),
+            column("forward.fill", "≫", ScheduleText.skip, "pastskip"),
+        ])
+        bar.orientation = .horizontal
+        bar.alignment = .top
+        bar.spacing = 22
+        bar.translatesAutoresizingMaskIntoConstraints = false
+
+        let container = NSView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(bar)
+        NSLayoutConstraint.activate([
+            bar.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 20),
+            bar.topAnchor.constraint(equalTo: container.topAnchor, constant: 2),
+            bar.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -8),
+            bar.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor),
+        ])
+        return container
+    }
+
+    /// Like makeActionButton but keyed by habit id (in the identifier) rather than a row index,
+    /// dispatching to pastActionButtonClicked. `tag` is "pastdone" / "pastskip".
+    private func makePastActionButton(symbol: String, fallback: String, habitId: String, tag: String,
+                                      diameter: CGFloat = 30, fill: NSColor? = nil) -> NSView {
+        let disc = NSView()
+        disc.wantsLayer = true
+        disc.layer?.backgroundColor = (fill ?? .clear).cgColor
+        disc.layer?.cornerRadius = diameter / 2
+        disc.layer?.masksToBounds = true
+        disc.translatesAutoresizingMaskIntoConstraints = false
+
+        let btn = NSButton(title: "", target: self, action: #selector(pastActionButtonClicked(_:)))
+        btn.imagePosition = .imageOnly
+        btn.isBordered = false
+        btn.wantsLayer = true
+        if #available(macOS 11.0, *), let base = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) {
+            let cfg = NSImage.SymbolConfiguration(pointSize: diameter * 0.42, weight: .semibold)
+            btn.image = base.withSymbolConfiguration(cfg) ?? base
+        } else {
+            btn.title = fallback
+        }
+        btn.contentTintColor = .labelColor
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        // Encode kind + id; the id can itself contain no ":" collisions because we split on the first.
+        btn.identifier = NSUserInterfaceItemIdentifier("\(tag):\(habitId)")
+
+        disc.addSubview(btn)
+        NSLayoutConstraint.activate([
+            disc.widthAnchor.constraint(equalToConstant: diameter),
+            disc.heightAnchor.constraint(equalToConstant: diameter),
+            btn.leadingAnchor.constraint(equalTo: disc.leadingAnchor),
+            btn.trailingAnchor.constraint(equalTo: disc.trailingAnchor),
+            btn.topAnchor.constraint(equalTo: disc.topAnchor),
+            btn.bottomAnchor.constraint(equalTo: disc.bottomAnchor),
+        ])
+        disc.setContentHuggingPriority(.required, for: .horizontal)
+        disc.setContentCompressionResistancePriority(.required, for: .horizontal)
+        return disc
+    }
+
+    @objc private func pastActionButtonClicked(_ sender: NSButton) {
+        guard let raw = sender.identifier?.rawValue,
+              let sep = raw.firstIndex(of: ":") else { return }
+        let kind = String(raw[..<sep])
+        let id = String(raw[raw.index(after: sep)...])
+        guard !id.isEmpty else { return }
+        switch kind {
+        case "pastdone":
+            host?.schedulePastHabitDone(id: id)
+            scheduleReload(after: 0.3)
+        case "pastskip":
+            host?.schedulePastHabitSkip(id: id)
+            scheduleReload(after: 0.25)
+        default: break
+        }
     }
 
     // MARK: Non-habit cards (meeting / deep work / markers)
