@@ -156,21 +156,20 @@ protocol ScheduleHost: AnyObject {
     func cancelledRoutine() -> (sectionName: String, message: String, buttonTitle: String)?
     /// Perform the uncancel (force-uncomplete) for the cancelled routine — fired by that button.
     func uncancelRoutine()
-    /// Complete / skip a PAST morning habit (surfaced in the "Show events from earlier today" accordion)
-    /// **by id**, without disturbing the live routine. No Play — you can't start a past habit. Default
-    /// no-op; only the active-routine host (`firstViewController`) implements these for now (staged per
-    /// PR #2012 / Prashant's by-id design). See `firstViewController.completePastMorningHabit`.
+    /// Mark a PAST morning habit (surfaced in the "Show events from earlier today" accordion) as done
+    /// **by id**, without disturbing the live routine. No Play (you can't start a past habit) and no
+    /// Skip (an un-struck earlier-today habit is already evidently un-done). Default no-op; only the
+    /// active-routine host (`firstViewController`) implements it (PR #2012 / Prashant's by-id design).
+    /// See `firstViewController.completePastMorningHabit`.
     func schedulePastHabitDone(id: String)
-    func schedulePastHabitSkip(id: String)
 }
 
 extension ScheduleHost {
     func cancelledRoutine() -> (sectionName: String, message: String, buttonTitle: String)? { nil }
     func uncancelRoutine() {}
-    // Default no-ops so hosts that don't surface past habits (routinePostponedInfoVc, habitsStateVc)
-    // needn't implement them — the earlier-today accordion is only actionable on the active host.
+    // Default no-op so hosts that don't surface past habits (routinePostponedInfoVc, habitsStateVc)
+    // needn't implement it — the earlier-today accordion is only actionable on the active host.
     func schedulePastHabitDone(id: String) {}
-    func schedulePastHabitSkip(id: String) {}
 }
 
 /// Shared helpers for installing the Schedule tab into a host habit screen. Each host
@@ -2280,8 +2279,9 @@ class scheduleViewController: NSViewController {
         return unit
     }
 
-    /// A Done/Skip-only bar for retroactively logging a past morning habit. Each button carries the
-    /// habit id in its identifier so the tap dispatches host.schedulePastHabitDone/Skip(id:).
+    /// A Done-only bar for retroactively logging a past morning habit — there's no Skip because an
+    /// un-struck earlier-today habit is already evidently un-done. The button carries the habit id in
+    /// its identifier so the tap dispatches host.schedulePastHabitDone(id:).
     private func makePastActionBar(habitId: String) -> NSView {
         func column(_ symbol: String, _ fallback: String, _ label: String, _ tag: String) -> NSView {
             let btn = makePastActionButton(symbol: symbol, fallback: fallback, habitId: habitId, tag: tag,
@@ -2295,7 +2295,6 @@ class scheduleViewController: NSViewController {
         }
         let bar = NSStackView(views: [
             column("checkmark", "✓", ScheduleText.done, "pastdone"),
-            column("forward.fill", "≫", ScheduleText.skip, "pastskip"),
         ])
         bar.orientation = .horizontal
         bar.alignment = .top
@@ -2364,9 +2363,6 @@ class scheduleViewController: NSViewController {
         case "pastdone":
             host?.schedulePastHabitDone(id: id)
             scheduleReload(after: 0.3)
-        case "pastskip":
-            host?.schedulePastHabitSkip(id: id)
-            scheduleReload(after: 0.25)
         default: break
         }
     }
