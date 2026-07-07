@@ -574,19 +574,8 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
 }
 
 func getBrowserAllWindowStructSafeInBackground(browser: BROWSER) -> [String : [String]]? {
-    var browserStruct: [String : [String]]? = nil
-
-    let semaphore = DispatchSemaphore(value: 0)
-
-    // AppleScript must run on MAIN
-    DispatchQueue.main.async {
-        
-        browserStruct = getBrowserAllWindowStruct(browser: browser)
-        semaphore.signal()
-    }
-
-    // Wait for the main thread to finish
-    semaphore.wait()
-
-    return browserStruct
+    // Call directly on the caller's (background) thread — runAppleScriptSafely already runs the script
+    // off the main thread. The old DispatchQueue.main bounce forced the blocking browser AppleScript
+    // onto the main thread (UI freeze / AppHang / blank Day Plan).
+    return getBrowserAllWindowStruct(browser: browser)
 }
