@@ -2574,8 +2574,12 @@ func shouldAskPassword(forPostpone:Bool = false)->Bool{
     // once before the duration picker, once when applying the chosen duration) — so it never unlocked and
     // looped (bug report 2026-07-06). Now a postpone honours the recent-unlock grace: the password is
     // asked once, then again only after the grace (~2 min) — "unlock for the postpone, ask next time".
-    _ = forPostpone
-    let bypassGrace = isFullScreenWindowCurrentlyShowing()
+    // A postpone must honour the recent-unlock grace EVEN in the borderless full-screen routine window
+    // (the evening routine runs there). Without the `!forPostpone`, full-screen forced bypassGrace=true,
+    // so shouldAskPassword returned true before the grace was ever consulted — the postpone flow's second
+    // gate re-prompted the instant after the password was entered, and it looped (report 2026-07-07).
+    // The lock screen itself (non-postpone) still always re-asks in full-screen.
+    let bypassGrace = isFullScreenWindowCurrentlyShowing() && !forPostpone
     if !bypassGrace{
         if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{
             if Date() < lastUnlockTimeByAccountabilityBuddy{
