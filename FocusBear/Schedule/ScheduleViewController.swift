@@ -1687,7 +1687,12 @@ class scheduleViewController: NSViewController {
         // #2010: a cancelled routine swaps its section for an uncancel message — include it so toggling
         // cancel/uncancel forces a re-render instead of being cached away.
         let cancelledSig = host?.cancelledRoutine()?.sectionName ?? ""
-        let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(selectedPastHabitId ?? "-")|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(collapseSig)|\(dwCollapseSig)|\(cancelledSig)|\(taskSig)|"
+        // Completion state for the viewed day — WITHOUT this, marking a (past) habit done doesn't change
+        // the signature, so reload() early-returns and the strike-through never appears. Counts suffice
+        // since completion is append-only per day.
+        let dayKey = getStringFromDate(date: selectedDate, dateFormat: "yyyy-MM-dd")
+        let completedSig = "\(dayPlanCompletedHabitIds.count)-\(dayPlanCompletedHabitIdsByDay[dayKey]?.count ?? 0)"
+        let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(selectedPastHabitId ?? "-")|\(completedSig)|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(collapseSig)|\(dwCollapseSig)|\(cancelledSig)|\(taskSig)|"
             + blocks.map { "\($0.kind)\($0.title)\(Int($0.start.timeIntervalSince1970))\(Int($0.end.timeIntervalSince1970))\($0.isCurrent)\($0.isActionable)" }.joined(separator: ";")
         if signature == lastRenderSignature, !stackView.arrangedSubviews.isEmpty { return }
         lastRenderSignature = signature

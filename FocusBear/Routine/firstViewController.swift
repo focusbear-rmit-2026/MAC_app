@@ -1141,13 +1141,21 @@ class firstViewController: NSViewController {
         }
     }
 
-    /// Add a log-quantity / take-notes popup over the Day Plan (this VC's own view), so it's visible when
-    /// completing a PAST habit — the normal showLogQuantityView()/showTakeNotesView() attach to the
-    /// hidden routine-player view. The popups remove themselves from their superview on OK/Cancel.
+    /// Add a log-quantity / take-notes popup over the Day Plan so it's visible when completing a PAST
+    /// habit — the normal showLogQuantityView()/showTakeNotesView() attach to the routine-player view
+    /// (habitsVc), which is hidden behind the Day Plan, so the popup rendered off-screen. Present it on
+    /// the WINDOW's content view (the top-most visible container) so it's always on top. The popups
+    /// remove themselves from their superview on OK/Cancel.
     private func presentPastHabitPopup(_ popupView: NSView?) {
-        guard let popupView = popupView else { return }
-        view.addSubview(popupView)
-        view.addConstraints(subView: popupView)
+        guard let popupView = popupView else {
+            addLog(text: "past-habit popup: view was nil — cannot present")
+            return
+        }
+        popupView.removeFromSuperview()   // detach if it was still attached to habitsVc from a live use
+        let host = view.window?.contentView ?? mainViewControllerObj?.view ?? view
+        addLog(text: "past-habit popup: presenting on \(view.window != nil ? "window.contentView" : "fallback")")
+        host.addSubview(popupView)
+        host.addConstraints(subView: popupView)
     }
 
     func eveningHabitAlreadyDoneClicked(){
