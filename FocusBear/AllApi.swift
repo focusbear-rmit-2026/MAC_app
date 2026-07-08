@@ -758,7 +758,42 @@ class AllApi:NSObject {
     
     var errorCodeRequestTimeout = -1001
     var errorCodeNoInternet = -1009
-    
+
+    /// #2150: the habits the user actually COMPLETED on a past day, so the Day Plan can strike them
+    /// through when navigating back. `GET /completed-activity-sequence/routine-progress?date=&timezone=`
+    /// returns the same shape as `today_routine_progress` (per-routine `completed_habit_ids` /
+    /// `skipped_habit_ids`). Note `completed_habit_ids` includes skipped ones, so we subtract
+    /// `skipped_habit_ids` to get strictly-completed. Best-effort — nil on any failure (Day Plan then
+    /// falls back to the local per-day cache).
+    func fetchDayRoutineProgress(dayKey: String, completion: @escaping (_ completedIds: Set<String>?) -> Void) {
+        appdelegate?.credentialsManager.credentials { credentialsInfo in
+            appdelegate?.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            guard appdelegate?.credential != nil else { DispatchQueue.main.async { completion(nil) }; return }
+            let tz = TimeZone.current.identifier
+            let path = "\(baseUrl)/completed-activity-sequence/routine-progress?date=\(dayKey)&timezone=\(tz)"
+            guard let encoded = path.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                  let url = NSURL(string: encoded) else { DispatchQueue.main.async { completion(nil) }; return }
+            let request = makeRequest(responsePathUrl: url)
+            request.httpMethod = "GET"
+            URLSession.shared.dataTask(with: request as URLRequest) { data, response, _ in
+                guard let http = response as? HTTPURLResponse, http.statusCode == 200, let data = data,
+                      let json = (try? JSONSerialization.jsonObject(with: data)) as? NSDictionary else {
+                    DispatchQueue.main.async { completion(nil) }; return
+                }
+                // Union strictly-completed ids across every routine in the payload (morning / evening /
+                // any custom or standalone), robust to which routine keys are present for the day.
+                var completed = Set<String>()
+                for value in json.allValues {
+                    guard let routine = value as? NSDictionary else { continue }
+                    let done = (routine["completed_habit_ids"] as? [String]).map(Set.init) ?? []
+                    let skipped = (routine["skipped_habit_ids"] as? [String]).map(Set.init) ?? []
+                    completed.formUnion(done.subtracting(skipped))
+                }
+                DispatchQueue.main.async { completion(completed) }
+            }.resume()
+        }
+    }
+
     func getLastActivityInfo(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
         addLog(text: "func call:- downloading getLastActivityInfo file")
         

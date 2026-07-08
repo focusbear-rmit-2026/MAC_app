@@ -1481,13 +1481,25 @@ class scheduleViewController: NSViewController {
         reloadLive()
     }
 
-    /// Pull the day's planned to-dos from the backend once per day shown, then refresh the panel so
-    /// completions/plans made on other devices appear. Throttled by `lastHydratedDay`.
+    /// Pull the day's backend state once per day shown, then refresh so completions made on other
+    /// devices appear: planned to-dos (task panel) and — for a PAST day — the habits actually
+    /// completed that day (#2150), which populate the per-day cache the "earlier today" accordion
+    /// strikes through. Today's habit completions already come from current-activity-props, so we only
+    /// fetch routine-progress for past days. Throttled by `lastHydratedDay`.
     private func hydrateTasksIfNeeded() {
         if let d = lastHydratedDay, Calendar.current.isDate(d, inSameDayAs: selectedDate) { return }
         lastHydratedDay = selectedDate
         DayPlanTaskStore.shared.loadAndHydrate(for: selectedDate) { [weak self] in
             self?.tasksPanel.reload()
+        }
+        if !isViewingToday {
+            let dayKey = getStringFromDate(date: selectedDate, dateFormat: "yyyy-MM-dd")
+            allApiObject.fetchDayRoutineProgress(dayKey: dayKey) { completedIds in
+                guard let completedIds = completedIds, !completedIds.isEmpty else { return }
+                // Backend is the source of truth for the day; union with any local backdated
+                // completions not yet synced. The didSet re-renders the Day Plan.
+                dayPlanCompletedHabitIdsByDay[dayKey, default: []].formUnion(completedIds)
+            }
         }
     }
 
