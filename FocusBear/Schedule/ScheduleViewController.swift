@@ -1442,6 +1442,10 @@ class scheduleViewController: NSViewController {
     /// Last day we pulled the backend Day Plan for, so hydration fires once per day shown (not on
     /// every timer-driven reload). Reset when the selected day changes.
     private var lastHydratedDay: Date?
+    /// Separate throttle for the #2150 routine-progress fetch: unlike task hydration it also fires for
+    /// TODAY once the routine completes (see hydrateTasksIfNeeded), so it can't share lastHydratedDay
+    /// (which was already set when the Day Plan was first shown earlier today, before completion).
+    private var lastProgressFetchDay: Date?
 
 #if DEBUG
     /// When set, reload() renders this fixed mock data instead of the live routine/calendar state
@@ -1487,19 +1491,37 @@ class scheduleViewController: NSViewController {
     /// strikes through. Today's habit completions already come from current-activity-props, so we only
     /// fetch routine-progress for past days. Throttled by `lastHydratedDay`.
     private func hydrateTasksIfNeeded() {
-        if let d = lastHydratedDay, Calendar.current.isDate(d, inSameDayAs: selectedDate) { return }
-        lastHydratedDay = selectedDate
-        DayPlanTaskStore.shared.loadAndHydrate(for: selectedDate) { [weak self] in
-            self?.tasksPanel.reload()
-        }
-        if !isViewingToday {
-            let dayKey = getStringFromDate(date: selectedDate, dateFormat: "yyyy-MM-dd")
-            allApiObject.fetchDayRoutineProgress(dayKey: dayKey) { completedIds in
-                guard let completedIds = completedIds, !completedIds.isEmpty else { return }
-                // Backend is the source of truth for the day; union with any local backdated
-                // completions not yet synced. The didSet re-renders the Day Plan.
-                dayPlanCompletedHabitIdsByDay[dayKey, default: []].formUnion(completedIds)
+        // Task-panel hydration — once per day shown.
+        if lastHydratedDay == nil || !Calendar.current.isDate(lastHydratedDay!, inSameDayAs: selectedDate) {
+            lastHydratedDay = selectedDate
+            DayPlanTaskStore.shared.loadAndHydrate(for: selectedDate) { [weak self] in
+                self?.tasksPanel.reload()
             }
+        }
+
+        // Routine-progress (#2150) → per-day completed-habit cache (strike-through). Fetch for PAST
+        // days always; for TODAY whenever we're between routines (._NOTHING_ — not in progress /
+        // postponed). This covers BOTH the completed morning (daytime) AND the completed evening (which
+        // runs during the shutoff window). We deliberately do NOT gate on isHabitAlreadyShowed: after
+        // the evening routine that flag is FALSE (it ends into the shutoff flow — confirmed via
+        // diagnostics), which would block the fetch. A genuine not-started ._NOTHING_ just fetches an
+        // empty result (harmless no-op).
+        //
+        // Reset the throttle whenever a routine is active/postponed, so each time we settle back into
+        // ._NOTHING_ (a routine just finished — morning OR evening) we fetch fresh progress once, rather
+        // than being blocked by an earlier same-day fetch.
+        if isViewingToday && currentState != ._NOTHING_ { lastProgressFetchDay = nil }
+        let todayRoutineComplete = isViewingToday && currentState == ._NOTHING_
+        let shouldFetchProgress = !isViewingToday || todayRoutineComplete
+        let alreadyFetched = lastProgressFetchDay.map { Calendar.current.isDate($0, inSameDayAs: selectedDate) } ?? false
+        guard shouldFetchProgress, !alreadyFetched else { return }
+        lastProgressFetchDay = selectedDate
+        let dayKey = getStringFromDate(date: selectedDate, dateFormat: "yyyy-MM-dd")
+        allApiObject.fetchDayRoutineProgress(dayKey: dayKey) { completedIds in
+            guard let completedIds = completedIds, !completedIds.isEmpty else { return }
+            // Backend is the source of truth for the day; union with any local backdated completions
+            // not yet synced. The didSet re-renders the Day Plan.
+            dayPlanCompletedHabitIdsByDay[dayKey, default: []].formUnion(completedIds)
         }
     }
 
