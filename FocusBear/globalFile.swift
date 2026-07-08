@@ -220,7 +220,11 @@ func recordPastHabitCompletionViaOfflineSync(activity_id: String, activity_seque
     markPastHabitDoneInDayPlan(id: activity_id, dayKey: dayKey)
 }
 
-let kEveningShutdownPromptDate = "kEveningShutdownPromptDate"
+/// Per-user key: the current user's id is appended in SettingsManager.resetAllKeys() (the app-wide
+/// convention for per-user UserDefaults keys), so a shutdown prompt one account triggers can't leak to
+/// a different account that signs in on the same device — UserDefaults.standard is shared across
+/// Focus Bear accounts. `var` (not `let`) so resetAllKeys() can append the id.
+var kEveningShutdownPromptDate = "kEveningShutdownPromptDate"
 
 /// The evening routine finished today → the Day Plan shows the shutdown prompt at its bottom (#2005
 /// part 4). Not a standalone window — only inside the Day Plan, only for the rest of today.

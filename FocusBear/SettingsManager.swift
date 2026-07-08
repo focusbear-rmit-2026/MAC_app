@@ -239,7 +239,9 @@ class SettingsManager:NSObject{
     
     func resetAllKeys() {
         kUserdefaultsLocalDeviceSettings = kUserdefaultsLocalDeviceSettings + (appdelegate?.user?.userId ?? "")
-        
+        // Per-user so the evening shutdown prompt doesn't leak across accounts on the same device.
+        kEveningShutdownPromptDate = kEveningShutdownPromptDate + (appdelegate?.user?.userId ?? "")
+
         kUserdefaultsAppPassword = kUserdefaultsAppPassword + (appdelegate?.user?.userId ?? "")
         
         kUserdefaultsPasswordRequireInChangeSettings = kUserdefaultsPasswordRequireInChangeSettings + (appdelegate?.user?.userId ?? "")
