@@ -1986,8 +1986,13 @@ class habitsVc: NSViewController {
         leftMenuVcObj?.habitOver()
         currentHabitIndex = -1
         hideBlankWindowInSecondaryMonitor()
+        // Surface the "well done — sleep / shut down" prompt at the bottom of the Day Plan (#2005 part 4).
+        // ONLY on the unlock path (before cutoff): here the old shutdown-time screen isn't shown yet, so
+        // this prompt is the user's only way to sleep/shut down. The shutOff path (after cutoff) already
+        // shows that screen, so eveningHabitFinishShowShutOff() must NOT set this.
+        markEveningRoutineDoneForShutdownPrompt()
     }
-    
+
     func eveningHabitFinishShowShutOff(){//evening habit Sequence Finished
         addLog(text: "evening habit Finished")
         // #1982 follow-up: evening routine completed — clear the saved postponed-routine state so the

@@ -117,6 +117,14 @@ extension routinePostponedInfoVc: ScheduleHost {
         btnSkipClicked(sender: proxy)
     }
 
+    // A PAST habit completes BY ID, independent of the (postponed) live routine — forward to the shared
+    // firstViewController flow (backdated /sync + popup/password on the key window). Without this the
+    // default no-op ate the tap: symptom was clicking Complete while the routine is postponed did nothing
+    // and wrote no log line. See Mac #2012.
+    func schedulePastHabitDone(id: String, performedAt: Date) {
+        firstViewControllerObj?.completePastHabit(id: id, performedAt: performedAt)
+    }
+
     /// Opens the shared "choose which habits to do today" sheet, mirroring the Habits view's
     /// "I don't have time for all these habits" action.
     func scheduleSkipRoutineForToday() {
@@ -124,6 +132,7 @@ extension routinePostponedInfoVc: ScheduleHost {
         guard let vc = mainStoryboard.instantiateController(
             withIdentifier: NSStoryboard.SceneIdentifier("chooseHabitsVC")) as? chooseHabitsVC else { return }
         vc.currentHabitIndex = -1
+        vc.openedFromDayPlan = true   // keep the window open on skip (planning, not in-routine)
         presentAsSheet(vc)
     }
 }

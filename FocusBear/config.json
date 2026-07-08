@@ -487,6 +487,7 @@
         "toolTipLockedFocus": "Use this if you want to focus on using one app/reading one article. We'll detect the current app + site you have open and block everything else.",
         "menuItemOpenChecklistTitle": "Open checklist",
         "menuItemMeetingDetectionBreaksOnTitle": "Meeting active - breaks on",
+        "menuItemMeetingDetectionBreaksOnTooltip": "Breaks are still on during this meeting because you've turned on \"Show breaks in call\". You can turn that off in Settings if you'd rather not be interrupted while presenting.",
         "menuItemPauseFocusModeTitle": "Pause this focus mode",
         "menuItemStopFocusModeTitle": "Stop this focus mode",
         "menuItemResumeFocusModeTitle": "Resume this focus mode",
@@ -1135,6 +1136,13 @@
         "titleAskOfficeMode": "Do you not have time for a break right now or are you in the office and it's not appropriate to do <ACTIVITY>?",
         "buttonDontHaveTimeText": "I don't have time",
         "buttonInTheOffIceText": "I'm in the offIce"
+    },
+    "eveningShutdownInfo": {
+        "title": "Well done on finishing your evening routine",
+        "subtitle": "Have a restful sleep",
+        "buttonSleepText": "Sleep",
+        "buttonShutDownText": "Shut Down",
+        "buttonNotNowText": "Not now"
     },
     "brainDumpVcInfo": {
         "title": "Focus Bear - Brain dump",
@@ -2146,7 +2154,9 @@
         "title": "Hiya, do you still want to do your morning routine today or skip it?",
         "subTitle": "(Asking because it's <HOUR> hours since your routine start time and it might not make sense to do it today)",
         "buttonSkipText": "Skip it",
-        "buttonDoHabitsText": "Do my habits"
+        "buttonDoHabitsText": "Do my habits",
+        "buttonPostponeText": "Not now",
+        "buttonSkipRoutineText": "Skip routine for today"
     },
     "settingsMeetingDetactionVcInfo": {
         "descriptionSuggestMeetingsFocusMode": "When you start a video call, Focus Bear can prompt you to start the Meeting focus mode to help you stay focused during the meeting",
@@ -2730,6 +2740,8 @@
         "play": "Play",
         "done": "Done",
         "skip": "Skip",
+        "pastHabitComplete": "Complete",
+        "pastHabitCompleteHint": "I actually did it but forgot to log it 😅",
         "habitsDone": "Habits done",
         "meeting": "meeting",
         "meetingDefaultTitle": "Meeting",

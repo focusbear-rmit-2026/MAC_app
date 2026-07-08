@@ -594,9 +594,12 @@ class focusSummaryVc: NSViewController {
         getHabitsVcObject().timerGiveOneMoreMinut = nil
         closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
 
+        // Clear ._FOCUS_SUMMARY_ first: shutOffMac() early-returns when currentState is ._FOCUS_SUMMARY_,
+        // so without this the call would do nothing. Then route the Focus Summary "Continue" through the
+        // shutdown flow so shutOffMac() can display the completed evening routine before the shutdown prompt.
         currentState = ._NOTHING_
-        appdelegate?.shutOffMac()
         viewVisibleCount = 0
+        appdelegate?.shutOffMac()
     }
     
     @IBAction func btnNeedMoreTimeClicked(_ sender: Any) {        

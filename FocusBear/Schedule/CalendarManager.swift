@@ -352,6 +352,25 @@ final class DayPlanSync {
         send(req, label: "undismissEvent")
     }
 
+    // MARK: Day Plan tasks (per day)
+    // #2104 (final) makes the Day Plan a POINTER into to-dos via `planned_date`, not a copy table —
+    // there is no `/day-plan/day/:day/task` route. So a Day Plan task that came from a to-do syncs
+    // through the normal `PUT /to-do` upsert: `setTodoPlanned` (below) plans/unplans it and
+    // `setTodoStatus` marks it complete. From-scratch tasks (no `sourceTaskId`) stay local-only.
+
+    /// Reflect a Day Plan task's completion onto its backend to-do so web/mobile lists update too.
+    /// The upsert reuses the create DTO, so `title` + `quadrant` are echoed back to avoid clobbering.
+    func setTodoStatus(todoID: String, title: String, quadrant: Int, completed: Bool) {
+        let body: [String: Any] = [
+            "id": todoID,
+            "title": title,
+            "eisenhower_quadrant": quadrant,
+            "status": completed ? "COMPLETED" : "NOT_STARTED",
+        ]
+        guard let req = request("/to-do", method: "PUT", body: body) else { return }
+        send(req, label: "setTodoStatus")
+    }
+
     // MARK: Event colours (global, per event)
     func loadEventColours(completion: @escaping (_ byEventID: [String: String]) -> Void) {
         guard isAuthed, let req = request("/day-plan/event-colour", method: "GET") else { completion([:]); return }

@@ -10,7 +10,8 @@ import Cocoa
 
 class lateMorningHabitPopupVc: NSViewController {
 
-    @IBOutlet weak var btnSkip: Button!
+    @IBOutlet weak var btnPostpone: Button!
+    @IBOutlet weak var btnSkip: underLineButton!
     @IBOutlet weak var btnDoHabits: Button!
     @IBOutlet weak var lblSubTitle: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
@@ -20,15 +21,18 @@ class lateMorningHabitPopupVc: NSViewController {
         lblTitle.stringValue = "Hiya, do you still want to do your morning routine today or skip it?"
         
         btnDoHabits.title = "Do my habits"
-        btnSkip.title = "Skip it"
+        btnPostpone.title = "Not now"
+        btnSkip.title = "Skip routine for today"
         if let lateMorningHabitPopupVcInfo = configjson.value(forKey: "lateMorningHabitPopupVcInfo") as? NSDictionary{
             lblTitle.stringValue = lateMorningHabitPopupVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
             btnDoHabits.title = lateMorningHabitPopupVcInfo.value(forKey: "buttonDoHabitsText") as? String ?? btnDoHabits.title
-            btnSkip.title = lateMorningHabitPopupVcInfo.value(forKey: "buttonSkipText") as? String ?? btnSkip.title
+            btnPostpone.title = lateMorningHabitPopupVcInfo.value(forKey: "buttonPostponeText") as? String ?? btnPostpone.title
+            btnSkip.title = lateMorningHabitPopupVcInfo.value(forKey: "buttonSkipRoutineText") as? String ?? btnSkip.title
         }
         
-        btnSkip.isSecondaryButton = true
+        btnPostpone.isSecondaryButton = true
     }
+    
     override func viewWillAppear() {
         let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
         let currentDate = Date()
@@ -70,5 +74,10 @@ class lateMorningHabitPopupVc: NSViewController {
         if !isAnyNagVisible{
             firstViewControllerObj?.showConfirmRoutineDurationViewIfNeeded()
         }
+    }
+    
+    @IBAction func btnPostponeClicked(_ sender: Any) {
+        self.dismiss(self)
+        getHabitsVcObject().btnAbortClicked(self)
     }
 }

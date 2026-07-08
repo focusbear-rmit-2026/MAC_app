@@ -53,6 +53,10 @@ class habitsStateVc: NSViewController {
             nextRoutineTimeCancelledMorningRoutineWithUndo = habitsStateVcInfo.value(forKey: "nextRoutineTimeCancelledMorningRoutineWithUndo") as? String ?? nextRoutineTimeCancelledMorningRoutineWithUndo
         }
         btnUnCancelRoutine.title = buttonUncancelEveningRoutine
+
+        // #2010: show the Day Plan schedule over this "between routines" state instead of just the
+        // "next routine" message, so a completed routine stays visible (with a force-uncomplete action).
+        setupScheduleTab()
     }
     
     override func viewWillAppear() {
@@ -69,6 +73,10 @@ class habitsStateVc: NSViewController {
         addLog(text:"habitsStateVc:- reloadData")
         isFreeTimeBeforeShutoff = false
         editRoutineButtonShowing = false
+        // Default to showing this VC's own Day Plan overlay. The postpone / break-from-postpone branches
+        // below embed routinePostponedInfoVc (which owns its own working Day Plan) and hide this overlay
+        // via showRutinePostponedInfoView, so its Play/Done/Skip aren't swallowed (#2010 regression).
+        setOwnDayPlanHidden(false)
         
         btnResumeHabits.isHidden = false
         lblTitle.isHidden = false
@@ -295,6 +303,9 @@ class habitsStateVc: NSViewController {
         btnResumeHabits.isHidden = true
         lblTitle.isHidden = true
         customView.isHidden = false
+        // Hide this VC's own Day Plan overlay so the embedded routinePostponedInfoVc (which owns a
+        // working Day Plan) is the interactive one; otherwise the overlay's no-op Play/Done/Skip win.
+        setOwnDayPlanHidden(true)
         customView.addSubview(getRutinePostponedInfoVcObject().view)
         customView.addConstraints(subView: getRutinePostponedInfoVcObject().view)
         getRutinePostponedInfoVcObject().lCurrentState = state
@@ -340,6 +351,10 @@ class habitsStateVc: NSViewController {
     }
     
     
+    /// #2010: name of the routine section (morning/evening habits) that was force-cancelled — the Day
+    /// Plan replaces just that section with the uncancel message. nil when nothing is cancelled.
+    var cancelledRoutineName: String?
+
     @IBAction func btnUnCancelRoutineClicked(_ sender: Any) {
         mainViewControllerObj?.showLoaderView()
         if isShutOffTimeGoing(){
@@ -405,6 +420,15 @@ class habitsStateVc: NSViewController {
             
             DispatchQueue.main.async { [self] in
                 self.btnUnCancelRoutine.isHidden = !shouldShowButton
+                // #2010: keep the Day Plan fully visible even when the routine is cancelled — the
+                // cancelled routine's SECTION is replaced with the uncancel message + button (see
+                // cancelledRoutine() / makeHabitGroupCard). Record which section is cancelled, keep the
+                // Day Plan up, and re-render so the section swaps to the message.
+                self.cancelledRoutineName = shouldShowButton
+                    ? (isEveningRoutine ? ScheduleText.eveningRoutineHabits : ScheduleText.morningRoutineHabits)
+                    : nil
+                self.applyDayPlanVisibility(cancelled: false)
+                self.refreshScheduleIfVisible()
                 btnResumeHabits.isSecondaryButton = true
                 if isEveningRoutine{
                     

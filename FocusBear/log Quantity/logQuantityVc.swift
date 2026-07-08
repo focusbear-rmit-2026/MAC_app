@@ -94,10 +94,19 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
     var notes:String = ""
     var textFieldStringCount = 0
     var is_skipped = false
+    // #2012: this popup is logging a PAST morning habit from the Day Plan (not the live routine). Forces
+    // should_not_update_current_activity: true so the running evening routine is untouched, and marks the
+    // habit done in the Day Plan on completion. pastHabitId is the habit whose row should strike through.
+    var isPastHabit = false
+    var pastHabitId: String?
+    var pastHabitDayKey: String?      // yyyy-MM-dd of the backdated completion (for per-day strike-through)
     var logQuantityQuestions:[quantityQuestion] = [quantityQuestion]()
 //    var currentQuestionIndex = 0
     func resetData(name:String, durationInSeconds:String, logQuantityQuestion:String?, currentState:CURRENTSTATE, logQuantityType:String, activity_id:String, activity_sequence_id:String, activityChoiceId:String?, take_notes:String, notes:String, logQuantityQuestions:[quantityQuestion]){
         self.is_skipped = false
+        self.isPastHabit = false          // cleared each open; the past-habit caller re-sets it after resetData
+        self.pastHabitId = nil
+        self.pastHabitDayKey = nil
         self.activityChoiceId = nil
         self.activityChoiceId = activityChoiceId
         self.activity_id = activity_id
@@ -236,14 +245,21 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         if take_notes == END_OF_ACTIVITY{
             getHabitsVcObject().showTakeNotesView()
             takeActivityNotesVcObj?.resetData(durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:0.0, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: [])
+            takeActivityNotesVcObj?.isPastHabit = isPastHabit   // #2012: carry the past-habit flag through
+            takeActivityNotesVcObj?.pastHabitId = pastHabitId
+                takeActivityNotesVcObj?.pastHabitDayKey = pastHabitDayKey
 
         }else if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
             let currentFocusModeName = currentRunningFocusType["name"] as? String ?? ""
             let currentFocusModeId = currentRunningFocusType["id"] as? String ?? ""
-            
+
             getHabitsVcObject().showFocusCompletedView()
             focusModeActualDurationPerformed = Int(durationInSeconds) ?? 0
             focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:0.0, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: [], notes: notes)
+        }else if isPastHabit{
+            // #2012: a PAST habit → offline-sync (/completed-activity/sync) so it lands on the right
+            // date's sequence log (with that day's stats) and never disturbs the live routine.
+            recordPastHabitCompletionViaOfflineSync(activity_id: activity_id, activity_sequence_id: activity_sequence_id, performedAt: lastActivityPerformedTime!, duration: Int(durationInSeconds) ?? 0, quantity: 0.0, notes: notes, dayKey: pastHabitDayKey ?? "")
         }else{
             if lCurrentState! == ._EVENING_HABIT_{
                 if activityCompletionVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
@@ -265,7 +281,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             })
 
         }
-        
+
     }
 
     
@@ -330,13 +346,20 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             if take_notes == END_OF_ACTIVITY{
                 getHabitsVcObject().showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:logQuantityQuestions[0].quantity, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: log_quantity_answers)
+                takeActivityNotesVcObj?.isPastHabit = isPastHabit   // #2012: carry the past-habit flag through
+                takeActivityNotesVcObj?.pastHabitId = pastHabitId
+                takeActivityNotesVcObj?.pastHabitDayKey = pastHabitDayKey
             }else if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
                 let currentFocusModeName = currentRunningFocusType["name"] as? String ?? ""
                 let currentFocusModeId = currentRunningFocusType["id"] as? String ?? ""
-                
+
                 getHabitsVcObject().showFocusCompletedView()
                 focusModeActualDurationPerformed = Int(durationInSeconds) ?? 0
                 focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:logQuantityQuestions[0].quantity, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: log_quantity_answers, notes: notes)
+            }else if isPastHabit{
+                // #2012: a PAST habit → offline-sync (/completed-activity/sync) so it lands on the right
+                // date's sequence log (with that day's stats) and never disturbs the live routine.
+                recordPastHabitCompletionViaOfflineSync(activity_id: activity_id, activity_sequence_id: activity_sequence_id, performedAt: lastActivityPerformedTime!, duration: Int(durationInSeconds) ?? 0, quantity: logQuantityQuestions[0].quantity, notes: notes, dayKey: pastHabitDayKey ?? "")
             }else{
                 if lCurrentState! == ._EVENING_HABIT_{
                     if activityCompletionVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
@@ -348,8 +371,6 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
                     should_not_update_current_activity = true
                 }
 
-
-                
                 allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:logQuantityQuestions[0].quantity, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, is_skipped:is_skipped, notes: notes, should_not_update_current_activity: should_not_update_current_activity, log_quantity_answers: log_quantity_answers, completionHandler: {dic  in
                     DispatchQueue.main.async {
 
