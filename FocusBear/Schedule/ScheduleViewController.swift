@@ -1527,6 +1527,7 @@ class scheduleViewController: NSViewController {
 
     /// Rebuild the timetable from the live routine + calendar state.
     private func reloadLive() {
+        addLog(text: "reloadLive: enter host=\(host != nil ? String(describing: type(of: host!)) : "NIL")")   // freeze-diag: pairs with the "dayplan reload:" log near the end to bracket the render
         // NOTE: we deliberately do NOT auto-request calendar access here. Firing the system TCC
         // prompt the first time the Day Plan renders surprises a brand-new user with a permission
         // dialog they never asked for. Instead, the "Connect your calendar" banner (with its

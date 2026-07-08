@@ -5418,13 +5418,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 }
                                 allApiObject.getLastActivityInfo(completionHandler: { json in
                                     DispatchQueue.main.async {
+                                        addLog(text: "current-activity-props completion: enter")   // freeze-diag: bracket the completion (2026-07-09 hang dead-ended right after 'success')
                                         if isMainWindowLoaded{// if main window is visible show loader
                                             if mainWindowControllerObj?.window?.isVisible ?? false{
                                                 getHabitsVcObject().removeSubViews()
                                             }
                                         }
-                                        
+
                                         getHabitsVcObject().hideLoaderView()
+                                        addLog(text: "current-activity-props completion: loader hidden, processing json")   // freeze-diag
                                         if json != nil{
                                             //                print(json)
                                             // check is there any change in settings
