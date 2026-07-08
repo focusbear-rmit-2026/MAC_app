@@ -55,11 +55,40 @@ extension habitsStateVc: ScheduleHost {
     // MARK: - ScheduleHost
 
     func scheduleSegments(now: Date) -> [ScheduleRoutineSegment] {
-        // Render the (completed) morning routine — dropCompleted:false so the done habits still show —
-        // plus the evening / custom previews, so the whole day is visible even after completion.
         let isMorning = currentState != ._EVENING_HABIT_ && currentState != ._POSTPONE_EVENING_HABIT_
-        let source = isMorning ? arrFilteredMorningHabits : arrFilteredEveningHabits
         let name = isMorning ? ScheduleText.morningRoutineHabits : ScheduleText.eveningRoutineHabits
+
+        // Recheck on every (re)build: if the routine has ALREADY run today (the app's own "done for
+        // now" signal — the same condition reloadData uses for the "Great job… next routine" branch),
+        // present it as a PAST completed routine, exactly like a previous day: read-only + struck
+        // through, and Done-by-id (via the isEarlier flag) for any completion not yet synced — NOT an
+        // active routine with a live action bar (whose Start/Done/Skip here are no-ops). Independent of
+        // whether we're still inside the routine's time window. We deliberately use isHabitAlreadyShowed
+        // rather than "all habit ids in dayPlanCompletedHabitIds", because that status can lag (e.g. the
+        // just-finished last habit isn't in it yet) — which is the very case this fixes.
+        if isHabitAlreadyShowed && !isShutOffTimeGoing() {
+            let allDaySource = isMorning ? arrAllDaysMorningHabits : arrAllDaysEveningHabits
+            let pastHabits = ScheduleTab.habitInputs(
+                from: ScheduleTab.filterByWeekday(allDaySource, weekday: now.dayOfWeek()),
+                now: now, dropCompleted: false)
+            if !pastHabits.isEmpty {
+                let windowStart = ScheduleTab.timeOnDate(isMorning ? startTime : shutOffTime, date: now) ?? now
+                let windowEnd = ScheduleTab.timeOnDate(isMorning ? shutOffTime : cutOffTime, date: now)
+                    ?? Calendar.current.date(bySettingHour: 23, minute: 59, second: 0, of: now) ?? now
+                let pastSeg = ScheduleRoutineSegment(
+                    name: name, habits: pastHabits, windowStart: windowStart, windowEnd: windowEnd,
+                    actionable: false, isEarlier: true)
+                // Keep the OTHER routines' previews the standard build adds (evening preview / custom
+                // routines); drop its actionable copy of THIS routine — replaced by the past one above.
+                let previews = ScheduleTab.standardSegments(activeName: name, activeHabits: [],
+                                                            isMorningActive: isMorning, now: now)
+                    .filter { $0.name != name }
+                return [pastSeg] + previews
+            }
+        }
+
+        // Not yet run today (e.g. before the routine start): render as the upcoming routine.
+        let source = isMorning ? arrFilteredMorningHabits : arrFilteredEveningHabits
         return ScheduleTab.standardSegments(
             activeName: name,
             activeHabits: ScheduleTab.habitInputs(from: source, now: now, dropCompleted: false),
