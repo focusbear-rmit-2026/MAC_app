@@ -647,7 +647,12 @@ final class DayPlanTaskStore {
             guard let id = obj["id"] as? String else { continue }
             let done = ((obj["status"] as? String) ?? "") == "COMPLETED"
             if let idx = indexBySource[id] {
-                if list[idx].done != done { list[idx].done = done; changed = true }   // sync completion only; keep local edits
+                // Upgrade-only: the backend may mark a task done (e.g. completed on another device),
+                // but must NOT revert a local completion. The completion reflect (PUT /to-do status)
+                // can lag or be skipped — e.g. a task imported before we captured its
+                // eisenhower_quadrant — and clobbering local `done` here made ticked tasks reappear
+                // un-ticked on the next Day Plan open (reported 2026-07-08).
+                if done, !list[idx].done { list[idx].done = true; changed = true }
             } else {
                 let title = (obj["title"] as? String) ?? "Task"
                 let secs = (obj["duration"] as? Int) ?? 0
