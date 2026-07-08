@@ -79,7 +79,7 @@ extension habitsStateVc: ScheduleHost {
     // (between-routines). Forward to the shared firstViewController flow (backdated /sync + popup on the
     // key window). Without this the default no-op ate the tap and nothing happened. See Mac #2005/#2012.
     func schedulePastHabitDone(id: String, performedAt: Date) {
-        firstViewControllerObj?.completePastMorningHabit(id: id, performedAt: performedAt)
+        firstViewControllerObj?.completePastHabit(id: id, performedAt: performedAt)
     }
 
     func updateScheduleTabForState() {

@@ -166,7 +166,7 @@ protocol ScheduleHost: AnyObject {
     /// `performedAt` is the habit's slot on that day, sent as the backdated completion time so the
     /// backend records it against the right date (via /completed-activity, same timestamps the offline
     /// activity-sync uses). Default no-op; only the active host (`firstViewController`) implements it.
-    /// See `firstViewController.completePastMorningHabit`.
+    /// See `firstViewController.completePastHabit`.
     func schedulePastHabitDone(id: String, performedAt: Date)
 }
 

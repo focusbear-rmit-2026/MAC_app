@@ -122,7 +122,7 @@ extension routinePostponedInfoVc: ScheduleHost {
     // default no-op ate the tap: symptom was clicking Complete while the routine is postponed did nothing
     // and wrote no log line. See Mac #2012.
     func schedulePastHabitDone(id: String, performedAt: Date) {
-        firstViewControllerObj?.completePastMorningHabit(id: id, performedAt: performedAt)
+        firstViewControllerObj?.completePastHabit(id: id, performedAt: performedAt)
     }
 
     /// Opens the shared "choose which habits to do today" sheet, mirroring the Habits view's

@@ -216,8 +216,8 @@ extension firstViewController: ScheduleHost {
     // A past morning habit (today's "earlier today" accordion or a previous calendar day) completes BY
     // ID — never through the index-based btnDoneClicked path above, which targets the live routine (it
     // would complete the wrong habit while the evening routine runs). `performedAt` is that habit's slot
-    // on the viewed day, sent as the backdated completion time. See completePastMorningHabit.
-    func schedulePastHabitDone(id: String, performedAt: Date) { completePastMorningHabit(id: id, performedAt: performedAt) }
+    // on the viewed day, sent as the backdated completion time. See completePastHabit.
+    func schedulePastHabitDone(id: String, performedAt: Date) { completePastHabit(id: id, performedAt: performedAt) }
 
     /// Opens the same "choose which habits to do today" sheet as the Habits view's
     /// "I don't have time for all these habits" button.

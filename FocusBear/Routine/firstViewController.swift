@@ -757,14 +757,14 @@ class firstViewController: NSViewController {
     }
     
     func passWordAuthenticated(){
-        // #2012: a past morning habit was gated (checked first — the live routine is the evening one,
+        // #2012: a past habit (morning or evening) was gated (checked first — the live routine is the evening one,
         // so the state-based branches below can't distinguish it).
         if passwordWindowShowingForPastHabit {
             passwordWindowShowingForPastHabit = false
             if let id = pendingPastHabitId {
                 let performedAt = pendingPastHabitPerformedAt ?? Date()
                 pendingPastHabitId = nil; pendingPastHabitPerformedAt = nil
-                performPastMorningHabitCompletion(id: id, performedAt: performedAt)
+                performPastHabitCompletion(id: id, performedAt: performedAt)
             }
             return
         }
@@ -1076,11 +1076,17 @@ class firstViewController: NSViewController {
     ///
     /// Completing a historical habit is a cheat vector (asserting you did something you didn't), so it
     /// honours the same password rule as skipping a morning habit (isPasswordRequireInSkipMorning).
-    /// After the gate, `performPastMorningHabitCompletion` runs the real completion — through the
+    /// After the gate, `performPastHabitCompletion` runs the real completion — through the
     /// log-quantity / notes popups when the habit has them, exactly like the live "already done" action.
-    func completePastMorningHabit(id: String, performedAt: Date) {
-        addLog(text: "action bar (past habit):- completePastMorningHabit id=\(id) performedAt=\(performedAt)")
-        if shouldAskPassword() && SettingsManagerObject.isPasswordRequireInSkipMorning {
+    /// Handles both morning and evening past habits (looked up by id in either all-days list); the skip
+    /// password rule follows the habit's own routine.
+    func completePastHabit(id: String, performedAt: Date) {
+        addLog(text: "action bar (past habit):- completePastHabit id=\(id) performedAt=\(performedAt)")
+        let isEvening = arrAllDaysMorningHabits.first(where: { $0.id == id }) == nil
+            && arrAllDaysEveningHabits.contains(where: { $0.id == id })
+        let skipPasswordRequired = isEvening ? SettingsManagerObject.isPasswordRequireInSkipEvening
+                                             : SettingsManagerObject.isPasswordRequireInSkipMorning
+        if shouldAskPassword() && skipPasswordRequired {
             passwordWindowShowingForMarkHabitComplete = false
             passwordWindowShowingForMarkHabitSkip = false
             passwordWindowShowingForPastHabit = true
@@ -1089,20 +1095,21 @@ class firstViewController: NSViewController {
             mainViewControllerObj?.showPasswordView()
             enterPasswordVcObj?.parentVc = self
         } else {
-            performPastMorningHabitCompletion(id: id, performedAt: performedAt)
+            performPastHabitCompletion(id: id, performedAt: performedAt)
         }
     }
 
-    /// The actual by-id completion of a past morning habit. Mirrors `morningHabitAlreadyDoneClicked`
-    /// (the live "I already did this" action, including its log-quantity / take-notes popups and
-    /// `is_skipped: true` "already done" semantics), but WITHOUT the active-routine coupling: it never
-    /// indexes into / mutates `arrFilteredMorningHabits`, never pushes thirdVc / activityCompletion, and
-    /// forces `should_not_update_current_activity: true` (via the popups' `isPastHabit` flag, or directly)
-    /// so the running evening routine is untouched. Looks the habit up in `arrAllDaysMorningHabits`
-    /// (survives array clearing / skip-for-today).
-    func performPastMorningHabitCompletion(id: String, performedAt: Date) {
-        guard let habit = arrAllDaysMorningHabits.first(where: { $0.id == id }) else { return }
-        addLog(text: "action bar (past habit):- performPastMorningHabitCompletion id=\(id) performedAt=\(performedAt)")
+    /// The actual by-id completion of a past habit — morning OR evening. Mirrors the live "I already
+    /// did this" action (its log-quantity / take-notes popups and `is_skipped: true` "already done"
+    /// semantics), but WITHOUT the active-routine coupling: it never indexes into / mutates the
+    /// `arrFiltered*` arrays, never pushes thirdVc / activityCompletion, and forces
+    /// `should_not_update_current_activity: true` (via the popups' `isPastHabit` flag, or directly) so
+    /// the running routine is untouched. Looks the habit up in `arrAllDaysMorningHabits` /
+    /// `arrAllDaysEveningHabits` (survives array clearing / skip-for-today).
+    func performPastHabitCompletion(id: String, performedAt: Date) {
+        let morningHabit = arrAllDaysMorningHabits.first(where: { $0.id == id })
+        guard let habit = morningHabit ?? arrAllDaysEveningHabits.first(where: { $0.id == id }) else { return }
+        addLog(text: "action bar (past habit):- performPastHabitCompletion id=\(id) performedAt=\(performedAt) evening=\(morningHabit == nil)")
         // Backdate the completion to the habit's slot on the viewed day so the backend records it against
         // the right date (via /completed-activity's start_time/finish_time — the same fields the offline
         // activity-sync replays). dayKey drives the local per-day strike-through.
@@ -1118,7 +1125,7 @@ class firstViewController: NSViewController {
             logQuantityVcObj?.isReviseQuantity = false
             logQuantityVcObj?.resetData(name: habit.name, durationInSeconds: "\(duration)",
                                         logQuantityQuestion: habit.logQuantityQuestion,
-                                        currentState: ._MORNING_HABIT_, logQuantityType: "",
+                                        currentState: morningHabit == nil ? ._EVENING_HABIT_ : ._MORNING_HABIT_, logQuantityType: "",
                                         activity_id: habit.id, activity_sequence_id: habit.activity_sequence_id,
                                         activityChoiceId: nil, take_notes: habit.take_notes, notes: "",
                                         logQuantityQuestions: habit.logQuantityQuestions)
