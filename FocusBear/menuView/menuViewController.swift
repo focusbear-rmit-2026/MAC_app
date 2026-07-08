@@ -2261,12 +2261,12 @@ class menuViewController: NSViewController {
         if !(mainWindowControllerObj?.window?.isVisible ?? false){
             mainWindowControllerObj?.showWindow(self)
         }
-        leftMenuVcObj?.showHabitsView()
-        // The Day Plan tab selection skips showHabitState() for morning/evening/focus-summary (to
-        // avoid a blank-screen regression), assuming the habit content is already up. But if the
-        // "Start Micro Break" tab had switched the habits area to the break state, that stale break
-        // content would remain under the now-selected Day Plan tab — so restore the Day Plan
-        // explicitly when the break state is what's currently showing.
+        // Populate the habits area with the Day Plan for the current state — the SAME dispatch the
+        // sidebar's boxHabits selection uses. Without this the menu path left the habits area blank on
+        // first open in the postpone states until a break-then-back happened to trigger it.
+        leftMenuVcObj?.showDayPlanForCurrentState()
+        // Safety net for the active routine states (which the dispatch above intentionally leaves
+        // alone): if a "Start Micro Break" left the break view up there, restore the Day Plan.
         if getHabitsVcObject().habitsView.subviews.contains(getBreaksStateVcObject().view) {
             getHabitsVcObject().showHabitState()
         }
