@@ -2334,7 +2334,16 @@ private let appleScriptSerialQueue = DispatchQueue(label: "com.focusbear.applesc
 /// wedge the queue or block the caller indefinitely.
 @discardableResult
 func runAppleScriptSafely(_ source: String, timeoutSeconds: Int = 5, errors: inout NSDictionary?) -> NSAppleEventDescriptor? {
-    let bounded = "with timeout of \(timeoutSeconds) seconds\n" + source + "\nend timeout\n"
+    // The script runs on `appleScriptSerialQueue`, but the semaphore wait below blocks the *caller*.
+    // On the MAIN thread that means a frozen UI, so cap the main-thread wait hard: browser/URL and
+    // focus-timer scripts return in well under 100 ms normally, and only a hung target app would ever
+    // approach the cap — in which case we'd far rather skip this detection cycle (the callers poll, e.g.
+    // the 1 s URL-block timer) than lock the UI. The dropped script keeps running on the queue; we just
+    // don't read its result. Background callers keep the full, generous timeout.
+    let onMain = Thread.isMainThread
+    let scriptTimeout = onMain ? min(timeoutSeconds, 1) : timeoutSeconds
+    let waitCap: DispatchTimeInterval = onMain ? .milliseconds(1200) : .seconds(timeoutSeconds + 2)
+    let bounded = "with timeout of \(scriptTimeout) seconds\n" + source + "\nend timeout\n"
     var capturedErrors: NSDictionary?
     var result: NSAppleEventDescriptor?
     let done = DispatchSemaphore(value: 0)
@@ -2346,7 +2355,7 @@ func runAppleScriptSafely(_ source: String, timeoutSeconds: Int = 5, errors: ino
     }
     // Wall-clock guard a little longer than the AppleScript `with timeout`, so the script normally
     // finishes first. On timeout we return without reading the still-running block's outputs.
-    if done.wait(timeout: .now() + .seconds(timeoutSeconds + 2)) == .timedOut {
+    if done.wait(timeout: .now() + waitCap) == .timedOut {
         errors = nil
         return nil
     }
