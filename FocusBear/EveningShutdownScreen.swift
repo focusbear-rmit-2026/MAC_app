@@ -25,18 +25,64 @@ struct EveningShutdownView: View {
             Text(title).font(.headline).multilineTextAlignment(.center)
             Text(subtitle).font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
             HStack(spacing: 12) {
-                SwiftUI.Button(action: onSleep) { Text(sleepLabel).frame(minWidth: 110) }
+                // Sleep = primary (orange) app button; Shut Down = secondary. Both borderless.
+                SwiftUI.Button(action: onSleep) { Text(sleepLabel) }
+                    .buttonStyle(AppOrangeButtonStyle(secondary: false))
                     .keyboardShortcut(.defaultAction)
-                SwiftUI.Button(action: onShutDown) { Text(shutDownLabel).frame(minWidth: 110) }
+                SwiftUI.Button(action: onShutDown) { Text(shutDownLabel) }
+                    .buttonStyle(AppOrangeButtonStyle(secondary: true))
             }
-            .controlSize(.large)
-            SwiftUI.Button(action: onDismiss) { Text(notNowLabel).foregroundColor(.secondary) }
-                .buttonStyle(.plain)
+            // "Not now" = underlined text button.
+            SwiftUI.Button(action: onDismiss) {
+                Text(notNowLabel).underline().foregroundColor(.secondary)
+            }
+            .buttonStyle(.plain)
+            .pointingHandCursor()
         }
         .padding(20)
         .frame(maxWidth: .infinity)
     }
 }
+
+/// SwiftUI mirror of the AppKit `Button` app style (Buttons.swift): orange fill + white text for the
+/// primary action, white fill + gray border + black text for the secondary. Borderless (no system
+/// push-button bezel), rounded, with the pointing-hand cursor on hover. Kept in SwiftUI because the
+/// prompt is a NSHostingView, rather than bridging the storyboard-only AppKit Button class.
+private struct AppOrangeButtonStyle: ButtonStyle {
+    let secondary: Bool
+
+    private var orange: Color { Color(NSColor(named: "dark_OrangeColor") ?? NSColor.systemOrange) }
+    private var lightOrange: Color { Color(NSColor(named: "light_OrangeColor") ?? NSColor.systemOrange) }
+
+    func makeBody(configuration: Configuration) -> some View {
+        let bg: Color
+        let fg: Color
+        let border: Color
+        if secondary {
+            bg = configuration.isPressed ? lightOrange : Color.white
+            fg = .black
+            border = Color(red: 220/255, green: 220/255, blue: 220/255)   // matches Button.grayBorderColor
+        } else {
+            bg = configuration.isPressed ? orange.opacity(0.7) : orange
+            fg = .white
+            border = orange
+        }
+        return configuration.label
+            .font(.system(size: 14, weight: .medium))
+            .foregroundColor(fg)
+            .frame(minWidth: 110)
+            .padding(.vertical, 9)
+            .padding(.horizontal, 18)
+            .background(bg)
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(border, lineWidth: 1))
+            .contentShape(Rectangle())
+            .pointingHandCursor()
+    }
+}
+
+// Uses the app's existing `pointingHandCursor()` View modifier (BlockingScheduleStore.swift) for the
+// hover cursor, so behaviour matches other custom buttons.
 
 /// Builds the evening shutdown prompt with config-driven labels; each action dismisses it first, then
 /// runs its power command.
