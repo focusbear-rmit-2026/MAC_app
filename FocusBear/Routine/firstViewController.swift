@@ -1134,14 +1134,20 @@ class firstViewController: NSViewController {
             logQuantityVcObj?.pastHabitId = habit.id
             logQuantityVcObj?.pastHabitDayKey = dayKey
         } else if habit.take_notes == END_OF_ACTIVITY {
-            presentPastHabitPopup(takeActivityNotesVcObj?.view)
-            takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged: nil,
-                                              activity_id: habit.id, activity_sequence_id: habit.activity_sequence_id,
-                                              activityChoiceId: nil, log_quantity_answers: [])
-            takeActivityNotesVcObj?.is_skipped = true
-            takeActivityNotesVcObj?.isPastHabit = true
-            takeActivityNotesVcObj?.pastHabitId = habit.id
-            takeActivityNotesVcObj?.pastHabitDayKey = dayKey
+            // takeActivityNotesVcObj is a LAZY optional (nil until first use) — unlike the eagerly-created
+            // logQuantityVcObj above — so instantiate it here via its getter. Otherwise its .view is nil,
+            // presentPastHabitPopup(nil) silently no-ops and the notes screen never appears. (The live
+            // path relies on showTakeNotesView() to create it, but that attaches it to the routine
+            // player, which is hidden behind the Day Plan when completing a past habit.)
+            let notesVc = getTakeActivityNotesVcObj()
+            presentPastHabitPopup(notesVc.view)
+            notesVc.resetData(durationInSeconds: duration, quantity_logged: nil,
+                              activity_id: habit.id, activity_sequence_id: habit.activity_sequence_id,
+                              activityChoiceId: nil, log_quantity_answers: [])
+            notesVc.is_skipped = true
+            notesVc.isPastHabit = true
+            notesVc.pastHabitId = habit.id
+            notesVc.pastHabitDayKey = dayKey
         } else {
             recordPastHabitCompletionViaOfflineSync(
                 activity_id: habit.id, activity_sequence_id: habit.activity_sequence_id,
