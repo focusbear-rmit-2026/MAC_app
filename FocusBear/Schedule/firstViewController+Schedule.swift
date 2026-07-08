@@ -222,7 +222,10 @@ extension firstViewController: ScheduleHost {
     /// Opens the same "choose which habits to do today" sheet as the Habits view's
     /// "I don't have time for all these habits" button.
     func scheduleSkipRoutineForToday() {
+        // A routine is in progress here (firstViewController is the active-routine host), so skipping
+        // from the Day Plan should CLOSE the window, like an in-routine skip. Leave openedFromDayPlan
+        // at its default false (set in showChooseHabitsView) so chooseHabitsVC runs its window.close().
+        // The postponed host (routinePostponedInfoVc) instead keeps the window open and reloads the plan.
         showChooseHabitsView()
-        chooseHabitsVCObj?.openedFromDayPlan = true   // keep the window open on skip (planning, not in-routine)
     }
 }

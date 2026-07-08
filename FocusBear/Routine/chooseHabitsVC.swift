@@ -384,7 +384,12 @@ class chooseHabitsVC: NSViewController {
         currentState = ._NOTHING_
         getHabitsVcObject().setActivityTimer()
         leftMenuVcObj?.habitOver()
-        if openedFromDayPlan { requestDayPlanRefresh() }   // reflect the skip in the still-open Day Plan
+        // Reselect/re-show the Day Plan for the current state (rather than requestDayPlanRefresh, which
+        // only reloads the schedule content). This re-runs the host's reloadData —
+        // updateUncancelRoutineButtonVisibility, where the "Uncancel <routine>" state is computed — so
+        // the button appears immediately. requestDayPlanRefresh() didn't trigger that, so the button
+        // only showed after the user manually switched tabs and back.
+        if openedFromDayPlan { leftMenuVcObj?.showDayPlanForCurrentState() }
         addLog(text: "Routine skipped by user")//addLog(text: "morning habit skipped by user")
     }
     
