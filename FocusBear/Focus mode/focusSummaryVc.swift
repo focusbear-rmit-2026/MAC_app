@@ -595,7 +595,8 @@ class focusSummaryVc: NSViewController {
         closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
 
         currentState = ._NOTHING_
-        appdelegate?.shutOffMac()
+        // Surface the "well done — sleep / shut down" prompt at the bottom of the Day Plan (#2005 part 4).
+        markEveningRoutineDoneForShutdownPrompt()
         viewVisibleCount = 0
     }
     

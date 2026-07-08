@@ -499,6 +499,7 @@
         "toolTipLockedFocus": "Usa esto si quieres enfocarte en usar una aplicación/leer un artículo. Detectaremos la aplicación + el sitio que tengas abiertos y bloquearemos todo lo demás.",
         "menuItemOpenChecklistTitle": "Abrir Lista de Control",
         "menuItemMeetingDetectionBreaksOnTitle": "Reunión activa - descansos activos",
+        "menuItemMeetingDetectionBreaksOnTooltip": "Los descansos siguen activos durante esta reunión porque tienes activado \"Mostrar descansos en llamadas\". Puedes desactivarlo en Ajustes si prefieres que no te interrumpan mientras presentas.",
         "menuItemPauseFocusModeTitle": "Pausar este Modo de Enfoque",
         "menuItemStopFocusModeTitle": "Detener este Modo de Enfoque",
         "menuItemResumeFocusModeTitle": "Reanudar este Modo de Enfoque",
@@ -1135,6 +1136,13 @@
         "titleAskOfficeMode": "¿No tienes tiempo para un descanso en este momento o estas en la oficina y no es apropiado hacer <ACTIVITY>?",
         "buttonDontHaveTimeText": "No tengo tiempo",
         "buttonInTheOffIceText": "Estoy en la oficina"
+    },
+    "eveningShutdownInfo": {
+        "title": "Bien hecho por terminar tu rutina nocturna",
+        "subtitle": "Que descanses bien",
+        "buttonSleepText": "Suspender",
+        "buttonShutDownText": "Apagar",
+        "buttonNotNowText": "Ahora no"
     },
     "brainDumpVcInfo": {
         "title": "Focus Bear - Volcado de cerebros",
@@ -2144,7 +2152,9 @@
         "title": "Hola, ¿todavía quieres hacer tu rutina matutina hoy o saltártela?",
         "subTitle": "(Pregunto porque son <HOUR> horas desde la hora de inicio de tu rutina y puede que no tenga sentido hacerlo hoy)",
         "buttonSkipText": "Saltarla",
-        "buttonDoHabitsText": "Hacer mis hábitos"
+        "buttonDoHabitsText": "Hacer mis hábitos",
+        "buttonPostponeText": "Ahora no",
+        "buttonSkipRoutineText": "Saltar rutina por hoy"
     },
     "settingsMeetingDetactionVcInfo": {
         "descriptionSuggestMeetingsFocusMode": "Al iniciar una videollamada, Focus Bear puede avisarte que inicies el modo de enfoque Reunión para ayudarte a mantener la concentración durante la reunión",

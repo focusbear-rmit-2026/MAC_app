@@ -87,6 +87,7 @@
 		13C6BF0B2FB19D750074DD63 /* ORSSerial in Frameworks */ = {isa = PBXBuildFile; productRef = 13C6BF0A2FB19D750074DD63 /* ORSSerial */; };
 		13C6BF0E2FB211CA0074DD63 /* audioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */; };
 		13C6C2A22FE2615E00B1F278 /* BreakWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */; };
+		ESD00001 /* EveningShutdownScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = ESD00002 /* EveningShutdownScreen.swift */; };
 		13CBE7652F07E9660025544E /* enableAIBlockingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */; };
 		13D5D0112FD0396E00AB474C /* micMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D5D0102FD0396E00AB474C /* micMonitor.swift */; };
 		13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */; };
@@ -114,6 +115,7 @@
 		44893728E4D2BE20B7672984 /* ScheduleKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9989E00FEA15521B6C3FE5FE /* ScheduleKit.swift */; };
 		7476A99B06ABC3EB040F5633 /* DayPlanTasks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 060DBE94CCB418D4071A43CB /* DayPlanTasks.swift */; };
 		5790A2029EF7B5F4A5EF47B8 /* routinePostponedInfoVc+Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE3FA8163BBB36B02EF947DD /* routinePostponedInfoVc+Schedule.swift */; };
+		HSS00001 /* habitsStateVc+Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = HSS00002 /* habitsStateVc+Schedule.swift */; };
 		57ED7D19F5DC0C0735C2F34B /* ScheduleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B215C30047E6A2A37A923150 /* ScheduleViewController.swift */; };
 		64206D6037E4BA7EA7DD14DA /* CalendarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6917674BE2A776D2F47EDE3 /* CalendarManager.swift */; };
 		7DC90FC77F5432F8C21012C0 /* firstViewController+Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DEF19BEE8458F980B62C5C3 /* firstViewController+Schedule.swift */; };
@@ -501,6 +503,7 @@
 		FBC00002 /* FocusButtonCommandChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusButtonCommandChannel.swift; sourceTree = "<group>"; };
 		13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = audioRecorder.swift; sourceTree = "<group>"; };
 		13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakWarningView.swift; sourceTree = "<group>"; };
+		ESD00002 /* EveningShutdownScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EveningShutdownScreen.swift; path = FocusBear/EveningShutdownScreen.swift; sourceTree = SOURCE_ROOT; };
 		13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = enableAIBlockingVc.swift; sourceTree = "<group>"; };
 		13D5D0102FD0396E00AB474C /* micMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = micMonitor.swift; sourceTree = "<group>"; };
 		13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineStateVc.swift; sourceTree = "<group>"; };
@@ -821,6 +824,7 @@
 		F2A250D6DD50DF2749899D48 /* FBHelper-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "FBHelper-Debug.xcconfig"; sourceTree = "<group>"; };
 		F4A04585FA1D0F1940D23631 /* Pods-Focus Bear.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Focus Bear.release.xcconfig"; path = "Target Support Files/Pods-Focus Bear/Pods-Focus Bear.release.xcconfig"; sourceTree = "<group>"; };
 		FE3FA8163BBB36B02EF947DD /* routinePostponedInfoVc+Schedule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "routinePostponedInfoVc+Schedule.swift"; sourceTree = "<group>"; };
+		HSS00002 /* habitsStateVc+Schedule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "habitsStateVc+Schedule.swift"; sourceTree = "<group>"; };
 		UBT00002 /* URLBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLBlockingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -1055,6 +1059,7 @@
 			children = (
 				8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */,
 				13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */,
+				ESD00002 /* EveningShutdownScreen.swift */,
 				8F3F1F28299BB96400E67F42 /* breaksBrainDumpVc.swift */,
 				8F1FBAE529F2A46000AA1979 /* naturalBreaksDetectionVc.swift */,
 				8F3A28982C22A46F002AD2E3 /* deactivateBreaksVc.swift */,
@@ -1681,6 +1686,7 @@
 				B215C30047E6A2A37A923150 /* ScheduleViewController.swift */,
 				2DEF19BEE8458F980B62C5C3 /* firstViewController+Schedule.swift */,
 				FE3FA8163BBB36B02EF947DD /* routinePostponedInfoVc+Schedule.swift */,
+				HSS00002 /* habitsStateVc+Schedule.swift */,
 			);
 			name = Schedule;
 			path = Schedule;
@@ -2172,6 +2178,7 @@
 				8F3DD01629F3B4CA00E23715 /* AHAuthorizer.m in Sources */,
 				274C9A91289A8C910066F883 /* accountVc.swift in Sources */,
 				13C6C2A22FE2615E00B1F278 /* BreakWarningView.swift in Sources */,
+				ESD00001 /* EveningShutdownScreen.swift in Sources */,
 				8FA692FD2B90B31600FF4862 /* confirmRunScriptVc.swift in Sources */,
 				8F6DAD842B32A84400CB210B /* lateNoMorePopUpVc.swift in Sources */,
 				8FC31BFE28C757B400E2DD4C /* brainDumpVc.swift in Sources */,
@@ -2266,6 +2273,7 @@
 				57ED7D19F5DC0C0735C2F34B /* ScheduleViewController.swift in Sources */,
 				7DC90FC77F5432F8C21012C0 /* firstViewController+Schedule.swift in Sources */,
 				5790A2029EF7B5F4A5EF47B8 /* routinePostponedInfoVc+Schedule.swift in Sources */,
+				HSS00001 /* habitsStateVc+Schedule.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

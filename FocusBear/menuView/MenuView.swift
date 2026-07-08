@@ -338,15 +338,17 @@ struct FocusBearMenuView: View {
         .background(MenuTheme.background(scheme))
         .onPreferenceChange(MenuHeightKey.self) { onHeight($0) }
         .onChange(of: model.inVoiceMode) { active in
-            // Keep the local view mode in sync with the model. A device-mic press (or reopening the
-            // menu mid-recording) sets inVoiceMode = true WITHOUT going through startVoice(), so we
-            // must switch to the voice screen here too — not only reset to the menu when it clears.
+            // Mirror voice mode into the local screen state: ENTER the voice screen when a recording
+            // starts and EXIT to the menu when it clears. Previously this only handled the exit (`if
+            // !active`), so the DEVICE mic — which drives the voice UI purely via model.inVoiceMode (set
+            // by the deviceListening observer), unlike the in-app mic's startVoice() which sets `mode`
+            // directly — opened the menu but never switched to the voice screen.
             mode = active ? .voice : .menu
         }
         .onAppear {
             if expanded == nil { expanded = initialExpanded }
-            // Respect an already-active voice session: if the menu is opened mid-recording, inVoiceMode
-            // was set true before this view appeared, so onChange won't fire — land on voice directly.
+            // If a recording is already active when the popover appears (the device mic opened the menu),
+            // start on the voice screen instead of the menu.
             mode = model.inVoiceMode ? .voice : initialMode
         }
     }
@@ -769,8 +771,16 @@ struct FocusBearMenuView: View {
     }
 
     // MARK: Day Plan body
+    /// Collapsed-row subtitle: surface what's actually coming up (next event, else next habit) so the
+    /// row is useful at a glance instead of just repeating "Day Plan"/the date. Falls back to the date,
+    /// then "Day Plan". No new i18n key needed — the values are already localized upstream.
     private var dayPlanSubtitle: String {
-        model.dayPlanDate.isEmpty ? menuLocalized("menuDayPlan", "Day Plan") : model.dayPlanDate
+        if !model.dayPlanNextEventTitle.isEmpty {
+            let time = model.dayPlanNextEventTime.isEmpty ? "" : "  ·  \(model.dayPlanNextEventTime)"
+            return model.dayPlanNextEventTitle + time
+        }
+        if !model.dayPlanNextHabit.isEmpty { return model.dayPlanNextHabit }
+        return model.dayPlanDate.isEmpty ? menuLocalized("menuDayPlan", "Day Plan") : model.dayPlanDate
     }
 
     private let dpBlue = Color(hex: 0x3B82F6)

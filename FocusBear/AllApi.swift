@@ -6445,8 +6445,9 @@ class AllApi:NSObject {
         - resume_habit
         - get_focus_stats
 
-        **Create task**  
-        Fields: task (string), datetime (local system datetime or relative like "tomorrow 9am", "tomorrow", "in 2 hours", "next thursday"), optional repeat.
+        **Create task**
+        Fields: task (string), datetime OPTIONAL (local system datetime or relative like "tomorrow 9am", "tomorrow", "in 2 hours", "next thursday"), optional repeat.
+        A reminder or task WITHOUT any time is still a valid create_task — "remind me to X", "add a task to X", "note to self: X" all map to create_task with high confidence and datetime null. Do NOT lower confidence just because no time was given.
 
         **Start focus session**  
         Fields: duration_minutes (int), goal (string, optional).
@@ -6497,6 +6498,18 @@ class AllApi:NSObject {
           "parameters": {
             "task": "call mom",
             "time": "yyyy-MM-dd HH:mm:ss",
+            "repeat": null
+          },
+          "confidence": "high",
+          "clarification_needed": null
+        }
+
+        1b. "Remind me to go to the movies"  (a reminder with no time — still high confidence)
+        {
+          "action": "create_task",
+          "parameters": {
+            "task": "go to the movies",
+            "time": null,
             "repeat": null
           },
           "confidence": "high",

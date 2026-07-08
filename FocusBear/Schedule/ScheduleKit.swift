@@ -34,6 +34,9 @@ struct ScheduleBlock {
     var didOverflow: Bool      // habit couldn't be placed before day end
     var eventID: String?       // calendar event identifier (for meetings, so they can be dismissed)
     var routineName: String?   // for habits: which routine they belong to (used to group them)
+    var isDone: Bool = false   // habit completed today — rendered struck through (earlier-today sections)
+    var habitId: String?       // the habit's server id — used to complete/skip a PAST habit by id
+    var isEarlier: Bool = false // from an "earlier today" section (past routine); actioned by id, not index
 
     init(kind: ScheduleBlockKind, title: String, start: Date, end: Date,
          habitIndex: Int? = nil, isActionable: Bool = false, isCurrent: Bool = false,
@@ -62,6 +65,8 @@ struct ScheduleHabitInput {
     let isPlaying: Bool         // currently running
     let elapsedSeconds: Int     // already elapsed (for the playing habit)
     let cutoff: Date?           // latest time it must be finished by; dropped if it can't be
+    var isDone: Bool = false    // completed today — rendered struck through (earlier-today sections)
+    var id: String?             // the habit's server id — needed to complete/skip a PAST habit by id
 }
 
 struct ScheduleMeetingInput {
@@ -80,6 +85,11 @@ struct ScheduleRoutineSegment {
     let windowStart: Date
     let windowEnd: Date
     let actionable: Bool
+    /// #2010: an "earlier today" section (the past morning routine, shown under the "Show events from
+    /// earlier today" toggle once we're past it). The builder lays these out at their historical window
+    /// [windowStart, windowEnd] instead of clamping the start up to `now` (which would drop a wholly-past
+    /// window), and it doesn't apply the per-habit cutoff drop — they're read-only history.
+    var isEarlier: Bool = false
 }
 
 enum ScheduleBuilder {
@@ -143,7 +153,10 @@ enum ScheduleBuilder {
         // morning routine never bleeds past the evening start and each routine shows in its block.
         var occupied = habitBusy   // grows as we place habits, so deep-work avoids them
         for seg in segments.sorted(by: { $0.windowStart < $1.windowStart }) {
-            let segStart = max(seg.windowStart, now)
+            // Active/preview routines pack from `now` (their remaining habits start here); an "earlier
+            // today" section is history, so lay it out at its real window start instead of clamping up
+            // to now (which would drop a window that already ended).
+            let segStart = seg.isEarlier ? seg.windowStart : max(seg.windowStart, now)
             guard seg.windowEnd > segStart, !seg.habits.isEmpty else { continue }
 
             // Place habits strictly in their list order (no reordering). Each starts at the
@@ -154,8 +167,9 @@ enum ScheduleBuilder {
             for h in seg.habits {
                 // A habit with a cutoff stays visible until that cutoff time has actually passed —
                 // not merely because its *projected* slot would land after it. The user can still do
-                // it (possibly out of order) right up to the cutoff, so don't hide it early.
-                if let cutoff = h.cutoff, now > cutoff { continue }
+                // it (possibly out of order) right up to the cutoff, so don't hide it early. (An
+                // "earlier today" section is past history: show every habit regardless of cutoff.)
+                if !seg.isEarlier, let cutoff = h.cutoff, now > cutoff { continue }
                 let remaining = max(0, h.durationSeconds - (h.isPlaying ? h.elapsedSeconds : 0))
                 let dur = Double(remaining)
                 guard let start = nextFreeStart(from: cursor, duration: dur,
@@ -170,6 +184,9 @@ enum ScheduleBuilder {
                 var b = ScheduleBlock(kind: .habit, title: h.title, start: start, end: end,
                                       habitIndex: h.index, routineName: seg.name)
                 b.isActionable = seg.actionable
+                b.isDone = h.isDone
+                b.habitId = h.id
+                b.isEarlier = seg.isEarlier
                 blocks.append(b)
                 placed.append(blocks.count - 1)
                 occupied.append((start, end))

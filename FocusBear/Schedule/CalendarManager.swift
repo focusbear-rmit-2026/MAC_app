@@ -352,6 +352,26 @@ final class DayPlanSync {
         send(req, label: "undismissEvent")
     }
 
+    // MARK: Day Plan tasks (per day) — #2104 backs completion/time-box so it syncs across devices.
+    /// Upsert a Day Plan task (incl. its `done` state) to the backend so ticking a task is preserved.
+    func saveTask(_ task: DayPlanTask, on date: Date) {
+        var body: [String: Any] = [
+            "id": task.id,
+            "title": task.title,
+            "duration_minutes": task.durationMinutes,
+            "done": task.done,
+        ]
+        if let src = task.sourceTaskId { body["source_task_id"] = src }
+        if let bk = task.blockKey { body["block_key"] = bk }
+        guard let req = request("/day-plan/day/\(dayString(date))/task", method: "PUT", body: body) else { return }
+        send(req, label: "saveTask")
+    }
+
+    func deleteTask(_ taskID: String, on date: Date) {
+        guard let req = request("/day-plan/day/\(dayString(date))/task/\(encodedEventID(taskID))", method: "DELETE") else { return }
+        send(req, label: "deleteTask")
+    }
+
     // MARK: Event colours (global, per event)
     func loadEventColours(completion: @escaping (_ byEventID: [String: String]) -> Void) {
         guard isAuthed, let req = request("/day-plan/event-colour", method: "GET") else { completion([:]); return }

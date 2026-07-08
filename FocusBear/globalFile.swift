@@ -152,6 +152,30 @@ var has_edited_settings = false
 
 let kDayPlanCompletedHabitIds = "kDayPlanCompletedHabitIds"
 let kDayPlanCompletedHabitIdsDate = "kDayPlanCompletedHabitIdsDate"
+let kDayPlanCompletedHabitIdsByDay = "kDayPlanCompletedHabitIdsByDay"
+
+/// #2012: per-day completed habit ids, keyed by yyyy-MM-dd. `dayPlanCompletedHabitIds` above only tracks
+/// TODAY; this lets a PAST-day habit strike through immediately after a backdated completion (which we
+/// sync to the backend via /completed-activity with the real past timestamp — the same path the offline
+/// activity-sync uses). Persisted so the strike-through survives a relaunch until the backend day-view
+/// becomes the source of truth. Change → requestDayPlanRefresh() re-renders the Day Plan.
+var dayPlanCompletedHabitIdsByDay: [String: Set<String>] = {
+    guard let raw = UserDefaults.standard.dictionary(forKey: kDayPlanCompletedHabitIdsByDay) as? [String: [String]] else { return [:] }
+    return raw.mapValues { Set($0) }
+}() {
+    didSet {
+        UserDefaults.standard.set(dayPlanCompletedHabitIdsByDay.mapValues { Array($0) }, forKey: kDayPlanCompletedHabitIdsByDay)
+        requestDayPlanRefresh()
+    }
+}
+
+/// Whether `habitId` is done for `dayKey` (yyyy-MM-dd): checks the per-day cache, plus the today-only
+/// `dayPlanCompletedHabitIds` set when dayKey is today (so the live day and past days share one check).
+func isHabitDoneForDay(_ habitId: String, dayKey: String) -> Bool {
+    if dayPlanCompletedHabitIdsByDay[dayKey]?.contains(habitId) == true { return true }
+    if dayKey == getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd") { return dayPlanCompletedHabitIds.contains(habitId) }
+    return false
+}
 
 /// Today's server-confirmed completed habit ids (both routines). The Day Plan filters these out so
 /// it never shows a habit the backend says is done — a safety net over the arrFiltered* arrays,
@@ -165,6 +189,60 @@ var dayPlanCompletedHabitIds = Set<String>() {
         UserDefaults.standard.set(today, forKey: kDayPlanCompletedHabitIdsDate)
         requestDayPlanRefresh()
     }
+}
+
+/// #2012: mark a past morning habit done in the Day Plan after a by-id completion (direct API, or via
+/// the log-quantity / take-notes popups). Inserting into dayPlanCompletedHabitIds persists it and, via
+/// the didSet above, requests a schedule refresh — so the "earlier today" accordion strikes it through.
+/// #2012: record a PAST habit completion through the offline activity-sync pipeline — write it to the
+/// offline activities CSV with the BACKDATED start/finish, then flush via `processOfflineData()` →
+/// `POST /completed-activity/sync`. The backend confirmed /sync is the correct path for backdated data:
+/// it attaches the completion to the per-DATE activity-sequence log (derived from start_time), updates
+/// that day's stats, has no 30-day clamp, and does NOT disturb today's current-activity pointer for a
+/// past-dated record — unlike the single /completed-activity endpoint, which skips stats + sequence-log
+/// attachment when should_not_update_current_activity is set. Also marks the Day Plan done locally so the
+/// row strikes through immediately.
+func recordPastHabitCompletionViaOfflineSync(activity_id: String, activity_sequence_id: String,
+                                             performedAt: Date, duration: Int, quantity: Double?,
+                                             notes: String, dayKey: String) {
+    let fmt = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+    let startStr = getStringFromDateInUtc(date: performedAt, dateFormat: fmt)
+    let finish = Calendar.current.date(byAdding: .second, value: max(duration, 1), to: performedAt) ?? performedAt
+    let finishStr = getStringFromDateInUtc(date: finish, dateFormat: fmt)
+    let qtyStr = quantity.map { "\($0)" } ?? ""
+    // skipped_did_complete = "true": "I already did this" semantics, matching the live already-done action.
+    addEntryInofflineActivitiesCsv(activity_id: activity_id, duration_logged: "\(duration)",
+                                   device_id: currentDeviceId, activity_sequence_id: activity_sequence_id,
+                                   start_time: startStr, finish_time: finishStr,
+                                   skipped_did_complete: "true", choice_id: "", quantity_logged: qtyStr,
+                                   skipped_did_not_complete: "", note_logged: notes)
+    appdelegate?.processOfflineData()   // flush now via /completed-activity/sync
+    markPastHabitDoneInDayPlan(id: activity_id, dayKey: dayKey)
+}
+
+let kEveningShutdownPromptDate = "kEveningShutdownPromptDate"
+
+/// The evening routine finished today → the Day Plan shows the shutdown prompt at its bottom (#2005
+/// part 4). Not a standalone window — only inside the Day Plan, only for the rest of today.
+func markEveningRoutineDoneForShutdownPrompt() {
+    UserDefaults.standard.set(getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd"), forKey: kEveningShutdownPromptDate)
+    requestDayPlanRefresh()
+}
+func shouldShowEveningShutdownPrompt() -> Bool {
+    UserDefaults.standard.string(forKey: kEveningShutdownPromptDate) == getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd")
+}
+func dismissEveningShutdownPrompt() {
+    UserDefaults.standard.removeObject(forKey: kEveningShutdownPromptDate)
+    requestDayPlanRefresh()
+}
+
+func markPastHabitDoneInDayPlan(id: String?, dayKey: String? = nil) {
+    guard let id = id, !id.isEmpty else { return }
+    let todayKey = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd")
+    let key = dayKey ?? todayKey
+    dayPlanCompletedHabitIdsByDay[key, default: []].insert(id)
+    // Today also feeds the today-only set the live day relies on everywhere else.
+    if key == todayKey { dayPlanCompletedHabitIds.insert(id) }
 }
 
 /// Seed dayPlanCompletedHabitIds from the persisted cache (today only) so the first Day Plan render
@@ -2506,8 +2584,12 @@ func shouldAskPassword(forPostpone:Bool = false)->Bool{
     // once before the duration picker, once when applying the chosen duration) — so it never unlocked and
     // looped (bug report 2026-07-06). Now a postpone honours the recent-unlock grace: the password is
     // asked once, then again only after the grace (~2 min) — "unlock for the postpone, ask next time".
-    _ = forPostpone
-    let bypassGrace = isFullScreenWindowCurrentlyShowing()
+    // A postpone must honour the recent-unlock grace EVEN in the borderless full-screen routine window
+    // (the evening routine runs there). Without the `!forPostpone`, full-screen forced bypassGrace=true,
+    // so shouldAskPassword returned true before the grace was ever consulted — the postpone flow's second
+    // gate re-prompted the instant after the password was entered, and it looped (report 2026-07-07).
+    // The lock screen itself (non-postpone) still always re-asks in full-screen.
+    let bypassGrace = isFullScreenWindowCurrentlyShowing() && !forPostpone
     if !bypassGrace{
         if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{
             if Date() < lastUnlockTimeByAccountabilityBuddy{
