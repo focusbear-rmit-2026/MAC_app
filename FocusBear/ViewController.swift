@@ -93,21 +93,16 @@ class ViewController: NSViewController {
         }else{
             if self.view.window != nil{
                 if isBreakActivityShowingWhileMeeting && currentState == ._MICRO_BREAK_{
+                    // Mid-meeting micro-break: checkIsFullScreenEnabled() forces this NON-fullscreen so
+                    // we don't take over the screen with the borderless kiosk window during a call. But
+                    // the window must still fill the visible screen — the previous code centred it at
+                    // minSize (900x450), which was too short and clipped the bottom of the break-activity
+                    // content. Do NOT shrink this back to a compact size; that reintroduces the clip.
                     let screenList = NSScreen.screens
                     for screen in screenList {
-                        let screenHeight = screen.frame.height
-                        let screenWidth = screen.frame.width
-                        let width = self.view.window?.minSize.width ?? 1000
-                        let height = self.view.window?.minSize.height ?? 1000
-                        
-                        let x = ((screenWidth/2) - (width/2))
-                        let y = ((screenHeight/2) - (height/2))
-                        
-                        let newFrame = NSRect(origin: NSPoint(x: x, y: y), size: self.view.window!.minSize)
-                        self.view.window?.setFrame(newFrame, display: true)
+                        self.view.window?.setFrame(screen.visibleFrame, display: true)
                         break;
                     }
-                    
                 }else{
                     if let screen = self.view.window?.screen{ //
                         self.view.window?.setFrame(screen.visibleFrame, display: true, animate: false)
