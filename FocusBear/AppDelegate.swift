@@ -142,7 +142,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
         UserDefaults.standard.set(currentUserEmail, forKey: kUserDefaultsLastUserEmailBeforeLogout)
         //--------------------------------------------------//
-        
+
+        // Clear persisted user identity so stale data doesn't bleed into the next account
+        currentLeaderboardUsername = ""
+        sharedDefaults?.removeObject(forKey: kUserdefaultsSharedLeaderboardUsername)
+        sharedDefaults?.removeObject(forKey: kUserdefaultsSharedUserEmail)
+        sharedDefaults?.removeObject(forKey: kUserdefaultsSharedUserName)
+
         self.user = nil
         let _ = self.credentialsManager.clear()
         self.credential = nil
@@ -764,7 +770,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 sharedDefaults?.setValue(self.user?.userId ?? "", forKeyPath: kUserdefaultsSharedUserId)
                 sharedDefaults?.setValue(self.credential!.accessToken, forKeyPath: kUserdefaultsSharedAccessToken)
                 sharedDefaults?.setValue(appVersion, forKeyPath: kUserdefaultsSharedAppVersion)
-                
+                // Restore persisted user info so account screen shows correct values before the API call returns
+                currentUserEmail = sharedDefaults?.object(forKey: kUserdefaultsSharedUserEmail) as? String ?? ""
+                currentUserName = sharedDefaults?.object(forKey: kUserdefaultsSharedUserName) as? String ?? ""
+                currentLeaderboardUsername = sharedDefaults?.object(forKey: kUserdefaultsSharedLeaderboardUsername) as? String ?? ""
+
                 SentrySDK.configureScope { scope in
                     let user = User(userId: self.user?.userId ?? "")
                     scope.setUser(user)
@@ -1271,10 +1281,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         addLog(text:"isEmailVerified :- \(isEmailVerified)")
                         self.needToCheckEmailVerification = false
                         currentUserEmail = dic?.value(forKey: "email") as? String ?? ""
-                        currentUserName = dic?.value(forKey: "username") as? String ?? ""
+                        currentUserName = dic?.value(forKey: "name") as? String ?? ""
+                        currentLeaderboardUsername = dic?.value(forKey: "username") as? String ?? ""
                         self.sharedDefaults?.setValue(currentUserEmail, forKeyPath: kUserdefaultsSharedUserEmail)
                         self.sharedDefaults?.setValue(currentUserName, forKeyPath: kUserdefaultsSharedUserName)
+                        self.sharedDefaults?.setValue(currentLeaderboardUsername, forKeyPath: kUserdefaultsSharedLeaderboardUsername)
                         self.sharedDefaults?.synchronize()
+                        DispatchQueue.main.async {
+                            accountVcObj?.reloadView()
+                        }
                     }
                     
                     

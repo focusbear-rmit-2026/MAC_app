@@ -1089,6 +1089,8 @@
     "accountVcInfo": {
         "title": "Información de tu cuenta",
         "titleNameText": "Nombre:",
+        "titleLeaderboardUsernameText": "Nombre de usuario del ranking:",
+        "leaderboardUsernamePlaceholder": "Sin definir — actualiza tu nombre de usuario del ranking en la aplicación web",
         "titleEmailIdText": "Correo electrónico:",
         "buttonLogoutText": "Cerrar Sesión",
         "registeredVersionText": "Suscripción activa",

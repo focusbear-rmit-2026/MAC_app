@@ -133,6 +133,7 @@ var configjson = NSDictionary()
 var currentDeviceId = ""
 var currentUserName = ""
 var currentUserEmail = ""
+var currentLeaderboardUsername = ""
 
 
 //var shouldShowOnboardingBlockedUrlsView = true
