@@ -2707,6 +2707,7 @@ class habitsVc: NSViewController {
                     closeNudgeFocusAlignmentScoreWindow()
                 }
                 isAnyAllowedFocusModeActivityRunning = false
+                isAllowedActivityHabitPlaying = false   // #2050: clear alongside so a postponed allowed-activity habit doesn't leave minimise in "background without postpone" mode
                 currentHabitPlaying = nil
                 if !isFocusModeOn(){
                     refreshFocusModeData()
@@ -2820,8 +2821,9 @@ class habitsVc: NSViewController {
             closeNudgeFocusAlignmentScoreWindow()
         }
         isAnyAllowedFocusModeActivityRunning = false
+        isAllowedActivityHabitPlaying = false   // #2050: clear alongside so a postponed allowed-activity habit doesn't leave minimise in "background without postpone" mode
         currentHabitPlaying = nil
-        
+
         if !isFocusModeOn(){
             refreshFocusModeData()
             setAppIconForFocusModeScore(probability: nil)
@@ -2911,8 +2913,9 @@ class habitsVc: NSViewController {
                 closeNudgeFocusAlignmentScoreWindow()
             }
             isAnyAllowedFocusModeActivityRunning = false
+            isAllowedActivityHabitPlaying = false   // #2050: clear alongside so a postponed allowed-activity habit doesn't leave minimise in "background without postpone" mode
             currentHabitPlaying = nil
-            
+
             if !isFocusModeOn(){
                 refreshFocusModeData()
                 setAppIconForFocusModeScore(probability: nil)

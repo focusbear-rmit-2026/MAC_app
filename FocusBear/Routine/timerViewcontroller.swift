@@ -1805,6 +1805,11 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
         if self.totalDuration <= self.currentTimer {
             self.timer?.invalidate()
+            // #2050: the habit's timer just finished. Clear this NOW (synchronously, before the async
+            // *Over dispatch) so a minimise in the gap before the next habit starts doesn't see a stale
+            // flag and background without the postpone prompt. startTimerHabit re-sets it for the next
+            // habit; the completion VC clears it for the last one.
+            isAllowedActivityHabitPlaying = false
             enableSystemSleep()
             if popUpCheckListWcObj != nil{
                 if popUpCheckListWcObj?.window?.isVisible ?? false{
@@ -2045,6 +2050,10 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     @IBAction func btnIAmDoneClicked(_ sender: Any) {
         addLog(text:"[user-action]ongoing activity:-btnIAmDoneClicked")
         self.timer?.invalidate()
+        // #2050: habit marked done. Clear NOW (synchronously, before the async *Over dispatch) so a
+        // minimise in the gap before the next habit starts doesn't see a stale flag and background
+        // without the postpone prompt. startTimerHabit re-sets it for the next habit.
+        isAllowedActivityHabitPlaying = false
         enableSystemSleep()
         if popUpCheckListWcObj != nil{
             if popUpCheckListWcObj?.window?.isVisible ?? false{

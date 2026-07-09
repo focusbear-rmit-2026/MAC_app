@@ -1587,6 +1587,10 @@ class activityCompletionVc: NSViewController {
     
     func customRoutineHabitSkipped() {
         addLog(text:"customRoutineHabitSkipped")
+        // #2050: parity with morning/evening skip — clear so a skipped allowed-activity custom-routine
+        // habit doesn't leave isAllowedActivityHabitPlaying stale (minimise would then background
+        // without the postpone prompt). startTimerHabit re-sets it for the next habit.
+        isAllowedActivityHabitPlaying = false
         btnSkipHabit.title = buttonMoreActionsText
 
         if currentAction != ._INPROGRESS_{// if inprogess it means already updated cutrrenthabitindex
@@ -2134,6 +2138,7 @@ class activityCompletionVc: NSViewController {
             closeNudgeFocusAlignmentScoreWindow()
         }
         isAnyAllowedFocusModeActivityRunning = false
+        isAllowedActivityHabitPlaying = false   // clear alongside the focus-mode flag so a finished allowed-activity habit doesn't leave minimise in "background without postpone" mode
         currentHabitPlaying = nil
         habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
@@ -2386,6 +2391,7 @@ class activityCompletionVc: NSViewController {
             closeNudgeFocusAlignmentScoreWindow()
         }
         isAnyAllowedFocusModeActivityRunning = false
+        isAllowedActivityHabitPlaying = false   // clear alongside the focus-mode flag so a finished allowed-activity habit doesn't leave minimise in "background without postpone" mode
         currentHabitPlaying = nil
         habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
@@ -2754,6 +2760,7 @@ class activityCompletionVc: NSViewController {
             closeNudgeFocusAlignmentScoreWindow()
         }
         isAnyAllowedFocusModeActivityRunning = false
+        isAllowedActivityHabitPlaying = false   // clear alongside the focus-mode flag so a finished allowed-activity habit doesn't leave minimise in "background without postpone" mode
         currentHabitPlaying = nil
         habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
@@ -3199,6 +3206,7 @@ class activityCompletionVc: NSViewController {
             closeNudgeFocusAlignmentScoreWindow()
         }
         isAnyAllowedFocusModeActivityRunning = false
+        isAllowedActivityHabitPlaying = false   // clear alongside the focus-mode flag so a finished allowed-activity habit doesn't leave minimise in "background without postpone" mode
         currentHabitPlaying = nil
         habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()

@@ -382,6 +382,9 @@ class chooseHabitsVC: NSViewController {
         }
         hideBlankWindowInSecondaryMonitor()
         currentState = ._NOTHING_
+        // #2050: routine skipped for today — clear so a playing allowed-activity habit doesn't leave
+        // isAllowedActivityHabitPlaying stale in ._NOTHING_ (minimise would background without postpone).
+        isAllowedActivityHabitPlaying = false
         getHabitsVcObject().setActivityTimer()
         leftMenuVcObj?.habitOver()
         // Reselect/re-show the Day Plan for the current state (rather than requestDayPlanRefresh, which

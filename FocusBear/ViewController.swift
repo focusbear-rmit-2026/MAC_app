@@ -211,7 +211,24 @@ class ViewController: NSViewController {
         
         let fullScreen = mainWindowControllerObj?.window?.styleMask.contains(.fullScreen) ?? false
         let isPaused = timerViewcontrollerObj?.isActivityPaused ?? false
-        addLog(text: "minimise: allowedActivity=\(isAllowedActivityHabitCurrentlyRunning) paused=\(isPaused) flag=\(isAllowedActivityHabitPlaying) focusAllowed=\(isAnyAllowedFocusModeActivityRunning) fullScreen=\(fullScreen) subviews=\(getHabitsVcObject().view.subviews.count)")
+        // Defence-in-depth: only trust the allowed-activity flags while an activity is genuinely playing.
+        // Require BOTH a playback state AND currentAction == ._INPROGRESS_ — the flags are set only at the
+        // play points (startTimerHabit / startSpecialActivity), where currentAction is always set to
+        // ._INPROGRESS_ alongside the state, so a legitimately-playing habit always satisfies both. Using
+        // && (not ||) means currentAction == ._INPROGRESS_ alone can't pass this in an unexpected state,
+        // and a stale flag in an idle ._NOTHING_ state (where currentAction is ._END_) is correctly
+        // rejected. ._SPECIAL_ACTIVITY_ is included because it too sets the flags (via
+        // checkActivityExtraAllowedAppsAndUrls) with currentState = ._SPECIAL_ACTIVITY_ + ._INPROGRESS_;
+        // omitting it would drop the background-on-minimise the pre-guard code gave special activities.
+        // Without this guard, a stale flag would silently background the window on minimise instead of
+        // showing the abort/postpone prompt.
+        let isActivelyPlaying = (currentState == ._MORNING_HABIT_
+            || currentState == ._EVENING_HABIT_
+            || currentState == ._MICRO_BREAK_
+            || currentState == ._CUSTOM_ROUTINE_
+            || currentState == ._SPECIAL_ACTIVITY_)
+            && currentAction == ._INPROGRESS_
+        addLog(text: "minimise: allowedActivity=\(isAllowedActivityHabitCurrentlyRunning) paused=\(isPaused) activelyPlaying=\(isActivelyPlaying) state=\(currentState) action=\(currentAction) flag=\(isAllowedActivityHabitPlaying) focusAllowed=\(isAnyAllowedFocusModeActivityRunning) fullScreen=\(fullScreen) subviews=\(getHabitsVcObject().view.subviews.count)")
 
         // While an allowed-activity habit is ACTIVELY running, a floating timer keeps it going in the
         // background, so the minimise button should just get the main window out of the way — never the
@@ -219,8 +236,12 @@ class ViewController: NSViewController {
         // what's layered in the habits view. The habit window is borderless (kiosk-style), so
         // miniaturize() is a no-op on it — close it instead; the floating timer keeps the habit running
         // and the user can reopen from the Dock. If the habit is PAUSED, the user isn't doing the
-        // allowed activity, so fall through to the normal postpone flow instead.
-        if isAllowedActivityHabitCurrentlyRunning && !isPaused {
+        // allowed activity, so fall through to the normal postpone flow instead. `isActivelyPlaying`
+        // guards against a stale flag firing this in an idle state.
+        if isAllowedActivityHabitCurrentlyRunning && !isPaused && isActivelyPlaying {
+            // The user backgrounded the app to use their computer, so also drop the blank blocking window
+            // on secondary monitors — otherwise closing the main window leaves the other screen blocked.
+            hideBlankWindowInSecondaryMonitor()
             mainWindowControllerObj?.window?.close()
             return
         }

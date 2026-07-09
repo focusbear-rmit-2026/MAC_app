@@ -6442,6 +6442,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         
                         refreshFocusModeData()
                         isAnyAllowedFocusModeActivityRunning = false
+                        isAllowedActivityHabitPlaying = false   // #2050: clear alongside the focus-mode flag so an aborted allowed-activity habit doesn't leave minimise in "background without postpone" mode
                         closePupUpBlockIfVisible()
                         
                         currentHabitPlaying = nil
@@ -6468,6 +6469,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 
                                 refreshFocusModeData()
                                 isAnyAllowedFocusModeActivityRunning = false
+                                isAllowedActivityHabitPlaying = false   // #2050: clear alongside so an aborted allowed-activity habit doesn't leave minimise in "background without postpone" mode
                                 currentHabitPlaying = nil
                                 habitBlockTimerHelper.stopUrlTimer()
                                 self.timerAllowAppForActivity?.invalidate()
