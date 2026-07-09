@@ -61,6 +61,9 @@ enum ScheduleText {
     static var eventSaveError: String { t("eventSaveError", "Couldn't save the event. Check calendar access and try again.") }
     static var showEarlierEvents: String { t("showEarlierEvents", "Show events from earlier today") }
     static var hideDeepWork: String { t("hideDeepWork", "Hide deep work blocks") }
+    static var showDismissedEvents: String { t("showDismissedEvents", "Show dismissed events") }
+    static var showEventAgain: String { t("showEventAgain", "Show this event again") }
+    static var hideEvent: String { t("hideEvent", "Hide this event") }
     static var showHabits: String { t("showHabits", "Show habits") }
     static var hideHabits: String { t("hideHabits", "Hide habits") }
     static var deepWorkSession: String { t("deepWorkSession", "Deep work") }
@@ -502,6 +505,13 @@ class scheduleViewController: NSViewController {
     private var hideDeepWorkBlocks: Bool {
         get { UserDefaults.standard.bool(forKey: "kUserdefaultsHideDeepWorkInDayPlan") }
         set { UserDefaults.standard.set(newValue, forKey: "kUserdefaultsHideDeepWorkInDayPlan") }
+    }
+
+    /// Persisted setting: show events the user dismissed (✕) — rendered struck-through with a 👀 to
+    /// bring them back — instead of hiding them.
+    private var showDismissedEvents: Bool {
+        get { UserDefaults.standard.bool(forKey: "kUserdefaultsShowDismissedEventsInDayPlan") }
+        set { UserDefaults.standard.set(newValue, forKey: "kUserdefaultsShowDismissedEventsInDayPlan") }
     }
 
     /// Explicit expand/collapse overrides for routine sections (accordions), keyed by
@@ -1564,7 +1574,7 @@ class scheduleViewController: NSViewController {
         // The day always runs through to 23:59 of the day being viewed.
         let cal = Calendar.current
         let dayEnd = cal.date(bySettingHour: 23, minute: 59, second: 0, of: selectedDate) ?? scheduleDayEnd(now: now)
-        let meetings = CalendarManager.shared.meetings(for: selectedDate)   // [] when no calendar access
+        let meetings = CalendarManager.shared.meetings(for: selectedDate, includeDismissed: showDismissedEvents)   // [] when no calendar access
 
         // "Show events from earlier today" only makes sense on today, and only when there actually
         // are meetings that already finished. Other days already show their whole timetable.
@@ -2012,7 +2022,10 @@ class scheduleViewController: NSViewController {
         let hideDW = NSButton(checkboxWithTitle: ScheduleText.hideDeepWork,
                               target: self, action: #selector(toggleHideDeepWork(_:)))
         hideDW.state = hideDeepWorkBlocks ? .on : .off
-        let form = NSStackView(views: [heading, check, hideDW])
+        let showDismissed = NSButton(checkboxWithTitle: ScheduleText.showDismissedEvents,
+                                     target: self, action: #selector(toggleShowDismissedEvents(_:)))
+        showDismissed.state = showDismissedEvents ? .on : .off
+        let form = NSStackView(views: [heading, check, hideDW, showDismissed])
         form.orientation = .vertical; form.alignment = .leading; form.spacing = 10
         form.translatesAutoresizingMaskIntoConstraints = false
         let container = NSView(); container.addSubview(form)
@@ -2036,6 +2049,12 @@ class scheduleViewController: NSViewController {
 
     @objc private func toggleHideDeepWork(_ sender: NSButton) {
         hideDeepWorkBlocks = (sender.state == .on)
+        lastRenderSignature = nil
+        reload()
+    }
+
+    @objc private func toggleShowDismissedEvents(_ sender: NSButton) {
+        showDismissedEvents = (sender.state == .on)
         lastRenderSignature = nil
         reload()
     }
@@ -2554,6 +2573,13 @@ class scheduleViewController: NSViewController {
         let (titleLabel, titleTrailing) = layoutColumns(in: content, time: timeText, title: title,
                                                         leadingInset: 6, vPad: 8,
                                                         timeColor: .secondaryLabelColor, titleColor: .labelColor)
+        if block.isDismissed {
+            // A dismissed meeting surfaced by "Show dismissed events": strike it through and dim it.
+            titleLabel.attributedStringValue = NSAttributedString(string: titleLabel.stringValue, attributes: [
+                .strikethroughStyle: NSUnderlineStyle.single.rawValue,
+                .foregroundColor: NSColor.tertiaryLabelColor,
+                .font: titleLabel.font ?? NSFont.systemFont(ofSize: 13)])
+        }
         var lastTrailing = titleTrailing
         if let subtitle = block.subtitle {
             let sub = makeLabel(subtitle, size: 13, bold: false)
@@ -2577,12 +2603,21 @@ class scheduleViewController: NSViewController {
             dur.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor).isActive = true
             dur.trailingAnchor.constraint(lessThanOrEqualTo: content.trailingAnchor, constant: -8).isActive = true
         }
-        // ✕ to remove a calendar meeting from the schedule (pinned to the trailing edge).
+        // ✕ to hide a calendar meeting (or 👀 to bring back a dismissed one), pinned to the trailing edge.
         if block.kind == .meeting, let eid = block.eventID {
-            let x = NSButton(title: "✕", target: self, action: #selector(dismissMeetingClicked(_:)))
-            x.bezelStyle = .circular
+            // cursorButton gives the pointing-hand cursor on hover for both the ✕ and the 👀.
+            let x = cursorButton(title: block.isDismissed ? "👀" : "✕", target: self, action: #selector(dismissMeetingClicked(_:)))
+            // The wide 👀 double-eye emoji gets clipped by the circular bezel, so render the un-dismiss control
+            // borderless (no button background) — the full emoji shows cleanly at the default font. The narrow
+            // ✕ fits its circle fine, so keep the circular bezel for the dismiss control.
+            if block.isDismissed {
+                x.isBordered = false
+            } else {
+                x.bezelStyle = .circular
+            }
             x.translatesAutoresizingMaskIntoConstraints = false
-            x.identifier = NSUserInterfaceItemIdentifier("dismiss:\(eid)")
+            x.identifier = NSUserInterfaceItemIdentifier((block.isDismissed ? "undismiss:" : "dismiss:") + eid)
+            x.toolTip = block.isDismissed ? ScheduleText.showEventAgain : ScheduleText.hideEvent
             content.addSubview(x)
             NSLayoutConstraint.activate([
                 x.widthAnchor.constraint(equalToConstant: 26),
@@ -2610,7 +2645,9 @@ class scheduleViewController: NSViewController {
 
     /// Finds the meeting card's ✕ (dismiss) button, if any, anywhere in its subtree.
     private func dismissButton(in view: NSView) -> NSView? {
-        if (view.identifier?.rawValue.hasPrefix("dismiss:")) == true { return view }
+        // Match both the ✕ (dismiss:) and the 👀 (undismiss:) buttons so the card's click gesture ignores
+        // clicks on either — otherwise tapping 👀 falls through to the card and opens the event editor.
+        if let id = view.identifier?.rawValue, id.hasPrefix("dismiss:") || id.hasPrefix("undismiss:") { return view }
         for sub in view.subviews { if let f = dismissButton(in: sub) { return f } }
         return nil
     }
@@ -2712,11 +2749,22 @@ class scheduleViewController: NSViewController {
     }
 
     @objc private func dismissMeetingClicked(_ sender: NSButton) {
-        guard let raw = sender.identifier?.rawValue, raw.hasPrefix("dismiss:") else { return }
-        let eventId = String(raw.dropFirst("dismiss:".count))
-        CalendarManager.shared.dismissEvent(id: eventId)
-        DayPlanSync.shared.dismissEvent(eventID: eventId, on: selectedDate)   // mirror to backend (cross-device)
-        reload()
+        guard let raw = sender.identifier?.rawValue else { return }
+        // Force a re-render: with "Show dismissed events" on, un-dismissing keeps the meeting in the list
+        // at the same position, so the render signature wouldn't change and reload() would no-op (the
+        // event would stay struck through). Same reset the settings toggles use.
+        lastRenderSignature = nil
+        if raw.hasPrefix("undismiss:") {
+            let eventId = String(raw.dropFirst("undismiss:".count))
+            CalendarManager.shared.restoreDismissedEvent(id: eventId)
+            DayPlanSync.shared.undismissEvent(eventID: eventId, on: selectedDate)   // mirror to backend (cross-device)
+            reload()
+        } else if raw.hasPrefix("dismiss:") {
+            let eventId = String(raw.dropFirst("dismiss:".count))
+            CalendarManager.shared.dismissEvent(id: eventId)
+            DayPlanSync.shared.dismissEvent(eventID: eventId, on: selectedDate)   // mirror to backend (cross-device)
+            reload()
+        }
     }
 
     // MARK: - Calendar permission banner

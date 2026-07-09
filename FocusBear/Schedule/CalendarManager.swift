@@ -73,7 +73,7 @@ final class CalendarManager {
 
     /// Non-declined, non-all-day, non-dismissed meetings for the given day (includes events the
     /// user hasn't RSVP'd to yet).
-    func meetings(for day: Date) -> [ScheduleMeetingInput] {
+    func meetings(for day: Date, includeDismissed: Bool = false) -> [ScheduleMeetingInput] {
         guard access == .authorized else { return [] }
         let cal = Calendar.current
         let startOfDay = cal.startOfDay(for: day)
@@ -84,8 +84,11 @@ final class CalendarManager {
         return store.events(matching: predicate)
             .filter { !$0.isAllDay && $0.status != .canceled && $0.endDate > $0.startDate }
             .filter { !hasDeclined($0) }
-            .filter { !dismissed.contains(eventKey($0)) }
-            .map { ScheduleMeetingInput(id: eventKey($0), title: title(for: $0), start: $0.startDate, end: $0.endDate) }
+            // Normally dismissed events are hidden; with "Show dismissed events" on, keep them and tag
+            // them so the row can render struck-through with an un-dismiss (👀) control.
+            .filter { includeDismissed || !dismissed.contains(eventKey($0)) }
+            .map { ScheduleMeetingInput(id: eventKey($0), title: title(for: $0), start: $0.startDate,
+                                        end: $0.endDate, isDismissed: dismissed.contains(eventKey($0))) }
             .sorted { $0.start < $1.start }
     }
 
@@ -254,6 +257,14 @@ final class CalendarManager {
     func dismissEvent(id: String) {
         var ids = dismissedEventIDs
         ids.insert(id)
+        UserDefaults.standard.set(Array(ids), forKey: dismissedKey)
+    }
+
+    /// Un-hide a previously dismissed event (the 👀 shown on a struck-through meeting when
+    /// "Show dismissed events" is on).
+    func restoreDismissedEvent(id: String) {
+        var ids = dismissedEventIDs
+        ids.remove(id)
         UserDefaults.standard.set(Array(ids), forKey: dismissedKey)
     }
 

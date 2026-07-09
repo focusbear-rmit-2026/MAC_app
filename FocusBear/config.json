@@ -2734,6 +2734,9 @@
         "buttonChangeTiming": "Change Timing"
     },
     "scheduleViewInfo":{
+        "showDismissedEvents": "Show dismissed events",
+        "showEventAgain": "Show this event again",
+        "hideEvent": "Hide this event",
         "morningRoutineHabits": "Morning routine habits",
         "eveningRoutineHabits": "Evening routine habits",
         "habitsSuffix": "habits",

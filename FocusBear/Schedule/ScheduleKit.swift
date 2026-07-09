@@ -37,6 +37,7 @@ struct ScheduleBlock {
     var isDone: Bool = false   // habit completed today — rendered struck through (earlier-today sections)
     var habitId: String?       // the habit's server id — used to complete/skip a PAST habit by id
     var isEarlier: Bool = false // from an "earlier today" section (past routine); actioned by id, not index
+    var isDismissed: Bool = false // a meeting the user hid with ✕, shown only when "Show dismissed events" is on
 
     init(kind: ScheduleBlockKind, title: String, start: Date, end: Date,
          habitIndex: Int? = nil, isActionable: Bool = false, isCurrent: Bool = false,
@@ -74,6 +75,7 @@ struct ScheduleMeetingInput {
     let title: String
     let start: Date
     let end: Date
+    var isDismissed: Bool = false   // hidden by the user; surfaced (struck through) when "Show dismissed events" is on
 }
 
 /// A routine (morning / evening / a custom routine) and the time window its habits may run in.
@@ -203,8 +205,10 @@ enum ScheduleBuilder {
         }
 
         for m in upcomingMeetings {
-            blocks.append(ScheduleBlock(kind: .meeting, title: m.title, start: m.start, end: m.end,
-                                        subtitle: labels.meeting, eventID: m.id))
+            var meetingBlock = ScheduleBlock(kind: .meeting, title: m.title, start: m.start, end: m.end,
+                                             subtitle: labels.meeting, eventID: m.id)
+            meetingBlock.isDismissed = m.isDismissed
+            blocks.append(meetingBlock)
         }
 
         // Marker for the transition into the evening routine (the user's shutdown time).

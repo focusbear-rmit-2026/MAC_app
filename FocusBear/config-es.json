@@ -2732,6 +2732,9 @@
         "buttonChangeTiming": "Cambiar horario"
     },
     "scheduleViewInfo":{
+        "showDismissedEvents": "Mostrar eventos descartados",
+        "showEventAgain": "Volver a mostrar este evento",
+        "hideEvent": "Ocultar este evento",
         "morningRoutineHabits": "Hábitos de la rutina matutina",
         "eveningRoutineHabits": "Hábitos de la rutina nocturna",
         "habitsSuffix": "hábitos",
