@@ -109,8 +109,6 @@ class habitsStateVc: NSViewController {
                 showRutinePostponedInfoView(state: CURRENTSTATE._MORNING_HABIT_)
             }else if currentState == ._POSTPONE_EVENING_HABIT_{
                 showRutinePostponedInfoView(state: CURRENTSTATE._EVENING_HABIT_)
-            }else{
-                showRutinePostponedInfoView(state: ._FOCUS_SUMMARY_)
             }
             if currentState == ._POSTPONE_MORNING_HABIT_{
                 lblTitle.stringValue = morningRoutinePostponedText
@@ -120,6 +118,7 @@ class habitsStateVc: NSViewController {
             
         }else if currentState == ._POSTPONE_FOCUS_SUMMARY_{
             btnResumeHabits.isHidden = false
+            showRutinePostponedInfoView(state: ._EVENING_HABIT_)
             lblTitle.stringValue = eveningRoutinePostponedText
         }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
             btnResumeHabits.isHidden = false
@@ -222,7 +221,17 @@ class habitsStateVc: NSViewController {
                 lblTitle.stringValue = ""
                 if sameDay || !shouldDoHabits(){
                     btnResumeHabits.isHidden = false
-                   
+                    // Fresh user (routine not started yet): route the Day Plan to routinePostponedInfoVc,
+                    // which owns a working habit table + Play/Skip/Done (Play → startFirst{Morning,Evening}Habit),
+                    // so the Day Plan tab's buttons actually start the routine — instead of habitsStateVc's own
+                    // overlay, whose ScheduleHost actions are no-ops (they render live buttons but do nothing).
+                    // Pick the routine by time of day, matching the Start-routine button title below (evening
+                    // during the shutoff window, morning otherwise).
+                    if isShutOffTimeGoing(){
+                        showRutinePostponedInfoView(state: ._EVENING_HABIT_)
+                    }else{
+                        showRutinePostponedInfoView(state: ._MORNING_HABIT_)
+                    }
                     if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
                         if isShutOffTimeGoing(){
                             btnResumeHabits.title = "Start evening routine"
