@@ -2633,8 +2633,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         getHabitsVcObject().loadView()
                     }
                     self.statusbutton?.wantsLayer = true
-                    self.statusbutton?.layer?.borderColor = NSColor.red.cgColor
-                    self.statusbutton?.layer?.borderWidth = 2
                     self.statusbutton?.layer?.backgroundColor = NSColor.clear.cgColor
                     self.statusbutton?.title = buttonStatusStateOffText
                     self.statusbutton?.imagePosition = .imageLeft
