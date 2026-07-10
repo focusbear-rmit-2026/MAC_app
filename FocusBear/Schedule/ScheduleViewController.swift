@@ -176,6 +176,12 @@ protocol ScheduleHost: AnyObject {
     /// activity-sync uses). Default no-op; only the active host (`firstViewController`) implements it.
     /// See `firstViewController.completePastHabit`.
     func schedulePastHabitDone(id: String, performedAt: Date)
+
+    /// Whether cancelling the routine from the Day Plan ✕ should KEEP the window open (planning) rather
+    /// than close it. The active-routine host (firstViewController) returns false — cancelling while a
+    /// routine is in progress closes the window, like an in-routine skip. The planning hosts
+    /// (routinePostponedInfoVc / habitsStateVc) keep it open and reload the Day Plan.
+    var cancelRoutineKeepsWindowOpen: Bool { get }
 }
 
 extension ScheduleHost {
@@ -184,6 +190,8 @@ extension ScheduleHost {
     // Default no-op so hosts that don't surface past habits (routinePostponedInfoVc, habitsStateVc)
     // needn't implement it — past-habit completion is only actionable on the active host.
     func schedulePastHabitDone(id: String, performedAt: Date) {}
+    // Default: planning hosts keep the window open on cancel. Only firstViewController overrides (false).
+    var cancelRoutineKeepsWindowOpen: Bool { true }
 }
 
 /// Shared helpers for installing the Schedule tab into a host habit screen. Each host
@@ -2289,9 +2297,13 @@ class scheduleViewController: NSViewController {
         alert.informativeText = ScheduleText.cancelRoutineMessage.replacingOccurrences(of: "<BUTTON>", with: uncancelButton)
         alert.addButton(withTitle: ScheduleText.cancelRoutineOk)       // first button → .alertFirstButtonReturn
         alert.addButton(withTitle: ScheduleText.cancelRoutineCancel)
+        // Whether cancelling keeps the window open depends on the host: the active-routine host
+        // (firstViewController) closes it (in-routine skip), the planning hosts keep it open. Hardcoding
+        // true here was a regression — an in-progress routine's window stopped closing on cancel.
+        let keepWindowOpen = host?.cancelRoutineKeepsWindowOpen ?? true
         alert.beginSheetModal(for: window) { response in
             guard response == .alertFirstButtonReturn else { return }   // Cancel → leave the routine unchanged
-            cancelRoutineForToday(openedFromDayPlan: true)              // OK; the ✕ lives on the Day Plan
+            cancelRoutineForToday(openedFromDayPlan: keepWindowOpen)    // OK
         }
     }
 

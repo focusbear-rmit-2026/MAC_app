@@ -228,4 +228,8 @@ extension firstViewController: ScheduleHost {
         // The postponed host (routinePostponedInfoVc) instead keeps the window open and reloads the plan.
         showChooseHabitsView()
     }
+
+    // In-routine cancel closes the window (mirrors scheduleSkipRoutineForToday above): the Day Plan ✕
+    // confirmation calls cancelRoutineForToday(openedFromDayPlan: false) for the active-routine host.
+    var cancelRoutineKeepsWindowOpen: Bool { false }
 }
