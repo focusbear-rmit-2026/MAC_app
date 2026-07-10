@@ -2280,8 +2280,13 @@ class menuViewController: NSViewController {
         btnEditBlockingScheduleClicked(self)
         boxBlockingDisabledFirstTime.isHidden = true
         boxBlockingDisabled.isHidden = false
-        UserDefaults.standard.set(true, forKey: kUserDefaultsBlockingScheduleAddedFirstTime)
         lblTitleBreakStatus.isHidden = true
+        // Deliberately do NOT set kUserDefaultsBlockingScheduleAddedFirstTime here. This only opens the
+        // blocking-schedule editor — the user hasn't set anything up yet. Setting the flag here cleared
+        // the "set up blocking" card/banner in the new menu the moment it was clicked. The flag (which
+        // hides the card — see reloadData / showBlockingBanner) is set only when blocking is actually
+        // dismissed (onDismissBlocking) or the user picks "later" (btnSetLaterBlockingScheduleFirstTimeClicked);
+        // once a schedule actually exists the card is hidden by the arrBlockingSchedule count check anyway.
     }
     
     

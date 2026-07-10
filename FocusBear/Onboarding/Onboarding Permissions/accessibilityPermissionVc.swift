@@ -12,6 +12,7 @@ import AVKit
 
 class accessibilityPermissionVc: NSViewController {
     
+    @IBOutlet weak var openSettingsLink: underLineButton!
     @IBOutlet weak var imgViewPermission: NSImageView!
     @IBOutlet weak var imgViewTick: NSImageView!
     @IBOutlet weak var imgViewBear: NSImageView!
@@ -107,23 +108,18 @@ class accessibilityPermissionVc: NSViewController {
                            owner: self, userInfo: nil))
 
         // Explicit text link below the image — same action — for users who don't realise the image
-        // itself is clickable.
+        // itself is clickable. It's a storyboard-defined underLineButton (outlet) laid out with Auto
+        // Layout below the accessibility image, rather than a programmatically-added NSButton: the old
+        // code pinned it to the image bottom with no constraint against btnContinue, so it overlapped
+        // the continue button and drifted further out of place when the window was resized. Here we only
+        // set its action/target/colour/text; underLineButton draws the underline itself.
         let linkText = (configjson["accessibilityPermissionVcInfoNew"] as? [String: Any])?["openSettingsLink"] as? String
             ?? "Open Accessibility settings"
-        let openSettingsLink = NSButton(title: linkText, target: self, action: #selector(imgPermissionClicked))
-        openSettingsLink.isBordered = false
-        openSettingsLink.bezelStyle = .inline
-        openSettingsLink.translatesAutoresizingMaskIntoConstraints = false
-        openSettingsLink.attributedTitle = NSAttributedString(string: linkText, attributes: [
-            .foregroundColor: NSColor(named: "dark_OrangeColor") ?? NSColor.systemOrange,
-            .underlineStyle: NSUnderlineStyle.single.rawValue,
-            .font: NSFont.systemFont(ofSize: 13, weight: .medium),
-        ])
-        view.addSubview(openSettingsLink)
-        NSLayoutConstraint.activate([
-            openSettingsLink.centerXAnchor.constraint(equalTo: imgViewPermission.centerXAnchor),
-            openSettingsLink.topAnchor.constraint(equalTo: imgViewPermission.bottomAnchor, constant: 8),
-        ])
+
+        openSettingsLink.action = #selector(imgPermissionClicked)
+        openSettingsLink.target = self
+        openSettingsLink.titleColor = NSColor(named: "dark_OrangeColor") ?? NSColor.systemOrange
+        openSettingsLink.title = linkText
     }
 
     override func mouseEntered(with event: NSEvent) { NSCursor.pointingHand.set() }
