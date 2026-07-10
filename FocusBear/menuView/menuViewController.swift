@@ -2767,17 +2767,28 @@ extension menuViewController {
     /// routine's start time; plus today's top undone tasks.
     private func updateDayPlan(_ model: MenuModel) {
         let activeHabits: [habit]
+        let isMorningRoutine: Bool
         switch currentState {
         case ._EVENING_HABIT_, ._POSTPONE_EVENING_HABIT_:
             activeHabits = arrFilteredEveningHabits
+            isMorningRoutine = false
         case ._CUSTOM_ROUTINE_:
             activeHabits = currentRoutineIndex < arrAllCustomRoutine.count
                 ? arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits : []
+            isMorningRoutine = false
         default:
             activeHabits = arrFilteredMorningHabits
+            isMorningRoutine = true
         }
         let playingId = currentHabitPlaying?.id ?? ""
-        let nextHabit = activeHabits.first { h in
+        // #2013: once the morning routine is done (before shutoff) and we're no longer in it, don't
+        // surface a leftover "next" morning habit. Some completed habits may not be in
+        // dayPlanCompletedHabitIds yet (e.g. before the #2150 refetch), so the first-not-completed check
+        // would otherwise pick one. Same isHabitAlreadyShowed signal the Day Plan uses; the if/else below
+        // then shows the next routine's start ("Evening routine starts at …") instead.
+        let morningRoutineDone = isMorningRoutine && isHabitAlreadyShowed && !isShutOffTimeGoing()
+            && currentState != ._MORNING_HABIT_ && currentState != ._POSTPONE_MORNING_HABIT_
+        let nextHabit = morningRoutineDone ? nil : activeHabits.first { h in
             let id = h.id ?? ""
             return id != playingId && !dayPlanCompletedHabitIds.contains(id)
         }
