@@ -149,12 +149,18 @@ struct habit {
         self.tutorial = tutorial
     }
 
-    /// True for "allowed activity" habits — ones that intentionally let you use other apps / sites
-    /// during them (an allowed-apps habit, an allowed-websites habit, or an allowed focus mode).
-    /// These get the Habit Player | Day Plan tabs and a postpone-free minimise.
+    /// True for "allowed activity" habits — ones that intentionally let you use your computer during
+    /// them (an allowed-apps habit or an allowed focus mode). These get the Habit Player | Day Plan
+    /// tabs and a postpone-free minimise.
+    ///
+    /// NOTE: allowUrls is deliberately NOT counted here. Allowed URLs only mean something when there's
+    /// an app (a browser) to open them in — with no allowApps and no allowedFocusMode, the URLs can't
+    /// be used during a blocking session, so the habit isn't really an "allowed activity". Counting
+    /// allowUrls made a URL-only habit read as allowed, which flipped isAllowedActivityHabitCurrentlyRunning
+    /// true and made btnMinimizeClicked close the window instead of showing AskPostpone (the postpone
+    /// popup looked "invisible" because it was never presented).
     var isAllowedActivityHabit: Bool {
         (allowApps?.count ?? 0) > 0
-            || (allowUrls?.count ?? 0) > 0
             || !((allowedFocusMode ?? "").isEmpty)
     }
 }
