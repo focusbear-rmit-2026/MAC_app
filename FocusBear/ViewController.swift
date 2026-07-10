@@ -803,20 +803,87 @@ class ViewController: NSViewController {
 // Surfaces the Focus Button connection UI as a first-class Tools screen (out of Settings > Add-Ons).
 // `SwiftUI.Button` is qualified because the app declares its own `Button` type.
 
+/// Localised strings for the Focus Button tool screen — config-driven with an English fallback, mirroring
+/// ScheduleText. Keys live under `focusButtonInfo` in config.json (and the assets repo config.json /
+/// config-es.json). Counts (n/total) are interpolated in Swift since numbers are locale-neutral here.
+enum FocusButtonText {
+    private static var info: NSDictionary? { configjson.value(forKey: "focusButtonInfo") as? NSDictionary }
+    private static func t(_ key: String, _ fallback: String) -> String {
+        (info?.value(forKey: key) as? String) ?? fallback
+    }
+    static var focusSessionEmoji: String { t("focusSessionEmoji", "Focus session emoji") }
+    static var focusEmojiHint: String { t("focusEmojiHint", "Pick up to 5 emoji — the button shows a random one as the hero when you start a focus session.") }
+    static var save: String { t("save", "Save") }
+    static var habitIconsLabel: String { t("habitIconsLabel", "Habit icons") }
+    static var focusIconsLabel: String { t("focusIconsLabel", "Focus session icons") }
+    static var upToDate: String { t("iconsUpToDate", "up to date") }
+    static var checkingHabitIcons: String { t("checkingHabitIcons", "Checking habit icons…") }
+    static var checkingFocusIcons: String { t("checkingFocusIcons", "Checking focus icons…") }
+}
+
 @available(macOS 11.0, *)
 final class FocusButtonToolModel: ObservableObject {
     @Published var isConnected = false
     @Published var statusMessage = ""
     @Published var connecting = false
+    @Published var iconUploadStatus = ""        // HABIT-icon sync progress
+    @Published var focusIconUploadStatus = ""   // FOCUS-session emoji-pool sync progress (kept separate)
+    @Published var focusEmojiText = UserDefaults.standard.string(forKey: FocusButtonToolModel.focusEmojiKey) ?? ""
+    static let focusEmojiKey = "kUserdefaultsFocusEmojiPool"
+
+    /// Persist + push the FOCUS-session emoji pool (up to 5). The device shows a random one of these as
+    /// the ring hero each time a plain focus session starts (firmware ≥ 1.8.0).
+    func saveFocusEmoji() {
+        let emoji = focusEmojiText.filter { EmojiSync.firstEmojiKey(in: String($0)) != nil }.prefix(5).map { String($0) }
+        focusEmojiText = emoji.joined()   // normalise the field to just the (≤5) emoji we kept
+        UserDefaults.standard.set(focusEmojiText, forKey: FocusButtonToolModel.focusEmojiKey)
+        focusIconUploadStatus = emoji.isEmpty ? "" : FocusButtonText.checkingFocusIcons
+        focusButtonServiceObject.syncFocusEmojiPool(emoji)
+    }
     private var timer: Timer?
     private var savedOnError: ((String) -> Void)?
     private var savedOnConnected: ((String) -> Void)?
+    private var savedOnEmojiProgress: ((Int, Int) -> Void)?
+    private var savedOnFocusEmojiProgress: ((Int, Int) -> Void)?
+
+    /// "<label>: <synced>/<total>" while uploading, "✓ <label> up to date" when done. synced = icons
+    /// actually on the device (cached + completed), not attempts.
+    private func syncStatus(_ synced: Int, _ total: Int, label: String) -> String {
+        synced >= total ? "✓ \(label) \(FocusButtonText.upToDate)" : "\(label): \(synced)/\(total)"
+    }
 
     func start() {
         // Remember the app's existing callbacks so leaving the screen doesn't clobber them.
         savedOnError = focusButtonServiceObject.onError
         savedOnConnected = focusButtonServiceObject.onDeviceConnected
+        savedOnEmojiProgress = focusButtonServiceObject.onEmojiProgress
+        savedOnFocusEmojiProgress = focusButtonServiceObject.onFocusEmojiProgress
+        // HABIT icon upload progress — kept separate from the focus-emoji pool below.
+        focusButtonServiceObject.onEmojiProgress = { [weak self] synced, total in
+            guard let self = self else { return }   // already on the main thread
+            self.iconUploadStatus = self.syncStatus(synced, total, label: FocusButtonText.habitIconsLabel)
+            if synced >= total {
+                let done = self.iconUploadStatus
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+                    if self?.iconUploadStatus == done { self?.iconUploadStatus = "" }
+                }
+            }
+        }
+        // FOCUS-session emoji pool upload progress — its own line, distinct from habit icons.
+        focusButtonServiceObject.onFocusEmojiProgress = { [weak self] synced, total in
+            guard let self = self else { return }
+            self.focusIconUploadStatus = self.syncStatus(synced, total, label: FocusButtonText.focusIconsLabel)
+            if synced >= total {
+                let done = self.focusIconUploadStatus
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+                    if self?.focusIconUploadStatus == done { self?.focusIconUploadStatus = "" }
+                }
+            }
+        }
         refresh()
+        // Re-check habit icon status now (syncs otherwise only fire on a routine load), so opening the
+        // screen shows current state instead of staying blank. Cached icons are skipped, so it's cheap.
+        if focusButtonServiceObject.refreshEmojiIcons() { iconUploadStatus = FocusButtonText.checkingHabitIcons }
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in self?.refresh() }
     }
@@ -824,6 +891,8 @@ final class FocusButtonToolModel: ObservableObject {
         timer?.invalidate(); timer = nil
         focusButtonServiceObject.onError = savedOnError
         focusButtonServiceObject.onDeviceConnected = savedOnConnected
+        focusButtonServiceObject.onEmojiProgress = savedOnEmojiProgress
+        focusButtonServiceObject.onFocusEmojiProgress = savedOnFocusEmojiProgress
     }
     func refresh() { isConnected = focusButtonServiceObject.isRunning }
 
@@ -897,6 +966,34 @@ struct FocusButtonToolView: View {
                 if !model.statusMessage.isEmpty {
                     Text(model.statusMessage).font(.callout).foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
+                }
+                if !model.iconUploadStatus.isEmpty {
+                    HStack(spacing: 6) {
+                        if !model.iconUploadStatus.hasPrefix("✓") {
+                            ProgressView().scaleEffect(0.5).frame(width: 14, height: 14)
+                        }
+                        Text(model.iconUploadStatus).font(.callout).foregroundColor(.secondary)
+                    }
+                }
+                if model.isConnected {
+                    Divider().padding(.vertical, 8)
+                    Text(FocusButtonText.focusSessionEmoji).font(.system(size: 14, weight: .semibold))
+                    Text(FocusButtonText.focusEmojiHint)
+                        .font(.callout).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: 8) {
+                        TextField("😀🔥🧘💻📚", text: $model.focusEmojiText, onCommit: { model.saveFocusEmoji() })
+                            .frame(maxWidth: 220)
+                        SwiftUI.Button(FocusButtonText.save) { model.saveFocusEmoji() }
+                    }
+                    // Focus-icon sync progress on its own line (separate from the habit-icon line above).
+                    if !model.focusIconUploadStatus.isEmpty {
+                        HStack(spacing: 6) {
+                            if !model.focusIconUploadStatus.hasPrefix("✓") {
+                                ProgressView().scaleEffect(0.5).frame(width: 14, height: 14)
+                            }
+                            Text(model.focusIconUploadStatus).font(.callout).foregroundColor(.secondary)
+                        }
+                    }
                 }
                 Divider().padding(.vertical, 8)
                 Text("Don't have a Focus Button yet? It's a physical timer for your desk that triggers focus sessions here.")

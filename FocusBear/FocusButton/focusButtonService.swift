@@ -324,7 +324,13 @@ class focusButtonService: NSObject {
             let id = arrFilteredMorningHabits[i].id ?? ""
             let isActivityCompleted = isActivityCompleted(id: id, habits: arrFilteredMorningHabits)
             if !isActivityCompleted{
-                arrHabits.append((id: arrFilteredMorningHabits[i].fakeIdForDevice, name: arrFilteredMorningHabits[i].nameWithoutIcon, durationSeconds: arrFilteredMorningHabits[i].durationSeconds))
+                // Emoji-capable firmware (≥1.7.0) shows the habit's emoji in the RUNNING ring. The emoji
+                // lives in the habit_icon field (NOT the name), so compose "<icon> <name>": the firmware
+                // derives the bitmap key from the leading emoji and strips it from the text label. Older
+                // firmware can't render emoji, so send the plain name.
+                let h = arrFilteredMorningHabits[i]
+                let deviceName = (firmwareSupportsEmoji && !h.habitIcon.isEmpty) ? "\(h.habitIcon) \(h.nameWithoutIcon)" : h.nameWithoutIcon
+                arrHabits.append((id: h.fakeIdForDevice, name: deviceName, durationSeconds: h.durationSeconds))
             }
         }
         sendHabits(habits: arrHabits)
@@ -349,7 +355,10 @@ class focusButtonService: NSObject {
                 // don't send those to the device either. Sending the full list left the button out of
                 // sync with the habits that actually run (a skipped habit starts then finishes at once).
                 if runningLate && !arrFilteredEveningHabits[i].isPriorityHigh { continue }
-                arrHabits.append((id: arrFilteredEveningHabits[i].fakeIdForDevice, name: arrFilteredEveningHabits[i].nameWithoutIcon, durationSeconds: arrFilteredEveningHabits[i].durationSeconds))
+                // See sendMorningHabits: compose "<habit_icon> <name>" for emoji-capable firmware (≥1.7.0).
+                let h = arrFilteredEveningHabits[i]
+                let deviceName = (firmwareSupportsEmoji && !h.habitIcon.isEmpty) ? "\(h.habitIcon) \(h.nameWithoutIcon)" : h.nameWithoutIcon
+                arrHabits.append((id: h.fakeIdForDevice, name: deviceName, durationSeconds: h.durationSeconds))
             }
         }
         sendHabits(habits: arrHabits)
@@ -390,6 +399,36 @@ class focusButtonService: NSObject {
         
         let entries = habits.map { "\($0.id),\($0.name),\($0.durationSeconds)" }
         sendCmd("SET|HABITS|" + entries.joined(separator: "|"))
+
+        // Push the habit-name emoji so the device can show them in the RUNNING ring (firmware ≥ 1.7.0).
+        // Runs after SET|HABITS and is best-effort / cached device-side, so it never blocks habit sync.
+        if firmwareSupportsEmoji {
+            lastEmojiHabitNames = habits.map { $0.name }
+            emojiSyncKind = .habit
+            emojiSync.syncEmojis(fromHabitNames: lastEmojiHabitNames)
+        }
+    }
+
+    /// The last habit names whose emoji were synced, so the Focus Button screen can re-check icon status
+    /// on demand (opening the screen) without waiting for the next routine load.
+    private var lastEmojiHabitNames: [String] = []
+
+    /// Re-run the emoji sync for the last-loaded habits (cached icons are skipped via GET|EMOJILIST, so
+    /// this is cheap). Drives the Focus Button screen's icon-upload status. Returns false if there's
+    /// nothing to check (unsupported firmware / no emoji habits loaded yet).
+    @discardableResult
+    func refreshEmojiIcons() -> Bool {
+        guard firmwareSupportsEmoji, isConnected else { return false }
+        // Every habit icon the user has — across morning, evening AND custom routines — so opening the
+        // Focus Button screen pre-caches the full set (EmojiSync dedupes to unique emoji; the device
+        // caches them, so each routine's running-ring icon is ready). Not just the last-synced routine.
+        let allHabits = arrAllDaysMorningHabits + arrAllDaysEveningHabits
+            + arrAllCustomRoutine.flatMap { $0.arrAllHabits }
+        let names = allHabits.compactMap { $0.habitIcon.isEmpty ? nil : "\($0.habitIcon) \($0.nameWithoutIcon)" }
+        guard !names.isEmpty else { return false }
+        emojiSyncKind = .habit
+        emojiSync.syncEmojis(fromHabitNames: names)
+        return true
     }
     
     func startHabit(habitId: String) {
@@ -555,6 +594,7 @@ class focusButtonService: NSObject {
     private func disconnect() {
         log("FocusButton: Disconnect()")
 
+        emojiSync.cancel()   // stop any in-progress emoji upload / its retry timers
         teardownPort()
 
         reconnectAttempts = 0
@@ -629,6 +669,81 @@ class focusButtonService: NSObject {
     
     // MARK: - Serial Communication
     
+    // MARK: - Emoji sync (habit-name emoji → RUNNING-ring bitmaps, firmware ≥ 1.7.0)
+
+    /// Emoji-icon upload progress for UI (Add-ons screen sets this): (done, total) missing icons this
+    /// sync. Delivered on the main thread.
+    var onEmojiProgress: ((_ done: Int, _ total: Int) -> Void)?
+    /// Progress for the FOCUS-mode emoji pool sync — separate from habit-icon progress even though both
+    /// go through the one serial uploader (only one runs at a time). Delivered on the main thread.
+    var onFocusEmojiProgress: ((_ done: Int, _ total: Int) -> Void)?
+    private enum EmojiSyncKind { case habit, focus }
+    private var emojiSyncKind: EmojiSyncKind = .habit
+
+    /// Uploads the emoji in the loaded habit names to the device. Writes via `sendRawLine` (not
+    /// `sendCmd`) so its ACK-gated lockstep isn't disrupted by the no-response STATUS watchdog.
+    private lazy var emojiSync: EmojiSync = {
+        let sync = EmojiSync(
+            send: { [weak self] line in self?.sendRawLine(line) },
+            log:  { [weak self] msg in self?.log(msg) })
+        sync.onProgress = { [weak self] done, total in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                switch self.emojiSyncKind {
+                case .habit: self.onEmojiProgress?(done, total)
+                case .focus: self.onFocusEmojiProgress?(done, total)
+                }
+            }
+        }
+        return sync
+    }()
+
+    /// Firmware 1.7.0 added the emoji-bitmap commands. Parse the `M50-1.7.0` version and gate on it so
+    /// we don't spray GET|EMOJILIST at older/other devices (which would just answer ERROR or nothing).
+    private var firmwareSupportsEmoji: Bool {
+        guard let v = firmwareVersion,
+              let dash = v.firstIndex(of: "-") else { return false }
+        let nums = v[v.index(after: dash)...].split(separator: ".").compactMap { Int($0) }
+        guard nums.count >= 2 else { return false }
+        return (nums[0], nums[1]) >= (1, 7)
+    }
+
+    /// Firmware 1.8.0 (Focus-Button #29) added the FOCUS-mode emoji pool (SET|FOCUSEMOJIS): the device
+    /// picks one of up to 5 declared emoji at random when a plain FOCUS session starts.
+    private var firmwareSupportsFocusEmoji: Bool {
+        guard let v = firmwareVersion, let dash = v.firstIndex(of: "-") else { return false }
+        let nums = v[v.index(after: dash)...].split(separator: ".").compactMap { Int($0) }
+        guard nums.count >= 2 else { return false }
+        return (nums[0], nums[1]) >= (1, 8)
+    }
+
+    /// Set the FOCUS-mode emoji pool (up to 5) the device randomly draws from at the start of each plain
+    /// focus session. Declares the eligible keys with SET|FOCUSEMOJIS, then uploads any missing bitmaps
+    /// via the same chunked SET|EMOJI path as habit emoji (cached keys are skipped; a declared key whose
+    /// bitmap isn't cached yet falls back gracefully device-side). Call when the user's selection changes,
+    /// not on every habit sync.
+    func syncFocusEmojiPool(_ emoji: [String]) {
+        guard firmwareSupportsFocusEmoji else { return }
+        let keys = Array(EmojiSync.uniqueEmojiKeys(in: emoji).prefix(5))
+        log("FocusButton: SET|FOCUSEMOJIS pool = [\(keys.joined(separator: ", "))]")
+        sendRawLine("SET|FOCUSEMOJIS|" + keys.joined(separator: "|"))
+        if firmwareSupportsEmoji, !emoji.isEmpty {
+            emojiSyncKind = .focus
+            emojiSync.syncEmojis(fromHabitNames: emoji)
+        }
+    }
+
+    /// Write a raw line to the device without the command/response-check machinery. Used by the emoji
+    /// uploader, which runs its own ACK-gated lockstep and must not have STATUS injected mid-transfer.
+    func sendRawLine(_ line: String) {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in self?.sendRawLine(line) }
+            return
+        }
+        guard let port = serialPort, port.isOpen, !isConnecting else { return }
+        port.send((line + "\n").data(using: .utf8) ?? Data())
+    }
+
     private func sendCmd(_ cmd: String) {
         // The serial write and the watchdog Timer scheduled below are run-loop bound, so every
         // command must go out on the main thread. The local "start focus" path already runs on the
@@ -749,6 +864,15 @@ class focusButtonService: NSObject {
                 // Handle habit received
                 onHabitsReceived?([(id: habitId, name: habitName, durationSeconds: duration)])
             }
+
+        case "EMOJILIST", "EMOJI":
+            emojiSync.handleDeviceLine(parts)
+
+        case "ACK" where parts.count >= 2 && parts[1].uppercased() == "EMOJI":
+            emojiSync.handleDeviceLine(parts)
+
+        case "ERROR" where parts.count >= 2 && EmojiSync.isEmojiErrorCode(parts[1].lowercased()):
+            emojiSync.handleDeviceLine(parts)
 
         default:
             break

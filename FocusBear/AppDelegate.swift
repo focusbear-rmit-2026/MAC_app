@@ -2085,6 +2085,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     var habit = habit(id:id,name: name, durationSeconds: durationSeconds, urlsArray: videoUrl, logQuantity: logQuantity, logQuantityQuestion: logQuantityQuestion, openSpecificApps: openSpecificApps, allowUrls: allowUrls, allowApps: allowApps, allowedFocusMode: allowedFocusMode, activity_sequence_id: activity_sequence_id, run_micro_breaks: run_micro_breaks, take_notes: take_notes, isPriorityHigh: false, days_of_week: days_of_week, text_instructions: text_instructions, imgUrls: imgUrls, completion_requirements: completion_requirements, useTimer: useTimer, checkList:check_list, tutorial: tutorial)
                     
                     habit.nameWithoutIcon = nameWithoutIcon
+                    habit.habitIcon = icon
                     habit.logQuantityQuestions = arrLogQuantityQuestions
                     habit.fakeIdForDevice = "\(arrFilteredMorningHabits.count + 1)"
                     arrFilteredMorningHabits.append(habit)
@@ -2180,6 +2181,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }
                     
                     habit.nameWithoutIcon = nameWithoutIcon
+                    habit.habitIcon = icon
                     habit.showSavedDistractingWebsites = show_saved_distracting_websites
                     habit.logQuantityQuestions = arrLogQuantityQuestions
                     habit.fakeIdForDevice = "\(arrFilteredEveningHabits.count + 1)"

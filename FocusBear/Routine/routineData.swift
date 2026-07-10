@@ -101,6 +101,7 @@ struct habit {
     var id:String!
     var name:String!
     var nameWithoutIcon:String = ""
+    var habitIcon:String = ""      // the habit_icon emoji field (kept separate from name; sent to emoji-capable Focus Button firmware)
     var durationSeconds:Int!
     var urlsArray:[String]
     var logQuantity:Bool!
