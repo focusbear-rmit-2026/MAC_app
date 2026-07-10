@@ -73,7 +73,14 @@ extension habitsStateVc: ScheduleHost {
         // (here no-op) action bar. "Ran today" via any-habit-done is robust: a routine that's been done
         // has at least its earlier habits completed even if the just-finished last one is still syncing.
         let dayKey = getStringFromDate(date: now, dateFormat: "yyyy-MM-dd")
+        // For the MORNING routine, also treat it as ran-today when isHabitAlreadyShowed is set — the same
+        // "morning done, before shutoff" signal reloadData uses for its "next routine" message. Without
+        // this, a completed morning whose habit ids aren't yet in the completion data (isHabitDoneForDay
+        // empty — e.g. before the #2150 refetch) fell through to the "not run yet" branch below and
+        // rendered a live (here no-op) Play/Skip/Done bar. Evening keeps isHabitDoneForDay only, since it
+        // runs during the shutoff window where isHabitAlreadyShowed doesn't apply.
         let routineRanToday = todayHabits.contains { $0.id.map { isHabitDoneForDay($0, dayKey: dayKey) } ?? false }
+            || (isMorning && isHabitAlreadyShowed)
         if routineRanToday {
             let pastHabits = ScheduleTab.habitInputs(from: todayHabits, now: now, dropCompleted: false)
             if !pastHabits.isEmpty {
