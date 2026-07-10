@@ -2736,6 +2736,10 @@
         "buttonChangeTiming": "Change Timing"
     },
     "scheduleViewInfo":{
+        "cancelRoutineTitle": "Cancel Routine?",
+        "cancelRoutineMessage": "If you change your mind later, you can click the \"<BUTTON>\" button to restore the routine.",
+        "cancelRoutineOk": "OK",
+        "cancelRoutineCancel": "Cancel",
         "showDismissedEvents": "Show dismissed events",
         "showEventAgain": "Show this event again",
         "hideEvent": "Hide this event",

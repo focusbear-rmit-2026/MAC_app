@@ -2734,6 +2734,10 @@
         "buttonChangeTiming": "Cambiar horario"
     },
     "scheduleViewInfo":{
+        "cancelRoutineTitle": "¿Cancelar rutina?",
+        "cancelRoutineMessage": "Si cambias de opinión más tarde, puedes hacer clic en el botón «<BUTTON>» para restaurar la rutina.",
+        "cancelRoutineOk": "Aceptar",
+        "cancelRoutineCancel": "Cancelar",
         "showDismissedEvents": "Mostrar eventos descartados",
         "showEventAgain": "Volver a mostrar este evento",
         "hideEvent": "Ocultar este evento",

@@ -335,65 +335,10 @@ class chooseHabitsVC: NSViewController {
     }
     
     @IBAction func btnCancelClicked(_ sender: Any) {
-        let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
-        let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
-
-        var sequenceId = ""
-        // Include the POSTPONE states: when the routine is postponed (e.g. skipping from the Day Plan),
-        // currentState is ._POSTPONE_MORNING_HABIT_ / ._POSTPONE_EVENING_HABIT_, which previously matched
-        // NEITHER branch — so sequenceId stayed "" (→ /completed-activity-sequence//force-complete 400)
-        // AND the skipped-for-today flag was never set (→ routine didn't show as skipped on reopen).
-        // Also fall back to arrAllDays* for the sequence id, since arrFiltered* is emptied while postponed.
-        if currentState == ._MORNING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_{
-            sequenceId = (arrFilteredMorningHabits.first ?? arrAllDaysMorningHabits.first)?.activity_sequence_id ?? ""
-            UserDefaults.standard.set(startDate, forKey: kUserdefaultsLastHabitShowDate)
-            allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-from":"chooseHabits"])
-        }else if currentState == ._FOCUS_SUMMARY_ || currentState == ._EVENING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
-            let curreentDate = Date()
-            if curreentDate > shutOffdate{// iska matlab 20-24 k bich
-                let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
-                let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
-                UserDefaults.standard.set(startDate, forKey: kUserdefaultsEveningHabitsShowedTillDate)
-            }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
-                UserDefaults.standard.set(startDate, forKey: kUserdefaultsEveningHabitsShowedTillDate)
-            }
-            sequenceId = (arrFilteredEveningHabits.first ?? arrAllDaysEveningHabits.first)?.activity_sequence_id ?? ""
-            allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-from":"chooseHabits"])
-        }
-        
-        if sequenceId.isEmpty {
-            // No sequence id anywhere — don't POST /completed-activity-sequence//force-complete (400).
-            addLog(text: "skip routine: sequenceId blank for state \(currentState) — skipping force-complete API")
-        } else {
-            allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: true, completionHandler: {json in
-                print("forceCompleteCurrentSequence success")
-            })
-        }
-        
-        
+        // Dismiss the chooser, then run the shared cancel-routine actions (see cancelRoutineForToday in
+        // routineData.swift — extracted so the Day Plan ✕ confirmation alert runs the exact same flow).
         self.dismiss(self)
-
-        UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
-        isHabitAlreadyShowed = true
-        // Skipping from the Day Plan keeps the window open (planning, not in the routine); the in-routine
-        // skip closes it as before.
-        if !openedFromDayPlan {
-            mainWindowControllerObj?.window?.close()
-        }
-        hideBlankWindowInSecondaryMonitor()
-        currentState = ._NOTHING_
-        // #2050: routine skipped for today — clear so a playing allowed-activity habit doesn't leave
-        // isAllowedActivityHabitPlaying stale in ._NOTHING_ (minimise would background without postpone).
-        isAllowedActivityHabitPlaying = false
-        getHabitsVcObject().setActivityTimer()
-        leftMenuVcObj?.habitOver()
-        // Reselect/re-show the Day Plan for the current state (rather than requestDayPlanRefresh, which
-        // only reloads the schedule content). This re-runs the host's reloadData —
-        // updateUncancelRoutineButtonVisibility, where the "Uncancel <routine>" state is computed — so
-        // the button appears immediately. requestDayPlanRefresh() didn't trigger that, so the button
-        // only showed after the user manually switched tabs and back.
-        if openedFromDayPlan { leftMenuVcObj?.showDayPlanForCurrentState() }
-        addLog(text: "Routine skipped by user")//addLog(text: "morning habit skipped by user")
+        cancelRoutineForToday(openedFromDayPlan: openedFromDayPlan)
     }
     
     @IBAction func btnCloseClicked(_ sender: Any) {

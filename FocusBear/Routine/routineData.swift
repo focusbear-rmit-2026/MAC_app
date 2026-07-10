@@ -92,6 +92,62 @@ func requestDayPlanRefresh() {
     }
 }
 
+/// Cancel (force-complete for today) the current routine. Extracted from chooseHabitsVC.btnCancelClicked
+/// so the exact same actions run from BOTH the chooser's Cancel button and the Day Plan's "skip routine
+/// for today" (✕) confirmation alert. It does NOT dismiss the chooser — each caller owns its own UI
+/// (btnCancelClicked dismisses the sheet; the alert path has no sheet). `openedFromDayPlan` keeps the
+/// window open + re-shows the Day Plan (planning) instead of closing it (in-routine skip).
+func cancelRoutineForToday(openedFromDayPlan: Bool) {
+    let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+    let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+
+    var sequenceId = ""
+    if currentState == ._MORNING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_{
+        sequenceId = (arrFilteredMorningHabits.first ?? arrAllDaysMorningHabits.first)?.activity_sequence_id ?? ""
+        UserDefaults.standard.set(startDate, forKey: kUserdefaultsLastHabitShowDate)
+        allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-from":"chooseHabits"])
+    }else if currentState == ._FOCUS_SUMMARY_ || currentState == ._EVENING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
+        let curreentDate = Date()
+        if curreentDate > shutOffdate{// iska matlab 20-24 k bich
+            let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+            let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
+            UserDefaults.standard.set(startDate, forKey: kUserdefaultsEveningHabitsShowedTillDate)
+        }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
+            UserDefaults.standard.set(startDate, forKey: kUserdefaultsEveningHabitsShowedTillDate)
+        }
+        sequenceId = (arrFilteredEveningHabits.first ?? arrAllDaysEveningHabits.first)?.activity_sequence_id ?? ""
+        allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-from":"chooseHabits"])
+    }
+
+    if sequenceId.isEmpty {
+        // No sequence id anywhere — don't POST /completed-activity-sequence//force-complete (400).
+        addLog(text: "skip routine: sequenceId blank for state \(currentState) — skipping force-complete API")
+    } else {
+        allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: true, completionHandler: {json in
+            print("forceCompleteCurrentSequence success")
+        })
+    }
+
+    UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
+    isHabitAlreadyShowed = true
+    // Skipping from the Day Plan keeps the window open (planning, not in the routine); the in-routine
+    // skip closes it as before.
+    if !openedFromDayPlan {
+        mainWindowControllerObj?.window?.close()
+    }
+    hideBlankWindowInSecondaryMonitor()
+    currentState = ._NOTHING_
+    // #2050: routine skipped for today — clear so a playing allowed-activity habit doesn't leave
+    // isAllowedActivityHabitPlaying stale in ._NOTHING_ (minimise would background without postpone).
+    isAllowedActivityHabitPlaying = false
+    getHabitsVcObject().setActivityTimer()
+    leftMenuVcObj?.habitOver()
+    // Re-run the host's reloadData so the "Uncancel <routine>" state is recomputed and its button
+    // appears immediately (see chooseHabitsVC.btnCancelClicked for the original rationale).
+    if openedFromDayPlan { leftMenuVcObj?.showDayPlanForCurrentState() }
+    addLog(text: "Routine skipped by user")
+}
+
 var arrFilteredMorningHabits = [habit]() { didSet { requestDayPlanRefresh() } }
 var arrFilteredEveningHabits = [habit]() { didSet { requestDayPlanRefresh() } }
 var isLastActivityStoppedInRunningState = false// only use ful in morning habit evening habit

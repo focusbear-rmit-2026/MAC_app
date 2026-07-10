@@ -37,6 +37,11 @@ enum ScheduleText {
     static var habitPlayerTab: String { t("habitPlayerTab", "Habit Player") }   // allowed-activity player tabs
     static var dayPlanTab: String { t("dayPlanTab", "Day Plan") }
     static var skipRoutineForToday: String { t("skipRoutineForToday", "Skip routine for today") }
+    // Confirmation shown when the ✕ (skip routine for today) is clicked on the Day Plan.
+    static var cancelRoutineTitle: String { t("cancelRoutineTitle", "Cancel Routine?") }
+    static var cancelRoutineMessage: String { t("cancelRoutineMessage", "If you change your mind later, you can click the \"<BUTTON>\" button to restore the routine.") }
+    static var cancelRoutineOk: String { t("cancelRoutineOk", "OK") }
+    static var cancelRoutineCancel: String { t("cancelRoutineCancel", "Cancel") }
     // Past-habit retroactive completion (Day Plan "earlier today" / previous days).
     static var pastHabitComplete: String { t("pastHabitComplete", "Complete") }
     static var pastHabitCompleteHint: String { t("pastHabitCompleteHint", "I actually did it but forgot to log it 😅") }
@@ -2269,7 +2274,25 @@ class scheduleViewController: NSViewController {
     }
 
     @objc private func skipRoutineForTodayClicked() {
-        host?.scheduleSkipRoutineForToday()
+        // Confirm before cancelling. Previously the ✕ opened ChooseHabitsVC and the routine was cancelled
+        // via its Cancel button; now the ✕ asks directly and, on OK, runs the same cancel actions
+        // (cancelRoutineForToday). Cancel leaves the routine unchanged.
+        guard let window = view.window else { return }
+        // Name only the routine this ✕ is actually cancelling (morning vs evening — same split as
+        // cancelRoutineForToday), so the message points at the right Uncancel button.
+        let isEvening = currentState == ._EVENING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_
+            || currentState == ._FOCUS_SUMMARY_ || currentState == ._POSTPONE_FOCUS_SUMMARY_
+        let uncancelButton = isEvening ? ScheduleText.uncancelEveningRoutineButton
+                                       : ScheduleText.uncancelMorningRoutineButton
+        let alert = NSAlert()
+        alert.messageText = ScheduleText.cancelRoutineTitle
+        alert.informativeText = ScheduleText.cancelRoutineMessage.replacingOccurrences(of: "<BUTTON>", with: uncancelButton)
+        alert.addButton(withTitle: ScheduleText.cancelRoutineOk)       // first button → .alertFirstButtonReturn
+        alert.addButton(withTitle: ScheduleText.cancelRoutineCancel)
+        alert.beginSheetModal(for: window) { response in
+            guard response == .alertFirstButtonReturn else { return }   // Cancel → leave the routine unchanged
+            cancelRoutineForToday(openedFromDayPlan: true)              // OK; the ✕ lives on the Day Plan
+        }
     }
 
     /// The "Uncancel My Morning/Evening Routine" link shown in place of a force-cancelled routine's
