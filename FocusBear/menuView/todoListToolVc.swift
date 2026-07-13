@@ -12,11 +12,29 @@ class todoListToolVc: NSViewController, WKNavigationDelegate, webViewLoadFailedD
 
     @IBOutlet weak var webView: WKWebView!
     let handler = MessageHandler()
+
+    // Spinner shown while the dashboard webview is loading, so the user isn't staring at a
+    // blank white screen for the few seconds it takes the page to load.
+    private let loadingSpinner: NSProgressIndicator = {
+        let indicator = NSProgressIndicator()
+        indicator.style = .spinning
+        indicator.controlSize = .regular
+        indicator.isDisplayedWhenStopped = false
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        return indicator
+    }()
+
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
         self.webView.navigationDelegate = self
         webView.configuration.userContentController.add(AccessTokenRequestHandler.shared, name: AccessTokenRequestHandler.messageName)
+
+        webView.addSubview(loadingSpinner)
+        NSLayoutConstraint.activate([
+            loadingSpinner.centerXAnchor.constraint(equalTo: webView.centerXAnchor),
+            loadingSpinner.centerYAnchor.constraint(equalTo: webView.centerYAnchor)
+        ])
     }
     override func viewWillDisappear() {
 //        update all tags because it may be posssible that user has created some tags in webview
@@ -26,16 +44,18 @@ class todoListToolVc: NSViewController, WKNavigationDelegate, webViewLoadFailedD
     }
     
     func reloadData(){
+        loadingSpinner.startAnimation(nil)
         let webUrl:String = "https://dashboard.focusbear.io/webview/tools-todo-list?bust_cache=\(getUuid())"
         let link = URL(string:webUrl)!
         let request = URLRequest(url: link)
         self.webView.load(request)
     }
-    
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         DispatchQueue.global().async {
             sleep(1)
             DispatchQueue.main.async {
+                self.loadingSpinner.stopAnimation(nil)
                 self.removeWebViewLoadFailedView(webView: webView)
                 self.setAccessTokenToWebView()
             }
@@ -61,6 +81,7 @@ class todoListToolVc: NSViewController, WKNavigationDelegate, webViewLoadFailedD
     }
    
     func handleLoadError(webView: WKWebView) {
+        loadingSpinner.stopAnimation(nil)
         if webViewLoadFailedVcObj != nil{
             if webView.subviews.contains(webViewLoadFailedVcObj!.view){
                 webViewLoadFailedVcObj?.reloadData()

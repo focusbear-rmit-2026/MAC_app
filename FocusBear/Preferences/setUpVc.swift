@@ -48,32 +48,52 @@ class setUpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate
     
     let viewWidthDefault = 1040
     let viewHeightDefault = 682
-    
+
+    // Spinner shown while the dashboard webview is loading, so the user isn't staring at a
+    // blank white screen for the few seconds it takes the page to load.
+    private let loadingSpinner: NSProgressIndicator = {
+        let indicator = NSProgressIndicator()
+        indicator.style = .spinning
+        indicator.controlSize = .regular
+        indicator.isDisplayedWhenStopped = false
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        return indicator
+    }()
+
     override func viewDidLoad() {
         super.viewDidLoad()
         addLog(text: "statsVc viewdidload start")
         self.webView.navigationDelegate = self
+
+        webView.addSubview(loadingSpinner)
+        NSLayoutConstraint.activate([
+            loadingSpinner.centerXAnchor.constraint(equalTo: webView.centerXAnchor),
+            loadingSpinner.centerYAnchor.constraint(equalTo: webView.centerYAnchor)
+        ])
+
         loadWebView()
-        
+
         let handler = MessageHandler()
         webView.configuration.userContentController.add(handler, name: "open_android_app")
         webView.configuration.userContentController.add(handler, name: "open_ios_app")
         webView.configuration.userContentController.add(handler, name: "download_focus_summaries")
         addLog(text: "statsVc viewdidload end")
     }
-    
+
     func loadWebView(){
+        loadingSpinner.startAnimation(nil)
         let url = "https://dashboard.focusbear.io/webview/stats?bust_cache=\(getUuid())"
         let  fileURL = URL(string: url)
         let request = NSMutableURLRequest(url: fileURL!)
         webView.load(request as URLRequest)
     }
-    
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         print("*************didFinish navigation**************")
         DispatchQueue.global().async {
             sleep(1)
             DispatchQueue.main.async {
+                self.loadingSpinner.stopAnimation(nil)
                 self.removeWebViewLoadFailedView(webView: webView)
                 self.setAccessTokenToWebView()
             }
@@ -99,6 +119,7 @@ class setUpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate
     }
    
     func handleLoadError(webView: WKWebView) {
+        loadingSpinner.stopAnimation(nil)
         if webViewLoadFailedVcObj != nil{
             if webView.subviews.contains(webViewLoadFailedVcObj!.view){
                 webViewLoadFailedVcObj?.reloadData()
