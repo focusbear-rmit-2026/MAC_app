@@ -3208,12 +3208,25 @@ class scheduleViewController: NSViewController {
         titleLabel.textColor = titleColor
         for v in [timeLabel, emojiLabel, titleLabel].compactMap({ $0 }) { container.addSubview(v) }
 
+        // The title has no intrinsic width of its own (WrappingScheduleLabel deliberately reports
+        // none, so it can wrap to whatever width it's given) and nothing else pins its trailing edge
+        // to a specific point — only the `<=` cap below. That leaves its width genuinely ambiguous to
+        // Auto Layout: any value from 0 up to the cap satisfies every required constraint equally, so
+        // the solver is free to (and sometimes does) settle on ~0. A low-priority pull to the same
+        // trailing point makes "fill the available width" the preferred solution while still losing to
+        // a subtitle/duration label added after this call: its content-compression-resistance is
+        // explicitly set to .defaultLow (250, see makeCard) precisely so it can shrink to make room for
+        // the title, so this pull must stay below that — otherwise it wins the trade-off instead and
+        // the subtitle collapses to zero width.
+        let preferFullWidth = titleLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -8)
+        preferFullWidth.priority = NSLayoutConstraint.Priority(200)
         var cons: [NSLayoutConstraint] = [
             timeLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: leadingInset),
             timeLabel.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
             titleLabel.topAnchor.constraint(equalTo: container.topAnchor, constant: vPad),
             titleLabel.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -vPad),
             titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -8),
+            preferFullWidth,
         ]
         if let emojiLabel = emojiLabel {
             cons += [
@@ -3457,9 +3470,14 @@ enum DayPlanMockup {
         let env = ProcessInfo.processInfo.environment
         guard let file = env["FB_MOCKUP_FILE"], let out = env["FB_MOCKUP_OUT"] else { return }
         let size = parseSize(env["FB_MOCKUP_SIZE"]) ?? NSSize(width: 1280, height: 1000)
+        // This window is never placed on an actual screen, so its backingScaleFactor (and thus
+        // bitmapImageRepForCachingDisplay's default pixel density) is 1x regardless of the Retina
+        // display the PNG ends up being viewed on — hence the blurry output. Default to 2x (matching
+        // a standard Retina display); FB_MOCKUP_SCALE overrides for a sharper (or smaller) render.
+        let scale = env["FB_MOCKUP_SCALE"].flatMap(Double.init).map { CGFloat($0) } ?? 2.0
         // Render after launch settles so config/fonts are ready, then quit.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-            let ok = render(scenarioPath: file, outPath: out, size: size)
+            let ok = render(scenarioPath: file, outPath: out, size: size, scale: scale)
             FileHandle.standardError.write("FB_MOCKUP: \(ok ? "wrote" : "FAILED") \(out)\n".data(using: .utf8)!)
             // applicationShouldTerminate cancels a normal quit when logged in (it pops a confirm window);
             // terminateFromSelf bypasses that so the headless render actually exits.
@@ -3475,7 +3493,7 @@ enum DayPlanMockup {
     }
 
     @discardableResult
-    static func render(scenarioPath: String, outPath: String, size: NSSize) -> Bool {
+    static func render(scenarioPath: String, outPath: String, size: NSSize, scale: CGFloat = 2.0) -> Bool {
         guard let data = FileManager.default.contents(atPath: scenarioPath),
               let scenario = try? JSONDecoder().decode(MockScenario.self, from: data) else {
             FileHandle.standardError.write("FB_MOCKUP: could not read/parse \(scenarioPath)\n".data(using: .utf8)!)
@@ -3562,7 +3580,15 @@ enum DayPlanMockup {
         vc.view.layoutSubtreeIfNeeded()
 
         let view = vc.view
-        guard let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return false }
+        // Build the bitmap at `scale`x the view's point size ourselves — bitmapImageRepForCachingDisplay
+        // would size it off view.window?.backingScaleFactor, which is 1x here since this window is
+        // never placed on a real screen, producing a blurry PNG once viewed at normal Retina density.
+        let pixelsWide = Int((view.bounds.width * scale).rounded(.up))
+        let pixelsHigh = Int((view.bounds.height * scale).rounded(.up))
+        guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: pixelsWide, pixelsHigh: pixelsHigh,
+                                         bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                         colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0) else { return false }
+        rep.size = view.bounds.size   // point size; pixel density above implies the render scale
         view.cacheDisplay(in: view.bounds, to: rep)
         guard let png = rep.representation(using: .png, properties: [:]) else { return false }
         do {

@@ -24,12 +24,16 @@ xcodebuild -workspace FocusBear.xcworkspace -scheme "Focus Bear" -configuration 
 # 2. Render a scenario (PNG lands in out/mockups/<scenario>.png):
 scripts/mockups/render-mockup.sh scripts/mockups/high-school-student.json
 
-# Optional: custom output path and/or width x min-height
-scripts/mockups/render-mockup.sh scripts/mockups/high-school-student.json out/hs.png 1280x1000
+# Optional: custom output path, width x min-height, and render scale
+scripts/mockups/render-mockup.sh scripts/mockups/high-school-student.json out/hs.png 1280x1000 2
 ```
 
 The size is `WIDTH x MIN_HEIGHT` — width is fixed, height grows automatically to fit the full day,
 so the min-height is just a floor.
+
+The scale is pixels-per-point (default 2, i.e. standard Retina). The offscreen window is never
+placed on a real screen, so without it the PNG renders at 1x and looks blurry next to normal
+Retina screenshots — bump it (e.g. 3) for an even sharper render.
 
 ## Authoring a scenario
 

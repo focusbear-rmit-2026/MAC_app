@@ -7,11 +7,16 @@
 # No real calendar/habit/task data is touched (the task store runs in non-persisting mock mode).
 #
 # Usage:
-#   scripts/mockups/render-mockup.sh <scenario.json> [out.png] [WIDTHxHEIGHT]
+#   scripts/mockups/render-mockup.sh <scenario.json> [out.png] [WIDTHxHEIGHT] [SCALE]
 #
 # Examples:
 #   scripts/mockups/render-mockup.sh scripts/mockups/high-school-student.json
 #   scripts/mockups/render-mockup.sh scripts/mockups/high-school-student.json out/hs.png 1280x1000
+#   scripts/mockups/render-mockup.sh scripts/mockups/high-school-student.json out/hs.png 1280x1000 3
+#
+# SCALE is the render density in "pixels per point" (default 2, i.e. standard Retina). The offscreen
+# window is never placed on a real screen, so without this the PNG renders at 1x and looks blurry
+# next to normal Retina screenshots.
 #
 # If you change Swift code, rebuild first:
 #   xcodebuild -workspace FocusBear.xcworkspace -scheme "Focus Bear" -configuration Debug -derivedDataPath build
@@ -37,6 +42,7 @@ mkdir -p "$(dirname "$OUT")"
 OUT="$(cd "$(dirname "$OUT")" && pwd)/$(basename "$OUT")"
 
 SIZE="${3:-1280x1000}"
+SCALE="${4:-2}"
 
 APP="$REPO_ROOT/build/Build/Products/Debug/Focus Bear.app"
 BIN="$APP/Contents/MacOS/Focus Bear"
@@ -48,7 +54,7 @@ if [[ ! -x "$BIN" ]]; then
 fi
 
 echo "→ scenario: $SCENARIO"
-echo "→ output:   $OUT  ($SIZE)"
+echo "→ output:   $OUT  ($SIZE @ ${SCALE}x)"
 
 rm -f "$OUT"
 
@@ -58,6 +64,7 @@ rm -f "$OUT"
 FB_MOCKUP_FILE="$SCENARIO" \
 FB_MOCKUP_OUT="$OUT" \
 FB_MOCKUP_SIZE="$SIZE" \
+FB_MOCKUP_SCALE="$SCALE" \
   "$BIN" 2>&1 1>/dev/null | grep -E "FB_MOCKUP" || true
 
 if [[ -f "$OUT" ]]; then

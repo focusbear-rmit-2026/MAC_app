@@ -1,0 +1,82 @@
+{
+  "title": "Environmental science student — ENVS301 crunch day",
+  "baseDate": "2026-07-10",
+  "dayStart": "07:00",
+  "dayEnd": "21:00",
+  "morningStart": "07:00",
+  "eveningStart": "20:00",
+  "deepWorkCutoff": "18:00",
+  "sprintWorkMinutes": 25,
+  "sprintBreakMinutes": 5,
+
+  "routines": [
+    {
+      "name": "🌅 Morning routine",
+      "start": "07:00",
+      "end": "07:45",
+      "habits": [
+        { "title": "🧘 Wake & stretch", "minutes": 10 },
+        { "title": "🚿 Shower", "minutes": 15 },
+        { "title": "🍳 Breakfast", "minutes": 15 },
+        { "title": "🗒️ Review today's plan", "minutes": 5 }
+      ]
+    },
+    {
+      "name": "🌙 Evening routine",
+      "start": "20:00",
+      "end": "21:00",
+      "habits": [
+        { "title": "📵 Phone on charger (out of room)", "minutes": 5 },
+        { "title": "🪥 Brush teeth", "minutes": 5 },
+        { "title": "📖 Read", "minutes": 25 },
+        { "title": "😴 Lights out", "minutes": 5 }
+      ]
+    }
+  ],
+
+  "events": [
+    { "title": "🚌 Commute to campus", "start": "08:00", "end": "08:20" },
+    { "title": "🧪 ENVS301 — Watershed lab session", "start": "08:30", "end": "10:30" },
+    { "title": "☕ Coffee break", "start": "10:30", "end": "10:45" },
+    { "title": "🥪 Lunch", "start": "12:15", "end": "13:00" },
+    { "title": "👥 Group meeting — Renewable Energy slides", "start": "15:00", "end": "15:45" },
+    { "title": "🚶 Walk / decompress", "start": "17:00", "end": "17:45" },
+    { "title": "🍽️ Dinner with housemates", "start": "18:00", "end": "18:45" }
+  ],
+
+  "tasks": [
+    {
+      "title": "ENVS301 — Watershed Field Report",
+      "minutes": 90,
+      "project": "ENVS301",
+      "outcome": 9,
+      "at": "10:45",
+      "subtasks": [
+        "Write up methods section describing sampling protocol",
+        "Insert water-quality data table",
+        "Draft site-selection rationale"
+      ]
+    },
+    {
+      "title": "ENVS301 — Climate Policy Literature Review",
+      "minutes": 60,
+      "project": "ENVS301",
+      "outcome": 8,
+      "at": "13:00",
+      "subtasks": [
+        "Summarise sources 6–8",
+        "Update annotated bibliography"
+      ]
+    },
+    {
+      "title": "ENVS301 — Renewable Energy Group Presentation",
+      "minutes": 30,
+      "project": "ENVS301",
+      "outcome": 6,
+      "at": "15:45",
+      "subtasks": [
+        "Build slide outline with group"
+      ]
+    }
+  ]
+}
