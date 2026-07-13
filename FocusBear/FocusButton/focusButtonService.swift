@@ -128,6 +128,10 @@ class focusButtonService: NSObject {
     /// or nil when not connected. Needed to hand the port to the firmware flasher.
     var connectedPortPath: String? { serialPort?.path }
 
+    /// Whether the connected firmware supports emoji-icon sync (>= 1.7.0). Public so settings screens
+    /// can decide whether to show icon-sync status at all (older firmware has nothing to report).
+    var supportsEmojiIcons: Bool { firmwareSupportsEmoji }
+
     // MARK: - Public Methods
     
     func start() -> Bool {

@@ -604,7 +604,7 @@ class ViewController: NSViewController {
     func showFocusButtonToolView(){
         self.removeSubViews()
         if #available(macOS 11.0, *) {
-            let host = NSHostingView(rootView: FocusButtonToolView(model: FocusButtonToolModel()))
+            let host = NSHostingView(rootView: FocusButtonToolView(model: FocusButtonToolModel.shared))
             host.translatesAutoresizingMaskIntoConstraints = false
             containerView.addSubview(host)
             containerView.addConstraints(subView: host)
@@ -821,15 +821,50 @@ enum FocusButtonText {
     static var checkingFocusIcons: String { t("checkingFocusIcons", "Checking focus icons…") }
 }
 
+/// Drives the Focus Button screen's single SwiftUI `.alert` — either a flash confirmation or a
+/// terminal result (up to date / updated / failed) — so only one `.alert` modifier is needed.
+/// Firmware-update copy mirrors the legacy Add-Ons screen's (addOnsVc.swift) hardcoded English rather
+/// than the config-driven FocusButtonText above, matching that screen's existing precedent for this
+/// same feature (see PR description for why this wasn't run through the 3-file config i18n pipeline).
+enum FocusButtonAlert: Identifiable {
+    case confirmFlash(from: String, to: String)
+    case result(title: String, message: String)
+    var id: String {
+        switch self {
+        case .confirmFlash(let from, let to): return "confirm|\(from)|\(to)"
+        case .result(let title, let message): return "result|\(title)|\(message)"
+        }
+    }
+}
+
 @available(macOS 11.0, *)
 final class FocusButtonToolModel: ObservableObject {
+    /// One persistent model shared by every showFocusButtonToolView(). A firmware update runs on a Task
+    /// bound to this model; recreating the model per tab open (the old behaviour) discarded the in-flight
+    /// state — leaving the tab and coming back showed a fresh, blank screen while the update ran on the
+    /// orphaned old instance. Reusing this instance keeps "Flashing firmware…" (and isCheckingFirmware)
+    /// visible across tab switches.
+    static let shared = FocusButtonToolModel()
+
     @Published var isConnected = false
     @Published var statusMessage = ""
     @Published var connecting = false
     @Published var iconUploadStatus = ""        // HABIT-icon sync progress
+    @Published var iconSyncSupported = false    // false on firmware too old to sync icons at all
     @Published var focusIconUploadStatus = ""   // FOCUS-session emoji-pool sync progress (kept separate)
     @Published var focusEmojiText = UserDefaults.standard.string(forKey: FocusButtonToolModel.focusEmojiKey) ?? ""
     static let focusEmojiKey = "kUserdefaultsFocusEmojiPool"
+
+    /// Installed firmware version (e.g. "M50-1.5.0"), mirrored from focusButtonService.
+    @Published var firmwareVersion: String?
+    /// "Checking for updates…" / "Downloading firmware…" / "Flashing firmware…" while a check/update is
+    /// in flight, "" otherwise.
+    @Published var firmwareStatus = ""
+    @Published var isCheckingFirmware = false
+    @Published var firmwareAlert: FocusButtonAlert?
+    /// The release + installed version a pending confirmFlash alert refers to, so accepting it can
+    /// resume the download/flash without re-fetching.
+    private var pendingFirmwareRelease: (release: FocusButtonFirmwareUpdater.Release, installedVersion: String)?
 
     /// Persist + push the FOCUS-session emoji pool (up to 5). The device shows a random one of these as
     /// the ring hero each time a plain focus session starts (firmware ≥ 1.8.0).
@@ -858,16 +893,13 @@ final class FocusButtonToolModel: ObservableObject {
         savedOnConnected = focusButtonServiceObject.onDeviceConnected
         savedOnEmojiProgress = focusButtonServiceObject.onEmojiProgress
         savedOnFocusEmojiProgress = focusButtonServiceObject.onFocusEmojiProgress
-        // HABIT icon upload progress — kept separate from the focus-emoji pool below.
+        // HABIT icon upload progress — kept separate from the focus-emoji pool below. Unlike the
+        // focus-emoji status below, this line is meant to stay visible permanently once known (see
+        // checkHabitIconsIfNeeded / the view) rather than fading out — it doubles as the icon-sync
+        // status the Focus Button screen always shows while connected.
         focusButtonServiceObject.onEmojiProgress = { [weak self] synced, total in
             guard let self = self else { return }   // already on the main thread
             self.iconUploadStatus = self.syncStatus(synced, total, label: FocusButtonText.habitIconsLabel)
-            if synced >= total {
-                let done = self.iconUploadStatus
-                DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
-                    if self?.iconUploadStatus == done { self?.iconUploadStatus = "" }
-                }
-            }
         }
         // FOCUS-session emoji pool upload progress — its own line, distinct from habit icons.
         focusButtonServiceObject.onFocusEmojiProgress = { [weak self] synced, total in
@@ -881,9 +913,6 @@ final class FocusButtonToolModel: ObservableObject {
             }
         }
         refresh()
-        // Re-check habit icon status now (syncs otherwise only fire on a routine load), so opening the
-        // screen shows current state instead of staying blank. Cached icons are skipped, so it's cheap.
-        if focusButtonServiceObject.refreshEmojiIcons() { iconUploadStatus = FocusButtonText.checkingHabitIcons }
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in self?.refresh() }
     }
@@ -894,7 +923,114 @@ final class FocusButtonToolModel: ObservableObject {
         focusButtonServiceObject.onEmojiProgress = savedOnEmojiProgress
         focusButtonServiceObject.onFocusEmojiProgress = savedOnFocusEmojiProgress
     }
-    func refresh() { isConnected = focusButtonServiceObject.isRunning }
+    func refresh() {
+        // While a firmware check/flash is in flight, don't touch isConnected: the flash releases the
+        // serial port (device drops off the bus mid-flash), so the next 1.5s tick would flip isConnected
+        // to false and show "Not Connected" over the "Flashing firmware…" status — even though the update
+        // is still running. The firmware flow owns the UI and re-syncs the real state when it finishes
+        // (isCheckingFirmware back to false). Mirrors addOnsVc's isFlashingFirmware guard.
+        if isCheckingFirmware { return }
+        isConnected = focusButtonServiceObject.isRunning
+        firmwareVersion = focusButtonServiceObject.firmwareVersion
+        iconSyncSupported = focusButtonServiceObject.supportsEmojiIcons
+        if !isConnected { hasCheckedIconsThisConnection = false }
+        checkHabitIconsIfNeeded()
+    }
+
+    private var hasCheckedIconsThisConnection = false
+
+    /// Kick off (once per connection) the habit-icon sync check so the icon-sync status line is always
+    /// populated whenever a Focus Button that supports it is connected — not just after a routine loads
+    /// icons. Re-armed on every fresh connection via `refresh()`.
+    private func checkHabitIconsIfNeeded() {
+        guard isConnected, iconSyncSupported, !hasCheckedIconsThisConnection else { return }
+        hasCheckedIconsThisConnection = true
+        if focusButtonServiceObject.refreshEmojiIcons() {
+            iconUploadStatus = FocusButtonText.checkingHabitIcons
+        } else {
+            // Nothing pending to upload (already cached, or no habit icons set) — that's "up to date".
+            iconUploadStatus = syncStatus(0, 0, label: FocusButtonText.habitIconsLabel)
+        }
+    }
+
+    // MARK: - Firmware update
+    //
+    // Reuses FocusButtonFirmwareUpdater (focusButtonService.swift) — the same fetch/compare/download/
+    // flash primitives the legacy Add-Ons screen (addOnsVc.swift) already drives from its own AppKit
+    // button. The orchestration here is SwiftUI-native (state-driven `.alert`) rather than addOnsVc's
+    // blocking NSAlert.runModal(), so it isn't a drop-in shared function, but the actual network/flash
+    // mechanics are the same shared type — see PR description.
+
+    /// Check Cloudflare R2 for newer firmware and, if found, ask for confirmation before flashing.
+    func checkForFirmwareUpdate() {
+        guard !isCheckingFirmware, isConnected, let installed = firmwareVersion else { return }
+        isCheckingFirmware = true
+        firmwareStatus = "Checking for updates…"
+        let (_, installedVersion) = FocusButtonFirmwareUpdater.parse(firmwareVersion: installed)
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            do {
+                let release = try await FocusButtonFirmwareUpdater.shared.fetchLatestRelease()
+                let latest = release.version.trimmingCharacters(in: CharacterSet(charactersIn: "vV "))
+                self.isCheckingFirmware = false
+                self.firmwareStatus = ""
+                if FocusButtonFirmwareUpdater.isNewer(latest, than: installedVersion) {
+                    self.pendingFirmwareRelease = (release, installedVersion)
+                    self.firmwareAlert = .confirmFlash(from: installedVersion, to: latest)
+                } else {
+                    self.firmwareAlert = .result(title: "Up to date",
+                        message: "The Focus Button is running the latest firmware (\(installedVersion)).")
+                }
+            } catch {
+                self.isCheckingFirmware = false
+                self.firmwareStatus = ""
+                self.firmwareAlert = .result(title: "Couldn't check for updates",
+                    message: "Couldn't retrieve the latest firmware information right now. Please try again later.")
+            }
+        }
+    }
+
+    /// User accepted the flash confirmation — download and flash the pending release.
+    func confirmFlashAccepted() {
+        guard let pending = pendingFirmwareRelease else { return }
+        pendingFirmwareRelease = nil
+        isCheckingFirmware = true
+        let latest = pending.release.version.trimmingCharacters(in: CharacterSet(charactersIn: "vV "))
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            let updater = FocusButtonFirmwareUpdater.shared
+            do {
+                self.firmwareStatus = "Downloading firmware \(latest)…"
+                let bin = try await updater.downloadFirmwareBin(release: pending.release)
+                guard let port = focusButtonServiceObject.connectedPortPath else {
+                    throw FocusButtonFirmwareUpdater.UpdaterError.flashFailed("device not connected")
+                }
+                self.firmwareStatus = "Flashing firmware \(latest)…"
+                focusButtonServiceObject.stop()                 // release the serial port
+                try await Task.sleep(nanoseconds: 600_000_000)  // let the port settle
+                try await Task.detached(priority: .userInitiated) {
+                    try updater.flash(firmwareBin: bin, port: port)
+                }.value
+                try? await Task.sleep(nanoseconds: 2_000_000_000) // device re-enumerates
+                _ = focusButtonServiceObject.start()            // reconnect (re-reads version)
+                self.isCheckingFirmware = false
+                self.firmwareStatus = ""
+                self.firmwareAlert = .result(title: "Firmware updated",
+                    message: "The Focus Button was updated to \(latest).")
+            } catch {
+                self.isCheckingFirmware = false
+                self.firmwareStatus = ""
+                self.firmwareAlert = .result(title: "Firmware update failed",
+                    message: (error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+            }
+        }
+    }
+
+    func confirmFlashDeclined() {
+        pendingFirmwareRelease = nil
+        isCheckingFirmware = false
+        firmwareStatus = ""
+    }
 
     /// Manually disconnect: closes the serial port and stays disconnected (frees it for reflashing);
     /// tapping Connect again reconnects.
@@ -956,10 +1092,15 @@ struct FocusButtonToolView: View {
                 }
                 HStack(spacing: 10) {
                     if model.isConnected {
+                        // Disable while a firmware update is in flight — disconnecting mid-flash would
+                        // release the port the flasher is using.
                         SwiftUI.Button("Disconnect") { model.disconnect() }
+                            .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 33))
+                            .disabled(model.isCheckingFirmware)
                     } else {
                         SwiftUI.Button("Connect") { model.connect() }
-                            .disabled(model.connecting)
+                            .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 33))
+                            .disabled(model.connecting || model.isCheckingFirmware)
                     }
                     if model.connecting { ProgressView().scaleEffect(0.5).frame(width: 16, height: 16) }
                 }
@@ -967,7 +1108,25 @@ struct FocusButtonToolView: View {
                     Text(model.statusMessage).font(.callout).foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                if !model.iconUploadStatus.isEmpty {
+                if model.isConnected {
+                    HStack(spacing: 8) {
+                        Text("Firmware: \(model.firmwareVersion ?? "unknown")")
+                            .font(.callout).foregroundColor(.secondary)
+                        if model.isCheckingFirmware {
+                            ProgressView().scaleEffect(0.5).frame(width: 14, height: 14)
+                        } else {
+                            SwiftUI.Button("Check for Updates") { model.checkForFirmwareUpdate() }
+                                .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 27))
+                                .disabled(model.firmwareVersion == nil)
+                        }
+                    }
+                    if !model.firmwareStatus.isEmpty {
+                        Text(model.firmwareStatus).font(.callout).foregroundColor(.secondary)
+                    }
+                }
+                // Icon-sync status is always visible whenever a Focus Button that supports it is
+                // connected — it must not fade away once "up to date" (that hid a real, ongoing state).
+                if model.isConnected && model.iconSyncSupported && !model.iconUploadStatus.isEmpty {
                     HStack(spacing: 6) {
                         if !model.iconUploadStatus.hasPrefix("✓") {
                             ProgressView().scaleEffect(0.5).frame(width: 14, height: 14)
@@ -984,6 +1143,7 @@ struct FocusButtonToolView: View {
                         TextField("😀🔥🧘💻📚", text: $model.focusEmojiText, onCommit: { model.saveFocusEmoji() })
                             .frame(maxWidth: 220)
                         SwiftUI.Button(FocusButtonText.save) { model.saveFocusEmoji() }
+                            .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 27))
                     }
                     // Focus-icon sync progress on its own line (separate from the habit-icon line above).
                     if !model.focusIconUploadStatus.isEmpty {
@@ -995,12 +1155,15 @@ struct FocusButtonToolView: View {
                         }
                     }
                 }
-                Divider().padding(.vertical, 8)
-                Text("Don't have a Focus Button yet? It's a physical timer for your desk that triggers focus sessions here.")
-                    .foregroundColor(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                if let url = URL(string: "https://button.focusbear.io") {
-                    SwiftUI.Link("Get yours from button.focusbear.io", destination: url)
+                // Only pitch buying a Focus Button to people who don't already have one connected.
+                if !model.isConnected {
+                    Divider().padding(.vertical, 8)
+                    Text("Don't have a Focus Button yet? It's a physical timer for your desk that triggers focus sessions here.")
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let url = URL(string: "https://button.focusbear.io") {
+                        SwiftUI.Link("Get yours from button.focusbear.io", destination: url)
+                    }
                 }
             }
             .padding(28)
@@ -1009,6 +1172,18 @@ struct FocusButtonToolView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { model.start() }
         .onDisappear { model.stop() }
+        .alert(item: $model.firmwareAlert) { alert in
+            switch alert {
+            case .confirmFlash(let from, let to):
+                return Alert(
+                    title: Text("Update Focus Button firmware?"),
+                    message: Text("A new version (\(to)) is available — you have \(from). Flashing reboots the device, installs the firmware and restarts it. Your settings and habits are kept."),
+                    primaryButton: .default(Text("Flash Firmware")) { model.confirmFlashAccepted() },
+                    secondaryButton: .cancel { model.confirmFlashDeclined() })
+            case .result(let title, let message):
+                return Alert(title: Text(title), message: Text(message), dismissButton: .default(Text("OK")))
+            }
+        }
     }
 }
 

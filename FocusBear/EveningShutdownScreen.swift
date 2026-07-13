@@ -46,10 +46,14 @@ struct EveningShutdownView: View {
 
 /// SwiftUI mirror of the AppKit `Button` app style (Buttons.swift): orange fill + white text for the
 /// primary action, white fill + gray border + black text for the secondary. Borderless (no system
-/// push-button bezel), rounded, with the pointing-hand cursor on hover. Kept in SwiftUI because the
-/// prompt is a NSHostingView, rather than bridging the storyboard-only AppKit Button class.
-private struct AppOrangeButtonStyle: ButtonStyle {
+/// push-button bezel), rounded, with the pointing-hand cursor on hover. Kept in SwiftUI (not the
+/// storyboard-only AppKit Button class) so NSHostingView screens can use it — the evening shutdown
+/// prompt and the Focus Button tool tab (ViewController.swift).
+struct AppOrangeButtonStyle: ButtonStyle {
     let secondary: Bool
+    /// Optional fixed button height; nil keeps the natural padding-based height. The Focus Button tab
+    /// passes 33; the evening shutdown prompt leaves it nil.
+    var height: CGFloat? = nil
 
     private var orange: Color { Color(NSColor(named: "dark_OrangeColor") ?? NSColor.systemOrange) }
     private var lightOrange: Color { Color(NSColor(named: "light_OrangeColor") ?? NSColor.systemOrange) }
@@ -70,8 +74,8 @@ private struct AppOrangeButtonStyle: ButtonStyle {
         return configuration.label
             .font(.system(size: 14, weight: .medium))
             .foregroundColor(fg)
-            .frame(minWidth: 110)
-            .padding(.vertical, 9)
+            .frame(minWidth: 110, minHeight: height, maxHeight: height)
+            .padding(.vertical, height == nil ? 9 : 0)
             .padding(.horizontal, 18)
             .background(bg)
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
