@@ -2705,15 +2705,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 }
                             }
                         }else if event.keyCode == 36 || event.keyCode == 76{
-                            // If the user is editing a Day Plan task field (name / duration) or the
-                            // snooze input, let the field handle Return — never start/advance a habit.
-                            // Scoped by identifier so OTHER editable fields (e.g. the Log Quantity
-                            // dialog) keep their existing Enter behaviour. Uses keyWindow so the snooze
-                            // popover (its own window) is covered too.
+                            // If the user is editing a Day Plan task field (name / duration), the
+                            // snooze input, or a field inside the task-details modal (title, duration,
+                            // project, details/notes, sub-tasks — see DayPlanTasks.openTaskModal), let
+                            // the field handle Return — never start/advance a habit. Scoped by identifier
+                            // so OTHER editable fields (e.g. the Log Quantity dialog) keep their existing
+                            // Enter behaviour. Uses keyWindow so the snooze popover and task-details
+                            // popover (their own windows) are covered too.
+                            // NSTextField editing goes through the shared field editor, whose `delegate`
+                            // is the NSTextField itself — that's `editor.delegate`. A bare NSTextView
+                            // (e.g. the task-details "Details" notes view) IS its own editor and has no
+                            // delegate set, so fall back to the editor view itself in that case.
                             if let editor = NSApp.keyWindow?.firstResponder as? NSText,
-                               let edited = editor.delegate as? NSView,
+                               let edited = (editor.delegate as? NSView) ?? (editor as? NSView),
                                let fid = edited.identifier?.rawValue,
-                               fid.hasPrefix("name:") || fid.hasPrefix("dur:") || fid == "snoozeInput" {
+                               fid.hasPrefix("name:") || fid.hasPrefix("dur:") || fid == "snoozeInput"
+                                   || fid.hasPrefix("taskModal") || fid == "projectFilter" {
                                 return event
                             }
                             if mainWindowControllerObj?.window?.isVisible ?? false && (leftMenuVcObj?.boxHabits.isSelected ?? false || leftMenuVcObj?.boxCustomRoutine.isSelected ?? false || leftMenuVcObj?.boxMicroBreaks.isSelected ?? false){

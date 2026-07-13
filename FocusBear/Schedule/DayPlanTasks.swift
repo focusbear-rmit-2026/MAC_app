@@ -1664,6 +1664,10 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         titleField.placeholderString = ScheduleText.tasksNamePlaceholder
         titleField.translatesAutoresizingMaskIntoConstraints = false
         titleField.widthAnchor.constraint(equalToConstant: 320).isActive = true
+        // "taskModal…" identifier tells AppDelegate's global Return-key monitor to let this field
+        // handle Return itself instead of advancing/starting the current habit — see the matching
+        // allowlist check there.
+        titleField.identifier = NSUserInterfaceItemIdentifier("taskModalTitle")
         modalTitleField = titleField
 
         // Searchable dropdown of known projects (still free-text, so a new project can be typed).
@@ -1683,6 +1687,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         let durationField = NSTextField(string: "\(task.durationMinutes)")
         durationField.translatesAutoresizingMaskIntoConstraints = false
         durationField.widthAnchor.constraint(equalToConstant: 60).isActive = true
+        durationField.identifier = NSUserInterfaceItemIdentifier("taskModalDuration")
         modalDurationField = durationField
 
         // Importance (outcome 1–10, higher = more important) → 4 colour bands shown on the task row.
@@ -1717,6 +1722,11 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         notesView.isRichText = false
         notesView.textContainerInset = NSSize(width: 4, height: 4)
         notesView.string = task.notes ?? ""
+        // Without this identifier, AppDelegate's global Return-key monitor (which advances/starts the
+        // current habit on Enter) sees an unrecognised field and hijacks Return before it ever reaches
+        // NewlineKeepingTextView.performKeyEquivalent below — Enter would start the next habit instead
+        // of inserting a newline. See the matching allowlist check there.
+        notesView.identifier = NSUserInterfaceItemIdentifier("taskModalNotes")
         modalNotesView = notesView
         let notesScroll = NSScrollView()
         notesScroll.documentView = notesView
@@ -1797,6 +1807,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
             let field = NSTextField(string: sub.title)
             field.placeholderString = ScheduleText.tasksSubtaskPlaceholder
             field.tag = i
+            field.identifier = NSUserInterfaceItemIdentifier("taskModalSubtask:\(i)")
             field.translatesAutoresizingMaskIntoConstraints = false
             field.widthAnchor.constraint(equalToConstant: 250).isActive = true
             let del = NSButton(title: "✕", target: self, action: #selector(deleteSubtaskClicked(_:)))
