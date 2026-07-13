@@ -9,238 +9,121 @@
 import Cocoa
 import WebKit
 
-class brainDumpVc: NSViewController, NSTextViewDelegate{
+class brainDumpVc: NSViewController, NSTextViewDelegate {
     
-//    @IBOutlet weak var lblTimeSinceLastBreak: NSTextField!
-    @IBOutlet weak var btnOpenUrl: Button!
-    @IBOutlet weak var textFieldOpenUrl: NSTextField!
-    @IBOutlet weak var lblTitleOpenUrl: NSTextField!
     @IBOutlet weak var boxBrainDumpWebView: NSBox!
-    @IBOutlet weak var stackViewBrainDumpWorkNote: NSStackView!
-    @IBOutlet weak var btnLinkSettingBrainDump: underLineButton!
-    @IBOutlet weak var scrollViewWorkNote: NSScrollView!
     @IBOutlet weak var webView: WKWebView!
-//    @IBOutlet weak var btnStartFocus: Button!
-    @IBOutlet weak var lblNotesSaveInfo: NSTextField!
     @IBOutlet weak var btnSave: Button!
-//    @IBOutlet weak var lineTopSpace: NSLayoutConstraint!
-    @IBOutlet var textViewWorkNote: NSTextView!
-    @IBOutlet weak var lblTitleWorkNote: NSTextField!
+    @IBOutlet weak var btnTryNewBrainDump: Button!
+    @IBOutlet weak var btnToggleOldVersion: underLineButton!
+    @IBOutlet weak var stackViewOldNotes: NSStackView!
+    @IBOutlet weak var scrollViewOldNotes: NSScrollView!
+    @IBOutlet var textViewOldNotes: NSTextView!
     
+    // Tracks whether the user has chosen to stay on the old local notes version
+    var isShowingOldVersion: Bool {
+        get { UserDefaults.standard.bool(forKey: "kUserDefaultsBrainDumpShowOldVersion") }
+        set { UserDefaults.standard.set(newValue, forKey: "kUserDefaultsBrainDumpShowOldVersion") }
+    }
     
-    var titleWorkNoteFirst = "Things I'll do in my next break:"
-    var titleWorkNoteSecond = "Things you wanted to do in your break:"
-    var titleTimeRemainingText = "Time remaining:"
-    var titleTimeSpentText = "Time spent:"
+    var hasEverSwitchedToWebview: Bool {
+        get { UserDefaults.standard.bool(forKey: "kUserDefaultsBrainDumpEverSwitchedToWebview") }
+        set { UserDefaults.standard.set(newValue, forKey: "kUserDefaultsBrainDumpEverSwitchedToWebview") }
+    }
+
+    // Ensures the initial brain-dump content is injected only once per load,
+    // so subsequent in-page navigations don't clobber user-typed webview notes.
+    private var hasInjectedInitialBrainDump = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
-        lblNotesSaveInfo.stringValue = "Your notes will automatically save"
         btnSave.title = "Close"
-        lblTitleOpenUrl.stringValue = "Open Url:"
-        btnOpenUrl.title = "Go"
-        lblTitleWorkNote.stringValue = "Dump down ideas you have so you don't forget - anything you write here will remain forever unless you delete it"
-        
-        if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
-            titleTimeRemainingText = brainDumpVcInfo.value(forKey: "titleTimeRemainingText") as? String ?? titleTimeRemainingText
-            titleWorkNoteFirst = brainDumpVcInfo.value(forKey: "titleWorkNoteFirst") as? String ?? titleWorkNoteFirst
-            titleWorkNoteSecond = brainDumpVcInfo.value(forKey: "titleWorkNoteSecond") as? String ?? titleWorkNoteSecond
-            lblTitleWorkNote.stringValue = brainDumpVcInfo.value(forKey: "writeThingsHereText") as? String ?? lblTitleWorkNote.stringValue
-            titleTimeSpentText = brainDumpVcInfo.value(forKey: "titleTimeSpentText") as? String ?? titleTimeSpentText
-            lblNotesSaveInfo.stringValue = brainDumpVcInfo.value(forKey: "notesSaveInfoText") as? String ?? lblNotesSaveInfo.stringValue
+        if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary {
             btnSave.title = brainDumpVcInfo.value(forKey: "buttonCloseText") as? String ?? btnSave.title
-            lblTitleOpenUrl.stringValue = brainDumpVcInfo.value(forKey: "titleOpenUrl") as? String ?? lblTitleOpenUrl.stringValue
-            btnOpenUrl.title = brainDumpVcInfo.value(forKey: "buttonOpenUrlText") as? String ?? btnOpenUrl.title
         }
-        textViewWorkNote.delegate = self
-        
+
         let webViewConfiguration = WKWebViewConfiguration()
         let newWebView = WKWebView(frame: CGRect.zero, configuration: webViewConfiguration)
         let userAgent = newWebView.stringByEvaluatingJavaScript(from: "navigator.userAgent")! + " Version/15.2 Safari/605.1.15"
-        
+
         webView.customUserAgent = userAgent
         webView.navigationDelegate = self
+        webView.setValue(false, forKey: "drawsBackground")
+        webView.isHidden = true // hidden until explicitly shown
+        textViewOldNotes.delegate = self
     }
+    
     override func viewWillAppear() {
-        if let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String {
-            textViewWorkNote.string = notes
-        }else{
-            textViewWorkNote.string = ""
-        }
         resetData()
     }
     
-    
-    func resetData(){
-        if SettingsManagerObject.brainDumpCustomUrlEnabled{
-            boxBrainDumpWebView.isHidden = false
-            stackViewBrainDumpWorkNote.isHidden = true
-            let url = SettingsManagerObject.brainDumpCustomUrlValue
-            textFieldOpenUrl.stringValue = url
-            btnLinkSettingBrainDump.title = "← Back to basic brain dump"
-            if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
-                btnLinkSettingBrainDump.title = brainDumpVcInfo.value(forKey: "buttonStartBasicBrainDumpText") as? String ?? btnLinkSettingBrainDump.title
-            }
-            loadWebView()
-            lblNotesSaveInfo.isHidden = true
-        }else{
+    func resetData() {
+        let existingNotes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String ?? ""
+        let hasOldContent = !existingNotes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
+        if isShowingOldVersion {
+            // User explicitly toggled back to old version
+            // Always show Try button so user is never stuck with no path to webview
             boxBrainDumpWebView.isHidden = true
-            stackViewBrainDumpWorkNote.isHidden = false
-            btnLinkSettingBrainDump.title = "Use your own system for brain dump"
-            if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
-                btnLinkSettingBrainDump.title = brainDumpVcInfo.value(forKey: "buttonOwnUrlBrainDumpText") as? String ?? btnLinkSettingBrainDump.title
+            stackViewOldNotes.isHidden = false
+            textViewOldNotes.string = existingNotes
+            btnTryNewBrainDump.isHidden = false
+            btnToggleOldVersion.isHidden = true
+            webView.isHidden = true
+        } else if hasEverSwitchedToWebview || !hasOldContent {
+            // User already switched to webview before, or has no old notes
+            boxBrainDumpWebView.isHidden = false
+            stackViewOldNotes.isHidden = true
+            btnTryNewBrainDump.isHidden = true
+            webView.isHidden = false
+            btnToggleOldVersion.isHidden = !hasEverSwitchedToWebview
+
+            if hasOldContent {
+                applyWebViewTopConstraintBelowToggle()
             }
-            lblNotesSaveInfo.isHidden = false
+
+            loadWebView()
+        } else {
+            // Has old content and hasn't switched yet — show text editor + Try button
+            boxBrainDumpWebView.isHidden = true
+            stackViewOldNotes.isHidden = false
+            textViewOldNotes.string = existingNotes
+            btnTryNewBrainDump.isHidden = false
+            btnToggleOldVersion.isHidden = true
+            webView.isHidden = true
         }
     }
     
-    func loadWebView(){
-        let url = SettingsManagerObject.brainDumpCustomUrlValue
-        if let link = URL(string:url){
+    func loadWebView() {
+        // ?open=braindump lands the webview directly in the Brain Dump section (web_dashboard #3624).
+        let urlString = "https://dashboard.focusbear.io/webview/notes?open=braindump"
+        if let link = URL(string: urlString) {
+            // Reset the one-shot guard so the initial brain-dump content is
+            // injected once for this fresh load of the notes page.
+            hasInjectedInitialBrainDump = false
             let request = URLRequest(url: link)
             self.webView.load(request)
         }
     }
     
-    func checkCurrentUrl(){
-        if boxBrainDumpWebView.isHidden{
-            return;
-        }
-        if let url = webView.url{
-            let urlString = url.absoluteString
-            for turl in defaultAllowedUrl{
-                if urlString.contains(turl){
-                    return;
-                }
-            }
-            
-            var shouldCheckBlockedUrls = false//now super distarcting sites will block only in focus modes and custom blocking schedules  24/9/25 version 2.27.417
-            if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-                shouldCheckBlockedUrls = true
-            }
-            if shouldCheckBlockedUrls{
-                let arrBlockedUrls = getBlockedUrlsToBlock()
-                for turl in arrBlockedUrls{
-                    //Change all suggested blocked apps in onboarding to start with https:// #1233
-                    let bool = validation.isUrlAlwaysBlocked(urlToCheck: urlString, blockedUrl: turl)
-                    if bool{
-                        blockCurrentUrl(isAlwaysBlock:true, oldUrl: urlString)
-                        return;
-                    }
-                }
-            }
-            
-            
-            if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-                let arrBlockedUrlsForFocus = currentRunningFocusType["blockUrlsArray"] as? [String] ?? []
-                for turl in arrBlockedUrlsForFocus{
-                    let isBlocked = validation.isUrlValid(urlToCheck: urlString, allowUrl: turl)
-                    if isBlocked{
-                        blockCurrentUrl(isAlwaysBlock:false, oldUrl: urlString)
-                        return;
-                    }
-                }
-                
-                let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
-                if isAllowedListApproachInFocus{
-                    let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-                    var isAllowed = false
-                    for turl in arrAllowedUrlsForFocus{
-                        isAllowed = validation.isUrlValid(urlToCheck: urlString, allowUrl: turl)
-                        if isAllowed{
-                            break;
-                        }
-                    }
-                    if !isAllowed{
-                        blockCurrentUrl(isAlwaysBlock:false, oldUrl: urlString)
-                        return;
-                    }
-                }
+    private func applyWebViewTopConstraintBelowToggle() {
+        guard let parentView = webView.superview else { return }
+        for constraint in parentView.constraints {
+            if (constraint.firstItem as? WKWebView) == webView && constraint.firstAttribute == .top {
+                parentView.removeConstraint(constraint)
             }
         }
+        let newTopConstraint = NSLayoutConstraint(
+            item: webView!,
+            attribute: .top,
+            relatedBy: .equal,
+            toItem: btnToggleOldVersion,
+            attribute: .bottom,
+            multiplier: 1.0,
+            constant: 8
+        )
+        parentView.addConstraint(newTopConstraint)
     }
-    
-//    \(blockWebUrlString)?old_url=https%3A%2F%2Fwww.facebook.com&block_type=always-blocked
-    func blockCurrentUrl(isAlwaysBlock:Bool, oldUrl:String){
-        let oldUrl = oldUrl.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? oldUrl
-        if isAlwaysBlock{
-            if let link = URL(string:"\(blockWebUrlString)?old_url=\(oldUrl)&block_type=always-blocked&braindump=true"){
-                let request = URLRequest(url: link)
-                self.webView.load(request)
-            }
-        }else{
-            var stringTime = ""
-            var focusMode = ""
-            if isFocusModeRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-                focusMode = currentRunningFocusType["name"] as? String ?? ""
-                
-                if let date = endFocusModeTime{
-                    stringTime = getStringFromDateInUtc(date: date, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-                }
-                
-                if let link = URL(string:"\(blockWebUrlString)?old_url=\(oldUrl)&focus_mode_end_time=\(stringTime)&focus_mode=\(focusMode)&braindump=true"){
-                    let request = URLRequest(url: link)
-                    self.webView.load(request)
-                }
-            }else{
-                var blockType = ""
-                if currentState == ._MICRO_BREAK_{
-                    if currentActivityPlaying != nil{
-                      //  activityAllowUrls = currentActivityPlaying!.allowUrls
-                    }
-                    blockType = "break-activity"
-                }else if currentState == ._MORNING_HABIT_{
-                    if currentHabitPlaying != nil{
-                      //  activityAllowUrls = currentHabitPlaying!.allowUrls
-                    }
-                    blockType = "morning-habit"
-                }else if currentState == ._EVENING_HABIT_{
-                    if currentHabitPlaying != nil{
-                        //activityAllowUrls = currentHabitPlaying!.allowUrls
-                    }
-                    blockType = "evening-habit"
-                }else if currentState == ._SPECIAL_ACTIVITY_{
-                    if currentHabitPlaying != nil{
-                       // activityAllowUrls = currentHabitPlaying!.allowUrls
-                    }
-                    blockType = "special-activity"
-                }else if currentState == ._CUSTOM_ROUTINE_{
-                    if currentHabitPlaying != nil{
-                        //activityAllowUrls = currentHabitPlaying!.allowUrls
-                    }
-                    blockType = "custom-routine"
-                }
-                
-                if let link = URL(string:"\(blockWebUrlString)?old_url=\(oldUrl)&block_type=\(blockType)&braindump=true"){
-                    let request = URLRequest(url: link)
-                    self.webView.load(request)
-                }
-            }
-        }
-    }
-  
-    func textDidChange(_ notification: Notification) {
-        guard let textView = notification.object as? NSTextView else{
-            return
-        }
-        if textView == textViewWorkNote{
-            UserDefaults.standard.set(textViewWorkNote.string, forKey: kUserdefaultsFocusModeNotes)
-//            if taskPlayerWcObj != nil{
-//                if taskPlayerWcObj?.window?.isVisible ?? false{
-//                    taskPlayerVcObj?.updateBrainDumpToPlayer()
-//                }
-//            }
-            taskPlayerVcObj?.updateBrainDumpToPlayer()
-        }
-    }
-    
-//    func focusModeStarted(){
-//        if SettingsManagerObject.brainDumpCustomUrlEnabled{
-//            
-//        }else{
-//            
-//        }
-//    }
     
     func focusModeFinished(){
         loadWebView()
@@ -249,58 +132,106 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
     func breakStarted(){
         //        lblTitleWorkNote.stringValue = titleWorkNoteSecond
     }
-
-    @IBAction func btnSaveClicked(_ sender: Any) {
-        self.view.window?.close()
-    }
-
-    @IBAction func btnLinkSettingBrainDumpClicked(_ sender: Any) {
-        if SettingsManagerObject.brainDumpCustomUrlEnabled{
-            SettingsManagerObject.brainDumpCustomUrlEnabled = false
-            allApiObject.capturePosthog(event: "settings-changed-disable-specific-url-for-brain-dump", metadata: [:])
-        }else{
-            SettingsManagerObject.brainDumpCustomUrlEnabled = true
-            allApiObject.capturePosthog(event: "settings-changed-enable-specific-url-for-brain-dump", metadata: [:])
-        }
-        SettingsManagerObject.isSettingsChanged = true
-        SettingsManagerObject.putUserLocalDeviceSettings()
-        resetData()
-        if toDoListSettingsVcObj != nil{
-            if toDoListSettingsVcObj?.isViewVisible ?? false{
-                toDoListSettingsVcObj?.reloadSettingsForBrainDump()
-            }
+    
+    func textDidChange(_ notification: Notification) {
+        guard let textView = notification.object as? NSTextView else { return }
+        if textView == textViewOldNotes {
+            UserDefaults.standard.set(textViewOldNotes.string, forKey: kUserdefaultsFocusModeNotes)
         }
     }
     
-    @IBAction func btnOpenUrlClicked(_ sender: Any) {
-        var urlString =  textFieldOpenUrl.stringValue.lowercased()
-        if !urlString.contains("http://") && !urlString.contains("https://"){
-            urlString = "https://" + urlString
-            textFieldOpenUrl.stringValue = urlString
+    @IBAction func btnTryNewBrainDumpClicked(_ sender: Any) {
+        let existingNotes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String ?? ""
+        if !existingNotes.isEmpty {
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            pasteboard.setString(existingNotes, forType: .string)
         }
-        
-        SettingsManagerObject.brainDumpCustomUrlValue = urlString
-        SettingsManagerObject.isSettingsChanged = true
+        isShowingOldVersion = false
+        hasEverSwitchedToWebview = true
+        stackViewOldNotes.isHidden = true
+        boxBrainDumpWebView.isHidden = false
+        btnTryNewBrainDump.isHidden = true
+        btnToggleOldVersion.isHidden = false
+        webView.isHidden = false
+
+        applyWebViewTopConstraintBelowToggle()
+
+        allApiObject.capturePosthog(event: "brain-dump-switched-to-new-webview", metadata: [:])
+        loadWebView()
+    }
+
+    @IBAction func btnToggleOldVersionClicked(_ sender: Any) {
+        isShowingOldVersion = true
+        hasEverSwitchedToWebview = false
+        allApiObject.capturePosthog(event: "brain-dump-switched-to-old-version", metadata: [:])
         resetData()
-        if toDoListSettingsVcObj != nil{
-            if toDoListSettingsVcObj?.isViewVisible ?? false{
-                toDoListSettingsVcObj?.reloadSettingsForBrainDump()
-            }
-        }
+    }
+
+    @IBAction func btnSaveClicked(_ sender: Any) {
+        self.view.window?.close()
     }
     
 }
 
 
-extension brainDumpVc: WKNavigationDelegate{
+extension brainDumpVc: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         print("*************didFinish navigation**************")
-        DispatchQueue.global().async {
-            sleep(1)
-            DispatchQueue.main.async {
-                self.checkCurrentUrl()
+
+        // One-time migration (per user): push this user's local notes into the webview once, ever. Once
+        // done, never re-push — that would clobber whatever the user has since typed in the webview.
+        if UserDefaults.standard.value(forKey: kUserdefaultsBrainDumpSentToWebView) != nil { return }
+        guard !isShowingOldVersion, !hasInjectedInitialBrainDump else { return }
+        // Set the per-load guard up front so a second didFinish during this load doesn't start a second
+        // poll loop; the persisted "sent" flag is only set once delivery is confirmed (see below).
+        hasInjectedInitialBrainDump = true
+        injectInitialBrainDumpNotes(into: webView)
+    }
+}
+
+extension brainDumpVc {
+    /// One-time migration: push the desktop app's saved notes into the webview brain dump via the web
+    /// bridge `window.updateBrainDumpFromDesktopApp(encodeURIComponent(notes))` — it `decodeURIComponent()`s
+    /// its argument, so the notes MUST be URI-encoded. The bridge is registered only after React
+    /// mount/hydration, so poll from the native side (each call returns whether the bridge was found +
+    /// called) and persist the "sent" flag ONLY once a call actually lands — a failed/early load must not
+    /// burn the one-time migration. (Tracked web-side in #2052: the editor doesn't yet render the
+    /// dispatched notes, so until that ships the call won't confirm and will simply retry on the next load.)
+    private func injectInitialBrainDumpNotes(into webView: WKWebView) {
+        let existingNotes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String ?? ""
+        let escaped = existingNotes
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "'", with: "\\'")
+            .replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\r", with: "\\r")
+            .replacingOccurrences(of: "\u{2028}", with: "\\u2028")
+            .replacingOccurrences(of: "\u{2029}", with: "\\u2029")
+        // Returns true only when the bridge exists and was called; false means "not ready yet".
+        let js = """
+        (function() {
+          if (typeof window.updateBrainDumpFromDesktopApp === 'function') {
+            window.updateBrainDumpFromDesktopApp(encodeURIComponent('\(escaped)'));
+            return true;
+          }
+          return false;
+        })();
+        """
+        var attemptsLeft = 40   // ~4s total at 100ms spacing
+        func attempt() {
+            webView.evaluateJavaScript(js) { result, _ in
+                if (result as? Bool) == true {
+                    // Delivery confirmed — burn the one-time flag now (and only now).
+                    UserDefaults.standard.set(true, forKey: kUserdefaultsBrainDumpSentToWebView)
+                } else if attemptsLeft > 0 {
+                    attemptsLeft -= 1
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: attempt)
+                }
+                // If the bridge never appears within the window, leave the flag unset so the next
+                // fresh load retries the migration.
             }
         }
+        attempt()
     }
 }
 

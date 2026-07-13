@@ -1017,6 +1017,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 kUserDefaultsLastRoutinePostponeEndDate = kUserDefaultsLastRoutinePostponeEndDate + (self.user?.userId ?? "")
                 kUserDefaultsLastRoutinePostponeState = kUserDefaultsLastRoutinePostponeState + (self.user?.userId ?? "")
                 
+                kUserdefaultsBrainDumpSentToWebView = kUserdefaultsBrainDumpSentToWebView + (self.user?.userId ?? "")
+                
                 connectGlobalAndMacIDWithDistinctUserID()
                 
                 if let notes = UserDefaults.standard.object(forKey: "kUserdefaultsFocusModeNotes") as? String{// get notes from old key and remove it from old key

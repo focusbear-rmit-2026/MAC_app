@@ -99,10 +99,7 @@ class SettingsManager:NSObject{
     var isMicroBreaksEnabled = true
     
     var isSkipBreakActivityDuringPomodoro = false
-    
-    var brainDumpCustomUrlEnabled = false
-    var brainDumpCustomUrlValue = ""
-    
+
     var shouldReloadAfterForceQuitEnabled = false
     var selectedFontIndex = 0
     var cuddlyModeProgressCount = 0
@@ -464,14 +461,12 @@ class SettingsManager:NSObject{
                 let kAiCheckUrlEnabled = "kAiCheckUrlEnabled"
                 
                 let kShowToDoPlayerAutomatically = "kShowToDoPlayerAutomatically"
-                let kBrainDumpCustomUrlEnabled = "kBrainDumpCustomUrlEnabled"
                 let kIsMenuPopoverEnabled = "kIsMenuPopoverEnabled"
                 let kIsAdvancedAnalyticsInFocusModeEnabled = "kIsAdvancedAnalyticsInFocusModeEnabled"
                 let kIsDataCollectionModeEnabled = "kIsDataCollectionModeEnabled"
                 let kDetectNatualBreaksEnabled = "kDetectNatualBreaksEnabled"
                 
                 let kIsFocusVisualIndicatorEnabled = "kIsFocusVisualIndicatorEnabled"
-                let kBrainDumpCustomUrlValue = "kBrainDumpCustomUrlValue"
                 let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
                 let kMicroBreaksEnabled = "kMicroBreaksEnabled"
                 
@@ -716,9 +711,6 @@ class SettingsManager:NSObject{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsAiCheckUrlEnabled)
                 }
                 
-                if let val = settings.value(forKey: kBrainDumpCustomUrlEnabled) as? Bool{
-                    brainDumpCustomUrlEnabled = val
-                }
                 if let val = settings.value(forKey: kSkipBreakActivityDuringFocusSession) as? Bool{
                     isSkipBreakActivityDuringPomodoro = val
                 }
@@ -747,10 +739,6 @@ class SettingsManager:NSObject{
                 
                 if let val = settings.value(forKey: kIsFocusVisualIndicatorEnabled) as? Bool{
                     isFocusVisualIndicatorEnabled = val
-                }
-                
-                if let val = settings.value(forKey: kBrainDumpCustomUrlValue) as? String{
-                    brainDumpCustomUrlValue = val
                 }
                 
                 if let val = settings.value(forKey: kShowToDoPlayerAutomatically) as? Bool{
@@ -1321,13 +1309,11 @@ class SettingsManager:NSObject{
         let kMotivationalMessageEnabled = "kMotivationalMessageEnabled"
         let kAiCheckUrlEnabled = "kAiCheckUrlEnabled"
         let kShowToDoPlayerAutomatically = "kShowToDoPlayerAutomatically"
-        let kBrainDumpCustomUrlEnabled = "kBrainDumpCustomUrlEnabled"
         let kIsMenuPopoverEnabled = "kIsMenuPopoverEnabled"
         let kIsAdvancedAnalyticsInFocusModeEnabled = "kIsAdvancedAnalyticsInFocusModeEnabled"
         let kIsDataCollectionModeEnabled = "kIsDataCollectionModeEnabled"
         let kDetectNatualBreaksEnabled = "kDetectNatualBreaksEnabled"
         let kIsFocusVisualIndicatorEnabled = "kIsFocusVisualIndicatorEnabled"
-        let kBrainDumpCustomUrlValue = "kBrainDumpCustomUrlValue"
         let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
         let kMicroBreaksEnabled = "kMicroBreaksEnabled"
         let kSkipBreakActivityDuringFocusSession = "kSkipBreakActivityDuringFocusSession"
@@ -1397,13 +1383,11 @@ class SettingsManager:NSObject{
             kMotivationalMessageEnabled:isMotivationalMessageEnabled,
             kAiCheckUrlEnabled:isAiCheckUrlEnabled,
             kShowToDoPlayerAutomatically:showToDoPlayerAutomaticallyEnabled,
-            kBrainDumpCustomUrlEnabled:brainDumpCustomUrlEnabled,
             kIsMenuPopoverEnabled: isMenuPopoverEnabled,
             kIsAdvancedAnalyticsInFocusModeEnabled:isAdvancedAnalyticsInFocusModeEnabled,
             kIsDataCollectionModeEnabled:isDataCollectionModeEnabled,
             kDetectNatualBreaksEnabled:isDetectNatualBreaksEnabled,
             kIsFocusVisualIndicatorEnabled:isFocusVisualIndicatorEnabled,
-            kBrainDumpCustomUrlValue:brainDumpCustomUrlValue,
             kShowBrainDumpAfterMorningRoutine:showBrainDumpAfterMorningRoutineEnabled,
             kMicroBreaksEnabled:isMicroBreaksEnabled,
             kSkipBreakActivityDuringFocusSession:isSkipBreakActivityDuringPomodoro,

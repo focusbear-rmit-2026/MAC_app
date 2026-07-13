@@ -241,3 +241,6 @@ var kUserdefaultsIsGuestAccount = "kUserdefaultsIsGuestAccount"
 
 // WiFi profile auto-switching (#1000)
 let kUserdefaultsWiFiProfileMappings = "kFBWiFiProfileMappings"
+
+
+var kUserdefaultsBrainDumpSentToWebView = "kUserdefaultsBrainDumpSentToWebView"
