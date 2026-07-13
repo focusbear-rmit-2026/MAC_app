@@ -378,22 +378,29 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         // The active routine states already have their habit content up — don't disturb it (that
         // previously caused a blank-habit-state regression, v 3.33.494).
         guard currentState != ._MORNING_HABIT_, currentState != ._EVENING_HABIT_, currentState != ._FOCUS_SUMMARY_ else { return }
+        // Tracks whether one of the branches below actually populated the habits/Day Plan area, so the
+        // safety net at the end can catch any state combination none of them account for — this exact
+        // function has already shipped one blank-Day-Plan fix (see the doc comment above) and another
+        // was reported 2026-07-13 (isUserOnMeeting + isHabitAlreadyShowed both landing on a combination
+        // no branch matched); rather than chase every future combination individually, never leave the
+        // area blank instead.
+        var didShowHabitState = false
         if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_ {
-            habitsVcObj?.showHabitState()
+            habitsVcObj?.showHabitState(); didShowHabitState = true
         } else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit {
-            habitsVcObj?.showHabitState()
+            habitsVcObj?.showHabitState(); didShowHabitState = true
         } else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit {
-            habitsVcObj?.showHabitState()
+            habitsVcObj?.showHabitState(); didShowHabitState = true
         } else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit {
-            habitsVcObj?.showHabitState()
+            habitsVcObj?.showHabitState(); didShowHabitState = true
         } else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit {
-            habitsVcObj?.showHabitState()
+            habitsVcObj?.showHabitState(); didShowHabitState = true
         } else {
             if isHabitAlreadyShowed && !isShutOffTimeGoing() {
-                habitsVcObj?.showHabitState()
+                habitsVcObj?.showHabitState(); didShowHabitState = true
             } else if let date = UserDefaults.standard.object(forKey: kUserdefaultsShutdownAborted) as? Date,
                       Date().compare(date) == .orderedAscending {
-                habitsVcObj?.showHabitState()
+                habitsVcObj?.showHabitState(); didShowHabitState = true
             }
 
             let currentDate = Date()
@@ -404,9 +411,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_ && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil {
                 if isHabitsDisabled {
                     UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
-                    habitsVcObj?.showHabitState()
+                    habitsVcObj?.showHabitState(); didShowHabitState = true
                 } else if sameDay || !shouldDoHabits() {
-                    habitsVcObj?.showHabitState()
+                    habitsVcObj?.showHabitState(); didShowHabitState = true
                 } else {
                     UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
                 }
@@ -414,22 +421,31 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 if let date = UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date {
                     if Date().compare(date) == .orderedAscending {// evening habits already shown for today
                         if isShutOffTimeGoing() && !isCutOffTimeGoing() {
-                            habitsVcObj?.showHabitState()// free time
+                            habitsVcObj?.showHabitState(); didShowHabitState = true // free time
                         }
                     }
                 } else if isShutOffTimeGoing() && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_ && currentState != ._POSTPONE_EVENING_HABIT_ && currentState != ._POSTPONE_FOCUS_SUMMARY_ && arrAllDaysEveningHabits.count == 0 {
-                    habitsVcObj?.showHabitState()// v 2.28.437
+                    habitsVcObj?.showHabitState(); didShowHabitState = true // v 2.28.437
                 } else if (appdelegate?.isUserOnMeeting ?? false) && !isHabitAlreadyShowed && !isShutOffTimeGoing() {
-                    habitsVcObj?.showHabitState()// v 2.28.445
+                    habitsVcObj?.showHabitState(); didShowHabitState = true // v 2.28.445
                 } else if !isAppEnable {
-                    habitsVcObj?.showHabitState()// v 2.28.456
+                    habitsVcObj?.showHabitState(); didShowHabitState = true // v 2.28.456
                 } else if sameDay || !shouldDoHabits() {
                     if isHabitsDisabled {
                         UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
                     }
-                    habitsVcObj?.showHabitState()
+                    habitsVcObj?.showHabitState(); didShowHabitState = true
                 }
             }
+        }
+        // Safety net: every branch above is a narrow, historically-patched special case: if none of
+        // them matched for the current state/flag combination, fall back to showing the habit state
+        // anyway rather than leaving the Day Plan area blank — showHabitState() just re-adds its view
+        // (removeSubViews() first), so calling it here is a no-op if something already handled it and
+        // the state genuinely needed nothing shown, and a real fix if nothing did.
+        if !didShowHabitState {
+            addLog(text: "showDayPlanForCurrentState: no branch matched for state=\(currentState) — falling back to showHabitState() so Day Plan isn't left blank")
+            habitsVcObj?.showHabitState()
         }
     }
 
