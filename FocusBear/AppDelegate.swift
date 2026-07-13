@@ -4870,6 +4870,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                     }
                 }
+                // Late No More (the external app) fires this URL to warn an appointment is about to
+                // start. Its trigger can be delivered late (e.g. the Mac was asleep, or a missed macOS
+                // notification replays after waking) — without this check, a replayed/stale trigger for
+                // an appointment that's long since ended still pops "about to start" and pauses habits.
+                if let endTime = eventEndTime, endTime <= Date(){
+                    addLog(text: "event-about-to-start:- ignoring stale trigger, appointment already ended at \(endTime)")
+                    return
+                }
+                if let startTime = eventStartTime, Date().timeIntervalSince(startTime) > 15 * 60{
+                    addLog(text: "event-about-to-start:- ignoring stale trigger, appointment started more than 15 minutes ago at \(startTime)")
+                    return
+                }
                 if eventEndTime != nil{
                     addLog(text: "event-about-to-start:- got end time")
                     if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
