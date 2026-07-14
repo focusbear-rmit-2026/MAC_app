@@ -227,6 +227,7 @@ var kUserDefaultsLastRoutinePostponeState = "kLastRoutinePostponeState"// mornin
 var kUserDefaultsBlockingScheduleAddedFirstTime = "kBlockingScheduleAddedFirstTime"// v2.29.461
 
 
+var kUserdefaultsHiddenFocusModeIDs = "kHiddenFocusModeIDs"
 var kUserdefaultsLastFocusModeId = "kLastRunningFocusModeId"
 // Block list the user last picked on the Focus-time (pomodoro) screen. Dedicated key so it isn't
 // clobbered by kUserdefaultsLastFocusModeId, which any focus mode (incl. scheduled blocking) sets.

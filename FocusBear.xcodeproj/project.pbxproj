@@ -109,6 +109,7 @@
 		274E0F4928902CF1000234A3 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E0F4828902CF1000234A3 /* User.swift */; };
 		274E0F4C28902E29000234A3 /* Auth0.plist in Resources */ = {isa = PBXBuildFile; fileRef = 274E0F4B28902E28000234A3 /* Auth0.plist */; };
 		274E671628951DDD0030163F /* AllApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E671528951DDC0030163F /* AllApi.swift */; };
+		5A3E0C8D2FA42A4700301BE2 /* HiddenFocusModeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3E0C8C2FA42A4700301BE2 /* HiddenFocusModeManager.swift */; };
 		5AA6CC882FBC0A1F007BD5D1 /* WiFiMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA6CC872FBC0A1F007BD5D1 /* WiFiMonitorService.swift */; };
 		5AA6CC8A2FBC0A49007BD5D1 /* WiFiProfileMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA6CC892FBC0A49007BD5D1 /* WiFiProfileMapping.swift */; };
 		5AA6CC8C2FBC0A91007BD5D1 /* officeModeSettingsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA6CC8B2FBC0A91007BD5D1 /* officeModeSettingsVc.swift */; };
@@ -525,6 +526,7 @@
 		274E0F4828902CF1000234A3 /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		274E0F4B28902E28000234A3 /* Auth0.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Auth0.plist; sourceTree = "<group>"; };
 		274E671528951DDC0030163F /* AllApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllApi.swift; sourceTree = "<group>"; };
+		5A3E0C8C2FA42A4700301BE2 /* HiddenFocusModeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiddenFocusModeManager.swift; sourceTree = "<group>"; };
 		5AA6CC872FBC0A1F007BD5D1 /* WiFiMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiMonitorService.swift; sourceTree = "<group>"; };
 		5AA6CC892FBC0A49007BD5D1 /* WiFiProfileMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiProfileMapping.swift; sourceTree = "<group>"; };
 		5AA6CC8B2FBC0A91007BD5D1 /* officeModeSettingsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = officeModeSettingsVc.swift; sourceTree = "<group>"; };
@@ -1241,6 +1243,7 @@
 		8F93BE5E27CCA168004FA0BE /* Focus mode */ = {
 			isa = PBXGroup;
 			children = (
+				5A3E0C8C2FA42A4700301BE2 /* HiddenFocusModeManager.swift */,
 				8F93BE5F27CCA196004FA0BE /* abortingFocusMode.swift */,
 				8FAD22D627CA2F1000CDC866 /* focusCompletedVc.swift */,
 				8F64E48C2A419A5500B11643 /* focusCompletedForActivityVc.swift */,
@@ -2223,6 +2226,7 @@
 				8FE5587E2CEC703300C44387 /* bellVc.swift in Sources */,
 				13A9D5AE2F741B4D004ACB7F /* setUpAccountVc.swift in Sources */,
 				8FB970AB2B71F7A500A38F17 /* chooseCommunityVc.swift in Sources */,
+				5A3E0C8D2FA42A4700301BE2 /* HiddenFocusModeManager.swift in Sources */,
 				13501E292E7C2B020055ACB1 /* browsersTabAuditVc.swift in Sources */,
 				8F45E5012B7C995F0063088E /* savedSitesForLaterVc.swift in Sources */,
 				8F0A18542A8E412B00AFA623 /* frictionVc.swift in Sources */,

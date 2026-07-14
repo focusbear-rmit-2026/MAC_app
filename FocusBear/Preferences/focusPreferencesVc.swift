@@ -10,6 +10,8 @@ import Cocoa
 
 class focusPreferencesVc: NSViewController, NSMenuDelegate {
 
+    @IBOutlet weak var stackViewLeftPanel: NSStackView!
+    @IBOutlet weak var lineBelowFocusModes: NSBox!
     @IBOutlet weak var btnBack: cursorButton!
     @IBOutlet weak var scrollView: NSScrollView!
     @IBOutlet weak var btnBackToCustomBlockingSmall: cursorButton!
@@ -62,6 +64,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     let viewWidthDefault = 760
     let viewHeightDefault = 624
     var isViewVisible = false
+    var isRevealHiddenModesOn = false
     var cp = NSColorPanel.shared
     
     override func viewDidLoad() {
@@ -216,6 +219,15 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         
         boxAllowedWebUrls.wantsLayer = true
         boxAllowedWebUrls.layer?.cornerRadius = 5
+        
+        let chkReveal = NSButton(checkboxWithTitle: "Reveal hidden focus modes", target: self, action: #selector(revealHiddenModesToggled(_:)))
+        chkReveal.translatesAutoresizingMaskIntoConstraints = false
+        chkReveal.state = .off
+
+        
+        stackViewLeftPanel.addArrangedSubview(chkReveal)
+        updateRevealHiddenCheckboxVisibility(chkReveal)
+
         addLog(text: "focusPreferencesVc viewdidload end")
     }
 
@@ -529,6 +541,66 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         btnRemoveFocusTypeClicked(self)
     }
     
+    // MARK: - Hide Focus Mode
+
+    @objc func toggleHideFocusModeClicked(_ sender: NSButton) {
+        let row = sender.tag
+        guard row >= 0, row < arrFocusType.count else { return }
+        guard let id = arrFocusType[row]["id"] as? String else { return }
+
+        let nowHidden = HiddenFocusModeManager.toggle(id: id)
+        sender.title = nowHidden ? "Show" : "Hide"
+        sender.toolTip = nowHidden ? "Show this focus mode in pickers" : "Hide this focus mode from pickers"
+
+        let modeName = arrFocusType[row]["name"] as? String ?? id
+        allApiObject.capturePosthog(event: nowHidden ? "focus-mode-hidden" : "focus-mode-shown",
+                                    metadata: ["focus_mode_id": id, "focus_mode_name": modeName])
+        addLog(text: "focusPreferencesVc: toggled hide for '\(modeName)' → hidden=\(nowHidden)")
+        
+        if let checkbox = stackViewLeftPanel.arrangedSubviews.compactMap({ $0 as? NSButton }).first(where: {
+            $0.action == #selector(revealHiddenModesToggled(_:))
+        }) {
+            updateRevealHiddenCheckboxVisibility(checkbox)
+        }
+
+        tblViewFocusType.reloadData()
+        tblViewFocusType.noteHeightOfRows(withIndexesChanged: IndexSet(integersIn: 0..<tblViewFocusType.numberOfRows))
+    }
+    
+    private func updateRevealHiddenCheckboxVisibility(_ checkbox: NSButton) {
+        // Drop any hidden ids whose focus mode was deleted (here or on another device) before
+        // deciding whether the reveal checkbox is still needed.
+        HiddenFocusModeManager.reconcile(against: arrFocusType)
+
+        let hasHiddenModes = arrFocusType.dropLast().contains {
+            guard let id = $0["id"] as? String else { return false }
+            return HiddenFocusModeManager.isHidden(id: id)
+        }
+
+        checkbox.isHidden = !hasHiddenModes
+        lineBelowFocusModes.isHidden = !hasHiddenModes
+    }
+    
+    @objc func revealHiddenModesToggled(_ sender: NSButton) {
+        isRevealHiddenModesOn = sender.state == .on
+        tblViewFocusType.reloadData()
+        tblViewFocusType.noteHeightOfRows(withIndexesChanged: IndexSet(integersIn: 0..<tblViewFocusType.numberOfRows))
+        if !isRevealHiddenModesOn {
+            let sel = tblViewFocusType.selectedRow
+            if sel >= 0, sel < arrFocusType.count - 1 {
+                let id = arrFocusType[sel]["id"] as? String ?? ""
+                if HiddenFocusModeManager.isHidden(id: id) {
+                    for i in 0..<arrFocusType.count - 1 {
+                        if !HiddenFocusModeManager.isHidden(id: arrFocusType[i]["id"] as? String ?? "") {
+                            tblViewFocusType.selectRowIndexes(IndexSet(integer: i), byExtendingSelection: false)
+                            break
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     @IBAction func btnRemoveFocusTypeClicked(_ sender: Any) {
         if isHardCorePomodoroModeOn{
             let alert = NSAlert()
@@ -677,6 +749,9 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                     self.checkState()
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                     resetPomodoroVcFocusListIfNeeded()
+                    // The deleted mode's id must not linger in the hidden set — drop any hidden ids
+                    // that no longer map to a live focus mode.
+                    HiddenFocusModeManager.reconcile(against: arrFocusType)
 
                     allApiObject.deleteFocusMode(id: id, completionHandler: {isDeleted in
                         
@@ -1140,6 +1215,57 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
                 }
                 cell.btnInfo.target = self
                 cell.btnInfo.action = #selector(btnInfoClicked(sender:))
+                let kHideToggleIdentifier = NSUserInterfaceItemIdentifier("focusModeHideToggle")
+                let canBeHidden = !(arrFocusType[row]["isDefault"] as? Bool ?? false)
+                                   && !(arrFocusType[row]["isLockedFocus"] as? Bool ?? false)
+
+                let existingHideBtn = cell.stackViewButtons.arrangedSubviews
+                    .first(where: { $0.identifier == kHideToggleIdentifier }) as? NSButton
+
+                let hideBtn: NSButton
+                if let existing = existingHideBtn {
+                    hideBtn = existing
+                } else {
+                    let newBtn = NSButton(title: "Hide", target: self, action: #selector(toggleHideFocusModeClicked(_:)))
+                    newBtn.bezelStyle = .inline
+                    newBtn.identifier = kHideToggleIdentifier
+                    cell.stackViewButtons.addArrangedSubview(newBtn)
+                    hideBtn = newBtn
+                }
+
+                hideBtn.target = self
+                hideBtn.action = #selector(toggleHideFocusModeClicked(_:))
+                hideBtn.tag = row
+
+                hideBtn.isHidden = !canBeHidden
+                if canBeHidden, let id = arrFocusType[row]["id"] as? String {
+                    let isModeHidden = HiddenFocusModeManager.isHidden(id: id)
+                    hideBtn.title = isModeHidden ? "Show" : "Hide"
+                    hideBtn.toolTip = isModeHidden ? "Show this focus mode in pickers" : "Hide this focus mode from pickers"
+                }
+                
+                let modeId = arrFocusType[row]["id"] as? String ?? ""
+                let isHidden = HiddenFocusModeManager.isHidden(id: modeId)
+
+                cell.alphaValue = 1.0
+                cell.lblTitle.textColor = NSColor.labelColor
+
+                if !isRevealHiddenModesOn && isHidden {
+                    cell.isHidden = true
+                } else {
+                    cell.isHidden = false
+
+                    if isRevealHiddenModesOn && isHidden {
+                        cell.alphaValue = 0.5
+                        cell.lblTitle.textColor = NSColor.secondaryLabelColor
+
+                        // Derive fresh (strip any existing suffix first) so a reused, previously-hidden
+                        // cell can never keep a stale " (Hidden)" — safer than an in-place append.
+                        cell.lblTitle.stringValue = cell.lblTitle.stringValue
+                            .replacingOccurrences(of: " (Hidden)", with: "") + " (Hidden)"
+                    }
+                }
+                
             }else if tableView == tblViewAllowedApps{
                 
                 if tblViewFocusType.selectedRow != -1{
@@ -1209,6 +1335,16 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
         let customView = TableRowViewResult()
         
         return customView
+    }
+    
+    func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
+        if tableView == tblViewFocusType, !isRevealHiddenModesOn, row < arrFocusType.count - 1 {
+            if let id = arrFocusType[row]["id"] as? String,
+               HiddenFocusModeManager.isHidden(id: id) {
+                return 1   // fully hide the row so it has no clickable area
+            }
+        }
+        return tableView.rowHeight
     }
     
     func tableViewSelectionDidChange(_ notification: Notification) {
@@ -1422,6 +1558,11 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
     }
     
     func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
+        if tableView == tblViewFocusType, !isRevealHiddenModesOn, row < arrFocusType.count - 1 {
+            if let id = arrFocusType[row]["id"] as? String, HiddenFocusModeManager.isHidden(id: id) {
+                return false
+            }
+        }
         return true
     }
     

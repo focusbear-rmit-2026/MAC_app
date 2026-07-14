@@ -912,9 +912,9 @@ class pomodoroVc: NSViewController {
     /// refreshes (e.g. focus types reloaded from the server) so the user's current pick is preserved.
     func reFillFocusTypeList(restoreLastUsedOnOpen: Bool = false){
         arrFocusTypeForPomodoro.removeAll()
-        for i in 0..<arrFocusType.count{
-            if !(arrFocusType[i]["isMeetings"] as? Bool ?? false == true){
-                arrFocusTypeForPomodoro.append(arrFocusType[i])
+        for focusMode in HiddenFocusModeManager.visibleFocusModes(from: arrFocusType){
+            if !(focusMode["isMeetings"] as? Bool ?? false == true){
+                arrFocusTypeForPomodoro.append(focusMode)
             }
         }
 

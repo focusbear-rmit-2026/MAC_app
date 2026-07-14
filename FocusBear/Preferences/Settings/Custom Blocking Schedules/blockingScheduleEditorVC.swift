@@ -372,9 +372,9 @@ class blockingScheduleEditorVC: NSViewController {
             return;
         }
         arrFocusTypeForBlockingSchedule.removeAll()
-        for i in 0..<arrFocusType.count{
-            if !(arrFocusType[i]["isMeetings"] as? Bool ?? false == true){
-                arrFocusTypeForBlockingSchedule.append(arrFocusType[i])
+        for focusMode in HiddenFocusModeManager.visibleFocusModes(from: arrFocusType){
+            if !(focusMode["isMeetings"] as? Bool ?? false == true){
+                arrFocusTypeForBlockingSchedule.append(focusMode)
             }
         }
         popUpBtnFocusMode.removeAllItems()
@@ -406,12 +406,12 @@ class blockingScheduleEditorVC: NSViewController {
         }
         
         arrFocusTypeForBlockingSchedule.removeAll()
-        for i in 0..<arrFocusType.count{
-            if !(arrFocusType[i]["isMeetings"] as? Bool ?? false == true){
-                arrFocusTypeForBlockingSchedule.append(arrFocusType[i])
+        for focusMode in HiddenFocusModeManager.visibleFocusModes(from: arrFocusType){
+            if !(focusMode["isMeetings"] as? Bool ?? false == true){
+                arrFocusTypeForBlockingSchedule.append(focusMode)
             }
         }
-        
+
         if shouldCreateNew{
             textFieldScheduleName.stringValue = ""
             for box in arrAllWeekDayBox{
