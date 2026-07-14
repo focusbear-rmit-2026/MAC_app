@@ -668,7 +668,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         }
         if box == boxUpgradeNow{
             addLog(text:"[user-action] leftMenuVc:- btnUpgradeNowClicked")
-            showUpgradeNowWindow()
+            showUpgradeNowWindow(reason: "upgrade_now_button")
             return false
         }
         

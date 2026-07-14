@@ -136,7 +136,7 @@ class customRoutineStateVc: NSViewController {
     @objc func menuItemStartRoutineClicked(sender:NSMenuItem){
         addLog(text:"[user-action] customRoutineStateVc:- menuItemStartRoutineClicked")
         if isPurchased == false && daysLeft <= 0{
-            showUpgradeNowWindow()
+            showUpgradeNowWindow(reason: "start_routine_expired")
             return;
         }
         startCustomRoutine(index: sender.tag, isOnDemand:true)

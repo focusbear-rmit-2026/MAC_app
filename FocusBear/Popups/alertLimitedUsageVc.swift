@@ -48,7 +48,7 @@ class alertLimitedUsageVc: NSViewController {
         // doNot CurrentState Here
         mainWindowControllerObj?.window?.close()
         hideBlankWindowInSecondaryMonitor()
-        showUpgradeNowWindow()
+        showUpgradeNowWindow(reason: "limited_usage_alert")
         DispatchQueue.global().async {
             DispatchQueue.main.async {
                 upgradeNowVcObj?.vcShownFromExpireUsageAlert = true

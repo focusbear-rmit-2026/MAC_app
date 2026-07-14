@@ -850,40 +850,51 @@ func showExplainingPermissionsWindow(showingFromPomodoro:Bool, showingFromBlocki
 }
 
 //***********SHOW Upgrade Now Window ***************//
-func showUpgradeNowWindow(){
-    addLog(text:"showUpgradeNowWindow")
-    allApiObject.capturePosthog(event: "upgrade-nag-shown", metadata: [:])
+func showUpgradeNowWindow(reason: String = "unknown"){
+    addLog(text:"showUpgradeNowWindow reason:\(reason)")
+
     if upgradeNowVcObj != nil{
         if upgradeNowVcObj?.isViewVisible ?? false{
             upgradeNowVcObj?.closeView()
         }
     }
-    upgradeNowVcObj = nil// always catch a fresh object
+
+    upgradeNowVcObj = nil
+
+    let vc = getUpgradeNowVcObject()
+    vc.nagShownReason = reason
+
     if mainWindowControllerObj?.window?.isVisible ?? false{
-        mainViewControllerObj?.presentAsSheet(getUpgradeNowVcObject())
+        mainViewControllerObj?.presentAsSheet(vc)
     }else{
-        getUpgradeNowWindowObject().contentViewController = getUpgradeNowVcObject()
-        upgradeNowWcObj?.window?.title = appName
-        upgradeNowWcObj!.showWindow(nil)
+        let window = getUpgradeNowWindowObject()
+        window.contentViewController = vc
+        window.showWindow(nil)
     }
+    vc.captureNagShownEvent()   // fire once here (deterministic), not in viewWillAppear
 }
 //-------------------------------------------------//
 
 
 //***********SHOW Upgrade To Pro Window ***************//
 func showUpgradeToProNagWindow(titleText:String, reason:String){
-    allApiObject.capturePosthog(event: "upgrade-pro-nag-shown", metadata: ["reason":reason])
-    addLog(text:"showUpgradeToProNagWindow")
-    if upgradeToProNagWcObj == nil{
-        getupgradeToProNagWindowObject().contentViewController = getUpgradeToProNagVcObject()
-        upgradeToProNagWcObj?.window?.title = appName
-        upgradeToProNagWcObj?.window?.styleMask.insert(.fullSizeContentView)
-        upgradeToProNagWcObj?.window?.titlebarAppearsTransparent = true
-        upgradeToProNagWcObj?.window?.title = ""
-    }
-    upgradeToProNagWcObj!.window?.center()
-    upgradeToProNagWcObj!.showWindow(nil)
-    upgradeToProNagVcObj?.resetData(titleText: titleText)
+    addLog(text:"showUpgradeToProNagWindow reason:\(reason)")
+
+    let vc = getUpgradeToProNagVcObject()
+    vc.nagShownReason = reason
+
+    let window = getupgradeToProNagWindowObject()
+    window.contentViewController = vc
+    // Restore the transparent full-size titlebar look (dropped in the rewrite; the window factory
+    // doesn't set it) so the pro nag doesn't render with a normal opaque title bar.
+    window.window?.styleMask.insert(.fullSizeContentView)
+    window.window?.titlebarAppearsTransparent = true
+    window.window?.title = ""
+    window.window?.center()
+    window.showWindow(nil)
+
+    vc.resetData(titleText: titleText)
+    vc.captureNagShownEvent()
 }
 //-------------------------------------------------//
 

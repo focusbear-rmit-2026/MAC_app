@@ -1465,7 +1465,7 @@ class menuViewController: NSViewController {
     @objc func menuItemStartRoutineClicked(sender:NSMenuItem){
         addLog(text:"[user-action] menuViewController:- menuItemStartRoutineClicked")
         if isPurchased == false && daysLeft <= 0{
-            showUpgradeNowWindow()
+            showUpgradeNowWindow(reason: "start_routine_expired")
             return;
         }
         startCustomRoutine(index: sender.tag, isOnDemand:true)
@@ -1474,7 +1474,7 @@ class menuViewController: NSViewController {
     
     @IBAction func btnEnterLicenseKeyClicked(_ sender: Any) {
         addLog(text:"[user-action] menuViewController:- btnEnterLicenseKeyClicked")
-        showUpgradeNowWindow()
+        showUpgradeNowWindow(reason: "enter_license_key")
         closeMenuWindowIsVisible()
     }
     
@@ -1550,7 +1550,7 @@ class menuViewController: NSViewController {
     @IBAction func btnExportStatisticsClicked(_ sender: Any) {
         addLog(text:"[user-action] menuViewController:- btnExportStatisticsClicked")
         if isPurchased == false && daysLeft <= 0{//if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-            showUpgradeNowWindow()
+            showUpgradeNowWindow(reason: "export_statistics_expired")
             closeMenuWindowIsVisible()
             return;
         }
@@ -1614,7 +1614,7 @@ class menuViewController: NSViewController {
     @IBAction func btnStartPomodoroModeClicked(_ sender: Any) {
         addLog(text:"[user-action] menuViewController:- btnStartPomodoroModeClicked")
         if isPurchased == false && daysLeft <= 0{
-            showUpgradeNowWindow()
+            showUpgradeNowWindow(reason: "start_pomodoro_expired")
             return;
         }
         appdelegate?.menuShowPomodoroModeView()
@@ -1987,7 +1987,7 @@ class menuViewController: NSViewController {
         addLog(text: "[user-action] menu item tools clicked")
         
         if isPurchased == false && daysLeft <= 0{// if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-            showUpgradeNowWindow()
+            showUpgradeNowWindow(reason: "tools_menu_expired")
             return;
         }
         toolsMenu.minimumWidth = boxTools.frame.width
@@ -2154,7 +2154,7 @@ class menuViewController: NSViewController {
     @IBAction func btnEditBlockingScheduleClicked(_ sender: Any) {
         addLog(text:"[user-action] menuViewController:- btnEditBlockingScheduleClicked")
         if isPurchased == false && daysLeft <= 0{// if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-            showUpgradeNowWindow()
+            showUpgradeNowWindow(reason: "edit_blocking_schedule_expired")
             return;
         }
         

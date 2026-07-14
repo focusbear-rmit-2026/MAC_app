@@ -2487,7 +2487,7 @@ final class CustomRoutinesPanel: NSView {
 
     @objc private func playClicked(_ sender: NSButton) {
         // Mirror the custom-routines screen: gate behind purchase, then start on-demand.
-        if isPurchased == false && daysLeft <= 0 { showUpgradeNowWindow(); return }
+        if isPurchased == false && daysLeft <= 0 { showUpgradeNowWindow(reason: "habit_play_clicked_expired"); return }
         startCustomRoutine(index: sender.tag, isOnDemand: true)
     }
 }

@@ -44,6 +44,18 @@ class upgradeToProNagVc: NSViewController {
     @IBOutlet weak var lblPartnerPassword: NSTextField!
     @IBOutlet weak var lblCustomizableStrictnessLevel: NSTextField!
     @IBOutlet weak var lblAddOns: NSTextField!
+    
+    var nagShownReason: String = ""
+
+    func captureNagShownEvent() {
+        let resolvedReason = nagShownReason.isEmpty ? "unknown" : nagShownReason
+
+        allApiObject.capturePosthog(event: "upgrade-pro-nag-shown", metadata: [
+            "reason": resolvedReason,
+            "is_purchased": isPurchased,
+            "days_left": daysLeft
+        ])
+    }
    
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -210,15 +222,27 @@ class upgradeToProNagVc: NSViewController {
     }
     
     @IBAction func btnUpgradeNowClicked(_ sender: Any) {
-        allApiObject.capturePosthog(event: "upgrade-pro-nag-button-upgrade-clicked", metadata: [:])
+        let resolvedReason = nagShownReason.isEmpty ? "unknown" : nagShownReason
+
+        allApiObject.capturePosthog(event: "upgrade-pro-nag-button-upgrade-clicked", metadata: [
+            "reason": resolvedReason,
+        ])
+
         addLog(text: "[user-action] upgradeToProNagVc:- btnUpgradeNowClicked.")
         self.presentAsSheet(getManageSubscriptionVcObject())
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
         addLog(text: "[user-action] upgradeToProNagVc:- btnContinueClicked.")
-        allApiObject.capturePosthog(event: "upgrade-pro-nag-button-continue-clicked", metadata: [:])
+
+        let resolvedReason = nagShownReason.isEmpty ? "unknown" : nagShownReason
+
+        allApiObject.capturePosthog(event: "upgrade-pro-nag-button-continue-clicked", metadata: [
+            "reason": resolvedReason,
+        ])
+
         self.view.window?.close()
+
         if !isAppInitialLodded{
             appdelegate?.initialWork()
         }

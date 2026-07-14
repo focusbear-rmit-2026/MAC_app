@@ -28,6 +28,7 @@ class upgradeNowVc: NSViewController {
     @IBOutlet weak var imgView: NSImageView!
     @IBOutlet weak var btnInfo: hoverInfoButton!
     
+    var nagShownReason: String = ""
     var vcShownFromExpireUsageAlert = false
     var isViewVisible = false
     override func viewDidLoad() {
@@ -81,14 +82,28 @@ class upgradeNowVc: NSViewController {
     }
     
     override func viewWillAppear() {
+        super.viewWillAppear()
+
         addLog(text: "upgradeNowVc:- viewWillAppear.")
+
         if !isPurchased && daysLeft <= 0{
             lblSubscriptionExpired.isHidden = false
         }else{
             lblSubscriptionExpired.isHidden = true
         }
+
         textFieldUserId.stringValue = appdelegate!.user?.userId ?? ""
         isViewVisible = true
+    }
+
+    /// Fire the "shown" analytics exactly once, from the show site (showUpgradeNowWindow), matching the
+    /// pro-nag flow. viewWillAppear can fire more than once per presentation, which over-counted the nag.
+    func captureNagShownEvent(){
+        allApiObject.capturePosthog(event: "upgrade-nag-shown", metadata: [
+            "reason": nagShownReason.isEmpty ? "unknown" : nagShownReason,
+            "is_purchased": isPurchased,
+            "days_left": daysLeft
+        ])
     }
     
     override func viewWillDisappear() {
@@ -128,12 +143,14 @@ class upgradeNowVc: NSViewController {
     
     @IBAction func btnUpgradeNowClicked(_ sender: Any) {
         addLog(text: "[user-action] btnUpgradeNowClicked.")
-        allApiObject.capturePosthog(event: "upgrade-nag-button-upgrade-clicked", metadata: [:])
+        allApiObject.capturePosthog(event: "upgrade-nag-button-upgrade-clicked", metadata: [
+            "reason": nagShownReason.isEmpty ? "unknown" : nagShownReason
+        ])
 //        let buynow_path = upgradeNowUrl
 //        NSWorkspace.shared.open(URL(string: buynow_path)!)
         self.presentAsSheet(getManageSubscriptionVcObject())
         
-//        upgradeButtonWasClicked = true// 
+//        upgradeButtonWasClicked = true//
     }
     
     @IBAction func btnRestorePurchasesClicked(_ sender: Any) {
@@ -187,7 +204,9 @@ class upgradeNowVc: NSViewController {
     }
     @IBAction func btnContinueClicked(_ sender: Any) {
         addLog(text: "[user-action] btnContinueClicked.")
-        allApiObject.capturePosthog(event: "upgrade-nag-button-continue-clicked", metadata: [:])
+        allApiObject.capturePosthog(event: "upgrade-nag-button-continue-clicked", metadata: [
+            "reason": nagShownReason.isEmpty ? "unknown" : nagShownReason
+        ])
         self.closeView()
         if !isAppInitialLodded{
             appdelegate?.initialWork()

@@ -618,7 +618,7 @@ class ViewController: NSViewController {
             let model = TodayTrackerViewModel()
             model.hasAccess = false
             model.isLoading = false
-            model.onUpgrade = { showUpgradeNowWindow() }
+            model.onUpgrade = { showUpgradeNowWindow(reason: "time_tracker_expired") }
             hostScrolledFBTT(model)
             return
         }
