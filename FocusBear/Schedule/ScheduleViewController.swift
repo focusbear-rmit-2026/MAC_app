@@ -1777,8 +1777,19 @@ class scheduleViewController: NSViewController {
         // since completion is append-only per day.
         let dayKey = getStringFromDate(date: selectedDate, dateFormat: "yyyy-MM-dd")
         let completedSig = "\(dayPlanCompletedHabitIds.count)-\(dayPlanCompletedHabitIdsByDay[dayKey]?.count ?? 0)"
+        // Deep-work/free-time blocks are recomputed relative to `now` on every reload() (habits/deep
+        // work "pack from now" — see ScheduleBuilder), so an in-progress block's start time drifts by
+        // however long it's been since the last reload, every single tick. timeString() below only
+        // ever displays HH:MM, never seconds, so that drift is never actually visible — but keying the
+        // cache on raw seconds made the signature change on essentially every 30s auto-refresh tick
+        // regardless, defeating the cache and forcing a full rebuild of the whole (~90-card) stack view
+        // continuously all day (root cause of the hangs tracked in #2075: that rebuild rate gave a rare
+        // AppKit/dyld lock-contention hang far more chances to fire than it should have needed).
+        // Round to the minute — matching what's actually shown — so a reload that only advanced the
+        // clock without changing anything visible correctly no-ops instead of rebuilding.
+        func minuteEpoch(_ date: Date) -> Int { Int(date.timeIntervalSince1970 / 60) }
         let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(selectedPastHabitId ?? "-")|\(completedSig)|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(collapseSig)|\(dwCollapseSig)|\(cancelledSig)|\(shouldShowEveningShutdownPrompt())|\(taskSig)|"
-            + blocks.map { "\($0.kind)\($0.title)\(Int($0.start.timeIntervalSince1970))\(Int($0.end.timeIntervalSince1970))\($0.isCurrent)\($0.isActionable)" }.joined(separator: ";")
+            + blocks.map { "\($0.kind)\($0.title)\(minuteEpoch($0.start))\(minuteEpoch($0.end))\($0.isCurrent)\($0.isActionable)" }.joined(separator: ";")
         if signature == lastRenderSignature, !stackView.arrangedSubviews.isEmpty { return }
         lastRenderSignature = signature
 
