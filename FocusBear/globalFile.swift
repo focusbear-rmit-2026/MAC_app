@@ -1546,6 +1546,8 @@ func getBlurFrameForBrowser(x:Int, y:Int, width:Int, height:Int, browser:BROWSER
         return NSRect(x: x, y: y + 81, width: width, height: height - 81)
     case ._SIGMA_OS_:
         return NSRect(x: x + 288, y: y + 48, width: width - 288, height: height - 48)
+    case ._COMET_:
+        return NSRect(x: x, y: y + 85, width: width, height: height - 85)
     }
 }
 

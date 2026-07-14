@@ -706,6 +706,8 @@ class habitBlockTimerManager {
                         script = getFirefoxBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "&block_type=\(blockType)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
                     case ._SIGMA_OS_:
                         script = getSigmaOsBrowserBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "&block_type=\(blockType)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+                    case ._COMET_:
+                        script = getCometBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "&block_type=\(blockType)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
                     case .none:
                         DispatchQueue.main.async {
                             closePopupBlockWindowIfRunningForUrl()

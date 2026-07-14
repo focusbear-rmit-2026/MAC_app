@@ -124,6 +124,8 @@ class browsersTabAuditVc: NSViewController {
                                 title += "Opera GX - \(totalTabsCount)\n"
                             case ._SIGMA_OS_:
                                 title += "SigmaOS - \(totalTabsCount)\n"
+                            case ._COMET_:
+                                title += "Comet - \(totalTabsCount)\n"
                             }
                             
                         }

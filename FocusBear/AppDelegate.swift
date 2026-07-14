@@ -8424,6 +8424,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 
                             case ._SIGMA_OS_:
                                 script = getSigmaOsBrowserBlockScript(url: url)
+                            case ._COMET_:
+                                script = getCometBlockScript(url: url)
                             case .none:
                                 
                                 return
