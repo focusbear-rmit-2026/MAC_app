@@ -875,7 +875,7 @@ class boxButton: NSBox {
     var titleColor = NSColor.black
     
     // MARK: - UI
-    private let iconView = NSImageView()
+    let iconView = NSImageView()
     private let titleLabel = NSTextField(labelWithString: "")
 
     // MARK: - State

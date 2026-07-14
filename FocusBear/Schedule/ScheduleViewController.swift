@@ -69,6 +69,14 @@ enum ScheduleText {
     static var showDismissedEvents: String { t("showDismissedEvents", "Show dismissed events") }
     static var showEventAgain: String { t("showEventAgain", "Show this event again") }
     static var hideEvent: String { t("hideEvent", "Hide this event") }
+    // Matches the strings already authored in the assets repo (config/config.json, commit 6c87745,
+    // "i18n: add repeating event dismissal strings (EN/ES)") — reusing those key names/wording rather
+    // than inventing new ones, so this picks up the config-driven (and Spanish) copy once that lands.
+    static var dismissRepeatingTitle: String { t("dismissRepeatingTitle", "This is a repeating event.") }
+    static var dismissRepeatingInfo: String { t("dismissRepeatingInfo", "Would you like to hide all events in the series or just the one for today?") }
+    static var dismissRepeatingJustThisOne: String { t("dismissRepeatingJustThisOne", "Just this one") }
+    static var dismissRepeatingAllSeries: String { t("dismissRepeatingAllSeries", "All events in series") }
+    static var dismissRepeatingCancel: String { t("dismissRepeatingCancel", "Cancel") }
     static var showHabits: String { t("showHabits", "Show habits") }
     static var hideHabits: String { t("hideHabits", "Hide habits") }
     static var deepWorkSession: String { t("deepWorkSession", "Deep work") }
@@ -461,6 +469,7 @@ class scheduleViewController: NSViewController {
     private let todayIndicatorLabel = NSTextField(labelWithString: "")
     private let addEventButton = NSButton()
     private var datePopover: NSPopover?
+    private var dismissRepeatingPopover: NSPopover?
 
     // "Add event" form state (rebuilt each time the popover opens).
     private var addEventPopover: NSPopover?
@@ -2785,21 +2794,120 @@ class scheduleViewController: NSViewController {
 
     @objc private func dismissMeetingClicked(_ sender: NSButton) {
         guard let raw = sender.identifier?.rawValue else { return }
-        // Force a re-render: with "Show dismissed events" on, un-dismissing keeps the meeting in the list
-        // at the same position, so the render signature wouldn't change and reload() would no-op (the
-        // event would stay struck through). Same reset the settings toggles use.
-        lastRenderSignature = nil
         if raw.hasPrefix("undismiss:") {
             let eventId = String(raw.dropFirst("undismiss:".count))
-            CalendarManager.shared.restoreDismissedEvent(id: eventId)
+            // Force a re-render: with "Show dismissed events" on, un-dismissing keeps the meeting in the
+            // list at the same position, so the render signature wouldn't change and reload() would
+            // no-op (the event would stay struck through). Same reset the settings toggles use.
+            lastRenderSignature = nil
+            CalendarManager.shared.restoreDismissedEvent(id: eventId, forDay: selectedDate)
             DayPlanSync.shared.undismissEvent(eventID: eventId, on: selectedDate)   // mirror to backend (cross-device)
             reload()
         } else if raw.hasPrefix("dismiss:") {
             let eventId = String(raw.dropFirst("dismiss:".count))
-            CalendarManager.shared.dismissEvent(id: eventId)
-            DayPlanSync.shared.dismissEvent(eventID: eventId, on: selectedDate)   // mirror to backend (cross-device)
-            reload()
+            // A recurring event's eventIdentifier is the SAME across every occurrence (verified against
+            // live EventKit data), so dismissing it outright hides the whole series — ask which the user
+            // means instead of silently doing that. A one-off event has no series to ask about.
+            guard let event = CalendarManager.shared.event(withID: eventId), event.hasRecurrenceRules else {
+                dismissMeeting(eventId: eventId, seriesWide: true)
+                return
+            }
+            showDismissRepeatingConfirm(eventId: eventId, anchor: sender)
         }
+    }
+
+    /// "Just this one" / "All events in series" / "Cancel" — shown from a recurring event's ✕, anchored
+    /// to the button that was clicked (same NSPopover pattern DayPlanTasksPanel uses for its own
+    /// transient confirmations, e.g. the task-details modal).
+    private func showDismissRepeatingConfirm(eventId: String, anchor: NSButton) {
+        let title = makeLabel(ScheduleText.dismissRepeatingTitle, size: 13, bold: true)
+        let info = makeLabel(ScheduleText.dismissRepeatingInfo, size: 12, bold: false)
+        info.textColor = .secondaryLabelColor
+        info.lineBreakMode = .byWordWrapping
+        info.maximumNumberOfLines = 0
+        info.preferredMaxLayoutWidth = 260
+        info.widthAnchor.constraint(lessThanOrEqualToConstant: 260).isActive = true
+
+        // boxButton, not the app Button class: it sets up its layer/background in init(frame:), so it
+        // draws correctly when created programmatically (Button only styles from awakeFromNib, which
+        // doesn't run here — leaving it with no background).
+        let justThisOne = boxButton(frame: .zero)   // primary (orange) — the default/expected choice
+        justThisOne.setTitle(ScheduleText.dismissRepeatingJustThisOne)
+        justThisOne.target = self; justThisOne.action = #selector(dismissRepeatingJustThisOneClicked)
+        justThisOne.setButtonColor(NSColor(named: "dark_OrangeColor") ?? .orange)
+        justThisOne.borderColor = NSColor(named: "dark_OrangeColor") ?? .orange
+        justThisOne.setTitleColor(.white)
+        justThisOne.iconView.isHidden = true
+        let allSeries = boxButton(frame: .zero)     // secondary (white bg, gray border, black title) by default
+        allSeries.setTitle(ScheduleText.dismissRepeatingAllSeries)
+        allSeries.target = self; allSeries.action = #selector(dismissRepeatingAllSeriesClicked)
+        allSeries.iconView.isHidden = true
+        
+        let cancel = boxButton(frame: .zero)        // same secondary style as "All events in series"
+        cancel.setTitle(ScheduleText.dismissRepeatingCancel)
+        cancel.target = self; cancel.action = #selector(dismissRepeatingCancelClicked)
+        cancel.iconView.isHidden = true
+        for b in [justThisOne, allSeries, cancel] { b.translatesAutoresizingMaskIntoConstraints = false }
+
+        let stack = NSStackView(views: [title, info, justThisOne, allSeries, cancel])
+        stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 10
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        justThisOne.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        allSeries.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        // boxButton centres its content and doesn't self-size vertically, so give it an explicit height.
+        cancel.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        justThisOne.heightAnchor.constraint(equalToConstant: 32).isActive = true
+        allSeries.heightAnchor.constraint(equalToConstant: 32).isActive = true
+        cancel.heightAnchor.constraint(equalToConstant: 32).isActive = true
+
+        let container = NSView()
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 16),
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -16),
+        ])
+        let vc = NSViewController(); vc.view = container
+        let pop = NSPopover(); pop.contentViewController = vc; pop.behavior = .transient
+        pendingDismissEventId = eventId
+        pop.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .maxY)
+        dismissRepeatingPopover = pop
+    }
+
+    /// The recurring event a dismiss-repeating popover is currently asking about — set right before
+    /// showing it, read by whichever of the three button actions the user clicks.
+    private var pendingDismissEventId: String?
+
+    @objc private func dismissRepeatingJustThisOneClicked() {
+        dismissRepeatingPopover?.close()
+        guard let eventId = pendingDismissEventId else { return }
+        dismissMeeting(eventId: eventId, seriesWide: false)
+    }
+
+    @objc private func dismissRepeatingAllSeriesClicked() {
+        dismissRepeatingPopover?.close()
+        guard let eventId = pendingDismissEventId else { return }
+        dismissMeeting(eventId: eventId, seriesWide: true)
+    }
+
+    @objc private func dismissRepeatingCancelClicked() {
+        dismissRepeatingPopover?.close()
+        pendingDismissEventId = nil
+    }
+
+    /// Shared by both the recurring-event confirmation and the direct (non-recurring) dismiss path.
+    private func dismissMeeting(eventId: String, seriesWide: Bool) {
+        pendingDismissEventId = nil
+        // Force a re-render — see the matching comment in dismissMeetingClicked's undismiss path.
+        lastRenderSignature = nil
+        if seriesWide {
+            CalendarManager.shared.dismissEvent(id: eventId)
+        } else {
+            CalendarManager.shared.dismissEvent(id: eventId, forDay: selectedDate)
+        }
+        DayPlanSync.shared.dismissEvent(eventID: eventId, on: selectedDate)   // mirror to backend (cross-device)
+        reload()
     }
 
     // MARK: - Calendar permission banner

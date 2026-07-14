@@ -86,9 +86,9 @@ final class CalendarManager {
             .filter { !hasDeclined($0) }
             // Normally dismissed events are hidden; with "Show dismissed events" on, keep them and tag
             // them so the row can render struck-through with an un-dismiss (👀) control.
-            .filter { includeDismissed || !dismissed.contains(eventKey($0)) }
+            .filter { includeDismissed || !isDismissed($0, in: dismissed, on: day) }
             .map { ScheduleMeetingInput(id: eventKey($0), title: title(for: $0), start: $0.startDate,
-                                        end: $0.endDate, isDismissed: dismissed.contains(eventKey($0))) }
+                                        end: $0.endDate, isDismissed: isDismissed($0, in: dismissed, on: day)) }
             .sorted { $0.start < $1.start }
     }
 
@@ -253,18 +253,62 @@ final class CalendarManager {
         Set(UserDefaults.standard.stringArray(forKey: dismissedKey) ?? [])
     }
 
-    /// Hide a calendar event from the schedule (the ✕ on a meeting card).
+    /// Scopes a dismissal to one specific day's occurrence — the "Just for today" choice on a recurring
+    /// event's ✕.
+    private func perDayDismissKey(_ id: String, _ day: Date) -> String {
+        "\(id)|day:\(getStringFromDate(date: day, dateFormat: "yyyy-MM-dd"))"
+    }
+
+    /// Series-wide dismiss key from the provider's iCalUID (calendarItemExternalIdentifier), which
+    /// EventKit keeps the SAME across every occurrence of a recurring series — unlike eventIdentifier,
+    /// which can differ per occurrence (that left occurrences after ~tomorrow still visible). nil when
+    /// the event has no external id (e.g. local calendars).
+    private func seriesKey(_ event: EKEvent) -> String? {
+        let ext = event.calendarItemExternalIdentifier ?? ""
+        return ext.isEmpty ? nil : "series:\(ext)"
+    }
+
+    /// Whether `event` is hidden on `day` — the whole series was dismissed (series key, or the legacy
+    /// plain id from before the series-key fix), or just this one day's occurrence was (per-day key).
+    private func isDismissed(_ event: EKEvent, in dismissed: Set<String>, on day: Date) -> Bool {
+        let id = eventKey(event)
+        if dismissed.contains(id) || dismissed.contains(perDayDismissKey(id, day)) { return true }
+        if let sk = seriesKey(event), dismissed.contains(sk) { return true }
+        return false
+    }
+
+    /// Hide a calendar event from the schedule for every occurrence (the "Hide entire series" choice
+    /// on a recurring event's ✕ — or the only choice for a non-recurring event's ✕).
     func dismissEvent(id: String) {
         var ids = dismissedEventIDs
-        ids.insert(id)
+        // Prefer the series-stable key so EVERY occurrence of a recurring event is hidden —
+        // eventIdentifier isn't reliably the same across occurrences. Falls back to the plain id when
+        // there's no external id. A non-recurring event has a unique external id, so this still hides
+        // just that one event.
+        if let event = event(withID: id), let sk = seriesKey(event) {
+            ids.insert(sk)
+        } else {
+            ids.insert(id)
+        }
+        UserDefaults.standard.set(Array(ids), forKey: dismissedKey)
+    }
+
+    /// Hide a calendar event from the schedule for just this one day (the "Just for today" choice on
+    /// a recurring event's ✕). Other occurrences of the series are unaffected.
+    func dismissEvent(id: String, forDay day: Date) {
+        var ids = dismissedEventIDs
+        ids.insert(perDayDismissKey(id, day))
         UserDefaults.standard.set(Array(ids), forKey: dismissedKey)
     }
 
     /// Un-hide a previously dismissed event (the 👀 shown on a struck-through meeting when
-    /// "Show dismissed events" is on).
-    func restoreDismissedEvent(id: String) {
+    /// "Show dismissed events" is on). Clears both a whole-series dismissal and this day's single-day
+    /// dismissal, whichever is present — either way, `day`'s occurrence reappears.
+    func restoreDismissedEvent(id: String, forDay day: Date) {
         var ids = dismissedEventIDs
         ids.remove(id)
+        ids.remove(perDayDismissKey(id, day))
+        if let event = event(withID: id), let sk = seriesKey(event) { ids.remove(sk) }   // undo a series dismiss too
         UserDefaults.standard.set(Array(ids), forKey: dismissedKey)
     }
 
