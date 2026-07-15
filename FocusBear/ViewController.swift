@@ -611,6 +611,18 @@ class ViewController: NSViewController {
         }
     }
 
+    /// Wires the FBTT Today view's enable/disable toggle to the shared tracker flow. Weak captures
+    /// avoid a retain cycle (the closure is stored on the model).
+    @available(macOS 11.0, *)
+    private func wireTrackingToggle(_ model: TodayTrackerViewModel) {
+        model.onToggleTracking = { [weak self, weak model] enabled in
+            guard let model = model else { return }
+            setTimeTrackerEnabled(enabled, presentingWindow: self?.view.window) { resolved in
+                model.isTrackingEnabled = resolved
+            }
+        }
+    }
+
     func showTimeTrackerToolView(){
         self.removeSubViews()
         // Time Tracker is a Pro feature — gate to trial or subscription; otherwise show the upgrade screen.
@@ -619,40 +631,66 @@ class ViewController: NSViewController {
             model.hasAccess = false
             model.isLoading = false
             model.onUpgrade = { showUpgradeNowWindow(reason: "time_tracker_expired") }
+            wireTrackingToggle(model)
             hostScrolledFBTT(model)
             return
         }
         // If FBTT is installed and has tracked data, show its read-only Today view inline (PR #1956).
-        // Host the SwiftUI view directly (not via TodayTrackerVc) so its window-oriented
-        // preferredContentSize / fixed container frame don't resize the main window.
         if FBTTReader.isFBTTInstalled, FBTTReader.hasData, #available(macOS 11.0, *) {
-            let model = TodayTrackerViewModel()
-            model.onOpenFBTT = { openFBTTApp() }
-            hostScrolledFBTT(model)
-            DispatchQueue.global(qos: .userInitiated).async {
-                let summary = FBTTReader.todaySummary()
-                let f = DateFormatter(); f.dateFormat = "HH:mm"
-                let stamp = f.string(from: Date())
-                DispatchQueue.main.async {
-                    model.summary = summary; model.updatedAt = stamp; model.isLoading = false
-                }
-            }
+            presentFBTTTodayInline()
             return
         }
         guard #available(macOS 11.0, *) else { return }
-        let view = ExternalToolView(
+        // FBTT isn't installed (or has no data yet): keep the download screen, but stack the
+        // always-visible Enable toggle above it so the setting is reachable here too. Once FBTT is
+        // launched (status → Running), swap to the Today view automatically.
+        let toggleModel = TodayTrackerViewModel()
+        wireTrackingToggle(toggleModel)
+        let toolModel = ExternalToolModel(appPath: "/Applications/Focus Bear Time Tracker.app",
+                                          runningMatch: "focus bear time tracker")
+        let view = TimeTrackerNotInstalledToolView(
+            model: toggleModel,
+            toolModel: toolModel,
             title: "Time Tracker",
-            description: "Focus Bear Time Tracker analyses your productivity by tracking time spent on websites and apps, and can auto-categorise logs into projects.",
-            model: ExternalToolModel(appPath: "/Applications/Focus Bear Time Tracker.app",
-                                     runningMatch: "focus bear time tracker"),
+            description: "Click the button below to download and install the Time Tracker.",
+            installedDescription: "Click the button below to open the Time Tracker.",
             primaryAction: {
                 if FileManager.default.fileExists(atPath: "/Applications/Focus Bear Time Tracker.app") {
                     enableTimeTracker()
                 } else if let url = URL(string: "https://downloads.focusbear.io/fbtt/FocusBearTimeTracker.dmg") {
                     NSWorkspace.shared.open(url)
                 }
-            })
+            },
+            onRunning: { [weak self] in self?.presentFBTTTodayInline() })
         hostToolView(view)
+    }
+
+    /// Host FBTTTodayView inline (the read-only Today view). Also used to auto-swap in once FBTT
+    /// starts running from the download screen. Host the SwiftUI view directly (not via
+    /// TodayTrackerVc) so its window-oriented preferredContentSize doesn't resize the main window.
+    @available(macOS 11.0, *)
+    private func presentFBTTTodayInline() {
+        self.removeSubViews()
+        let model = TodayTrackerViewModel()
+        model.onOpenFBTT = { openFBTTApp() }
+        wireTrackingToggle(model)
+        let loadSummary: () -> Void = { [weak model] in
+            guard FBTTReader.isFBTTInstalled, FBTTReader.hasData else {
+                DispatchQueue.main.async { model?.isLoading = false }
+                return
+            }
+            DispatchQueue.global(qos: .userInitiated).async {
+                let summary = FBTTReader.todaySummary()
+                let f = DateFormatter(); f.dateFormat = "HH:mm"
+                let stamp = f.string(from: Date())
+                DispatchQueue.main.async {
+                    model?.summary = summary; model?.updatedAt = stamp; model?.isLoading = false
+                }
+            }
+        }
+        model.onRefresh = loadSummary
+        hostScrolledFBTT(model)
+        loadSummary()
     }
 
     func showLateNoMoreToolView(){
@@ -1215,12 +1253,58 @@ final class ExternalToolModel: ObservableObject {
     }
 }
 
+/// The Time Tracker Tools pane when FBTT isn't installed / has no data: the always-visible Enable
+/// toggle stacked on top of the existing download screen. Once FBTT starts running, `onRunning`
+/// fires so the host can swap in the Today view.
 @available(macOS 11.0, *)
+struct TimeTrackerNotInstalledToolView: View {
+    @ObservedObject var model: TodayTrackerViewModel
+    @ObservedObject var toolModel: ExternalToolModel
+    let title: String
+    let description: String
+    let installedDescription: String
+    let primaryAction: () -> Void
+    let onRunning: () -> Void
+
+    var body: some View {
+        // One scroll container for the whole pane (the Tools-pane container hugs content height, so
+        // an unbounded stack would overflow the window). ExternalToolView renders non-scrollable here.
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                // Shared page title + separator, then the enable toggle, then the download screen
+                // (its own title hidden so "Time Tracker" isn't shown twice).
+                TimeTrackerTitleHeader()
+                TimeTrackerEnableToggleView(isEnabled: model.isTrackingEnabled, onToggle: model.onToggleTracking)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                ExternalToolView(title: title, description: description, model: toolModel,
+                                 primaryAction: primaryAction, scrollable: false, showsTitle: false,
+                                 installedDescription: installedDescription)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(28)   // match the other Tools panes (Focus Button / Late No More)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Color("backgroundColor"))
+        // FBTT just launched → hand off to the Today view.
+        .onChange(of: toolModel.isRunning) { running in
+            if running { onRunning() }
+        }
+    }
+}
+
 struct ExternalToolView: View {
     let title: String
     let description: String
     @ObservedObject var model: ExternalToolModel
     let primaryAction: () -> Void
+    /// When embedded under another header (e.g. the Time Tracker enable toggle) the caller supplies
+    /// the scroll container, so this view renders at natural height instead of nesting a ScrollView.
+    var scrollable: Bool = true
+    /// Hidden when a shared page title is already shown above (avoids a duplicate title).
+    var showsTitle: Bool = true
+    /// Optional description shown when the app is installed (but not running); falls back to
+    /// `description`. Lets the copy be actionable per state (download vs open).
+    var installedDescription: String? = nil
 
     private var statusText: String {
         if model.isRunning { return "Running" }
@@ -1232,22 +1316,38 @@ struct ExternalToolView: View {
         if model.isInstalled { return .orange }
         return .gray
     }
+    private var shownDescription: String {
+        (model.isInstalled ? installedDescription : nil) ?? description
+    }
+
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if showsTitle {
+                Text(title).font(.system(size: 24, weight: .bold))
+            }
+            HStack(spacing: 8) {
+                Circle().fill(statusColor).frame(width: 10, height: 10)
+                Text(statusText).foregroundColor(.secondary)
+            }
+            Text(shownDescription).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
+            SwiftUI.Button(model.isInstalled ? "Open" : "Download") { primaryAction() }
+                .buttonStyle(AppOrangeButtonStyle(secondary: false))
+        }
+        // Standalone this view owns its padding; embedded (scrollable == false) the parent pads, so
+        // the download content lines up with the shared title/toggle above it.
+        .padding(scrollable ? 28 : 0)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text(title).font(.system(size: 24, weight: .bold))
-                HStack(spacing: 8) {
-                    Circle().fill(statusColor).frame(width: 10, height: 10)
-                    Text(statusText).foregroundColor(.secondary)
-                }
-                Text(description).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
-                SwiftUI.Button(model.isInstalled ? "Open" : "Download") { primaryAction() }
+        Group {
+            if scrollable {
+                ScrollView { content }
+            } else {
+                content
             }
-            .padding(28)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: scrollable ? .infinity : nil)
         .onAppear { model.start() }
         .onDisappear { model.stop() }
     }

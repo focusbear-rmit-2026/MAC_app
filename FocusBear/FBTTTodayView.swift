@@ -174,10 +174,43 @@ final class TodayTrackerViewModel: ObservableObject {
     @Published var isLoading = true
     @Published var updatedAt = ""
     @Published var hasAccess = true   // trial or subscription; false → upgrade screen
+    /// Whether Focus Bear Time Tracker is enabled. Drives the always-on toggle at the top of
+    /// the view; the tracker content below is shown only when this is true. Mirrors
+    /// `kUserdefaultsScreenTimeEnabled`; the host VC updates it after the enable/disable flow.
+    @Published var isTrackingEnabled = (UserDefaults.standard.object(forKey: kUserdefaultsScreenTimeEnabled) as? Bool) == true
 
     var onOpenFBTT: () -> Void = {}
     var onRefresh: () -> Void = {}
     var onUpgrade: () -> Void = {}
+    /// The host VC runs the real enable/disable flow (which may show an install alert) and then
+    /// updates `isTrackingEnabled` with the resolved state.
+    var onToggleTracking: (Bool) -> Void = { _ in }
+
+    init() {
+        // The enable flow can complete elsewhere (e.g. the first-run TimeTrackerVc intro window),
+        // so observe the global state change and re-sync the toggle + reload while this view is up.
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(trackerStateChanged),
+                                               name: .timeTrackerEnabledStateChanged,
+                                               object: nil)
+    }
+
+    deinit { NotificationCenter.default.removeObserver(self) }
+
+    @objc private func trackerStateChanged() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            let enabled = (UserDefaults.standard.object(forKey: kUserdefaultsScreenTimeEnabled) as? Bool) == true
+            self.isTrackingEnabled = enabled
+            if enabled { self.onRefresh() }
+        }
+    }
+}
+
+extension Notification.Name {
+    /// Posted whenever Focus Bear Time Tracker is enabled or disabled, so any live FBTT view
+    /// re-syncs its toggle.
+    static let timeTrackerEnabledStateChanged = Notification.Name("timeTrackerEnabledStateChanged")
 }
 
 // MARK: - SwiftUI view
@@ -211,18 +244,38 @@ struct FBTTTodayView: View {
     private let contentMaxWidth: CGFloat = 440
 
     var body: some View {
-        Group {
-            if model.hasAccess {
-                trackerContent
-            } else {
+        VStack(alignment: .leading, spacing: 18) {
+            // Page title + separator, always shown, so it reads as the Time Tracker screen header
+            // above the enable setting.
+            TimeTrackerTitleHeader()
+
+            // The enable/disable toggle lives at the top and is ALWAYS shown.
+            enableSection
+
+            if !model.hasAccess {
+                // No Pro access → always show the upgrade prompt, regardless of the toggle state.
                 upgradeState
+            } else if model.isTrackingEnabled {
+                trackerContent
+            } else if fillsParent {
+                Spacer(minLength: 0)   // keep the toggle pinned to the top when nothing's shown below
             }
         }
-        .padding(22)
+        .padding(28)   // match the other Tools panes (Focus Button / Late No More)
         // Fully flexible (no minimum) so it fills both its 380×520 window and an inline Tools pane
         // without imposing a minimum size that would force the main window to resize.
         .frame(maxWidth: .infinity, maxHeight: fillsParent ? .infinity : nil, alignment: .topLeading)
         .background(Color("backgroundColor"))
+    }
+
+    // MARK: Enable toggle (moved here from Advanced → Add-Ons)
+
+    private var enableSection: some View {
+        TimeTrackerEnableToggleView(
+            isEnabled: model.isTrackingEnabled,
+            onToggle: model.onToggleTracking
+        )
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var trackerContent: some View {
@@ -372,6 +425,70 @@ struct FBTTTodayView: View {
     }
 }
 
+// MARK: - Page title (reusable)
+
+/// "Time Tracker" screen title + a separator, shown at the very top of the Time Tracker pane in
+/// every state (downloaded or not) so the title never merges with the enable setting below it.
+struct TimeTrackerTitleHeader: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Match the other Tools titles ("Focus Button", "Late No More").
+            Text(menuLocalized("menuTimeTracker", "Time Tracker"))
+                .font(.system(size: 24, weight: .bold))
+                .foregroundColor(.primary)
+            Divider()
+        }
+    }
+}
+
+// MARK: - Enable toggle (reusable)
+
+/// The "Enable Focus Bear Time Tracker" title + description + switch. Lives at the top of the
+/// Time Tracker view, and is also stacked above the download screen when FBTT isn't installed, so
+/// the toggle is always visible. `onToggle` runs the host VC's enable/disable flow.
+struct TimeTrackerEnableToggleView: View {
+    let isEnabled: Bool
+    let onToggle: (Bool) -> Void
+
+    private var title: String {
+        (configjson.value(forKey: "settingsNew") as? NSDictionary)?
+            .value(forKey: "focusBearTrackerSettingTitle") as? String
+            ?? "Enable Focus Bear Time Tracker"
+    }
+
+    private var trackerDescription: String {
+        (configjson.value(forKey: "settingsNew") as? NSDictionary)?
+            .value(forKey: "focusBearTrackerDescriptionTitle") as? String
+            ?? "Analyse your productivity by tracking how much time you spend on different websites and apps. You can automatically categorise time logs into different projects (helpful for timesheets). Data is stored locally for privacy reasons."
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(appSemiBold(15))
+                        .foregroundColor(.primary)
+                    Text(trackerDescription)
+                        .font(appRegular(12))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 12)
+                // The setter routes through the host VC's flow instead of flipping the state
+                // directly, so the switch only turns on once the tracker is really enabled.
+                Toggle("", isOn: Binding(
+                    get: { isEnabled },
+                    set: { onToggle($0) }
+                ))
+                .labelsHidden()
+                .toggleStyle(.switch)
+            }
+            Divider()
+        }
+    }
+}
+
 // MARK: - Hosting view controller
 
 /// Programmatic NSViewController that hosts FBTTTodayView and refreshes it from
@@ -400,10 +517,17 @@ class TodayTrackerVc: NSViewController {
         super.viewDidLoad()
         viewModel.onOpenFBTT = { openFBTTApp() }
         viewModel.onRefresh = { [weak self] in self?.refresh() }
+        viewModel.onToggleTracking = { [weak self] enabled in
+            setTimeTrackerEnabled(enabled, presentingWindow: self?.view.window) { resolved in
+                self?.viewModel.isTrackingEnabled = resolved
+                if resolved { self?.refresh() }
+            }
+        }
     }
 
     override func viewWillAppear() {
         super.viewWillAppear()
+        viewModel.isTrackingEnabled = (UserDefaults.standard.object(forKey: kUserdefaultsScreenTimeEnabled) as? Bool) == true
         refresh()
         // Light polling while the window is visible so the totals stay current.
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in

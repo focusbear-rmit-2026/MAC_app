@@ -2569,8 +2569,76 @@ func enableTimeTracker(){
     
     let appPath = "/Applications/Focus Bear Time Tracker.app"
     let configuration = NSWorkspace.OpenConfiguration()//.arguments = [appPath]
-    NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: appPath), configuration: configuration)
+    if FileManager.default.fileExists(atPath: "/Applications/Focus Bear Time Tracker.app") {
+        NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: appPath), configuration: configuration)
+    }
     writeSettingForScreeenTime(habitInfo: "")
+    // Let any live FBTT "Today" view re-sync its toggle (e.g. enabled via the first-run window).
+    NotificationCenter.default.post(name: .timeTrackerEnabledStateChanged, object: nil)
+}
+
+/// Central enable/disable flow for the Focus Bear Time Tracker. Extracted from the old
+/// Advanced → Add-Ons toggle so the FBTT "Today" view can own the switch. `presentingWindow`
+/// hosts the download alert (falls back to a modal if nil). `completion` reports the RESOLVED
+/// enabled state — the switch must reflect reality, so it stays off until the tracker is
+/// actually installed and enabled (first-run and not-installed both resolve to false).
+func setTimeTrackerEnabled(_ enabled: Bool, presentingWindow: NSWindow?, completion: @escaping (Bool) -> Void) {
+    guard enabled else {
+        allApiObject.capturePosthog(event: "settings-changed-disable-time-tracker", metadata: [:])
+        UserDefaults.standard.set(false, forKey: kUserdefaultsScreenTimeEnabled)
+        writeSettingForScreeenTime(habitInfo: "")
+        NotificationCenter.default.post(name: .timeTrackerEnabledStateChanged, object: nil)
+        completion(false)
+        return
+    }
+
+    // Time Tracker is a Pro feature — if the trial/subscription has lapsed, don't enable it; prompt
+    // to upgrade instead and leave the switch off.
+    if !(isPurchased || daysLeft > 0) {
+        showUpgradeNowWindow(reason: "time_tracker_expired")
+        completion(false)
+        return
+    }
+
+    // First time enabling → run the intro window flow; leave the switch off until it enables there.
+    if UserDefaults.standard.object(forKey: kUserdefaultsScreenTimeEnabledOneTime) == nil {
+        showTimeTrackerWindow(showingAutomatically: false)
+        completion(false)
+        return
+    }
+
+    if FileManager.default.fileExists(atPath: "/Applications/Focus Bear Time Tracker.app") {
+        enableTimeTracker()
+        completion(true)
+        return
+    }
+    
+    enableTimeTracker()
+    // Installed component missing → offer to download it; switch stays off.
+    let alert = NSAlert()
+    alert.setSharingType()
+    alert.alertStyle = .informational
+    var titleDownloadTimeTrackerText = "Focus Bear Time Tracker needs to be downloaded and installed as a separate component."
+    var buttonDownloadTimeTrackerText = "Download Now"
+    if let settingsNew = configjson.value(forKey: "settingsNew") as? NSDictionary {
+        titleDownloadTimeTrackerText = settingsNew.value(forKey: "titleDownloadTimeTrackerText") as? String ?? titleDownloadTimeTrackerText
+        buttonDownloadTimeTrackerText = settingsNew.value(forKey: "buttonDownloadTimeTrackerText") as? String ?? buttonDownloadTimeTrackerText
+    }
+    alert.messageText = titleDownloadTimeTrackerText
+    alert.addButton(withTitle: buttonDownloadTimeTrackerText)
+    alert.addButton(withTitle: buttonCancelText)
+    let handleResponse: (NSApplication.ModalResponse) -> Void = { modalResponse in
+        if modalResponse == .alertFirstButtonReturn,
+           let url = URL(string: "https://downloads.focusbear.io/fbtt/FocusBearTimeTracker.dmg") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+    if let window = presentingWindow {
+        alert.beginSheetModal(for: window, completionHandler: handleResponse)
+    } else {
+        handleResponse(alert.runModal())
+    }
+    completion(false)
 }
 
 

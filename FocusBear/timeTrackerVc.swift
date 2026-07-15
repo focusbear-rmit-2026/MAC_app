@@ -62,12 +62,8 @@ class timeTrackerVc: NSViewController {
         }
     }
     @IBAction func btnEnableClicked(_ sender: Any) {
-        if FileManager.default.fileExists(atPath: "/Applications/Focus Bear Time Tracker.app"){
-            enableTimeTracker()
-            if !showingAutomatically{
-                addOnsVcObj?.timeTrackerEnabledItemVcObj?.btnSwitch.state = .on
-            }
-        }else{
+        enableTimeTracker()
+        if !FileManager.default.fileExists(atPath: "/Applications/Focus Bear Time Tracker.app"){
             if let url = URL(string: "https://downloads.focusbear.io/fbtt/FocusBearTimeTracker.dmg"){
                 NSWorkspace.shared.open(url)
             }

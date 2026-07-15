@@ -557,16 +557,9 @@ func showTimeTrackerWindow(showingAutomatically:Bool){
     let wc = getTimeTrackerWcObject()
     // Once FBTT is installed and has tracked data, show the read-only Today view
     // (reads FBTT's own SQLite store) instead of the promo/enable screen.
-    if FBTTReader.isFBTTInstalled, FBTTReader.hasData {
-        let today = getTodayTrackerVcObject()
-        wc.contentViewController = today
-        today.refresh()
-        wc.window?.styleMask.insert(.closable)   // a data view should be dismissable
-    } else {
-        wc.contentViewController = getTimeTrackerVcObject()
-        timeTrackerVcObj!.showingAutomatically = showingAutomatically
-        wc.window?.styleMask.remove(.closable)
-    }
+    wc.contentViewController = getTimeTrackerVcObject()
+    timeTrackerVcObj!.showingAutomatically = showingAutomatically
+    wc.window?.styleMask.remove(.closable)
     wc.window?.center()
     wc.window?.title = appName
     wc.showWindow(nil)
