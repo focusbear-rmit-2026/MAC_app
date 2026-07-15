@@ -415,8 +415,9 @@ def download_github_attachment(url: str) -> dict:
             print(f"  [attachments] Auth request failed HTTP {resp.status_code} — retrying without auth")
             resp = requests.get(url, timeout=60, allow_redirects=True)
             if resp.status_code != 200:
+                content_type = resp.headers.get("content-type", "unknown")
                 print(f"  [attachments] No-auth also failed HTTP {resp.status_code} for {url[:80]}")
-                return {"type": "unknown"}
+                return {"type": "unknown", "error": f"HTTP {resp.status_code}, content-type: {content_type}"}
 
         content_type = resp.headers.get("content-type", "").lower()
         print(f"  [attachments] Fetched {url[:80]} → final URL: {resp.url[:80]}")
@@ -739,6 +740,9 @@ def _process_gdrive_file_id(file_id: str, original_link: str, result: dict) -> N
     file_path, content_type = download_gdrive_file(file_id)
     entry: dict = {"original": original_link, "available": file_path is not None}
 
+    if not file_path:
+        entry["error"] = f"Download failed (content-type: {content_type!r})" if content_type else "Download failed (no response)"
+
     if file_path:
         try:
             if "image" in content_type:
@@ -841,7 +845,9 @@ def extract_attachments(text: str) -> dict:
                 except OSError:
                     pass
         else:
-            print(f"  [attachments] GitHub CDN URL is not a recognized image/video.")
+            error_detail = asset.get("error", f"unrecognised content-type: {asset.get('content_type', 'unknown')!r}")
+            print(f"  [attachments] GitHub CDN URL is not a recognized image/video: {error_detail}")
+            result["images"].append({"url": url, "available": False, "error": error_detail})
 
     for m in DIRECT_IMAGE_RE.finditer(text):
         url = m.group(0).rstrip(")")
@@ -1247,7 +1253,7 @@ def check_issue(
         result["problems"] = ["No comments found on this issue."]
         _move_back_and_comment(
             repo, issue_number, item_id, project_id, ready_field_id, ready_option_id,
-            result["problems"], result, mention, dry_run=dry_run
+            result["problems"], result, mention, dry_run=dry_run, attachments=None
         )
         return result
 
@@ -1317,7 +1323,7 @@ def check_issue(
         result["status"] = "failed_evidence"
         _move_back_and_comment(
             repo, issue_number, item_id, project_id, ready_field_id, ready_option_id,
-            result["problems"], result, author_mention, dry_run=dry_run
+            result["problems"], result, author_mention, dry_run=dry_run, attachments=attachments
         )
 
     return result
@@ -1391,6 +1397,7 @@ def _move_back_and_comment(
     result: dict,
     mention: str = "",
     dry_run: bool = False,
+    attachments: dict | None = None,
 ) -> None:
     """Move the issue back to Ready for QA and post an explanatory comment.
 
@@ -1398,19 +1405,53 @@ def _move_back_and_comment(
     """
     problem_list = "\n".join(f"- {p}" for p in problems) if problems else "- Evidence was insufficient."
     mention_line = f"\n{mention} — please add test evidence before moving back to QA.\n" if mention else ""
+
+    # Only show the required format block when the failure is about format
+    # (missing OS, scenarios, evidence description), not when it's about inaccessible attachments.
+    FORMAT_RELATED_RE = re.compile(
+        r"\b(?:OS[ /]?version|OS/device|operating system|device model|"
+        r"device|scenarios?|test steps?|required format)\b",
+        re.IGNORECASE,
+    )
+    has_format_issues = any(FORMAT_RELATED_RE.search(problem) for problem in problems)
+    if has_format_issues:
+        format_section = (
+            "### Required format:\n"
+            "```\n"
+            "Tested on {OS} with these scenarios:\n"
+            "1. <scenario description>\n"
+            "2. <scenario description>\n\n"
+            "Evidence: <attached screenshot or video>\n"
+            "```\n\n"
+        )
+    else:
+        format_section = ""
+
+    # Collect attachment error details for debugging inaccessible files
+    attachment_errors: list[str] = []
+    if attachments:
+        for entry in attachments.get("gdrive", []):
+            if entry.get("error"):
+                attachment_errors.append(f"GDrive `{entry['original'][:60]}…`: {entry['error']}")
+        for entry in attachments.get("images", []):
+            if entry.get("error"):
+                attachment_errors.append(f"GitHub attachment `{entry['url'][:60]}…`: {entry['error']}")
+    attachment_debug_section = ""
+    if attachment_errors:
+        attachment_debug_section = (
+            "\n### Attachment debug info:\n"
+            + "\n".join(f"- {err}" for err in attachment_errors)
+            + "\n"
+        )
+
     comment_body = (
         f"## QA Evidence Review\n\n"
         f"This issue has been moved back to **{READY_FOR_QA_STATUS}** because the test evidence "
         f"was not sufficient.\n\n"
         f"### Issues found:\n{problem_list}\n"
         f"{mention_line}\n"
-        f"### Required format:\n"
-        f"```\n"
-        f"Tested on {{OS}} with these scenarios:\n"
-        f"1. <scenario description>\n"
-        f"2. <scenario description>\n\n"
-        f"Evidence: <attached screenshot or video>\n"
-        f"```\n\n"
+        f"{format_section}"
+        f"{attachment_debug_section}"
         f"Please re-test and provide adequate evidence before moving back to QA Passed.\n\n"
         f"*Automated check by QA Evidence Checker (model: {MODEL})*"
     )
