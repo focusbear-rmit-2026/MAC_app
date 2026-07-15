@@ -1660,6 +1660,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     func extendFocusModeFor(minutes:Int){
         addLog(text: "extendFocusModeFor \(minutes)")
+        if teacherSessionManagerObject.isTeacherSessionActive(){// the teacher owns the schedule of a class session
+            return;
+        }
         if minutes > 0{
             if isFocusModeOn(){
                 if timerForFocusMode != nil{
@@ -1718,6 +1721,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     func reduceFocusModeFor(minutes:Int){
         addLog(text: "reduceFocusModeFor \(minutes)")
+        if teacherSessionManagerObject.isTeacherSessionActive(){// reducing the duration would be an early stop of a teacher controlled session
+            teacherSessionManagerObject.showTeacherSessionLockedAlert()
+            return;
+        }
         if minutes > 0{
             if isFocusModeOn(){
                 if timerForFocusMode != nil{
@@ -1937,7 +1944,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 // change appMode to simple mode
                 if SettingsManagerObject.isGeekModeEnabled{
                     SettingsManagerObject.isGeekModeEnabled = false
-                    SettingsManagerObject.isCuddlyModeEnabled = true
+                    SettingsManagerObject.storedCuddlyModeEnabled = true
                     SettingsManagerObject.isSettingsChanged = true
                     SettingsManagerObject.putUserLocalDeviceSettings()
                 }
@@ -3454,8 +3461,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         restorePostponeStateIfNeeded()
         setBackgroundThreadTimer()
         pusherEventsObject.startEventNotifications()
-        
-        
+        teacherSessionManagerObject.adoptCurrentSessionOnLaunch()// live class session adoption:- joined resumes, invited shows the join prompt
+
+
         // v 2.27.435 //The app should automatically restart the focus session after the app restarts during permissions #1559
         if UserDefaults.standard.object(forKey: kUserdefaultsUserShouldDoFirstFocusSesion) != nil{
             UserDefaults.standard.removeObject(forKey: kUserdefaultsUserShouldDoFirstFocusSesion)
@@ -6830,6 +6838,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         addLog(text: "Application Will Terminate")
         UserDefaults.standard.set(true, forKey: kUserdefaultsAppQuitProperly)
         print("applicationWillTerminate")
+        teacherSessionManagerObject.sendFinalHeartbeatBeforeTerminate()// best-effort {in_focus:false} beat, server also infers quit from the heartbeat gap
         flaskServerObject.stopFlaskServer()
         firefoxServer.stop()
         EventBuffer.shared.flushEvents()
@@ -7249,6 +7258,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             timerForFocusModeEndNotification?.invalidate()
             timerForFocusModeEndNotification = nil
         }
+        // A teacher-controlled class session ends on its own (class-session-ended / scheduled finish
+        // time) and the student can't extend or act on the end warning, so don't show it.
+        if teacherSessionManagerObject.isTeacherSessionActive(){
+            addLog(text: "showFocusModeFinishNotification: skipped — teacher session active")
+            return;
+        }
         if isFocusModeOn(){
             if isUserOnMeeting{
                 addLog(text: "user is On Meeting auto extend focus session for 5 minutes")
@@ -7275,6 +7290,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     
     @objc func tryFocusModeFinished(isSilent:Bool, isShutOffTime:Bool, isMorningRoutineTime:Bool, allowExtend:Bool, isCustomRoutineTime:Bool, shouldUpdateFocusButton:Bool = false){
+        if teacherSessionManagerObject.isTeacherSessionActive(){// teacher controlled class session:- only legit ends are class-session-ended or scheduled_finish_time
+            if teacherSessionManagerObject.canTeacherSessionFinishNow(){
+                teacherSessionManagerObject.teacherSessionFinished(reason: "scheduled finish time reached")
+            }else{
+                addLog(text: "focus mode finish blocked:- teacher session is active")
+                teacherSessionManagerObject.showTeacherSessionLockedAlert()
+            }
+            return;
+        }
         addLog(text: "focus mode finished")
         taskPlayerVcObj?.getToDosFromPlayer()
         

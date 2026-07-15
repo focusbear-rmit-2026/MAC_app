@@ -124,7 +124,7 @@ class changeFrictionLevelVc: NSViewController {
             if !SettingsManagerObject.isFullScreenEnabled{
                 SettingsManagerObject.isFullScreenEnabled = true
             }
-            SettingsManagerObject.isCuddlyModeEnabled = false
+            SettingsManagerObject.storedCuddlyModeEnabled = false
             SettingsManagerObject.isEasySkipEnabled = false
             UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
             SettingsManagerObject.shouldReloadAfterForceQuitEnabled = true
@@ -145,7 +145,7 @@ class changeFrictionLevelVc: NSViewController {
             if !SettingsManagerObject.isFullScreenEnabled{
                 SettingsManagerObject.isFullScreenEnabled = true
             }
-            SettingsManagerObject.isCuddlyModeEnabled = true
+            SettingsManagerObject.storedCuddlyModeEnabled = true
             SettingsManagerObject.isEasySkipEnabled = false
             UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
             SettingsManagerObject.shouldReloadAfterForceQuitEnabled = true
@@ -167,7 +167,7 @@ class changeFrictionLevelVc: NSViewController {
             if !SettingsManagerObject.isFullScreenEnabled{
                 SettingsManagerObject.isFullScreenEnabled = true
             }
-            SettingsManagerObject.isCuddlyModeEnabled = true
+            SettingsManagerObject.storedCuddlyModeEnabled = true
             SettingsManagerObject.isEasySkipEnabled = false
             UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
             SettingsManagerObject.shouldReloadAfterForceQuitEnabled = false
@@ -185,7 +185,7 @@ class changeFrictionLevelVc: NSViewController {
             if !SettingsManagerObject.isFullScreenEnabled{
                 SettingsManagerObject.isFullScreenEnabled = true
             }
-            SettingsManagerObject.isCuddlyModeEnabled = true
+            SettingsManagerObject.storedCuddlyModeEnabled = true
             SettingsManagerObject.isEasySkipEnabled = true
             UserDefaults.standard.set(true, forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
             
@@ -204,7 +204,7 @@ class changeFrictionLevelVc: NSViewController {
             if SettingsManagerObject.isFullScreenEnabled{
                 SettingsManagerObject.isFullScreenEnabled = false
             }
-            SettingsManagerObject.isCuddlyModeEnabled = true
+            SettingsManagerObject.storedCuddlyModeEnabled = true
             SettingsManagerObject.isEasySkipEnabled = true
             UserDefaults.standard.set(true, forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
             

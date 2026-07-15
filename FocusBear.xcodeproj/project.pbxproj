@@ -73,6 +73,8 @@
 		13AAC9E12D9819F7000AD619 /* customRoutineTimeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */; };
 		13AFB9CC2FD3044D002DA62E /* suggestFocusModeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13AFB9CB2FD3044D002DA62E /* suggestFocusModeVc.swift */; };
 		13B1D8292F7D2B9B0010610C /* suggestWorkFocusManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B1D8282F7D2B9B0010610C /* suggestWorkFocusManager.swift */; };
+		FB7EAC1E2F7E100100000001 /* teacherSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7EAC1E2F7E100100000002 /* teacherSessionManager.swift */; };
+		FB7EAC1E2F7E100100000003 /* teacherUnlockRequestVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7EAC1E2F7E100100000004 /* teacherUnlockRequestVc.swift */; };
 		13B74D582E87A71E00556C79 /* collectionCellScreenshots.xib in Resources */ = {isa = PBXBuildFile; fileRef = 13B74D572E87A71E00556C79 /* collectionCellScreenshots.xib */; };
 		13B74D592E87A71E00556C79 /* collectionCellScreenshots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B74D562E87A71E00556C79 /* collectionCellScreenshots.swift */; };
 		13B74D5B2E87AA6B00556C79 /* dropView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B74D5A2E87AA6B00556C79 /* dropView.swift */; };
@@ -493,6 +495,8 @@
 		13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineTimeVc.swift; sourceTree = "<group>"; };
 		13AFB9CB2FD3044D002DA62E /* suggestFocusModeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = suggestFocusModeVc.swift; sourceTree = "<group>"; };
 		13B1D8282F7D2B9B0010610C /* suggestWorkFocusManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = suggestWorkFocusManager.swift; sourceTree = "<group>"; };
+		FB7EAC1E2F7E100100000002 /* teacherSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = teacherSessionManager.swift; sourceTree = "<group>"; };
+		FB7EAC1E2F7E100100000004 /* teacherUnlockRequestVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = teacherUnlockRequestVc.swift; sourceTree = "<group>"; };
 		13B74D562E87A71E00556C79 /* collectionCellScreenshots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = collectionCellScreenshots.swift; sourceTree = "<group>"; };
 		13B74D572E87A71E00556C79 /* collectionCellScreenshots.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = collectionCellScreenshots.xib; sourceTree = "<group>"; };
 		13B74D5A2E87AA6B00556C79 /* dropView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = dropView.swift; sourceTree = "<group>"; };
@@ -1275,6 +1279,8 @@
 				13E0386E2ED075420097E91C /* focusTimerManager.swift */,
 				135AD5302ED18D7D00870175 /* focusHabitTimerManager.swift */,
 				13B1D8282F7D2B9B0010610C /* suggestWorkFocusManager.swift */,
+				FB7EAC1E2F7E100100000002 /* teacherSessionManager.swift */,
+				FB7EAC1E2F7E100100000004 /* teacherUnlockRequestVc.swift */,
 				13AFB9CB2FD3044D002DA62E /* suggestFocusModeVc.swift */,
 				133747622FC87AB600CB3DA1 /* DNDManager.swift */,
 			);
@@ -2241,6 +2247,8 @@
 				8F4E34BD29BC52FB00E161F4 /* focusEndWarningVc.swift in Sources */,
 				8F09ACBF29703C1B00A0F1D0 /* allTracksVc.swift in Sources */,
 				13B1D8292F7D2B9B0010610C /* suggestWorkFocusManager.swift in Sources */,
+				FB7EAC1E2F7E100100000001 /* teacherSessionManager.swift in Sources */,
+				FB7EAC1E2F7E100100000003 /* teacherUnlockRequestVc.swift in Sources */,
 				8FAC6C972780612B008A4180 /* mainWindowController.swift in Sources */,
 				8FE5E5BA2C46A5C800420717 /* alertLimitedUsageVc.swift in Sources */,
 				13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */,

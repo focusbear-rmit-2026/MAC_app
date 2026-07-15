@@ -755,7 +755,12 @@ class AllApi:NSObject {
     var isApiAddAdditionalGoalsErrorFound = false
     
     var isApiUnCompleteCurrentSequenceErrorFound = false
-    
+
+    var isApiJoinClassSessionErrorFound = false
+    var isApiDeclineClassSessionErrorFound = false
+    var isApiGetCurrentClassSessionErrorFound = false
+    var isApiRequestClassUnlockErrorFound = false
+
     var errorCodeRequestTimeout = -1001
     var errorCodeNoInternet = -1009
 
@@ -6388,6 +6393,424 @@ class AllApi:NSObject {
         }
     }
     
+    //***********Teacher Mode class session apis***************//
+
+    func joinClassSession(sessionId:String, completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
+        addLog(text: "func call:- joinClassSession")
+
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+
+            if appdelegate!.credential != nil{
+
+                let responsePath = "\(baseUrl)/class-session/\(sessionId)/join"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call joinClassSession \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "POST";
+
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    // The server rejects an empty body when Content-Type is application/json
+                    // ("Body cannot be empty…"), so send an empty JSON object.
+                    request.httpBody = "{}".data(using: .utf8)
+
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+
+                        if let httpResponse = response as? HTTPURLResponse{
+                            self.isApiJoinClassSessionErrorFound = false
+                            if httpResponse.statusCode == 200 || httpResponse.statusCode == 201{ //it means it is right
+
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+
+                                            addLog(text: "api call joinClassSession success")
+                                            print(jsonResult)
+                                            completionHandler(jsonResult)
+                                            return
+                                        }
+
+                                    }catch{
+                                        print(error)
+                                        addLog(text: "error joinClassSession: \(error.localizedDescription)")
+                                        completionHandler(nil)
+                                        return
+                                    }
+
+                                }
+
+                                completionHandler(nil)
+                                return
+                            }else{
+                                addLog(text: "api call joinClassSession error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return;
+                            }
+                        }
+
+
+                        if error != nil {
+                            addLog(text: "api call joinClassSession error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiJoinClassSessionErrorFound{
+                                    self.isApiJoinClassSessionErrorFound = false
+                                    completionHandler(nil)
+                                    return;
+                                }else{
+                                    self.isApiJoinClassSessionErrorFound = true
+                                    addLog(text: "error joinClassSession:- try second time")
+                                    self.joinClassSession(sessionId: sessionId, completionHandler: { newDic in
+                                        completionHandler(newDic)
+                                        return;
+                                    })
+                                }
+                            }else{
+                                completionHandler(nil)
+                                return;
+                            }
+
+                        }else{
+                            completionHandler(nil)
+                            return;
+                        }
+
+                    }
+
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                }
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
+
+    func declineClassSession(sessionId:String, completionHandler: @escaping(_ result: Bool) -> ()){
+        addLog(text: "func call:- declineClassSession")
+
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+
+            if appdelegate!.credential != nil{
+
+                let responsePath = "\(baseUrl)/class-session/\(sessionId)/decline"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call declineClassSession \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "POST";
+
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    // The server rejects an empty body when Content-Type is application/json
+                    // ("Body cannot be empty…"), so send an empty JSON object.
+                    request.httpBody = "{}".data(using: .utf8)
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+
+                        if let httpResponse = response as? HTTPURLResponse{
+                            self.isApiDeclineClassSessionErrorFound = false
+                            if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 || httpResponse.statusCode == 204{ //it means it is right
+
+                                completionHandler(true)
+                                return;
+                            }else{
+                                addLog(text: "api call declineClassSession error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(false)
+                                return;
+                            }
+                        }
+
+
+                        if error != nil {
+                            addLog(text: "api call declineClassSession error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiDeclineClassSessionErrorFound{
+                                    self.isApiDeclineClassSessionErrorFound = false
+                                    completionHandler(false)
+                                    return;
+                                }else{
+                                    self.isApiDeclineClassSessionErrorFound = true
+                                    addLog(text: "error declineClassSession:- try second time")
+                                    self.declineClassSession(sessionId: sessionId, completionHandler: { bool in
+                                        completionHandler(bool)
+                                        return;
+                                    })
+                                }
+                            }else{
+                                completionHandler(false)
+                                return;
+                            }
+
+                        }else{
+                            completionHandler(false)
+                            return;
+                        }
+
+                    }
+
+                    task.resume()
+                }else{
+                    completionHandler(false)
+                }
+            }else{
+                completionHandler(false)
+            }
+        }
+    }
+
+    func getCurrentClassSession(completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
+        addLog(text: "func call:- getCurrentClassSession")
+
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+
+            if appdelegate!.credential != nil{
+
+                let responsePath = "\(baseUrl)/class-session/current"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getCurrentClassSession \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "GET";
+
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+
+                        if let httpResponse = response as? HTTPURLResponse{
+                            self.isApiGetCurrentClassSessionErrorFound = false
+                            if httpResponse.statusCode == 200{
+
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+
+                                            addLog(text: "api call getCurrentClassSession success")
+                                            print(jsonResult)
+                                            completionHandler(jsonResult)
+                                            return
+                                        }
+
+                                    }catch{
+                                        // the endpoint returns null when there is no live session for the caller
+                                        completionHandler(nil)
+                                        return
+                                    }
+
+                                }
+
+                                completionHandler(nil)
+                                return
+                            }else{
+                                addLog(text: "api call getCurrentClassSession error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return;
+                            }
+                        }
+
+
+                        if error != nil {
+                            addLog(text: "api call getCurrentClassSession error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiGetCurrentClassSessionErrorFound{
+                                    self.isApiGetCurrentClassSessionErrorFound = false
+                                    completionHandler(nil)
+                                    return;
+                                }else{
+                                    self.isApiGetCurrentClassSessionErrorFound = true
+                                    addLog(text: "error getCurrentClassSession:- try second time")
+                                    self.getCurrentClassSession(completionHandler: { newDic in
+                                        completionHandler(newDic)
+                                        return;
+                                    })
+                                }
+                            }else{
+                                completionHandler(nil)
+                                return;
+                            }
+
+                        }else{
+                            completionHandler(nil)
+                            return;
+                        }
+
+                    }
+
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                }
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
+
+    // canonical heartbeat body {in_focus, device_id} - best effort, no retry (next beat is 25s away)
+    func classSessionHeartbeat(sessionId:String, inFocus:Bool, completionHandler: @escaping(_ result: Bool) -> ()){
+
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+
+            if appdelegate!.credential != nil{
+
+                let responsePath = "\(baseUrl)/class-session/\(sessionId)/heartbeat"
+                if let responsePathUrl = NSURL(string: responsePath){
+
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "POST";
+
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+                    let json: [String: Any] = [
+                        "in_focus": inFocus,
+                        "device_id": currentDeviceId
+                    ]
+
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                    request.httpBody = jsonData
+
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+
+                        if let httpResponse = response as? HTTPURLResponse{
+                            if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 || httpResponse.statusCode == 204{ //it means it is right
+
+                                completionHandler(true)
+                                return;
+                            }else{
+                                addLog(text: "api call classSessionHeartbeat error:- statusCode is \(httpResponse.statusCode)")
+                                completionHandler(false)
+                                return;
+                            }
+                        }
+
+                        if error != nil {
+                            addLog(text: "api call classSessionHeartbeat error:- \(error!.localizedDescription)")
+                        }
+                        completionHandler(false)
+                        return;
+
+                    }
+
+                    task.resume()
+                }else{
+                    completionHandler(false)
+                }
+            }else{
+                completionHandler(false)
+            }
+        }
+    }
+
+    func requestClassUnlock(sessionId:String, requestedApp:String?, requestedDomain:String?, reason:String, completionHandler: @escaping(_ result: Bool) -> ()){
+        addLog(text: "func call:- requestClassUnlock")
+
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+
+            if appdelegate!.credential != nil{
+
+                let responsePath = "\(baseUrl)/class-session/\(sessionId)/unlock-requests"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call requestClassUnlock \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "POST";
+
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+                    var json: [String: Any] = [:]
+                    if let requestedApp = requestedApp{
+                        json["requested_app"] = requestedApp
+                    }
+                    if let requestedDomain = requestedDomain{
+                        json["requested_domain"] = requestedDomain
+                    }
+                    if !reason.isEmpty{
+                        json["reason"] = reason
+                    }
+
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                    request.httpBody = jsonData
+
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+
+                        if let httpResponse = response as? HTTPURLResponse{
+                            self.isApiRequestClassUnlockErrorFound = false
+                            if httpResponse.statusCode == 200 || httpResponse.statusCode == 201{ //it means it is right
+
+                                completionHandler(true)
+                                return;
+                            }else{
+                                addLog(text: "api call requestClassUnlock error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(false)
+                                return;
+                            }
+                        }
+
+
+                        if error != nil {
+                            addLog(text: "api call requestClassUnlock error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiRequestClassUnlockErrorFound{
+                                    self.isApiRequestClassUnlockErrorFound = false
+                                    completionHandler(false)
+                                    return;
+                                }else{
+                                    self.isApiRequestClassUnlockErrorFound = true
+                                    addLog(text: "error requestClassUnlock:- try second time")
+                                    self.requestClassUnlock(sessionId: sessionId, requestedApp: requestedApp, requestedDomain: requestedDomain, reason: reason, completionHandler: { bool in
+                                        completionHandler(bool)
+                                        return;
+                                    })
+                                }
+                            }else{
+                                completionHandler(false)
+                                return;
+                            }
+
+                        }else{
+                            completionHandler(false)
+                            return;
+                        }
+
+                    }
+
+                    task.resume()
+                }else{
+                    completionHandler(false)
+                }
+            }else{
+                completionHandler(false)
+            }
+        }
+    }
+
     func transcribeAudio(fileURL: URL, completion: @escaping (Result<String, Error>) -> Void) {
         let apiKey = "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"
         let url = URL(string: "https://api.openai.com/v1/audio/transcriptions")!

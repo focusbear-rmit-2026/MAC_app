@@ -10,6 +10,10 @@ import Foundation
 
 func showAbortingFocusModeVc(forPause:Bool){// abortview for pause only in strict mode
     addLog(text: "Showing Abort focus mode view")
+    if teacherSessionManagerObject.isTeacherSessionActive(){// C3:- teacher controlled sessions cannot be aborted or paused, only unlock requests
+        teacherSessionManagerObject.showTeacherSessionLockedAlert()
+        return;
+    }
     if currentFocusModeStrictness == ._STRICT_{
         mainWindowControllerObj?.showWindow(nil)
         leftMenuVcObj!.showFocusAbortedView()

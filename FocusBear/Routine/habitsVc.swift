@@ -2350,7 +2350,7 @@ class habitsVc: NSViewController {
         if isFirstRun{//welcome routine k baad set krenge (when first time)
             UserDefaults.standard.removeObject(forKey: kUserdefaultsPasswordSetInOnboarding)
             SettingsManagerObject.isFullScreenEnabled = false
-            SettingsManagerObject.isCuddlyModeEnabled = true
+            SettingsManagerObject.storedCuddlyModeEnabled = true
             SettingsManagerObject.isEasySkipEnabled = true
             SettingsManagerObject.doNotBlockUrlsDuringSuperPomodoroBreaksDefaultValue = true
             SettingsManagerObject.shouldReloadAfterForceQuitEnabled = false

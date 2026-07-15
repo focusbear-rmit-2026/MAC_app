@@ -170,6 +170,9 @@ class pusherEvents:NSObject, PusherDelegate {
                         
                     }
                 }
+                if teacherSessionManagerObject.isTeacherSessionActive(){// a teacher controlled class session only ends via class-session-ended or its scheduled finish time
+                    return;
+                }
                 if isFocusModeOnOrPaused() == false{
                     return;
                 }
@@ -319,6 +322,82 @@ class pusherEvents:NSObject, PusherDelegate {
             }
         })
         
+        //***********Teacher Mode class session events (canonical names, same vocabulary as backend + FCM data.type)***************//
+        // unlike focus-mode-started (auto starts), class-session-invite shows the JOIN prompt first - the session never starts without the student's approval
+        _ = channel.bind(eventName: "class-session-invite", eventCallback: { (event: PusherEvent) in
+            if let data = event.data {
+                print(data)
+                if let data = data.data(using: .utf8) {
+                    do {
+                        if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]{
+                            print(dictionary)
+                            DispatchQueue.main.async {
+                                teacherSessionManagerObject.handleSessionInvite(dictionary: dictionary)
+                            }
+                        }
+                    } catch {
+                        print(error.localizedDescription)
+                    }
+                }
+            }
+        })
+
+        // stale/duplicate deliveries are dropped in the manager via allowlist_version
+        _ = channel.bind(eventName: "class-allowlist-changed", eventCallback: { (event: PusherEvent) in
+            if let data = event.data {
+                print(data)
+                if let data = data.data(using: .utf8) {
+                    do {
+                        if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]{
+                            print(dictionary)
+                            DispatchQueue.main.async {
+                                teacherSessionManagerObject.handleAllowlistChanged(dictionary: dictionary)
+                            }
+                        }
+                    } catch {
+                        print(error.localizedDescription)
+                    }
+                }
+            }
+        })
+
+        _ = channel.bind(eventName: "class-session-ended", eventCallback: { (event: PusherEvent) in
+            if let data = event.data {
+                print(data)
+                if let data = data.data(using: .utf8) {
+                    do {
+                        if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]{
+                            print(dictionary)
+                            DispatchQueue.main.async {
+                                teacherSessionManagerObject.handleSessionEnded(dictionary: dictionary)
+                            }
+                        }
+                    } catch {
+                        print(error.localizedDescription)
+                    }
+                }
+            }
+        })
+
+        // approvals arrive as class-allowlist-changed; this one only carries denials/expiries back to the requesting student
+        _ = channel.bind(eventName: "class-unlock-resolved", eventCallback: { (event: PusherEvent) in
+            if let data = event.data {
+                print(data)
+                if let data = data.data(using: .utf8) {
+                    do {
+                        if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]{
+                            print(dictionary)
+                            DispatchQueue.main.async {
+                                teacherSessionManagerObject.handleUnlockResolved(dictionary: dictionary)
+                            }
+                        }
+                    } catch {
+                        print(error.localizedDescription)
+                    }
+                }
+            }
+        })
+
         _ = channel.bind(eventName: "settings-updated", eventCallback: { (event: PusherEvent) in
             if let data = event.data {
                 print(data)

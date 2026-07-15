@@ -1134,7 +1134,7 @@ class GeekModeSegmentedControl: NSSegmentedControl {
     
     func appModeChangeDone(geekMode:Bool){
         if !geekMode{
-            SettingsManagerObject.isCuddlyModeEnabled = true
+            SettingsManagerObject.storedCuddlyModeEnabled = true
         }else{
             // doing this because in simple mode when user start a pomodoro mode with blocking style (AI) we change local var isAiCheckUrlEnabled to true and if user starts pomodoro with blockDistractingsites/apps focus mode we change isAiCheckUrlEnabled to false but doesn't upload it so when user change app mode to geek mode we need to reload this setting from userdefaults
             if let isEnabled = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAiCheckUrlEnabled) as? Bool{

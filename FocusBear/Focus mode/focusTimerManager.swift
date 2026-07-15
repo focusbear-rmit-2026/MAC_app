@@ -615,6 +615,33 @@ class focusTimerManager {
                     //
                 }
             }else{
+                // C6:- during a teacher-controlled class session the student can't self-unblock a URL
+                // ("unblock it for me" is off — the teacher owns the allow-list). Instead of the
+                // super-strict dead-end below, navigate the browser back off the unblock URL and open
+                // the teacher unlock-request window pre-filled with the blocked URL, so the student can
+                // request the teacher to unlock it.
+                if teacherSessionManagerObject.isTeacherSessionActive(){
+                    addLog(text: "teacher session:- unblock-it-for-me blocked, routing to unlock request window")
+                    allApiObject.capturePosthog(event: "unblock-it-for-me-not-working-reason-teacher-session", metadata: [:])
+                    let hitNewUrl = originalUrlStringFromBrowser.replacingOccurrences(of: "unblock_it=true", with: "")
+                    DispatchQueue.main.async {
+                        setUrlToBrowser(browser: currentBrowser, url: hitNewUrl)
+                    }
+
+                    if var extractedUrl = extractSubstring(from: url, start: "old_url=", end: "&focus_mode_end_time") {
+                        extractedUrl = extractedUrl.removingPercentEncoding ?? extractedUrl
+                        addLog(text: "teacher session:- opening unlock request window for url: \(extractedUrl)")
+                        DispatchQueue.main.async {
+                            teacherSessionManagerObject.showTeacherUnlockRequestWindow()
+                            if let teacherUnlockRequestVcObj = teacherSessionManagerObject.teacherUnlockRequestWindow?.contentViewController as? teacherUnlockRequestVc{
+                                teacherUnlockRequestVcObj.textFieldAppOrUrl.stringValue = extractedUrl
+                            }
+
+                        }
+                    }
+                    return false;
+                }
+                
                 allApiObject.capturePosthog(event: "unblock-it-for-me-not-working-reason-super-strict", metadata: [:])
                 let hitNewUrl = originalUrlStringFromBrowser.replacingOccurrences(of: "unblock_it=true", with: "")
                 DispatchQueue.main.async {

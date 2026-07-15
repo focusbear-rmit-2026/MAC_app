@@ -48,7 +48,16 @@ class SettingsManager:NSObject{
     var isPasswordRequireInPreferencesAfterCutoff = true
     
     
-    var isCuddlyModeEnabled = true
+    /// The user's real cuddly/grizzly preference (backing store). Persist/sync from THIS, not the
+    /// computed `isCuddlyModeEnabled` below, so a teacher session can't overwrite the saved value.
+    var storedCuddlyModeEnabled = true
+    /// Effective cuddly-mode flag. A teacher (class) session forces grizzly mode
+    /// (isCuddlyModeEnabled == false) regardless of the user's setting; when the session ends the
+    /// user's stored preference resumes automatically.
+    var isCuddlyModeEnabled: Bool {
+        get { teacherSessionManagerObject.isTeacherSessionActive() ? false : storedCuddlyModeEnabled }
+        set { storedCuddlyModeEnabled = newValue }
+    }
     var immediatelyBlockDistractingSites = false
     var immediatelyBlockDistractingApps = false
     
@@ -1060,9 +1069,9 @@ class SettingsManager:NSObject{
             
             //  ---------------------------SETTINGS Focus bear mode--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsCuddlyModeEnabled) as? Bool{
-                isCuddlyModeEnabled = isEnabled
+                storedCuddlyModeEnabled = isEnabled
             }else{
-                UserDefaults.standard.set(isCuddlyModeEnabled, forKey: kUserdefaultsCuddlyModeEnabled)
+                UserDefaults.standard.set(storedCuddlyModeEnabled, forKey: kUserdefaultsCuddlyModeEnabled)
             }
             
             
@@ -1355,7 +1364,7 @@ class SettingsManager:NSObject{
             kArrBlockedUrls:arrBlockedUrls,
             kArrBlockedApps:arrBlockedApps,
             kArrAlwaysAllowedApps:arrAlwaysAllowedApps,
-            kCuddlyModeEnabled:isCuddlyModeEnabled,
+            kCuddlyModeEnabled:storedCuddlyModeEnabled,
             kIsGeekModeEnabled:isGeekModeEnabled,
             kImmediatelyBlockDistractingSites:immediatelyBlockDistractingSites,
             kImmediatelyBlockDistractingApps:immediatelyBlockDistractingApps,
@@ -1427,7 +1436,7 @@ class SettingsManager:NSObject{
         UserDefaults.standard.set(cuddlyModeProgressCount, forKey: kUserdefaultsCuddlyModeProgressCount)
         UserDefaults.standard.set(selectedAppAppearanceIndex, forKey: kUserdefaultsSelectedAppAppearanceIndex)
         UserDefaults.standard.set(isOfficeModeEnabled, forKey: kUserdefaultsOfficeModeEnabled)
-        UserDefaults.standard.set(isCuddlyModeEnabled, forKey: kUserdefaultsCuddlyModeEnabled)
+        UserDefaults.standard.set(storedCuddlyModeEnabled, forKey: kUserdefaultsCuddlyModeEnabled)
         UserDefaults.standard.set(isGeekModeEnabled, forKey: kUserdefaultsGeekModeEnabled)
         UserDefaults.standard.set(immediatelyBlockDistractingSites, forKey: kUserdefaultsImmediatelyBlockDistractingSites)
         UserDefaults.standard.set(immediatelyBlockDistractingApps, forKey: kUserdefaultsImmediatelyBlockDistractingApps)
@@ -1596,7 +1605,9 @@ class SettingsManager:NSObject{
             superGentleSettingsEnableCount += 1
         }
         
-        if isCuddlyModeEnabled{
+        // Score the user's chosen strictness, so an active teacher session (which forces grizzly)
+        // doesn't temporarily inflate this settings-based level — use the stored preference.
+        if storedCuddlyModeEnabled{
             superGentleSettingsEnableCount += 1
             gentleSettingsEnableCount += 1
             slightlyStrictSettingsEnableCount += 1

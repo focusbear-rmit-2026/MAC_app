@@ -1758,6 +1758,12 @@ class menuViewController: NSViewController {
     
     
     @objc func pauseFocusModeClicked(){
+        if teacherSessionManagerObject.isTeacherSessionActive(){// C3:- no pausing a teacher controlled session, route to the unlock request ux instead of the password view
+            addLog(text: "pause focus mode blocked:- teacher session is active")
+            teacherSessionManagerObject.showTeacherSessionLockedAlert()
+            closeMenuWindowIsVisible()
+            return;
+        }
         if currentFocusModeStrictness == ._SUPER_STRICT_{
             if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
                 if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{// if no password is set  then chance of getting lastUnlockTimeByAccountabilityBuddy is 0% but if password is set then check this
@@ -1805,6 +1811,12 @@ class menuViewController: NSViewController {
     }
     
     @objc func stopFocusMode(){
+        if teacherSessionManagerObject.isTeacherSessionActive(){// C3:- no stopping a teacher controlled session early, route to the unlock request ux instead of the password view
+            addLog(text: "stop focus mode blocked:- teacher session is active")
+            teacherSessionManagerObject.showTeacherSessionLockedAlert()
+            closeMenuWindowIsVisible()
+            return;
+        }
         var needToShowPassword = false
         if currentFocusModeStrictness == ._SUPER_STRICT_{
             needToShowPassword = true// show without checking . if password not there then show enter random characters view

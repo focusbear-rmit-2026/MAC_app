@@ -805,7 +805,7 @@ class ViewController: NSViewController {
         
         UserDefaults.standard.removeObject(forKey: kUserdefaultsPasswordSetInOnboarding)
         SettingsManagerObject.isFullScreenEnabled = false
-        SettingsManagerObject.isCuddlyModeEnabled = true
+        SettingsManagerObject.storedCuddlyModeEnabled = true
         SettingsManagerObject.isEasySkipEnabled = true
         SettingsManagerObject.doNotBlockUrlsDuringSuperPomodoroBreaksDefaultValue = true
         SettingsManagerObject.shouldReloadAfterForceQuitEnabled = false

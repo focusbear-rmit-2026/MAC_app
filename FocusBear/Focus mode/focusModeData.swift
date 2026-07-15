@@ -1854,6 +1854,9 @@ var unfocusedTime = 0
 var isFocusModeRunning = false
 
 func isFocusModeOn()->Bool{
+    if teacherSessionManagerObject.isTeacherSessionActive(){// a teacher controlled class session runs outside arrFocusType
+        return true
+    }
     for dic in arrFocusType{
         if dic["isOn"] as? Bool == true{
             return true
@@ -1870,6 +1873,9 @@ func isFocusModePaused()->Bool{
     return false
 }
 func isFocusModeOnOrPaused()->Bool{
+    if teacherSessionManagerObject.isTeacherSessionActive(){// a teacher controlled class session runs outside arrFocusType
+        return true
+    }
     for dic in arrFocusType{
         if dic["isOn"] as? Bool == true{
             return true
