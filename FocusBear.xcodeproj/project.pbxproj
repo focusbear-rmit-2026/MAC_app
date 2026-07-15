@@ -389,6 +389,7 @@
 		ABH00020 /* DaysOfWeekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00021 /* DaysOfWeekTests.swift */; };
 		BEED37F6C1373AFCB67BCF04 /* Pods_Focus_Bear.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E339C651791746EA3D066A6A /* Pods_Focus_Bear.framework */; };
 		UBT00001 /* URLBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = UBT00002 /* URLBlockingTests.swift */; };
+		CBS00001 /* CustomBlockingScheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBS00002 /* CustomBlockingScheduleTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -830,6 +831,7 @@
 		FE3FA8163BBB36B02EF947DD /* routinePostponedInfoVc+Schedule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "routinePostponedInfoVc+Schedule.swift"; sourceTree = "<group>"; };
 		HSS00002 /* habitsStateVc+Schedule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "habitsStateVc+Schedule.swift"; sourceTree = "<group>"; };
 		UBT00002 /* URLBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLBlockingTests.swift; sourceTree = "<group>"; };
+		CBS00002 /* CustomBlockingScheduleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomBlockingScheduleTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1600,6 +1602,7 @@
 				ABH00011 /* ScheduleKitTests.swift */,
 				ABH00021 /* DaysOfWeekTests.swift */,
 				UBT00002 /* URLBlockingTests.swift */,
+				CBS00002 /* CustomBlockingScheduleTests.swift */,
 				8FD1054027EEE44100B7728E /* Info.plist */,
 			);
 			path = FocusBearTests;
@@ -2295,6 +2298,7 @@
 				ABH00010 /* ScheduleKitTests.swift in Sources */,
 				ABH00020 /* DaysOfWeekTests.swift in Sources */,
 				UBT00001 /* URLBlockingTests.swift in Sources */,
+				CBS00001 /* CustomBlockingScheduleTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

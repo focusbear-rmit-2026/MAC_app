@@ -80,8 +80,7 @@ struct customBlockingSchedule: Codable, Identifiable {
     // - schedule.startTime and schedule.endTime are Date objects that contain the time-of-day you saved
     //   (date components will be ignored; only hour/minute/second are used)
 
-    func isBlockingActive() -> Bool {
-        let now = Date()
+    func isBlockingActive(now: Date = Date()) -> Bool {
         let calendar = Calendar.current
         let todayWeekday = calendar.component(.weekday, from: now)
 
@@ -135,8 +134,7 @@ struct customBlockingSchedule: Codable, Identifiable {
         }
     }
     
-    func remainingBlockingDuration() -> TimeInterval {
-        let now = Date()
+    func remainingBlockingDuration(now: Date = Date()) -> TimeInterval {
         let calendar = Calendar.current
 
         // Extract time components from stored start/end Dates (time-of-day only)
@@ -382,6 +380,34 @@ extension customBlockingSchedule {
         self.isAIBlockingEnabled = isAIBlockingEnabled
         self.isMicroBreaksEnabled = isMicroBreaksEnabled
         self.emoji = emoji
+    }
+
+    // Accepts pre-built Date values for startTime/endTime — used by unit tests to construct
+    // schedules relative to a known reference time without going through string parsing.
+    init(
+        id: String,
+        name: String,
+        startTime: Date,
+        endTime: Date,
+        startTimeString: String,
+        endTimeString: String,
+        daysOfWeek: [Int],
+        focusModeID: String,
+        blockLevel: FOCUSMODESTRICTNESS,
+        isAIBlockingEnabled: Bool,
+        isMicroBreaksEnabled: Bool
+    ) {
+        self.id = id
+        self.name = name
+        self.startTime = startTime
+        self.endTime = endTime
+        self.startTimeString = startTimeString
+        self.endTimeString = endTimeString
+        self.daysOfWeek = daysOfWeek
+        self.focusModeID = focusModeID
+        self.blockLevel = blockLevel
+        self.isAIBlockingEnabled = isAIBlockingEnabled
+        self.isMicroBreaksEnabled = isMicroBreaksEnabled
     }
 }
 
