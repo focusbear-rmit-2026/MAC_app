@@ -31,6 +31,8 @@ class teacherSessionManager: NSObject {
     let teacherSessionOpenEndedFallbackHours = 12// mirror backend fallback for sessions with no scheduled finish time
     let teacherSessionDateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
 
+    private var isRoutinePostponedByTeacherSession = false
+    
     func isTeacherSessionActive()->Bool{
         return activeTeacherSessionId != nil
     }
@@ -267,12 +269,16 @@ class teacherSessionManager: NSObject {
         
         // Joining a class session pushes any routine/summary/break currently on screen past the
         // session end (diffMinutes + 1) so it doesn't compete with the teacher session.
+        isRoutinePostponedByTeacherSession = false
         if currentState == ._MORNING_HABIT_{
             getHabitsVcObject().postponeMorningHabitFor(minutes: diffMinutes + 1, secondsToPostpone: nil, showAskFocusModeView:false, showAskIntention:false)
+            isRoutinePostponedByTeacherSession = true
         }else if currentState == ._EVENING_HABIT_{
             getHabitsVcObject().postponeEveningHabitFor(minutes: diffMinutes + 1, secondsToPostpone: nil, showAskFocusModeView:false, showAskIntention:false)
+            isRoutinePostponedByTeacherSession = true
         }else if currentState == ._FOCUS_SUMMARY_{
             getHabitsVcObject().postponeFocusSummaryFor(minutes: diffMinutes + 1, showAskIntention:false)
+            isRoutinePostponedByTeacherSession = true
         }else if currentState == ._CUSTOM_ROUTINE_{
             getHabitsVcObject().postponeCustomRoutineFor(minutes: diffMinutes + 1, secondsToPostpone: nil, showAskFocusModeView:false, showAskIntention:false, fromRoutineWarning:false)
         }else if currentState == ._MICRO_BREAK_{
@@ -471,6 +477,36 @@ class teacherSessionManager: NSObject {
             }
         }
         refreshFocusModeData()
+        
+        
+        
+        // Auto-resume a routine we postponed for this class session. On join we pushed the
+        // morning/evening routine or focus summary past the session (diffMinutes + 1); now that the
+        // session has ended, drop that postpone so the still-due routine comes back straight away
+        // instead of waiting out the full postpone:
+        //   • state → ._NOTHING_ and clear the saved postpone → backgroundThread re-surfaces the due
+        //     routine on its next tick (the teacher guard that suppressed it is gone now).
+        //   • cancel habitsVc.postponeTimer → it was armed by postponeMorning/Evening/FocusSummaryFor
+        //     to fire resumeMorning/Evening/FocusSummary at diffMinutes+1; killing it stops that
+        //     timer-based resume from firing a second time on top of the immediate one.
+        if isRoutinePostponedByTeacherSession{
+            if currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
+                addLog(text: "teacher session:- ended, auto-resuming routine postponed for the session (was \(currentState))")
+                currentState = ._NOTHING_
+                // Clear the saved postpone so ._POSTPONE_.. state isn't restored on the next launch.
+                UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+                UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+
+                // Cancel the postpone's own resume timer so it doesn't re-fire at diffMinutes+1.
+                if let habitsVcObj = habitsVcObj{
+                    if habitsVcObj.postponeTimer != nil{
+                        habitsVcObj.stopPostponeEndTimer()
+                        addLog(text: "teacher session:- cancelled the routine postpone timer")
+                    }
+                }
+            }
+            isRoutinePostponedByTeacherSession = false
+        }
     }
 
     //***********C5 heartbeat + quit + next-launch adoption***************//
