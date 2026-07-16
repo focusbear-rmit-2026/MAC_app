@@ -262,6 +262,31 @@ class teacherSessionManager: NSObject {
             setAppIconForFocusModeScore(probability: nil)
             timerForFocusModeEndNotification = nil
         }
+        
+        
+        
+        // Joining a class session pushes any routine/summary/break currently on screen past the
+        // session end (diffMinutes + 1) so it doesn't compete with the teacher session.
+        if currentState == ._MORNING_HABIT_{
+            getHabitsVcObject().postponeMorningHabitFor(minutes: diffMinutes + 1, secondsToPostpone: nil, showAskFocusModeView:false, showAskIntention:false)
+        }else if currentState == ._EVENING_HABIT_{
+            getHabitsVcObject().postponeEveningHabitFor(minutes: diffMinutes + 1, secondsToPostpone: nil, showAskFocusModeView:false, showAskIntention:false)
+        }else if currentState == ._FOCUS_SUMMARY_{
+            getHabitsVcObject().postponeFocusSummaryFor(minutes: diffMinutes + 1, showAskIntention:false)
+        }else if currentState == ._CUSTOM_ROUTINE_{
+            getHabitsVcObject().postponeCustomRoutineFor(minutes: diffMinutes + 1, secondsToPostpone: nil, showAskFocusModeView:false, showAskIntention:false, fromRoutineWarning:false)
+        }else if currentState == ._MICRO_BREAK_{
+            if breakWarningWcObj != nil{
+                if breakWarningWcObj?.window?.isVisible ?? false{
+                    breakWarningVcObj?.timer?.invalidate()
+                    breakWarningWcObj?.window?.close()
+                }
+            }
+            getHabitsVcObject().postponeBreakActivitiesFor(minutes: diffMinutes + 1, secondsToPostpone: nil, isFromBreakWarningWindow:false)
+        }
+        
+
+        
         appdelegate?.setFocusModeTimer(hour: nil, minute: diffMinutes)
 
         //focusButtonService

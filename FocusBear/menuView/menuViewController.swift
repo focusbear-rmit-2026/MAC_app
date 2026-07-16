@@ -1485,6 +1485,11 @@ class menuViewController: NSViewController {
     
     @IBAction func btnStartBreakClicked(_ sender: Any) {
         addLog(text: "[user-action] button Start Break Clicked")
+        // A class session is in control — don't let the student start a micro break manually.
+        if teacherSessionManagerObject.isTeacherSessionActive(){
+            teacherSessionManagerObject.showTeacherSessionLockedAlert()
+            return
+        }
         if !isMainWindowLoaded{
             mainWindowControllerObj?.loadWindow()
         }

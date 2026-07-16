@@ -3299,6 +3299,13 @@ class habitsVc: NSViewController {
                 }
             }
             
+            // No micro-breaks while a class session is running.
+            if teacherSessionManagerObject.isTeacherSessionActive(){
+                addLog(text: "Teacher session active, Break Activities cancelled.")
+                self.rescheduleBreakSoonAfterBlocked()
+                return;
+            }
+            
             if currentState == ._SHUTOFFMAC_{
                 addLog(text: "App is in shutoff state, Break Activities cancelled.")
                 return;

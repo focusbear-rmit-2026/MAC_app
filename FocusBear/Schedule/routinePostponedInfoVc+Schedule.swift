@@ -101,6 +101,12 @@ extension routinePostponedInfoVc: ScheduleHost {
     }
 
     func scheduleStart(index: Int) {
+        // A class session is in control — don't let the student start a habit from the Day Plan
+        // (routines are postponed during the session and resume after it ends).
+        if teacherSessionManagerObject.isTeacherSessionActive(){
+            teacherSessionManagerObject.showTeacherSessionLockedAlert()
+            return
+        }
         // Resuming from a postponed Focus Summary via the Day Plan Play button: mark the Focus Summary
         // as done (so it doesn't reappear later today) and drop the saved postpone info BEFORE starting
         // the habit — otherwise starting a habit leaves the ._POSTPONE_FOCUS_SUMMARY_ state behind (it's

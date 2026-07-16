@@ -182,6 +182,12 @@ extension firstViewController: ScheduleHost {
     }
 
     func scheduleStart(index: Int) {
+        // A class session is in control — don't let the student start a habit from the Day Plan
+        // (routines are postponed during the session and resume after it ends).
+        if teacherSessionManagerObject.isTeacherSessionActive(){
+            teacherSessionManagerObject.showTeacherSessionLockedAlert()
+            return
+        }
         guard isLiveScheduleIndex(index) else { refreshScheduleIfVisible(); return }
         // If the tapped habit is the one currently RUNNING as an allowed-activity habit, don't restart
         // it — just switch back to its Habit Player tab. But when it's PAUSED, fall through so tapping

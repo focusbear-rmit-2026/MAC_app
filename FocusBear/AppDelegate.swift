@@ -5171,6 +5171,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
             }
             
+
+            // A class session owns the screen — don't trigger morning/evening routines, focus
+            // summary, or the shutdown warning while it's running.
+            if teacherSessionManagerObject.isTeacherSessionActive(){
+                return;
+            }
+
             /// 5  may 2022 (5 minute warning before shutdown time "It's time to wrap up for the day. Your shutdown time is in 5 minutes.")#62
             ///
             

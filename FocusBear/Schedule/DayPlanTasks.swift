@@ -2486,6 +2486,11 @@ final class CustomRoutinesPanel: NSView {
     }
 
     @objc private func playClicked(_ sender: NSButton) {
+        // A class session is in control — don't let the student start an on-demand custom routine.
+        if teacherSessionManagerObject.isTeacherSessionActive(){
+            teacherSessionManagerObject.showTeacherSessionLockedAlert()
+            return
+        }
         // Mirror the custom-routines screen: gate behind purchase, then start on-demand.
         if isPurchased == false && daysLeft <= 0 { showUpgradeNowWindow(reason: "habit_play_clicked_expired"); return }
         startCustomRoutine(index: sender.tag, isOnDemand: true)
