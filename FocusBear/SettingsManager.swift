@@ -1701,6 +1701,16 @@ class SettingsManager:NSObject{
     }
     
     func isAIBlockingEnabled()->Bool{
+        // A teacher-controlled class session takes precedence over the custom schedule and the user's
+        // global setting: AI relevance-checking is on only if the teacher enabled it for the
+        // allow-list (`isAiBlockingEnabledForAllowList`). This keeps every AI/block/score path in
+        // sync with the teacher's choice rather than the student's own setting — and, when the teacher
+        // hasn't asked for AI, makes not-on-list URLs block immediately (no ~3-4s AI round trip).
+        if teacherSessionManagerObject.isTeacherSessionActive(){
+            let teacherAi = currentRunningFocusType["isAiBlockingEnabledForAllowList"] as? Bool ?? false
+            addLog(text: "isAIBlockingEnabled: teacher session → \(teacherAi)")
+            return teacherAi
+        }
         // Fix #1584: log which code path is taken to diagnose the ~50% activation rate.
         let customScheduleOn = customBlockingScheduleManagerObj.isAnyCustomScheduleOn
         let result = customScheduleOn ? customBlockingScheduleManagerObj.isAIBlockingEnabled() : isAiCheckUrlEnabled

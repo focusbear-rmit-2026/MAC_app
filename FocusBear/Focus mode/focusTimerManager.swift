@@ -327,6 +327,10 @@ class focusTimerManager {
                                 }
                             }
                         }
+                        // Teacher sessions honour the teacher's AI toggle via isAIBlockingEnabled()
+                        // (teacher session → isAiBlockingEnabledForAllowList), so when the teacher
+                        // hasn't asked for AI, focusTryToBlockUnwantedUrl's grizzly path blocks
+                        // immediately with no ~3-4s AI round trip — no special-case needed here.
                     }
                 }else{
                     isAllowed = true

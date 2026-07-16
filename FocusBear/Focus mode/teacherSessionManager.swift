@@ -27,7 +27,7 @@ class teacherSessionManager: NSObject {
     var timerTeacherSessionHeartbeat:Timer?
     var teacherUnlockRequestWindow:NSWindow?
 
-    let teacherSessionHeartbeatIntervalSeconds:Double = 25// canonical 20-30s heartbeat interval
+    let teacherSessionHeartbeatIntervalSeconds:Double = 5
     let teacherSessionOpenEndedFallbackHours = 12// mirror backend fallback for sessions with no scheduled finish time
     let teacherSessionDateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
 
@@ -71,6 +71,9 @@ class teacherSessionManager: NSObject {
         // Teacher sessions are allowlist-based (block everything except allowed_apps/allowed_urls), so
         // there's no explicit blocklist — keep it empty, matching session start. (Was a no-op self-read.)
         currentRunningFocusType["blockUrlsArray"] = [String]()
+        // Teacher can hot-toggle whether not-allowed sites get an AI relevance check before blocking
+        // (see startTeacherSession for the property contract/default).
+        currentRunningFocusType["isAiBlockingEnabledForAllowList"] = dictionary["ai_blocking_enabled"] as? Bool ?? false
         appdelegate?.checkFcousAllowedApp()// immediate re-eval of the front app; url timer re-scans on its next tick
         addLog(text: "teacher session:- allow-list hot-synced to version \(version)")
     }
@@ -132,15 +135,27 @@ class teacherSessionManager: NSObject {
         pendingInviteSessionId = sessionId
 
         let sessionName = sessionDic["name"] as? String ?? ""
+        // API contract: sessionDic["teacher_name"] (String), falling back to sessionDic["teacher_email"]
+        // if the display name isn't set. Both absent/empty falls back to the generic "Your teacher"
+        // wording, so this is safe to ship ahead of backend sending either property.
+        var teacherName = sessionDic["teacher_name"] as? String ?? ""
+        if teacherName.isEmpty{
+            teacherName = sessionDic["teacher_email"] as? String ?? ""
+        }
         var title = "Your teacher started a class focus session"
+        var titleWithTeacher = "<TEACHER> started a class focus session"
         var body = "Join to start the focus session on this Mac. Only the apps and websites your teacher allowed will be usable, and you won't be able to stop the session early."
         var buttonJoinText = "Join session"
         var buttonDeclineText = "Decline"
         if let teacherSessionInfo = configjson.value(forKey: "teacherSessionInfo") as? NSDictionary{
             title = teacherSessionInfo.value(forKey: "invitePromptTitle") as? String ?? title
+            titleWithTeacher = teacherSessionInfo.value(forKey: "invitePromptTitleWithTeacher") as? String ?? titleWithTeacher
             body = teacherSessionInfo.value(forKey: "invitePromptBody") as? String ?? body
             buttonJoinText = teacherSessionInfo.value(forKey: "buttonJoin") as? String ?? buttonJoinText
             buttonDeclineText = teacherSessionInfo.value(forKey: "buttonDecline") as? String ?? buttonDeclineText
+        }
+        if !teacherName.isEmpty{
+            title = titleWithTeacher.replacingOccurrences(of: "<TEACHER>", with: teacherName)
         }
         if !sessionName.isEmpty{
             title = title + ":- \(sessionName)"
@@ -252,9 +267,15 @@ class teacherSessionManager: NSObject {
         //focusButtonService
         focusButtonServiceObject.startFocusSession(seconds: diffMinutes*60)
 
-        appdelegate!.focusModeStartted(isStartedByPusher: true)
-
-        // set explicitly after focusModeStartted because the teacher dict is not in arrFocusType
+        // Set explicitly before focusModeStartted() — the teacher dict isn't in arrFocusType, so
+        // focusModeStartted()'s own "find the isOn entry in arrFocusType" loop can't populate it
+        // and leaves currentRunningFocusType untouched either way. Setting it first matters because
+        // focusModeStartted() synchronously calls frontApplicationChanged() at its end (to catch the
+        // already-frontmost app), which is what actually starts the URL-blocking timer
+        // (setTimeCheckUrlsForFocusMode) — previously that first call ran against the stale/previous
+        // session's currentRunningFocusType, so the URL timer wasn't (re)started until whatever app
+        // the student had open happened to trigger the next real app-activation event. A student who
+        // stayed in an already-open, disallowed browser tab could go unblocked for a while.
         currentRunningFocusType = [
             "id": "teacher-" + sessionId,
             "name": activeTeacherSessionName,
@@ -266,9 +287,18 @@ class teacherSessionManager: NSObject {
             "isAllowedAllApps": false,
             "isAllowedListApproach": true,
             "isTeacherSession": true,
+            // API contract: sessionDic["ai_blocking_enabled"] (Bool). When true, a site not on
+            // allowed_urls still gets the AI relevance check (chatGPTIsURLSafe) before blocking, same
+            // as a regular intention-based focus mode. When false/absent, it's blocked immediately —
+            // the teacher's allow-list is a closed list, so "not on it" is already a deterministic
+            // decision and doesn't need AI judgment. Defaults to false so this is safe to ship ahead
+            // of the backend/web sending the property.
+            "isAiBlockingEnabledForAllowList": sessionDic["ai_blocking_enabled"] as? Bool ?? false,
             "tags": [String]()
         ]
         isFocusModeRunning = true
+
+        appdelegate!.focusModeStartted(isStartedByPusher: true)
 
         startHeartbeatTimer()
         sendTeacherSessionHeartbeat()// immediate first beat so the teacher roster updates right away

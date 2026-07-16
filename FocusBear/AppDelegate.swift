@@ -8589,7 +8589,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if name == selfAppName.lowercased() || name == focusBearTimeTrackerAppName{
                     return;
                 }
-                
+
+                // No need to (re)start the URL-blocking timer here: it's started at session start by
+                // focusModeStartted() → frontApplicationChanged() (which catches the already-frontmost
+                // browser — see startTeacherSession), and every real app switch restarts it via
+                // frontApplicationChanged(). A per-tick self-heal for the "no app-switch notification"
+                // case is therefore redundant.
                 for path in SettingsManagerObject.arrAlwaysAllowedApps{
                     let url = URL(fileURLWithPath: path)
                     if url.deletingPathExtension().lastPathComponent.lowercased() == name{
