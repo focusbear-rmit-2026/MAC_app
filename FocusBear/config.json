@@ -638,6 +638,8 @@
         "descriptionAdvanceAanalytics": "Track the exact time you spend on each app and browser tab during focus mode. Gain deeper insights into your productivity by understanding how your attention is distributed.",
         "switchButtonFocusVisualIndicatoText": "Show focus visual indicator",
         "descriptionFocusVisualIndicatorText": "Display a visual indicator when the focus alignment score drops.",
+        "switchButtonFocusGlowBorderText": "Show glow border during focus sessions",
+        "descriptionFocusGlowBorderText": "Display a soft glowing border around your screen while a focus session is running.",
         "privacyAdvanceAanalytics": "Data is only stored on your computer and not sent to our servers.",
         "subTitleTabLimiter": "Works only during active Focus Sessions or active Blocking Schedules."
     },

@@ -1346,6 +1346,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         // serial port via ~/.focusbear/focus-button-command (#1947 / Focus-Button#15,#21).
         FocusButtonCommandChannel.shared.start()
 
+        // Glowing screen-edge border shown while a focus session is running.
+        FocusGlowBorderManager.shared.start()
+
 #if DEBUG
         // Offscreen Day Plan mockup render (DEBUG-only; no-op unless FB_MOCKUP_FILE is set); quits when done.
         DayPlanMockup.runIfRequested()

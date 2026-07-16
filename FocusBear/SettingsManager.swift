@@ -30,7 +30,15 @@ class SettingsManager:NSObject{
     var isDetectNatualBreaksEnabled = true// 19/7/25 version 1.26.392   "Don't show this again" option for natural break detection popups #1466
     
     var isFocusVisualIndicatorEnabled = true
-    
+
+    /// Show the glowing screen-edge border during focus sessions. Backed by
+    /// kUserdefaultsFocusGlowBorderEnabled for local persistence, and synced to the server via the
+    /// device-settings upload/load below so it follows the user across devices. Default on.
+    var isFocusGlowBorderEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: kUserdefaultsFocusGlowBorderEnabled) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: kUserdefaultsFocusGlowBorderEnabled) }
+    }
+
     var isPasswordRequireInChangeSettings = true
     var isPasswordRequireInSkipMorning = true
     var isPasswordRequireInSkipEvening = true
@@ -476,6 +484,7 @@ class SettingsManager:NSObject{
                 let kDetectNatualBreaksEnabled = "kDetectNatualBreaksEnabled"
                 
                 let kIsFocusVisualIndicatorEnabled = "kIsFocusVisualIndicatorEnabled"
+                let kIsFocusGlowBorderEnabled = "kIsFocusGlowBorderEnabled"
                 let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
                 let kMicroBreaksEnabled = "kMicroBreaksEnabled"
                 
@@ -749,7 +758,11 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kIsFocusVisualIndicatorEnabled) as? Bool{
                     isFocusVisualIndicatorEnabled = val
                 }
-                
+
+                if let val = settings.value(forKey: kIsFocusGlowBorderEnabled) as? Bool{
+                    isFocusGlowBorderEnabled = val
+                }
+
                 if let val = settings.value(forKey: kShowToDoPlayerAutomatically) as? Bool{
                     showToDoPlayerAutomaticallyEnabled = val
                 }
@@ -1323,6 +1336,7 @@ class SettingsManager:NSObject{
         let kIsDataCollectionModeEnabled = "kIsDataCollectionModeEnabled"
         let kDetectNatualBreaksEnabled = "kDetectNatualBreaksEnabled"
         let kIsFocusVisualIndicatorEnabled = "kIsFocusVisualIndicatorEnabled"
+        let kIsFocusGlowBorderEnabled = "kIsFocusGlowBorderEnabled"
         let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
         let kMicroBreaksEnabled = "kMicroBreaksEnabled"
         let kSkipBreakActivityDuringFocusSession = "kSkipBreakActivityDuringFocusSession"
@@ -1397,6 +1411,7 @@ class SettingsManager:NSObject{
             kIsDataCollectionModeEnabled:isDataCollectionModeEnabled,
             kDetectNatualBreaksEnabled:isDetectNatualBreaksEnabled,
             kIsFocusVisualIndicatorEnabled:isFocusVisualIndicatorEnabled,
+            kIsFocusGlowBorderEnabled:isFocusGlowBorderEnabled,
             kShowBrainDumpAfterMorningRoutine:showBrainDumpAfterMorningRoutineEnabled,
             kMicroBreaksEnabled:isMicroBreaksEnabled,
             kSkipBreakActivityDuringFocusSession:isSkipBreakActivityDuringPomodoro,

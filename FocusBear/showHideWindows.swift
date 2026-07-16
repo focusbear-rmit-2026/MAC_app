@@ -406,6 +406,7 @@ func showPopupAppointmentWindow(title:String, endTime:Date){
     addLog(text:"showPopupAppointmentWindow")
     // Mirror the Late No More appointment reminder onto the Focus Button.
     focusButtonServiceObject.showNotification(text: title)
+    FocusGlowBorderManager.shared.pulseWorm()
     getPopupAppointmentTimeWindowObject().contentViewController = getPopupAppointmentTimeVcObject()
     getPopupAppointmentTimeWindowObject().window?.styleMask.remove(.closable)
     getPopupAppointmentTimeWindowObject().window?.center()

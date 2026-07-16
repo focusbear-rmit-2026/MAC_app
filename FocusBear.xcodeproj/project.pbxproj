@@ -24,6 +24,8 @@
 		133747632FC87AB600CB3DA1 /* DNDManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 133747622FC87AB600CB3DA1 /* DNDManager.swift */; };
 		1338D3792E1E35B8002A1BFC /* loginWc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1338D3782E1E35B8002A1BFC /* loginWc.swift */; };
 		13395D412DB900440094F019 /* focusModeData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13395D402DB900380094F019 /* focusModeData.swift */; };
+		7D9EE7D2F809B0E3AEECD72F /* FocusGlowBorderManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F29AACE7F6D8CF44F9B3C22 /* FocusGlowBorderManager.swift */; };
+		606CECE6CEC925F9058E4F6F /* FocusGlowBorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7450DC23C9B4D42F5A7EE22 /* FocusGlowBorderView.swift */; };
 		134C1D332E8260D00032AF65 /* allSubclasses.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134C1D322E8260C10032AF65 /* allSubclasses.swift */; };
 		134C1D352E8261610032AF65 /* allExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134C1D342E82615B0032AF65 /* allExtension.swift */; };
 		134C1D372E8261BD0032AF65 /* stageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134C1D362E8261BD0032AF65 /* stageManager.swift */; };
@@ -448,6 +450,8 @@
 		133747622FC87AB600CB3DA1 /* DNDManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DNDManager.swift; sourceTree = "<group>"; };
 		1338D3782E1E35B8002A1BFC /* loginWc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = loginWc.swift; sourceTree = "<group>"; };
 		13395D402DB900380094F019 /* focusModeData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusModeData.swift; sourceTree = "<group>"; };
+		7F29AACE7F6D8CF44F9B3C22 /* FocusGlowBorderManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusGlowBorderManager.swift; sourceTree = "<group>"; };
+		F7450DC23C9B4D42F5A7EE22 /* FocusGlowBorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusGlowBorderView.swift; sourceTree = "<group>"; };
 		134C1D322E8260C10032AF65 /* allSubclasses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = allSubclasses.swift; sourceTree = "<group>"; };
 		134C1D342E82615B0032AF65 /* allExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = allExtension.swift; sourceTree = "<group>"; };
 		134C1D362E8261BD0032AF65 /* stageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = stageManager.swift; sourceTree = "<group>"; };
@@ -1275,6 +1279,8 @@
 				135A8A542E7EB27A00A96A8E /* customBlockingScheduleData.swift */,
 				13B74D5C2E8801DA00556C79 /* abortingCustomScheduleBlockingVc.swift */,
 				13395D402DB900380094F019 /* focusModeData.swift */,
+				7F29AACE7F6D8CF44F9B3C22 /* FocusGlowBorderManager.swift */,
+				F7450DC23C9B4D42F5A7EE22 /* FocusGlowBorderView.swift */,
 				139D87A52FCF18B000BA7598 /* claudeTitleReader.swift */,
 				13E0386E2ED075420097E91C /* focusTimerManager.swift */,
 				135AD5302ED18D7D00870175 /* focusHabitTimerManager.swift */,
@@ -2095,6 +2101,8 @@
 				13B7700B2F76BE77006C30AC /* onboardingAllowedUrlsVc.swift in Sources */,
 				139D87A62FCF18B000BA7598 /* claudeTitleReader.swift in Sources */,
 				13395D412DB900440094F019 /* focusModeData.swift in Sources */,
+				7D9EE7D2F809B0E3AEECD72F /* FocusGlowBorderManager.swift in Sources */,
+				606CECE6CEC925F9058E4F6F /* FocusGlowBorderView.swift in Sources */,
 				135ABA6D2E5345A300D133F2 /* focusModeStateVc.swift in Sources */,
 				8FAC6CA127808125008A4180 /* timerViewcontroller.swift in Sources */,
 				8F59374F2D49F6CD00442292 /* nudgeFocusAlignmentScoreDippingVc.swift in Sources */,

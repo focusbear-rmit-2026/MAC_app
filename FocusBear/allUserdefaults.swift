@@ -67,6 +67,9 @@ var kUserdefaultsFocusTipsShown = "kUserdefaultsFocusTipsShown"
 
 var kUserdefaultsShowDockIcon = "kUserdefaultsShowDockIcon"
 
+/// Absent key means "on" — the glow is on by default during focus sessions.
+var kUserdefaultsFocusGlowBorderEnabled = "kUserdefaultsFocusGlowBorderEnabled"
+
 let kUserdefaultsLastHabitShowDate = "UserdefaultsLastHabitShowDate"
 
 var kUserdefaultsLastHabitsStartedDate = "kUserdefaultsLastHabitsStartedDate"

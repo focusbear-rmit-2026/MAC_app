@@ -2053,6 +2053,9 @@ func focusBlockUnwantedUrl(script: String, url:String, lastBlockReasonFromAi:Str
     }
     
     if isUrlBlockByAi{
+        // A URL the AI determined isn't relevant to the current focus session — worth drawing the
+        // user's eye back to the glow border, since this is exactly the kind of drift it's there for.
+        FocusGlowBorderManager.shared.pulseWorm()
         allApiObject.capturePosthog(event: "block-distracting-url", metadata: ["block-reason":"ai_blocking", "block-mode": blockMode])
     }else{
         allApiObject.capturePosthog(event: "block-distracting-url", metadata: ["block-reason":blockReason, "block-mode": blockMode])
