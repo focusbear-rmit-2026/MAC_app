@@ -211,10 +211,38 @@ class focusTimerManager {
             if checkUrlIsUnlock(url: url, arrBlockedUrlsForFocus: arrBlockedUrlsForFocus, currentBrowser: currentBrowser, originalUrlStringFromBrowser: originalUrlStringFromBrowser){ // if true it means no need to check any thing else //
                 return;
             }
-            
             //-----------------/
-            
-            
+            // Teacher unlock → auto-open the now-allowed URL. After the teacher approves an unlock, the
+            // class-allowlist-changed event hot-syncs the new URL into arrAllowedUrlsForFocus. If the
+            // student is still sitting on the block page for that URL, pull the original site out of the
+            // block page (old_url), confirm it's now on the allow-list, and navigate the browser to it so
+            // they don't have to reload manually. Only for teacher (allow-list) sessions; the "unblock it
+            // for me" click path is handled above in checkUrlIsUnlock.
+            if teacherSessionManagerObject.isTeacherSessionActive(){
+                if url.contains(blockWebUrlString){
+                    var urlLowercased = url.lowercased()
+                    urlLowercased = urlLowercased.removingPercentEncoding ?? urlLowercased
+                    if isAllowedListApproachInFocus{
+                        for turl in arrAllowedUrlsForFocus{
+                            if urlLowercased.contains(turl.lowercased()){
+                                if var extractedUrl = extractSubstring(from: url, start: "old_url=", end: "&focus_mode_end_time") {
+                                    extractedUrl = extractedUrl.removingPercentEncoding ?? extractedUrl
+                                    let isAllowed = validation.isUrlValid(urlToCheck: extractedUrl, allowUrl: turl)
+                                    if isAllowed{
+                                        addLog(text: "teacher session:- url unlocked (now on allow-list), auto-opening \(extractedUrl)")
+                                        DispatchQueue.main.async {
+                                            setUrlToBrowser(browser: currentBrowser, url: extractedUrl)
+                                        }
+                                        return;
+                                    }
+                                }
+                            }
+                            
+                        }
+                    }
+                }
+            }
+            //blockWebUrlString
             for turl in defaultAllowedUrl{
                 if url.contains(turl){
                     DispatchQueue.main.async {
