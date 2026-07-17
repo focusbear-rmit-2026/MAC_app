@@ -422,9 +422,17 @@ final class ClickableRowView: NSView {
 /// re-apply layer cgColor backgrounds (which AppKit does NOT auto-update) and rebuild the cards.
 final class AppearanceReactiveView: NSView {
     var onAppearanceChange: (() -> Void)?
+    /// Fired whenever this view is added to (or removed from) a window — used to catch up a render that
+    /// was skipped while the view had no window. NSViewController has no window-attach callback, so the
+    /// container view forwards NSView's viewDidMoveToWindow up to the VC.
+    var onDidMoveToWindow: (() -> Void)?
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
         onAppearanceChange?()
+    }
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        onDidMoveToWindow?()
     }
 }
 
@@ -446,6 +454,8 @@ class scheduleViewController: NSViewController {
     private var refreshTimer: Timer?
     private var didBecomeActiveObserver: NSObjectProtocol?
     private var postponeHiddenObservation: NSKeyValueObservation?
+    private var viewHiddenObservation: NSKeyValueObservation?
+    private var hasPendingRenderWhileHidden = false
     private var dateBarTopConstraint: NSLayoutConstraint?
     private var crHeightConstraint: NSLayoutConstraint?
     // Two leading positions for the settings cog: top-left by default, or just right of the
@@ -595,6 +605,15 @@ class scheduleViewController: NSViewController {
             }
             self.reload()
             self.tasksPanel.reload()
+        }
+        // Catch up a render skipped while this view had no window (see the guard in render(blocks:)) the
+        // moment it's attached to one — the window-attach counterpart to the isHidden KVO catch-up in
+        // startAutoRefresh(). render() re-checks both conditions, so it stays skipped if still hidden.
+        root.onDidMoveToWindow = { [weak self] in
+            guard let self = self, self.view.window != nil, !self.view.isHidden,
+                  self.hasPendingRenderWhileHidden else { return }
+            self.hasPendingRenderWhileHidden = false
+            self.reload()
         }
 
         stackView.orientation = .vertical
@@ -1361,6 +1380,16 @@ class scheduleViewController: NSViewController {
                 DispatchQueue.main.async { self?.updateFullScreenInsets() }
             }
         }
+        // Catch up on any render() skipped while this host's view was hidden (see the guard at the
+        // top of render(blocks:)) as soon as it becomes visible again.
+        if viewHiddenObservation == nil {
+            viewHiddenObservation = view.observe(\.isHidden, options: [.old, .new]) { [weak self] _, change in
+                guard let self = self, change.oldValue == true, change.newValue == false,
+                      self.hasPendingRenderWhileHidden else { return }
+                self.hasPendingRenderWhileHidden = false
+                self.reload()
+            }
+        }
     }
 
     func stopAutoRefresh() {
@@ -1754,6 +1783,24 @@ class scheduleViewController: NSViewController {
     }
 
     private func render(blocks: [ScheduleBlock]) {
+        // Rebuilding the block stack view is expensive (up to ~90 cards worth of fresh NSViews), and
+        // per the #2078/#2075 investigation each full rebuild is also a chance to hit a rare AppKit/
+        // dyld lock-contention hang — reducing rebuild frequency is the only lever we have on that.
+        // Skip it entirely while this host's Day Plan isn't actually on screen — either its own view is
+        // hidden (behind a micro break, or a non-fronted habitsStateVc host — a routinePostponedInfoVc
+        // render can happen while a hidden habitsStateVc host is ALSO mid-render behind it), or the view
+        // isn't attached to any window at all (diagnostics showed ~half of all rebuilds ran for a host
+        // with no window). Catch up the moment it becomes visible again: viewHiddenObservation (in
+        // startAutoRefresh()) covers un-hide, and AppearanceReactiveView.onDidMoveToWindow covers
+        // window re-attachment.
+        guard !view.isHidden else {
+            hasPendingRenderWhileHidden = true
+            return
+        }
+        guard view.window != nil else {
+            hasPendingRenderWhileHidden = true
+            return
+        }
         withViewAppearance { renderImpl(blocks: blocks) }
     }
 
