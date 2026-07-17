@@ -2250,6 +2250,9 @@ func createZipArchive(zipPath: String, logFolder: String, screenshots: [URL]) th
 
 
 var arrAllTracks = [[String:Any]]()
+/// True while focus music is playing because the user accepted the post-session-start prompt — so
+/// it can be stopped when that focus session ends (music the user started manually is left alone).
+var isFocusMusicStartedFromPrompt = false
 
 func checkAllTracksDownloadState(){
     for track in arrAllTracks{

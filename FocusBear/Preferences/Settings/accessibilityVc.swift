@@ -16,7 +16,8 @@ class accessibilityVc: NSViewController {
     let soundItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
     let verbalAnnouncementItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
     let selectFontItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingPopUpButtonItemVc")) as? settingPopUpButtonItemVc
-    
+    let focusMusicItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
+
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -69,7 +70,7 @@ class accessibilityVc: NSViewController {
         selectFontItemVcObj?.lblTitle.stringValue = titleFont
         selectFontItemVcObj?.lblSubTitle.isHidden = true
         selectFontItemVcObj?.delegate = self
-        selectFontItemVcObj?.lineBottom.isHidden = true
+        selectFontItemVcObj?.lineBottom.isHidden = false
         selectFontItemVcObj?.popUpBtn.removeAllItems()
         selectFontItemVcObj?.toolTip = accessibility_Font
         
@@ -78,20 +79,40 @@ class accessibilityVc: NSViewController {
             fontTitles.append(font.name)
         }
         selectFontItemVcObj?.popUpBtn.addItems(withTitles: fontTitles)
-        
-        
+
+        // Focus-music auto-start toggle. Lets the user change/reset the choice they made in the
+        // post-session-start "play focus music?" prompt. On = always auto-play, Off = never.
+        var checkBoxFocusMusicText = "Automatically play focus music when a session starts"
+        var accessibility_FocusMusicPrompt = "Turn this on to automatically play focus music whenever you start a focus session."
+        if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
+            checkBoxFocusMusicText = preferencesInfo.value(forKey: "checkBoxFocusMusicText") as? String ?? checkBoxFocusMusicText
+        }
+        if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary{
+            accessibility_FocusMusicPrompt = tooltips.value(forKey: "accessibility_FocusMusicPrompt") as? String ?? accessibility_FocusMusicPrompt
+        }
+
+        stackView.addView(focusMusicItemVcObj!.view, in: .bottom)
+        focusMusicItemVcObj?.lblTitle.stringValue = checkBoxFocusMusicText
+        focusMusicItemVcObj?.lblSubTitle.isHidden = true
+        focusMusicItemVcObj?.lineBottom.isHidden = true
+        focusMusicItemVcObj?.delegate = self
+        focusMusicItemVcObj?.toolTip = accessibility_FocusMusicPrompt
+
+
         arrForSearchFromSettings.append(["title": checkBoxReduceMotionText, "tabId": idAccesibility, "object": reduceMotionItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": checkBoxSoundText, "tabId": idAccesibility, "object": soundItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": checkBoxAnnouncementText, "tabId": idAccesibility, "object": verbalAnnouncementItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": titleFont, "tabId": idAccesibility, "object": selectFontItemVcObj!.bgBox as Any])
-        
+        arrForSearchFromSettings.append(["title": checkBoxFocusMusicText, "tabId": idAccesibility, "object": focusMusicItemVcObj!.bgBox as Any])
+
         arrForSearchFromSimpleModeSettings.append(["title": checkBoxReduceMotionText, "tabId": idAccesibility, "object": reduceMotionItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": checkBoxSoundText, "tabId": idAccesibility, "object": soundItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": checkBoxAnnouncementText, "tabId": idAccesibility, "object": verbalAnnouncementItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": titleFont, "tabId": idAccesibility, "object": selectFontItemVcObj!.bgBox as Any])
-        
-        
-        
+        arrForSearchFromSimpleModeSettings.append(["title": checkBoxFocusMusicText, "tabId": idAccesibility, "object": focusMusicItemVcObj!.bgBox as Any])
+
+
+
     }
     
     override func viewWillAppear() {
@@ -111,6 +132,7 @@ class accessibilityVc: NSViewController {
             verbalAnnouncementItemVcObj?.btnSwitch.state = .off
         }
         selectFontItemVcObj?.popUpBtn.selectItem(at: SettingsManagerObject.selectedFontIndex)
+        focusMusicItemVcObj?.btnSwitch.state = SettingsManagerObject.focusMusicAutoStart == .play ? .on : .off
         if settingsSideBarVcObj != nil{
             if settingsSideBarVcObj!.tblView.selectedRow == -1{
                 lblTitle.stringValue = ""
@@ -188,6 +210,17 @@ extension accessibilityVc: SettingToggleItemDelegate, SettingPopUpButtonItemDele
             }else{
                 SettingsManagerObject.isAnnouncementEnabled = false
                 allApiObject.capturePosthog(event: "settings-changed-announcement-disabled", metadata: [:])//#490
+            }
+        }else if object == focusMusicItemVcObj{
+            // On = always auto-play focus music at session start; Off = never. Either way this commits the
+            // preference out of .ask, so the post-session-start prompt stops appearing.
+            SettingsManagerObject.isSettingsChanged = true
+            if state == .on{
+                SettingsManagerObject.focusMusicAutoStart = .play
+                allApiObject.capturePosthog(event: "settings-changed-focus-music-autostart-enabled", metadata: [:])
+            }else{
+                SettingsManagerObject.focusMusicAutoStart = .off
+                allApiObject.capturePosthog(event: "settings-changed-focus-music-autostart-disabled", metadata: [:])
             }
         }
     }

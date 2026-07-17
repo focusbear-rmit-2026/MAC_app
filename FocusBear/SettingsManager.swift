@@ -39,6 +39,16 @@ class SettingsManager:NSObject{
         set { UserDefaults.standard.set(newValue, forKey: kUserdefaultsFocusGlowBorderEnabled) }
     }
 
+    /// The user's saved answer to the post-session-start "play focus music?" prompt: .ask shows the
+    /// prompt each focus session (default), .play auto-starts music, .off stays silent. Surfaced as a
+    /// toggle in Settings → Accessibility (on = .play). Backed by kUserdefaultsFocusMusicAutoStartPreference
+    /// and synced to the server via the device-settings upload/load below, so it follows the user across
+    /// devices (user-specific, not device-specific).
+    var focusMusicAutoStart: FocusMusicAutoStart {
+        get { FocusMusicAutoStart(rawValue: UserDefaults.standard.string(forKey: kUserdefaultsFocusMusicAutoStartPreference) ?? "") ?? .ask }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: kUserdefaultsFocusMusicAutoStartPreference) }
+    }
+
     var isPasswordRequireInChangeSettings = true
     var isPasswordRequireInSkipMorning = true
     var isPasswordRequireInSkipEvening = true
@@ -485,6 +495,7 @@ class SettingsManager:NSObject{
                 
                 let kIsFocusVisualIndicatorEnabled = "kIsFocusVisualIndicatorEnabled"
                 let kIsFocusGlowBorderEnabled = "kIsFocusGlowBorderEnabled"
+                let kFocusMusicAutoStartPreference = "kFocusMusicAutoStartPreference"
                 let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
                 let kMicroBreaksEnabled = "kMicroBreaksEnabled"
                 
@@ -761,6 +772,10 @@ class SettingsManager:NSObject{
 
                 if let val = settings.value(forKey: kIsFocusGlowBorderEnabled) as? Bool{
                     isFocusGlowBorderEnabled = val
+                }
+
+                if let val = settings.value(forKey: kFocusMusicAutoStartPreference) as? String{
+                    focusMusicAutoStart = FocusMusicAutoStart(rawValue: val) ?? .ask
                 }
 
                 if let val = settings.value(forKey: kShowToDoPlayerAutomatically) as? Bool{
@@ -1337,6 +1352,7 @@ class SettingsManager:NSObject{
         let kDetectNatualBreaksEnabled = "kDetectNatualBreaksEnabled"
         let kIsFocusVisualIndicatorEnabled = "kIsFocusVisualIndicatorEnabled"
         let kIsFocusGlowBorderEnabled = "kIsFocusGlowBorderEnabled"
+        let kFocusMusicAutoStartPreference = "kFocusMusicAutoStartPreference"
         let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
         let kMicroBreaksEnabled = "kMicroBreaksEnabled"
         let kSkipBreakActivityDuringFocusSession = "kSkipBreakActivityDuringFocusSession"
@@ -1412,6 +1428,7 @@ class SettingsManager:NSObject{
             kDetectNatualBreaksEnabled:isDetectNatualBreaksEnabled,
             kIsFocusVisualIndicatorEnabled:isFocusVisualIndicatorEnabled,
             kIsFocusGlowBorderEnabled:isFocusGlowBorderEnabled,
+            kFocusMusicAutoStartPreference:focusMusicAutoStart.rawValue,
             kShowBrainDumpAfterMorningRoutine:showBrainDumpAfterMorningRoutineEnabled,
             kMicroBreaksEnabled:isMicroBreaksEnabled,
             kSkipBreakActivityDuringFocusSession:isSkipBreakActivityDuringPomodoro,

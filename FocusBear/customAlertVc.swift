@@ -56,6 +56,7 @@ class customAlertVc: NSViewController {
         if let checkBoxText = checkBoxText {
             checkBox.isHidden = false
             checkBox.title = checkBoxText
+            checkBox.state = .off
         }else{
             checkBox.isHidden = true
         }

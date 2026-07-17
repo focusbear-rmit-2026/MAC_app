@@ -2442,6 +2442,12 @@ func focusModeFinishedCapturePosthog(){
 func focusModeFinishedResetAllData(){
     refreshFocusModeData()
     arrAllowedTabTitlesInCuddlyModeCurrentFocus.removeAll()
+    // Stop focus music the "want to play some music?" prompt auto-started for this session — but leave
+    // music the user started manually playing.
+    if isFocusMusicStartedFromPrompt{
+        allTracksVcObj?.stopPlayback()
+        isFocusMusicStartedFromPrompt = false
+    }
 }
 
 func focusModeStarttedResetAllData(){

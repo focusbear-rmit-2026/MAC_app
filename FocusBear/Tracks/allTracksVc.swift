@@ -194,9 +194,8 @@ extension allTracksVc: NSTableViewDelegate, NSTableViewDataSource{
     @objc func btnPlayClicked(sender:NSButton){
         let track = arrAllTracks[sender.tag]
         let isPlaying = track["isPlaying"] as? Bool ?? false
-        let localUrlString = track["url"] as? String ?? ""
         let isPaused = track["isPaused"] as? Bool ?? false
-        
+
         if isPlaying || isPaused{
             currentSound?.stop()
             currentSound = nil
@@ -204,25 +203,72 @@ extension allTracksVc: NSTableViewDelegate, NSTableViewDataSource{
                 arrAllTracks[i]["isPlaying"] = false
                 arrAllTracks[i]["isPaused"] = false
             }
+            tblView.reloadData()
+            tblView.selectRowIndexes(IndexSet(integer: sender.tag), byExtendingSelection: false)
+            menuViewControllerObj?.reloadIfNeeded()
         }else{
-            for i in 0..<arrAllTracks.count{
-                arrAllTracks[i]["isPlaying"] = false
-                arrAllTracks[i]["isPaused"] = false
-                currentSound?.stop()
-                currentSound = nil
-            }
-            
-            arrAllTracks[sender.tag]["isPlaying"] = true
-            currentSound = NSSound(contentsOfFile: localUrlString, byReference: true)
-            currentSound?.play()
-            currentSound?.volume = sliderVolume.floatValue
-            currentSound?.delegate = self
+            playTrack(atIndex: sender.tag)
         }
-        tblView.reloadData()
-        tblView.selectRowIndexes(IndexSet(integer: sender.tag), byExtendingSelection: false)
+    }
+
+    /// Stops the currently-playing track (if any) and clears the playing/paused flags. Used to stop
+    /// focus music when the focus session it was started for ends.
+    func stopPlayback(){
+        currentSound?.stop()
+        currentSound = nil
+        for i in 0..<arrAllTracks.count{
+            arrAllTracks[i]["isPlaying"] = false
+            arrAllTracks[i]["isPaused"] = false
+        }
+        tblView?.reloadData()
         menuViewControllerObj?.reloadIfNeeded()
     }
-    
+
+    /// Starts playback of the track at `index`, stopping whatever else is currently playing. Shared
+    /// by the row Play button and the "play something" auto-start path (see playLastPlayedOrRandomTrack).
+    private func playTrack(atIndex index: Int){
+        guard index >= 0, index < arrAllTracks.count else { return }
+        let localUrlString = arrAllTracks[index]["url"] as? String ?? ""
+
+        for i in 0..<arrAllTracks.count{
+            arrAllTracks[i]["isPlaying"] = false
+            arrAllTracks[i]["isPaused"] = false
+        }
+        currentSound?.stop()
+        currentSound = nil
+
+        arrAllTracks[index]["isPlaying"] = true
+        currentSound = NSSound(contentsOfFile: localUrlString, byReference: true)
+        currentSound?.play()
+        // Outlets are optional-chained so playback works even when the tracks view isn't loaded (the
+        // auto-play-on-session-start path just plays music without opening the Focus Music screen).
+        currentSound?.volume = sliderVolume?.floatValue ?? 1.0
+        currentSound?.delegate = self
+
+        if let trackId = arrAllTracks[index]["id"] as? String, !trackId.isEmpty{
+            UserDefaults.standard.set(trackId, forKey: kUserdefaultsLastPlayedTrackId)
+        }
+
+        tblView?.reloadData()
+        tblView?.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
+        menuViewControllerObj?.reloadIfNeeded()
+    }
+
+    /// Called when the user says "yes" to the post-session-start "want to play some focus music?"
+    /// prompt — picks up where they left off (the last track they played) if it's still downloaded,
+    /// otherwise a random downloaded track. Does nothing if no track has ever been downloaded.
+    func playLastPlayedOrRandomTrack(){
+        let downloadedIndices = arrAllTracks.indices.filter { arrAllTracks[$0]["isFileDownloded"] as? Bool ?? false }
+        guard !downloadedIndices.isEmpty else { return }
+
+        if let lastPlayedId = UserDefaults.standard.string(forKey: kUserdefaultsLastPlayedTrackId),
+           let lastPlayedIndex = downloadedIndices.first(where: { arrAllTracks[$0]["id"] as? String == lastPlayedId }){
+            playTrack(atIndex: lastPlayedIndex)
+        }else if let randomIndex = downloadedIndices.randomElement(){
+            playTrack(atIndex: randomIndex)
+        }
+    }
+
     @objc func btnDownloadClicked(sender:NSButton){
         let senderTag = sender.tag
         arrAllTracks[senderTag]["isFileDownloading"] = true

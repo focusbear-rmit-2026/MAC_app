@@ -169,6 +169,9 @@ var kUserdefaultsLastCustomRoutineHabitSavedNotes = "kUserdefaultsLastCustomRout
 
 var kUserdefaultsLastSpecaialActivitySavedNotes = "kUserdefaultsLastSpecaialActivitySavedNotes"
 var kUserdefaultsAllTracks = "kUserdefaultsAllTracks"
+// Track id last started via the Play button — used to resume the same track when the
+// post-session-start "want to play some focus music?" prompt is accepted.
+var kUserdefaultsLastPlayedTrackId = "kUserdefaultsLastPlayedTrackId"
 var kUserdefaultsDontConfirmBeforeExecuteScript = "kUserdefaultsDontConfirmBeforeExecuteScript"
 
 var kUserdefaultsIsGlobalUUIDLinked = "kUserdefaultsIsGlobalUUIDLinked"
@@ -177,6 +180,12 @@ var kUserdefaultsIsMacIdLinked = "kUserdefaultsIsMacIdLinked"
 var kUserdefaultsLastFocusModeStrictness = "kUserdefaultsLastFocusModeStrictness"
 
 var kUserdefaultsDontShowConfirmGeekModeAlert = "kUserdefaultsDontShowConfirmGeekModeAlert"
+// Suppresses the "Want to play some focus music?" prompt shown after a focus session starts.
+var kUserdefaultsDontAskFocusMusicPrompt = "kUserdefaultsDontAskFocusMusicPrompt"
+// The user's saved answer to the focus-music prompt: "ask" (default, prompt each focus session),
+// "play" (auto-start music), "off" (stay silent). Surfaced as a toggle in Settings → Accessibility
+// (on = play) and synced to the account (see SettingsManager.focusMusicAutoStart). Per-user suffixed.
+var kUserdefaultsFocusMusicAutoStartPreference = "kUserdefaultsFocusMusicAutoStartPreference"
 var kUserDefaultsOpenTodoPlayerFirstTime = "kUserDefaultsOpenTodoPlayerFirstTime"
 
 var kUserDefaultsHideAppModeOption = "kUserDefaultsHideAppModeOption"

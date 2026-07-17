@@ -970,6 +970,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 kUserdefaults24HoursClearPasswordTime = kUserdefaults24HoursClearPasswordTime + (self.user?.userId ?? "")
                 
                 kUserdefaultsLastHabitsStartedDate = kUserdefaultsLastHabitsStartedDate + (self.user?.userId ?? "")
+                kUserdefaultsDontAskFocusMusicPrompt = kUserdefaultsDontAskFocusMusicPrompt + (self.user?.userId ?? "")
+                kUserdefaultsFocusMusicAutoStartPreference = kUserdefaultsFocusMusicAutoStartPreference + (self.user?.userId ?? "")
                 kUserdefaultsLastHabitRunningInfo = kUserdefaultsLastHabitRunningInfo + (self.user?.userId ?? "")
                 kUserdefaultsLastCustomRoutineHabitRunningInfo = kUserdefaultsLastCustomRoutineHabitRunningInfo + (self.user?.userId ?? "")
                 
@@ -7572,6 +7574,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         menuViewControllerObj?.showFocusModeCountDownIfNeeded()
         currentFocusAlignmentScore = 100
         getArrayOfTaskForApi()
+        FocusMusicPromptManager.maybeShowPrompt(isStartedByPusher: isStartedByPusher)
     }
     
     

@@ -622,6 +622,7 @@
         "titleReloadAppAfterForceQuit": "Reload:",
         "checkBoxReloadAppAfterForceQuitText": "Reload after Force Quit",
         "titleFont": "Application Font:",
+        "checkBoxFocusMusicText": "Automatically play focus music when a session starts",
         "titlePomodoroShortcut": "Shortcut to start focus session:",
         "recordShorcutText": "Record Shortcut",
         "alertShortcutErrorText": "Please use a different key combination.",
@@ -2177,6 +2178,7 @@
         "accessibility_PlaySound": "We play video game style sound effects (ding!) after you complete habits to make you feel good about your progress. If you don’t like these sound effects, you can turn them off. You can also email us: support@focusbear.io if you’d like to be able to customize the sound effects.",
         "accessibility_Announcement": "This feature is helpful if you have trouble reading from a screen. If you turn it on, it will use a Siri style voice to read out the next habit in your routine and let you know when you’ve finished the current habit.",
         "accessibility_Font": "We’ve chosen some dyslexic friendly fonts to help you read the text in the Focus Bear app.",
+        "accessibility_FocusMusicPrompt": "Turn this on to automatically play focus music whenever you start a focus session.",
         "pomodoro_AfterMorning": "Supercharge your morning routine! If you activate this feature, you will seamlessly transition into Focus mode right after completing your morning routine, boosting your productivity to new heights.",
         "pomodoro_DoNotBlockDistractingSites": "We actually recommend you turn this off because breaks are much better if you get away from the computer. You could go for a walk instead :) However, if you don’t feel like giving your brain a break, you can turn off blocking and enjoy unrestricted breaks where you can access all of those distracting sites.",
         "pomodoro_PomodoroModeDuration": "Normally pomodoro work blocks are 25 minutes long (with a 5 minute break) but you can customize it to a different time",
@@ -2302,6 +2304,12 @@
         "buttonStickSimpleModeText": "Stick with Simple Mode",
         "buttonDontShowAgainText": "Don't show again",
         "alertConfirmSwitchGeekModeDescription": "You can switch the modes from Preferences -> Settings tab"
+    },
+    "focusMusicPromptInfo": {
+        "title": "Want to play some focus music?",
+        "buttonYesText": "Yes, play music",
+        "buttonNoText": "No thanks",
+        "buttonDontAskAgainText": "Remember my choice"
     },
     "takeBreaksInfoVcInfo":{
         "subTitle": "Focus Bear can help you remember to take short breaks (30s to 2 minutes) regularly throughout the day. This will help avoid screen headaches and actually improve your productivity. You can even do microworkouts during the breaks 💪",
