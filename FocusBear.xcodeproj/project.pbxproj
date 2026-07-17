@@ -32,6 +32,8 @@
 		134C1D392E8263CC0032AF65 /* log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134C1D382E8263CC0032AF65 /* log.swift */; };
 		134D1DEC2E41E52300328E84 /* leftMenuVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DEB2E41E52300328E84 /* leftMenuVc.swift */; };
 		134D1DEE2E42144F00328E84 /* accordionBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DED2E42144F00328E84 /* accordionBox.swift */; };
+		64A623D93155CBE05F5C8FAE /* ToolVisibilityStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 804A3787372D3AE68B541AEF /* ToolVisibilityStore.swift */; };
+		2BC962788650BE9B5AF7744A /* RestoreHiddenToolsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 923E7D62446EEA6F34FEF7D1 /* RestoreHiddenToolsView.swift */; };
 		134D1DF02E42378B00328E84 /* habitsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DEF2E42378B00328E84 /* habitsVc.swift */; };
 		13501E292E7C2B020055ACB1 /* browsersTabAuditVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13501E282E7C2B020055ACB1 /* browsersTabAuditVc.swift */; };
 		13501E2B2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13501E2A2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift */; };
@@ -458,6 +460,8 @@
 		134C1D382E8263CC0032AF65 /* log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = log.swift; sourceTree = "<group>"; };
 		134D1DEB2E41E52300328E84 /* leftMenuVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = leftMenuVc.swift; sourceTree = "<group>"; };
 		134D1DED2E42144F00328E84 /* accordionBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = accordionBox.swift; sourceTree = "<group>"; };
+		804A3787372D3AE68B541AEF /* ToolVisibilityStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolVisibilityStore.swift; sourceTree = "<group>"; };
+		923E7D62446EEA6F34FEF7D1 /* RestoreHiddenToolsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreHiddenToolsView.swift; sourceTree = "<group>"; };
 		134D1DEF2E42378B00328E84 /* habitsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = habitsVc.swift; sourceTree = "<group>"; };
 		13501E282E7C2B020055ACB1 /* browsersTabAuditVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = browsersTabAuditVc.swift; sourceTree = "<group>"; };
 		13501E2A2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = postBrowsersTabAuditVc.swift; sourceTree = "<group>"; };
@@ -889,6 +893,8 @@
 				134D1DEB2E41E52300328E84 /* leftMenuVc.swift */,
 				130CE9A72E40C131004A6F04 /* mainWindowListBox.swift */,
 				134D1DED2E42144F00328E84 /* accordionBox.swift */,
+				804A3787372D3AE68B541AEF /* ToolVisibilityStore.swift */,
+				923E7D62446EEA6F34FEF7D1 /* RestoreHiddenToolsView.swift */,
 			);
 			path = leftMenu;
 			sourceTree = "<group>";
@@ -2039,6 +2045,8 @@
 				8FD86E1E2A54376C004F6761 /* todoNotes.swift in Sources */,
 				8F861DBA2CB8F36A000BCF72 /* webViewLoadFailedVc.swift in Sources */,
 				134D1DEE2E42144F00328E84 /* accordionBox.swift in Sources */,
+				64A623D93155CBE05F5C8FAE /* ToolVisibilityStore.swift in Sources */,
+				2BC962788650BE9B5AF7744A /* RestoreHiddenToolsView.swift in Sources */,
 				8FF1CD9B2A57D7340092AB9B /* menuTourPopoverVc.swift in Sources */,
 				8F378E262976701A00A43C06 /* shareFeedbackVc.swift in Sources */,
 				8FAB113B2B42ABDA006D1261 /* longTermGoalsVc.swift in Sources */,

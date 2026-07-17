@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import SwiftUI
 
 class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
 
@@ -47,7 +48,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     var disableReasonCustomRoutine = "Disabled because your custom routine is in progress. Go to the Custom Routine tab to continue."
     
     var lastSelectedBox:mainWindowListBox?
-    
+    private var isToolsSectionExpanded = true
+    private var hiddenToolsPopover: NSPopover?
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -95,7 +98,21 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         
         boxBrainDump.imageIcon = NSImage(named: "brainDump")
         boxBrainDump.title = "Brain Dump"
-        
+
+        // TOOLS rows the user can hover-hide via ✕ and restore via the TOOLS gear icon.
+        let hideableTools: [(mainWindowListBox, ToolID)] = [
+            (boxFocusMusic, .focusMusic), (boxBrainDump, .brainDump),
+            (boxTodoPlayer, .todoList), (boxMotivation, .stats),
+            (boxBrowsersTabAudit, .tabAudit)
+        ]
+        for (box, id) in hideableTools {
+            box.showsHideButton = true
+            box.onHideRequested = { [weak self] in
+                ToolVisibilityStore.hide(id)
+                self?.refreshToolsVisibility()
+            }
+        }
+
         
         boxBrowsersTabAudit.imageIcon = NSImage(named: "NSTouchBarOpenInBrowserTemplate")
         boxBrowsersTabAudit.title = "Tab Audit"
@@ -162,25 +179,26 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         installToolsAddOnItems()
         ensureMenuScrolls()
 
-        // Tab Audit and Custom Routine are removed from the menu. setExpanded(true) above runs before
-        // the accordion's onStateChanged is assigned, so the closures don't hide them on first load —
-        // hide them explicitly here, and leave them out of the show/hide closures below.
-        boxBrowsersTabAudit.isHidden = true
+        // Custom Routine is removed from the menu (now lives in the Day Plan's Custom Routines
+        // panel). setExpanded(true) above runs before the accordion's onStateChanged is assigned,
+        // so the closure doesn't hide it on first load — hide it explicitly here. Tab Audit is
+        // restored (visible by default, user-hideable) — its initial visibility is set below by
+        // refreshToolsVisibility(), via the hideableTools list above.
         boxCustomRoutine.isHidden = true
 
         boxToolsItems.setExpanded(true)
-        boxToolsItems.onStateChanged = { isExpanded in
+        boxToolsItems.onStateChanged = { [weak self] isExpanded in
             print("Tools is now \(isExpanded ? "expanded" : "collapsed")")
-            let hidden = !isExpanded
-            self.boxFocusMusic.isHidden = hidden
-            self.boxBrainDump.isHidden = hidden
-            self.boxTodoPlayer.isHidden = hidden
-            self.boxMotivation.isHidden = hidden
-            self.boxFocusButtonTool?.isHidden = hidden
-            self.boxTimeTrackerTool?.isHidden = hidden
-            self.boxLateNoMoreTool?.isHidden = hidden
+            self?.isToolsSectionExpanded = isExpanded
+            self?.refreshToolsVisibility()
         }
-        
+        boxToolsItems.onGearClicked = { [weak self] in
+            self?.showHiddenToolsPopover()
+        }
+        // setExpanded(true) above ran before onStateChanged was assigned, so it didn't apply
+        // hidden-row state on first load — apply it explicitly now.
+        refreshToolsVisibility()
+
         boxPreferences.setExpanded(true)
         boxPreferences.onStateChanged = { isExpanded in
             print("Preferences is now \(isExpanded ? "expanded" : "collapsed")")
@@ -310,8 +328,54 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         }
     }
     
+    /// Applies both the TOOLS accordion's expanded/collapsed state and each row's user-hidden state
+    /// (via the hover ✕ / gear-restore flow). A row is visible only when the section is expanded AND
+    /// the user hasn't hidden it.
+    private func refreshToolsVisibility() {
+        let hideableTools: [(mainWindowListBox, ToolID)] = [
+            (boxFocusMusic, .focusMusic), (boxBrainDump, .brainDump),
+            (boxTodoPlayer, .todoList), (boxMotivation, .stats),
+            (boxBrowsersTabAudit, .tabAudit)
+        ]
+        for (box, id) in hideableTools {
+            box.isHidden = !isToolsSectionExpanded || ToolVisibilityStore.isHidden(id)
+        }
+        let addOnHideableTools: [(mainWindowListBox?, ToolID)] = [
+            (boxFocusButtonTool, .focusButton), (boxTimeTrackerTool, .timeTracker), (boxLateNoMoreTool, .lateNoMore)
+        ]
+        for (box, id) in addOnHideableTools {
+            box?.isHidden = !isToolsSectionExpanded || ToolVisibilityStore.isHidden(id)
+        }
+    }
+
+    private func showHiddenToolsPopover() {
+        if let popover = hiddenToolsPopover, popover.isShown {
+            popover.performClose(nil)
+            return
+        }
+        let view = RestoreHiddenToolsView(onRestore: { [weak self] _ in
+            self?.refreshToolsVisibility()
+        })
+        let popover = NSPopover()
+        let hosting = NSHostingController(rootView: view)
+        // Let the popover track the SwiftUI content's size, so it resizes as rows are restored.
+        if #available(macOS 13.0, *) {
+            hosting.sizingOptions = [.preferredContentSize]
+        }
+        popover.contentViewController = hosting
+        popover.behavior = .transient
+        // Give the content a concrete size BEFORE showing. Without this, a short list (0–3 rows) has no
+        // established fitting size yet, so NSPopover falls back to a degenerate default — the arrow
+        // renders as a blunt square and the popover is mispositioned, only self-correcting once enough
+        // rows force a bigger intrinsic size. Forcing layout + pinning contentSize fixes both.
+        hosting.view.layoutSubtreeIfNeeded()
+        popover.contentSize = hosting.view.fittingSize
+        hiddenToolsPopover = popover
+        popover.show(relativeTo: boxToolsItems.bounds, of: boxToolsItems, preferredEdge: .maxX)
+    }
+
     /// Adds Focus Button / Time Tracker / Late No More to the TOOLS group programmatically, so the
-    /// storyboard left-menu stack stays untouched. Inserted right after Stats (Tab Audit is removed).
+    /// storyboard left-menu stack stays untouched. Inserted right after Stats.
     private func installToolsAddOnItems() {
         guard boxFocusButtonTool == nil,
               let stack = boxMotivation.superview as? NSStackView else { return }
@@ -321,6 +385,18 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxFocusButtonTool = focusBtn
         boxTimeTrackerTool = timeTracker
         boxLateNoMoreTool = lateNoMore
+
+        let addOnHideableTools: [(mainWindowListBox, ToolID)] = [
+            (focusBtn, .focusButton), (timeTracker, .timeTracker), (lateNoMore, .lateNoMore)
+        ]
+        for (box, id) in addOnHideableTools {
+            box.showsHideButton = true
+            box.onHideRequested = { [weak self] in
+                ToolVisibilityStore.hide(id)
+                self?.refreshToolsVisibility()
+            }
+        }
+
         let after = stack.arrangedSubviews.firstIndex(of: boxMotivation) ?? (stack.arrangedSubviews.count - 1)
         stack.insertArrangedSubview(focusBtn, at: after + 1)
         stack.insertArrangedSubview(timeTracker, at: after + 2)

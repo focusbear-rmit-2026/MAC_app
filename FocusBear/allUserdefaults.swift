@@ -231,6 +231,8 @@ var kUserDefaultsBlockingScheduleAddedFirstTime = "kBlockingScheduleAddedFirstTi
 
 
 var kUserdefaultsHiddenFocusModeIDs = "kHiddenFocusModeIDs"
+// IDs of TOOLS sidebar rows the user hid via the hover ✕ (restored via the TOOLS gear icon).
+var kUserdefaultsHiddenToolIds = "kUserdefaultsHiddenToolIds"
 var kUserdefaultsLastFocusModeId = "kLastRunningFocusModeId"
 // Block list the user last picked on the Focus-time (pomodoro) screen. Dedicated key so it isn't
 // clobbered by kUserdefaultsLastFocusModeId, which any focus mode (incl. scheduled blocking) sets.
