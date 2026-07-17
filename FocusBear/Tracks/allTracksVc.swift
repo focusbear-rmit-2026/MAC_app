@@ -327,6 +327,9 @@ extension allTracksVc:NSSoundDelegate{
             }
         }
         currentSound = nil
-        tblView.reloadData()
+        // Optional-chained: focus music can be auto-started without ever opening the Focus Music tab
+        // (see FocusMusicPromptManager), so tblView may be nil when a track finishes — only reload the
+        // table if the view is actually loaded. The playing-state reset above still runs regardless.
+        tblView?.reloadData()
     }
 }

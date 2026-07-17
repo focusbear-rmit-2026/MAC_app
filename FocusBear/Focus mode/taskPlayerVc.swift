@@ -297,6 +297,9 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
                 addLog(text: "loadIntentionForToDoPlayer:- JavaScript evaluation error: \(error)")// v 2.28.441
             }
         })
+        
+        // Notify Focus Button of the updated goal
+        focusButtonServiceObject.updateFocusGoal(goal: focusButtonServiceObject.currentFocusGoal())
     }
     
     func updateBrainDumpToPlayer(){
@@ -374,6 +377,11 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     func addAndPlayTaskInCurrentList(taskName: String, id:String, duration:Int, shouldCompleteCurrentTask:Bool) {
         addLog(text: "func:- addAndPlayTaskInCurrentList taskName: \(taskName), duration: \(duration), shouldCompleteCurrentTask: \(shouldCompleteCurrentTask), id: \(id)")
         taskCreatedByBlockPopup = taskName
+        // Reflect the changed task on the Focus Button device. getCurrentTaskInFocusMode() returns
+        // taskCreatedByBlockPopup first, so currentFocusGoal() already reflects the new task here. This
+        // covers every task-change entry point (e.g. changing the task from focusModeStateVc), not just
+        // the intention-update flow that previously was the only caller of updateFocusGoal.
+        focusButtonServiceObject.updateFocusGoal(goal: focusButtonServiceObject.currentFocusGoal())
         let taskDic:[String:Any] = [
             "id": id,
             "title": taskName,

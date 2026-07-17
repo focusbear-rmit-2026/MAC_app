@@ -29,6 +29,7 @@ class focusButtonService: NSObject {
     private var serialPort: ORSSerialPort?
     var isRunning = false
     private var rxThread: Thread?
+    private var rxBuffer = ""
     
     private var state: DeviceState = .disconnected
     private var remainingSeconds: Int64 = 0
@@ -245,11 +246,30 @@ class focusButtonService: NSObject {
         }
     }
     
+    func currentFocusGoal() -> String {
+        if let currentTask = getCurrentTaskInFocusMode(), !currentTask.isEmpty {
+            return currentTask
+        }
+        return whatToAchieveInFocusBlock
+    }
+    
     func startFocusSession(seconds: Int) {
         log("FocusButton: StartFocusSession()")
-        sendCmd("SET|START|\(seconds)")
+        let goal = currentFocusGoal()
+        if !goal.isEmpty {
+            sendCmd("SET|START|\(seconds)|\(goal)")
+        } else {
+            sendCmd("SET|START|\(seconds)")
+        }
         applyState(.running)
         armFocusResync()
+    }
+
+    func updateFocusGoal(goal: String) {
+        guard isRunning, serialPort?.isOpen == true else { return }
+        log("FocusButton: UpdateFocusGoal() - \(goal)")
+        let sanitized = sanitizeForCommand(goal)
+        sendCmd("SET|GOAL|\(sanitized)")
     }
 
     /// Arm the periodic focus-session resync (idempotent). Each tick only polls STATUS — a silent read.
@@ -665,6 +685,7 @@ class focusButtonService: NSObject {
         validationTimer?.invalidate()
         validationTimer = nil
         setFirmwareVersion(nil)
+        rxBuffer = ""
 
         applyState(.disconnected)
         onPortDisconnected?()
@@ -917,7 +938,12 @@ class focusButtonService: NSObject {
             let remaining = Int(end.timeIntervalSinceNow)
             if remaining > 0 {
                 log("FocusButton: device idle during a running focus session — re-pushing SET|START|\(remaining)")
-                sendCmd("SET|START|\(remaining)")
+                let goal = currentFocusGoal()
+                if !goal.isEmpty {
+                    sendCmd("SET|START|\(remaining)|\(goal)")
+                } else {
+                    sendCmd("SET|START|\(remaining)")
+                }
                 applyState(.running)
             }
         }
@@ -1083,8 +1109,8 @@ class focusButtonService: NSObject {
 
         for port in ORSSerialPortManager.shared().availablePorts {
             let portPath = port.path
-            // Only cu.usbmodem* ports are eligible (as before).
-            guard portPath.lowercased().contains("cu.usbmodem") else { continue }
+            // Only cu.usbmodem* and cu.usbserial* ports are eligible.
+            guard portPath.lowercased().contains("cu.usbmodem") || portPath.lowercased().contains("cu.usbserial") else { continue }
 
             let portName = port.name.uppercased()
             let portPathUpper = portPath.uppercased()
@@ -1099,7 +1125,7 @@ class focusButtonService: NSObject {
             } else if serialKeywords.contains(where: { portName.contains($0) || portPathUpper.contains($0) }) {
                 kw.append(portPath)
             } else {
-                // A bare usbmodem device (native-USB ESP32 boards report no
+                // A bare usbmodem/usbserial device (native-USB ESP32 boards report no
                 // useful name) — still a candidate, just lowest priority.
                 other.append(portPath)
             }
@@ -1216,18 +1242,24 @@ extension focusButtonService: ORSSerialPortDelegate {
         // Convert received data to string and process line by line
         guard let receivedString = String(data: data, encoding: .utf8) else { return }
         
-        let lines = receivedString.components(separatedBy: "\n")
-        for line in lines {
-            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !trimmed.isEmpty {
-                // Skip ESP log noise
-                if let espLog = espLog,
-                   let match = espLog.firstMatch(in: trimmed, range: NSRange(location: 0, length: trimmed.utf16.count)) {
-                    continue
-                }
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.rxBuffer += receivedString
+            
+            // Extract complete lines separated by "\n"
+            while let newlineIndex = self.rxBuffer.firstIndex(of: "\n") {
+                let line = String(self.rxBuffer[..<newlineIndex])
+                self.rxBuffer.removeSubrange(...newlineIndex)
                 
-                DispatchQueue.main.async { [weak self] in
-                    self?.handleLine(trimmed)
+                let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty {
+                    // Skip ESP log noise
+                    if let espLog = self.espLog,
+                       let _ = espLog.firstMatch(in: trimmed, range: NSRange(location: 0, length: trimmed.utf16.count)) {
+                        continue
+                    }
+                    
+                    self.handleLine(trimmed)
                 }
             }
         }
