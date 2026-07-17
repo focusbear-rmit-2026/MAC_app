@@ -138,24 +138,101 @@ class passwordVc: NSViewController {
     private var checkBoxPostponeMorning: NSButton?
     private var checkBoxPostponeEvening: NSButton?
     private var checkBoxPostponeAfterCutOff: NSButton?
+    private var btnInfoPostponeMorning: hoverInfoButton?
+    private var btnInfoPostponeEvening: hoverInfoButton?
+    private var btnInfoPostponeAfterCutOff: hoverInfoButton?
 
     private func setupPostponeCheckboxes() {
-        // Walk up from a skip checkbox to its enclosing vertical stack.
-        var v: NSView? = checkBoxSkipEveningHabitAfterCutOff
-        var vstack: NSStackView?
-        while let cur = v { if let s = cur as? NSStackView, s.orientation == .vertical { vstack = s; break }; v = cur.superview }
-        guard let stack = vstack else { return }
+        // The skip/action password checkboxes are constraint-chained siblings in a plain view (NOT an
+        // NSStackView) — each row's top is pinned to the previous row's bottom. Insert the three postpone
+        // checkboxes into that chain directly below the "skip evening after cutoff" row: re-hang whatever
+        // currently sits below the anchor beneath the last postpone row instead.
+        guard let anchor = checkBoxSkipEveningHabitAfterCutOff, let container = anchor.superview else { return }
         func make(_ title: String, _ action: Selector) -> NSButton {
             let cb = NSButton(checkboxWithTitle: title, target: self, action: action)
             cb.translatesAutoresizingMaskIntoConstraints = false
             return cb
         }
-        let m = make("Postponing morning routine", #selector(checkBoxPostponeMorningClicked))
-        let e = make("Postponing evening routine", #selector(checkBoxPostponeEveningClicked))
-        let c = make("Postponing evening routine after cutoff time", #selector(checkBoxPostponeAfterCutOffClicked))
+        // Config-driven titles (passwordPreferencesInfo), matching the skip rows, with English fallbacks.
+        var titleMorning = "Postponing morning routine"
+        var titleEvening = "Postponing evening routine"
+        var titleAfterCutOff = "Postponing evening routine after cutoff time"
+        if let info = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary {
+            titleMorning = info.value(forKey: "buttonPostponeMorningHabitText") as? String ?? titleMorning
+            titleEvening = info.value(forKey: "buttonPostponeEveningHabitText") as? String ?? titleEvening
+            titleAfterCutOff = info.value(forKey: "buttonPostponeEveningHabitAfterCutOffText") as? String ?? titleAfterCutOff
+        }
+        let m = make(titleMorning, #selector(checkBoxPostponeMorningClicked))
+        let e = make(titleEvening, #selector(checkBoxPostponeEveningClicked))
+        let c = make(titleAfterCutOff, #selector(checkBoxPostponeAfterCutOffClicked))
         checkBoxPostponeMorning = m; checkBoxPostponeEvening = e; checkBoxPostponeAfterCutOff = c
-        for cb in [m, e, c] { stack.addArrangedSubview(cb) }
+
+        // The constraint that currently hangs the next row below the anchor (anchor.bottom -> next.top).
+        let followingTop = container.constraints.first {
+            $0.firstAttribute == .top && $0.secondAttribute == .bottom &&
+            ($0.secondItem as? NSView) === anchor && ($0.firstItem as? NSView) !== anchor
+        }
+        let followingView = followingTop?.firstItem as? NSView
+        let spacing: CGFloat = 10
+        let followingSpacing = followingTop?.constant ?? spacing
+        followingTop?.isActive = false
+
+        for cb in [m, e, c] { container.addSubview(cb) }
+        var constraints: [NSLayoutConstraint] = []
+        var previous: NSView = anchor
+        for cb in [m, e, c] {
+            constraints.append(cb.leadingAnchor.constraint(equalTo: anchor.leadingAnchor))
+            constraints.append(cb.topAnchor.constraint(equalTo: previous.bottomAnchor, constant: spacing))
+            previous = cb
+        }
+        // Reconnect the row that used to follow the anchor beneath the last postpone row (if any).
+        if let following = followingView {
+            constraints.append(following.topAnchor.constraint(equalTo: previous.bottomAnchor, constant: followingSpacing))
+        }
+        NSLayoutConstraint.activate(constraints)
+
+        setupPostponeInfoButtons(in: container)
         refreshPostponeCheckboxStates()
+    }
+
+    /// Adds an NSInfo hover-info button in the right-edge column for each postpone row, matching the
+    /// skip rows. centerX aligns to an existing skip-row info button's column; centerY to each checkbox.
+    private func setupPostponeInfoButtons(in container: NSView) {
+        guard let m = checkBoxPostponeMorning, let e = checkBoxPostponeEvening, let c = checkBoxPostponeAfterCutOff else { return }
+        let columnRef: NSView? = btnSkipEveningHabitAfterCutOff ?? btnInfoSkipEveningHabit
+        func makeInfo(_ action: Selector) -> hoverInfoButton {
+            let b = hoverInfoButton()
+            b.translatesAutoresizingMaskIntoConstraints = false
+            b.bezelStyle = .shadowlessSquare
+            b.isBordered = false
+            b.imagePosition = .imageOnly
+            b.imageScaling = .scaleProportionallyUpOrDown
+            b.image = NSImage(named: NSImage.infoName)
+            b.target = self
+            b.action = action
+            // hoverInfoButton.awakeFromNib installs this tracking area (hover auto-shows the tooltip);
+            // replicate it here since programmatically-created views don't get awakeFromNib.
+            b.addTrackingArea(NSTrackingArea(rect: .zero, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: b, userInfo: nil))
+            return b
+        }
+        let im = makeInfo(#selector(btnInfoPostponeMorningClicked))
+        let ie = makeInfo(#selector(btnInfoPostponeEveningClicked))
+        let ic = makeInfo(#selector(btnInfoPostponeAfterCutOffClicked))
+        btnInfoPostponeMorning = im; btnInfoPostponeEvening = ie; btnInfoPostponeAfterCutOff = ic
+
+        var cons: [NSLayoutConstraint] = []
+        for (btn, row) in [(im, m), (ie, e), (ic, c)] {
+            container.addSubview(btn)
+            cons.append(btn.widthAnchor.constraint(equalToConstant: 16))
+            cons.append(btn.heightAnchor.constraint(equalToConstant: 16))
+            cons.append(btn.centerYAnchor.constraint(equalTo: row.centerYAnchor))
+            if let ref = columnRef {
+                cons.append(btn.centerXAnchor.constraint(equalTo: ref.centerXAnchor))
+            } else {
+                cons.append(btn.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -14))
+            }
+        }
+        NSLayoutConstraint.activate(cons)
     }
 
     private func refreshPostponeCheckboxStates() {
@@ -180,6 +257,28 @@ class passwordVc: NSViewController {
         setPostpone(checkBoxPostponeAfterCutOff?.state == .on, key: SettingsManagerObject.kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff) { SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff = $0 }
     }
 
+    @objc private func btnInfoPostponeMorningClicked() {
+        var toolTip = "Enable this to require your password when postponing your morning routine, so the choice stays intentional."
+        if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary {
+            toolTip = tooltips.value(forKey: "strictness_Password_PostponeMorningHabit") as? String ?? toolTip
+        }
+        if let s = btnInfoPostponeMorning { showTooltip(sender: s, msg: toolTip, preferredEdge: NSRectEdge.maxX, maxWidthVal: 350) }
+    }
+    @objc private func btnInfoPostponeEveningClicked() {
+        var toolTip = "Enable this to require your password when postponing your evening routine, so the choice stays intentional."
+        if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary {
+            toolTip = tooltips.value(forKey: "strictness_Password_PostponeEveningHabit") as? String ?? toolTip
+        }
+        if let s = btnInfoPostponeEvening { showTooltip(sender: s, msg: toolTip, preferredEdge: NSRectEdge.maxX, maxWidthVal: 350) }
+    }
+    @objc private func btnInfoPostponeAfterCutOffClicked() {
+        var toolTip = "Enable this to require your password when postponing your evening routine after the cutoff time, so the choice stays intentional."
+        if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary {
+            toolTip = tooltips.value(forKey: "strictness_Password_PostponeEveningHabitAfterCutOffTime") as? String ?? toolTip
+        }
+        if let s = btnInfoPostponeAfterCutOff { showTooltip(sender: s, msg: toolTip, preferredEdge: NSRectEdge.maxX, maxWidthVal: 350) }
+    }
+
     override func viewWillAppear() {
         if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
 //            preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
@@ -189,8 +288,25 @@ class passwordVc: NSViewController {
         resetView()
     }//your password has been disabled.
     //
-    
-    override func viewDidLayout() {// after scrollview resize it removes title and not srawing it again so doing this here 
+
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        // Always reset the settings list to the top whenever this screen is shown (it may have been left
+        // scrolled down from a previous visit). Deferred so it runs after the final layout pass.
+        DispatchQueue.main.async { [weak self] in self?.scrollToTop() }
+    }
+
+    private func scrollToTop() {
+        guard let scrollView = checkBoxSkipMorningHabit?.enclosingScrollView ?? view.enclosingScrollView,
+              let docView = scrollView.documentView else { return }
+        let clip = scrollView.contentView
+        // Top is y=0 for a flipped document view, else the highest y (content height minus the visible height).
+        let topY = docView.isFlipped ? 0 : max(0, docView.bounds.height - clip.bounds.height)
+        clip.setBoundsOrigin(NSPoint(x: clip.bounds.origin.x, y: topY))
+        scrollView.reflectScrolledClipView(clip)
+    }
+
+    override func viewDidLayout() {// after scrollview resize it removes title and not srawing it again so doing this here
         btnChangePassword.title = btnChangePassword.title
     }
     

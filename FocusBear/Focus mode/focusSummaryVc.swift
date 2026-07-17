@@ -605,7 +605,7 @@ class focusSummaryVc: NSViewController {
     @IBAction func btnNeedMoreTimeClicked(_ sender: Any) {        
         if viewVisibleCount == 0{
             addLog(text: "[user-action] button Need one More minute Clicked from focus summary")
-            if cutOffTime != nil && SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff && !SettingsManagerObject.isEasySkipEnabled{
+            if cutOffTime != nil && SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff && !SettingsManagerObject.isEasySkipEnabled{
                 if isCutOffTimeGoing() && shouldAskPassword(){
                     mainViewControllerObj?.showPasswordView()
                 }else{

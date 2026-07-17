@@ -499,7 +499,7 @@ class habitsVc: NSViewController {
                     showAskPostponeView()
                 }else{
                     if shouldAskPassword(){
-                        if SettingsManagerObject.isPasswordRequireInSkipMorning{
+                        if SettingsManagerObject.isPasswordRequireInPostponeMorning{
                             mainViewControllerObj?.showPasswordView()
                             enterPasswordVcObj?.parentVc = getAskPostponeVcObject()
                         }else{
@@ -546,7 +546,7 @@ class habitsVc: NSViewController {
                 if activityPostponeCount == 0{
                     if isCutOffTimeGoing(){// changed in 2.27.422  : isHighPrioritySequenceGoing->isCutOffTimeGoing()
                         if shouldAskPassword(){
-                            if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                            if SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff{
                                 showPasswordView()
                                 enterPasswordVcObj?.parentVc = getAskPostponeVcObject()
                             }else{
@@ -561,14 +561,14 @@ class habitsVc: NSViewController {
                 }else{
                     if shouldAskPassword(){
                         if isCutOffTimeGoing(){// changed in 2.27.422  : isHighPrioritySequenceGoing->isCutOffTimeGoing()
-                            if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                            if SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff{
                                 showPasswordView()
                                 enterPasswordVcObj?.parentVc = getAskPostponeVcObject()
                             }else{
                                 showAskPostponeView()
                             }
                         }else{
-                            if SettingsManagerObject.isPasswordRequireInSkipEvening{
+                            if SettingsManagerObject.isPasswordRequireInPostponeEvening{
                                 showPasswordView()
                                 enterPasswordVcObj?.parentVc = getAskPostponeVcObject()
                             }else{

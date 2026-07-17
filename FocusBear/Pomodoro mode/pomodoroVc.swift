@@ -1169,7 +1169,7 @@ class pomodoroVc: NSViewController {
                                         getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                         self.checkStateAndStartPomodoroMode()
                                     }else{
-                                        if SettingsManagerObject.isPasswordRequireInSkipMorning && shouldAskPassword(forPostpone: true){
+                                        if SettingsManagerObject.isPasswordRequireInPostponeMorning && shouldAskPassword(forPostpone: true){
                                             self.presentAsSheet(self.enterPasswordVcObj!)
                                             self.enterPasswordVcObj?.parentVc = self
                                             self.enterPasswordVcObj?.isShowingForRelaxFocusMode = false
@@ -1183,11 +1183,11 @@ class pomodoroVc: NSViewController {
                                     var shouldAskPasswordForEvening = false
                                     if shouldAskPassword(forPostpone: true) &&  !SettingsManagerObject.isEasySkipEnabled{
                                         if isCutOffTimeGoing(){ 
-                                            if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                                            if SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff{
                                                 shouldAskPasswordForEvening = true
                                             }
                                         }else{
-                                            if SettingsManagerObject.isPasswordRequireInSkipEvening{
+                                            if SettingsManagerObject.isPasswordRequireInPostponeEvening{
                                                 shouldAskPasswordForEvening = true
                                             }
                                         }
