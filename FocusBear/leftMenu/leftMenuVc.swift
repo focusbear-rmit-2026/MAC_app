@@ -53,7 +53,6 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
 
         boxFocusModeSettings.isHidden = true
         
-        boxMainItems.title = "MAIN"
         boxToolsItems.title = "TOOLS"
         boxPreferences.title = "PREFERENCES"
         
@@ -148,24 +147,18 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxUpgradeNow.title = "Upgrade Now"
         boxUpgradeNow.imageIcon = NSImage(named: "upgrade")
         
-        boxMainItems.setExpanded(true)
-        boxMainItems.onStateChanged = { isExpanded in
-            print("MainItems is now \(isExpanded ? "expanded" : "collapsed")")
-            if isExpanded{
-                self.boxMicroBreaks.isHidden = false
-                self.boxFocusSession.isHidden = false
-                self.boxHabits.isHidden = false
-                // Custom routines now live in the Day Plan's Custom Routines panel, so the menu item
-                // is removed.
-                self.boxCustomRoutine.isHidden = true
-            }else{
-                self.boxMicroBreaks.isHidden = true
-                self.boxFocusSession.isHidden = true
-                self.boxHabits.isHidden = true
-                self.boxCustomRoutine.isHidden = true
-            }
-        }
-        
+        // MAIN is no longer a collapsible group — its rows sit flat with no section
+        // header, like boxHelpAndSupport/boxUpgradeNow below. Hide the (now unused)
+        // accordion header view rather than removing it from the storyboard, and force
+        // its rows permanently visible.
+        boxMainItems.isHidden = true
+        boxMicroBreaks.isHidden = false
+        boxFocusSession.isHidden = false
+        boxHabits.isHidden = false
+        // Custom routines now live in the Day Plan's Custom Routines panel, so the menu item
+        // is removed.
+        boxCustomRoutine.isHidden = true
+
         installToolsAddOnItems()
         ensureMenuScrolls()
 
@@ -220,7 +213,6 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxUpgradeNow.delegate = self
         
         if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
-            boxMainItems.title = leftMenuVcInfo.value(forKey: "titleMain") as? String ?? boxMainItems.title
             boxToolsItems.title = leftMenuVcInfo.value(forKey: "titleTools") as? String ?? boxToolsItems.title
             boxPreferences.title = leftMenuVcInfo.value(forKey: "titlePreferences") as? String ?? boxPreferences.title
             

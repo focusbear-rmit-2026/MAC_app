@@ -54,11 +54,9 @@ class ViewController: NSViewController {
         if keyPath == "frame" {
             let width = (object as? NSView)?.frame.width ?? 0
             if width < 100{
-                leftMenuVcObj?.boxMainItems.titleLabel.isHidden = true
                 leftMenuVcObj?.boxToolsItems.titleLabel.isHidden = true
                 leftMenuVcObj?.boxPreferences.titleLabel.isHidden = true
             }else{
-                leftMenuVcObj?.boxMainItems.titleLabel.isHidden = false
                 leftMenuVcObj?.boxToolsItems.titleLabel.isHidden = false
                 leftMenuVcObj?.boxPreferences.titleLabel.isHidden = false
             }
