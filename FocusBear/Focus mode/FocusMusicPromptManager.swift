@@ -65,6 +65,7 @@ enum FocusMusicPromptManager {
             if customAlertVcObj?.checkBox.state == .on {
                 SettingsManagerObject.focusMusicAutoStart = isYes ? .play : .off
                 SettingsManagerObject.isSettingsChanged = true
+                SettingsManagerObject.putUserLocalDeviceSettings()
             }
             if isYes {
                 // User opted in — just play music, don't open the Focus Music screen.
