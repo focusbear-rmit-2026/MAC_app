@@ -2825,19 +2825,14 @@ class scheduleViewController: NSViewController {
             host?.scheduleStart(index: idx)
             scheduleReload(after: 0.3)
         case "done":
+            // #2103: mirror Skip exactly. The old code green-flashed the row and animated it to
+            // alphaValue 0 (hidden) before scheduleDone showed the password prompt, so cancelling the
+            // prompt left the row/Done button gone — and any pre-confirm visual (fade or green tint)
+            // lingered when the action didn't complete. Keep the row visible on click and let the normal
+            // reload/refetch reflect the outcome: restored on cancel, struck through on success.
             removeHabitFromCache(index: idx)   // so it can't flash back during the refetch
-            // Green flash + fade on the habit row for clear "completed" feedback.
-            let rowContainer = sender.superview?.superview
-            rowContainer?.wantsLayer = true
-            rowContainer?.layer?.cornerRadius = 6
-            rowContainer?.layer?.backgroundColor = NSColor.systemGreen.withAlphaComponent(0.45).cgColor
-            NSAnimationContext.runAnimationGroup({ ctx in
-                ctx.duration = 0.3
-                rowContainer?.animator().alphaValue = 0.0
-            }, completionHandler: { [weak self] in
-                self?.host?.scheduleDone(index: idx)
-                self?.reload()
-            })
+            host?.scheduleDone(index: idx)
+            scheduleReload(after: 0.25)
         case "skip":
             removeHabitFromCache(index: idx)
             host?.scheduleSkip(index: idx)
