@@ -374,6 +374,10 @@ class habitsStateVc: NSViewController {
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsEveningHabitsShowedTillDate)
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutdownAborted)
                         appdelegate!.backgroundThread()
+                        // #2065: rebuild the menu-bar popover's Day Plan so an uncancel made while it's
+                        // open reflects immediately (backgroundThread re-derives state but doesn't touch
+                        // the popover; tickMenu only refreshes live fields, not the Day Plan section).
+                        menuViewControllerObj?.refreshSwiftUIMenu()
                     }else{
                         showCustomAlert(title: self.restoreRoutineFailedText, body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: true, buttonLinkUrl: nil, buttonLinkText: nil, completionHandler: {_ in
                             
@@ -390,6 +394,8 @@ class habitsStateVc: NSViewController {
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitShowDate)
                         isHabitAlreadyShowed = false
                         appdelegate!.backgroundThread()
+                        // #2065: see the evening branch above — refresh the popover Day Plan on uncancel.
+                        menuViewControllerObj?.refreshSwiftUIMenu()
                     }else{
                         showCustomAlert(title: self.restoreRoutineFailedText, body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: true, buttonLinkUrl: nil, buttonLinkText: nil, completionHandler: {_ in
                             

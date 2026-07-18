@@ -145,6 +145,10 @@ func cancelRoutineForToday(openedFromDayPlan: Bool) {
     // Re-run the host's reloadData so the "Uncancel <routine>" state is recomputed and its button
     // appears immediately (see chooseHabitsVC.btnCancelClicked for the original rationale).
     if openedFromDayPlan { leftMenuVcObj?.showDayPlanForCurrentState() }
+    // #2065: rebuild the menu-bar popover's Day Plan so a cancel made while it's open reflects
+    // immediately (tickMenu only refreshes live fields, not the Day Plan section). Guarded internally,
+    // so it's a no-op when the popover isn't set up.
+    menuViewControllerObj?.refreshSwiftUIMenu()
     addLog(text: "Routine skipped by user")
 }
 
