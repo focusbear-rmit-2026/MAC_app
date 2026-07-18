@@ -40,6 +40,7 @@ class settingsContainerVc: NSViewController {
         getPrivacyVcObject().loadView()
         getMicroBreaksSettingsVcObject().loadView()
         getAddOnsVcObject().loadView()
+        getTalkingClockSettingsVcObject().loadView()
         getResearchVcObject().loadView()
         
         getAccountVcObject().loadView()
@@ -217,6 +218,12 @@ class settingsContainerVc: NSViewController {
         self.containerView.addConstraints(subView: getResearchVcObject().view)
     }
 
+    func showTalkingClockView(){
+        removeSubViews()
+        self.containerView.addSubview(getTalkingClockSettingsVcObject().view)
+        self.containerView.addConstraints(subView: getTalkingClockSettingsVcObject().view)
+    }
+
     func showKeyboardShortcutsView() {
         removeSubViews()
         let vc = getKeyboardShortcutsSettingsVcObject()
@@ -224,7 +231,7 @@ class settingsContainerVc: NSViewController {
         self.containerView.addSubview(vc.view)
         self.containerView.addConstraints(subView: vc.view)
     }
-    
+
     func showOfficeModeSettingsView(){
         removeSubViews()
         self.containerView.addSubview(getOfficeModeSettingsVcObject().view)

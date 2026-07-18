@@ -346,6 +346,11 @@ class settingsSideBarVc: NSViewController {
                 settingsContainerVcObj?.showAddOnsView()
                 return;
             }
+            if id == idTalkingClock{
+                tblView.selectRowIndexes(IndexSet(integer: advancedSettingsIndex), byExtendingSelection: false)
+                settingsContainerVcObj?.showTalkingClockView()
+                return;
+            }
             if id == idToDoList{
                 tblView.selectRowIndexes(IndexSet(integer: 5), byExtendingSelection: false)
                 settingsContainerVcObj?.showTodoListSettingView()

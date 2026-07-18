@@ -238,7 +238,6 @@ var kUserDefaultsLastRoutinePostponeState = "kLastRoutinePostponeState"// mornin
 
 var kUserDefaultsBlockingScheduleAddedFirstTime = "kBlockingScheduleAddedFirstTime"// v2.29.461
 
-
 var kUserdefaultsHiddenFocusModeIDs = "kHiddenFocusModeIDs"
 // IDs of TOOLS sidebar rows the user hid via the hover ✕ (restored via the TOOLS gear icon).
 var kUserdefaultsHiddenToolIds = "kUserdefaultsHiddenToolIds"
@@ -259,3 +258,10 @@ let kUserdefaultsWiFiProfileMappings = "kFBWiFiProfileMappings"
 
 
 var kUserdefaultsBrainDumpSentToWebView = "kUserdefaultsBrainDumpSentToWebView"
+
+// Talking clock (#1674)
+var kUserdefaultsTalkingClockEnabled = "kUserdefaultsTalkingClockEnabled"
+var kUserdefaultsTalkingClockInterval = "kUserdefaultsTalkingClockInterval"
+var kUserdefaultsTalkingClockQuietStart = "kUserdefaultsTalkingClockQuietStart"
+var kUserdefaultsTalkingClockQuietEnd = "kUserdefaultsTalkingClockQuietEnd"
+var kUserdefaultsTalkingClockSuppressMeetings = "kUserdefaultsTalkingClockSuppressMeetings"

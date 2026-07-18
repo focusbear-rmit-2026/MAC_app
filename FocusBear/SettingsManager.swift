@@ -111,6 +111,13 @@ class SettingsManager:NSObject{
     var isMeetingDetectionEnabled = true
     var isBlockDistractingSitesDuringMeetingsEnabled = false
     var showMeetingDetectionAlert = false
+    var isTalkingClockEnabled = false
+    var talkingClockIntervalMinutes = 30
+    var talkingClockQuietStartHour = 22
+    var talkingClockQuietStartMinute = 0
+    var talkingClockQuietEndHour = 8
+    var talkingClockQuietEndMinute = 0
+    var talkingClockSuppressDuringMeetings = true
     var isHideDockInActivity = false
     var isPromptToRememberHabit = true
     var isEasySkipEnabled = true
@@ -865,6 +872,42 @@ class SettingsManager:NSObject{
             }else{
                 UserDefaults.standard.set(isBlockDistractingSitesDuringMeetingsEnabled, forKey: kUserdefaultsBlockDistractingSitesDuringMeetingsEnabled)
             }
+            //  ---------------------------SETTINGS Talking Clock--------------------------
+            if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsTalkingClockEnabled) as? Bool {
+                isTalkingClockEnabled = isEnabled
+            } else {
+                UserDefaults.standard.set(false, forKey: kUserdefaultsTalkingClockEnabled)
+                isTalkingClockEnabled = false
+            }
+            if let interval = UserDefaults.standard.object(forKey: kUserdefaultsTalkingClockInterval) as? Int {
+                talkingClockIntervalMinutes = interval
+            } else {
+                UserDefaults.standard.set(30, forKey: kUserdefaultsTalkingClockInterval)
+                talkingClockIntervalMinutes = 30
+            }
+            if let quietStart = UserDefaults.standard.object(forKey: kUserdefaultsTalkingClockQuietStart) as? Int {
+                talkingClockQuietStartHour = quietStart / 60
+                talkingClockQuietStartMinute = quietStart % 60
+            } else {
+                UserDefaults.standard.set(22 * 60, forKey: kUserdefaultsTalkingClockQuietStart)
+                talkingClockQuietStartHour = 22
+                talkingClockQuietStartMinute = 0
+            }
+            if let quietEnd = UserDefaults.standard.object(forKey: kUserdefaultsTalkingClockQuietEnd) as? Int {
+                talkingClockQuietEndHour = quietEnd / 60
+                talkingClockQuietEndMinute = quietEnd % 60
+            } else {
+                UserDefaults.standard.set(8 * 60, forKey: kUserdefaultsTalkingClockQuietEnd)
+                talkingClockQuietEndHour = 8
+                talkingClockQuietEndMinute = 0
+            }
+            if let suppress = UserDefaults.standard.object(forKey: kUserdefaultsTalkingClockSuppressMeetings) as? Bool {
+                talkingClockSuppressDuringMeetings = suppress
+            } else {
+                UserDefaults.standard.set(true, forKey: kUserdefaultsTalkingClockSuppressMeetings)
+                talkingClockSuppressDuringMeetings = true
+            }
+
             addLog(text: "Parse PasswordRequireInChangeSettings")
             //  ---------------------------SETTINGS Password Require--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInChangeSettings) as? Bool{
@@ -1453,6 +1496,11 @@ class SettingsManager:NSObject{
         UserDefaults.standard.set(isMeetingDetectionEnabled, forKey: kUserdefaultsMeetingDetectionEnabled)
         UserDefaults.standard.set(isBlockDistractingSitesDuringMeetingsEnabled, forKey: kUserdefaultsBlockDistractingSitesDuringMeetingsEnabled)
         UserDefaults.standard.set(showMeetingDetectionAlert, forKey: kUserdefaultsShowMeetingDetectionAlert)
+        UserDefaults.standard.set(isTalkingClockEnabled, forKey: kUserdefaultsTalkingClockEnabled)
+        UserDefaults.standard.set(talkingClockIntervalMinutes, forKey: kUserdefaultsTalkingClockInterval)
+        UserDefaults.standard.set(talkingClockQuietStartHour * 60 + talkingClockQuietStartMinute, forKey: kUserdefaultsTalkingClockQuietStart)
+        UserDefaults.standard.set(talkingClockQuietEndHour * 60 + talkingClockQuietEndMinute, forKey: kUserdefaultsTalkingClockQuietEnd)
+        UserDefaults.standard.set(talkingClockSuppressDuringMeetings, forKey: kUserdefaultsTalkingClockSuppressMeetings)
         UserDefaults.standard.set(isHideDockInActivity, forKey: kUserdefaultsHideDockInActivity)
         UserDefaults.standard.set(isPromptToRememberHabit, forKey: kUserdefaultsPromptToRememberHabit)
         UserDefaults.standard.set(isEasySkipEnabled, forKey: kUserdefaultsEasySkipEnabled)

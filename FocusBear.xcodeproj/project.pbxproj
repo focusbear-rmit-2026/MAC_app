@@ -116,6 +116,7 @@
 		274E0F4928902CF1000234A3 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E0F4828902CF1000234A3 /* User.swift */; };
 		274E0F4C28902E29000234A3 /* Auth0.plist in Resources */ = {isa = PBXBuildFile; fileRef = 274E0F4B28902E28000234A3 /* Auth0.plist */; };
 		274E671628951DDD0030163F /* AllApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E671528951DDC0030163F /* AllApi.swift */; };
+		E0AA4E363AFEF2F7180E9848 /* TalkingClockManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2AFF50781FF64A00B0C9A64 /* TalkingClockManager.swift */; };
 		5A3E0C8D2FA42A4700301BE2 /* HiddenFocusModeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3E0C8C2FA42A4700301BE2 /* HiddenFocusModeManager.swift */; };
 		5AA6CC882FBC0A1F007BD5D1 /* WiFiMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA6CC872FBC0A1F007BD5D1 /* WiFiMonitorService.swift */; };
 		5AA6CC8A2FBC0A49007BD5D1 /* WiFiProfileMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA6CC892FBC0A49007BD5D1 /* WiFiProfileMapping.swift */; };
@@ -280,6 +281,8 @@
 		8F8A53F827AA4ABB00A01E2D /* Smile _Small.gif in Resources */ = {isa = PBXBuildFile; fileRef = 8F8A53F427AA4ABB00A01E2D /* Smile _Small.gif */; };
 		8F8C3FD42A8CB297005CAF96 /* settingListItemVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F8C3FD32A8CB297005CAF96 /* settingListItemVc.swift */; };
 		8F8C3FD62A8CB79A005CAF96 /* advancedVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F8C3FD52A8CB79A005CAF96 /* advancedVc.swift */; };
+		TCV00001 /* talkingClockSettingsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = TCV00002 /* talkingClockSettingsVc.swift */; };
+		TCS00001 /* TalkingClockSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TCS00002 /* TalkingClockSettingsView.swift */; };
 		8F8C3FD82A8CD865005CAF96 /* meetingDetactionVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F8C3FD72A8CD865005CAF96 /* meetingDetactionVc.swift */; };
 		8F8C3FDA2A8CDB8F005CAF96 /* settingToggleItemVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F8C3FD92A8CDB8F005CAF96 /* settingToggleItemVc.swift */; };
 		8F8C3FDC2A8CF079005CAF96 /* privacyVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F8C3FDB2A8CF079005CAF96 /* privacyVc.swift */; };
@@ -541,6 +544,7 @@
 		274E0F4828902CF1000234A3 /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		274E0F4B28902E28000234A3 /* Auth0.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Auth0.plist; sourceTree = "<group>"; };
 		274E671528951DDC0030163F /* AllApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllApi.swift; sourceTree = "<group>"; };
+		E2AFF50781FF64A00B0C9A64 /* TalkingClockManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkingClockManager.swift; sourceTree = "<group>"; };
 		5A3E0C8C2FA42A4700301BE2 /* HiddenFocusModeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiddenFocusModeManager.swift; sourceTree = "<group>"; };
 		5AA6CC872FBC0A1F007BD5D1 /* WiFiMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiMonitorService.swift; sourceTree = "<group>"; };
 		5AA6CC892FBC0A49007BD5D1 /* WiFiProfileMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiProfileMapping.swift; sourceTree = "<group>"; };
@@ -715,6 +719,8 @@
 		8F8A53F427AA4ABB00A01E2D /* Smile _Small.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = "Smile _Small.gif"; sourceTree = "<group>"; };
 		8F8C3FD32A8CB297005CAF96 /* settingListItemVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = settingListItemVc.swift; sourceTree = "<group>"; };
 		8F8C3FD52A8CB79A005CAF96 /* advancedVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = advancedVc.swift; sourceTree = "<group>"; };
+		TCV00002 /* talkingClockSettingsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = talkingClockSettingsVc.swift; sourceTree = "<group>"; };
+		TCS00002 /* TalkingClockSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkingClockSettingsView.swift; sourceTree = "<group>"; };
 		8F8C3FD72A8CD865005CAF96 /* meetingDetactionVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = meetingDetactionVc.swift; sourceTree = "<group>"; };
 		8F8C3FD92A8CDB8F005CAF96 /* settingToggleItemVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = settingToggleItemVc.swift; sourceTree = "<group>"; };
 		8F8C3FDB2A8CF079005CAF96 /* privacyVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = privacyVc.swift; sourceTree = "<group>"; };
@@ -1225,6 +1231,8 @@
 			isa = PBXGroup;
 			children = (
 				8F8C3FD52A8CB79A005CAF96 /* advancedVc.swift */,
+				TCV00002 /* talkingClockSettingsVc.swift */,
+				TCS00002 /* TalkingClockSettingsView.swift */,
 				8F8C3FD72A8CD865005CAF96 /* meetingDetactionVc.swift */,
 				8F8C3FDB2A8CF079005CAF96 /* privacyVc.swift */,
 				8F2E99392B31CC51001AF655 /* addOnsVc.swift */,
@@ -1484,6 +1492,7 @@
 				274C9A92289BF8D40066F883 /* SettingsManager.swift */,
 				8F1456BB2D40B32600130B21 /* TabMatrics.swift */,
 				274E671528951DDC0030163F /* AllApi.swift */,
+				E2AFF50781FF64A00B0C9A64 /* TalkingClockManager.swift */,
 				8F344A032D882532003D82A4 /* allCsvFilesData.swift */,
 				8F7DA75D2B1B412000B2E1CC /* pusherEvents.swift */,
 				8FD86E1B2A54303A004F6761 /* unusedCode.swift */,
@@ -2156,6 +2165,9 @@
 				13BBEEE42F7567F10073B58E /* startSetUpHabitsVc.swift in Sources */,
 				8F2B7C6F2C3BFAF100829B59 /* accessibilityPermissionVc.swift in Sources */,
 				8F8C3FD62A8CB79A005CAF96 /* advancedVc.swift in Sources */,
+				TCV00001 /* talkingClockSettingsVc.swift in Sources */,
+				TCS00001 /* TalkingClockSettingsView.swift in Sources */,
+				8FA0FEE22C9EDEB00071D8CC /* blockingScheduleVc.swift in Sources */,
 				8F8E9AA62AAB021900F7CD32 /* surveyVc.swift in Sources */,
 				134C1D392E8263CC0032AF65 /* log.swift in Sources */,
 				8F4BD8C427883FBE00ABAEF5 /* NSEventModifierFlags+HotKey.swift in Sources */,
@@ -2209,6 +2221,7 @@
 				8FBE37A52A8F5B640018402A /* aiSettingNewVc.swift in Sources */,
 				8FCE07AB2931F2A300DF4530 /* popUpOfflineVc.swift in Sources */,
 				274E671628951DDD0030163F /* AllApi.swift in Sources */,
+				E0AA4E363AFEF2F7180E9848 /* TalkingClockManager.swift in Sources */,
 				8F6465CE2A612C58009A3341 /* tblCellUrlRelaxMode.swift in Sources */,
 				8F3DD01629F3B4CA00E23715 /* AHAuthorizer.m in Sources */,
 				274C9A91289A8C910066F883 /* accountVc.swift in Sources */,

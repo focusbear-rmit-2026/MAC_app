@@ -518,6 +518,14 @@ func getResearchVcObject()->researchVc{
     return researchVcObj!
 }
 
+//talkingClockSettingsVcObj
+var talkingClockSettingsVcObj:talkingClockSettingsVc?
+func getTalkingClockSettingsVcObject()->talkingClockSettingsVc{
+    if talkingClockSettingsVcObj == nil{
+        talkingClockSettingsVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("talkingClockSettingsVc")) as? talkingClockSettingsVc
+    }
+    return talkingClockSettingsVcObj!
+}
 
 //microBreaksSettingsVcObj
 var microBreaksSettingsVcObj:microBreaksSettingsVc?

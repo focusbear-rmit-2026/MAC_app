@@ -1147,6 +1147,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             
             DispatchQueue.main.async {
                 addLog(text: "work after getUserLocalDeviceSettings")
+                TalkingClockManager.shared.start()
 
                 // Register keyboard shortcuts for Brain Dump, Focus Music, Task List
                 HotkeyService.shared.registerAll()
@@ -1485,6 +1486,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             print("Woke up")
             addLog(text: "Woke up")
             isSystemSleep = false
+            TalkingClockManager.shared.restart()
             if !isScreenLocked{
                 if isActivityTimerPaused{
                     resumeBreakActivityTimerIfNededed()//always calll this function before returnFromSystemSleepCheckAppStateAgain func
@@ -6852,6 +6854,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         addLog(text: "Application Will Terminate")
         UserDefaults.standard.set(true, forKey: kUserdefaultsAppQuitProperly)
         print("applicationWillTerminate")
+        TalkingClockManager.shared.stop()
         teacherSessionManagerObject.sendFinalHeartbeatBeforeTerminate()// best-effort {in_focus:false} beat, server also infers quit from the heartbeat gap
         flaskServerObject.stopFlaskServer()
         firefoxServer.stop()

@@ -1143,6 +1143,19 @@
         "buttonDontHaveTimeText": "No tengo tiempo",
         "buttonInTheOffIceText": "Estoy en la oficina"
     },
+    "talkingClockSettingsInfo": {
+        "title": "Reloj Parlante",
+        "back": "Atrás",
+        "enableTitle": "Activar el reloj parlante",
+        "enableSubtitle": "Anuncia la hora actual a intervalos regulares para ayudarte a ser consciente del tiempo.",
+        "announceEvery": "Anunciar cada",
+        "minutes": "minutos",
+        "quietHours": "Horas de silencio (sin anuncios entre estas horas)",
+        "start": "Inicio:",
+        "end": "Fin:",
+        "suppressTitle": "Silenciar durante reuniones",
+        "suppressSubtitle": "No anunciar la hora cuando estás en un modo de enfoque de reunión."
+    },
     "eveningShutdownInfo": {
         "title": "Bien hecho por terminar tu rutina nocturna",
         "subtitle": "Que descanses bien",

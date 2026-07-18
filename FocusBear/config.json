@@ -1145,6 +1145,19 @@
         "buttonDontHaveTimeText": "I don't have time",
         "buttonInTheOffIceText": "I'm in the offIce"
     },
+    "talkingClockSettingsInfo": {
+        "title": "Talking Clock",
+        "back": "Back",
+        "enableTitle": "Enable talking clock",
+        "enableSubtitle": "Announce the current time at regular intervals to help you stay time-aware.",
+        "announceEvery": "Announce every",
+        "minutes": "minutes",
+        "quietHours": "Quiet hours (no announcements between these times)",
+        "start": "Start:",
+        "end": "End:",
+        "suppressTitle": "Suppress during meetings",
+        "suppressSubtitle": "Don't announce the time when you're in a meeting focus mode."
+    },
     "eveningShutdownInfo": {
         "title": "Well done on finishing your evening routine",
         "subtitle": "Have a restful sleep",

@@ -12669,6 +12669,167 @@ Gw
             </objects>
             <point key="canvasLocation" x="4447" y="-299"/>
         </scene>
+        <!--Talking Clock Settings Vc-->
+        <scene sceneID="TCK-sc-001">
+            <objects>
+                <viewController storyboardIdentifier="talkingClockSettingsVc" id="TCK-vc-001" customClass="talkingClockSettingsVc" customModule="Focus_Bear" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" id="TCK-vw-001">
+                        <rect key="frame" x="0.0" y="0.0" width="529" height="138"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                        <subviews>
+                            <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="TCK-bx-001">
+                                <rect key="frame" x="0.0" y="0.0" width="529" height="138"/>
+                                <view key="contentView" id="TCK-cv-001">
+                                    <rect key="frame" x="0.0" y="0.0" width="529" height="138"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                    <subviews>
+                                        <box horizontalHuggingPriority="1" horizontalCompressionResistancePriority="1" boxType="custom" borderType="line" cornerRadius="7" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="TCK-bx-002">
+                                            <rect key="frame" x="20" y="20" width="489" height="48"/>
+                                            <view key="contentView" id="TCK-cv-002">
+                                                <rect key="frame" x="1" y="1" width="487" height="46"/>
+                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                <subviews>
+                                                    <stackView distribution="fill" orientation="vertical" alignment="centerX" spacing="0.0" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="249.99998474121094" horizontalHuggingPriority="1" horizontalCompressionResistancePriority="1" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="TCK-sv-001">
+                                                        <rect key="frame" x="1" y="1" width="485" height="44"/>
+                                                        <subviews>
+                                                            <box horizontalHuggingPriority="1" horizontalCompressionResistancePriority="1" boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="TCK-bx-003">
+                                                                <rect key="frame" x="0.0" y="0.0" width="485" height="44"/>
+                                                                <view key="contentView" id="TCK-cv-003">
+                                                                    <rect key="frame" x="0.0" y="0.0" width="485" height="44"/>
+                                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                    <subviews>
+                                                                        <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="TCK-tf-001">
+                                                                            <rect key="frame" x="8" y="14" width="209" height="16"/>
+                                                                            <textFieldCell key="cell" lineBreakMode="clipping" title="Talking Clock" id="TCK-tfc-001">
+                                                                                <font key="font" usesAppearanceFont="YES"/>
+                                                                                <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                            </textFieldCell>
+                                                                        </textField>
+                                                                        <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="TCK-sep-001">
+                                                                            <rect key="frame" x="10" y="-2" width="465" height="5"/>
+                                                                        </box>
+                                                                    </subviews>
+                                                                    <constraints>
+                                                                        <constraint firstItem="TCK-tf-001" firstAttribute="leading" secondItem="TCK-cv-003" secondAttribute="leading" constant="10" id="TCK-c-001"/>
+                                                                        <constraint firstAttribute="trailing" secondItem="TCK-sep-001" secondAttribute="trailing" constant="10" id="TCK-c-002"/>
+                                                                        <constraint firstItem="TCK-sep-001" firstAttribute="leading" secondItem="TCK-cv-003" secondAttribute="leading" constant="10" id="TCK-c-003"/>
+                                                                        <constraint firstAttribute="bottom" secondItem="TCK-sep-001" secondAttribute="bottom" id="TCK-c-004"/>
+                                                                        <constraint firstItem="TCK-tf-001" firstAttribute="centerY" secondItem="TCK-cv-003" secondAttribute="centerY" id="TCK-c-005"/>
+                                                                    </constraints>
+                                                                </view>
+                                                                <constraints>
+                                                                    <constraint firstAttribute="height" constant="44" id="TCK-c-006"/>
+                                                                </constraints>
+                                                                <color key="fillColor" name="alternatingContentBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                            </box>
+                                                        </subviews>
+                                                        <visibilityPriorities>
+                                                            <integer value="1000"/>
+                                                        </visibilityPriorities>
+                                                        <customSpacing>
+                                                            <real value="3.4028234663852886e+38"/>
+                                                        </customSpacing>
+                                                    </stackView>
+                                                </subviews>
+                                                <constraints>
+                                                    <constraint firstAttribute="trailing" secondItem="TCK-sv-001" secondAttribute="trailing" constant="1" id="TCK-c-007"/>
+                                                    <constraint firstItem="TCK-sv-001" firstAttribute="leading" secondItem="TCK-cv-002" secondAttribute="leading" constant="1" id="TCK-c-008"/>
+                                                    <constraint firstItem="TCK-sv-001" firstAttribute="top" secondItem="TCK-cv-002" secondAttribute="top" constant="1" id="TCK-c-009"/>
+                                                    <constraint firstAttribute="bottom" secondItem="TCK-sv-001" secondAttribute="bottom" constant="1" id="TCK-c-010"/>
+                                                </constraints>
+                                            </view>
+                                            <color key="borderColor" name="separatorColor" catalog="System" colorSpace="catalog"/>
+                                        </box>
+                                        <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="TCK-bx-004">
+                                            <rect key="frame" x="0.0" y="88" width="529" height="50"/>
+                                            <view key="contentView" id="TCK-cv-004">
+                                                <rect key="frame" x="0.0" y="0.0" width="529" height="50"/>
+                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                <subviews>
+                                                    <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="7" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="TCK-sv-002">
+                                                        <rect key="frame" x="20" y="0.0" width="489" height="50"/>
+                                                        <subviews>
+                                                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="TCK-btn-001" customClass="cursorButton" customModule="Focus_Bear" customModuleProvider="target">
+                                                                <rect key="frame" x="-3" y="8" width="32" height="33"/>
+                                                                <buttonCell key="cell" type="bevel" bezelStyle="regularSquare" image="NSLeftFacingTriangleTemplate" imagePosition="only" alignment="center" controlSize="large" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="TCK-bc-001">
+                                                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                                    <font key="font" metaFont="system"/>
+                                                                </buttonCell>
+                                                                <constraints>
+                                                                    <constraint firstAttribute="height" constant="26" id="TCK-c-011"/>
+                                                                    <constraint firstAttribute="width" constant="26" id="TCK-c-012"/>
+                                                                </constraints>
+                                                                <connections>
+                                                                    <action selector="btnBackClicked:" target="TCK-vc-001" id="TCK-act-001"/>
+                                                                </connections>
+                                                            </button>
+                                                            <textField focusRingType="none" horizontalHuggingPriority="1" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="TCK-tf-002">
+                                                                <rect key="frame" x="31" y="17" width="460" height="17"/>
+                                                                <textFieldCell key="cell" lineBreakMode="clipping" title="Talking Clock" id="TCK-tfc-002">
+                                                                    <font key="font" metaFont="systemSemibold" size="14"/>
+                                                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                </textFieldCell>
+                                                            </textField>
+                                                        </subviews>
+                                                        <visibilityPriorities>
+                                                            <integer value="1000"/>
+                                                            <integer value="1000"/>
+                                                        </visibilityPriorities>
+                                                        <customSpacing>
+                                                            <real value="3.4028234663852886e+38"/>
+                                                            <real value="3.4028234663852886e+38"/>
+                                                        </customSpacing>
+                                                    </stackView>
+                                                    <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="TCK-sep-002">
+                                                        <rect key="frame" x="0.0" y="-2" width="529" height="5"/>
+                                                    </box>
+                                                </subviews>
+                                                <constraints>
+                                                    <constraint firstAttribute="bottom" secondItem="TCK-sv-002" secondAttribute="bottom" id="TCK-c-013"/>
+                                                    <constraint firstAttribute="trailing" secondItem="TCK-sep-002" secondAttribute="trailing" id="TCK-c-014"/>
+                                                    <constraint firstItem="TCK-sep-002" firstAttribute="leading" secondItem="TCK-cv-004" secondAttribute="leading" id="TCK-c-015"/>
+                                                    <constraint firstAttribute="bottom" secondItem="TCK-sep-002" secondAttribute="bottom" id="TCK-c-016"/>
+                                                    <constraint firstItem="TCK-sv-002" firstAttribute="top" secondItem="TCK-cv-004" secondAttribute="top" id="TCK-c-017"/>
+                                                </constraints>
+                                            </view>
+                                            <constraints>
+                                                <constraint firstAttribute="height" constant="50" id="TCK-c-018"/>
+                                            </constraints>
+                                            <color key="fillColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                        </box>
+                                    </subviews>
+                                    <constraints>
+                                        <constraint firstItem="TCK-bx-002" firstAttribute="top" secondItem="TCK-bx-004" secondAttribute="bottom" constant="20" id="TCK-c-019"/>
+                                        <constraint firstItem="TCK-sv-002" firstAttribute="leading" secondItem="TCK-bx-002" secondAttribute="leading" id="TCK-c-020"/>
+                                        <constraint firstAttribute="trailing" secondItem="TCK-bx-002" secondAttribute="trailing" constant="20" id="TCK-c-021"/>
+                                        <constraint firstItem="TCK-bx-004" firstAttribute="leading" secondItem="TCK-cv-001" secondAttribute="leading" id="TCK-c-022"/>
+                                        <constraint firstItem="TCK-bx-004" firstAttribute="top" secondItem="TCK-cv-001" secondAttribute="top" id="TCK-c-023"/>
+                                        <constraint firstAttribute="trailing" secondItem="TCK-bx-004" secondAttribute="trailing" id="TCK-c-024"/>
+                                        <constraint firstItem="TCK-bx-002" firstAttribute="leading" secondItem="TCK-cv-001" secondAttribute="leading" constant="20" id="TCK-c-025"/>
+                                        <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="TCK-bx-002" secondAttribute="bottom" constant="20" id="TCK-c-026"/>
+                                    </constraints>
+                                </view>
+                            </box>
+                        </subviews>
+                        <constraints>
+                            <constraint firstAttribute="bottom" secondItem="TCK-bx-001" secondAttribute="bottom" id="TCK-c-027"/>
+                            <constraint firstItem="TCK-bx-001" firstAttribute="top" secondItem="TCK-vw-001" secondAttribute="top" id="TCK-c-028"/>
+                            <constraint firstItem="TCK-bx-001" firstAttribute="leading" secondItem="TCK-vw-001" secondAttribute="leading" id="TCK-c-029"/>
+                            <constraint firstAttribute="trailing" secondItem="TCK-bx-001" secondAttribute="trailing" id="TCK-c-030"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="btnBack" destination="TCK-btn-001" id="TCK-out-001"/>
+                        <outlet property="lblTitle" destination="TCK-tf-002" id="TCK-out-002"/>
+                        <outlet property="stackView" destination="TCK-sv-001" id="TCK-out-003"/>
+                    </connections>
+                </viewController>
+                <customObject id="TCK-fr-001" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="6200" y="602"/>
+        </scene>
     </scenes>
     <resources>
         <image name="NSAddTemplate" width="18" height="16"/>
