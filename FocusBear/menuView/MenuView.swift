@@ -118,6 +118,11 @@ final class MenuModel: ObservableObject {
     // Voice/mic is only offered to trial/subscription users.
     @Published var micAvailable = true
 
+    // #2081: trial / expired subscription status shown at the top of the menu. Empty for paid users.
+    @Published var subscriptionStatus = ""      // "Trial version - N of 21 trial days remaining" / "…expired"
+    @Published var subscriptionExpired = false  // style red + warning icon when the trial/subscription has ended
+    var onUpgrade: () -> Void = {}              // tap the status → open the Upgrade Now window
+
     // "Set up distraction blocking" banner — shown when no blocking schedule exists.
     @Published var showBlockingBanner = false
     var onSetUpBlocking: () -> Void = {}
@@ -430,6 +435,14 @@ struct FocusBearMenuView: View {
                     ToolButton(icon: "brain", title: menuLocalized("menuBrainDump", "Brain Dump"), scheme: scheme, action: model.onOpenBrainDump)
                     ToolButton(icon: "checklist", title: menuLocalized("menuToDoPlayer", "To-Do Player"), scheme: scheme, action: model.onOpenToDoPlayer)
                 }
+            }
+
+            // #2081: trial / expired subscription status — shown at the bottom of the menu.
+            if !model.subscriptionStatus.isEmpty {
+                SubscriptionBanner(text: model.subscriptionStatus,
+                                   expired: model.subscriptionExpired,
+                                   scheme: scheme,
+                                   onUpgrade: model.onUpgrade)
             }
         }
         .padding(14)
@@ -1112,6 +1125,46 @@ private func menuBundledImage(_ name: String) -> NSImage? {
 }
 
 @available(macOS 11.0, *)
+/// #2081: trial / expired subscription status, styled like the other menu rows — a leading icon, an
+/// "Upgrade Now" title, and the status as a small subtitle. The whole row taps through to Upgrade Now
+/// (no separate link needed). The status text is systemRed when expired — matching the old menu's
+/// lblTrialVersionInfo — but the row background stays neutral like every other row.
+private struct SubscriptionBanner: View {
+    let text: String          // status description (trial days remaining / expired) — shown as the subtitle
+    let expired: Bool
+    let scheme: ColorScheme
+    let onUpgrade: () -> Void
+
+    var body: some View {
+        SwiftUI.Button(action: onUpgrade) {
+            HStack(spacing: 12) {
+                IconChip(systemName: "crown.fill", scheme: scheme, onSolid: false)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(menuLocalized("menuUpgradeNow", "Upgrade Now"))
+                        .font(MenuTheme.font(14, .semibold))
+                        .foregroundColor(MenuTheme.primaryText(scheme))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(text)
+                        .font(MenuTheme.font(11, .regular))
+                        .foregroundColor(expired ? .red : MenuTheme.subtitle(scheme))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                // Fill the remaining width so the status uses the whole line before wrapping (a trailing
+                // Spacer instead would make this column hug its content and wrap the text early).
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(13)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 10).fill(MenuTheme.cardBg(scheme)))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(MenuTheme.border(scheme), lineWidth: 1))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
 private struct BlockingBanner: View {
     let scheme: ColorScheme
     let onSetUp: () -> Void

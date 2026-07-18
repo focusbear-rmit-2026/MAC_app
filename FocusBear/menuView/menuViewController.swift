@@ -2482,6 +2482,7 @@ extension menuViewController {
             }
         }
         model.onShowStats      = { [weak self] in self?.btnPreferencesClicked(self as Any) }
+        model.onUpgrade        = { showUpgradeNowWindow(reason: "menu_subscription_status") }   // #2081
         model.onStopFocus      = { [weak self] in self?.stopFocusMode() }
         model.onTogglePin      = { [weak self] in self?.btnPinClicked(self as Any) }   // popover <-> window
         model.onOpenBreaks     = { [weak self] in self?.btnStartBreakClicked(self as Any) }
@@ -2668,6 +2669,22 @@ extension menuViewController {
         // Reflect the current menu presentation so the header's pin icon matches reality
         // (window/pinned vs popover). The pin button toggles between the two via btnPinClicked.
         model.menuPinnedAsWindow = !SettingsManagerObject.isMenuPopoverEnabled
+
+        // #2081: trial / expired subscription status. Computed here (a live field) so a mid-session change
+        // to isPurchased/daysLeft anywhere in the app — e.g. a purchase completing — hides/updates the
+        // banner within ~1s while the menu is open, not only on the next menu-open. Mirrors the old menu's
+        // checkPurchaseState(): paid → nothing (banner hidden); trial → days remaining; else → expired.
+        if isPurchased {
+            model.subscriptionStatus = ""
+            model.subscriptionExpired = false
+        } else if daysLeft <= 0 {
+            model.subscriptionStatus = subscriptionExpiredText
+            model.subscriptionExpired = true
+        } else {
+            model.subscriptionStatus = daysRemainingText.replacingOccurrences(of: "<DAYS>", with: "\(daysLeft)")
+            model.subscriptionExpired = false
+        }
+
         let running = isFocusModeOnOrPaused()
         model.focusRunning     = running
         model.focusPaused      = isFocusModePaused()
