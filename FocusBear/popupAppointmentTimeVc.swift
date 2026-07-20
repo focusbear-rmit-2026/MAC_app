@@ -22,6 +22,12 @@ class popupAppointmentTimeVc: NSViewController {
     var totalDuration = 120
     var timer:Timer?
     var endTime:Date?
+    // Fires startAppointment() once the meeting's own end time passes, so the popup can't sit open
+    // (and the routine stay stuck) indefinitely if the user just doesn't click a button — the window
+    // has no close button and nothing else was closing it. Only used on the no-password branch: the
+    // password branch already has its own 120s give-up timer (performTimerCount below), and
+    // auto-advancing past a required password would defeat the postpone-after-cutoff gate above.
+    var autoCloseTimer: Timer?
     var subTitle = "Unlocking your Mac so you can turn off Late No More appointment reminders. You have <TIMELEFT> to turn it off. Enter a password to continue using it until your appointment ends at <TIME>"
     
     override func viewDidLoad() {
@@ -43,6 +49,8 @@ class popupAppointmentTimeVc: NSViewController {
     var shouldAskPassword = false
     func resetView(title:String, endTime:Date){
         self.endTime = endTime
+        autoCloseTimer?.invalidate()
+        autoCloseTimer = nil
         if currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_{
             btnBackToHabits.isHidden = true
         }else{
@@ -92,7 +100,13 @@ class popupAppointmentTimeVc: NSViewController {
             if let popupAppointmentTimeVcInfo = configjson.value(forKey: "popupAppointmentTimeVcInfo") as? NSDictionary{
                 btnOk.title = popupAppointmentTimeVcInfo.value(forKey: "buttonThanksText") as? String ?? btnOk.title
             }
-            
+
+            let fireInterval = max(endTime.timeIntervalSinceNow, 1)
+            autoCloseTimer = Timer.scheduledTimer(withTimeInterval: fireInterval, repeats: false) { [weak self] _ in
+                addLog(text: "popupAppointmentTimeVc:- auto-closing at meeting end time, no user action taken")
+                self?.startAppointment()
+            }
+            RunLoop.main.add(autoCloseTimer!, forMode: .common)
         }else{
             lblSubTitle.isHidden = false
             btnOk.title = "Enter Password"
@@ -116,6 +130,8 @@ class popupAppointmentTimeVc: NSViewController {
     func startAppointment(){
         addLog(text: "smallCountDownVc:- startAppointment")
         focusButtonServiceObject.dismissNotification()
+        autoCloseTimer?.invalidate()
+        autoCloseTimer = nil
         let duration = Calendar.current.dateComponents([.second], from: Date(), to: endTime!).second ?? 0
         if lastCurrentState == ._MORNING_HABIT_{
             getHabitsVcObject().postponeMorningHabitFor(minutes: 0, secondsToPostpone: duration + 160, showAskFocusModeView:false, showAskIntention:false)
@@ -136,6 +152,8 @@ class popupAppointmentTimeVc: NSViewController {
     @IBAction func btnBackToHabitsClicked(_ sender: Any) {
         addLog(text: "[user-action] smallCountDownVc:- button back to habits clicked")
         focusButtonServiceObject.dismissNotification()
+        autoCloseTimer?.invalidate()
+        autoCloseTimer = nil
         if timer != nil{
             timer?.invalidate()
             timer = nil
