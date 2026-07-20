@@ -361,6 +361,9 @@ class focusCompletedVc: NSViewController {
     override func viewWillAppear() {
         isFinishFocusModeApiCalled = false
         loader.isHidden = true
+        // Prevent focus mode name from overlapping adjacent labels on smaller screens (#1659)
+        lblTitle.lineBreakMode = .byTruncatingTail
+        lblTitle.maximumNumberOfLines = 1
         if isHardCorePomodoroModeOn{
             btnStartAnotherFocusBlock.isHidden = true
         }else{

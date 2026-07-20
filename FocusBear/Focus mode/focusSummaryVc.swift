@@ -344,11 +344,19 @@ class focusSummaryVc: NSViewController {
     }
     
     func setScrollViewFocusSummaryWidth(){
-        if self.view.frame.width < 1100{
+        let windowWidth = self.view.frame.width
+        if windowWidth < 1100 {
+            // Very narrow window: use smallest scroll view width
+            widthScrollViewFocusSummary.constant = 800
+        } else if windowWidth < 1300 {
+            // 13-inch MacBook range (~1280px): reduce width to prevent label overlap
             widthScrollViewFocusSummary.constant = 900
-        }else{
+        } else {
             widthScrollViewFocusSummary.constant = 1000
         }
+        // Ensure the title label truncates gracefully rather than overlapping
+        lblTitle.lineBreakMode = .byTruncatingTail
+        lblTitle.maximumNumberOfLines = 1
     }
     
     
