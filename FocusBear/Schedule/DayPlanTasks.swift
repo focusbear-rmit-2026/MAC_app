@@ -832,6 +832,13 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
     private let stack = NSStackView()
     private var isReloading = false   // guards against re-entrant reload() duplicating the list
 
+    // Trailing spacer height reserved after the last task row so its action row (Expand/Snooze/Remove,
+    // revealed on click) and a fully-wrapped 3-line name aren't left unreachable by scrolling — see the
+    // comment on the spacer in reload() for why this can't be done via NSScrollView.contentInsets.
+    // Sized for the worst case: ~2 extra wrapped lines over a 1-line row (≈ 34pt) + the action row's own
+    // height plus its stack spacing (≈ 30pt), with headroom.
+    private let bottomScrollReserveHeight: CGFloat = 90
+
     private var headTopConstraint: NSLayoutConstraint?
     /// Extra top padding added in full screen so the header clears the menu-bar reveal overlay.
     var extraTopInset: CGFloat = 0 { didSet { headTopConstraint?.constant = 14 + extraTopInset } }
@@ -999,10 +1006,11 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         scroll.scrollerStyle = .legacy   // always-visible scrollbar on the tasks list, even with no custom routines below
         scroll.documentView = stack
         scroll.translatesAutoresizingMaskIntoConstraints = false
-        // Room to scroll past the last task so its (multi-line) input + the #project suggestions
-        // aren't cut off by the Custom Routines panel below.
-        scroll.automaticallyAdjustsContentInsets = false
-        scroll.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: 60, right: 0)
+        // NB: room to scroll past the last task is reserved via a trailing spacer arranged subview in
+        // reload(), NOT scroll.contentInsets — verified (offscreen AppKit harness) that contentInsets.bottom
+        // does not extend NSClipView's constrainBoundsRect/documentRect, so it never actually created any
+        // extra scrollable headroom here despite the old comment claiming otherwise (bug report 2026-07-18:
+        // the last task's click-revealed action row was unreachable/unclickable at max scroll).
 
         addSubview(head)
         addSubview(scroll)
@@ -1064,6 +1072,14 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         // (dropped onto a schedule block, blockKey != nil) are flagged with a clock badge on their
         // row instead of living under a separate section header. Tasks stay grouped by project.
         addProjectGroups(all)
+        // Real trailing content (not a scroll inset — see the comment on `scroll` above) so the last
+        // task's click-revealed action row is always fully reachable by scrolling, instead of landing
+        // right at the visual boundary with the Custom Routines panel below and reading as "hidden
+        // behind" it.
+        let bottomSpacer = NSView()
+        bottomSpacer.translatesAutoresizingMaskIntoConstraints = false
+        bottomSpacer.heightAnchor.constraint(equalToConstant: bottomScrollReserveHeight).isActive = true
+        stack.addArrangedSubview(bottomSpacer)
     }
 
     /// Sub-group a section's tasks by project (first-appearance order; "No project" last) and render
