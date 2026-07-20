@@ -3897,21 +3897,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         return false
     }
     
-    private func fetchBrowserAllTabUrlsInBackground(browser: BROWSER) -> [String]?  {
-        var resultURL: [String]? = nil
-        
-        let semaphore = DispatchSemaphore(value: 0)
-        
-        // AppleScript must run on MAIN
-        DispatchQueue.main.async {
-            resultURL = getBrowserAllTabUrl(browser: browser) ?? []
-            semaphore.signal()
-        }
-        
-        // Wait for the main thread to finish
-        semaphore.wait()
-        
-        return resultURL
+    private func fetchBrowserAllTabUrlsInBackground(browser: BROWSER) -> [String]? {
+        // Call directly on the (background) meeting-detection thread. `getBrowserAllTabUrl`
+        // routes through `runAppleScriptSafely`, which already serialises the AppleScript onto
+        // `appleScriptSerialQueue` and applies a bounded timeout — a background caller gets the
+        // full, generous wait, the main thread is never touched. The previous
+        // `DispatchQueue.main.async { … }; semaphore.wait()` bounce was the PR #2009 anti-pattern:
+        // it forced browser "get every tab" AppleScript onto the main thread (freezing the UI while
+        // a busy browser answered) and blocked this worker on an *un-timed* semaphore, so a stalled
+        // main run loop hung the worker forever and starved the global thread pool → full beachball.
+        return getBrowserAllTabUrl(browser: browser)
     }
     
     func handleMeetingDetected(){
