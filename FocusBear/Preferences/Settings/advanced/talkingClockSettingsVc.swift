@@ -26,19 +26,10 @@ class talkingClockSettingsVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // Replace the storyboard content with the SwiftUI settings view.
-        view.subviews.forEach { $0.removeFromSuperview() }
-        let hosting = NSHostingView(rootView: TalkingClockSettingsView(model: model, onBack: {
-            settingsContainerVcObj?.showAdvancedView()
-        }))
-        hosting.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(hosting)
-        NSLayoutConstraint.activate([
-            hosting.topAnchor.constraint(equalTo: view.topAnchor),
-            hosting.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            hosting.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            hosting.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
+        // Keep the storyboard's native back bar (btnBack + lblTitle + separator) — it's the same
+        // bevel back button the other settings pages use (Privacy / Add-ons / Research) — and swap
+        // only the content box below it for the SwiftUI view. Don't recreate the bar in SwiftUI.
+        installSwiftUIContentBelowBackBar()
 
         // Keep the two toggles findable from settings search.
         arrForSearchFromSettings.append([
@@ -51,5 +42,72 @@ class talkingClockSettingsVc: NSViewController {
 
     @IBAction func btnBackClicked(_ sender: Any) {
         settingsContainerVcObj?.showAdvancedView()
+    }
+
+    // MARK: - SwiftUI hosting
+
+    /// Remove the storyboard's old bordered content box (the ancestor of `stackView`) while keeping
+    /// the back-bar box (the ancestor of `btnBack`), then pin the SwiftUI content directly beneath
+    /// the back bar. Both boxes are siblings inside the scene's content container.
+    private func installSwiftUIContentBelowBackBar() {
+        guard let container = commonAncestor(btnBack, stackView),
+              let backBarBox = topChild(of: container, containing: btnBack),
+              let contentBox = topChild(of: container, containing: stackView) else {
+            // Fallback: if the storyboard structure ever changes, host the full-screen view
+            // (the SwiftUI content still renders, just without the shared back bar).
+            hostFillingView()
+            return
+        }
+
+        contentBox.removeFromSuperview()
+
+        // Host on the VC's root `view` (which settingsContainerVc pins to the pane on all four
+        // edges, so it's definitively height-bounded) rather than inside the NSBox content view —
+        // an NSBox sizes its content view via autoresizing, which let the hosting view fall back to
+        // its intrinsic SwiftUI height and grow past the pane. Only the top is tied to the back bar.
+        let hosting = NSHostingView(rootView: TalkingClockSettingsView(model: model))
+        hosting.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(hosting)
+        NSLayoutConstraint.activate([
+            hosting.topAnchor.constraint(equalTo: backBarBox.bottomAnchor),
+            hosting.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hosting.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hosting.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+    }
+
+    /// Last-resort host that fills the whole VC view (used only if the storyboard back bar can't be found).
+    private func hostFillingView() {
+        view.subviews.forEach { $0.removeFromSuperview() }
+        let hosting = NSHostingView(rootView: TalkingClockSettingsView(model: model))
+        hosting.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(hosting)
+        NSLayoutConstraint.activate([
+            hosting.topAnchor.constraint(equalTo: view.topAnchor),
+            hosting.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hosting.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hosting.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+    }
+
+    /// Deepest view that is an ancestor of both `a` and `b`.
+    private func commonAncestor(_ a: NSView, _ b: NSView) -> NSView? {
+        var ancestors = Set<ObjectIdentifier>()
+        var node: NSView? = a
+        while let n = node { ancestors.insert(ObjectIdentifier(n)); node = n.superview }
+        node = b
+        while let n = node { if ancestors.contains(ObjectIdentifier(n)) { return n }; node = n.superview }
+        return nil
+    }
+
+    /// The direct child of `container` on the ancestry path to `descendant` (i.e. which top-level
+    /// box inside the container holds this descendant).
+    private func topChild(of container: NSView, containing descendant: NSView) -> NSView? {
+        var node: NSView? = descendant
+        while let n = node {
+            if n.superview === container { return n }
+            node = n.superview
+        }
+        return nil
     }
 }

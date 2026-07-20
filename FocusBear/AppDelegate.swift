@@ -158,6 +158,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastBreaksStartTime)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsArrayBreaksDurations)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastBreakEndTime)
+
+        // Talking Clock settings live in device-level UserDefaults. Clear them on logout so a
+        // previous account's values don't bleed into the next account when that account has never
+        // saved them (its synced blob has no key, so the login apply-from-server is a no-op). Once
+        // cleared, login re-applies the new account's synced values or falls back to the defaults.
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsTalkingClockEnabled)
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsTalkingClockInterval)
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsTalkingClockQuietStart)
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsTalkingClockQuietEnd)
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsTalkingClockSuppressMeetings)
         quitAndRestartApp()
     }
     let alertAppAutoRestart = NSAlert()

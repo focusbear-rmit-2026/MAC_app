@@ -507,7 +507,14 @@ class SettingsManager:NSObject{
                 let kMicroBreaksEnabled = "kMicroBreaksEnabled"
                 
                 let kSkipBreakActivityDuringFocusSession = "kSkipBreakActivityDuringFocusSession"
-                
+
+                // Talking Clock keys — must match the ones written in getLocalJsonToUpload().
+                let kTalkingClockEnabled = "kTalkingClockEnabled"
+                let kTalkingClockInterval = "kTalkingClockInterval"
+                let kTalkingClockQuietStart = "kTalkingClockQuietStart"
+                let kTalkingClockQuietEnd = "kTalkingClockQuietEnd"
+                let kTalkingClockSuppressMeetings = "kTalkingClockSuppressMeetings"
+
                 addLog(text: "Parse ReducedMotion")
                 if let val = settings.value(forKey: kIsReducedMotionEnabled) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsReducedMotion)
@@ -523,7 +530,25 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kShowMeetingDetectionAlert) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsShowMeetingDetectionAlert)
                 }
-                
+
+                // Talking Clock — apply the synced values into UserDefaults before the local read
+                // block below reads them into the in-memory properties (same flow as the settings above).
+                if let val = settings.value(forKey: kTalkingClockEnabled) as? Bool{
+                    UserDefaults.standard.set(val, forKey: kUserdefaultsTalkingClockEnabled)
+                }
+                if let val = settings.value(forKey: kTalkingClockInterval) as? Int{
+                    UserDefaults.standard.set(val, forKey: kUserdefaultsTalkingClockInterval)
+                }
+                if let val = settings.value(forKey: kTalkingClockQuietStart) as? Int{
+                    UserDefaults.standard.set(val, forKey: kUserdefaultsTalkingClockQuietStart)
+                }
+                if let val = settings.value(forKey: kTalkingClockQuietEnd) as? Int{
+                    UserDefaults.standard.set(val, forKey: kUserdefaultsTalkingClockQuietEnd)
+                }
+                if let val = settings.value(forKey: kTalkingClockSuppressMeetings) as? Bool{
+                    UserDefaults.standard.set(val, forKey: kUserdefaultsTalkingClockSuppressMeetings)
+                }
+
                 if let val = settings.value(forKey: kIsPasswordRequireInChangeSettings) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInChangeSettings)
                 }
@@ -1400,6 +1425,15 @@ class SettingsManager:NSObject{
         let kMicroBreaksEnabled = "kMicroBreaksEnabled"
         let kSkipBreakActivityDuringFocusSession = "kSkipBreakActivityDuringFocusSession"
 
+        // Talking Clock — synced to the user's account (cross-device) like the other settings,
+        // rather than staying device-local. Quiet hours travel as combined minutes-of-day ints
+        // (hour*60 + minute), matching how they're stored in UserDefaults.
+        let kTalkingClockEnabled = "kTalkingClockEnabled"
+        let kTalkingClockInterval = "kTalkingClockInterval"
+        let kTalkingClockQuietStart = "kTalkingClockQuietStart"
+        let kTalkingClockQuietEnd = "kTalkingClockQuietEnd"
+        let kTalkingClockSuppressMeetings = "kTalkingClockSuppressMeetings"
+
         //        let kAiAllowUrlShowAlertEnabled = "kAiAllowUrlShowAlertEnabled"
         let isEditBlockedUrlsOnce = UserDefaults.standard.object(forKey: kUserdefaultsEditBlockedUrlsOnce) as? Bool ?? false
         
@@ -1475,6 +1509,11 @@ class SettingsManager:NSObject{
             kShowBrainDumpAfterMorningRoutine:showBrainDumpAfterMorningRoutineEnabled,
             kMicroBreaksEnabled:isMicroBreaksEnabled,
             kSkipBreakActivityDuringFocusSession:isSkipBreakActivityDuringPomodoro,
+            kTalkingClockEnabled:isTalkingClockEnabled,
+            kTalkingClockInterval:talkingClockIntervalMinutes,
+            kTalkingClockQuietStart:talkingClockQuietStartHour * 60 + talkingClockQuietStartMinute,
+            kTalkingClockQuietEnd:talkingClockQuietEndHour * 60 + talkingClockQuietEndMinute,
+            kTalkingClockSuppressMeetings:talkingClockSuppressDuringMeetings,
             "has_edited_blocked_urls":isEditBlockedUrlsOnce
         ]
         if let password = UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) as? String{

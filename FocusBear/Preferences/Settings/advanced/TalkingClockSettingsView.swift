@@ -89,27 +89,25 @@ final class TalkingClockSettingsModel: ObservableObject {
 
 struct TalkingClockSettingsView: View {
     @ObservedObject var model: TalkingClockSettingsModel
-    let onBack: () -> Void
 
     // Localized copy (config `talkingClockSettingsInfo`, English fallbacks).
     private let strings = TalkingClockSettingsStrings.load()
 
+    // Shared width for the "Start"/"End" labels so both rows' time fields line up.
+    private let quietLabelWidth: CGFloat = 52
+
+    // Content only — the back bar (button + title + separator) is the storyboard scene's own
+    // native bar (talkingClockSettingsVc), shared with the other settings pages, so we don't
+    // recreate it here. This view is hosted directly below that bar.
     var body: some View {
+        // Scrollable so the content never spills past the settings pane (and the whole thing
+        // stays bounded regardless of how tall the copy/wrapping gets).
+        ScrollView(.vertical) {
         VStack(alignment: .leading, spacing: 18) {
-            SwiftUI.Button(action: onBack) {
-                HStack(spacing: 4) { Image(systemName: "chevron.left"); Text(strings.back) }
-            }
-            .buttonStyle(.plain)
-            .foregroundColor(.secondary)
-
-            Text(strings.title).font(.title2).fontWeight(.semibold)
-
-            Toggle(isOn: $model.enabled) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(strings.enableTitle)
-                    Text(strings.enableSubtitle).font(.caption).foregroundColor(.secondary)
-                }
-            }
+            // Switch-style row: title/subtitle pinned to the leading edge, switch to the trailing
+            // edge, spanning the full width (same idiom as TimeTrackerEnableToggleView). A plain
+            // Toggle(.switch) inside a maxWidth frame would sit centred at its intrinsic width.
+            toggleRow(title: strings.enableTitle, subtitle: strings.enableSubtitle, isOn: $model.enabled)
 
             HStack {
                 Text(strings.announceEvery)
@@ -124,31 +122,45 @@ struct TalkingClockSettingsView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text(strings.quietHours).foregroundColor(.secondary)
+                // Fixed-width labels so the "Start" and "End" time fields line up vertically.
                 HStack(spacing: 6) {
-                    Text(strings.start)
+                    Text(strings.start).frame(width: quietLabelWidth, alignment: .leading)
                     timeField($model.quietStartHour, range: 0...23)
                     Text(":")
                     timeField($model.quietStartMinute, range: 0...59)
                 }
                 HStack(spacing: 6) {
-                    Text(strings.end)
+                    Text(strings.end).frame(width: quietLabelWidth, alignment: .leading)
                     timeField($model.quietEndHour, range: 0...23)
                     Text(":")
                     timeField($model.quietEndMinute, range: 0...59)
                 }
             }
 
-            Toggle(isOn: $model.suppressDuringMeetings) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(strings.suppressTitle)
-                    Text(strings.suppressSubtitle).font(.caption).foregroundColor(.secondary)
-                }
-            }
-
-            Spacer()
+            toggleRow(title: strings.suppressTitle, subtitle: strings.suppressSubtitle, isOn: $model.suppressDuringMeetings)
         }
         .padding(24)
-        .frame(minWidth: 420, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+    }
+
+    /// A settings toggle row: title + subtitle hugging the leading edge, a switch on the trailing
+    /// edge, filling the available width. Matches the app's other switch rows.
+    private func toggleRow(title: String, subtitle: String, isOn: Binding<Bool>) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 12)
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private func timeField(_ value: Binding<Int>, range: ClosedRange<Int>) -> some View {
