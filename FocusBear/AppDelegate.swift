@@ -8766,6 +8766,46 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     
     
+    // MARK: - Actual distracting-site time (#1302)
+
+    /// When we last credited distracting time, and the sub-second remainder not yet committed.
+    /// Measuring the real gap between ticks (instead of assuming each poll == 1s) keeps the total
+    /// accurate under timer jitter and makes a second check fired in the same tick a no-op.
+    private var lastDistractingCountTime: Date?
+    private var pendingDistractingSeconds: Double = 0
+    /// Longest gap between two ticks still treated as "continuously on the site". A larger gap means
+    /// the user was away (or the machine slept) and is only now back, so we re-anchor without crediting it.
+    private let maxDistractingTickGap: TimeInterval = 3
+
+    /// Credit the real time elapsed since the previous tick to today's "time spent on distracting sites"
+    /// total. Call once per poll while the front tab/app is an allowed (unblocked) distracting item.
+    /// Accumulates actual elapsed time rather than a flat +1, so it stays exact under timer jitter and
+    /// won't double-count if the check happens to run twice within the same second.
+    private func accumulateActualDistractingTime(){
+        let now = Date()
+        if let last = lastDistractingCountTime{
+            let elapsed = now.timeIntervalSince(last)
+            if elapsed > 0 && elapsed <= maxDistractingTickGap{
+                pendingDistractingSeconds += elapsed
+            }
+            // elapsed > cap ⇒ user returned after a gap; re-anchor below without crediting the gap.
+        }
+        lastDistractingCountTime = now
+
+        let wholeSeconds = Int(pendingDistractingSeconds)
+        guard wholeSeconds > 0 else { return }
+        pendingDistractingSeconds -= Double(wholeSeconds)
+
+        var totalDurationaSaved = 0
+        if let timeSpentInfo = UserDefaults.standard.object(forKey: kUserdefaultsTotalTimeSpentOnDistractingSites) as? [String:Any],
+           let date = timeSpentInfo["date"] as? Date, let duration = timeSpentInfo["duration"] as? Int,
+           Calendar.current.isDateInToday(date){
+            totalDurationaSaved = duration
+        }
+        totalDurationaSaved += wholeSeconds
+        UserDefaults.standard.set(["date": Date(), "duration": totalDurationaSaved], forKey: kUserdefaultsTotalTimeSpentOnDistractingSites)
+    }
+
     func tryToBlockAlwaysBlockedUrl(script: String, url:String, browser: BROWSER?, runningApp:NSRunningApplication, blockItem:String){
         print("tryToBlockAlwaysBlockedUrl")
         var needToBlockImmediately = SettingsManagerObject.immediatelyBlockDistractingSites
@@ -8823,6 +8863,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     closeIntentionBlockedUrlsWinddowIfVisible()
                     blockAlwaysBlockedUrl(script: script, browser: browser, url: url)
                 }else {
+                    // Credit the actual time elapsed since the last poll (not a flat +1) — issue #1302.
+                    accumulateActualDistractingTime()
+
                     var shouldSetIntentionAgain = false
                     if alllowUrlEndTime != nil{
                         if Date().compare(alllowUrlEndTime!) == .orderedDescending{ //>
@@ -8943,6 +8986,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     closeIntentionBlockedAppsWinddowIfVisible()
                     blockAlwaysBlockedApp(runningApp: runningApp, appName: appName)
                 }else{
+                    // Credit the actual time elapsed since the last poll (not a flat +1) — issue #1302.
+                    accumulateActualDistractingTime()
+
                     var shouldSetIntentionAgain = false
                     if alllowAppEndTime != nil{
                         if Date().compare(alllowAppEndTime!) == .orderedDescending{ //>
@@ -9057,27 +9103,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             if isUrlAllreadyChecked == false{
                 arrAlwaysBlockedSitesData.append(["url": url, "isBlocked": true, "intention" : "", "closed":false])
             }else{
-                //
-                if let endTime = arrAlwaysBlockedSitesData[isUrlAllreadyCheckedIndex]["endTime"] as? Date{
-                    let diffSeconds = Calendar.current.dateComponents([.second], from: Date(), to: endTime).second ?? 0
-                    if diffSeconds != 0{
-                        
-                        var totalDurationaSaved = 0
-                        if let timeSpentInfo = UserDefaults.standard.object(forKey: kUserdefaultsTotalTimeSpentOnDistractingSites) as? [String:Any]{
-                            if let date = timeSpentInfo["date"] as? Date, let duration = timeSpentInfo["duration"] as? Int{
-                                if Calendar.current.isDateInToday(date){
-                                    totalDurationaSaved = duration
-                                }
-                            }
-                        }
-                        if totalDurationaSaved > 0{
-                            totalDurationaSaved -= diffSeconds// remove remaining seconds if user clicks" block url i am done"
-                            UserDefaults.standard.set(["date": Date(), "duration": totalDurationaSaved], forKey: kUserdefaultsTotalTimeSpentOnDistractingSites)
-                        }
-                        
-                    }
-                }
-                //
                 arrAlwaysBlockedSitesData[isUrlAllreadyCheckedIndex] = ["url": url, "isBlocked": true, "intention" : "", "closed":false]
             }
         }
@@ -9107,18 +9132,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
         
         lastFrontMostApplication?.activate()
-        
-        var totalDurationaSaved = 0
-        if let timeSpentInfo = UserDefaults.standard.object(forKey: kUserdefaultsTotalTimeSpentOnDistractingSites) as? [String:Any]{
-            if let date = timeSpentInfo["date"] as? Date, let duration = timeSpentInfo["duration"] as? Int{
-                if Calendar.current.isDateInToday(date){
-                    totalDurationaSaved = duration
-                }
-            }
-        }
-        totalDurationaSaved += seconds
-        UserDefaults.standard.set(["date": Date(), "duration": totalDurationaSaved], forKey: kUserdefaultsTotalTimeSpentOnDistractingSites)
-        
     }
     
     func saveIntentionForBlockedApp(intention:String, seconds:Int, runningApp: NSRunningApplication, appName:String){
