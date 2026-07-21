@@ -140,7 +140,10 @@
 		8F08FD7028B60DD60016C741 /* uninstallingConfirmVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F08FD6F28B60DD60016C741 /* uninstallingConfirmVc.swift */; };
 		8F0994B72A0CB5F400F4C65E /* tblCellLogQuantity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0994B62A0CB5F400F4C65E /* tblCellLogQuantity.swift */; };
 		8F09ACBF29703C1B00A0F1D0 /* allTracksVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F09ACBE29703C1B00A0F1D0 /* allTracksVc.swift */; };
-		8F09ACC129703C5B00A0F1D0 /* tblCellTracks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F09ACC029703C5B00A0F1D0 /* tblCellTracks.swift */; };
+		2D64BA07FDD9863D4274B076 /* SpotifyTrackStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6F1F3A7517EFCBB53BA0EC6 /* SpotifyTrackStore.swift */; };
+		7DC9C1133BB9459EBD6AE8FB /* FocusMusicViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F482F6107468499198DC3FB2 /* FocusMusicViewModel.swift */; };
+		06A3D0527FB24DACA6B3828D /* FocusMusicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9EEFA32DEE4446E9A35BE69 /* FocusMusicView.swift */; };
+		1F08F8B4312D492C82A0C619 /* YouTubeMusicTrackStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37822C4312A41568B0E8AE0 /* YouTubeMusicTrackStore.swift */; };
 		8F0A184E2A8DE76100AFA623 /* accessibilityVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0A184D2A8DE76100AFA623 /* accessibilityVc.swift */; };
 		8F0A18502A8DFA7400AFA623 /* pomodoroSettingsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0A184F2A8DFA7400AFA623 /* pomodoroSettingsVc.swift */; };
 		8F0A18522A8E291200AFA623 /* strictnessVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0A18512A8E291200AFA623 /* strictnessVc.swift */; };
@@ -400,6 +403,7 @@
 		BEED37F6C1373AFCB67BCF04 /* Pods_Focus_Bear.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E339C651791746EA3D066A6A /* Pods_Focus_Bear.framework */; };
 		UBT00001 /* URLBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = UBT00002 /* URLBlockingTests.swift */; };
 		CBS00001 /* CustomBlockingScheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBS00002 /* CustomBlockingScheduleTests.swift */; };
+		04F9DAE9F1504F1D9AE99346 /* YouTubeMusicPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C7037C21AF4BA7BFAD7BC0 /* YouTubeMusicPlayerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -566,7 +570,10 @@
 		8F08FD6F28B60DD60016C741 /* uninstallingConfirmVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = uninstallingConfirmVc.swift; sourceTree = "<group>"; };
 		8F0994B62A0CB5F400F4C65E /* tblCellLogQuantity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tblCellLogQuantity.swift; sourceTree = "<group>"; };
 		8F09ACBE29703C1B00A0F1D0 /* allTracksVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = allTracksVc.swift; sourceTree = "<group>"; };
-		8F09ACC029703C5B00A0F1D0 /* tblCellTracks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tblCellTracks.swift; sourceTree = "<group>"; };
+		E6F1F3A7517EFCBB53BA0EC6 /* SpotifyTrackStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyTrackStore.swift; sourceTree = "<group>"; };
+		F482F6107468499198DC3FB2 /* FocusMusicViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusMusicViewModel.swift; sourceTree = "<group>"; };
+		E9EEFA32DEE4446E9A35BE69 /* FocusMusicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusMusicView.swift; sourceTree = "<group>"; };
+		D37822C4312A41568B0E8AE0 /* YouTubeMusicTrackStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeMusicTrackStore.swift; sourceTree = "<group>"; };
 		8F0A184D2A8DE76100AFA623 /* accessibilityVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = accessibilityVc.swift; sourceTree = "<group>"; };
 		8F0A184F2A8DFA7400AFA623 /* pomodoroSettingsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = pomodoroSettingsVc.swift; sourceTree = "<group>"; };
 		8F0A18512A8E291200AFA623 /* strictnessVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = strictnessVc.swift; sourceTree = "<group>"; };
@@ -852,6 +859,7 @@
 		HSS00002 /* habitsStateVc+Schedule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "habitsStateVc+Schedule.swift"; sourceTree = "<group>"; };
 		UBT00002 /* URLBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLBlockingTests.swift; sourceTree = "<group>"; };
 		CBS00002 /* CustomBlockingScheduleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomBlockingScheduleTests.swift; sourceTree = "<group>"; };
+		D0C7037C21AF4BA7BFAD7BC0 /* YouTubeMusicPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeMusicPlayerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1021,7 +1029,11 @@
 			isa = PBXGroup;
 			children = (
 				8F09ACBE29703C1B00A0F1D0 /* allTracksVc.swift */,
-				8F09ACC029703C5B00A0F1D0 /* tblCellTracks.swift */,
+				E6F1F3A7517EFCBB53BA0EC6 /* SpotifyTrackStore.swift */,
+				F482F6107468499198DC3FB2 /* FocusMusicViewModel.swift */,
+				E9EEFA32DEE4446E9A35BE69 /* FocusMusicView.swift */,
+				D37822C4312A41568B0E8AE0 /* YouTubeMusicTrackStore.swift */,
+				D0C7037C21AF4BA7BFAD7BC0 /* YouTubeMusicPlayerView.swift */,
 			);
 			path = Tracks;
 			sourceTree = "<group>";
@@ -2279,13 +2291,17 @@
 				135CBDAF2D967009003BA438 /* routineData.swift in Sources */,
 				8F4E34BD29BC52FB00E161F4 /* focusEndWarningVc.swift in Sources */,
 				8F09ACBF29703C1B00A0F1D0 /* allTracksVc.swift in Sources */,
+				2D64BA07FDD9863D4274B076 /* SpotifyTrackStore.swift in Sources */,
+				7DC9C1133BB9459EBD6AE8FB /* FocusMusicViewModel.swift in Sources */,
+				06A3D0527FB24DACA6B3828D /* FocusMusicView.swift in Sources */,
+				1F08F8B4312D492C82A0C619 /* YouTubeMusicTrackStore.swift in Sources */,
+				04F9DAE9F1504F1D9AE99346 /* YouTubeMusicPlayerView.swift in Sources */,
 				13B1D8292F7D2B9B0010610C /* suggestWorkFocusManager.swift in Sources */,
 				FB7EAC1E2F7E100100000001 /* teacherSessionManager.swift in Sources */,
 				FB7EAC1E2F7E100100000003 /* teacherUnlockRequestVc.swift in Sources */,
 				8FAC6C972780612B008A4180 /* mainWindowController.swift in Sources */,
 				8FE5E5BA2C46A5C800420717 /* alertLimitedUsageVc.swift in Sources */,
 				13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */,
-				8F09ACC129703C5B00A0F1D0 /* tblCellTracks.swift in Sources */,
 				13C6BF082FB199E70074DD63 /* focusButtonService.swift in Sources */,
 				13C6BF0B2FB199E70074DD63 /* EmojiSync.swift in Sources */,
 				FBC00001 /* FocusButtonCommandChannel.swift in Sources */,

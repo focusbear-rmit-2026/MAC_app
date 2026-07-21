@@ -1130,7 +1130,7 @@ func reloadFocusMusicListIfVisible(){
     if allTracksVcObj != nil && mainWindowControllerObj != nil{
         if mainWindowControllerObj?.window?.isVisible ?? false{
             if leftMenuVcObj?.boxFocusMusic.isSelected ?? false{
-                allTracksVcObj?.tblView.reloadData()
+                allTracksVcObj?.model.refresh()
             }
         }
     }

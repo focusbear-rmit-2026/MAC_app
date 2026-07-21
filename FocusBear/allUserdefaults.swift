@@ -169,6 +169,11 @@ var kUserdefaultsLastCustomRoutineHabitSavedNotes = "kUserdefaultsLastCustomRout
 
 var kUserdefaultsLastSpecaialActivitySavedNotes = "kUserdefaultsLastSpecaialActivitySavedNotes"
 var kUserdefaultsAllTracks = "kUserdefaultsAllTracks"
+// User-added Spotify track/album/playlist links (Focus Music), separate from
+// kUserdefaultsAllTracks which is overwritten wholesale from the backend on every launch.
+var kUserdefaultsCustomSpotifyTracks = "kUserdefaultsCustomSpotifyTracks"
+// User-added YouTube/YouTube Music links (Focus Music), same idea as kUserdefaultsCustomSpotifyTracks.
+var kUserdefaultsYouTubeMusicTracks = "kUserdefaultsYouTubeMusicTracks"
 // Track id last started via the Play button — used to resume the same track when the
 // post-session-start "want to play some focus music?" prompt is accepted.
 var kUserdefaultsLastPlayedTrackId = "kUserdefaultsLastPlayedTrackId"

@@ -29,6 +29,12 @@ enum FocusMusicPromptManager {
         // Nothing to offer (or auto-play) if the user hasn't downloaded any focus-music tracks — skip
         // the prompt entirely rather than offering music that can't play.
         guard arrAllTracks.contains(where: { $0["isFileDownloded"] as? Bool == true }) else { return }
+        // The user is already listening to something (library track, Spotify or YouTube) — don't offer
+        // to start music, and don't auto-start it either. Playing a library track stops Spotify/YouTube,
+        // so prompting here would hijack the music they deliberately chose. Read via the optional global
+        // so this never instantiates the Focus Music screen just to ask (if nothing is playing, there's
+        // nothing to protect).
+        guard !(allTracksVcObj?.isAnyMusicPlaying ?? false) else { return }
 
         // The saved preference decides whether to prompt at all. Only .ask shows the prompt.
         switch SettingsManagerObject.focusMusicAutoStart {
