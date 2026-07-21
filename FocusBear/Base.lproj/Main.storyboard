@@ -2261,13 +2261,13 @@
                                                             <color key="borderColor" name="separatorColor" catalog="System" colorSpace="catalog"/>
                                                         </box>
                                                         <box boxType="custom" borderType="line" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="RBM-ww-eoK">
-                                                            <rect key="frame" x="1291" y="466" width="249" height="82"/>
+                                                            <rect key="frame" x="1291" y="467" width="249" height="80"/>
                                                             <view key="contentView" id="FSl-QV-9pN">
-                                                                <rect key="frame" x="1" y="1" width="247" height="80"/>
+                                                                <rect key="frame" x="1" y="1" width="247" height="78"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
                                                                     <box boxType="custom" borderType="line" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="vcm-4q-hdK">
-                                                                        <rect key="frame" x="0.0" y="30" width="247" height="50"/>
+                                                                        <rect key="frame" x="0.0" y="28" width="247" height="50"/>
                                                                         <view key="contentView" id="UWt-4W-6gw">
                                                                             <rect key="frame" x="0.0" y="0.0" width="247" height="50"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -2300,9 +2300,9 @@
                                                                         <color key="fillColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                     </box>
                                                                     <scrollView horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" borderType="none" autohidesScrollers="YES" horizontalLineScroll="40" horizontalPageScroll="10" verticalLineScroll="40" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="BmC-FB-q29">
-                                                                        <rect key="frame" x="0.0" y="0.0" width="247" height="30"/>
+                                                                        <rect key="frame" x="0.0" y="0.0" width="247" height="28"/>
                                                                         <clipView key="contentView" id="xse-cV-tNZ">
-                                                                            <rect key="frame" x="0.0" y="0.0" width="247" height="30"/>
+                                                                            <rect key="frame" x="0.0" y="0.0" width="247" height="28"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
                                                                                 <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" selectionHighlightStyle="none" multipleSelection="NO" autosaveColumns="NO" rowHeight="40" rowSizeStyle="automatic" viewBased="YES" id="vNa-fU-S7L">
@@ -12277,22 +12277,8 @@ Gw
                                                     <stackView distribution="fill" orientation="horizontal" alignment="top" spacing="16" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="tkb-gY-aVu">
                                                         <rect key="frame" x="-78" y="30" width="704" height="44"/>
                                                         <subviews>
-                                                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sb6-Hr-5hO" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
-                                                                <rect key="frame" x="0.0" y="0.0" width="200" height="44"/>
-                                                                <buttonCell key="cell" type="square" title="xxPostpone break" bezelStyle="shadowlessSquare" alignment="center" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="iGe-Cc-gwv">
-                                                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                                                    <font key="font" size="16" name="CourierNewPSMT"/>
-                                                                </buttonCell>
-                                                                <constraints>
-                                                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="5pF-x7-PWS"/>
-                                                                    <constraint firstAttribute="width" relation="lessThanOrEqual" constant="250" id="Vya-XZ-CEO"/>
-                                                                </constraints>
-                                                                <connections>
-                                                                    <action selector="btnPostponeClicked:" target="6vo-DA-Pb8" id="wqL-ra-MH0"/>
-                                                                </connections>
-                                                            </button>
                                                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="9IS-eC-4zA" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
-                                                                <rect key="frame" x="216" y="0.0" width="209" height="44"/>
+                                                                <rect key="frame" x="0.0" y="0.0" width="209" height="44"/>
                                                                 <buttonCell key="cell" type="square" title="xxAbort break activity" bezelStyle="shadowlessSquare" alignment="center" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="pOg-Ma-MQf">
                                                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                     <font key="font" size="15" name="CourierNewPSMT"/>
@@ -12304,6 +12290,20 @@ Gw
                                                                 </constraints>
                                                                 <connections>
                                                                     <action selector="btnAbortBreakClicked:" target="6vo-DA-Pb8" id="d7a-qX-3Pu"/>
+                                                                </connections>
+                                                            </button>
+                                                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sb6-Hr-5hO" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
+                                                                <rect key="frame" x="225" y="0.0" width="200" height="44"/>
+                                                                <buttonCell key="cell" type="square" title="xxPostpone break" bezelStyle="shadowlessSquare" alignment="center" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="iGe-Cc-gwv">
+                                                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                                    <font key="font" size="16" name="CourierNewPSMT"/>
+                                                                </buttonCell>
+                                                                <constraints>
+                                                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="5pF-x7-PWS"/>
+                                                                    <constraint firstAttribute="width" relation="lessThanOrEqual" constant="250" id="Vya-XZ-CEO"/>
+                                                                </constraints>
+                                                                <connections>
+                                                                    <action selector="btnPostponeClicked:" target="6vo-DA-Pb8" id="wqL-ra-MH0"/>
                                                                 </connections>
                                                             </button>
                                                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="4pW-QS-RcW" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
