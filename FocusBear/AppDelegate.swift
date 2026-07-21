@@ -500,8 +500,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
             }
             readConfigFile()
+            // canRenew() synchronously reads + decrypts the stored Auth0 credentials from the Keychain
+            // (SimpleKeychain.data → SecItemCopyMatching → SecurityServer XPC). On some machines that
+            // stalls for >2s, and it used to be called inside the DispatchQueue.main.async below, which
+            // froze the launch UI (Sentry AppHang: SimpleKeychain.data). Compute it once out here
+            // instead: this closure is getConfigFile's URLSession completion, so we're already off the
+            // main thread — no extra dispatch needed — then hop to main for the launch/login UI.
+            let canRenew = self.credentialsManager.canRenew()
             DispatchQueue.main.async {
-                
+
                 NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(self.frontApplicationChanged), name: NSWorkspace.didActivateApplicationNotification, object: nil)//this is correct, needs to block uls even if user is not logged in
                 NotificationCenter.default.addObserver(self, selector: #selector(self.screenChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
                 
@@ -531,7 +538,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
                 // work for old useres beacuse we have changed the login routine now we will also write is Logged in in userdefaulsts so handle old users
                 if UserDefaults.standard.object(forKey: "oldUserLoggedInCheck") == nil{
-                    if  self.credentialsManager.canRenew(){
+                    if canRenew {
                         UserDefaults.standard.set(true, forKey: kUserdefaultsIsUserLoggedIn)
                     }
                     UserDefaults.standard.set(true, forKey: "oldUserLoggedInCheck")
@@ -558,7 +565,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }
                     return;
                 }else{
-                    guard self.credentialsManager.canRenew() else {
+                    guard canRenew else {
                         // Present login screen
                         if UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) == nil{
                             closeSplashWindow()
@@ -574,7 +581,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 
                 self.loadCredentialsAndDeviceId()
             }
-            
+
         }
         )
         
