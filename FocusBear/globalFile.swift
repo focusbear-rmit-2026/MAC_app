@@ -46,10 +46,10 @@ func getBlockedUrlsToBlock()->[String]{
             }
         }
         
-        if appdelegate!.isUserOnMeeting && !SettingsManagerObject.isBlockDistractingSitesDuringMeetingsEnabled{
+        if appdelegate?.isUserOnMeeting == true && !SettingsManagerObject.isBlockDistractingSitesDuringMeetingsEnabled{
             return [];
         }
-        
+
     }
     var arrBlockedUrls = [String]()
     var blockedUrlsCount = SettingsManagerObject.arrBlockedUrls.count
@@ -82,12 +82,12 @@ func getBlockedAppsToBlock()->[String]{
             }
         }
         
-        if appdelegate!.isUserOnMeeting && !SettingsManagerObject.isBlockDistractingSitesDuringMeetingsEnabled{
+        if appdelegate?.isUserOnMeeting == true && !SettingsManagerObject.isBlockDistractingSitesDuringMeetingsEnabled{
             return [];
         }
-        
+
     }
-    
+
     var arrBlockedApps = [String]()
     var blockedAppsCount = SettingsManagerObject.arrBlockedApps.count
     if isExpired{
