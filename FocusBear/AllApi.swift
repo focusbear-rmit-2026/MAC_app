@@ -3604,7 +3604,79 @@ class AllApi:NSObject {
             }
         }
     }
-    
+
+    /// POST focus-mode/{id}/pause — tells the backend the session was paused here, so it broadcasts
+    /// `focus-mode-paused` to the user's other devices (FOCUS_SESSION_SYNC.md §6). Until this existed a
+    /// desktop pause was a purely local flag, so nothing else could ever learn about it.
+    func pauseFocusMode(id:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+        postFocusModeLifecycleAction(id: id, action: "pause", completionHandler: completionHandler)
+    }
+
+    /// POST focus-mode/{id}/resume — the resume counterpart of pauseFocusMode.
+    func resumeFocusMode(id:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+        postFocusModeLifecycleAction(id: id, action: "resume", completionHandler: completionHandler)
+    }
+
+    /// Shared body for the pause/resume endpoints — they differ only by path segment. The `device_id`
+    /// header that makeRequest already attaches is what lets this Mac ignore the echo of its own change
+    /// when the backend broadcasts it back over Pusher.
+    private func postFocusModeLifecycleAction(id:String, action:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+        addLog(text: "func call:- focus mode \(action):- focus-mode/id/\(action)")
+        guard !id.isEmpty else {
+            addLog(text: "focus mode \(action):- no focus mode id, skipping")
+            completionHandler(nil)
+            return
+        }
+
+        appdelegate!.credentialsManager.credentials { credentialsInfo in
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+
+            let responsePath = "\(baseUrl)/focus-mode/\(id)/\(action)"
+            guard let responsePathUrl = NSURL(string: responsePath) else {
+                completionHandler(nil)
+                return
+            }
+            addLog(text: "api call focus mode \(action) Api \(responsePathUrl)")
+
+            let request = makeRequest(responsePathUrl: responsePathUrl)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            // These endpoints take no parameters, but the API rejects an absent body when the
+            // content-type says JSON ("Body cannot be empty when content-type is set to
+            // 'application/json'"), so send an empty object rather than nothing.
+            request.httpBody = try? JSONSerialization.data(withJSONObject: [String: Any]())
+
+            let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
+                if let error = error {
+                    // Deliberately no retry: pause/resume is time-sensitive, and a late retry could
+                    // land after the user already toggled back. The local state stays applied and the
+                    // next current-activity-props reconcile corrects the server view.
+                    addLog(text: "api call focus mode \(action) Api error:- \(error.localizedDescription)")
+                    completionHandler(nil)
+                    return
+                }
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    completionHandler(nil)
+                    return
+                }
+                guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
+                    addLog(text: "api call focus mode \(action) Api error:- statusCode is \(httpResponse.statusCode)")
+                    self.writeJsonInLog(data: data)
+                    completionHandler(nil)
+                    return
+                }
+                addLog(text: "api call focus mode \(action) Api success")
+                if let data = data,
+                   let jsonResult = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) as? NSDictionary {
+                    completionHandler(jsonResult)
+                } else {
+                    completionHandler(nil)
+                }
+            }
+            task.resume()
+        }
+    }
+
     func getForgotPassword(emailAddress:String,completionHandler: @escaping(_ result: String?) -> ()) {
         addLog(text: "func call:- getForgotPassword")//
         let jsonResult:NSMutableDictionary = ["client_id":"dgMrlNC5mM634Sxi9SLqIqi0WvgVpwX7", "email":emailAddress, "connection":"Username-Password-Authentication"]

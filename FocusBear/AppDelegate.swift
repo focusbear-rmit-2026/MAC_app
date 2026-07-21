@@ -1811,8 +1811,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
     }
     
-    func pauseFocusMode(index:Int, shouldUpdateFocusButton:Bool = true){
+    /// `shouldSyncToServer` mirrors `shouldUpdateFocusButton`: pass false when the pause ORIGINATED
+    /// elsewhere (a Pusher `focus-mode-paused` from another device), so applying it locally doesn't
+    /// POST it straight back and bounce around the user's devices. Local/UI pauses leave it true so the
+    /// backend hears about them and can broadcast to the other devices (FOCUS_SESSION_SYNC.md §6).
+    func pauseFocusMode(index:Int, shouldUpdateFocusButton:Bool = true, shouldSyncToServer:Bool = true){
         if timerForFocusMode != nil{
+            if shouldSyncToServer{
+                let focusModeId = arrFocusType[index]["id"] as? String ?? ""
+                allApiObject.pauseFocusMode(id: focusModeId, completionHandler: { _ in })
+            }
             if let fireDate =  startFocusModeTimeForPauseAndResume{
                 let interval = focusModeSecondsToPerform
                 let passedSeconds = Calendar.current.dateComponents([.second], from: fireDate, to: Date()).second ?? 0
@@ -1868,7 +1876,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
-    func resumeFocusMode(index:Int, shouldUpdateFocusButton:Bool = true){
+    /// See pauseFocusMode — `shouldSyncToServer` is false when the resume came from another device.
+    func resumeFocusMode(index:Int, shouldUpdateFocusButton:Bool = true, shouldSyncToServer:Bool = true){
+        if shouldSyncToServer{
+            let focusModeId = arrFocusType[index]["id"] as? String ?? ""
+            allApiObject.resumeFocusMode(id: focusModeId, completionHandler: { _ in })
+        }
         //focusButtonService
         if shouldUpdateFocusButton{
             focusButtonServiceObject.resumeFocusSession()

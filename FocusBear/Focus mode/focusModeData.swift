@@ -1696,7 +1696,10 @@ func resumeFocusModeAfterAppStartted(diffSeconds: Int, focusMode: [String : Any]
     taskCreatedByBlockPopup = ""
     whatToAchieveInFocusBlock = focusMode["lastIntentionUsed"] as? String ?? ""
     focusModeStarttedResetAllData()
-    appdelegate?.resumeFocusMode(index: index)
+    // Restoring our own local view of a session that's still running — NOT a user resume, so it must
+    // not POST to the backend. Otherwise merely launching the Mac would resume (and broadcast) a
+    // session the user had deliberately paused on another device.
+    appdelegate?.resumeFocusMode(index: index, shouldSyncToServer: false)
     endFocusModeTime = finishFocusMoedTime
     currentRunningFocusType = focusMode
     startFocusModeTimeForPauseAndResume = Date()

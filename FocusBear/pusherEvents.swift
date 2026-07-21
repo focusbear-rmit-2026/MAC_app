@@ -8,6 +8,24 @@
 
 import PusherSwift
 
+/// Decode a `focus-mode-*` event's JSON body. The payload is the same shape for every focus event
+/// (FOCUS_SESSION_SYNC.md §3.2), so the handlers share one decode instead of repeating it.
+func focusModePayload(from event: PusherEvent) -> [String: Any]? {
+    guard let data = event.data?.data(using: .utf8) else { return nil }
+    return (try? JSONSerialization.jsonObject(with: data, options: [])) as? [String: Any]
+}
+
+/// Map the session's `block_level` to the Mac's strictness enum. Previously every remotely-started
+/// session was hardcoded to `._NORMAL_`, so a strict session started on the phone was enforced
+/// leniently on the Mac.
+func focusModeStrictness(fromBlockLevel blockLevel: String?) -> FOCUSMODESTRICTNESS {
+    switch blockLevel?.lowercased() {
+    case "super_strict": return ._SUPER_STRICT_
+    case "strict":       return ._STRICT_
+    default:             return ._NORMAL_   // "gentle" / null / unknown
+    }
+}
+
 class pusherEvents:NSObject, PusherDelegate {
     var pusher: Pusher!
 
@@ -49,6 +67,11 @@ class pusherEvents:NSObject, PusherDelegate {
                                 let finishTimeString = dictionary["scheduled_finish_time"] as? String ?? ""
                                 let focusModeId = dictionary["focus_mode_id"] as? String ?? ""
                                 let intention = dictionary["intention"] as? String ?? ""
+                                // Fuller payload (FOCUS_SESSION_SYNC.md §3.2): the session may already be
+                                // paused when we hear about it (started elsewhere, paused before this Mac
+                                // saw it), and its strictness is the session's, not always normal.
+                                let status = dictionary["status"] as? String ?? ""
+                                let blockLevel = dictionary["block_level"] as? String
                                 
                                 if let startTime = getDateFromStringInUtc(date: startTimeString, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"), let finishTime = getDateFromStringInUtc(date: finishTimeString, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"){
                                      
@@ -76,8 +99,8 @@ class pusherEvents:NSObject, PusherDelegate {
                                         let calendar = Calendar.current
                                         startFocusModeTime = Date()
                                         endFocusModeTime = calendar.date(byAdding: .minute, value: diffMinutes, to: startFocusModeTime!)
-                                        currentFocusModeStrictness = ._NORMAL_
-                                        addLog(text: "focus mode is normal mode")
+                                        currentFocusModeStrictness = focusModeStrictness(fromBlockLevel: blockLevel)
+                                        addLog(text: "focus mode strictness from block_level \(blockLevel ?? "nil"): \(currentFocusModeStrictness)")
                                         arrFocusType[currentFocusModeIndex]["isOn"] = true
                                         arrFocusType[currentFocusModeIndex]["lastStartedDate"] = getStringFromDate(date: startFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
                                         arrFocusType[currentFocusModeIndex]["lastScheduledEndDate"] = getStringFromDate(date: endFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
@@ -144,7 +167,15 @@ class pusherEvents:NSObject, PusherDelegate {
                                         focusButtonServiceObject.startFocusSession(seconds: diffMinutes*60)
                                         
                                         appdelegate!.focusModeStartted(isStartedByPusher: true)
-  
+
+                                        // The session can already be paused by the time we hear about it
+                                        // (started on the phone, paused before this Mac joined). Start it
+                                        // normally above so all the session state is set up, then apply the
+                                        // pause — shouldSyncToServer:false since the pause isn't ours.
+                                        if status.lowercased() == "paused"{
+                                            addLog(text: "focus mode started from pusher event is already paused - applying pause")
+                                            appdelegate?.pauseFocusMode(index: currentFocusModeIndex, shouldSyncToServer: false)
+                                        }
                                     }
                                 }
                             }
@@ -266,6 +297,39 @@ class pusherEvents:NSObject, PusherDelegate {
         })
         
         
+        // A pause/resume performed on another device (phone, Windows). Mac used to bind only
+        // started/finished, so a remote pause never reached it and the two devices silently disagreed
+        // (FOCUS_SESSION_SYNC.md §1/§6). We reuse the local pauseFocusMode/resumeFocusMode so the timer
+        // arithmetic, focus-button and UI all behave exactly as a local pause — but with
+        // shouldSyncToServer:false, otherwise applying the event would POST it straight back.
+        _ = channel.bind(eventName: "focus-mode-paused", eventCallback: { (event: PusherEvent) in
+            guard let dictionary = focusModePayload(from: event) else { return }
+            if dictionary["device_id"] as? String == currentDeviceId{ return }        // our own echo
+            if teacherSessionManagerObject.isTeacherSessionActive(){ return }         // teacher-controlled, not user-controlled
+            guard isFocusModeOn() else { return }                                     // nothing running to pause
+            addLog(text: "Pause focus mode from pusher event")
+            for i in 0..<arrFocusType.count{
+                if arrFocusType[i]["isOn"] as? Bool == true{
+                    appdelegate?.pauseFocusMode(index: i, shouldSyncToServer: false)
+                    break;
+                }
+            }
+        })
+
+        _ = channel.bind(eventName: "focus-mode-resumed", eventCallback: { (event: PusherEvent) in
+            guard let dictionary = focusModePayload(from: event) else { return }
+            if dictionary["device_id"] as? String == currentDeviceId{ return }
+            if teacherSessionManagerObject.isTeacherSessionActive(){ return }
+            guard isFocusModePaused() else { return }                                 // nothing paused to resume
+            addLog(text: "Resume focus mode from pusher event")
+            for i in 0..<arrFocusType.count{
+                if arrFocusType[i]["isPaused"] as? Bool == true{
+                    appdelegate?.resumeFocusMode(index: i, shouldSyncToServer: false)
+                    break;
+                }
+            }
+        })
+
         _ = channel.bind(eventName: "activity-completed", eventCallback: { (event: PusherEvent) in
             if let data = event.data {
                 print(data)
