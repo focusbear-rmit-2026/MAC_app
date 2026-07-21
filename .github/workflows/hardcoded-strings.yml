@@ -1,0 +1,44 @@
+name: Hardcoded Strings
+
+# Fails a PR that ADDS a hardcoded user-facing English string in Swift (e.g.
+# `label.stringValue = "Welcome back"` or an inline `?? "English"` config fallback).
+# User-facing text belongs in config.json (read via configjson) so it can be translated;
+# a string hardcoded in Swift never reaches the Spanish config.
+#
+# Diff-scoped: only newly-added lines are checked, so the ~1300 pre-existing hardcoded
+# strings in this legacy codebase don't need a baseline. Suppress a genuine non-UI case
+# with a `// i18n-ignore` comment on the line.
+
+on:
+  pull_request:
+    paths:
+      # Both patterns: '**/*.swift' alone misses top-level files like FocusBear/AppDelegate.swift.
+      - 'FocusBear/*.swift'
+      - 'FocusBear/**/*.swift'
+      - 'scripts/check-hardcoded-strings.py'
+      - '.github/workflows/hardcoded-strings.yml'
+
+concurrency:
+  group: hardcoded-strings-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hardcoded-strings:
+    name: No new hardcoded user-facing strings
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout (full history for diff)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check newly-added Swift lines
+        run: |
+          set -o pipefail
+          BASE="origin/${{ github.event.pull_request.base.ref }}"
+          git fetch --no-tags --depth=1 origin "${{ github.event.pull_request.base.ref }}"
+          # Both pathspecs: 'FocusBear/**/*.swift' alone skips top-level files (AppDelegate.swift, …).
+          git diff "$BASE"...HEAD -- 'FocusBear/*.swift' 'FocusBear/**/*.swift' \
+            | python3 scripts/check-hardcoded-strings.py
