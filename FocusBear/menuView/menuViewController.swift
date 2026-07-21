@@ -2278,6 +2278,11 @@ class menuViewController: NSViewController {
         if !(mainWindowControllerObj?.window?.isVisible ?? false){
             mainWindowControllerObj?.showWindow(self)
         }
+        // Select the sidebar's Day Plan row. The sidebar path gets this from the user's click; opening
+        // from the menu is programmatic, so without it the Day Plan showed with no tab selected. The
+        // setter deselects the other rows itself, and only fires the window-sizing delegate — not the
+        // by-user handler — so it doesn't re-enter the dispatch below.
+        leftMenuVcObj?.boxHabits.isSelected = true
         // Populate the habits area with the Day Plan for the current state — the SAME dispatch the
         // sidebar's boxHabits selection uses. Without this the menu path left the habits area blank on
         // first open in the postpone states until a break-then-back happened to trigger it.
