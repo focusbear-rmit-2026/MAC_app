@@ -45,6 +45,12 @@ struct NowPlayingInfo {
 /// AppleScript), and user-added YouTube Music links (played inline within the screen via
 /// YouTubeMusicPlayerView, an embedded WKWebView). Only one of the three ever plays at once.
 final class FocusMusicViewModel: NSObject, ObservableObject {
+    /// One shared instance so the Focus Music screen, the To Do Player's now-playing bar, and the
+    /// auto-start prompt all read/write the same playback state. Creating it is cheap (reads config
+    /// + the Spotify/YouTube stores); the heavy pieces (the YouTube WKWebView) live in FocusMusicView,
+    /// which is only built when the Focus Music screen is actually opened.
+    static let shared = FocusMusicViewModel()
+
     @Published private(set) var localTracks: [LocalTrackDisplay] = []
     @Published var volume: Float = 1.0
 
@@ -77,14 +83,37 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
     private(set) var spotifyNotInstalledText = "Spotify isn't installed on this Mac."
     private(set) var youtubeInvalidLinkText = "That doesn't look like a music.youtube.com link."
 
+    // Source labels used as the "Now Playing" subtitle for the non-local sources.
+    private(set) var spotifySourceLabel = "Spotify"
+    private(set) var youtubeSourceLabel = "YouTube Music"
+
     override init() {
         super.init()
         if let focusMusicInfo = configjson.value(forKey: "focusMusicInfo") as? NSDictionary {
             spotifyInvalidLinkText = focusMusicInfo.value(forKey: "spotifyInvalidLinkError") as? String ?? spotifyInvalidLinkText
             spotifyNotInstalledText = focusMusicInfo.value(forKey: "spotifyNotInstalledError") as? String ?? spotifyNotInstalledText
             youtubeInvalidLinkText = focusMusicInfo.value(forKey: "youtubeInvalidLinkError") as? String ?? youtubeInvalidLinkText
+            spotifySourceLabel = focusMusicInfo.value(forKey: "sectionTitleSpotify") as? String ?? spotifySourceLabel
+            youtubeSourceLabel = focusMusicInfo.value(forKey: "sectionTitleYouTubeMusic") as? String ?? youtubeSourceLabel
         }
         refresh()
+        backfillLinkTitles()
+    }
+
+    /// Whatever's currently playing, unified across all three sources — nil when nothing is playing.
+    /// Reads the @Published playing state, so any SwiftUI view observing this model (the Focus Music
+    /// screen and the To Do Player's now-playing bar) updates automatically when playback changes.
+    var nowPlaying: NowPlayingInfo? {
+        if let track = localTracks.first(where: { $0.isPlaying }) {
+            return NowPlayingInfo(title: track.name, subtitle: track.subtitle, source: .local)
+        }
+        if let id = spotifyPlayingId, let track = spotifyTracks.first(where: { $0.id == id }) {
+            return NowPlayingInfo(title: track.name, subtitle: spotifySourceLabel, source: .spotify(track))
+        }
+        if let id = youtubePlayingId, let track = youtubeTracks.first(where: { $0.id == id }) {
+            return NowPlayingInfo(title: track.name, subtitle: youtubeSourceLabel, source: .youtube(track))
+        }
+        return nil
     }
 
     // MARK: - arrAllTracks -> localTracks
@@ -248,10 +277,21 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
             spotifyError = spotifyNotInstalledText
             return
         }
-        let track = SpotifyTrack(id: uri, name: "\(kind.capitalized) — \(spotifyUrlInput)", url: spotifyUrlInput)
+        // Friendly placeholder until the oEmbed title lookup resolves the real track/playlist name.
+        let track = SpotifyTrack(id: uri, name: "\(spotifySourceLabel) \(kind)", url: spotifyUrlInput)
         SpotifyTrackStore.add(track)
         spotifyTracks = SpotifyTrackStore.load()
+        let addedUrl = spotifyUrlInput
         spotifyUrlInput = ""
+        resolveSpotifyTitle(id: uri, url: addedUrl)
+    }
+
+    private func resolveSpotifyTitle(id: String, url: String) {
+        MusicTrackTitleFetcher.fetchSpotifyTitle(url: url) { [weak self] title in
+            guard let self, let title else { return }
+            SpotifyTrackStore.updateName(id: id, name: title)
+            self.spotifyTracks = SpotifyTrackStore.load()
+        }
     }
 
     func toggleSpotifyTrack(_ track: SpotifyTrack) {
@@ -293,10 +333,42 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
             youtubeError = youtubeInvalidLinkText
             return
         }
-        let track = YouTubeMusicTrack(id: parsed.id, kind: parsed.kind, name: youtubeUrlInput, url: youtubeUrlInput)
+        // Friendly placeholder until the oEmbed title lookup resolves the real video/playlist name.
+        let placeholder = parsed.kind == .playlist ? "\(youtubeSourceLabel) playlist" : youtubeSourceLabel
+        let track = YouTubeMusicTrack(id: parsed.id, kind: parsed.kind, name: placeholder, url: youtubeUrlInput)
         YouTubeMusicTrackStore.add(track)
         youtubeTracks = YouTubeMusicTrackStore.load()
         youtubeUrlInput = ""
+        resolveYouTubeTitle(id: parsed.id, kind: parsed.kind)
+    }
+
+    private func resolveYouTubeTitle(id: String, kind: YouTubeMusicTrack.Kind) {
+        MusicTrackTitleFetcher.fetchYouTubeTitle(id: id, kind: kind) { [weak self] title in
+            guard let self, let title else { return }
+            YouTubeMusicTrackStore.updateName(id: id, name: title)
+            self.youtubeTracks = YouTubeMusicTrackStore.load()
+        }
+    }
+
+    /// One-time title backfill for links added before the oEmbed lookup existed (their stored name is
+    /// still the raw URL). First swaps the raw URL for a friendly placeholder — persisted, so the ugly
+    /// URL never shows again and this backfill won't re-match next launch even if the link can't be
+    /// resolved (e.g. YouTube Music "RD…" radio mixes aren't public playlists) — then upgrades to the
+    /// real title if oEmbed resolves it.
+    private func backfillLinkTitles() {
+        for track in spotifyTracks where track.name.contains("http") {
+            let kind = SpotifyLinkParser.parse(track.url)?.kind ?? ""
+            SpotifyTrackStore.updateName(id: track.id, name: kind.isEmpty ? spotifySourceLabel : "\(spotifySourceLabel) \(kind)")
+            resolveSpotifyTitle(id: track.id, url: track.url)
+        }
+        spotifyTracks = SpotifyTrackStore.load()
+
+        for track in youtubeTracks where track.name.contains("http") {
+            let placeholder = track.kind == .playlist ? "\(youtubeSourceLabel) playlist" : youtubeSourceLabel
+            YouTubeMusicTrackStore.updateName(id: track.id, name: placeholder)
+            resolveYouTubeTitle(id: track.id, kind: track.kind)
+        }
+        youtubeTracks = YouTubeMusicTrackStore.load()
     }
 
     func toggleYouTubeTrack(_ track: YouTubeMusicTrack) {

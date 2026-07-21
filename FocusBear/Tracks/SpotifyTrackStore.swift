@@ -36,6 +36,14 @@ enum SpotifyTrackStore {
         save(load().filter { $0.id != track.id })
     }
 
+    /// Persist a resolved display name (from the oEmbed title lookup) for an already-added link.
+    static func updateName(id: String, name: String) {
+        var tracks = load()
+        guard let idx = tracks.firstIndex(where: { $0.id == id }) else { return }
+        tracks[idx].name = name
+        save(tracks)
+    }
+
     private static func save(_ tracks: [SpotifyTrack]) {
         guard let data = try? JSONEncoder().encode(tracks) else { return }
         UserDefaults.standard.set(data, forKey: kUserdefaultsCustomSpotifyTracks)

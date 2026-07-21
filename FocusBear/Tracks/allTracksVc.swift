@@ -16,7 +16,7 @@ import SwiftUI
 /// modified Mac UI is SwiftUI" convention.
 class allTracksVc: NSViewController {
 
-    let model = FocusMusicViewModel()
+    let model = FocusMusicViewModel.shared
 
     /// Forwarded from the view model — other files (pause/resume-during-meetings, etc.) read this
     /// directly as allTracksVcObj?.currentSound.

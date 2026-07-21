@@ -34,18 +34,7 @@ struct FocusMusicView: View {
     // just want to press play on the curated library, not be greeted by two link input rows.
     @SwiftUI.State private var showAddOwnMusic = false
 
-    private var nowPlaying: NowPlayingInfo? {
-        if let track = model.localTracks.first(where: { $0.isPlaying }) {
-            return NowPlayingInfo(title: track.name, subtitle: track.subtitle, source: .local)
-        }
-        if let id = model.spotifyPlayingId, let track = model.spotifyTracks.first(where: { $0.id == id }) {
-            return NowPlayingInfo(title: track.name, subtitle: sectionTitleSpotify, source: .spotify(track))
-        }
-        if let id = model.youtubePlayingId, let track = model.youtubeTracks.first(where: { $0.id == id }) {
-            return NowPlayingInfo(title: track.name, subtitle: sectionTitleYouTube, source: .youtube(track))
-        }
-        return nil
-    }
+    private var nowPlaying: NowPlayingInfo? { model.nowPlaying }
 
     var body: some View {
         ScrollView {
