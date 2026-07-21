@@ -2487,8 +2487,16 @@ class activityCompletionVc: NSViewController {
     var isSequenceFinished = false
     
     func eveningHabitFinished(index:Int) {
+        // The global arrFilteredEveningHabits can be re-filtered/emptied (AppDelegate,
+        // routinePostponedInfoVc) while a habit timer is still counting, so its completion can fire
+        // eveningHabitOver() → here with a currentHabitIndex that no longer exists. Subscripting it
+        // crashed on the main thread (EXC_BREAKPOINT, "Array index out of range"). Bail safely.
+        guard index >= 0, index < arrFilteredEveningHabits.count else {
+            addLog(text: "eveningHabitFinished: stale index \(index) vs count \(arrFilteredEveningHabits.count) — skipping to avoid out-of-range crash")
+            return
+        }
         btnSkipHabit.title = buttonMoreActionsText
-        
+
         lblCreateAccount.isHidden = true
         lblDescriptionHabits.isHidden = true
         currentGraphIndex = 0
@@ -3062,8 +3070,14 @@ class activityCompletionVc: NSViewController {
     }
     
     func eveningHabitFinishedAndStartIncompleteNew(index:Int, isLastActivitySkipped:Bool) {
+        // Same stale-index guard as eveningHabitFinished(index:): the global evening-habits array can
+        // be re-filtered out from under a running timer, leaving currentHabitIndex out of range.
+        guard index >= 0, index < arrFilteredEveningHabits.count else {
+            addLog(text: "eveningHabitFinishedAndStartIncompleteNew: stale index \(index) vs count \(arrFilteredEveningHabits.count) — skipping to avoid out-of-range crash")
+            return
+        }
         btnSkipHabit.title = buttonMoreActionsText
-        
+
         lblCreateAccount.isHidden = true
         lblDescriptionHabits.isHidden = true
         currentGraphIndex = 0
