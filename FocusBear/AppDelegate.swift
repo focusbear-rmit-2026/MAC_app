@@ -7432,7 +7432,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         mainWindowControllerObj?.loadWindow()
                     }
                     if !(focusCompletedFullScreenVcObj?.isViewLoaded ?? false){
-                        focusCompletedFullScreenVcObj?.loadView()
+                        // Force-load via .view, not loadView() directly. Calling loadView() on a storyboard
+                        // VC re-enters nib loading and can raise nibForStoryboardNibNamed → SIGABRT on first
+                        // completion (#1948). Accessing .view runs loadView()+viewDidLoad once, in the
+                        // supported order (still before resetData, so behaviour is unchanged).
+                        _ = focusCompletedFullScreenVcObj?.view
                     }
                     focusCompletedFullScreenVcObj?.allowExtend = allowExtend
                     
@@ -7447,7 +7451,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         mainWindowControllerObj?.loadWindow()
                     }
                     if !(focusCompletedFullScreenVcObj?.isViewLoaded ?? false){
-                        focusCompletedFullScreenVcObj?.loadView()
+                        // Force-load via .view, not loadView() directly. Calling loadView() on a storyboard
+                        // VC re-enters nib loading and can raise nibForStoryboardNibNamed → SIGABRT on first
+                        // completion (#1948). Accessing .view runs loadView()+viewDidLoad once, in the
+                        // supported order (still before resetData, so behaviour is unchanged).
+                        _ = focusCompletedFullScreenVcObj?.view
                     }
                     focusCompletedFullScreenVcObj?.allowExtend = allowExtend
                     
@@ -7467,7 +7475,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 
                 DispatchQueue.main.async {
                     if !(focusCompletedVcObj?.isViewLoaded ?? false){
-                        focusCompletedVcObj?.loadView()
+                        // Force-load via .view, not loadView() directly (see #1948): loadView() on a
+                        // storyboard VC can raise nibForStoryboardNibNamed → SIGABRT. .view loads once.
+                        _ = focusCompletedVcObj?.view
                     }
                     focusCompletedVcObj?.allowExtend = allowExtend
                     focusCompletedVcObj?.currentFocusModeId = currentFocusModeId
