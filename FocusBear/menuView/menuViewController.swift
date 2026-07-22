@@ -2493,7 +2493,19 @@ extension menuViewController {
         model.onOpenBreaks     = { [weak self] in self?.btnStartBreakClicked(self as Any) }
         model.onOpenDayPlan    = { [weak self] in self?.openDayPlanSchedule() }
         model.onOpenFocusMusic = { [weak self] in self?.btnFocusMusicClicked(self as Any) }
-        model.onToggleMusic    = { [weak self] in self?.btnCurrentTrackClicked(self as Any) }
+        model.onToggleMusic    = { [weak self] in
+            // A built-in track (in arrAllTracks) uses the local play/pause. Otherwise toggle the
+            // Spotify / YouTube-Music track that FocusMusicViewModel is playing.
+            let localActive = arrAllTracks.contains {
+                ($0["isPlaying"] as? Bool == true) || ($0["isPaused"] as? Bool == true)
+            }
+            if localActive { self?.btnCurrentTrackClicked(self as Any); return }
+            switch FocusMusicViewModel.shared.nowPlaying?.source {
+            case .spotify(let track): FocusMusicViewModel.shared.toggleSpotifyTrack(track)
+            case .youtube(let track): FocusMusicViewModel.shared.toggleYouTubeTrack(track)
+            default: self?.btnCurrentTrackClicked(self as Any)
+            }
+        }
         model.onToggleTask     = { [weak self] id in
             guard var t = DayPlanTaskStore.shared.tasks(for: Date()).first(where: { $0.id == id }) else { return }
             t.done.toggle()
@@ -2769,11 +2781,23 @@ extension menuViewController {
         }
 
         // Focus music: current track name + playing/paused state (drives the play/pause control).
+        // Built-in tracks live in arrAllTracks; Spotify / YouTube-Music tracks are stored separately and
+        // only surface through FocusMusicViewModel.nowPlaying — so fall back to that when no local track
+        // is active, otherwise the menu can't see (or pause) a playing YouTube/Spotify track.
         var trackName = ""
         var playing = false
         for t in arrAllTracks {
             if t["isPlaying"] as? Bool == true { trackName = t["name"] as? String ?? ""; playing = true; break }
             if t["isPaused"] as? Bool == true { trackName = t["name"] as? String ?? ""; playing = false }
+        }
+        if trackName.isEmpty, let np = FocusMusicViewModel.shared.nowPlaying {
+            switch np.source {
+            case .spotify, .youtube:
+                trackName = np.title
+                playing = true   // Spotify/YouTube expose play/stop, not a paused state — treat as playing.
+            case .local:
+                break            // handled by the arrAllTracks scan above
+            }
         }
         model.musicTrackName = trackName
         model.musicPlaying = playing

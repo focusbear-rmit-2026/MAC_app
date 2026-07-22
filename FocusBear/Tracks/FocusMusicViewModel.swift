@@ -59,13 +59,16 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
     // while the user is fixing the URL. (Guarded so normal typing isn't a state change.)
     @Published var spotifyUrlInput = "" { didSet { if spotifyError != nil { spotifyError = nil } } }
     @Published var spotifyError: String?
-    @Published private(set) var spotifyPlayingId: String?
+    // Refresh the menu popup's now-playing row whenever Spotify/YouTube playback starts or stops —
+    // those tracks live outside arrAllTracks, so the menu can't otherwise notice them (mirrors the
+    // reloadIfNeeded() call the local-track play/stop paths already make).
+    @Published private(set) var spotifyPlayingId: String? { didSet { menuViewControllerObj?.reloadIfNeeded() } }
 
     @Published var youtubeTracks: [YouTubeMusicTrack] = YouTubeMusicTrackStore.load()
     // See spotifyUrlInput — editing clears the stale invalid-link warning.
     @Published var youtubeUrlInput = "" { didSet { if youtubeError != nil { youtubeError = nil } } }
     @Published var youtubeError: String?
-    @Published private(set) var youtubePlayingId: String?
+    @Published private(set) var youtubePlayingId: String? { didSet { menuViewControllerObj?.reloadIfNeeded() } }
     @Published private(set) var youtubePlayingKind: YouTubeMusicTrack.Kind?
     @Published private(set) var youtubeMuted = false
 
