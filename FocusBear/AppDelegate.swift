@@ -3751,7 +3751,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     func detectMeetingAppAndUpdateState(isPreventUserIdleDisplaySleepOn: Bool){
-        DispatchQueue.main.async {
+        // NSRunningApplication.bundleURL does a synchronous LaunchServices XPC lookup per running app;
+        // reading it on the main thread across every running app blocked the UI for >2s (Sentry
+        // AppHang: detectMeetingAppAndUpdateState). NSWorkspace.runningApplications is a thread-safe
+        // snapshot, so read it off the main thread — in the same utility-queue block that does the matching.
+        DispatchQueue.global(qos: .utility).async { [self] in
             let runningAppNames = Set(
                 NSWorkspace.shared.runningApplications.compactMap {
                     $0.bundleURL?
@@ -3760,110 +3764,108 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         .lowercased()
                 }
             )
-            
-            DispatchQueue.global(qos: .utility).async { [self] in
-                var micStatus: MicStatus?
-                if isMicAlreadyOn{
-                    let status = micMonitor().microphoneStatus()
-                    print(status)
-                    micStatus = status
-                }
-                for i in 0..<arrFocusType.count{
-                    let focus = arrFocusType[i]
-                    if let state = focus["isMeetings"] as? Bool{//this key will only be awailable in default focus type
-                        if  state{
-                            if let arr = focus["allowed_apps"] as? [String]{
-                                for apppPath in arr{
-                                    
-                                    if let micStatus = micStatus{// mic process name added v 3.32.491
-                                        for app in micStatus.apps{
-                                            let nameLowercased = app.appName.lowercased()
-                                            let url = URL(fileURLWithPath: apppPath)
-                                            let appNameToCheck = url.deletingPathExtension().lastPathComponent.lowercased()
-                                            if nameLowercased.contains(s: appNameToCheck){
-                                                
-                                                if isUserOnMeeting{
-                                                    if isFocusModeOn(){
-                                                        DispatchQueue.main.async {
-                                                            self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText + " / " + buttonStatusStateFocusText)
-                                                        }
-                                                    }else{
-                                                        DispatchQueue.main.async {
-                                                            self.setStatusBarButtonColorForFocusMode(color: NSColor.systemBlue, colorString: nil)
-                                                            self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText)
-                                                            self.statusbutton?.imagePosition = .imageLeft
-                                                        }
+
+            var micStatus: MicStatus?
+            if isMicAlreadyOn{
+                let status = micMonitor().microphoneStatus()
+                print(status)
+                micStatus = status
+            }
+            for i in 0..<arrFocusType.count{
+                let focus = arrFocusType[i]
+                if let state = focus["isMeetings"] as? Bool{//this key will only be awailable in default focus type
+                    if  state{
+                        if let arr = focus["allowed_apps"] as? [String]{
+                            for apppPath in arr{
+                                
+                                if let micStatus = micStatus{// mic process name added v 3.32.491
+                                    for app in micStatus.apps{
+                                        let nameLowercased = app.appName.lowercased()
+                                        let url = URL(fileURLWithPath: apppPath)
+                                        let appNameToCheck = url.deletingPathExtension().lastPathComponent.lowercased()
+                                        if nameLowercased.contains(s: appNameToCheck){
+                                            
+                                            if isUserOnMeeting{
+                                                if isFocusModeOn(){
+                                                    DispatchQueue.main.async {
+                                                        self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText + " / " + buttonStatusStateFocusText)
                                                     }
-                                                    return;
-                                                }
-                                                
-                                                if let browser = getCurrentBrowserFrom(browserName: appNameToCheck){
-                                                    addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is a browser:- get current url")
-                                                    
-                                                    if !isBrowserMeetingAllowed(focus: focus, browser: browser){
-                                                        continue;
+                                                }else{
+                                                    DispatchQueue.main.async {
+                                                        self.setStatusBarButtonColorForFocusMode(color: NSColor.systemBlue, colorString: nil)
+                                                        self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText)
+                                                        self.statusbutton?.imagePosition = .imageLeft
                                                     }
                                                 }
-                                                
-                                                addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is \(nameLowercased)")
-                                                
-                                                appUsedInAutoMeetingFocusMode = url.lastPathComponent
-                                                
-                                                handleMeetingDetected()
                                                 return;
                                             }
                                             
+                                            if let browser = getCurrentBrowserFrom(browserName: appNameToCheck){
+                                                addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is a browser:- get current url")
+                                                
+                                                if !isBrowserMeetingAllowed(focus: focus, browser: browser){
+                                                    continue;
+                                                }
+                                            }
+                                            
+                                            addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is \(nameLowercased)")
+                                            
+                                            appUsedInAutoMeetingFocusMode = url.lastPathComponent
+                                            
+                                            handleMeetingDetected()
+                                            return;
                                         }
-                                    }else{
-                                        for nameLowercased in runningAppNames{
-                                            let url = URL(fileURLWithPath: apppPath)
-                                            if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
-                                                
-                                                if isUserOnMeeting{
-                                                    if isFocusModeOn(){
-                                                        DispatchQueue.main.async {
-                                                            self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText + " / " + buttonStatusStateFocusText)
-                                                        }
-                                                    }else{
-                                                        DispatchQueue.main.async {
-                                                            self.setStatusBarButtonColorForFocusMode(color: NSColor.systemBlue, colorString: nil)
-                                                            self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText)
-                                                            self.statusbutton?.imagePosition = .imageLeft
-                                                        }
+                                        
+                                    }
+                                }else{
+                                    for nameLowercased in runningAppNames{
+                                        let url = URL(fileURLWithPath: apppPath)
+                                        if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
+                                            
+                                            if isUserOnMeeting{
+                                                if isFocusModeOn(){
+                                                    DispatchQueue.main.async {
+                                                        self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText + " / " + buttonStatusStateFocusText)
                                                     }
-                                                    return;
-                                                }
-                                                
-                                                if nameLowercased == "microsoft teams" || nameLowercased == "microsoft teams classic" || nameLowercased == "zoom.us"{
-                                                    if !isPreventUserIdleDisplaySleepOn{
-                                                        continue;
+                                                }else{
+                                                    DispatchQueue.main.async {
+                                                        self.setStatusBarButtonColorForFocusMode(color: NSColor.systemBlue, colorString: nil)
+                                                        self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText)
+                                                        self.statusbutton?.imagePosition = .imageLeft
                                                     }
                                                 }
-                                                
-                                                
-                                                if let browser = getCurrentBrowserFrom(browserName: nameLowercased){
-                                                    addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is a browser:- get current url")
-                                                    
-                                                    if !isBrowserMeetingAllowed(focus: focus, browser: browser){
-                                                        continue;
-                                                    }
-                                                }
-                                                
-                                                addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is \(nameLowercased)")
-                                                
-                                                appUsedInAutoMeetingFocusMode = url.lastPathComponent
-                                                
-                                                handleMeetingDetected()
                                                 return;
                                             }
                                             
+                                            if nameLowercased == "microsoft teams" || nameLowercased == "microsoft teams classic" || nameLowercased == "zoom.us"{
+                                                if !isPreventUserIdleDisplaySleepOn{
+                                                    continue;
+                                                }
+                                            }
+                                            
+                                            
+                                            if let browser = getCurrentBrowserFrom(browserName: nameLowercased){
+                                                addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is a browser:- get current url")
+                                                
+                                                if !isBrowserMeetingAllowed(focus: focus, browser: browser){
+                                                    continue;
+                                                }
+                                            }
+                                            
+                                            addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is \(nameLowercased)")
+                                            
+                                            appUsedInAutoMeetingFocusMode = url.lastPathComponent
+                                            
+                                            handleMeetingDetected()
+                                            return;
                                         }
+                                        
                                     }
                                 }
                             }
-                            handleMeetingEnded()
-                            break;
                         }
+                        handleMeetingEnded()
+                        break;
                     }
                 }
             }
