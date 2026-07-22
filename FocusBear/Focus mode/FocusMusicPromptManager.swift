@@ -83,4 +83,40 @@ enum FocusMusicPromptManager {
         })
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
+
+    // MARK: - Resume auto-start (app quit → relaunch into a still-running focus session)
+
+    /// Armed when a launch-time focus-session restore wants to auto-start music (preference == .play)
+    /// but the track library hasn't loaded yet (arrAllTracks fills from an async API call). Cleared once
+    /// music actually starts (or there's already something playing).
+    static var isAutoStartPendingOnResume = false
+
+    /// Called when the app relaunches straight back into a focus session that was still running. If the
+    /// user chose to auto-play focus music (focusMusicAutoStart == .play), restart it — WITHOUT ever
+    /// prompting (resuming shouldn't nag, unlike maybeShowPrompt's .ask path). The track library loads
+    /// asynchronously at launch, so this may run before tracks are ready: it arms a pending flag and
+    /// startAutoStartOnResumeIfReady() retries once the tracks finish loading.
+    static func autoStartMusicOnResumeIfEnabled() {
+        guard SettingsManagerObject.focusMusicAutoStart == .play else { return }
+        guard currentRunningFocusType["isMeetings"] as? Bool != true else { return }
+        isAutoStartPendingOnResume = true
+        startAutoStartOnResumeIfReady()
+    }
+
+    /// Try to satisfy a pending resume auto-start. Safe to call repeatedly (e.g. from the track-load
+    /// completion): the pending flag plus the "already playing" guard prevent double-starts, and it stays
+    /// armed (a no-op) until the track library is available.
+    static func startAutoStartOnResumeIfReady() {
+        guard isAutoStartPendingOnResume, isFocusModeOn() else { return }
+        // Already playing something (library / Spotify / YouTube)? Nothing to restart.
+        if allTracksVcObj?.isAnyMusicPlaying ?? false {
+            isAutoStartPendingOnResume = false
+            return
+        }
+        // Track library not loaded yet — stay armed; the track-load completion calls us again.
+        guard arrAllTracks.contains(where: { $0["isFileDownloded"] as? Bool == true }) else { return }
+        getAllTracksVcObj().playLastPlayedOrRandomTrack()
+        isFocusMusicStartedFromPrompt = true
+        isAutoStartPendingOnResume = false
+    }
 }

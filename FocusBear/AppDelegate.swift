@@ -1091,6 +1091,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         UserDefaults.standard.set(arrAllTracks, forKey: kUserdefaultsAllTracks)
                     }
                     checkAllTracksDownloadState()
+                    // If the app relaunched into a still-running focus session before the track library
+                    // finished loading, this is where a pending resume auto-start finally gets its tracks.
+                    DispatchQueue.main.async { FocusMusicPromptManager.startAutoStartOnResumeIfReady() }
                 })
                 
                 

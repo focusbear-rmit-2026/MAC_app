@@ -1709,6 +1709,9 @@ func resumeFocusModeAfterAppStartted(diffSeconds: Int, focusMode: [String : Any]
             showSavedSitesForLaterWindowForBreaks()
         }
     }
+    // Relaunched into a still-running focus session: restart focus music if the user opted to auto-play
+    // it. Never prompts on resume; deferred internally until the async track library has loaded.
+    FocusMusicPromptManager.autoStartMusicOnResumeIfEnabled()
 }
 
 
