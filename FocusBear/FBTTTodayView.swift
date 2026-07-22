@@ -285,10 +285,10 @@ struct FBTTTodayView: View {
             if let summary = model.summary, !summary.isEmpty {
                 let sections = VStack(alignment: .leading, spacing: 20) {
                     if !summary.projects.isEmpty {
-                        section(title: menuLocalized("ttProjects", "Projects"), slices: summary.projects, showDot: true)
+                        section(title: ttLocalized("ttProjects", "Projects"), slices: summary.projects, showDot: true)
                     }
                     if !summary.apps.isEmpty {
-                        section(title: menuLocalized("ttMostUsedApps", "Most used apps"), slices: summary.apps, showDot: false)
+                        section(title: ttLocalized("ttMostUsedApps", "Most used apps"), slices: summary.apps, showDot: false)
                     }
                 }
                 // Inline (fillsParent == false) the outer host ScrollView scrolls everything, so don't
@@ -309,7 +309,7 @@ struct FBTTTodayView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline) {
-                Text(menuLocalized("ttToday", "Today"))
+                Text(ttLocalized("ttToday", "Today"))
                     .font(appBold(20))
                     .foregroundColor(.primary)
                 Spacer()
@@ -321,7 +321,7 @@ struct FBTTTodayView: View {
                 .font(appBold(30))
                 .foregroundColor(fbAccent)
             if !model.updatedAt.isEmpty {
-                Text(menuLocalized("ttUpdated", "Updated") + " \(model.updatedAt)")
+                Text(ttLocalized("ttUpdated", "Updated") + " \(model.updatedAt)")
                     .font(appRegular(11))
                     .foregroundColor(.secondary)
             }
@@ -355,10 +355,10 @@ struct FBTTTodayView: View {
 
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(menuLocalized("ttEmptyTitle", "No activity tracked yet today."))
+            Text(ttLocalized("ttEmptyTitle", "No activity tracked yet today."))
                 .font(appSemiBold(13))
                 .foregroundColor(.primary)
-            Text(menuLocalized("ttEmptyBody", "Focus Bear Time Tracker logs your apps and sites automatically — check back soon."))
+            Text(ttLocalized("ttEmptyBody", "Focus Bear Time Tracker logs your apps and sites automatically — check back soon."))
                 .font(appRegular(12))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -372,14 +372,14 @@ struct FBTTTodayView: View {
             // user out of their routine — show guidance instead of the button. checkIsFullScreenEnabled()
             // is the global flag for "the app runs as a borderless full-screen window".
             if checkIsFullScreenEnabled() {
-                Text(menuLocalized("ttFullscreenHint", "When you're finished with your habits, you can open the Time Tracker app to see more stats and edit your settings."))
+                Text(ttLocalized("ttFullscreenHint", "When you're finished with your habits, you can open the Time Tracker app to see more stats and edit your settings."))
                     .font(appRegular(12))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
                 SwiftUI.Button(action: model.onOpenFBTT) {
-                    Text(menuLocalized("ttOpenTracker", "Open Time Tracker"))
+                    Text(ttLocalized("ttOpenTracker", "Open Time Tracker"))
                         .font(appSemiBold(13))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
@@ -387,7 +387,7 @@ struct FBTTTodayView: View {
                         .foregroundColor(.white)
                 }
                 .buttonStyle(.plain)
-                Text(menuLocalized("ttOpenTrackerSubtitle", "To change settings and view more data"))
+                Text(ttLocalized("ttOpenTrackerSubtitle", "To change settings and view more data"))
                     .font(appRegular(11))
                     .foregroundColor(.secondary)
             }
@@ -401,16 +401,16 @@ struct FBTTTodayView: View {
             Image(systemName: "chart.bar.xaxis")
                 .font(.system(size: 42, weight: .semibold))
                 .foregroundColor(fbAccent)
-            Text(menuLocalized("ttUpgradeTitle", "Automatically log your time"))
+            Text(ttLocalized("ttUpgradeTitle", "Automatically log your time"))
                 .font(appBold(22))
                 .foregroundColor(.primary)
                 .fixedSize(horizontal: false, vertical: true)
-            Text(menuLocalized("ttUpgradeBody", "Upgrade to Focus Bear Pro to get automated time tracking."))
+            Text(ttLocalized("ttUpgradeBody", "Upgrade to Focus Bear Pro to get automated time tracking."))
                 .font(appRegular(14))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             SwiftUI.Button(action: model.onUpgrade) {
-                Text(menuLocalized("ttUpgradeButton", "Upgrade to Pro"))
+                Text(ttLocalized("ttUpgradeButton", "Upgrade to Pro"))
                     .font(appSemiBold(14))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
@@ -433,7 +433,7 @@ struct TimeTrackerTitleHeader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Match the other Tools titles ("Focus Button", "Late No More").
-            Text(menuLocalized("menuTimeTracker", "Time Tracker"))
+            Text(ttLocalized("menuTimeTracker", "Time Tracker"))
                 .font(.system(size: 24, weight: .bold))
                 .foregroundColor(.primary)
             Divider()

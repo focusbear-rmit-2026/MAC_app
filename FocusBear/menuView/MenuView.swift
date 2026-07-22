@@ -37,6 +37,17 @@ func menuLocalized(_ key: String, _ fallback: String) -> String {
     return fallback
 }
 
+/// Time-Tracker "today" view strings, resolved from the `timeTrackerViewInfo` config section (keyed
+/// per language) with an English fallback. Kept separate from `menuLocalized`/`menuView` so the
+/// Time-Tracker view's copy lives in its own dictionary rather than being mixed into the menu's.
+func ttLocalized(_ key: String, _ fallback: String) -> String {
+    if let dict = configjson.value(forKey: "timeTrackerViewInfo") as? NSDictionary,
+       let s = dict.value(forKey: key) as? String, !s.isEmpty {
+        return s
+    }
+    return fallback
+}
+
 // MARK: - Design system
 
 @available(macOS 11.0, *)
@@ -421,8 +432,15 @@ struct FocusBearMenuView: View {
 
             AccordionRow(icon: "ellipsis",
                          title: menuLocalized("menuFocusTools", "Focus Tools"),
-                         subtitle: menuLocalized("menuFocusToolsSubtitle", "Music, brain dump & to-dos"),
+                         // When a focus-music track is loaded, surface it (and a pause control) at the
+                         // top level so it's identifiable/pausable without opening the accordion.
+                         subtitle: model.musicTrackName.isEmpty
+                            ? menuLocalized("menuFocusToolsSubtitle", "Music, brain dump & to-dos")
+                            : "♪ " + model.musicTrackName,
                          solid: highlightedSection == .tools,
+                         accessory: model.musicTrackName.isEmpty ? nil : AnyView(
+                            MusicToggleButton(playing: model.musicPlaying, scheme: scheme, action: model.onToggleMusic)
+                         ),
                          isOpen: binding(.tools), scheme: scheme) {
                 VStack(spacing: 8) {
                     if model.musicTrackName.isEmpty {
@@ -1236,6 +1254,27 @@ private struct DashedUnderline: Shape {
 }
 
 @available(macOS 11.0, *)
+@available(macOS 11.0, *)
+private struct MusicToggleButton: View {
+    let playing: Bool
+    let scheme: ColorScheme
+    let action: () -> Void
+    var body: some View {
+        SwiftUI.Button(action: action) {
+            Image(systemName: playing ? "pause.fill" : "play.fill")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(MenuTheme.orange)
+                .frame(width: 30, height: 30)
+                .background(MenuTheme.chipBg(scheme))
+                .clipShape(Circle())
+                .contentShape(Circle())
+        }
+        .buttonStyle(PlainButtonStyle())
+        .help(playing ? menuLocalized("menuPauseMusic", "Pause music") : menuLocalized("menuPlayMusic", "Play music"))
+    }
+}
+
+@available(macOS 11.0, *)
 private struct AccordionRow<Body: View>: View {
     let icon: String
     let title: String
@@ -1243,6 +1282,9 @@ private struct AccordionRow<Body: View>: View {
     var accent: Bool = false
     var bgColor: Color? = nil
     var solid: Bool = false      // solid orange card with white text (used for the running Focus card)
+    // Optional control shown in the header before the chevron (e.g. the focus-music play/pause button),
+    // tappable without expanding the row.
+    var accessory: AnyView? = nil
     @Binding var isOpen: Bool
     let scheme: ColorScheme
     @ViewBuilder var content: () -> Body
@@ -1267,6 +1309,9 @@ private struct AccordionRow<Body: View>: View {
                             .lineLimit(1)
                     }
                     Spacer(minLength: 8)
+                    // The accessory is its own Button, so tapping it fires its action instead of
+                    // toggling the row (nested buttons route the tap to the innermost on macOS).
+                    if let accessory { accessory }
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(subColor)
