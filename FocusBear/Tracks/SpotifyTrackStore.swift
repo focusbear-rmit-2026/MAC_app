@@ -89,11 +89,39 @@ enum SpotifyPlaybackManager {
     }
 
     static func play(uri: String) {
-        executeScript(script: "tell application \"Spotify\"\nactivate\nplay track \"\(uri)\"\nend tell")
+        // Off the main thread on purpose: runAppleScriptSafely hard-caps main-thread scripts to a 1s
+        // timeout (to avoid freezing the UI), but activating/launching Spotify routinely takes longer,
+        // so on the main thread the `play track` command was cut off — Spotify opened but never played.
+        // On a background queue the script gets the full timeout and playback actually starts.
+        DispatchQueue.global(qos: .userInitiated).async {
+            // Cold-launch race: on the first play after app start Spotify isn't running yet, so `activate`
+            // only *begins* launching it. A launching Spotify ACCEPTS `play track` without erroring but
+            // silently ignores it, so it opened and stayed silent — only the 2nd play (Spotify already up)
+            // worked. So we can't loop on "did the command error"; loop until Spotify is actually playing,
+            // re-issuing `play track` each pass until it takes. Longer timeout to cover a cold start.
+            let script = """
+            tell application "Spotify"
+                activate
+                repeat 100 times
+                    try
+                        if player state is playing then return
+                    end try
+                    try
+                        play track "\(uri)"
+                    end try
+                    delay 0.3
+                end repeat
+            end tell
+            """
+            var errors: NSDictionary?
+            _ = runAppleScriptSafely(script, timeoutSeconds: 35, errors: &errors)
+        }
     }
 
     static func pause() {
-        executeScript(script: "tell application \"Spotify\" to pause")
+        DispatchQueue.global(qos: .userInitiated).async {
+            executeScript(script: "tell application \"Spotify\" to pause")
+        }
     }
 
     static func setVolume(percent: Int) {
