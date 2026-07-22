@@ -533,6 +533,35 @@ var lastCurrentAction:ACTION = ACTION._START_
 
 
 
+// NSSound.play() blocks its calling thread while CoreAudio wakes/primes the output device
+// (StartIO_Sync / AudioQueue prime) — routinely >2s when the device is idle or a Bluetooth output has
+// to reconnect. All the play*Sound helpers below called it on the main thread, which froze the UI
+// (Sentry AppHang, culprits playEveryActivitySound / playStartMorningEveningRoutineSound /
+// playFocusPomodorBreakEndsSound). Play on a background queue instead, and keep the NSSound retained
+// until playback should be finished so async playback isn't cut off when the caller returns.
+private final class BackgroundSoundPlayer {
+    static let shared = BackgroundSoundPlayer()
+    private let lock = NSLock()
+    private var playing: [NSSound] = []
+
+    func play(_ name: String) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            guard let sound = NSSound(named: name) else { return }
+            self.lock.lock(); self.playing.append(sound); self.lock.unlock()
+            sound.play()   // blocks THIS background thread on CoreAudio startup, not the main thread
+            // NSSound plays asynchronously; its delegate isn't reliably delivered without a run loop on
+            // this queue, so just drop the strong reference after the clip's own duration (+ margin).
+            let ttl = sound.duration > 0 ? sound.duration + 1 : 8
+            DispatchQueue.global().asyncAfter(deadline: .now() + ttl) {
+                self.lock.lock(); self.playing.removeAll { $0 === sound }; self.lock.unlock()
+            }
+        }
+    }
+}
+
+/// Play a bundled named sound effect off the main thread (see BackgroundSoundPlayer).
+func playNamedSound(_ name: String) { BackgroundSoundPlayer.shared.play(name) }
+
 func playEveryActivitySound(){
     if appdelegate!.isUserOnMeeting{//Don't play sound effects during mid-meeting breaks#662
         return;
@@ -540,7 +569,7 @@ func playEveryActivitySound(){
     if SettingsManagerObject.isSoundEnabled{
         if let sound = arrCompletingHabitSound.randomElement(){
             addLog(text: "Sound name: \(sound)")
-            NSSound(named: sound)?.play()
+            playNamedSound(sound)
         }
         addLog(text: "Play Every Activity Sound")
         focusButtonServiceObject.beep()
@@ -556,13 +585,13 @@ func playAfterMorningEveningRoutineSound(isMorning:Bool){
         if isMorning{
             if let sound = arrCompletingWholeMorningRoutineSound.randomElement(){
                 addLog(text: "Sound name: \(sound)")
-                NSSound(named: sound)?.play()
+                playNamedSound(sound)
             }
             addLog(text: "Play Morning Routine End Sound")
         }else{
             if let sound = arrCompletingWholeEveningRoutineSound.randomElement(){
                 addLog(text: "Sound name: \(sound)")
-                NSSound(named: sound)?.play()
+                playNamedSound(sound)
             }
             addLog(text: "Play Evening Routine End Sound")
         }
@@ -574,7 +603,7 @@ func playFocusModeStartedSound(){
     if SettingsManagerObject.isSoundEnabled{
         if let sound = arrStartFocusSound.randomElement(){
             addLog(text: "Sound name: \(sound)")
-            NSSound(named: sound)?.play()
+            playNamedSound(sound)
         }
         addLog(text: "Play Focus Mode Started Sound")
         focusButtonServiceObject.beep()
@@ -587,7 +616,7 @@ func playStartMorningEveningRoutineSound(){
     if SettingsManagerObject.isSoundEnabled{
         if let sound = arrStartingMorningEveningRoutineSound.randomElement(){
             addLog(text: "Sound name: \(sound)")
-            NSSound(named: sound)?.play()
+            playNamedSound(sound)
         }
         addLog(text: "Play Start Morning Evening Routine Sound")
         focusButtonServiceObject.beep()
@@ -597,7 +626,7 @@ func playFocusPomodorBreakEndsSound(){
     if SettingsManagerObject.isSoundEnabled{
         if let sound = arrCompletingHabitSound.randomElement(){
             addLog(text: "Sound name: \(sound)")
-            NSSound(named: sound)?.play()
+            playNamedSound(sound)
         }
         addLog(text: "Play Focus Pomodor Break Ends Sound")
         focusButtonServiceObject.beep()
