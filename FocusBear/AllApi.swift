@@ -1758,7 +1758,7 @@ class AllApi:NSObject {
                                 self.isApiActivityCompletedErrorFound = false
                                 
                                 DispatchQueue.main.async {
-                                    var activitiesSyncErrorText = "Focus Bear was not able to sync the activities' statistics due to bad internet."
+                                    var activitiesSyncErrorText = "Internet issue: habit completion will sync once your connection stabilises."
                                     if let common = configjson.value(forKey: "common") as? NSDictionary{
                                         activitiesSyncErrorText = common.value(forKey: "activitiesSyncErrorText") as? String ?? activitiesSyncErrorText
                                     }
@@ -1783,7 +1783,7 @@ class AllApi:NSObject {
                             //                            self.isAnyErrorFoundInActivityCompletedApi = true
                             
                             DispatchQueue.main.async {
-                                var activitiesSyncErrorText = "Focus Bear was not able to sync the activities' statistics due to bad internet."
+                                var activitiesSyncErrorText = "Internet issue: habit completion will sync once your connection stabilises."
                                 if let common = configjson.value(forKey: "common") as? NSDictionary{
                                     activitiesSyncErrorText = common.value(forKey: "activitiesSyncErrorText") as? String ?? activitiesSyncErrorText
                                 }

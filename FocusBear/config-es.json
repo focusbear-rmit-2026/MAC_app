@@ -163,7 +163,7 @@
         "graphDateText": "Fecha",
         "graphTimeText": "Tiempo",
         "buttonBackToMyHabitsText": "Regresar a mis hábitos",
-        "activitiesSyncErrorText": "Focus Bear no ha podido sincronizar las estadísticas de las actividades debido a mala conexión de internet.",
+        "activitiesSyncErrorText": "Problema de conexión: la finalización de hábitos se sincronizará cuando tu conexión se estabilice.",
         "alertAppRestartText": "Focus Bear se reinicia automáticamente si se cierra o bloquea a la fuerza para asegurarse de ayudarte a combatir las distracciones. Si quieres salir de la aplicación o tomar un descanso, usa las funciones para salir en la barra de menú de Focus Bear.",
         "buttonDontTellAgainText": "Entendido – No mencionar de nuevo",
         "toolTipColorBoxText": "Elige un color para que se muestre en el fondo del ícono de la barra de menú superior para ayudar a identificar el modo de enfoque que estás ejecutando.",

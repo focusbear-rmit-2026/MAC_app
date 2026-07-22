@@ -163,7 +163,7 @@
         "graphDateText": "Date",
         "graphTimeText": "Time",
         "buttonBackToMyHabitsText": "Back to my habits",
-        "activitiesSyncErrorText": "Focus Bear was not able to sync the activities' statistics due to bad internet.",
+        "activitiesSyncErrorText": "Internet issue: habit completion will sync once your connection stabilises.",
         "alertAppRestartText": "Focus Bear automatically restarts if it gets force quit/crashes to make sure you always have help combatting distractions. If you want to quit the app/take a break, use the Quit option from the Focus Bear menu bar.",
         "buttonDontTellAgainText": "Got it - don't tell me again",
         "toolTipColorBoxText": "Choose a color to be displayed in the background of the top menu bar icon to help identify the Focus Mode you are running.",
