@@ -25,11 +25,25 @@ struct YouTubeMusicPlayerView: NSViewRepresentable {
     let kind: YouTubeMusicTrack.Kind
     var volume: Float
     var isMuted: Bool
+    /// Called with (trackId, title, author) once the player reports the currently-playing track's
+    /// metadata. Lets a placeholder name ("YouTube Music playlist") be upgraded to a real title even
+    /// for RD… radio mixes, whose title isn't available from oEmbed or the server HTML.
+    var onResolvedTitle: ((String, String, String) -> Void)? = nil
 
-    final class Coordinator {
+    final class Coordinator: NSObject, WKScriptMessageHandler {
         var loadedKey: String?
         var lastAppliedVolume: Int?
         var lastAppliedMuted: Bool?
+        var trackId = ""
+        var onResolvedTitle: ((String, String, String) -> Void)?
+
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            guard message.name == "trackInfo", let body = message.body as? [String: Any] else { return }
+            let title = (body["title"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let author = (body["author"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            guard !title.isEmpty else { return }
+            onResolvedTitle?(trackId, title, author)
+        }
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -40,6 +54,9 @@ struct YouTubeMusicPlayerView: NSViewRepresentable {
         // that isn't in response to a user gesture — the "Play" click happened in SwiftUI, not
         // inside this webview, so from WebKit's point of view autoplay here has no gesture behind it.
         configuration.mediaTypesRequiringUserActionForPlayback = []
+        // The player posts the playing track's { title, author } here (see the onStateChange handler).
+        context.coordinator.onResolvedTitle = onResolvedTitle
+        configuration.userContentController.add(context.coordinator, name: "trackInfo")
         let webView = WKWebView(frame: .zero, configuration: configuration)
         loadIfNeeded(in: webView, context: context)
         return webView
@@ -56,6 +73,7 @@ struct YouTubeMusicPlayerView: NSViewRepresentable {
         let key = "\(kind.rawValue):\(id)"
         guard context.coordinator.loadedKey != key else { return }
         context.coordinator.loadedKey = key
+        context.coordinator.trackId = id
         context.coordinator.lastAppliedVolume = nil
         context.coordinator.lastAppliedMuted = nil
 
@@ -95,6 +113,20 @@ struct YouTubeMusicPlayerView: NSViewRepresentable {
                     'onReady': function(event) {
                         window.fbPlayerReady = true;
                         event.target.playVideo();
+                    },
+                    'onStateChange': function(event) {
+                        // On PLAYING, report the real track title/author back to Swift. getVideoData()
+                        // is only populated once a video actually starts — which is why this fires on
+                        // PLAYING (not onReady) and works even for RD… radio mixes (they pick a real
+                        // video to play even though the playlist itself has no title).
+                        if (event.data === 1 && fbPlayer.getVideoData) {
+                            try {
+                                var d = fbPlayer.getVideoData();
+                                if (d && d.title) {
+                                    window.webkit.messageHandlers.trackInfo.postMessage({ title: d.title, author: d.author || '' });
+                                }
+                            } catch (e) {}
+                        }
                     }
                 }
             });

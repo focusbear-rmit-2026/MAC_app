@@ -350,6 +350,19 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
         }
     }
 
+    /// Called by the inline player (YouTubeMusicPlayerView) when it reports the currently-playing
+    /// track's metadata. Upgrades a still-generic name to the real title — the only source that works
+    /// for RD… radio mixes (no oEmbed / server title). Only replaces the placeholder, so it fills in
+    /// once and isn't clobbered as a mix advances to the next song.
+    func resolvePlayingYouTubeTitle(id: String, title: String, author: String) {
+        guard let track = youtubeTracks.first(where: { $0.id == id }) else { return }
+        let placeholders = [youtubeSourceLabel, "\(youtubeSourceLabel) playlist"]
+        guard placeholders.contains(track.name) || track.name.contains("http") else { return }
+        let resolved = author.isEmpty ? title : "\(title) — \(author)"
+        YouTubeMusicTrackStore.updateName(id: id, name: resolved)
+        youtubeTracks = YouTubeMusicTrackStore.load()
+    }
+
     /// One-time title backfill for links added before the oEmbed lookup existed (their stored name is
     /// still the raw URL). First swaps the raw URL for a friendly placeholder — persisted, so the ugly
     /// URL never shows again and this backfill won't re-match next launch even if the link can't be

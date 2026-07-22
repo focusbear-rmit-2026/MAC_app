@@ -114,7 +114,10 @@ struct FocusMusicView: View {
             // instantiated once, so it moved out of the YouTube track list below when playing.
             if let playingId = model.youtubePlayingId, let playingKind = model.youtubePlayingKind {
                 ZStack(alignment: .bottomTrailing) {
-                    YouTubeMusicPlayerView(id: playingId, kind: playingKind, volume: model.volume, isMuted: model.youtubeMuted)
+                    YouTubeMusicPlayerView(id: playingId, kind: playingKind, volume: model.volume, isMuted: model.youtubeMuted,
+                                           onResolvedTitle: { id, title, author in
+                                               model.resolvePlayingYouTubeTitle(id: id, title: title, author: author)
+                                           })
                         .frame(width: 72, height: 40)
                         .cornerRadius(4)
                     SwiftUI.Button(action: { model.toggleYoutubeMute() }) {
@@ -196,7 +199,13 @@ struct FocusMusicView: View {
                     SwiftUI.Button(action: { model.toggleYouTubeTrack(track) }) {
                         Image(systemName: isPlaying ? "stop.circle.fill" : "play.circle.fill")
                     }.buttonStyle(FBButtonStyle())
-                    Text(track.name).lineLimit(1).font(.body.weight(isPlaying ? .semibold : .regular))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(track.name).lineLimit(1).font(.body.weight(isPlaying ? .semibold : .regular))
+                        // Show the pasted link too, so the source is identifiable even when the title is
+                        // still the generic placeholder (e.g. an RD… radio mix before playback resolves it).
+                        Text(track.url).lineLimit(1).truncationMode(.middle)
+                            .font(.caption).foregroundColor(.secondary)
+                    }
                     Spacer()
                     SwiftUI.Button(action: { model.removeYouTubeTrack(track) }) {
                         Image(systemName: "trash")
