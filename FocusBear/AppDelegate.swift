@@ -1498,6 +1498,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             print("Going to sleep")
             addLog(text: "Going to sleep")
             isSystemSleep = true
+            // Drop the realtime socket before the network goes away, so PusherSwift doesn't churn
+            // reconnects into a dead network and crash (Network.framework use-after-free, #2125).
+            pusherEventsObject.disconnectForSleep()
             if !isScreenLocked{
                 pauseBreakActivityTimerIfRunning()
                 pauseHabitActivityIfRunning()
@@ -1506,6 +1509,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             print("Woke up")
             addLog(text: "Woke up")
             isSystemSleep = false
+            pusherEventsObject.reconnectAfterWake()
             TalkingClockManager.shared.restart()
             if !isScreenLocked{
                 if isActivityTimerPaused{
