@@ -10,6 +10,10 @@ import Foundation
 
 func showAbortingFocusModeVc(forPause:Bool){// abortview for pause only in strict mode
     addLog(text: "Showing Abort focus mode view")
+    if teacherSessionManagerObject.isTeacherSessionActive(){// C3:- teacher controlled sessions cannot be aborted or paused, only unlock requests
+        teacherSessionManagerObject.showTeacherSessionLockedAlert()
+        return;
+    }
     if currentFocusModeStrictness == ._STRICT_{
         mainWindowControllerObj?.showWindow(nil)
         leftMenuVcObj!.showFocusAbortedView()
@@ -400,6 +404,9 @@ func closeNaturalBreakDetectionWindowIfVisible(){// added on 9/9/25 in 2.27.413
 
 func showPopupAppointmentWindow(title:String, endTime:Date){
     addLog(text:"showPopupAppointmentWindow")
+    // Mirror the Late No More appointment reminder onto the Focus Button.
+    focusButtonServiceObject.showNotification(text: title)
+    FocusGlowBorderManager.shared.pulseWorm()
     getPopupAppointmentTimeWindowObject().contentViewController = getPopupAppointmentTimeVcObject()
     getPopupAppointmentTimeWindowObject().window?.styleMask.remove(.closable)
     getPopupAppointmentTimeWindowObject().window?.center()
@@ -466,9 +473,12 @@ func showBlurWindow(frame:NSRect, browser:BROWSER?){
 
 func showAllTracksWindow(){
     addLog(text:"showAllTracksWindow")
-    
+
     mainWindowControllerObj?.showWindow(nil)
     leftMenuVcObj?.showAllTracks()
+    // Focus Bear is a menu-bar (accessory) app, so showWindow alone leaves the window behind other
+    // apps — clicking "Focus Music" looked like nothing happened. Activate so it comes to the front.
+    NSApplication.shared.activate(ignoringOtherApps: true)
     return;
 }
 //-------------------------------------------------//
@@ -549,13 +559,16 @@ func showSurveyWindow(){
 //***********showTimeTrackerWindow***************//
 func showTimeTrackerWindow(showingAutomatically:Bool){
     addLog(text:"showTimeTrackerWindow")
-    getTimeTrackerWcObject().contentViewController = getTimeTrackerVcObject()
-    getTimeTrackerWcObject().window?.center()
-    getTimeTrackerWcObject().window?.title = appName
-    getTimeTrackerWcObject().window?.styleMask.remove(.closable)
-    getTimeTrackerWcObject().showWindow(nil)
-    NSApplication.shared.activate(ignoringOtherApps: true)
+    let wc = getTimeTrackerWcObject()
+    // Once FBTT is installed and has tracked data, show the read-only Today view
+    // (reads FBTT's own SQLite store) instead of the promo/enable screen.
+    wc.contentViewController = getTimeTrackerVcObject()
     timeTrackerVcObj!.showingAutomatically = showingAutomatically
+    wc.window?.styleMask.remove(.closable)
+    wc.window?.center()
+    wc.window?.title = appName
+    wc.showWindow(nil)
+    NSApplication.shared.activate(ignoringOtherApps: true)
     allApiObject.capturePosthog(event: "show-timetracker-window", metadata: [:])
 }
 //-------------------------------------------------//
@@ -640,8 +653,11 @@ func showLateNoMoreWindow(){
     getLateNoMorePopUpWcObject().window?.center()
     getLateNoMorePopUpWcObject().window?.title = appName
     getLateNoMorePopUpWcObject().window?.styleMask.remove(.closable)
+    getLateNoMorePopUpWcObject().window?.level = .floating
     getLateNoMorePopUpWcObject().showWindow(nil)
-    NSApplication.shared.activate(ignoringOtherApps: true)
+    // Float the reminder above the user's current app WITHOUT activating Focus Bear — calling
+    // NSApp.activate here also dragged the main window to the foreground over the user's work.
+    getLateNoMorePopUpWcObject().window?.orderFrontRegardless()
     allApiObject.capturePosthog(event: "show-latenomore-window", metadata: [:])
 }
 //-------------------------------------------------//
@@ -731,9 +747,14 @@ func showAskLoginWindow(){
         leftMenuVcObj?.disableAllTabForOnboarding()
         mainViewControllerObj?.collapseLeftPanel()
         currentState = ._LOGIN_
+        // Logged out: the menu-bar click must foreground this window (it was a no-op because the
+        // action stayed nil on this screen). Set target + action explicitly so dispatch is guaranteed.
+        appdelegate!.statusbutton?.target = appdelegate
+        appdelegate!.statusbutton?.action = #selector(AppDelegate.bringMainWindowToForeground(_:))
         return;
     }
-    appdelegate!.statusbutton?.action = nil
+    appdelegate!.statusbutton?.target = appdelegate
+    appdelegate!.statusbutton?.action = #selector(AppDelegate.bringMainWindowToForeground(_:))
     getOnboardingVcObject().navigate(to: ._CREATE_ACCOUNT_)
 }
 //-------------------------------------------------//
@@ -758,14 +779,14 @@ func showCustomLoginWindow(isLogin:Bool){
         leftMenuVcObj?.disableAllTabForOnboarding()
         mainViewControllerObj?.collapseLeftPanel()
         customLoginVcObj?.isLogin = isLogin
-        appdelegate!.statusbutton?.action = nil
+        appdelegate!.statusbutton?.action = #selector(AppDelegate.bringMainWindowToForeground(_:))
         currentState = ._LOGIN_
         return;
     }
 
     customLoginVcObj?.isLogin = isLogin
     getOnboardingVcObject().navigate(to: ._LOGIN_)
-    appdelegate!.statusbutton?.action = nil
+    appdelegate!.statusbutton?.action = #selector(AppDelegate.bringMainWindowToForeground(_:))
 }
 //-------------------------------------------------//
 
@@ -827,40 +848,51 @@ func showExplainingPermissionsWindow(showingFromPomodoro:Bool, showingFromBlocki
 }
 
 //***********SHOW Upgrade Now Window ***************//
-func showUpgradeNowWindow(){
-    addLog(text:"showUpgradeNowWindow")
-    allApiObject.capturePosthog(event: "upgrade-nag-shown", metadata: [:])
+func showUpgradeNowWindow(reason: String = "unknown"){
+    addLog(text:"showUpgradeNowWindow reason:\(reason)")
+
     if upgradeNowVcObj != nil{
         if upgradeNowVcObj?.isViewVisible ?? false{
             upgradeNowVcObj?.closeView()
         }
     }
-    upgradeNowVcObj = nil// always catch a fresh object
+
+    upgradeNowVcObj = nil
+
+    let vc = getUpgradeNowVcObject()
+    vc.nagShownReason = reason
+
     if mainWindowControllerObj?.window?.isVisible ?? false{
-        mainViewControllerObj?.presentAsSheet(getUpgradeNowVcObject())
+        mainViewControllerObj?.presentAsSheet(vc)
     }else{
-        getUpgradeNowWindowObject().contentViewController = getUpgradeNowVcObject()
-        upgradeNowWcObj?.window?.title = appName
-        upgradeNowWcObj!.showWindow(nil)
+        let window = getUpgradeNowWindowObject()
+        window.contentViewController = vc
+        window.showWindow(nil)
     }
+    vc.captureNagShownEvent()   // fire once here (deterministic), not in viewWillAppear
 }
 //-------------------------------------------------//
 
 
 //***********SHOW Upgrade To Pro Window ***************//
 func showUpgradeToProNagWindow(titleText:String, reason:String){
-    allApiObject.capturePosthog(event: "upgrade-pro-nag-shown", metadata: ["reason":reason])
-    addLog(text:"showUpgradeToProNagWindow")
-    if upgradeToProNagWcObj == nil{
-        getupgradeToProNagWindowObject().contentViewController = getUpgradeToProNagVcObject()
-        upgradeToProNagWcObj?.window?.title = appName
-        upgradeToProNagWcObj?.window?.styleMask.insert(.fullSizeContentView)
-        upgradeToProNagWcObj?.window?.titlebarAppearsTransparent = true
-        upgradeToProNagWcObj?.window?.title = ""
-    }
-    upgradeToProNagWcObj!.window?.center()
-    upgradeToProNagWcObj!.showWindow(nil)
-    upgradeToProNagVcObj?.resetData(titleText: titleText)
+    addLog(text:"showUpgradeToProNagWindow reason:\(reason)")
+
+    let vc = getUpgradeToProNagVcObject()
+    vc.nagShownReason = reason
+
+    let window = getupgradeToProNagWindowObject()
+    window.contentViewController = vc
+    // Restore the transparent full-size titlebar look (dropped in the rewrite; the window factory
+    // doesn't set it) so the pro nag doesn't render with a normal opaque title bar.
+    window.window?.styleMask.insert(.fullSizeContentView)
+    window.window?.titlebarAppearsTransparent = true
+    window.window?.title = ""
+    window.window?.center()
+    window.showWindow(nil)
+
+    vc.resetData(titleText: titleText)
+    vc.captureNagShownEvent()
 }
 //-------------------------------------------------//
 
@@ -1256,6 +1288,7 @@ func showFloatingTopBarWindow(windowTopMidPoint:NSPoint){
 
 
 func closeMenuWindowIsVisible(){
+    appdelegate?.removeMenuOutsideClickMonitors()
     if !SettingsManagerObject.isMenuPopoverEnabled{
         if menuWcObj != nil{
             if menuWcObj?.window?.isVisible ?? false{

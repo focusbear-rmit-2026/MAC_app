@@ -55,6 +55,13 @@ class firstViewController: NSViewController {
     var btnTopSpaceValue:CGFloat = 60
     var passwordWindowShowingForMarkHabitComplete = false
     var passwordWindowShowingForMarkHabitSkip = false
+    // #2012: a past morning habit (Day Plan "earlier today" accordion) is being marked done and the
+    // password gate is up. Kept separate from the two flags above because the live routine is the
+    // evening one (currentState == ._EVENING_HABIT_), so passWordAuthenticated() can't tell this apart
+    // by state — it dispatches on this flag + the stashed id instead.
+    var passwordWindowShowingForPastHabit = false
+    var pendingPastHabitId: String?
+    var pendingPastHabitPerformedAt: Date?
     var actionBarItemPlay = "Play"
     var actionBarItemDone = "Done"
     var actionBarItemSkip = "Skip"
@@ -113,6 +120,9 @@ class firstViewController: NSViewController {
         
         segmentWfhModeTrackingArea = NSTrackingArea.init(rect: boundsWfhMode, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         segmentControlOfficeMode.addTrackingArea(segmentWfhModeTrackingArea!)
+
+        // Schedule view: adds the "Schedule | Habits" tab over this habit-list screen.
+        setupScheduleTab()
     }
     
     @IBAction func btnInfoClicked(_ sender: Any) {
@@ -233,20 +243,14 @@ class firstViewController: NSViewController {
                 btnPostponeBreak.isHidden = true
                 lblProgress.isHidden = true
                 btnBottomSpace.constant = 100
-                btnTopSpace.constant = 60
-                btnTopSpaceValue = 60
-                if SettingsManagerObject.kIsReducedMotion{
-                    imgView.image = nil
-                    imgViewHeight.constant = 40
-                    imgViewTopSpace.constant = 35
-                    imgViewBottomSpace.constant = 5
-                }else{
-                    imgViewHeight.constant = 160
-                    imgViewTopSpace.constant = 15
-                    imgViewBottomSpace.constant = 0
-                    imgView.image = NSImage(named: "Waking up _ SMall")
-                    imgView.animates = true
-                }
+                // Schedule redesign: collapse the decorative header image + top spacer that
+                // left a large gap above the habit list.
+                btnTopSpace.constant = 12
+                btnTopSpaceValue = 12
+                imgView.image = nil
+                imgViewHeight.constant = 0
+                imgViewTopSpace.constant = 0
+                imgViewBottomSpace.constant = 0
                 lblTitle.stringValue = startMorningHabitTitleText
                 
                 tblViewHabits.isHidden = false
@@ -271,13 +275,13 @@ class firstViewController: NSViewController {
                 btnPostponeBreak.isHidden = true
                 lblSelectHabits.isHidden = false
                 lblProgress.isHidden = true
-                btnTopSpace.constant = 60
-                btnTopSpaceValue = 60
+                btnTopSpace.constant = 12
+                btnTopSpaceValue = 12
                 btnBottomSpace.constant = 100
                 imgView.image = nil
-                imgViewHeight.constant = 40
-                imgViewTopSpace.constant = 35
-                imgViewBottomSpace.constant = 5
+                imgViewHeight.constant = 0
+                imgViewTopSpace.constant = 0
+                imgViewBottomSpace.constant = 0
                 lblTitle.stringValue = startEveningHabitTitleText
                 
                 tblViewHabits.isHidden = false
@@ -302,6 +306,20 @@ class firstViewController: NSViewController {
                 }
                 
                 lblTitle.stringValue = activityCompletionVcObj?.lblTitle.stringValue ?? ""
+                // When the micro-break list first renders, activityCompletionVcObj's title can
+                // still be empty (it's only populated once the break activity screen is built),
+                // which left the list header blank. Fall back to computing the start-break title
+                // from the first activity, mirroring activityCompletionVc.startBreakActivity().
+                if lblTitle.stringValue.isEmpty, !arrFinalBreakActivities.isEmpty,
+                   let currentActivity = arrFinalBreakActivities[0].activity {
+                    let activityName: String
+                    if currentActivity.choiceType != ._RANDOM_ {
+                        activityName = currentActivity.name
+                    } else {
+                        activityName = arrFinalBreakActivities[0].randomChoice?.name ?? ""
+                    }
+                    lblTitle.stringValue = getStartBreakActivityTitleText(seconds: currentActivity.durationSeconds, activityName: activityName)
+                }
                 btnStartFirstHabit.title = activityCompletionVcObj?.btnMain.title ?? ""
                 
                 lblProgress.stringValue = activityCompletionVcObj?.lblProgress.stringValue ?? ""
@@ -396,6 +414,12 @@ class firstViewController: NSViewController {
     }
     
     override func viewDidAppear() {
+        // viewWillAppear re-shows the habit list every time this view appears; re-hide it whenever
+        // the Day Plan is the front content. A visible-but-occluded table keeps firing its cells'
+        // activeAlways tracking areas (stray hand cursor) and stays hit-testable (clicks fall
+        // through and start the selected habit). updateScheduleTabForState only ran on state
+        // changes, so a plain navigate-back to the Day Plan left the list live underneath.
+        updateScheduleTabForState()
         if currentState == ._CUSTOM_ROUTINE_{
             return;
         }
@@ -712,6 +736,7 @@ class firstViewController: NSViewController {
     @IBAction func btnEditHabitsClicked(_ sender: Any) {
         passwordWindowShowingForMarkHabitComplete = false
         passwordWindowShowingForMarkHabitSkip = false
+        passwordWindowShowingForPastHabit = false
         if shouldAskPassword(){
             if SettingsManagerObject.isPasswordRequireInChangeSettings{
                 getHabitsVcObject().showPasswordView()
@@ -732,6 +757,17 @@ class firstViewController: NSViewController {
     }
     
     func passWordAuthenticated(){
+        // #2012: a past habit (morning or evening) was gated (checked first — the live routine is the evening one,
+        // so the state-based branches below can't distinguish it).
+        if passwordWindowShowingForPastHabit {
+            passwordWindowShowingForPastHabit = false
+            if let id = pendingPastHabitId {
+                let performedAt = pendingPastHabitPerformedAt ?? Date()
+                pendingPastHabitId = nil; pendingPastHabitPerformedAt = nil
+                performPastHabitCompletion(id: id, performedAt: performedAt)
+            }
+            return
+        }
         if passwordWindowShowingForMarkHabitComplete{
             if currentState == ._MORNING_HABIT_{
                 morningHabitAlreadyDoneClicked()
@@ -770,11 +806,18 @@ class firstViewController: NSViewController {
         }
     }
     func sortMorningHabitsBySelectedFirst(){
-        if tblViewHabits.selectedRow != 0 && tblViewHabits.selectedRow != -1{
+        // The table view outlet can be nil here when this is reached
+        // programmatically (e.g. scheduleStart -> btnStartFirstHabitClicked)
+        // before/after the view is in the hierarchy, which previously crashed
+        // with an implicit-unwrap nil. Also bounds-check the selected row
+        // against the backing array. See Sentry FOCUS-BEAR-MACOS-10S.
+        guard let tblViewHabits = tblViewHabits else { return }
+        let selectedRow = tblViewHabits.selectedRow
+        if selectedRow > 0 && selectedRow < arrFilteredMorningHabits.count{
             var tempArr = arrFilteredMorningHabits
             arrFilteredMorningHabits.removeAll()
-            arrFilteredMorningHabits.append(tempArr[tblViewHabits.selectedRow])
-            tempArr.remove(at: tblViewHabits.selectedRow)
+            arrFilteredMorningHabits.append(tempArr[selectedRow])
+            tempArr.remove(at: selectedRow)
             for item in tempArr{
                 arrFilteredMorningHabits.append(item)
             }
@@ -879,10 +922,11 @@ class firstViewController: NSViewController {
                 chooseHabitsVCObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("chooseHabitsVC")) as? chooseHabitsVC
             }
             chooseHabitsVCObj!.currentHabitIndex = currentHabitIndex
+            chooseHabitsVCObj!.openedFromDayPlan = false   // default; the Day Plan path sets it true after
             self.presentAsSheet(chooseHabitsVCObj!)
         }
     }
-    
+
     @IBAction func segmentControlOfficeModeClicked(_ sender: Any) {
         addLog(text:"[user-action] firstViewController:- btnEnableOfficeModeClicked")
         
@@ -1024,7 +1068,112 @@ class firstViewController: NSViewController {
         focusButtonServiceObject.sendMorningHabitsToFocusDevice()
         //---------//
     }
-    
+
+    /// Mark a PAST morning habit (surfaced in the Day Plan's "Show events from earlier today" accordion)
+    /// as done **by id**, without disturbing the live (evening) routine — per Prashant's #2012 design.
+    /// There is deliberately no Skip: a habit sitting un-struck in the earlier-today section is *already*
+    /// evidently un-done, so the only useful action is "actually, I did do this".
+    ///
+    /// Completing a historical habit is a cheat vector (asserting you did something you didn't), so it
+    /// honours the same password rule as skipping a morning habit (isPasswordRequireInSkipMorning).
+    /// After the gate, `performPastHabitCompletion` runs the real completion — through the
+    /// log-quantity / notes popups when the habit has them, exactly like the live "already done" action.
+    /// Handles both morning and evening past habits (looked up by id in either all-days list); the skip
+    /// password rule follows the habit's own routine.
+    func completePastHabit(id: String, performedAt: Date) {
+        addLog(text: "action bar (past habit):- completePastHabit id=\(id) performedAt=\(performedAt)")
+        let isEvening = arrAllDaysMorningHabits.first(where: { $0.id == id }) == nil
+            && arrAllDaysEveningHabits.contains(where: { $0.id == id })
+        let skipPasswordRequired = isEvening ? SettingsManagerObject.isPasswordRequireInSkipEvening
+                                             : SettingsManagerObject.isPasswordRequireInSkipMorning
+        if shouldAskPassword() && skipPasswordRequired {
+            passwordWindowShowingForMarkHabitComplete = false
+            passwordWindowShowingForMarkHabitSkip = false
+            passwordWindowShowingForPastHabit = true
+            pendingPastHabitId = id
+            pendingPastHabitPerformedAt = performedAt
+            mainViewControllerObj?.showPasswordView()
+            enterPasswordVcObj?.parentVc = self
+        } else {
+            performPastHabitCompletion(id: id, performedAt: performedAt)
+        }
+    }
+
+    /// The actual by-id completion of a past habit — morning OR evening. Mirrors the live "I already
+    /// did this" action (its log-quantity / take-notes popups and `is_skipped: true` "already done"
+    /// semantics), but WITHOUT the active-routine coupling: it never indexes into / mutates the
+    /// `arrFiltered*` arrays, never pushes thirdVc / activityCompletion, and forces
+    /// `should_not_update_current_activity: true` (via the popups' `isPastHabit` flag, or directly) so
+    /// the running routine is untouched. Looks the habit up in `arrAllDaysMorningHabits` /
+    /// `arrAllDaysEveningHabits` (survives array clearing / skip-for-today).
+    func performPastHabitCompletion(id: String, performedAt: Date) {
+        let morningHabit = arrAllDaysMorningHabits.first(where: { $0.id == id })
+        guard let habit = morningHabit ?? arrAllDaysEveningHabits.first(where: { $0.id == id }) else { return }
+        addLog(text: "action bar (past habit):- performPastHabitCompletion id=\(id) performedAt=\(performedAt) evening=\(morningHabit == nil)")
+        // Backdate the completion to the habit's slot on the viewed day so the backend records it against
+        // the right date (via /completed-activity's start_time/finish_time — the same fields the offline
+        // activity-sync replays). dayKey drives the local per-day strike-through.
+        lastActivityPerformedTime = performedAt
+        let dayKey = getStringFromDate(date: performedAt, dateFormat: "yyyy-MM-dd")
+        let duration = getLastHabitDoneDuration(lastHabit: habit)
+
+        if habit.logQuantity {
+            // Present on the Day Plan's own visible view (this VC), NOT habitsVc — the routine player is
+            // hidden behind the Day Plan when completing a past habit, so showLogQuantityView() (which
+            // attaches there) would put the popup off-screen and it'd look like nothing happened.
+            presentPastHabitPopup(logQuantityVcObj?.view)
+            logQuantityVcObj?.isReviseQuantity = false
+            logQuantityVcObj?.resetData(name: habit.name, durationInSeconds: "\(duration)",
+                                        logQuantityQuestion: habit.logQuantityQuestion,
+                                        currentState: morningHabit == nil ? ._EVENING_HABIT_ : ._MORNING_HABIT_, logQuantityType: "",
+                                        activity_id: habit.id, activity_sequence_id: habit.activity_sequence_id,
+                                        activityChoiceId: nil, take_notes: habit.take_notes, notes: "",
+                                        logQuantityQuestions: habit.logQuantityQuestions)
+            logQuantityVcObj?.is_skipped = true          // "already done" marker, matching the live flow
+            logQuantityVcObj?.isPastHabit = true         // forces should_not_update + marks the Day Plan done
+            logQuantityVcObj?.pastHabitId = habit.id
+            logQuantityVcObj?.pastHabitDayKey = dayKey
+        } else if habit.take_notes == END_OF_ACTIVITY {
+            // takeActivityNotesVcObj is a LAZY optional (nil until first use) — unlike the eagerly-created
+            // logQuantityVcObj above — so instantiate it here via its getter. Otherwise its .view is nil,
+            // presentPastHabitPopup(nil) silently no-ops and the notes screen never appears. (The live
+            // path relies on showTakeNotesView() to create it, but that attaches it to the routine
+            // player, which is hidden behind the Day Plan when completing a past habit.)
+            let notesVc = getTakeActivityNotesVcObj()
+            presentPastHabitPopup(notesVc.view)
+            notesVc.resetData(durationInSeconds: duration, quantity_logged: nil,
+                              activity_id: habit.id, activity_sequence_id: habit.activity_sequence_id,
+                              activityChoiceId: nil, log_quantity_answers: [])
+            notesVc.is_skipped = true
+            notesVc.isPastHabit = true
+            notesVc.pastHabitId = habit.id
+            notesVc.pastHabitDayKey = dayKey
+        } else {
+            recordPastHabitCompletionViaOfflineSync(
+                activity_id: habit.id, activity_sequence_id: habit.activity_sequence_id,
+                performedAt: performedAt, duration: duration, quantity: nil, notes: "", dayKey: dayKey)
+        }
+    }
+
+    /// Add a log-quantity / take-notes popup over the Day Plan so it's visible when completing a PAST
+    /// habit — the normal showLogQuantityView()/showTakeNotesView() attach to the routine-player view
+    /// (habitsVc), which is hidden behind the Day Plan, so the popup rendered off-screen. Present it on
+    /// the WINDOW's content view (the top-most visible container) so it's always on top. The popups
+    /// remove themselves from their superview on OK/Cancel.
+    private func presentPastHabitPopup(_ popupView: NSView?) {
+        guard let popupView = popupView else {
+            addLog(text: "past-habit popup: view was nil — cannot present")
+            return
+        }
+        popupView.removeFromSuperview()   // detach if it was still attached to habitsVc from a live use
+        // Present on the KEY window's content view — the front-most visible container regardless of which
+        // Day Plan host (firstViewController / routinePostponedInfoVc / habitsStateVc) is on screen.
+        let host = NSApp.keyWindow?.contentView ?? view.window?.contentView ?? mainViewControllerObj?.view ?? view
+        addLog(text: "past-habit popup: presenting on \(NSApp.keyWindow != nil ? "keyWindow" : "fallback")")
+        host.addSubview(popupView)
+        host.addConstraints(subView: popupView)
+    }
+
     func eveningHabitAlreadyDoneClicked(){
         addLog(text: "action bar:- eveningHabitAlreadyDoneClicked")
         let lastHabitIndex = currentHabitIndex
@@ -1143,11 +1292,15 @@ class firstViewController: NSViewController {
             tblViewHabits.reloadData()
         }
         allApiObject.activitySkippedApi(activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, completionHandler: {dic in
-            
+
         })
         //focusButtonService-------//
         focusButtonServiceObject.sendMorningHabitsToFocusDevice()
         //---------//
+        // Optimistic Day Plan update: the habit is already gone from arrFilteredMorningHabits above, so
+        // refresh the schedule now instead of waiting ~10s for the next server-driven refresh tick.
+        if let id = lastHabit.id { dayPlanCompletedHabitIds.insert(id) }
+        refreshScheduleIfVisible()
     }
     
     func eveningHabitSkipClicked(){
@@ -1167,11 +1320,14 @@ class firstViewController: NSViewController {
             tblViewHabits.reloadData()
         }
         allApiObject.activitySkippedApi(activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, completionHandler: {dic in
-            
+
         })
         //focusButtonService-------//
         focusButtonServiceObject.sendEveningHabitsToFocusDevice()
         //---------//
+        // Optimistic Day Plan update (see morningHabitSkipClicked).
+        if let id = lastHabit.id { dayPlanCompletedHabitIds.insert(id) }
+        refreshScheduleIfVisible()
     }
     
     func customRoutineHabitSkipClicked(){
@@ -1190,6 +1346,9 @@ class firstViewController: NSViewController {
             }
             tblViewHabits.reloadData()
         }
+        // Optimistic Day Plan update (see morningHabitSkipClicked).
+        if let id = lastHabit.id { dayPlanCompletedHabitIds.insert(id) }
+        refreshScheduleIfVisible()
     }
 }
 extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
@@ -1211,6 +1370,14 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
     
     
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        // AppKit can ask for a row that no longer matches our backing arrays
+        // (e.g. while the habit list is re-sorted/cleared during scheduleStart,
+        // before reloadData catches up), which previously crashed with
+        // "Index out of range". numberOfRows(in:) is the source of truth for
+        // the current state's array. See Sentry FOCUS-BEAR-MACOS-10W.
+        guard row >= 0 && row < numberOfRows(in: tableView) else {
+            return NSTableCellView()
+        }
         if let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "tblCellHabits"), owner: nil) as? tblCellHabits {
             cell.boxBg.fillColor = NSColor.clear
             cell.lblTitle.textColor = NSColor.labelColor
@@ -1377,6 +1544,7 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
         currentHabitIndex = sender.tag
         passwordWindowShowingForMarkHabitComplete = false
         passwordWindowShowingForMarkHabitSkip = false
+        passwordWindowShowingForPastHabit = false
         if currentState == ._MORNING_HABIT_{
             if shouldAskPassword() && SettingsManagerObject.isPasswordRequireInSkipMorning{
                 passwordWindowShowingForMarkHabitComplete = true
@@ -1386,7 +1554,11 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
                 morningHabitAlreadyDoneClicked()
             }
         }else if currentState == ._EVENING_HABIT_{
-            if shouldAskPassword() && SettingsManagerObject.isPasswordRequireInSkipEvening{
+            // Also enforce the "password to complete after cutoff" rule — previously only the
+            // general skip-evening rule was checked here, so completing a habit past its cutoff
+            // slipped through without a prompt.
+            let afterCutoff = isCutOffTimeGoing() && SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff
+            if shouldAskPassword() && (SettingsManagerObject.isPasswordRequireInSkipEvening || afterCutoff){
                 passwordWindowShowingForMarkHabitComplete = true
                 mainViewControllerObj?.showPasswordView()
                 enterPasswordVcObj?.parentVc = self
@@ -1403,6 +1575,7 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
         currentHabitIndex = sender.tag
         passwordWindowShowingForMarkHabitComplete = false
         passwordWindowShowingForMarkHabitSkip = false
+        passwordWindowShowingForPastHabit = false
         if currentState == ._MORNING_HABIT_{
             if shouldAskPassword() && SettingsManagerObject.isPasswordRequireInSkipMorning{
                 passwordWindowShowingForMarkHabitSkip = true
@@ -1412,7 +1585,8 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
                 tryMorningRoutineSkip()
             }
         }else if currentState == ._EVENING_HABIT_{
-            if shouldAskPassword() && SettingsManagerObject.isPasswordRequireInSkipEvening{
+            let afterCutoff = isCutOffTimeGoing() && SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff
+            if shouldAskPassword() && (SettingsManagerObject.isPasswordRequireInSkipEvening || afterCutoff){
                 passwordWindowShowingForMarkHabitSkip = true
                 mainViewControllerObj?.showPasswordView()
                 enterPasswordVcObj?.parentVc = self

@@ -821,6 +821,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         
         
         isAnyAllowedFocusModeActivityRunning = false
+        isAllowedActivityHabitPlaying = false
         if !(getHabitsVcObject().isBreakActivityPostponeInsideAllowedHabit){
             getHabitsVcObject().stopActivityTimer()
         }
@@ -915,6 +916,16 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }else{
                  currentHabitPlaying = nil
             }
+        }
+        // Allowed-activity habits get the Habit Player | Day Plan tabs; normal habits hide them.
+        // The flag drives the postpone-free minimise (covers allow-URLs habits, where the
+        // currentHabitPlaying / focus-mode signals aren't set).
+        isAllowedActivityHabitPlaying = currentHabit.isAllowedActivityHabit
+        updateAllowedActivityScheduleTab(for: currentHabit)
+        // Seed the to-do player with any Day Plan tasks assigned to this habit. Deferred so the player
+        // has begun loading; the injection JS itself waits for the player to be ready. No-op if none.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            prepopulateDayPlanTasks(for: currentHabit)
         }
         boxButtonTabViews.isHidden = true
         tabCount = 0
@@ -1750,9 +1761,18 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         self.webView.load(request)
     }
     @objc func performTimerCount() {
-        currentTimer += 1 
+        currentTimer += 1
         if isAnyAllowedFocusModeActivityRunning{
             addEntryInProductivityStatsCsv()
+        }
+        // Re-sync the Focus Button to the Mac's authoritative remaining time every 15s. The device
+        // runs its own countdown and can drift; until now it was only told the duration once at
+        // habit start, so any device drift accumulated over the whole habit (reported ~33s slow on a
+        // 15-min habit). This keeps it aligned to within the re-sync window. No-op if not connected.
+        // Only while a morning/evening habit is actually running — this timer also drives breaks,
+        // focus mode and custom routines, where the habit-duration signal doesn't apply.
+        if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_) && currentTimer % 15 == 0 {
+            focusButtonServiceObject.updateHabitDuration(seconds: self.totalDuration - currentTimer)
         }
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         
@@ -1785,6 +1805,11 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
         if self.totalDuration <= self.currentTimer {
             self.timer?.invalidate()
+            // #2050: the habit's timer just finished. Clear this NOW (synchronously, before the async
+            // *Over dispatch) so a minimise in the gap before the next habit starts doesn't see a stale
+            // flag and background without the postpone prompt. startTimerHabit re-sets it for the next
+            // habit; the completion VC clears it for the last one.
+            isAllowedActivityHabitPlaying = false
             enableSystemSleep()
             if popUpCheckListWcObj != nil{
                 if popUpCheckListWcObj?.window?.isVisible ?? false{
@@ -1950,7 +1975,15 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                     saveCurrentHabitCurrentDurationDone(id: arrFilteredEveningHabits[currentHabitIndex].id, duration: currentTimer)
                     enableMenuForStartCustomRoutine()
                 }else if currentState == ._CUSTOM_ROUTINE_{
-                    if currentHabitIndex == arrAllCustomRoutine[currentHabitIndex].arrAllFilteredHabits.count - 1{
+                    // arrAllCustomRoutine is indexed by the ROUTINE, not the habit — use
+                    // currentRoutineIndex. (Was arrAllCustomRoutine[currentHabitIndex], an out-of-bounds
+                    // trap once a custom routine actually ran to its last habit — e.g. an on-demand one
+                    // started over a Morning/Evening routine.) Bounds-guarded so a stale index can't
+                    // crash; a bad index just falls back to showing the "Select Another Habit" menu.
+                    let isLastCustomHabit = currentRoutineIndex >= 0
+                        && currentRoutineIndex < arrAllCustomRoutine.count
+                        && currentHabitIndex == arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.count - 1
+                    if isLastCustomHabit{
                         menuItemChooseHabit.isHidden = true
                         addLog(text:"Hide menu Item Select Another Habit")
                     }else{
@@ -2017,6 +2050,10 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     @IBAction func btnIAmDoneClicked(_ sender: Any) {
         addLog(text:"[user-action]ongoing activity:-btnIAmDoneClicked")
         self.timer?.invalidate()
+        // #2050: habit marked done. Clear NOW (synchronously, before the async *Over dispatch) so a
+        // minimise in the gap before the next habit starts doesn't see a stale flag and background
+        // without the postpone prompt. startTimerHabit re-sets it for the next habit.
+        isAllowedActivityHabitPlaying = false
         enableSystemSleep()
         if popUpCheckListWcObj != nil{
             if popUpCheckListWcObj?.window?.isVisible ?? false{

@@ -52,6 +52,7 @@ class popUpAddNewFocusGoalVc: NSViewController {
         btnSave.title = "Save"
         lblGettingTasks.stringValue = "Fetching tasks..."
         comboBoxTask.customDelegate = self
+        textViewIntention.delegate = self
         comboBoxTask.stringValue = ""
         
         comboBoxTask.items.removeAll()
@@ -269,5 +270,19 @@ extension popUpAddNewFocusGoalVc: SearchableComboBoxDelegate{
             return;
         }
 
+    }
+}
+
+extension popUpAddNewFocusGoalVc: NSTextViewDelegate {
+    func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        if commandSelector == #selector(NSResponder.insertTab(_:)) {
+            comboBoxTask.window?.makeFirstResponder(comboBoxTask)
+            return true
+        }
+        if commandSelector == #selector(NSResponder.insertBacktab(_:)) {
+            view.window?.selectPreviousKeyView(nil)
+            return true
+        }
+        return false
     }
 }

@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import SwiftUI
 
 class blockingScheduleEditorVC: NSViewController {
     
@@ -57,6 +58,20 @@ class blockingScheduleEditorVC: NSViewController {
     var arrFocusTypeForBlockingSchedule = [[String : Any]]()
     var isCreatingNew = false
     var currentFocusModeIndex = 0
+
+    // Pre-fill values when a schedule is drag-created on the calendar redesign
+    // or created from a Quick-Start preset.
+    var prefillDays: [Int]?
+    var prefillStart: Date?
+    var prefillEnd: Date?
+    var prefillName: String?
+    var prefillStrictness: FOCUSMODESTRICTNESS?
+    var prefillEmoji: String?
+
+    // SwiftUI editor hosting (Figma redesign). The model is configured from
+    // resetData(); the SwiftUI view calls back into this VC's save/delete/etc.
+    private var editorModel: Any?            // BlockingScheduleEditorModel (macOS 11+)
+    private var editorHostingView: NSView?
     
     var titleNormalMode = "Chill Mode"
     var descriptionNormalMode = "Stop focusing anytime, no questions asked."
@@ -170,6 +185,179 @@ class blockingScheduleEditorVC: NSViewController {
         btnInfoStrictnessLevel.isAutoClickEnabled = false
 
         btnEditBlockList.isHidden = false
+
+        setupSwiftUIEditor()
+    }
+
+    // MARK: - SwiftUI editor hosting
+
+    private func setupSwiftUIEditor() {
+        guard #available(macOS 11.0, *) else { return }
+
+        // The redesign overlays a full-bleed SwiftUI editor on top of this storyboard scene. Hide all
+        // the storyboard-provided controls first so they don't render or intercept hover/clicks behind
+        // the SwiftUI view (otherwise the hand cursor / clicks fall through to the old controls in the
+        // SwiftUI view's transparent areas). Outlets still exist for any code that reads them — they're
+        // just hidden. The hosting view is added afterwards, so it stays visible.
+        view.subviews.forEach { $0.isHidden = true }
+
+        let model = BlockingScheduleEditorModel()
+        editorModel = model
+
+        let root = BlockingScheduleEditorView(
+            model: model,
+            onSave: { [weak self] in self?.saveFromModel() },
+            onCancel: { [weak self] in self?.closeView() },
+            onDelete: { [weak self] in self?.deleteFromModel() },
+            onEditBlockList: { [weak self] in self?.editBlockListFromModel() },
+            onBack: { [weak self] in self?.closeView() })
+
+        let hosting = NSHostingView(rootView: root)
+        hosting.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(hosting)
+        NSLayoutConstraint.activate([
+            hosting.topAnchor.constraint(equalTo: view.topAnchor),
+            hosting.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            hosting.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hosting.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+        ])
+        editorHostingView = hosting
+    }
+
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        // refresh block lists in case the user edited them in the sheet
+        if #available(macOS 11.0, *), let model = editorModel as? BlockingScheduleEditorModel {
+            model.reloadFocusModes()
+        }
+    }
+
+    /// Populate the SwiftUI editor model from the schedule being edited / created.
+    @available(macOS 11.0, *)
+    private func configureModel(index: Int, shouldCreateNew: Bool) {
+        guard let model = editorModel as? BlockingScheduleEditorModel else { return }
+        model.reloadFocusModes()
+        if shouldCreateNew {
+            model.isEditing = false
+            model.name = prefillName ?? ""
+            model.selectedDays = prefillDays.map { Set($0) } ?? [1, 2, 3, 4, 5, 6, 7]
+            let now = Date()
+            let from = Calendar.current.date(byAdding: .minute, value: 2, to: now) ?? now
+            let till = Calendar.current.date(byAdding: .hour, value: 1, to: from) ?? from
+            model.startMinutes = prefillStart.map { minutesFromDate($0) } ?? minutesFromDate(from)
+            model.endMinutes = prefillEnd.map { minutesFromDate($0) } ?? minutesFromDate(till)
+            if model.endMinutes <= model.startMinutes { model.endMinutes = min(1440, model.startMinutes + 60) }
+            model.strictness = prefillStrictness ?? ._NORMAL_
+            model.emoji = prefillEmoji
+            model.useAI = true
+            model.skipMicroBreaks = true
+            if model.selectedFocusModeID == nil { model.selectedFocusModeID = model.focusModes.first?.id }
+            prefillEmoji = nil
+        } else {
+            let s = customBlockingScheduleManagerObj.arrBlockingSchedule[index]
+            model.isEditing = true
+            model.name = s.name
+            model.selectedDays = Set(s.daysOfWeek)
+            let start = BlockingScheduleStore.minutes(from: s.startTimeString)
+            var end = BlockingScheduleStore.minutes(from: s.endTimeString)
+            if end <= start { end = 1440 } // cross-midnight: not representable on the slider; clamp to end of day
+            model.startMinutes = start
+            model.endMinutes = min(1440, max(start + 15, end))
+            model.strictness = s.blockLevel
+            model.useAI = s.isAIBlockingEnabled
+            model.skipMicroBreaks = !s.isMicroBreaksEnabled
+            model.emoji = s.emoji
+            model.selectedFocusModeID = s.focusModeID
+        }
+    }
+
+    private func minutesFromDate(_ date: Date) -> Int {
+        let c = Calendar.current.dateComponents([.hour, .minute], from: date)
+        return (c.hour ?? 0) * 60 + (c.minute ?? 0)
+    }
+
+    /// Save handler driven by the SwiftUI model (mirrors btnSaveClicked).
+    @available(macOS 11.0, *)
+    private func saveFromModel() {
+        guard let model = editorModel as? BlockingScheduleEditorModel else { return }
+
+        if model.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            var alertEnterName = "Please enter a name for your custom schedule before saving."
+            if let info = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary {
+                alertEnterName = info.value(forKey: "alertEnterName") as? String ?? alertEnterName
+            }
+            showAlert(title: alertEnterName); return
+        }
+        let days = Array(model.selectedDays).sorted()
+        if days.isEmpty {
+            var alertSelectDay = "Please select at least one day for this schedule."
+            if let info = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary {
+                alertSelectDay = info.value(forKey: "alertSelectDay") as? String ?? alertSelectDay
+            }
+            showAlert(title: alertSelectDay); return
+        }
+        guard let focusModeId = model.selectedFocusModeID, !focusModeId.isEmpty else {
+            var alertSelectBlockList = "Please select block list."
+            if let info = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary {
+                alertSelectBlockList = info.value(forKey: "alertSelectBlockList") as? String ?? alertSelectBlockList
+            }
+            showAlert(title: alertSelectBlockList); return
+        }
+
+        blockMode = model.strictness
+        let startStr = BlockingScheduleStore.hhmm(fromMinutes: model.startMinutes)
+        let endStr = BlockingScheduleStore.hhmm(fromMinutes: model.endMinutes)
+
+        if model.isEditing {
+            if customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex].state == .on {
+                currentFocusModeStrictness = blockMode
+            }
+            var blockingSchedule = customBlockingSchedule(
+                id: customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex].id,
+                name: model.name, start: startStr, end: endStr, daysOfWeek: days,
+                focusModeID: focusModeId, blockLevel: blockMode,
+                isAIBlockingEnabled: model.useAI, isMicroBreaksEnabled: !model.skipMicroBreaks,
+                emoji: model.emoji)
+            blockingSchedule.state = customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex].state
+            isCreatingNew = false
+            if customBlockingScheduleManagerObj.isBlockingScheduleOverlapping(newSchedule: blockingSchedule, schedules: customBlockingScheduleManagerObj.arrBlockingSchedule, excludingId: blockingSchedule.id) {
+                showOverlapAlert(for: blockingSchedule); return
+            }
+            editBlockingSchedule(blockingSchedule: blockingSchedule)
+        } else {
+            let blockingSchedule = customBlockingSchedule(
+                id: UUID().uuidString,
+                name: model.name, start: startStr, end: endStr, daysOfWeek: days,
+                focusModeID: focusModeId, blockLevel: blockMode,
+                isAIBlockingEnabled: model.useAI, isMicroBreaksEnabled: !model.skipMicroBreaks,
+                emoji: model.emoji)
+            isCreatingNew = true
+            if customBlockingScheduleManagerObj.isBlockingScheduleOverlapping(newSchedule: blockingSchedule, schedules: customBlockingScheduleManagerObj.arrBlockingSchedule, excludingId: nil) {
+                showOverlapAlert(for: blockingSchedule); return
+            }
+            createBlockingSchedule(blockingSchedule: blockingSchedule)
+        }
+    }
+
+    @available(macOS 11.0, *)
+    private func deleteFromModel() {
+        guard currentFocusModeIndex >= 0,
+              currentFocusModeIndex < customBlockingScheduleManagerObj.arrBlockingSchedule.count else { return }
+        confirmDelete(schedule: customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex], at: currentFocusModeIndex)
+    }
+
+    @available(macOS 11.0, *)
+    private func editBlockListFromModel() {
+        addLog(text: "[user-action]Showing preferences from edit focus mode (SwiftUI editor)")
+        if focusPreferencesVcObj == nil {
+            getFocusPreferencesVcObject().loadView()
+        }
+        getFocusPreferencesVcObject().btnBackToCustomBlocking.isHidden = false
+        getFocusPreferencesVcObject().btnBack.isHidden = true
+        self.presentAsSheet(getFocusPreferencesVcObject())
+        if let model = editorModel as? BlockingScheduleEditorModel, let id = model.selectedFocusModeID {
+            getFocusPreferencesVcObject().selectFocusModeWithId(id: id)
+        }
     }
     
     override func viewDidLayout() {// after scrollview resize it removes title and not srawing it again so doing this here
@@ -184,9 +372,9 @@ class blockingScheduleEditorVC: NSViewController {
             return;
         }
         arrFocusTypeForBlockingSchedule.removeAll()
-        for i in 0..<arrFocusType.count{
-            if !(arrFocusType[i]["isMeetings"] as? Bool ?? false == true){
-                arrFocusTypeForBlockingSchedule.append(arrFocusType[i])
+        for focusMode in HiddenFocusModeManager.visibleFocusModes(from: arrFocusType){
+            if !(focusMode["isMeetings"] as? Bool ?? false == true){
+                arrFocusTypeForBlockingSchedule.append(focusMode)
             }
         }
         popUpBtnFocusMode.removeAllItems()
@@ -204,6 +392,9 @@ class blockingScheduleEditorVC: NSViewController {
     func resetData(index:Int, shouldCreateNew:Bool){
         isCreatingNew = shouldCreateNew
         currentFocusModeIndex = index
+        // Drive the SwiftUI editor (reads prefill values before the legacy
+        // outlet code below clears them).
+        if #available(macOS 11.0, *) { configureModel(index: index, shouldCreateNew: shouldCreateNew) }
         for box in arrAllWeekDayBox{
             box.isSelected = false
         }
@@ -215,12 +406,12 @@ class blockingScheduleEditorVC: NSViewController {
         }
         
         arrFocusTypeForBlockingSchedule.removeAll()
-        for i in 0..<arrFocusType.count{
-            if !(arrFocusType[i]["isMeetings"] as? Bool ?? false == true){
-                arrFocusTypeForBlockingSchedule.append(arrFocusType[i])
+        for focusMode in HiddenFocusModeManager.visibleFocusModes(from: arrFocusType){
+            if !(focusMode["isMeetings"] as? Bool ?? false == true){
+                arrFocusTypeForBlockingSchedule.append(focusMode)
             }
         }
-        
+
         if shouldCreateNew{
             textFieldScheduleName.stringValue = ""
             for box in arrAllWeekDayBox{
@@ -248,6 +439,27 @@ class blockingScheduleEditorVC: NSViewController {
             let till = Calendar.current.date(byAdding: .hour, value: 1, to: from)!
             datePickerFrom.dateValue = from
             datePickerTill.dateValue = till
+
+            // Apply calendar drag-create / preset pre-fill.
+            if let name = prefillName { textFieldScheduleName.stringValue = name }
+            if let days = prefillDays {
+                for box in arrAllWeekDayBox { box.isSelected = days.contains(box.index) }
+            }
+            if let start = prefillStart { datePickerFrom.dateValue = start }
+            if let end = prefillEnd { datePickerTill.dateValue = end }
+            if let strictness = prefillStrictness {
+                blockMode = strictness
+                switch strictness {
+                case ._NORMAL_:       sliderStrictness.integerValue = 1
+                case ._STRICT_:       sliderStrictness.integerValue = 2
+                case ._SUPER_STRICT_: sliderStrictness.integerValue = 3
+                }
+            }
+            prefillDays = nil
+            prefillStart = nil
+            prefillEnd = nil
+            prefillName = nil
+            prefillStrictness = nil
         }else{
             textFieldScheduleName.stringValue = customBlockingScheduleManagerObj.arrBlockingSchedule[index].name
             let weekDays = customBlockingScheduleManagerObj.arrBlockingSchedule[index].daysOfWeek
@@ -424,7 +636,9 @@ class blockingScheduleEditorVC: NSViewController {
                 focusModeID: focusModeId,
                 //pauseFriction: .timer,
                 blockLevel: blockMode,
-                isAIBlockingEnabled: checkBoxAiEnabled.state == .on, isMicroBreaksEnabled: checkBoxSkipMicroBreaks.state != .on
+                isAIBlockingEnabled: checkBoxAiEnabled.state == .on, isMicroBreaksEnabled: checkBoxSkipMicroBreaks.state != .on,
+                // Carry over any per-schedule emoji set on another device — don't drop it on a Mac edit.
+                emoji: customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex].emoji
             )
             blockingSchedule.state = customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex].state
             

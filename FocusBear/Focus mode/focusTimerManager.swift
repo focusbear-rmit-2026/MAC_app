@@ -211,10 +211,38 @@ class focusTimerManager {
             if checkUrlIsUnlock(url: url, arrBlockedUrlsForFocus: arrBlockedUrlsForFocus, currentBrowser: currentBrowser, originalUrlStringFromBrowser: originalUrlStringFromBrowser){ // if true it means no need to check any thing else //
                 return;
             }
-            
             //-----------------/
-            
-            
+            // Teacher unlock → auto-open the now-allowed URL. After the teacher approves an unlock, the
+            // class-allowlist-changed event hot-syncs the new URL into arrAllowedUrlsForFocus. If the
+            // student is still sitting on the block page for that URL, pull the original site out of the
+            // block page (old_url), confirm it's now on the allow-list, and navigate the browser to it so
+            // they don't have to reload manually. Only for teacher (allow-list) sessions; the "unblock it
+            // for me" click path is handled above in checkUrlIsUnlock.
+            if teacherSessionManagerObject.isTeacherSessionActive(){
+                if url.contains(blockWebUrlString){
+                    var urlLowercased = url.lowercased()
+                    urlLowercased = urlLowercased.removingPercentEncoding ?? urlLowercased
+                    if isAllowedListApproachInFocus{
+                        for turl in arrAllowedUrlsForFocus{
+                            if urlLowercased.contains(turl.lowercased()){
+                                if var extractedUrl = extractSubstring(from: url, start: "old_url=", end: "&focus_mode_end_time") {
+                                    extractedUrl = extractedUrl.removingPercentEncoding ?? extractedUrl
+                                    let isAllowed = validation.isUrlValid(urlToCheck: extractedUrl, allowUrl: turl)
+                                    if isAllowed{
+                                        addLog(text: "teacher session:- url unlocked (now on allow-list), auto-opening \(extractedUrl)")
+                                        DispatchQueue.main.async {
+                                            setUrlToBrowser(browser: currentBrowser, url: extractedUrl)
+                                        }
+                                        return;
+                                    }
+                                }
+                            }
+                            
+                        }
+                    }
+                }
+            }
+            //blockWebUrlString
             for turl in defaultAllowedUrl{
                 if url.contains(turl){
                     DispatchQueue.main.async {
@@ -327,6 +355,10 @@ class focusTimerManager {
                                 }
                             }
                         }
+                        // Teacher sessions honour the teacher's AI toggle via isAIBlockingEnabled()
+                        // (teacher session → isAiBlockingEnabledForAllowList), so when the teacher
+                        // hasn't asked for AI, focusTryToBlockUnwantedUrl's grizzly path blocks
+                        // immediately with no ~3-4s AI round trip — no special-case needed here.
                     }
                 }else{
                     isAllowed = true
@@ -615,6 +647,33 @@ class focusTimerManager {
                     //
                 }
             }else{
+                // C6:- during a teacher-controlled class session the student can't self-unblock a URL
+                // ("unblock it for me" is off — the teacher owns the allow-list). Instead of the
+                // super-strict dead-end below, navigate the browser back off the unblock URL and open
+                // the teacher unlock-request window pre-filled with the blocked URL, so the student can
+                // request the teacher to unlock it.
+                if teacherSessionManagerObject.isTeacherSessionActive(){
+                    addLog(text: "teacher session:- unblock-it-for-me blocked, routing to unlock request window")
+                    allApiObject.capturePosthog(event: "unblock-it-for-me-not-working-reason-teacher-session", metadata: [:])
+                    let hitNewUrl = originalUrlStringFromBrowser.replacingOccurrences(of: "unblock_it=true", with: "")
+                    DispatchQueue.main.async {
+                        setUrlToBrowser(browser: currentBrowser, url: hitNewUrl)
+                    }
+
+                    if var extractedUrl = extractSubstring(from: url, start: "old_url=", end: "&focus_mode_end_time") {
+                        extractedUrl = extractedUrl.removingPercentEncoding ?? extractedUrl
+                        addLog(text: "teacher session:- opening unlock request window for url: \(extractedUrl)")
+                        DispatchQueue.main.async {
+                            teacherSessionManagerObject.showTeacherUnlockRequestWindow()
+                            if let teacherUnlockRequestVcObj = teacherSessionManagerObject.teacherUnlockRequestWindow?.contentViewController as? teacherUnlockRequestVc{
+                                teacherUnlockRequestVcObj.textFieldAppOrUrl.stringValue = extractedUrl
+                            }
+
+                        }
+                    }
+                    return false;
+                }
+                
                 allApiObject.capturePosthog(event: "unblock-it-for-me-not-working-reason-super-strict", metadata: [:])
                 let hitNewUrl = originalUrlStringFromBrowser.replacingOccurrences(of: "unblock_it=true", with: "")
                 DispatchQueue.main.async {
@@ -740,6 +799,8 @@ func blockAlwaysBlockUrl(currentBrowser:BROWSER, url:String, runningApp:NSRunnin
         
     case ._SIGMA_OS_:
         script = getSigmaOsBrowserBlockScript(url: url)
+    case ._COMET_:
+        script = getCometBlockScript(url: url)
     }
     
     
@@ -820,37 +881,16 @@ func blockAlwaysBlockUrl(currentBrowser:BROWSER, url:String, runningApp:NSRunnin
 
 
 func getURLSafeInBackground(browser: BROWSER) -> String? {
-    var resultURL: String? = nil
-    
-    let semaphore = DispatchSemaphore(value: 0)
-    
-    // AppleScript must run on MAIN
-    DispatchQueue.main.async {
-        resultURL = getActiveTabUrlForBlocking(browser: browser)
-        semaphore.signal()
-    }
-    
-    // Wait for the main thread to finish
-    semaphore.wait()
-    
-    return resultURL
+    // Call directly on the caller's (background) thread. runAppleScriptSafely already runs the script
+    // off the main thread on its own serial queue, so the old DispatchQueue.main bounce was unnecessary
+    // AND harmful: it forced the blocking browser AppleScript onto the main thread (~5–7s per call),
+    // freezing the UI — the cause of the AppHangs / blank Day Plan.
+    return getActiveTabUrlForBlocking(browser: browser)
 }
 
 func getTabTitleSafeInBackground(browser: BROWSER) -> String? {
-    var resultTitle: String? = nil
-    
-    let semaphore = DispatchSemaphore(value: 0)
-    
-    // AppleScript must run on MAIN
-    DispatchQueue.main.async {
-        resultTitle = getActiveTabTitleOf(browser: browser)
-        semaphore.signal()
-    }
-    
-    // Wait for the main thread to finish
-    semaphore.wait()
-    
-    return resultTitle
+    // See getURLSafeInBackground — do not bounce to the main thread; the script runs off-main already.
+    return getActiveTabTitleOf(browser: browser)
 }
 
 

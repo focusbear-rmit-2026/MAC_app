@@ -12,6 +12,7 @@ import AVKit
 
 class accessibilityPermissionVc: NSViewController {
     
+    @IBOutlet weak var openSettingsLink: underLineButton!
     @IBOutlet weak var imgViewPermission: NSImageView!
     @IBOutlet weak var imgViewTick: NSImageView!
     @IBOutlet weak var imgViewBear: NSImageView!
@@ -90,11 +91,46 @@ class accessibilityPermissionVc: NSViewController {
         getDistractionBlockingProgressVcObj().setProgress(level: 3, progress: 0.25)
 
         imgViewTick.isHidden = true
-        
+
         //progress
         self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
         self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
         getDistractionBlockingProgressVcObj().setProgress(level: 3, progress: 0.5)
+
+        // Make the System-Settings mock image a shortcut: clicking it opens the Accessibility pane
+        // directly so the user doesn't have to navigate System Settings by hand. Tooltip + pointing-
+        // hand cursor signal that it's clickable.
+        imgViewPermission.toolTip = "Open Accessibility settings"
+        imgViewPermission.addGestureRecognizer(
+            NSClickGestureRecognizer(target: self, action: #selector(imgPermissionClicked)))
+        imgViewPermission.addTrackingArea(
+            NSTrackingArea(rect: .zero, options: [.activeAlways, .mouseEnteredAndExited, .inVisibleRect],
+                           owner: self, userInfo: nil))
+
+        // Explicit text link below the image — same action — for users who don't realise the image
+        // itself is clickable. It's a storyboard-defined underLineButton (outlet) laid out with Auto
+        // Layout below the accessibility image, rather than a programmatically-added NSButton: the old
+        // code pinned it to the image bottom with no constraint against btnContinue, so it overlapped
+        // the continue button and drifted further out of place when the window was resized. Here we only
+        // set its action/target/colour/text; underLineButton draws the underline itself.
+        let linkText = (configjson["accessibilityPermissionVcInfoNew"] as? [String: Any])?["openSettingsLink"] as? String
+            ?? "Open Accessibility settings"
+
+        openSettingsLink.action = #selector(imgPermissionClicked)
+        openSettingsLink.target = self
+        openSettingsLink.titleColor = NSColor(named: "dark_OrangeColor") ?? NSColor.systemOrange
+        openSettingsLink.title = linkText
+    }
+
+    override func mouseEntered(with event: NSEvent) { NSCursor.pointingHand.set() }
+    override func mouseExited(with event: NSEvent) { NSCursor.arrow.set() }
+
+    /// Opens System Settings → Privacy & Security → Accessibility (matches firefoxPermissionsVc).
+    @objc func imgPermissionClicked() {
+        addLog(text: "[user-action] accessibilityPermissionVc:- permission image clicked → open Accessibility settings")
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     override func viewWillAppear() {

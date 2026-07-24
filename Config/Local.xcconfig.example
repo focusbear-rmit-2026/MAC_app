@@ -8,6 +8,18 @@
 //
 // Signing-Debug.xcconfig does `#include? "Local.xcconfig"` after its defaults, so
 // anything you set here wins.
+//
+// TIP — keep TCC permissions across rebuilds: the default ad-hoc identity ("-") produces a
+// new signature every build, so macOS resets Accessibility / Full Disk Access / Calendar
+// grants each rebuild. Signing Debug with a STABLE identity (any code-signing cert in your
+// keychain — e.g. your "Apple Development: <you>" cert) keeps those grants. List identities:
+//   security find-identity -v -p codesigning
+// then set the exact name below (Manual signing; no provisioning profile is needed for a
+// locally-run Mac app). You re-grant permissions once after switching; then they stick.
+
+// CODE_SIGN_STYLE = Manual
+// CODE_SIGN_IDENTITY = Apple Development: Your Name (TEAMID)
+// CODE_SIGN_IDENTITY[sdk=macosx*] = Apple Development: Your Name (TEAMID)
 
 // DEVELOPMENT_TEAM = ABCDE12345
 // CODE_SIGN_STYLE = Automatic

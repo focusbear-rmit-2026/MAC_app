@@ -8,24 +8,22 @@
 
 import Cocoa
 import WebKit
+import SwiftUI
 
 class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate {
 
-    @IBOutlet weak var lblFocusAlignmentScore: NSTextField!
-    @IBOutlet weak var btnStartFocusMusic: cursorButton!
-    @IBOutlet weak var btnEndFocusSession: cursorButton!
-    @IBOutlet weak var boxExtraOptions: NSBox!
-    @IBOutlet weak var boxBg: NSBox!
-    @IBOutlet weak var webView: WKWebView!
+    // The player UI is now SwiftUI (TaskPlayerView) with the web-rendered player hosted below a native
+    // top bar. The WKWebView is created in code (not a storyboard outlet) so all the JS-bridge /
+    // navigation-delegate logic below keeps driving the same instance.
+    var webView: WKWebView!
+
+    private let headerModel = TaskPlayerHeaderModel()
+    private let musicModel = FocusMusicViewModel.shared
 
     let handler = MessageHandler()
     var totalDuration = 0
     var intention = ""
-    var trackingAreaWebView: NSTrackingArea?
-    
-    var trackingAreaStopFocusMode: NSTrackingArea?
-    var trackingAreaPlayFocusMusic: NSTrackingArea?
-    
+
     var lastWindowFrame:NSRect = NSRect(x: 50, y: 50, width: 500, height: 500)
     var isSnapLeft = true
     var isSnappingGoing = false
@@ -33,99 +31,65 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     var isViewVisible = false
     var taskToLoadForFirstTime:String?
     var arrAllTasks = [NSDictionary]()
+
+    override func loadView() {
+        // Build the WKWebView (with its message handlers) before the SwiftUI view that embeds it.
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController.add(handler, name: "close_focus_player_ui")
+        configuration.userContentController.add(handler, name: "send_new_task_added_to_todo_player")
+        configuration.userContentController.add(handler, name: "send_brain_dump_content")
+        configuration.userContentController.add(handler, name: "send_intention")
+        configuration.userContentController.add(AccessTokenRequestHandler.shared, name: AccessTokenRequestHandler.messageName)
+        webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.navigationDelegate = self
+
+        var playFocusMusicTooltip = "Play focus music"
+        var stopFocusSessionLabel = "Stop focus session"
+        var changeTrackTooltip = "Change focus music"
+        if let taskPlayerVcInfo = configjson.value(forKey: "taskPlayerVcInfo") as? NSDictionary {
+            playFocusMusicTooltip = taskPlayerVcInfo.value(forKey: "playFocusMusicTooltip") as? String ?? playFocusMusicTooltip
+            stopFocusSessionLabel = taskPlayerVcInfo.value(forKey: "stopFocusSessionLabel") as? String ?? stopFocusSessionLabel
+            changeTrackTooltip = taskPlayerVcInfo.value(forKey: "changeTrackTooltip") as? String ?? changeTrackTooltip
+        }
+        var nowPlayingLabel = "Now Playing"
+        if let focusMusicInfo = configjson.value(forKey: "focusMusicInfo") as? NSDictionary {
+            nowPlayingLabel = focusMusicInfo.value(forKey: "nowPlayingLabelText") as? String ?? nowPlayingLabel
+        }
+
+        let rootView = TaskPlayerView(
+            headerModel: headerModel,
+            musicModel: musicModel,
+            webView: webView,
+            stopFocusSessionLabel: stopFocusSessionLabel,
+            playFocusMusicTooltip: playFocusMusicTooltip,
+            changeTrackTooltip: changeTrackTooltip,
+            nowPlayingLabel: nowPlayingLabel,
+            onEndSession: { menuViewControllerObj?.stopFocusMode() },
+            onOpenFocusMusic: { showAllTracksWindow() }
+        )
+        view = NSHostingView(rootView: rootView)
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.webView.navigationDelegate = self
-        webView.configuration.userContentController.add(handler, name: "close_focus_player_ui")
-        webView.configuration.userContentController.add(handler, name: "send_new_task_added_to_todo_player")
-        webView.configuration.userContentController.add(handler, name: "send_brain_dump_content")
-        webView.configuration.userContentController.add(handler, name: "send_intention")
-        webView.configuration.userContentController.add(AccessTokenRequestHandler.shared, name: AccessTokenRequestHandler.messageName)
-
         self.view.window?.backgroundColor = NSColor.clear
-        
-        
-        createTrackingArea()
-        
-        
-        trackingAreaStopFocusMode = NSTrackingArea.init(rect: self.btnEndFocusSession.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        self.btnEndFocusSession.addTrackingArea(trackingAreaStopFocusMode!)
-        
-        trackingAreaPlayFocusMusic = NSTrackingArea.init(rect: self.btnStartFocusMusic.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        self.btnStartFocusMusic.addTrackingArea(trackingAreaPlayFocusMusic!)
-        
-        lblFocusAlignmentScore.isHidden = true
     }
-    
+
     override func viewWillAppear() {
         isViewVisible = true
-        if isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-            btnEndFocusSession.isHidden = true
-        }else{
-            btnEndFocusSession.isHidden = false
-        }
+        // Hide "end focus session" while a blocking session is running (it can't be ended from here).
+        headerModel.showEndButton = !(isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn)
+        musicModel.refresh()
     }
-    
-    
+
+
     override func viewWillDisappear() {
         isViewVisible = false
     }
-    
-    override func viewDidLayout() {
-        DispatchQueue.global().async {
-            DispatchQueue.main.async {
-                self.updateTrackingAreaIfNeeded()
-            }
-        }
-    }
-    
-    override func viewDidAppear() {
-        updateTrackingAreaIfNeeded()
-    }
-    
+
     func setFocusAlignmentScore(){
         if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
             updateAlignmentScoreToPlayer()
-        }
-    }
-    
-    func updateTrackingAreaIfNeeded() {
-        // Remove the old tracking area if it exists
-        if let trackingArea = self.trackingAreaWebView {
-            webView.removeTrackingArea(trackingArea)
-        }
-        // Recreate the tracking area with the updated bounds
-        createTrackingArea()
-    }
-    
-    func createTrackingArea(){
-        trackingAreaWebView = NSTrackingArea.init(rect: self.boxBg.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        self.boxBg.addTrackingArea(trackingAreaWebView!)
-    }
-    
-
-
-    
-    override func mouseEntered(with event: NSEvent) {
-        if event.trackingArea == trackingAreaPlayFocusMusic{
-            var playFocusMusicTooltip = "Play focus music"
-            if let taskPlayerVcInfo = configjson.value(forKey: "taskPlayerVcInfo") as? NSDictionary{
-                playFocusMusicTooltip = taskPlayerVcInfo.value(forKey: "playFocusMusicTooltip") as? String ?? playFocusMusicTooltip
-            }
-            showTooltipWithOsTahoe(sender: btnStartFocusMusic, msg: playFocusMusicTooltip, preferredEdge: .minX, maxWidthVal: 250, autoCloseOnMouseExit: true)
-        }else if event.trackingArea == trackingAreaStopFocusMode{
-            var endFocusSessionTooltip = "End focus session"
-            if let taskPlayerVcInfo = configjson.value(forKey: "taskPlayerVcInfo") as? NSDictionary{
-                endFocusSessionTooltip = taskPlayerVcInfo.value(forKey: "endFocusSessionTooltip") as? String ?? endFocusSessionTooltip
-            }
-            showTooltipWithOsTahoe(sender: btnEndFocusSession, msg: endFocusSessionTooltip, preferredEdge: .minX, maxWidthVal: 250, autoCloseOnMouseExit: true)
-        }
-    }
-    
-
-    override func mouseExited(with event: NSEvent) {
-         if event.trackingArea == trackingAreaStopFocusMode || event.trackingArea == trackingAreaPlayFocusMusic{
-            closePopoverTooltipIfVisible()
         }
     }
 
@@ -297,6 +261,9 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
                 addLog(text: "loadIntentionForToDoPlayer:- JavaScript evaluation error: \(error)")// v 2.28.441
             }
         })
+        
+        // Notify Focus Button of the updated goal
+        focusButtonServiceObject.updateFocusGoal(goal: focusButtonServiceObject.currentFocusGoal())
     }
     
     func updateBrainDumpToPlayer(){
@@ -374,6 +341,11 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     func addAndPlayTaskInCurrentList(taskName: String, id:String, duration:Int, shouldCompleteCurrentTask:Bool) {
         addLog(text: "func:- addAndPlayTaskInCurrentList taskName: \(taskName), duration: \(duration), shouldCompleteCurrentTask: \(shouldCompleteCurrentTask), id: \(id)")
         taskCreatedByBlockPopup = taskName
+        // Reflect the changed task on the Focus Button device. getCurrentTaskInFocusMode() returns
+        // taskCreatedByBlockPopup first, so currentFocusGoal() already reflects the new task here. This
+        // covers every task-change entry point (e.g. changing the task from focusModeStateVc), not just
+        // the intention-update flow that previously was the only caller of updateFocusGoal.
+        focusButtonServiceObject.updateFocusGoal(goal: focusButtonServiceObject.currentFocusGoal())
         let taskDic:[String:Any] = [
             "id": id,
             "title": taskName,
@@ -441,6 +413,36 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     }
     
     
+    /// Prepopulate the player with the day-plan tasks assigned to the current habit. Sent as one
+    /// `newTasks` batch; the JS waits for the player to be ready. Each task carries its source to-do id
+    /// where known, so a task already in the player isn't duplicated. No-op if there are none.
+    func prepopulateTasks(_ tasks: [[String: Any]]) {
+        guard !tasks.isEmpty else { return }
+        let payload: [String: Any] = ["todoPlayer": ["newTasks": tasks]]
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: payload, options: []),
+              let jsonString = String(data: jsonData, encoding: .utf8) else {
+            addLog(text: "prepopulateTasks: JSON serialization failed")
+            return
+        }
+        // Separate interval key from addTaskInCurrentList so the two don't clobber each other.
+        let jsFunction = """
+        (function() {
+            if (window.__prefillInterval) { clearInterval(window.__prefillInterval); }
+            window.__prefillInterval = setInterval(() => {
+                if (window.syncWithDevices) {
+                    try { syncWithDevices(\(jsonString)); }
+                    catch (error) { console.error('JS Error:', error); }
+                    clearInterval(window.__prefillInterval);
+                    delete window.__prefillInterval;
+                }
+            }, 100);
+        })();
+        """
+        webView.evaluateJavaScript(jsFunction) { _, error in
+            if let error = error { addLog(text: "prepopulateTasks JS error: \(error)") }
+        }
+    }
+
     func addTaskInCurrentList(taskName: String, id:String, duration:Int) {
         addLog(text: "func:- addTaskInCurrentList taskName: \(taskName), duration: \(duration), id: \(id)")
         let taskDic:[String:Any] = [
@@ -523,15 +525,6 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         } catch {
             addLog(text: "NotifyToDoPlayerPauseState ex - \(error.localizedDescription)")
         }
-    }
-    
-    
-    @IBAction func btnEndFocusSessionClicked(_ sender: Any) {
-        menuViewControllerObj?.stopFocusMode()
-    }
-    
-    @IBAction func btnStartFocusMusicClicked(_ sender: Any) {
-        showAllTracksWindow()
     }
 }
 

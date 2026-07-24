@@ -42,7 +42,12 @@ class habitsVc: NSViewController {
     
     var dateTimeTimer:Timer?
     func startDateTimer() {
-        lblCurrentDateTime.isHidden = false
+        // Time-of-day clock shown above the habit name on the habit player. It must stay hidden while a
+        // Day Plan is on screen (the Day Plan has its own clock and the label overlaps its tasks panel).
+        // Entering full screen calls this, so don't force it visible — only show it when a habit player
+        // is the front content. The player/Day-Plan transitions (setDateTimeClockHidden /
+        // updateScheduleTabForState) keep it in sync afterwards.
+        refreshDateTimeClockVisibility()
         if dateTimeTimer != nil{
             dateTimeTimer?.invalidate()
             dateTimeTimer = nil
@@ -54,8 +59,40 @@ class habitsVc: NSViewController {
             RunLoop.main.add((self.dateTimeTimer!), forMode: RunLoop.Mode.common)
         }
     }
+
+    /// True when an activity player is the front content of the habits area: the habit / custom-
+    /// routine timer (timerViewcontroller) or a running micro-break activity (activityCompletionVc).
+    /// The time-of-day clock belongs to these, so Day-Plan visibility code must not hide it.
+    var isActivityPlayerFront: Bool {
+        let players = [timerViewcontrollerObj?.view, activityCompletionVcObj?.view].compactMap { $0 }
+        return players.contains { habitsView.subviews.contains($0) }
+    }
+
+    /// Set the clock's visibility from what's actually on screen. It is shown ONLY when the app's
+    /// "Play habits in full screen mode" setting is enabled AND an activity is running in full screen
+    /// — a habit, a custom-routine habit, or a micro-break activity — and not on the habit player's
+    /// own Day Plan tab (which has its own clock and overlaps the tasks panel). Hidden in every other
+    /// case: no activity running, the Day Plan list, the small window, the setting off, etc.
+    /// Use this instead of `setDateTimeClockHidden(!isBreak)`: the host Day Plans stay "selected"
+    /// (their scheduleVC isn't hidden) while a player runs on top, so a state change into a *running*
+    /// activity would otherwise hide the clock the player just showed.
+    func refreshDateTimeClockVisibility() {
+        let onDayPlanTab = timerViewcontrollerObj?.isAllowedActivityDayPlanFront ?? false
+        let show = checkIsFullScreenEnabled() && isActivityPlayerFront && !onDayPlanTab
+        lblCurrentDateTime?.isHidden = !show
+    }
+
+    /// Hide/show the time-of-day clock. Hidden while a Day Plan is the visible content (its tasks panel
+    /// overlaps this label and it has its own clock); shown on the habit player.
+    func setDateTimeClockHidden(_ hidden: Bool) {
+        lblCurrentDateTime?.isHidden = hidden
+    }
     
     @objc func setDateTime(){
+        // Keep visibility in sync each tick: an activity can become the front content without a state
+        // change (e.g. a micro-break activity starting mid-break), which wouldn't otherwise re-run the
+        // visibility logic. The timer only runs in full screen, so this is cheap and self-correcting.
+        refreshDateTimeClockVisibility()
         if let dict = UserDefaults.standard.persistentDomain(forName: "com.apple.menuextra.clock") {
             print(dict)
             lblCurrentDateTime.stringValue = getStringFromDate(date: Date(), dateFormat: dict["DateFormat"] as? String ?? "EEE d MMM h:mm:ss")
@@ -285,8 +322,16 @@ class habitsVc: NSViewController {
     
     func showAskPostponeView(){
         addLog(text: "show AskPostpone View")
-        self.view.addSubview(getAskPostponeVcObject().view)
-        self.view.addConstraints(subView: getAskPostponeVcObject().view)
+        // Host on the window's content view (always window-sized and on top) rather than habitsVc.view,
+        // which grows to the full Day Plan height — there the centred dialog landed off-screen, and it
+        // wasn't visible at all from the Tools/Help screens. Idempotent so re-triggers don't stack it.
+        let host = mainWindowControllerObj?.window?.contentView ?? self.view
+        let dialog = getAskPostponeVcObject().view
+        if dialog.superview !== host {
+            dialog.removeFromSuperview()
+            host.addSubview(dialog)
+            host.addConstraints(subView: dialog)
+        }
         getAskPostponeVcObject().resetView()
     }
     
@@ -454,7 +499,7 @@ class habitsVc: NSViewController {
                     showAskPostponeView()
                 }else{
                     if shouldAskPassword(){
-                        if SettingsManagerObject.isPasswordRequireInSkipMorning{
+                        if SettingsManagerObject.isPasswordRequireInPostponeMorning{
                             mainViewControllerObj?.showPasswordView()
                             enterPasswordVcObj?.parentVc = getAskPostponeVcObject()
                         }else{
@@ -470,9 +515,21 @@ class habitsVc: NSViewController {
             
         }else if currentState == ._EVENING_HABIT_{
             refreshLastPostponeCount()
-            
-            if SettingsManagerObject.isEasySkipEnabled{
-                
+
+            // Minimise/abort leads to the POSTPONE popup, so after cutoff it must honour the *postpone*
+            // cutoff password setting (not the skip one) — and ask the password FIRST, before the popup,
+            // regardless of easy-skip. Without this, easy-skip/the skip-gated path showed the postpone
+            // popup with no password even though "require password to postpone after cutoff" was on.
+            if isCutOffTimeGoing() && shouldAskPassword(forPostpone: true)
+                && SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff {
+                stopActivityTimer()
+                showPasswordView()
+                enterPasswordVcObj?.parentVc = getAskPostponeVcObject()
+                return
+            }
+
+            if SettingsManagerObject.isEasySkipEnabled {
+
                 if currentHabitPlaying != nil{
                     closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
                 }
@@ -489,7 +546,7 @@ class habitsVc: NSViewController {
                 if activityPostponeCount == 0{
                     if isCutOffTimeGoing(){// changed in 2.27.422  : isHighPrioritySequenceGoing->isCutOffTimeGoing()
                         if shouldAskPassword(){
-                            if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                            if SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff{
                                 showPasswordView()
                                 enterPasswordVcObj?.parentVc = getAskPostponeVcObject()
                             }else{
@@ -504,14 +561,14 @@ class habitsVc: NSViewController {
                 }else{
                     if shouldAskPassword(){
                         if isCutOffTimeGoing(){// changed in 2.27.422  : isHighPrioritySequenceGoing->isCutOffTimeGoing()
-                            if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                            if SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff{
                                 showPasswordView()
                                 enterPasswordVcObj?.parentVc = getAskPostponeVcObject()
                             }else{
                                 showAskPostponeView()
                             }
                         }else{
-                            if SettingsManagerObject.isPasswordRequireInSkipEvening{
+                            if SettingsManagerObject.isPasswordRequireInPostponeEvening{
                                 showPasswordView()
                                 enterPasswordVcObj?.parentVc = getAskPostponeVcObject()
                             }else{
@@ -575,6 +632,12 @@ class habitsVc: NSViewController {
             }
             
         }else if currentState == ._FOCUS_SUMMARY_{
+            // #1942: cancel any pending "one more minute" timer before opening the postpone
+            // dialog so it can't re-show the Focus Summary on top of / after the postpone,
+            // and close its countdown box so the "one minute timer" window doesn't linger.
+            timerGiveOneMoreMinut?.invalidate()
+            timerGiveOneMoreMinut = nil
+            closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             showAskPostponeView()
         }else if currentState == ._SPECIAL_ACTIVITY_{
             specialActivityFinish()
@@ -646,8 +709,14 @@ class habitsVc: NSViewController {
     }
     
     func showPasswordView(){
-        self.view.addSubview(enterPasswordVcObj!.view)
-        self.view.addConstraints(subView: enterPasswordVcObj!.view)
+        // Same window-content-view hosting as showAskPostponeView so the prompt is centred on-screen
+        // and visible regardless of which screen (Day Plan / Tools / Help) is showing.
+        let host = mainWindowControllerObj?.window?.contentView ?? self.view
+        if enterPasswordVcObj!.view.superview !== host {
+            enterPasswordVcObj!.view.removeFromSuperview()
+            host.addSubview(enterPasswordVcObj!.view)
+            host.addConstraints(subView: enterPasswordVcObj!.view)
+        }
         enterPasswordVcObj?.removeConstraints()
         enterPasswordVcObj?.parentVc = nil
         enterPasswordVcObj?.pendingAction = nil
@@ -1329,6 +1398,13 @@ class habitsVc: NSViewController {
         timerViewcontrollerObj?.tryStartTimerHabit(durationSeconds: arrFilteredMorningHabits[currentHabitIndex].durationSeconds, name: arrFilteredMorningHabits[currentHabitIndex].name!, currentHabit: arrFilteredMorningHabits[currentHabitIndex], currentTimerValue:0, shouldUpdateDeviceButton: shouldUpdateDeviceButton)
         currentState = ._MORNING_HABIT_
         currentAction = ._INPROGRESS_
+
+        // #1982 follow-up: the user is starting the morning routine now — clear any saved
+        // postponed-routine state so a stale postpone isn't restored as a postponed habit list on the
+        // next app launch.
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+        
         allApiObject.capturePosthog(event: "start-morning-routine", metadata: ["routine-type":"morning_routine"])
     }
     
@@ -1362,6 +1438,13 @@ class habitsVc: NSViewController {
         timerViewcontrollerObj?.tryStartTimerHabit(durationSeconds: arrFilteredEveningHabits[currentHabitIndex].durationSeconds, name: arrFilteredEveningHabits[currentHabitIndex].name!, currentHabit: arrFilteredEveningHabits[currentHabitIndex], currentTimerValue:0, shouldUpdateDeviceButton: shouldUpdateDeviceButton)
         currentState = ._EVENING_HABIT_
         currentAction = ._INPROGRESS_
+
+        // #1982 follow-up: the user is starting the evening routine now — clear any saved
+        // postponed-routine state so a stale postpone isn't restored as a postponed habit list on the
+        // next app launch.
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+        
         allApiObject.capturePosthog(event: "start-evening-routine", metadata: ["routine-type":"evening_routine"])
     }
     
@@ -1892,16 +1975,31 @@ class habitsVc: NSViewController {
     
     func eveningHabitFinishShowUnlock(){//evening habit Sequence Finished
         addLog(text: "eveningHabitFinishShowUnlock")
+        // #1982 follow-up: evening routine completed — clear the saved postponed-routine state so the
+        // app doesn't restore the postponed habit list on the next launch.
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+        
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
         leftMenuVcObj?.habitOver()
         currentHabitIndex = -1
         hideBlankWindowInSecondaryMonitor()
+        // Surface the "well done — sleep / shut down" prompt at the bottom of the Day Plan (#2005 part 4).
+        // ONLY on the unlock path (before cutoff): here the old shutdown-time screen isn't shown yet, so
+        // this prompt is the user's only way to sleep/shut down. The shutOff path (after cutoff) already
+        // shows that screen, so eveningHabitFinishShowShutOff() must NOT set this.
+        markEveningRoutineDoneForShutdownPrompt()
     }
-    
+
     func eveningHabitFinishShowShutOff(){//evening habit Sequence Finished
         addLog(text: "evening habit Finished")
+        // #1982 follow-up: evening routine completed — clear the saved postponed-routine state so the
+        // app doesn't restore the postponed habit list on the next launch.
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+        
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
@@ -2168,6 +2266,12 @@ class habitsVc: NSViewController {
     
     func habitsFinishedUnlockMachine() {
         addLog(text: "morning habit Finished")
+
+        // #1982 follow-up: morning routine completed — clear the saved postponed-routine state so the
+        // app doesn't restore the postponed habit list on the next launch.
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+        
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
@@ -2246,7 +2350,7 @@ class habitsVc: NSViewController {
         if isFirstRun{//welcome routine k baad set krenge (when first time)
             UserDefaults.standard.removeObject(forKey: kUserdefaultsPasswordSetInOnboarding)
             SettingsManagerObject.isFullScreenEnabled = false
-            SettingsManagerObject.isCuddlyModeEnabled = true
+            SettingsManagerObject.storedCuddlyModeEnabled = true
             SettingsManagerObject.isEasySkipEnabled = true
             SettingsManagerObject.doNotBlockUrlsDuringSuperPomodoroBreaksDefaultValue = true
             SettingsManagerObject.shouldReloadAfterForceQuitEnabled = false
@@ -2289,20 +2393,61 @@ class habitsVc: NSViewController {
         }
     }
     
-    func setActivityTimer(){
-        addLog(text: "Break Activity Timer reset Done.")
+    func setActivityTimer(forceReset: Bool = false){
+        // Only restart the break countdown to a full interval when the user actually takes a break (in
+        // Focus Bear or a natural break) or postpones one — those callers pass forceReset:true. Plain
+        // app-state transitions (focus mode changing, routine checks, waking from sleep, returning to
+        // idle, etc.) call this WITHOUT forceReset, so a break that's already counting down is not
+        // pushed back to a full interval each time the app re-evaluates state.
+        if !forceReset, let runningTimer = breakTimer, runningTimer.isValid {
+            addLog(text: "setActivityTimer: break countdown already running — keeping it (no forceReset).")
+            return
+        }
+        if arrAllbreakActivities.count != 0 {
+            // Carry over time already elapsed since the last break (persisted across restarts,
+            // and including natural/idle breaks) instead of always restarting the full
+            // interval — otherwise relaunching the app keeps resetting the break countdown so a
+            // break is never due. See: "Focus Bear isn't prompting breaks".
+            let fullInterval = TimeInterval(breakAfterMinutes * 60)
+            var interval = fullInterval
+            // On a forced reset (the user just took/finished a break or postponed one) always use the
+            // full interval — ignore the previous break time entirely. Otherwise, only carry over a
+            // RECENT break (one within the current interval): if the last break is older than a full
+            // interval (e.g. from a previous day, or after the app was closed / idle a long time) it's
+            // stale, so schedule a fresh full interval instead of collapsing to the 60s floor — a
+            // yesterday break must not make today's first break fire ~60s after launch.
+            if !forceReset, let elapsed = secondsSinceLastBreakEnd(), elapsed > 0, elapsed < Int(fullInterval) {
+                interval = max(fullInterval - Double(elapsed), 60)
+            }
+            addLog(text: "Break Activity Timer reset Done. Next break in \(Int(interval))s (interval \(breakAfterMinutes)m, carrying over time since last break).")
+            DispatchQueue.global().sync {
+                stopActivityTimer()
+                self.breakTimer = Timer.scheduledTimer(timeInterval: interval, target: self, selector: #selector(self.timeToStartBreakActivities), userInfo: nil, repeats: false)
+
+                RunLoop.main.add((breakTimer!), forMode: RunLoop.Mode.common)
+            }
+        }
+    }
+
+    /// A break came due but can't be shown right now (meeting / focus session / presentation / active
+    /// blocking schedule / routine in progress). The user hasn't taken a break, so don't reset to a full
+    /// interval — re-check shortly so the break fires soon after the blocking condition clears.
+    func rescheduleBreakSoonAfterBlocked(){
         if arrAllbreakActivities.count != 0 {
             DispatchQueue.global().sync {
-                print("breakAfterMinutesxxxx")
                 stopActivityTimer()
-                self.breakTimer = Timer.scheduledTimer(timeInterval: TimeInterval(breakAfterMinutes*60), target: self, selector: #selector(self.timeToStartBreakActivities), userInfo: nil, repeats: false)
-                
+                self.breakTimer = Timer.scheduledTimer(timeInterval: TimeInterval(breakRetryWhenBlockedSeconds), target: self, selector: #selector(self.timeToStartBreakActivities), userInfo: nil, repeats: false)
                 RunLoop.main.add((breakTimer!), forMode: RunLoop.Mode.common)
             }
         }
     }
     var isBreakActivityPostponeInsideAllowedHabit = false// using this beacuse we dont want reset activity timer again (in resuming habit) if user has postponed activity inside allow app habit
     func postponeBreakActivitiesFor(minutes:Int, secondsToPostpone:Int?, isFromBreakWarningWindow:Bool){
+        // Postponing a running activity stops it — tell the Focus Button so it
+        // doesn't keep counting down (matches postponeMorning/EveningHabitFor).
+        if currentAction == ._INPROGRESS_ {
+            focusButtonServiceObject.cancelHabit()
+        }
         var seconds = 0
         if secondsToPostpone != nil{
             seconds = secondsToPostpone!
@@ -2562,6 +2707,7 @@ class habitsVc: NSViewController {
                     closeNudgeFocusAlignmentScoreWindow()
                 }
                 isAnyAllowedFocusModeActivityRunning = false
+                isAllowedActivityHabitPlaying = false   // #2050: clear alongside so a postponed allowed-activity habit doesn't leave minimise in "background without postpone" mode
                 currentHabitPlaying = nil
                 if !isFocusModeOn(){
                     refreshFocusModeData()
@@ -2628,7 +2774,11 @@ class habitsVc: NSViewController {
     }
     
     func postponeCustomRoutineFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool, showAskIntention:Bool, fromRoutineWarning:Bool){
-        
+        // Postponing a running activity stops it — tell the Focus Button so it
+        // doesn't keep counting down (matches postponeMorning/EveningHabitFor).
+        if currentAction == ._INPROGRESS_ {
+            focusButtonServiceObject.cancelHabit()
+        }
         var seconds = 0
         if secondsToPostpone != nil{
             seconds = secondsToPostpone!
@@ -2671,8 +2821,9 @@ class habitsVc: NSViewController {
             closeNudgeFocusAlignmentScoreWindow()
         }
         isAnyAllowedFocusModeActivityRunning = false
+        isAllowedActivityHabitPlaying = false   // #2050: clear alongside so a postponed allowed-activity habit doesn't leave minimise in "background without postpone" mode
         currentHabitPlaying = nil
-        
+
         if !isFocusModeOn(){
             refreshFocusModeData()
             setAppIconForFocusModeScore(probability: nil)
@@ -2762,8 +2913,9 @@ class habitsVc: NSViewController {
                 closeNudgeFocusAlignmentScoreWindow()
             }
             isAnyAllowedFocusModeActivityRunning = false
+            isAllowedActivityHabitPlaying = false   // #2050: clear alongside so a postponed allowed-activity habit doesn't leave minimise in "background without postpone" mode
             currentHabitPlaying = nil
-            
+
             if !isFocusModeOn(){
                 refreshFocusModeData()
                 setAppIconForFocusModeScore(probability: nil)
@@ -2833,7 +2985,15 @@ class habitsVc: NSViewController {
     
     func postponeFocusSummaryFor(minutes:Int, showAskIntention:Bool){
         addLog(text: "postpone Focus Summary Done:- \(minutes) minutes")
-        
+
+        // #1942: a pending "one more minute" timer (giveOneMoreMinuteBeforeShutOffMac)
+        // would otherwise fire showFocusSummaryViewAgain and re-display the Focus Summary
+        // a few seconds after postponing, resetting the state and defeating the postpone.
+        // Also close its countdown box so the "one minute timer" window doesn't linger.
+        timerGiveOneMoreMinut?.invalidate()
+        timerGiveOneMoreMinut = nil
+        closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
+
         var showAskIntention = showAskIntention
         
         if SettingsManagerObject.isStrictnessLevelSuperGentle(){
@@ -3139,6 +3299,13 @@ class habitsVc: NSViewController {
                 }
             }
             
+            // No micro-breaks while a class session is running.
+            if teacherSessionManagerObject.isTeacherSessionActive(){
+                addLog(text: "Teacher session active, Break Activities cancelled.")
+                self.rescheduleBreakSoonAfterBlocked()
+                return;
+            }
+            
             if currentState == ._SHUTOFFMAC_{
                 addLog(text: "App is in shutoff state, Break Activities cancelled.")
                 return;
@@ -3163,7 +3330,7 @@ class habitsVc: NSViewController {
             
             //
             if currentState == ._CUSTOM_ROUTINE_{
-                self.setActivityTimer()
+                self.rescheduleBreakSoonAfterBlocked()
                 addLog(text: "Custom routine is running :- Break Activities cancelled.")
                 return;
             }
@@ -3174,7 +3341,7 @@ class habitsVc: NSViewController {
                 return;
             }
             if currentState == ._SPECIAL_ACTIVITY_{
-                self.setActivityTimer()
+                self.rescheduleBreakSoonAfterBlocked()
                 addLog(text: "Special activity is running :- Break Activities cancelled.")
                 return;
             }
@@ -3188,15 +3355,15 @@ class habitsVc: NSViewController {
             
             let isFocusModeOn = isFocusModeOn()
             if isFocusModeOn && isFocusModeStartedFromPomodoroMode && isSkipBreakActivityDuringPomodoro{
-                self.setActivityTimer()
+                self.rescheduleBreakSoonAfterBlocked()
                 addLog(text: "Pomodoro mode is On and Skip Break Activity During Focus is enabled: Break Activities cancelled.")
                 return;
             }else if isHardCorePomodoroModeOn && isSkipBreakActivityDuringPomodoro{
-                self.setActivityTimer()
+                self.rescheduleBreakSoonAfterBlocked()
                 addLog(text: "Super Pomodoro mode is On and Skip Break Activity During Focus is enabled: Break Activities cancelled.")
                 return;
             }else if isFocusModeOn && isSkipBreakActivityDuringFocus{// will never return true beacuse isSkipBreakActivityDuringFocus is not in use now
-                self.setActivityTimer()
+                self.rescheduleBreakSoonAfterBlocked()
                 addLog(text: "Focus mode is On and Skip Break Activity During Focus is enabled: Break Activities cancelled.")
                 return;
             }
@@ -3204,7 +3371,7 @@ class habitsVc: NSViewController {
             
             if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                 if !customBlockingScheduleManagerObj.isMicroBreaksEnabled(){
-                    self.setActivityTimer()
+                    self.rescheduleBreakSoonAfterBlocked()
                     addLog(text: "Custom Blocking is On and Skip Break Activity During Custom Blocking is enabled: Break Activities cancelled.")
                     return;
                 }
@@ -3270,7 +3437,7 @@ class habitsVc: NSViewController {
             if appdelegate!.isUserOnMeeting{
                 if !SettingsManagerObject.IsShowBreaksInCallEnabled{
                     addLog(text: "isUserOnMeeting True: Break Activities cancelled.")
-                    self.setActivityTimer()
+                    self.rescheduleBreakSoonAfterBlocked()
                     isBreakActivityShowingWhileMeeting = false
                     return;
                 }else{
@@ -3283,7 +3450,7 @@ class habitsVc: NSViewController {
                     }
                     if !anyOfficeFriendlyActivityFound{
                         addLog(text: "User is On Meeting;- no office friendly activity found: Break Activities cancelled.")
-                        self.setActivityTimer()
+                        self.rescheduleBreakSoonAfterBlocked()
                         isBreakActivityShowingWhileMeeting = false
                         return;
                     }
@@ -3294,7 +3461,7 @@ class habitsVc: NSViewController {
             if isAnyPresentationOrVideoShowing(){
                 if !SettingsManagerObject.IsShowBreaksInCallEnabled{
                     addLog(text: "PresentationOrVideoShowing True: Break Activities cancelled.")
-                    self.setActivityTimer()
+                    self.rescheduleBreakSoonAfterBlocked()
                     isBreakActivityShowingWhileMeeting = false
                     return;
                 }else{
@@ -3307,7 +3474,7 @@ class habitsVc: NSViewController {
                     }
                     if !anyOfficeFriendlyActivityFound{
                         addLog(text: "User is On Meeting;- no office friendly activity found: Break Activities cancelled.")
-                        self.setActivityTimer()
+                        self.rescheduleBreakSoonAfterBlocked()
                         isBreakActivityShowingWhileMeeting = false
                         return;
                     }

@@ -7,6 +7,10 @@
 //
 
 var breakAfterMinutes = 0
+/// When a break comes due but can't be shown yet (in a meeting / focus session / presentation / active
+/// blocking schedule / routine), we re-check after this many seconds instead of pushing the break out a
+/// full `breakAfterMinutes` interval — so the break fires soon after the blocking condition clears.
+let breakRetryWhenBlockedSeconds = 60
 var arrAllbreakActivities = [breakActivity]()
 var arrFinalBreakActivities = [breakActivityFilter]()
 struct breakActivityFilter{
@@ -109,7 +113,7 @@ func writeNaturalBreak(){//2.28.444
         print("\(diffSeconds) seconds Last break recorded at \(now). It will be shown in the menu.")
         if currentState != ._MICRO_BREAK_{
             if getHabitsVcObject().breakTimer != nil{
-                getHabitsVcObject().setActivityTimer()
+                getHabitsVcObject().setActivityTimer(forceReset: true)   // a break was taken/recorded — reset to a full interval
             }
         }
     }
@@ -192,6 +196,24 @@ func closeNatutalBreakIfRunning(){
         anyNaturallBreakIsOn = false
         writeNaturalBreak()
     }
+}
+
+/// Seconds since the last break ended, read from the persisted `kUserdefaultsLastBreakEndTime`
+/// (which is updated by both real breaks and natural/idle breaks). Clamped to today's routine
+/// start so time before the day began — or overnight after a restart — doesn't count.
+/// Returns nil when there's no recorded break to carry over from.
+func secondsSinceLastBreakEnd() -> Int? {
+    guard let lastEnd = UserDefaults.standard.object(forKey: kUserdefaultsLastBreakEndTime) as? Date else {
+        return nil
+    }
+    var effective = lastEnd
+    if let s = startTime {
+        var startDate = Calendar.current.date(bySettingHour: s.hour, minute: s.minute, second: s.second, of: Date()) ?? Date()
+        if Date() < startDate { startDate = Calendar.current.date(byAdding: .day, value: -1, to: startDate) ?? startDate }
+        if effective < startDate { effective = startDate }
+    }
+    let seconds = Int(Date().timeIntervalSince(effective))
+    return seconds >= 0 ? seconds : nil
 }
 
 func getTimeSinceLastBreak()->String?{

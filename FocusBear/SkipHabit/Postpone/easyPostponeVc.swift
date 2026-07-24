@@ -56,8 +56,8 @@ class easyPostponeVc: NSViewController {
         //Shouldn't be able to postpone during cutoff time without password after postponing once(wjem habit is about to resume) #797
         if currentState == ._POSTPONE_EVENING_HABIT_ && !SettingsManagerObject.isEasySkipEnabled{
             if cutOffTime != nil{
-                if shouldAskPassword(){
-                    if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                if shouldAskPassword(forPostpone: true){
+                    if SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff{
                         if isCutOffTimeGoing(){
                             if self.view.window != nil{
                                 self.presentAsSheet(enterPasswordVcObj!)
@@ -193,7 +193,7 @@ class easyPostponeVc: NSViewController {
     
     @IBAction func btnDeactivateAppClicked(_ sender: Any) {
         addLog(text: "[user-action] easyPostponeVc:- button deactivated app clicked")
-        if shouldAskPassword(){
+        if shouldAskPassword(forPostpone: true){
             if SettingsManagerObject.isPasswordRequireInQuitApp{
                 self.presentAsSheet(enterPasswordVcObj!)
                 enterPasswordVcObj?.parentVc = self

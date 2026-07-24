@@ -21,8 +21,9 @@ class uIVc: NSViewController {
     let enablePopoverMenuItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
     
     let focusVisualIndicatorSettingVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
-    
-    
+    let focusGlowBorderSettingVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
+
+
     let copySystemPreferencesIndex = 0
     let alwaysDarkModeIndex = 1
     let neverDarkModeIndex = 2
@@ -66,8 +67,11 @@ class uIVc: NSViewController {
         
         var titleFocusVisualIndicator = "Show focus visual indicator"
         var descriptionFocusVisualIndicator = "Display a visual indicator when the focus alignment score drops."
-        
-        
+
+        var titleFocusGlowBorder = "Show glow border during focus sessions"
+        var descriptionFocusGlowBorder = "Display a soft glowing border around your screen while a focus session is running."
+
+
         if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
             checkBoxFullScreenEnabledText = preferencesInfo.value(forKey: "checkBoxFullScreenEnabledText") as? String ?? checkBoxFullScreenEnabledText
             checkBoxShowDockIconText = preferencesInfo.value(forKey: "checkBoxShowDockIconText") as? String ?? checkBoxShowDockIconText
@@ -86,6 +90,9 @@ class uIVc: NSViewController {
             
             titleFocusVisualIndicator = preferencesInfo.value(forKey: "switchButtonFocusVisualIndicatoText") as? String ?? titleFocusVisualIndicator
             descriptionFocusVisualIndicator = preferencesInfo.value(forKey: "descriptionFocusVisualIndicatorText") as? String ?? descriptionFocusVisualIndicator
+
+            titleFocusGlowBorder = preferencesInfo.value(forKey: "switchButtonFocusGlowBorderText") as? String ?? titleFocusGlowBorder
+            descriptionFocusGlowBorder = preferencesInfo.value(forKey: "descriptionFocusGlowBorderText") as? String ?? descriptionFocusGlowBorder
         }
 
         stackView.addView(fullScreenEnabledItemVcObj!.view, in: .bottom)
@@ -129,8 +136,15 @@ class uIVc: NSViewController {
         focusVisualIndicatorSettingVcObj?.delegate = self
         focusVisualIndicatorSettingVcObj?.lineBottom.isHidden = false
 //        focusVisualIndicatorSettingVcObj?.toolTip = ui_EnablePopoverMenu
-        
-        
+
+        stackView.addView(focusGlowBorderSettingVcObj!.view, in: .bottom)
+        focusGlowBorderSettingVcObj?.lblTitle.stringValue = titleFocusGlowBorder
+        focusGlowBorderSettingVcObj?.lblSubTitle.stringValue = descriptionFocusGlowBorder
+        focusGlowBorderSettingVcObj?.lblSubTitle.isHidden = false
+        focusGlowBorderSettingVcObj?.delegate = self
+        focusGlowBorderSettingVcObj?.lineBottom.isHidden = false
+
+
         stackView.addView(enablePopoverMenuItemVcObj!.view, in: .bottom)
         enablePopoverMenuItemVcObj?.lblTitle.stringValue = switchButtonEnablePopoverMenuText
         enablePopoverMenuItemVcObj?.lblSubTitle.isHidden = true
@@ -157,13 +171,15 @@ class uIVc: NSViewController {
         arrForSearchFromSettings.append(["title": switchButtonEnablePopoverMenuText, "tabId": idUi, "object": enablePopoverMenuItemVcObj!.bgBox as Any])
         
         arrForSearchFromSettings.append(["title": titleFocusVisualIndicator, "tabId": idUi, "object": focusVisualIndicatorSettingVcObj!.bgBox as Any])
-        
-        
+        arrForSearchFromSettings.append(["title": titleFocusGlowBorder, "tabId": idUi, "object": focusGlowBorderSettingVcObj!.bgBox as Any])
+
+
         arrForSearchFromSimpleModeSettings.append(["title": titleSelectLanguage, "tabId": idUi, "object": selectLanguageItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": titleDarkMode, "tabId": idUi, "object": darkModeItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": switchButtonEnablePopoverMenuText, "tabId": idUi, "object": enablePopoverMenuItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": titleFocusVisualIndicator, "tabId": idUi, "object": focusVisualIndicatorSettingVcObj!.bgBox as Any])
-        
+        arrForSearchFromSimpleModeSettings.append(["title": titleFocusGlowBorder, "tabId": idUi, "object": focusGlowBorderSettingVcObj!.bgBox as Any])
+
     }
     
     override func viewWillAppear() {
@@ -197,7 +213,13 @@ class uIVc: NSViewController {
         }else{
             focusVisualIndicatorSettingVcObj?.btnSwitch.state = .off
         }
-        
+
+        if SettingsManagerObject.isFocusGlowBorderEnabled{
+            focusGlowBorderSettingVcObj?.btnSwitch.state = .on
+        }else{
+            focusGlowBorderSettingVcObj?.btnSwitch.state = .off
+        }
+
         reloadDataForAppMode()
     }
     
@@ -383,6 +405,16 @@ extension uIVc: SettingToggleItemDelegate, SettingPopUpButtonItemDelegate{
                 SettingsManagerObject.isFocusVisualIndicatorEnabled = true
             }else{
                 SettingsManagerObject.isFocusVisualIndicatorEnabled = false
+            }
+        }else if object == focusGlowBorderSettingVcObj{
+            if state == .on{
+                SettingsManagerObject.isFocusGlowBorderEnabled = true
+                SettingsManagerObject.isSettingsChanged = true
+                allApiObject.capturePosthog(event: "settings-changed-enable-focus-glow-border", metadata: [:])
+            }else{
+                SettingsManagerObject.isFocusGlowBorderEnabled = false
+                SettingsManagerObject.isSettingsChanged = true
+                allApiObject.capturePosthog(event: "settings-changed-disable-focus-glow-border", metadata: [:])
             }
         }
     }

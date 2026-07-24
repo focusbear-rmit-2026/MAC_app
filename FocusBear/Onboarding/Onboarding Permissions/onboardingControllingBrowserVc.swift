@@ -140,6 +140,14 @@ class onboardingControllingBrowserVc: NSViewController {
             arrBrowsers.append(["name": "SigmaOS", "image": fileIcon, "isEnabled": false, "browser":BROWSER._SIGMA_OS_])
         }
         
+        if filemanager.fileExists(atPath: "/Applications/Comet.app"){
+            let fileIcon = NSWorkspace.shared.icon(forFile: "/Applications/Comet.app")
+            arrBrowsers.append(["name": "Comet", "image": fileIcon, "isEnabled": false, "browser":BROWSER._COMET_])
+        }else if filemanager.fileExists(atPath: NSString(string: "~/Applications/Comet.app").expandingTildeInPath){
+            let fileIcon = NSWorkspace.shared.icon(forFile: NSString(string: "~/Applications/Comet.app").expandingTildeInPath)
+            arrBrowsers.append(["name": "Comet", "image": fileIcon, "isEnabled": false, "browser":BROWSER._COMET_])
+        }
+        
         
         if let arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
             for info in arrBrowsersInfo{
@@ -264,6 +272,8 @@ class onboardingControllingBrowserVc: NSViewController {
                                             browserNameForPosthog = "firefox"
                                         }else if browser == ._SIGMA_OS_{
                                             browserNameForPosthog = "sigmaos"
+                                        }else if browser == ._COMET_{
+                                            browserNameForPosthog = "comet"
                                         }
                                         addLog(text: "Permission granted for browser:- \(browserNameForPosthog)")
                                         allApiObject.capturePosthog(event: "onboarding-granted-permission-\(browserNameForPosthog)", metadata: [:])
@@ -460,6 +470,8 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
                 browserNameForPosthog = "firefox"
             }else if browser == ._SIGMA_OS_{
                 browserNameForPosthog = "SigmaOS"
+            }else if browser == ._COMET_{
+                browserNameForPosthog = "comet"
             }
             allApiObject.capturePosthog(event: "onboarding-request-permission-\(browserNameForPosthog)", metadata: [:])
             addLog(text: "Request permission for browser:- \(browserNameForPosthog)")

@@ -906,7 +906,7 @@ class simplePomodoroVc: NSViewController {
                                         self.pomodoroModeStarted()
                                     }else{
                                         var shouldAskPasswordForEvening = false
-                                        if shouldAskPassword() && cutOffTime != nil && SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                                        if shouldAskPassword() && cutOffTime != nil && SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff{
                                             if isCutOffTimeGoing(){
                                                 shouldAskPasswordForEvening = true
                                             }

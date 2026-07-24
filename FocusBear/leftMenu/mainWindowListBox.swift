@@ -14,8 +14,16 @@ class mainWindowListBox: NSBox {
     
     let kBorderColor = NSColor(red: 232/255, green: 136/255, blue: 0/255, alpha: 1)
     private var hovered = false
+    /// When true, this item refuses disable requests so it always stays clickable. Used for the
+    /// Todo List, which must always be reachable. Onboarding is exempt — it deliberately locks the
+    /// whole menu, so we don't fight it there.
+    var alwaysEnabled = false
     var isEnabled: Bool = true{
         didSet {
+            if alwaysEnabled, !isEnabled, currentState != ._ONBOARDING_ {
+                isEnabled = true   // re-entrant set; guard above prevents recursion
+                return
+            }
             if oldValue != isEnabled {
                 if isEnabled{
                     if !isSelected{
@@ -37,6 +45,9 @@ class mainWindowListBox: NSBox {
     
     var isSelected: Bool = false {
         didSet {
+            // Selection does NOT touch `hovered`: the hover ✕ tracks the actual pointer, so selecting a
+            // row you're hovering keeps the ✕ visible — it hides on real mouse-out or when another row is
+            // entered. updateAppearance shows selected styling regardless of hover, so nothing is lost.
             // Only update appearance if value changed
             if oldValue != isSelected {
                 updateAppearance()
@@ -46,7 +57,6 @@ class mainWindowListBox: NSBox {
             }
             if isSelected {// needed beacuse some time box is already selected and we need to show window again setting it selected again so that screen frame will updated
                 delegate?.selectableListBoxSelectionDidChange(self)
-                hovered = false
             }
         }
     }
@@ -65,7 +75,14 @@ class mainWindowListBox: NSBox {
     
     var imageView: NSImageView?
     private weak var label: NSTextField?
-    
+
+    /// When true, hovering this row reveals a trailing "hide" (✕) button. Used for TOOLS rows so
+    /// users can simplify the sidebar; unset for everything else.
+    var showsHideButton = false
+    var onHideRequested: (() -> Void)?
+    private weak var hideButton: cursorButton?
+    private var scrollObserver: NSObjectProtocol?
+
     // MARK: - Initialization
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -93,7 +110,7 @@ class mainWindowListBox: NSBox {
         // Tracking area for hover effects
         let trackingArea = NSTrackingArea(
             rect: bounds,
-            options: [.activeAlways, .mouseEnteredAndExited],
+            options: [.activeAlways, .mouseEnteredAndExited, .inVisibleRect],
             owner: self,
             userInfo: nil
         )
@@ -141,6 +158,25 @@ class mainWindowListBox: NSBox {
         
         self.imageView = imageView
         self.label = label
+
+        // Trailing "hide" button, revealed on hover only when showsHideButton is set (see mouseEntered).
+        let hideButton = cursorButton(title: "✕", target: self, action: #selector(hideButtonClicked))
+        hideButton.bezelStyle = .circular
+        hideButton.translatesAutoresizingMaskIntoConstraints = false
+        hideButton.isHidden = true
+        hideButton.toolTip = leftMenuConfigString("hideToolTooltip") ?? "Hide this tool"
+        contentView.addSubview(hideButton)
+        NSLayoutConstraint.activate([
+            hideButton.widthAnchor.constraint(equalToConstant: 20),
+            hideButton.heightAnchor.constraint(equalToConstant: 20),
+            hideButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -6),
+            hideButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
+        ])
+        self.hideButton = hideButton
+    }
+
+    @objc private func hideButtonClicked() {
+        onHideRequested?()
     }
     
     func showSelectedUi(){
@@ -177,6 +213,10 @@ class mainWindowListBox: NSBox {
         } else {
             showNormalUi()
         }
+        // Drive the hover ✕ from a single place so it can never get stuck on — e.g. when selecting a
+        // tool opens its window and steals focus, the follow-up mouseExited never arrives. Any state
+        // change that touches `hovered`/`isSelected`/`isEnabled` and calls updateAppearance keeps it right.
+        hideButton?.isHidden = !(showsHideButton && hovered && isEnabled)
     }
     
     // MARK: - Mouse Events
@@ -184,7 +224,7 @@ class mainWindowListBox: NSBox {
         super.mouseEntered(with: event)
         if isEnabled{
             hovered = true
-            updateAppearance()
+            updateAppearance()   // reveals the hover ✕ (see updateAppearance)
             DispatchQueue.global().async {
                 DispatchQueue.main.async {
                     NSCursor.pointingHand.set()
@@ -194,9 +234,10 @@ class mainWindowListBox: NSBox {
                 for subview in superview.subviews {
                     if let box = subview as? mainWindowListBox, box != self {
                         box.hovered = false
-                        if !box.isSelected{
-                            box.showNormalUi()
-                        }
+                        // Route through updateAppearance (not just showNormalUi) so the other row's hover
+                        // ✕ hides too — covers a row that missed its own mouseExited (e.g. selection opened
+                        // a window that swallowed it). Selected rows keep their selected styling.
+                        box.updateAppearance()
                     }
                 }
             }
@@ -211,7 +252,7 @@ class mainWindowListBox: NSBox {
         super.mouseExited(with: event)
         if isEnabled{
             hovered = false
-            updateAppearance()
+            updateAppearance()   // hides the hover ✕ (see updateAppearance)
             NSCursor.arrow.set()
         }else{
             closePopoverTooltipIfVisible()
@@ -248,11 +289,57 @@ class mainWindowListBox: NSBox {
         }
         let trackingArea = NSTrackingArea(
             rect: bounds,
-            options: [.activeAlways, .mouseEnteredAndExited],
+            options: [.activeAlways, .mouseEnteredAndExited, .inVisibleRect],
             owner: self,
             userInfo: nil
         )
         addTrackingArea(trackingArea)
+    }
+
+    // MARK: - Scroll-aware hover reconciliation
+    // When the menu scrolls, a row can move out from under a stationary pointer without AppKit
+    // delivering mouseExited — leaving the hover ✕ button (and pointing-hand cursor) stuck on. Watch
+    // the enclosing scroll view's clip-view bounds changes and re-derive the hover state from the real
+    // mouse position on every scroll tick.
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if let observer = scrollObserver {
+            NotificationCenter.default.removeObserver(observer)
+            scrollObserver = nil
+        }
+        guard let clipView = enclosingScrollView?.contentView else { return }
+        clipView.postsBoundsChangedNotifications = true
+        scrollObserver = NotificationCenter.default.addObserver(
+            forName: NSView.boundsDidChangeNotification, object: clipView, queue: .main
+        ) { [weak self] _ in
+            self?.reconcileHoverWithMouseLocation()
+        }
+    }
+
+    deinit {
+        if let observer = scrollObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    /// Re-derives hover state from the current mouse position — used when the row moves under the
+    /// pointer (scroll) rather than the pointer moving over the row, which is when mouseEntered/Exited
+    /// can be skipped. Each row reconciles itself, so a row scrolled off the pointer clears its own ✕.
+    private func reconcileHoverWithMouseLocation() {
+        guard isEnabled, let window = window else { return }
+        let pointInView = convert(window.mouseLocationOutsideOfEventStream, from: nil)
+        let inside = bounds.contains(pointInView)
+        if inside {
+            guard !hovered else { return }
+            hovered = true
+            updateAppearance()   // reveals the hover ✕
+            NSCursor.pointingHand.set()
+        } else {
+            guard hovered else { return }
+            hovered = false
+            updateAppearance()   // hides the hover ✕
+            NSCursor.arrow.set()
+        }
     }
 }
 

@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import SwiftUI
 
 class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
 
@@ -27,7 +28,11 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     @IBOutlet weak var boxTodoPlayer: mainWindowListBox!
     @IBOutlet weak var boxToolsItems: accordionBox!
     @IBOutlet weak var boxBrowsersTabAudit: mainWindowListBox!
-    
+    // Programmatically-added TOOLS items, surfaced out of Settings > Add-Ons.
+    var boxFocusButtonTool: mainWindowListBox?
+    var boxTimeTrackerTool: mainWindowListBox?
+    var boxLateNoMoreTool: mainWindowListBox?
+
     @IBOutlet weak var boxCustomRoutine: mainWindowListBox!
     @IBOutlet weak var boxMainItems: accordionBox!
     @IBOutlet weak var boxMicroBreaks: mainWindowListBox!
@@ -43,21 +48,28 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     var disableReasonCustomRoutine = "Disabled because your custom routine is in progress. Go to the Custom Routine tab to continue."
     
     var lastSelectedBox:mainWindowListBox?
-    
+    private var isToolsSectionExpanded = true
+    private var hiddenToolsPopover: NSPopover?
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
         boxFocusModeSettings.isHidden = true
         
-        boxMainItems.title = "MAIN"
         boxToolsItems.title = "TOOLS"
         boxPreferences.title = "PREFERENCES"
         
         boxDashboard.isHidden = true
         
-        boxHabits.imageIcon = NSImage(named: "play_circle")
-        boxHabits.title = "Habits"
-        
+        if #available(macOS 11.0, *) {
+            boxHabits.imageIcon = NSImage(systemSymbolName: "calendar", accessibilityDescription: nil)
+        } else {
+            boxHabits.imageIcon = NSImage(named: "play_circle")
+        }
+        boxHabits.title = "Day Plan"
+        boxHabits.imageView?.image?.isTemplate = true
+        boxHabits.imageView?.contentTintColor = NSColor(named: "dark_OrangeColor") ?? NSColor.orange   // match the other menu icons' orange tint
+
         
         boxCustomRoutine.imageIcon = NSImage(named: "play_circle")
         boxCustomRoutine.title = "Custom Routine"
@@ -76,6 +88,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxMicroBreaks.title = "Start Micro Break"
         
         boxTodoPlayer.imageIcon = NSImage(named: "validIcon")
+        boxTodoPlayer.alwaysEnabled = true   // Todo List must always stay reachable (never greyed out)
         
         if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             boxTodoPlayer.title = "Todo Player"
@@ -85,7 +98,21 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         
         boxBrainDump.imageIcon = NSImage(named: "brainDump")
         boxBrainDump.title = "Brain Dump"
-        
+
+        // TOOLS rows the user can hover-hide via ✕ and restore via the TOOLS gear icon.
+        let hideableTools: [(mainWindowListBox, ToolID)] = [
+            (boxFocusMusic, .focusMusic), (boxBrainDump, .brainDump),
+            (boxTodoPlayer, .todoList), (boxMotivation, .stats),
+            (boxBrowsersTabAudit, .tabAudit)
+        ]
+        for (box, id) in hideableTools {
+            box.showsHideButton = true
+            box.onHideRequested = { [weak self] in
+                ToolVisibilityStore.hide(id)
+                self?.refreshToolsVisibility()
+            }
+        }
+
         
         boxBrowsersTabAudit.imageIcon = NSImage(named: "NSTouchBarOpenInBrowserTemplate")
         boxBrowsersTabAudit.title = "Tab Audit"
@@ -123,11 +150,11 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxEditHabits.imageView?.contentTintColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
 
         if #available(macOS 11.0, *) {
-            boxMotivation.imageIcon = NSImage(systemSymbolName: "person", accessibilityDescription: nil)
+            boxMotivation.imageIcon = NSImage(systemSymbolName: "chart.bar.xaxis", accessibilityDescription: nil)
         } else {
             boxMotivation.imageIcon = NSImage(named: "NSTouchBarUserTemplate")
         }
-        boxMotivation.title = "Motivation"
+        boxMotivation.title = "Stats"
         boxMotivation.imageView?.contentTintColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
 
         boxHelpAndSupport.imageIcon = NSImage(named: NSImage.infoName)
@@ -137,45 +164,41 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxUpgradeNow.title = "Upgrade Now"
         boxUpgradeNow.imageIcon = NSImage(named: "upgrade")
         
-        boxMainItems.setExpanded(true)
-        boxMainItems.onStateChanged = { isExpanded in
-            print("MainItems is now \(isExpanded ? "expanded" : "collapsed")")
-            if isExpanded{
-                self.boxMicroBreaks.isHidden = false
-                self.boxFocusSession.isHidden = false
-                self.boxHabits.isHidden = false
-                if arrAllCustomRoutine.count == 0{
-                    self.boxCustomRoutine.isHidden = true
-                }else{
-                    self.boxCustomRoutine.isHidden = false
-                }
-            }else{
-                self.boxMicroBreaks.isHidden = true
-                self.boxFocusSession.isHidden = true
-                self.boxHabits.isHidden = true
-                self.boxCustomRoutine.isHidden = true
-            }
-        }
-        
+        // MAIN is no longer a collapsible group — its rows sit flat with no section
+        // header, like boxHelpAndSupport/boxUpgradeNow below. Hide the (now unused)
+        // accordion header view rather than removing it from the storyboard, and force
+        // its rows permanently visible.
+        boxMainItems.isHidden = true
+        boxMicroBreaks.isHidden = false
+        boxFocusSession.isHidden = false
+        boxHabits.isHidden = false
+        // Custom routines now live in the Day Plan's Custom Routines panel, so the menu item
+        // is removed.
+        boxCustomRoutine.isHidden = true
+
+        installToolsAddOnItems()
+        ensureMenuScrolls()
+
+        // Custom Routine is removed from the menu (now lives in the Day Plan's Custom Routines
+        // panel). setExpanded(true) above runs before the accordion's onStateChanged is assigned,
+        // so the closure doesn't hide it on first load — hide it explicitly here. Tab Audit is
+        // restored (visible by default, user-hideable) — its initial visibility is set below by
+        // refreshToolsVisibility(), via the hideableTools list above.
+        boxCustomRoutine.isHidden = true
+
         boxToolsItems.setExpanded(true)
-        boxToolsItems.onStateChanged = { isExpanded in
+        boxToolsItems.onStateChanged = { [weak self] isExpanded in
             print("Tools is now \(isExpanded ? "expanded" : "collapsed")")
-            if isExpanded{
-                self.boxFocusMusic.isHidden = false
-                self.boxBrainDump.isHidden = false
-                self.boxTodoPlayer.isHidden = false
-                self.boxMotivation.isHidden = false
-                self.boxBrowsersTabAudit.isHidden = false
-            }else{
-                self.boxFocusMusic.isHidden = true
-                self.boxBrainDump.isHidden = true
-                self.boxTodoPlayer.isHidden = true
-                self.boxMotivation.isHidden = true
-                self.boxBrowsersTabAudit.isHidden = true
-            }
-            
+            self?.isToolsSectionExpanded = isExpanded
+            self?.refreshToolsVisibility()
         }
-        
+        boxToolsItems.onGearClicked = { [weak self] in
+            self?.showHiddenToolsPopover()
+        }
+        // setExpanded(true) above ran before onStateChanged was assigned, so it didn't apply
+        // hidden-row state on first load — apply it explicitly now.
+        refreshToolsVisibility()
+
         boxPreferences.setExpanded(true)
         boxPreferences.onStateChanged = { isExpanded in
             print("Preferences is now \(isExpanded ? "expanded" : "collapsed")")
@@ -208,12 +231,14 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxUpgradeNow.delegate = self
         
         if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
-            boxMainItems.title = leftMenuVcInfo.value(forKey: "titleMain") as? String ?? boxMainItems.title
             boxToolsItems.title = leftMenuVcInfo.value(forKey: "titleTools") as? String ?? boxToolsItems.title
             boxPreferences.title = leftMenuVcInfo.value(forKey: "titlePreferences") as? String ?? boxPreferences.title
             
 
-            boxHabits.title = leftMenuVcInfo.value(forKey: "menuHabits") as? String ?? boxHabits.title
+            // Mac-only "Day Plan" label — a NEW key, NOT menuHabits (which other platforms still
+            // use for their Habits view). Falls back to the hardcoded "Day Plan" (set above), never
+            // to menuHabits, so the Mac never shows "Habits" here even before the new key ships.
+            boxHabits.title = (leftMenuVcInfo.value(forKey: "menuDayPlan") as? String) ?? boxHabits.title
             boxCustomRoutine.title = leftMenuVcInfo.value(forKey: "menuCustomRoutine") as? String ?? boxCustomRoutine.title
             boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuStartFocusSession") as? String ?? boxFocusSession.title
             boxMicroBreaks.title = leftMenuVcInfo.value(forKey: "menuStartMicroBreak") as? String ?? boxMicroBreaks.title
@@ -230,7 +255,10 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             boxBlocks.title = leftMenuVcInfo.value(forKey: "menuBlocksPreferences") as? String ?? boxFocusMusic.title
             boxSettings.title = leftMenuVcInfo.value(forKey: "menuSettings") as? String ?? boxFocusMusic.title
             boxEditHabits.title = leftMenuVcInfo.value(forKey: "menuEditHabits") as? String ?? boxFocusMusic.title
-            boxMotivation.title = leftMenuVcInfo.value(forKey: "menuMotivation") as? String ?? boxFocusMusic.title
+            // Renamed to "Stats". Hardcoded (not config-driven) because the synced/cached config can
+            // still carry the old "Motivation" label; the bundled + assets config also say "Stats" now,
+            // so this can revert to the config value once that has propagated.
+            boxMotivation.title = "Stats"
             boxHelpAndSupport.title = leftMenuVcInfo.value(forKey: "menuHelpAndSupport") as? String ?? boxFocusMusic.title
             boxUpgradeNow.title = leftMenuVcInfo.value(forKey: "menuUpgradeNow") as? String ?? boxFocusMusic.title
             
@@ -300,72 +328,203 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         }
     }
     
+    /// Applies both the TOOLS accordion's expanded/collapsed state and each row's user-hidden state
+    /// (via the hover ✕ / gear-restore flow). A row is visible only when the section is expanded AND
+    /// the user hasn't hidden it.
+    private func refreshToolsVisibility() {
+        let hideableTools: [(mainWindowListBox, ToolID)] = [
+            (boxFocusMusic, .focusMusic), (boxBrainDump, .brainDump),
+            (boxTodoPlayer, .todoList), (boxMotivation, .stats),
+            (boxBrowsersTabAudit, .tabAudit)
+        ]
+        for (box, id) in hideableTools {
+            box.isHidden = !isToolsSectionExpanded || ToolVisibilityStore.isHidden(id)
+        }
+        let addOnHideableTools: [(mainWindowListBox?, ToolID)] = [
+            (boxFocusButtonTool, .focusButton), (boxTimeTrackerTool, .timeTracker), (boxLateNoMoreTool, .lateNoMore)
+        ]
+        for (box, id) in addOnHideableTools {
+            box?.isHidden = !isToolsSectionExpanded || ToolVisibilityStore.isHidden(id)
+        }
+    }
+
+    private func showHiddenToolsPopover() {
+        if let popover = hiddenToolsPopover, popover.isShown {
+            popover.performClose(nil)
+            return
+        }
+        let view = RestoreHiddenToolsView(onRestore: { [weak self] _ in
+            self?.refreshToolsVisibility()
+        })
+        let popover = NSPopover()
+        let hosting = NSHostingController(rootView: view)
+        // Let the popover track the SwiftUI content's size, so it resizes as rows are restored.
+        if #available(macOS 13.0, *) {
+            hosting.sizingOptions = [.preferredContentSize]
+        }
+        popover.contentViewController = hosting
+        popover.behavior = .transient
+        // Give the content a concrete size BEFORE showing. Without this, a short list (0–3 rows) has no
+        // established fitting size yet, so NSPopover falls back to a degenerate default — the arrow
+        // renders as a blunt square and the popover is mispositioned, only self-correcting once enough
+        // rows force a bigger intrinsic size. Forcing layout + pinning contentSize fixes both.
+        hosting.view.layoutSubtreeIfNeeded()
+        popover.contentSize = hosting.view.fittingSize
+        hiddenToolsPopover = popover
+        popover.show(relativeTo: boxToolsItems.bounds, of: boxToolsItems, preferredEdge: .maxX)
+    }
+
+    /// Adds Focus Button / Time Tracker / Late No More to the TOOLS group programmatically, so the
+    /// storyboard left-menu stack stays untouched. Inserted right after Stats.
+    private func installToolsAddOnItems() {
+        guard boxFocusButtonTool == nil,
+              let stack = boxMotivation.superview as? NSStackView else { return }
+        let focusBtn = makeToolBox(title: "Focus Button", systemIcon: "button.programmable")
+        let timeTracker = makeToolBox(title: "Time Tracker", systemIcon: "clock")
+        let lateNoMore = makeToolBox(title: "Late No More", systemIcon: "calendar.badge.clock")
+        boxFocusButtonTool = focusBtn
+        boxTimeTrackerTool = timeTracker
+        boxLateNoMoreTool = lateNoMore
+
+        let addOnHideableTools: [(mainWindowListBox, ToolID)] = [
+            (focusBtn, .focusButton), (timeTracker, .timeTracker), (lateNoMore, .lateNoMore)
+        ]
+        for (box, id) in addOnHideableTools {
+            box.showsHideButton = true
+            box.onHideRequested = { [weak self] in
+                ToolVisibilityStore.hide(id)
+                self?.refreshToolsVisibility()
+            }
+        }
+
+        let after = stack.arrangedSubviews.firstIndex(of: boxMotivation) ?? (stack.arrangedSubviews.count - 1)
+        stack.insertArrangedSubview(focusBtn, at: after + 1)
+        stack.insertArrangedSubview(timeTracker, at: after + 2)
+        stack.insertArrangedSubview(lateNoMore, at: after + 3)
+        for box in [focusBtn, timeTracker, lateNoMore] {
+            box.heightAnchor.constraint(equalToConstant: 32).isActive = true
+            // Pin leading/trailing to an existing item so the row lines up exactly with it.
+            box.leadingAnchor.constraint(equalTo: boxMotivation.leadingAnchor).isActive = true
+            box.trailingAnchor.constraint(equalTo: boxMotivation.trailingAnchor).isActive = true
+        }
+    }
+
+    /// Make the menu scroll when its items are taller than the window (the document view already grows
+    /// with the stack content; this just enables the scroller and lets it scroll past the visible area).
+    private func ensureMenuScrolls() {
+        guard let scroll = boxMotivation.enclosingScrollView else { return }
+        scroll.hasVerticalScroller = true
+        scroll.verticalScrollElasticity = .allowed
+        scroll.drawsBackground = false
+    }
+
+    private func makeToolBox(title: String, systemIcon: String) -> mainWindowListBox {
+        let box = mainWindowListBox(frame: .zero)
+        box.translatesAutoresizingMaskIntoConstraints = false
+        box.contentViewMargins = NSSize(width: 0, height: 0)   // match storyboard items (no extra inset)
+        box.title = title
+        if #available(macOS 11.0, *) {
+            // Fixed point size + centred scaling so the three symbols line up consistently with each
+            // other (raw SF Symbols have differing aspect ratios and render at different visual sizes).
+            let config = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
+            box.imageIcon = NSImage(systemSymbolName: systemIcon, accessibilityDescription: title)?
+                .withSymbolConfiguration(config)
+            box.imageView?.imageScaling = .scaleProportionallyDown
+        }
+        box.imageView?.contentTintColor = NSColor(named: "dark_OrangeColor") ?? NSColor.orange
+        box.delegate = self
+        return box
+    }
+
+    /// Show the habits / Day Plan area with the correct state view for the CURRENT app state. Shared by
+    /// the sidebar `boxHabits` selection and the menu's Open-Day-Plan action so both populate it
+    /// identically. The menu path used to skip this dispatch, so the Day Plan rendered blank on first
+    /// open in the postpone states (habits area never got its state view) until you navigated away and
+    /// back — reported 2026-07-08.
+    func showDayPlanForCurrentState() {
+        mainViewControllerObj?.showHabitsView()
+        // The active routine states already have their habit content up — don't disturb it (that
+        // previously caused a blank-habit-state regression, v 3.33.494).
+        guard currentState != ._MORNING_HABIT_, currentState != ._EVENING_HABIT_, currentState != ._FOCUS_SUMMARY_ else { return }
+        // Tracks whether one of the branches below actually populated the habits/Day Plan area, so the
+        // safety net at the end can catch any state combination none of them account for — this exact
+        // function has already shipped one blank-Day-Plan fix (see the doc comment above) and another
+        // was reported 2026-07-13 (isUserOnMeeting + isHabitAlreadyShowed both landing on a combination
+        // no branch matched); rather than chase every future combination individually, never leave the
+        // area blank instead.
+        var didShowHabitState = false
+        if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_ {
+            habitsVcObj?.showHabitState(); didShowHabitState = true
+        } else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit {
+            habitsVcObj?.showHabitState(); didShowHabitState = true
+        } else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit {
+            habitsVcObj?.showHabitState(); didShowHabitState = true
+        } else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit {
+            habitsVcObj?.showHabitState(); didShowHabitState = true
+        } else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit {
+            habitsVcObj?.showHabitState(); didShowHabitState = true
+        } else {
+            if isHabitAlreadyShowed && !isShutOffTimeGoing() {
+                habitsVcObj?.showHabitState(); didShowHabitState = true
+            } else if let date = UserDefaults.standard.object(forKey: kUserdefaultsShutdownAborted) as? Date,
+                      Date().compare(date) == .orderedAscending {
+                habitsVcObj?.showHabitState(); didShowHabitState = true
+            }
+
+            let currentDate = Date()
+            let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
+            let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
+            let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
+
+            if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_ && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil {
+                if isHabitsDisabled {
+                    UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
+                    habitsVcObj?.showHabitState(); didShowHabitState = true
+                } else if sameDay || !shouldDoHabits() {
+                    habitsVcObj?.showHabitState(); didShowHabitState = true
+                } else {
+                    UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
+                }
+            } else {
+                if let date = UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date {
+                    if Date().compare(date) == .orderedAscending {// evening habits already shown for today
+                        if isShutOffTimeGoing() && !isCutOffTimeGoing() {
+                            habitsVcObj?.showHabitState(); didShowHabitState = true // free time
+                        }
+                    }
+                } else if isShutOffTimeGoing() && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_ && currentState != ._POSTPONE_EVENING_HABIT_ && currentState != ._POSTPONE_FOCUS_SUMMARY_ && arrAllDaysEveningHabits.count == 0 {
+                    habitsVcObj?.showHabitState(); didShowHabitState = true // v 2.28.437
+                } else if (appdelegate?.isUserOnMeeting ?? false) && !isHabitAlreadyShowed && !isShutOffTimeGoing() {
+                    habitsVcObj?.showHabitState(); didShowHabitState = true // v 2.28.445
+                } else if !isAppEnable {
+                    habitsVcObj?.showHabitState(); didShowHabitState = true // v 2.28.456
+                } else if sameDay || !shouldDoHabits() {
+                    if isHabitsDisabled {
+                        UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
+                    }
+                    habitsVcObj?.showHabitState(); didShowHabitState = true
+                }
+            }
+        }
+        // Safety net: every branch above is a narrow, historically-patched special case: if none of
+        // them matched for the current state/flag combination, fall back to showing the habit state
+        // anyway rather than leaving the Day Plan area blank — showHabitState() just re-adds its view
+        // (removeSubViews() first), so calling it here is a no-op if something already handled it and
+        // the state genuinely needed nothing shown, and a real fix if nothing did.
+        if !didShowHabitState {
+            addLog(text: "showDayPlanForCurrentState: no branch matched for state=\(currentState) — falling back to showHabitState() so Day Plan isn't left blank")
+            habitsVcObj?.showHabitState()
+        }
+    }
+
     func selectableListBoxDidChangeSelectionByUser(_ box: mainWindowListBox) {
+        if box == boxFocusButtonTool { mainViewControllerObj?.showFocusButtonToolView(); return }
+        if box == boxTimeTrackerTool { mainViewControllerObj?.showTimeTrackerToolView(); return }
+        if box == boxLateNoMoreTool { mainViewControllerObj?.showLateNoMoreToolView(); return }
         switch box{
             
         case boxHabits:
-            mainViewControllerObj?.showHabitsView()
-            
-            if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_{// blank habit state scrren bug solved v 3.33.494
-                if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
-                    habitsVcObj?.showHabitState()
-                }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
-                    habitsVcObj?.showHabitState()
-                }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
-                    habitsVcObj?.showHabitState()
-                }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit{
-                    habitsVcObj?.showHabitState()
-                }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit{
-                    habitsVcObj?.showHabitState()
-                }else{
-                    if isHabitAlreadyShowed && !isShutOffTimeGoing(){
-                        habitsVcObj?.showHabitState()
-                    }else{
-                        if let date = UserDefaults.standard.object(forKey: kUserdefaultsShutdownAborted) as? Date{
-                            if Date().compare(date) == .orderedAscending {
-                                habitsVcObj?.showHabitState()
-                            }
-                        }
-                    }
-
-                    let currentDate = Date()
-                    let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
-                    let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
-                    let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
-                    
-                    if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_  && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil{
-                        if isHabitsDisabled{
-                            UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
-                            habitsVcObj?.showHabitState()
-                        }else{
-                            if sameDay || !shouldDoHabits(){
-                                habitsVcObj?.showHabitState()
-                            }else{
-                                UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
-                            }
-                        }
-                    }else{
-                        if let date = UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date{
-                            if Date().compare(date) == .orderedAscending {//"Evening habits already shown for today
-                                if isShutOffTimeGoing() && !isCutOffTimeGoing(){
-                                    habitsVcObj?.showHabitState()// free time
-                                }
-                            }
-                        }else if isShutOffTimeGoing() && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_ && currentState != ._POSTPONE_EVENING_HABIT_ && currentState != ._POSTPONE_FOCUS_SUMMARY_ && arrAllDaysEveningHabits.count == 0{
-                            habitsVcObj?.showHabitState()// v 2.28.437
-                        }else if (appdelegate?.isUserOnMeeting ?? false) && !isHabitAlreadyShowed && !isShutOffTimeGoing(){
-                            habitsVcObj?.showHabitState()// v 2.28.445
-                        }else if !isAppEnable{
-                            habitsVcObj?.showHabitState()// v 2.28.456
-                        }else if sameDay || !shouldDoHabits(){
-                            if isHabitsDisabled{
-                                UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
-                            }
-                            habitsVcObj?.showHabitState()
-                        }
-                    }
-                }
-            }
+            showDayPlanForCurrentState()
             break;
         case boxFocusSession:
             let isFocusModeOn = isFocusModeOn()
@@ -531,6 +690,13 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             checkScreenSizeIfFullScreenHabitIsRunning()
         case boxHelpAndSupport:
             checkScreenSizeIfFullScreenHabitIsRunning()
+        case boxFocusButtonTool, boxTimeTrackerTool, boxLateNoMoreTool:
+            // Keep the full-size window while a full-screen habit/routine/break/shut-off is running —
+            // these tool tabs were unconditionally shrinking it, which let the user drop out of a
+            // full-screen activity (and expose the desktop) by opening a tool. checkScreenSize… shrinks
+            // to the standard small window when no full-screen activity is active, matching the other
+            // inline tabs (Todo Player / Brain Dump).
+            checkScreenSizeIfFullScreenHabitIsRunning()
         default:
             break;
         }
@@ -570,7 +736,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         }
         if box == boxUpgradeNow{
             addLog(text:"[user-action] leftMenuVc:- btnUpgradeNowClicked")
-            showUpgradeNowWindow()
+            showUpgradeNowWindow(reason: "upgrade_now_button")
             return false
         }
         

@@ -33,6 +33,8 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>FBTeamIdentifierPrefix</key>
+	<string>$(DEVELOPMENT_TEAM)</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.productivity</string>
 	<key>LSMinimumSystemVersion</key>
@@ -46,8 +48,14 @@
 	</dict>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>This is needed to block distracting websites.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Focus Bear uses your calendar to build your daily timetable — showing when your habits will finish and when you have free time for deep work around your meetings.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Focus Bear uses your calendar to build your daily timetable — showing when your habits will finish and when you have free time for deep work around your meetings.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2022-2026 Focus Bear Pty Ltd, All rights reserved</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Focus Bear needs Location access to read your Wi-Fi network name (SSID) in order to automatically switch your profile when you move between networks (e.g. home to office).</string>
 	<key>NSMainStoryboardFile</key>
 	<string>Main</string>
 	<key>NSMicrophoneUsageDescription</key>

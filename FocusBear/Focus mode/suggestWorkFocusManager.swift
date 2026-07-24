@@ -76,15 +76,17 @@ class suggestWorkFocusManager {
             for i in 0..<arrFocusType.count{
                 let workFocusMode = arrFocusType[i]
                 
-                let isAllowedListApproachInFocus = workFocusMode["isAllowedListApproach"] as? Bool ?? false
+                // isAllowedListApproach is the URL allowlist flag (used in the URL path below), not apps —
+                // the app suggestion instead skips when the mode allows ALL apps (isAllowedAllApps).
                 let allowAppsPath = workFocusMode["allowed_apps"] as? [String] ?? []
-                let doNotSuggestAnyMore = arrFocusType[i]["doNotSuggestAnyMore"] as? Bool ?? false
+                let doNotSuggestAnyMore = workFocusMode["doNotSuggestAnyMore"] as? Bool ?? false
+                let isAllowedAllApps = workFocusMode["isAllowedAllApps"] as? Bool ?? false
                 
-                let autoSuggestFocusModeOnAllowedURL = arrFocusType[i]["autoSuggestFocusModeOnAllowedURL"] as? Bool ?? false
+                let autoSuggestFocusModeOnAllowedURL = workFocusMode["autoSuggestFocusModeOnAllowedURL"] as? Bool ?? false
                 if !autoSuggestFocusModeOnAllowedURL{
                     continue;
                 }
-                if doNotSuggestAnyMore || !isAllowedListApproachInFocus{
+                if doNotSuggestAnyMore || isAllowedAllApps{
                     continue;
                 }
                 

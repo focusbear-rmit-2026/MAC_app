@@ -7647,8 +7647,8 @@ Edit setting -"search" in Firefox</string>
                                                                                                                     <rect key="frame" x="5" y="4" width="82" height="28"/>
                                                                                                                     <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="Des-YI-ybj">
                                                                                                                         <font key="font" metaFont="system"/>
-                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="802351230.82673001">
-                                                                                                                            <!--2026-06-05 11:20:30 +0000-->
+                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="805363155.81186903">
+                                                                                                                            <!--2026-07-10 07:59:15 +0000-->
                                                                                                                         </date>
                                                                                                                         <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -7698,8 +7698,8 @@ Edit setting -"search" in Firefox</string>
                                                                                                                     <rect key="frame" x="5" y="4" width="82" height="28"/>
                                                                                                                     <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="z7A-mY-tK3">
                                                                                                                         <font key="font" metaFont="system"/>
-                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="802351230.83013999">
-                                                                                                                            <!--2026-06-05 11:20:30 +0000-->
+                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="805363155.81531203">
+                                                                                                                            <!--2026-07-10 07:59:15 +0000-->
                                                                                                                         </date>
                                                                                                                         <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -8300,11 +8300,11 @@ Edit setting -"search" in Firefox</string>
                                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                             </textFieldCell>
                                         </textField>
-                                        <stackView distribution="fill" orientation="vertical" alignment="centerX" spacing="20" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Awz-nc-tyL">
-                                            <rect key="frame" x="100" y="483" width="794" height="77"/>
+                                        <stackView distribution="fill" orientation="vertical" alignment="centerX" spacing="15" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Awz-nc-tyL">
+                                            <rect key="frame" x="100" y="486" width="794" height="72"/>
                                             <subviews>
                                                 <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="752" horizontalCompressionResistancePriority="249" verticalCompressionResistancePriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="8rX-fd-uJs">
-                                                    <rect key="frame" x="-2" y="39" width="798" height="38"/>
+                                                    <rect key="frame" x="-2" y="34" width="798" height="38"/>
                                                     <textFieldCell key="cell" alignment="center" id="FGP-Nm-rJG">
                                                         <font key="font" metaFont="system" size="15"/>
                                                         <string key="title">xxIn order to interact with other browsers, you need to authorise Focus bear through System Preferences:
@@ -8332,14 +8332,14 @@ System Preferences &gt; Privacy &amp; Security &gt; Accessibility</string>
                                             </customSpacing>
                                         </stackView>
                                         <imageView horizontalHuggingPriority="1" verticalHuggingPriority="1" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="GSR-rq-FXs" customClass="shadowImageView" customModule="Focus_Bear" customModuleProvider="target">
-                                            <rect key="frame" x="139" y="108" width="716" height="360"/>
+                                            <rect key="frame" x="236" y="126" width="522" height="346"/>
                                             <constraints>
-                                                <constraint firstAttribute="width" secondItem="GSR-rq-FXs" secondAttribute="height" multiplier="896:450" id="pIk-I9-vyb"/>
+                                                <constraint firstAttribute="width" secondItem="GSR-rq-FXs" secondAttribute="height" multiplier="827:548" id="pIk-I9-vyb"/>
                                             </constraints>
                                             <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyDown" image="accessibility" id="u2w-Qb-61P"/>
                                         </imageView>
                                         <imageView horizontalHuggingPriority="1" verticalHuggingPriority="1" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="4hr-SB-wHU">
-                                            <rect key="frame" x="353" y="144" width="288" height="288"/>
+                                            <rect key="frame" x="359" y="161" width="276" height="276"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" secondItem="4hr-SB-wHU" secondAttribute="height" multiplier="1:1" id="0Jv-ZE-LfW"/>
                                             </constraints>
@@ -8403,9 +8403,30 @@ System Preferences &gt; Privacy &amp; Security &gt; Accessibility</string>
                                                 </constraints>
                                             </view>
                                         </box>
+                                        <box boxType="custom" borderType="line" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="G5h-Os-aEs">
+                                            <rect key="frame" x="0.0" y="94" width="994" height="67"/>
+                                            <view key="contentView" id="q4o-Cc-Qze">
+                                                <rect key="frame" x="0.0" y="0.0" width="994" height="67"/>
+                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                <subviews>
+                                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Zqe-1c-d3b" customClass="underLineButton" customModule="Focus_Bear" customModuleProvider="target">
+                                                        <rect key="frame" x="475" y="22" width="44" height="16"/>
+                                                        <buttonCell key="cell" type="square" title="xxSkip" bezelStyle="shadowlessSquare" alignment="center" lineBreakMode="truncatingTail" state="on" imageScaling="proportionallyDown" inset="2" id="3Ea-o8-GhX">
+                                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                            <font key="font" metaFont="system"/>
+                                                        </buttonCell>
+                                                    </button>
+                                                </subviews>
+                                                <constraints>
+                                                    <constraint firstItem="Zqe-1c-d3b" firstAttribute="centerX" secondItem="q4o-Cc-Qze" secondAttribute="centerX" id="6te-G6-d94"/>
+                                                    <constraint firstItem="Zqe-1c-d3b" firstAttribute="centerY" secondItem="q4o-Cc-Qze" secondAttribute="centerY" multiplier="1.1" id="WsY-CW-t7U"/>
+                                                </constraints>
+                                            </view>
+                                        </box>
                                     </subviews>
                                     <constraints>
                                         <constraint firstItem="iVU-mu-vdV" firstAttribute="height" secondItem="RdI-Kq-5f6" secondAttribute="height" multiplier="0.25" id="0UR-p1-Bzn"/>
+                                        <constraint firstAttribute="trailing" secondItem="G5h-Os-aEs" secondAttribute="trailing" id="16W-sE-h83"/>
                                         <constraint firstAttribute="trailing" secondItem="xdc-Ms-obb" secondAttribute="trailing" id="1Yy-k8-V7q"/>
                                         <constraint firstItem="Awz-nc-tyL" firstAttribute="leading" secondItem="RdI-Kq-5f6" secondAttribute="leading" constant="100" id="33A-aY-pbf"/>
                                         <constraint firstItem="f0d-Tb-JU9" firstAttribute="centerX" secondItem="RdI-Kq-5f6" secondAttribute="centerX" id="5q4-PB-onT"/>
@@ -8414,10 +8435,12 @@ System Preferences &gt; Privacy &amp; Security &gt; Accessibility</string>
                                         <constraint firstItem="tDq-GT-0y8" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="RdI-Kq-5f6" secondAttribute="leading" constant="30" id="Gyx-px-Lw0"/>
                                         <constraint firstItem="V5g-t7-SA3" firstAttribute="height" secondItem="RdI-Kq-5f6" secondAttribute="height" multiplier="0.15" id="KKp-u0-MMo"/>
                                         <constraint firstAttribute="bottom" secondItem="xdc-Ms-obb" secondAttribute="bottom" id="L2d-5I-GK7"/>
-                                        <constraint firstItem="GSR-rq-FXs" firstAttribute="height" secondItem="RdI-Kq-5f6" secondAttribute="height" multiplier="0.5" id="MKg-y5-XAy"/>
+                                        <constraint firstItem="GSR-rq-FXs" firstAttribute="height" secondItem="RdI-Kq-5f6" secondAttribute="height" multiplier="0.48" id="MKg-y5-XAy"/>
                                         <constraint firstItem="GSR-rq-FXs" firstAttribute="centerX" secondItem="RdI-Kq-5f6" secondAttribute="centerX" id="OOs-VX-oPQ"/>
-                                        <constraint firstItem="GSR-rq-FXs" firstAttribute="centerY" secondItem="RdI-Kq-5f6" secondAttribute="centerY" multiplier="1.2" id="T3z-xa-kyA"/>
+                                        <constraint firstItem="GSR-rq-FXs" firstAttribute="centerY" secondItem="RdI-Kq-5f6" secondAttribute="centerY" multiplier="1.17" id="T3z-xa-kyA"/>
+                                        <constraint firstItem="f0d-Tb-JU9" firstAttribute="top" secondItem="G5h-Os-aEs" secondAttribute="bottom" id="V9Y-5t-Z9C"/>
                                         <constraint firstItem="4hr-SB-wHU" firstAttribute="height" secondItem="GSR-rq-FXs" secondAttribute="height" multiplier="0.8" id="ZNm-Ug-nsU"/>
+                                        <constraint firstItem="G5h-Os-aEs" firstAttribute="leading" secondItem="RdI-Kq-5f6" secondAttribute="leading" id="Zen-qB-dRH"/>
                                         <constraint firstItem="V5g-t7-SA3" firstAttribute="leading" secondItem="RdI-Kq-5f6" secondAttribute="leading" id="aOg-Zf-f3m"/>
                                         <constraint firstItem="Awz-nc-tyL" firstAttribute="centerY" secondItem="RdI-Kq-5f6" secondAttribute="centerY" multiplier="0.55" id="eNz-Vu-x4U"/>
                                         <constraint firstItem="tDq-GT-0y8" firstAttribute="top" secondItem="V5g-t7-SA3" secondAttribute="bottom" constant="5" id="eeZ-zm-a7v"/>
@@ -8430,6 +8453,7 @@ System Preferences &gt; Privacy &amp; Security &gt; Accessibility</string>
                                         <constraint firstItem="4hr-SB-wHU" firstAttribute="centerX" secondItem="GSR-rq-FXs" secondAttribute="centerX" id="vki-gZ-ZY8"/>
                                         <constraint firstItem="V5g-t7-SA3" firstAttribute="top" secondItem="RdI-Kq-5f6" secondAttribute="top" id="wx9-1V-yIa"/>
                                         <constraint firstItem="xdc-Ms-obb" firstAttribute="top" secondItem="f0d-Tb-JU9" secondAttribute="bottom" id="xm8-q9-9L5"/>
+                                        <constraint firstItem="G5h-Os-aEs" firstAttribute="top" secondItem="4hr-SB-wHU" secondAttribute="bottom" id="zBX-dm-4lS"/>
                                         <constraint firstItem="4hr-SB-wHU" firstAttribute="centerY" secondItem="GSR-rq-FXs" secondAttribute="centerY" id="ze7-Gy-hbX"/>
                                     </constraints>
                                 </view>
@@ -8452,6 +8476,7 @@ System Preferences &gt; Privacy &amp; Security &gt; Accessibility</string>
                         <outlet property="lblDescription" destination="5xh-bg-7Nx" id="lYZ-Ry-XHG"/>
                         <outlet property="lblSubTitle" destination="8rX-fd-uJs" id="dwv-q0-Qls"/>
                         <outlet property="lblTitle" destination="tDq-GT-0y8" id="dx9-qK-m8l"/>
+                        <outlet property="openSettingsLink" destination="Zqe-1c-d3b" id="xwa-6B-xHq"/>
                     </connections>
                 </viewController>
                 <customObject id="bi8-bo-48f" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
@@ -8471,7 +8496,7 @@ System Preferences &gt; Privacy &amp; Security &gt; Accessibility</string>
         <image name="NSRemoveTemplate" width="18" height="4"/>
         <image name="NSStopProgressTemplate" width="17" height="15"/>
         <image name="NSTouchBarPlayTemplate" width="14" height="16"/>
-        <image name="accessibility" width="827" height="582"/>
+        <image name="accessibility" width="827" height="548"/>
         <image name="bear_allSet" width="450" height="450"/>
         <image name="bear_allowedUrls" width="291" height="450"/>
         <image name="bear_askBlockingSchedule" width="450" height="450"/>

@@ -136,7 +136,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call isSettingsValid Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil, httpResponse.statusCode)
                                 return
                             }
@@ -287,7 +286,6 @@ class AllApi:NSObject {
                                         
                                     }catch{
                                         addLog(text: "api call getDeviceId error:- \(error.localizedDescription)")
-                                        addLog(text: "accessToken is:- \(token)")
                                         completionHandler(nil)
                                         print(error)
                                         return;
@@ -598,7 +596,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call get Settings Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -672,7 +669,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call user-local-device-settings Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -759,10 +755,50 @@ class AllApi:NSObject {
     var isApiAddAdditionalGoalsErrorFound = false
     
     var isApiUnCompleteCurrentSequenceErrorFound = false
-    
+
+    var isApiJoinClassSessionErrorFound = false
+    var isApiDeclineClassSessionErrorFound = false
+    var isApiGetCurrentClassSessionErrorFound = false
+    var isApiRequestClassUnlockErrorFound = false
+
     var errorCodeRequestTimeout = -1001
     var errorCodeNoInternet = -1009
-    
+
+    /// #2150: the habits the user actually COMPLETED on a past day, so the Day Plan can strike them
+    /// through when navigating back. `GET /completed-activity-sequence/routine-progress?date=&timezone=`
+    /// returns the same shape as `today_routine_progress` (per-routine `completed_habit_ids` /
+    /// `skipped_habit_ids`). Note `completed_habit_ids` includes skipped ones, so we subtract
+    /// `skipped_habit_ids` to get strictly-completed. Best-effort — nil on any failure (Day Plan then
+    /// falls back to the local per-day cache).
+    func fetchDayRoutineProgress(dayKey: String, completion: @escaping (_ completedIds: Set<String>?) -> Void) {
+        appdelegate?.credentialsManager.credentials { credentialsInfo in
+            appdelegate?.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            guard appdelegate?.credential != nil else { DispatchQueue.main.async { completion(nil) }; return }
+            let tz = TimeZone.current.identifier
+            let path = "\(baseUrl)/completed-activity-sequence/routine-progress?date=\(dayKey)&timezone=\(tz)"
+            guard let encoded = path.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                  let url = NSURL(string: encoded) else { DispatchQueue.main.async { completion(nil) }; return }
+            let request = makeRequest(responsePathUrl: url)
+            request.httpMethod = "GET"
+            URLSession.shared.dataTask(with: request as URLRequest) { data, response, _ in
+                guard let http = response as? HTTPURLResponse, http.statusCode == 200, let data = data,
+                      let json = (try? JSONSerialization.jsonObject(with: data)) as? NSDictionary else {
+                    DispatchQueue.main.async { completion(nil) }; return
+                }
+                // Union strictly-completed ids across every routine in the payload (morning / evening /
+                // any custom or standalone), robust to which routine keys are present for the day.
+                var completed = Set<String>()
+                for value in json.allValues {
+                    guard let routine = value as? NSDictionary else { continue }
+                    let done = (routine["completed_habit_ids"] as? [String]).map(Set.init) ?? []
+                    let skipped = (routine["skipped_habit_ids"] as? [String]).map(Set.init) ?? []
+                    completed.formUnion(done.subtracting(skipped))
+                }
+                DispatchQueue.main.async { completion(completed) }
+            }.resume()
+        }
+    }
+
     func getLastActivityInfo(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
         addLog(text: "func call:- downloading getLastActivityInfo file")
         
@@ -813,7 +849,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getLastActivityInfo Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -902,7 +937,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getuserDetailsInfo Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -993,7 +1027,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getuserDetailsSummary Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -1085,7 +1118,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getuserLongTermGoals Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -1176,7 +1208,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getFocusTemplateInfo Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -1267,7 +1298,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getAllFocusModes Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -1358,7 +1388,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getUserSubscriptionInfo Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil, httpResponse.statusCode)
                                 return
                             }
@@ -1446,7 +1475,6 @@ class AllApi:NSObject {
                     }else{
                         addLog(text: "api call getHabitPacksInfo Api error:- statusCode is \(httpResponse.statusCode)")
                         self.writeJsonInLog(data: data)
-                        //addLog(text: "accessToken is:- \(token)")
                         completionHandler(nil)
                         return
                     }
@@ -1530,7 +1558,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call putUserLocalDeviceSettings Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -1693,7 +1720,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call activityCompletedApi error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             
                             
                             if httpResponse.statusCode == 500{
@@ -1732,7 +1758,7 @@ class AllApi:NSObject {
                                 self.isApiActivityCompletedErrorFound = false
                                 
                                 DispatchQueue.main.async {
-                                    var activitiesSyncErrorText = "Focus Bear was not able to sync the activities' statistics due to bad internet."
+                                    var activitiesSyncErrorText = "Internet issue: habit completion will sync once your connection stabilises."
                                     if let common = configjson.value(forKey: "common") as? NSDictionary{
                                         activitiesSyncErrorText = common.value(forKey: "activitiesSyncErrorText") as? String ?? activitiesSyncErrorText
                                     }
@@ -1757,7 +1783,7 @@ class AllApi:NSObject {
                             //                            self.isAnyErrorFoundInActivityCompletedApi = true
                             
                             DispatchQueue.main.async {
-                                var activitiesSyncErrorText = "Focus Bear was not able to sync the activities' statistics due to bad internet."
+                                var activitiesSyncErrorText = "Internet issue: habit completion will sync once your connection stabilises."
                                 if let common = configjson.value(forKey: "common") as? NSDictionary{
                                     activitiesSyncErrorText = common.value(forKey: "activitiesSyncErrorText") as? String ?? activitiesSyncErrorText
                                 }
@@ -1850,7 +1876,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call activity Completed Revise Api error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             completionHandler(nil)
                             return
                         }
@@ -1898,7 +1923,6 @@ class AllApi:NSObject {
         addLog(text: "func call:- activitySkippedApi completed-activity")
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
-            
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
             let responsePath = "\(baseUrl)/completed-activity/skip"
@@ -1939,7 +1963,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call activitySkippedApi error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             
                             if httpResponse.statusCode == 500{
                                 let calendar = Calendar.current
@@ -2076,7 +2099,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call activitysyncApi error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             //Deon asked that if the request fails with a 400 error, we should not try again
                              //So we will return json here so that the entries are removed from the offline csv file
                             if (httpResponse.statusCode != 408 && (httpResponse.statusCode >= 400 && httpResponse.statusCode <= 426 )){
@@ -2169,7 +2191,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call forceCompleteCurrentSequence error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             completionHandler(nil)
                             return
                         }
@@ -2271,7 +2292,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call uncompleteCurrentSequence error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             completionHandler(nil)
                             return
                         }
@@ -2364,7 +2384,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getAllTracks error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -2446,7 +2465,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getActivityStats error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -2562,7 +2580,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getACtivityCurrentDayStats error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -2677,7 +2694,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getActivityCurrentDayQuestionsStats error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -2769,7 +2785,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getAllActivityDaySummary error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -2890,7 +2905,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call addFocusMode error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return;
                             }
@@ -2963,7 +2977,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call deleteFocusMode error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return
                             }
@@ -3084,7 +3097,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call editFocusMode error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -3179,7 +3191,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call updateAllFocusMode error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -3289,7 +3300,6 @@ class AllApi:NSObject {
                                         }else{
                                             addLog(text: "api call startFocusMode Api error:- statusCode is \(httpResponse.statusCode)")
                                             self.writeJsonInLog(data: data)
-                                            addLog(text: "accessToken is:- \(token)")
                                             if httpResponse.statusCode == 400{//it means may be a focus mode is already running so complete it
                                                 finishOldFocusModeIfRunning(startNewFocusId: id, intention: intention, start_time: start_time, finish_time: finish_time)
                                             }
@@ -3429,7 +3439,6 @@ class AllApi:NSObject {
                                         }else{
                                             addLog(text: "api call finishFocusMode Api error:- statusCode is \(httpResponse.statusCode)")
                                             self.writeJsonInLog(data: data)
-                                            addLog(text: "accessToken is:- \(token)")
                                             completionHandler(nil)
                                             return
                                         }
@@ -3554,7 +3563,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call extendFocusMode Api error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             completionHandler(nil)
                             return
                         }
@@ -3596,7 +3604,79 @@ class AllApi:NSObject {
             }
         }
     }
-    
+
+    /// POST focus-mode/{id}/pause — tells the backend the session was paused here, so it broadcasts
+    /// `focus-mode-paused` to the user's other devices (FOCUS_SESSION_SYNC.md §6). Until this existed a
+    /// desktop pause was a purely local flag, so nothing else could ever learn about it.
+    func pauseFocusMode(id:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+        postFocusModeLifecycleAction(id: id, action: "pause", completionHandler: completionHandler)
+    }
+
+    /// POST focus-mode/{id}/resume — the resume counterpart of pauseFocusMode.
+    func resumeFocusMode(id:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+        postFocusModeLifecycleAction(id: id, action: "resume", completionHandler: completionHandler)
+    }
+
+    /// Shared body for the pause/resume endpoints — they differ only by path segment. The `device_id`
+    /// header that makeRequest already attaches is what lets this Mac ignore the echo of its own change
+    /// when the backend broadcasts it back over Pusher.
+    private func postFocusModeLifecycleAction(id:String, action:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+        addLog(text: "func call:- focus mode \(action):- focus-mode/id/\(action)")
+        guard !id.isEmpty else {
+            addLog(text: "focus mode \(action):- no focus mode id, skipping")
+            completionHandler(nil)
+            return
+        }
+
+        appdelegate!.credentialsManager.credentials { credentialsInfo in
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+
+            let responsePath = "\(baseUrl)/focus-mode/\(id)/\(action)"
+            guard let responsePathUrl = NSURL(string: responsePath) else {
+                completionHandler(nil)
+                return
+            }
+            addLog(text: "api call focus mode \(action) Api \(responsePathUrl)")
+
+            let request = makeRequest(responsePathUrl: responsePathUrl)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            // These endpoints take no parameters, but the API rejects an absent body when the
+            // content-type says JSON ("Body cannot be empty when content-type is set to
+            // 'application/json'"), so send an empty object rather than nothing.
+            request.httpBody = try? JSONSerialization.data(withJSONObject: [String: Any]())
+
+            let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
+                if let error = error {
+                    // Deliberately no retry: pause/resume is time-sensitive, and a late retry could
+                    // land after the user already toggled back. The local state stays applied and the
+                    // next current-activity-props reconcile corrects the server view.
+                    addLog(text: "api call focus mode \(action) Api error:- \(error.localizedDescription)")
+                    completionHandler(nil)
+                    return
+                }
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    completionHandler(nil)
+                    return
+                }
+                guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
+                    addLog(text: "api call focus mode \(action) Api error:- statusCode is \(httpResponse.statusCode)")
+                    self.writeJsonInLog(data: data)
+                    completionHandler(nil)
+                    return
+                }
+                addLog(text: "api call focus mode \(action) Api success")
+                if let data = data,
+                   let jsonResult = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) as? NSDictionary {
+                    completionHandler(jsonResult)
+                } else {
+                    completionHandler(nil)
+                }
+            }
+            task.resume()
+        }
+    }
+
     func getForgotPassword(emailAddress:String,completionHandler: @escaping(_ result: String?) -> ()) {
         addLog(text: "func call:- getForgotPassword")//
         let jsonResult:NSMutableDictionary = ["client_id":"dgMrlNC5mM634Sxi9SLqIqi0WvgVpwX7", "email":emailAddress, "connection":"Username-Password-Authentication"]
@@ -3875,7 +3955,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getKeyWords Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -3966,7 +4045,6 @@ class AllApi:NSObject {
                                         }else{
                                             addLog(text: "api call chatGPTIsURLSafe Api error:- statusCode is \(httpResponse.statusCode)")
                                             self.writeJsonInLog(data: data)
-                                            addLog(text: "accessToken is:- \(token)")
                                             completionHandler(nil, url, json)
                                             return
                                         }
@@ -4069,7 +4147,6 @@ class AllApi:NSObject {
                                         }else{
                                             addLog(text: "api call chatGPTIsURLSafeWithNewIntention Api error:- statusCode is \(httpResponse.statusCode)")
                                             self.writeJsonInLog(data: data)
-                                            addLog(text: "accessToken is:- \(token)")
                                             completionHandler(nil, url, json)
                                             return
                                         }
@@ -4182,7 +4259,6 @@ class AllApi:NSObject {
                                         }else{
                                             addLog(text: "api call chatGPTIsAppSafe Api error:- statusCode is \(httpResponse.statusCode)")
                                             self.writeJsonInLog(data: data)
-                                            addLog(text: "accessToken is:- \(token)")
                                             completionHandler(nil, appName, json)
                                             return
                                         }
@@ -4280,7 +4356,6 @@ class AllApi:NSObject {
                                         }else{
                                             addLog(text: "api call chatGPTIsAppSafeWithNewIntention Api error:- statusCode is \(httpResponse.statusCode)")
                                             self.writeJsonInLog(data: data)
-                                            addLog(text: "accessToken is:- \(token)")
                                             completionHandler(nil, appName, json)
                                             return
                                         }
@@ -4361,7 +4436,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call postTermsService error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                             }
                         }
                         
@@ -4470,7 +4544,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getFocusModeTags Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -4556,7 +4629,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call postSavedWebsiteApi error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             completionHandler(nil)
                             return
                         }
@@ -4643,7 +4715,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call getSavedWebsiteApi error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             completionHandler(nil)
                             return
                         }
@@ -4718,7 +4789,6 @@ class AllApi:NSObject {
                         }else{
                             addLog(text: "api call deleteSavedWebsiteApi error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
-                            addLog(text: "accessToken is:- \(token)")
                             completionHandler(false)
                             return
                         }
@@ -5103,7 +5173,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call addTask error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false, nil)
                                 return;
                             }
@@ -5175,7 +5244,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getProjects error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -5265,7 +5333,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call get getUploadLogUrl Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false, nil)
                                 return
                             }
@@ -5385,7 +5452,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call notifyUploadLogsSuccess Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return
                             }
@@ -5443,7 +5509,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call emailConfirmation Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return
                             }
@@ -5509,7 +5574,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call resetPassword Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 
                                 if data != nil{
                                     do {
@@ -5609,7 +5673,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getAllTasks Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -5649,6 +5712,101 @@ class AllApi:NSObject {
         }
     }
     
+    /// Fetches the to-do list in the backend's SMART (TOP-score) priority order. Unlike
+    /// /to-do/recent (recency, plain array), this endpoint is paginated and already prioritised,
+    /// so the Day Plan picker shows the same order as the web to-do list. Handles both a plain
+    /// array and a `{ data: [...] }` wrapper response.
+    func getSmartTasks(completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
+        addLog(text: "func call:- getSmartTasks")
+        appdelegate!.credentialsManager.credentials { credentialsInfo in
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            guard appdelegate!.credential != nil else { completionHandler(nil); return }
+            let responsePath = "\(baseUrl)/to-do?page=1&take=50&status=NOT_STARTED&order=DESC&sort_mode=SMART"
+            guard let responsePathUrl = NSURL(string: responsePath) else { completionHandler(nil); return }
+            addLog(text: "api call getSmartTasks \(responsePathUrl)")
+            let request = makeRequest(responsePathUrl: responsePathUrl)
+            request.httpMethod = "GET"
+            let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
+                guard let httpResponse = response as? HTTPURLResponse else { completionHandler(nil); return }
+                guard httpResponse.statusCode == 200, let data = data else {
+                    addLog(text: "getSmartTasks statusCode \((response as? HTTPURLResponse)?.statusCode ?? -1)")
+                    completionHandler(nil); return
+                }
+                do {
+                    let json = try JSONSerialization.jsonObject(with: data, options: .mutableContainers)
+                    if let arr = json as? [NSDictionary] { completionHandler(arr); return }
+                    if let obj = json as? NSDictionary, let arr = obj.value(forKey: "data") as? [NSDictionary] {
+                        completionHandler(arr); return
+                    }
+                    addLog(text: "getSmartTasks: unexpected response shape")
+                } catch {
+                    addLog(text: "error getSmartTasks parse: \(error.localizedDescription)")
+                }
+                completionHandler(nil)
+            }
+            task.resume()
+        }
+    }
+
+    /// Fetch ALL of the user's projects (used by the Day Plan `#project` autocomplete). The
+    /// `/projects` response is `{ data: [page], projects: [...], total_count, meta }`; we take the
+    /// larger of `data`/`projects` and, if that's still short of `total_count`, page with `?page=N`
+    /// (no `take` — a large `take` makes the endpoint return empty) until we've collected them all.
+    func getProjectsList(completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
+        addLog(text: "func call:- getProjectsList")
+        fetchProjectsPage(page: 1, accumulated: [], completionHandler: completionHandler)
+    }
+
+    private func fetchProjectsPage(page: Int, accumulated: [NSDictionary],
+                                   completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
+        appdelegate!.credentialsManager.credentials { credentialsInfo in
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            guard appdelegate!.credential != nil else {
+                completionHandler(accumulated.isEmpty ? nil : accumulated); return
+            }
+            let responsePath = page == 1 ? "\(baseUrl)/projects" : "\(baseUrl)/projects?page=\(page)"
+            guard let responsePathUrl = NSURL(string: responsePath) else {
+                completionHandler(accumulated.isEmpty ? nil : accumulated); return
+            }
+            addLog(text: "api call getProjectsList \(responsePathUrl)")
+            let request = makeRequest(responsePathUrl: responsePathUrl)
+            request.httpMethod = "GET"
+            let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
+                guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200, let data = data else {
+                    addLog(text: "getProjectsList statusCode \((response as? HTTPURLResponse)?.statusCode ?? -1)")
+                    completionHandler(accumulated.isEmpty ? nil : accumulated); return
+                }
+                var pageItems: [NSDictionary] = []
+                var totalCount = 0
+                if let json = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) {
+                    if let arr = json as? [NSDictionary] {
+                        pageItems = arr
+                    } else if let obj = json as? NSDictionary {
+                        let dataArr = obj.value(forKey: "data") as? [NSDictionary] ?? []
+                        let projArr = obj.value(forKey: "projects") as? [NSDictionary] ?? []
+                        pageItems = projArr.count > dataArr.count ? projArr : dataArr
+                        totalCount = (obj.value(forKey: "total_count") as? Int)
+                            ?? ((obj.value(forKey: "meta") as? NSDictionary)?.value(forKey: "total") as? Int) ?? 0
+                    }
+                }
+                // Dedupe by id so we stop cleanly even if `?page=` is ignored and the same set repeats.
+                let existingIds = Set(accumulated.compactMap { $0.value(forKey: "id") as? String })
+                let newItems = pageItems.filter {
+                    guard let id = $0.value(forKey: "id") as? String else { return true }
+                    return !existingIds.contains(id)
+                }
+                let all = accumulated + newItems
+                let more = !newItems.isEmpty && (totalCount == 0 || all.count < totalCount)
+                if more, page < 50 {
+                    self.fetchProjectsPage(page: page + 1, accumulated: all, completionHandler: completionHandler)
+                } else {
+                    completionHandler(all)
+                }
+            }
+            task.resume()
+        }
+    }
+
     func getAllBlockingSchedules(completionHandler: @escaping(_ result: Data?) -> ()) {
         addLog(text: "func call:- getAllBlockingSchedules")
         
@@ -5682,7 +5840,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getAllBlockingSchedules Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -5754,7 +5911,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call addBlockingSchedule error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return;
                             }
@@ -5830,7 +5986,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call updateBlockingSchedule error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return;
                             }
@@ -5903,7 +6058,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call deleteBlockingSchedule error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return;
                             }
@@ -5994,7 +6148,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getAllBuddies Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -6075,7 +6228,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call unlockRequest error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return;
                             }
@@ -6179,7 +6331,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call generateOccupationRelevantSites error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return;
                             }
@@ -6275,7 +6426,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getUnlockRequestStatus Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return
                             }
@@ -6315,6 +6465,424 @@ class AllApi:NSObject {
         }
     }
     
+    //***********Teacher Mode class session apis***************//
+
+    func joinClassSession(sessionId:String, completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
+        addLog(text: "func call:- joinClassSession")
+
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+
+            if appdelegate!.credential != nil{
+
+                let responsePath = "\(baseUrl)/class-session/\(sessionId)/join"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call joinClassSession \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "POST";
+
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    // The server rejects an empty body when Content-Type is application/json
+                    // ("Body cannot be empty…"), so send an empty JSON object.
+                    request.httpBody = "{}".data(using: .utf8)
+
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+
+                        if let httpResponse = response as? HTTPURLResponse{
+                            self.isApiJoinClassSessionErrorFound = false
+                            if httpResponse.statusCode == 200 || httpResponse.statusCode == 201{ //it means it is right
+
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+
+                                            addLog(text: "api call joinClassSession success")
+                                            print(jsonResult)
+                                            completionHandler(jsonResult)
+                                            return
+                                        }
+
+                                    }catch{
+                                        print(error)
+                                        addLog(text: "error joinClassSession: \(error.localizedDescription)")
+                                        completionHandler(nil)
+                                        return
+                                    }
+
+                                }
+
+                                completionHandler(nil)
+                                return
+                            }else{
+                                addLog(text: "api call joinClassSession error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return;
+                            }
+                        }
+
+
+                        if error != nil {
+                            addLog(text: "api call joinClassSession error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiJoinClassSessionErrorFound{
+                                    self.isApiJoinClassSessionErrorFound = false
+                                    completionHandler(nil)
+                                    return;
+                                }else{
+                                    self.isApiJoinClassSessionErrorFound = true
+                                    addLog(text: "error joinClassSession:- try second time")
+                                    self.joinClassSession(sessionId: sessionId, completionHandler: { newDic in
+                                        completionHandler(newDic)
+                                        return;
+                                    })
+                                }
+                            }else{
+                                completionHandler(nil)
+                                return;
+                            }
+
+                        }else{
+                            completionHandler(nil)
+                            return;
+                        }
+
+                    }
+
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                }
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
+
+    func declineClassSession(sessionId:String, completionHandler: @escaping(_ result: Bool) -> ()){
+        addLog(text: "func call:- declineClassSession")
+
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+
+            if appdelegate!.credential != nil{
+
+                let responsePath = "\(baseUrl)/class-session/\(sessionId)/decline"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call declineClassSession \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "POST";
+
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    // The server rejects an empty body when Content-Type is application/json
+                    // ("Body cannot be empty…"), so send an empty JSON object.
+                    request.httpBody = "{}".data(using: .utf8)
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+
+                        if let httpResponse = response as? HTTPURLResponse{
+                            self.isApiDeclineClassSessionErrorFound = false
+                            if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 || httpResponse.statusCode == 204{ //it means it is right
+
+                                completionHandler(true)
+                                return;
+                            }else{
+                                addLog(text: "api call declineClassSession error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(false)
+                                return;
+                            }
+                        }
+
+
+                        if error != nil {
+                            addLog(text: "api call declineClassSession error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiDeclineClassSessionErrorFound{
+                                    self.isApiDeclineClassSessionErrorFound = false
+                                    completionHandler(false)
+                                    return;
+                                }else{
+                                    self.isApiDeclineClassSessionErrorFound = true
+                                    addLog(text: "error declineClassSession:- try second time")
+                                    self.declineClassSession(sessionId: sessionId, completionHandler: { bool in
+                                        completionHandler(bool)
+                                        return;
+                                    })
+                                }
+                            }else{
+                                completionHandler(false)
+                                return;
+                            }
+
+                        }else{
+                            completionHandler(false)
+                            return;
+                        }
+
+                    }
+
+                    task.resume()
+                }else{
+                    completionHandler(false)
+                }
+            }else{
+                completionHandler(false)
+            }
+        }
+    }
+
+    func getCurrentClassSession(completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
+        addLog(text: "func call:- getCurrentClassSession")
+
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+
+            if appdelegate!.credential != nil{
+
+                let responsePath = "\(baseUrl)/class-session/current"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getCurrentClassSession \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "GET";
+
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+
+                        if let httpResponse = response as? HTTPURLResponse{
+                            self.isApiGetCurrentClassSessionErrorFound = false
+                            if httpResponse.statusCode == 200{
+
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+
+                                            addLog(text: "api call getCurrentClassSession success")
+                                            print(jsonResult)
+                                            completionHandler(jsonResult)
+                                            return
+                                        }
+
+                                    }catch{
+                                        // the endpoint returns null when there is no live session for the caller
+                                        completionHandler(nil)
+                                        return
+                                    }
+
+                                }
+
+                                completionHandler(nil)
+                                return
+                            }else{
+                                addLog(text: "api call getCurrentClassSession error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return;
+                            }
+                        }
+
+
+                        if error != nil {
+                            addLog(text: "api call getCurrentClassSession error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiGetCurrentClassSessionErrorFound{
+                                    self.isApiGetCurrentClassSessionErrorFound = false
+                                    completionHandler(nil)
+                                    return;
+                                }else{
+                                    self.isApiGetCurrentClassSessionErrorFound = true
+                                    addLog(text: "error getCurrentClassSession:- try second time")
+                                    self.getCurrentClassSession(completionHandler: { newDic in
+                                        completionHandler(newDic)
+                                        return;
+                                    })
+                                }
+                            }else{
+                                completionHandler(nil)
+                                return;
+                            }
+
+                        }else{
+                            completionHandler(nil)
+                            return;
+                        }
+
+                    }
+
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                }
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
+
+    // canonical heartbeat body {in_focus, device_id} - best effort, no retry (next beat is 25s away)
+    func classSessionHeartbeat(sessionId:String, inFocus:Bool, completionHandler: @escaping(_ result: Bool) -> ()){
+
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+
+            if appdelegate!.credential != nil{
+
+                let responsePath = "\(baseUrl)/class-session/\(sessionId)/heartbeat"
+                if let responsePathUrl = NSURL(string: responsePath){
+
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "POST";
+
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+                    let json: [String: Any] = [
+                        "in_focus": inFocus,
+                        "device_id": currentDeviceId
+                    ]
+
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                    request.httpBody = jsonData
+
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+
+                        if let httpResponse = response as? HTTPURLResponse{
+                            if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 || httpResponse.statusCode == 204{ //it means it is right
+
+                                completionHandler(true)
+                                return;
+                            }else{
+                                addLog(text: "api call classSessionHeartbeat error:- statusCode is \(httpResponse.statusCode)")
+                                completionHandler(false)
+                                return;
+                            }
+                        }
+
+                        if error != nil {
+                            addLog(text: "api call classSessionHeartbeat error:- \(error!.localizedDescription)")
+                        }
+                        completionHandler(false)
+                        return;
+
+                    }
+
+                    task.resume()
+                }else{
+                    completionHandler(false)
+                }
+            }else{
+                completionHandler(false)
+            }
+        }
+    }
+
+    func requestClassUnlock(sessionId:String, requestedApp:String?, requestedDomain:String?, reason:String, completionHandler: @escaping(_ result: Bool) -> ()){
+        addLog(text: "func call:- requestClassUnlock")
+
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+
+            if appdelegate!.credential != nil{
+
+                let responsePath = "\(baseUrl)/class-session/\(sessionId)/unlock-requests"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call requestClassUnlock \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "POST";
+
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+                    var json: [String: Any] = [:]
+                    if let requestedApp = requestedApp{
+                        json["requested_app"] = requestedApp
+                    }
+                    if let requestedDomain = requestedDomain{
+                        json["requested_domain"] = requestedDomain
+                    }
+                    if !reason.isEmpty{
+                        json["reason"] = reason
+                    }
+
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                    request.httpBody = jsonData
+
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+
+                        if let httpResponse = response as? HTTPURLResponse{
+                            self.isApiRequestClassUnlockErrorFound = false
+                            if httpResponse.statusCode == 200 || httpResponse.statusCode == 201{ //it means it is right
+
+                                completionHandler(true)
+                                return;
+                            }else{
+                                addLog(text: "api call requestClassUnlock error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(false)
+                                return;
+                            }
+                        }
+
+
+                        if error != nil {
+                            addLog(text: "api call requestClassUnlock error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiRequestClassUnlockErrorFound{
+                                    self.isApiRequestClassUnlockErrorFound = false
+                                    completionHandler(false)
+                                    return;
+                                }else{
+                                    self.isApiRequestClassUnlockErrorFound = true
+                                    addLog(text: "error requestClassUnlock:- try second time")
+                                    self.requestClassUnlock(sessionId: sessionId, requestedApp: requestedApp, requestedDomain: requestedDomain, reason: reason, completionHandler: { bool in
+                                        completionHandler(bool)
+                                        return;
+                                    })
+                                }
+                            }else{
+                                completionHandler(false)
+                                return;
+                            }
+
+                        }else{
+                            completionHandler(false)
+                            return;
+                        }
+
+                    }
+
+                    task.resume()
+                }else{
+                    completionHandler(false)
+                }
+            }else{
+                completionHandler(false)
+            }
+        }
+    }
+
     func transcribeAudio(fileURL: URL, completion: @escaping (Result<String, Error>) -> Void) {
         let apiKey = "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"
         let url = URL(string: "https://api.openai.com/v1/audio/transcriptions")!
@@ -6405,9 +6973,11 @@ class AllApi:NSObject {
         - start_habit
         - pause_habit
         - resume_habit
+        - get_focus_stats
 
-        **Create task**  
-        Fields: task (string), datetime (local system datetime or relative like "tomorrow 9am", "tomorrow", "in 2 hours", "next thursday"), optional repeat.
+        **Create task**
+        Fields: task (string), datetime OPTIONAL (local system datetime or relative like "tomorrow 9am", "tomorrow", "in 2 hours", "next thursday"), optional repeat.
+        A reminder or task WITHOUT any time is still a valid create_task — "remind me to X", "add a task to X", "note to self: X" all map to create_task with high confidence and datetime null. Do NOT lower confidence just because no time was given.
 
         **Start focus session**  
         Fields: duration_minutes (int), goal (string, optional).
@@ -6424,9 +6994,12 @@ class AllApi:NSObject {
         **Pause habit**  
         Fields: none.
 
-        **Resume habit**  
+        **Resume habit**
         Fields: none.
-        
+
+        **Get focus stats**
+        Fields: none. Use when the user asks how they're doing, how much they've focused, or how many hours of deep work they've done today (e.g. "how's my focus today?", "how much deep work have I done?").
+
         Rules:
         - Infer missing details sensibly. If no duration for focus, default to 25 min.
         - Assume current datetime is \(dateString) and format is "yyyy-MM-dd HH:mm:ss".
@@ -6438,7 +7011,7 @@ class AllApi:NSObject {
         Output format (JSON only, no extra text):
 
         {
-          "action": "create_task | start_focus | pause_focus | stop_focus | start_habit",
+          "action": "create_task | start_focus | pause_focus | stop_focus | start_habit | get_focus_stats",
           "parameters": {
             // action-specific fields
           },
@@ -6455,6 +7028,18 @@ class AllApi:NSObject {
           "parameters": {
             "task": "call mom",
             "time": "yyyy-MM-dd HH:mm:ss",
+            "repeat": null
+          },
+          "confidence": "high",
+          "clarification_needed": null
+        }
+
+        1b. "Remind me to go to the movies"  (a reminder with no time — still high confidence)
+        {
+          "action": "create_task",
+          "parameters": {
+            "task": "go to the movies",
+            "time": null,
             "repeat": null
           },
           "confidence": "high",

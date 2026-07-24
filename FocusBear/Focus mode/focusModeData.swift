@@ -735,6 +735,14 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
         if dic != nil{
             if currentBrowserUrlForAi == checkedUrl{
                 DispatchQueue.main.async{
+                    // Race guard: if the user switched their To-Do task while this AI request was in
+                    // flight, the relevance score was computed for a now-stale task — ignore it so we
+                    // don't show a wrong "have you changed focus?" prompt (mirrors the URL guard above).
+                    if getCurrentTaskInFocusMode() != currentTaskInToDoPlayer {
+                        addLog(text: "checkUrlFromAi: To-Do task changed during request (\(currentTaskInToDoPlayer ?? "nil") -> \(getCurrentTaskInFocusMode() ?? "nil")); ignoring stale relevance result.")
+                        setFocusBearIconToNormal()
+                        return
+                    }
                     let reason = dic?.value(forKey: "reason") as? String ?? ""
                     setFocusBearIconToNormal()
                     if var dProbability = dic?.value(forKey: "allowed_probability") as? Double{
@@ -1137,6 +1145,13 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
         if dic != nil{
             if currentRunningAppNameForAi == checkedApp{
                 DispatchQueue.main.async{
+                    // Race guard: ignore the result if the user switched their To-Do task while the
+                    // request was in flight (the score is for a stale task).
+                    if getCurrentTaskInFocusMode() != currentTaskInToDoPlayer {
+                        addLog(text: "checkAppFromAi: To-Do task changed during request; ignoring stale relevance result.")
+                        setFocusBearIconToNormal()
+                        return
+                    }
                     let reason = dic?.value(forKey: "reason") as? String ?? ""
                     setFocusBearIconToNormal()
                     if var dProbability = dic?.value(forKey: "allowed_probability") as? Double{
@@ -1681,7 +1696,10 @@ func resumeFocusModeAfterAppStartted(diffSeconds: Int, focusMode: [String : Any]
     taskCreatedByBlockPopup = ""
     whatToAchieveInFocusBlock = focusMode["lastIntentionUsed"] as? String ?? ""
     focusModeStarttedResetAllData()
-    appdelegate?.resumeFocusMode(index: index)
+    // Restoring our own local view of a session that's still running — NOT a user resume, so it must
+    // not POST to the backend. Otherwise merely launching the Mac would resume (and broadcast) a
+    // session the user had deliberately paused on another device.
+    appdelegate?.resumeFocusMode(index: index, shouldSyncToServer: false)
     endFocusModeTime = finishFocusMoedTime
     currentRunningFocusType = focusMode
     startFocusModeTimeForPauseAndResume = Date()
@@ -1691,6 +1709,9 @@ func resumeFocusModeAfterAppStartted(diffSeconds: Int, focusMode: [String : Any]
             showSavedSitesForLaterWindowForBreaks()
         }
     }
+    // Relaunched into a still-running focus session: restart focus music if the user opted to auto-play
+    // it. Never prompts on resume; deferred internally until the async track library has loaded.
+    FocusMusicPromptManager.autoStartMusicOnResumeIfEnabled()
 }
 
 
@@ -1839,6 +1860,9 @@ var unfocusedTime = 0
 var isFocusModeRunning = false
 
 func isFocusModeOn()->Bool{
+    if teacherSessionManagerObject.isTeacherSessionActive(){// a teacher controlled class session runs outside arrFocusType
+        return true
+    }
     for dic in arrFocusType{
         if dic["isOn"] as? Bool == true{
             return true
@@ -1855,6 +1879,9 @@ func isFocusModePaused()->Bool{
     return false
 }
 func isFocusModeOnOrPaused()->Bool{
+    if teacherSessionManagerObject.isTeacherSessionActive(){// a teacher controlled class session runs outside arrFocusType
+        return true
+    }
     for dic in arrFocusType{
         if dic["isOn"] as? Bool == true{
             return true
@@ -1990,6 +2017,8 @@ func getBlockScriptForFocusMode(url:String, currentBrowser:BROWSER, intention:St
         script = getFirefoxBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
     case ._SIGMA_OS_:
         script = getSigmaOsBrowserBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+    case ._COMET_:
+        script = getCometBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
     }
     return script
 }
@@ -2030,6 +2059,9 @@ func focusBlockUnwantedUrl(script: String, url:String, lastBlockReasonFromAi:Str
     }
     
     if isUrlBlockByAi{
+        // A URL the AI determined isn't relevant to the current focus session — worth drawing the
+        // user's eye back to the glow border, since this is exactly the kind of drift it's there for.
+        FocusGlowBorderManager.shared.pulseWorm()
         allApiObject.capturePosthog(event: "block-distracting-url", metadata: ["block-reason":"ai_blocking", "block-mode": blockMode])
     }else{
         allApiObject.capturePosthog(event: "block-distracting-url", metadata: ["block-reason":blockReason, "block-mode": blockMode])
@@ -2416,6 +2448,12 @@ func focusModeFinishedCapturePosthog(){
 func focusModeFinishedResetAllData(){
     refreshFocusModeData()
     arrAllowedTabTitlesInCuddlyModeCurrentFocus.removeAll()
+    // Stop focus music the "want to play some music?" prompt auto-started for this session — but leave
+    // music the user started manually playing.
+    if isFocusMusicStartedFromPrompt{
+        allTracksVcObj?.stopPlayback()
+        isFocusMusicStartedFromPrompt = false
+    }
 }
 
 func focusModeStarttedResetAllData(){

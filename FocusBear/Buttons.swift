@@ -875,7 +875,7 @@ class boxButton: NSBox {
     var titleColor = NSColor.black
     
     // MARK: - UI
-    private let iconView = NSImageView()
+    let iconView = NSImageView()
     private let titleLabel = NSTextField(labelWithString: "")
 
     // MARK: - State
@@ -924,7 +924,8 @@ class boxButton: NSBox {
 
         iconView.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-
+        titleLabel.font = getRegularFont(size: 13)
+        
         // Truncation
         titleLabel.lineBreakMode = .byTruncatingTail
         titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -1364,5 +1365,13 @@ class hoverEffectButton: NSButton {
         mouseDown = false
         NSCursor.arrow.set()
         self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0).cgColor
+    }
+}
+
+extension boxButton {
+    /// Tint colour for a template/symbol icon (e.g. white on the orange primary button).
+    /// Same-file extension, so it can reach the private iconView.
+    func setImageTint(_ color: NSColor) {
+        iconView.contentTintColor = color
     }
 }

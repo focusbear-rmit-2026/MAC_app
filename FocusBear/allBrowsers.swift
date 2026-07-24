@@ -8,13 +8,29 @@
 
 import Foundation
 
+/// Run an AppleScript source and return its result descriptor, ALWAYS on the main thread.
+/// NSAppleScript is not thread-safe; executing it on a background queue (e.g. the URL/tab timer)
+/// intermittently segfaults inside Apple's AppleScript compiler — that was the browser-tab-count crash.
+/// Routes through `runAppleScriptSafely`, the single serialised AppleScript entry point, so browser
+/// scripts never execute concurrently with other NSAppleScript on a different thread. NSAppleScript
+/// is not thread-safe: running browser scripts on the main thread (as this used to) while other
+/// scripts ran on the AppleScript serial queue segfaulted inside Apple's AppleScript compiler
+/// (EXC_BAD_ACCESS during compile). The `with timeout` guard (#1950) prevents hangs but not that
+/// crash — serialising every NSAppleScript execution onto one queue does.
+func runBrowserAppleScript(_ source: String, timeoutSeconds: Int = 5) -> NSAppleEventDescriptor? {
+    var errors: NSDictionary?
+    let desc = runAppleScriptSafely(source, timeoutSeconds: timeoutSeconds, errors: &errors)
+    if errors != nil { print(errors as Any) }
+    return desc
+}
+
 //*****************all browsers Active Tab Url and Titlle*********************//
 
 enum BROWSER:Int{
-    case _GOOGLE_CHROME_ = 152, _SAFARI_, _BRAVE_BROWSER_, _SIDEKICK_, _MICROSOFT_EDGE_, _ARC_, _FIREFOX_, _OPERA_, _VIVALDI_, _OPERA_GX_, _SIGMA_OS_// start state sirf first activity ki start mi hi hoti h fir  second activity ki start mai "end state hoti hai "
+    case _GOOGLE_CHROME_ = 152, _SAFARI_, _BRAVE_BROWSER_, _SIDEKICK_, _MICROSOFT_EDGE_, _ARC_, _FIREFOX_, _OPERA_, _VIVALDI_, _OPERA_GX_, _SIGMA_OS_, _COMET_// start state sirf first activity ki start mi hi hoti h fir  second activity ki start mai "end state hoti hai"
 }
 var sigmaOsBrowserName = "SigmaOS" // SigmaOS_latest
-var arrBrowsersLowerCasedNames = ["safari", "google chrome", "sidekick", "brave browser", "microsoft edge", "arc", "firefox", "opera", "vivaldi", "opera gx", "sigmaos", "sigmaos_latest"]//if any change in this array, should also change in browsers list in onboardingcontrollingbrowservc
+var arrBrowsersLowerCasedNames = ["safari", "google chrome", "sidekick", "brave browser", "microsoft edge", "arc", "firefox", "opera", "vivaldi", "opera gx", "sigmaos", "sigmaos_latest", "comet"]//if any change in this array, should also change in browsers list in onboardingcontrollingbrowservc
 
 func getBrowserAllTabUrl(browser:BROWSER)->[String]?{
     if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
@@ -48,6 +64,8 @@ func getBrowserAllTabUrl(browser:BROWSER)->[String]?{
         if let url = getSigmaOSBrowserActiveTabUrl(){
             return [url]
         }
+    }else if browser == ._COMET_{
+        browserName = "Comet"
     }
     
     var script: String = ""
@@ -81,13 +99,7 @@ func getBrowserAllTabUrl(browser:BROWSER)->[String]?{
     }
     
     
-    if let appleScript = NSAppleScript(source: script) {
-        
-        var errors : NSDictionary? = nil
-        let desc = appleScript.executeAndReturnError(&errors)
-        if errors != nil {
-            print(errors)
-        }
+    if let desc = runBrowserAppleScript(script) {
         return desc.toStringArray()
     }
     return nil
@@ -126,6 +138,8 @@ func getBrowserAllTabUrlAndTitle(browser:BROWSER)->[(title: String, url: String)
         if let url = getSigmaOSBrowserActiveTabUrl(), let title = getSigmaOSBrowserActiveTabTitle(){
             return [(title, url)]
         }
+    }else if browser == ._COMET_{
+        browserName = "Comet"
     }
     
 
@@ -186,13 +200,7 @@ func getBrowserAllTabUrlAndTitle(browser:BROWSER)->[(title: String, url: String)
 
     
     
-    if let appleScript = NSAppleScript(source: script) {
-        
-        var errors : NSDictionary? = nil
-        let desc = appleScript.executeAndReturnError(&errors)
-        if errors != nil {
-            print(errors as Any)
-        }
+    if let desc = runBrowserAppleScript(script) {
         return desc.toTwoColumnStringArray()
     }
     return nil
@@ -230,6 +238,8 @@ func getActiveTabUrlForBlocking(browser:BROWSER)->String?{
         url = getFirefoxActiveTabUrl()
     }else if browser == ._SIGMA_OS_{
         url = getSigmaOSBrowserActiveTabUrl()
+    }else if browser == ._COMET_{
+        url = getCometActiveTabUrl()
     }
 
     // check which browser is allowed in automation
@@ -298,6 +308,8 @@ func getActiveTabUrlOf(browser:BROWSER)->String?{
         url = getFirefoxActiveTabUrl()
     }else if browser == ._SIGMA_OS_{
         url = getSigmaOSBrowserActiveTabUrl()
+    }else if browser == ._COMET_{
+        url = getCometActiveTabUrl()
     }
 
     //--------------------------------------------//
@@ -350,6 +362,8 @@ func getActiveTabTitleOf(browser:BROWSER)->String?{
         return getFirefoxActiveTabTitle()
     }else if browser == ._SIGMA_OS_{
         return getSigmaOSBrowserActiveTabTitle()
+    }else if browser == ._COMET_{
+        return getCometActiveTabTitle()
     }
     return nil
 }
@@ -371,7 +385,8 @@ func getAllBrowsersTabCount()->Int{
     var isOperaRunning = false
     var isVivaldiRunning = false
     var isOperaGxRunning = false
-    
+    var isCometRunning = false
+
     for app in runningApps{
         if let appUrl = app.bundleURL{
             let nameLowercased = appUrl.deletingPathExtension().lastPathComponent.lowercased()
@@ -442,6 +457,14 @@ func getAllBrowsersTabCount()->Int{
             }else if nameLowercased == "arc"{
                 totalTabsCount += arcBrowserTabsInfo.count
                 isArcRunning = true
+            }else if nameLowercased == "comet"{
+                let keys = cometWindowsInfo.keys
+                for key in keys{
+                    if let browserTabsArr = cometWindowsInfo[key]{
+                        totalTabsCount += browserTabsArr.count
+                    }
+                }
+                isCometRunning = true
             }
         }
     }
@@ -475,6 +498,9 @@ func getAllBrowsersTabCount()->Int{
     if !isArcRunning{
         arcBrowserTabsInfo.removeAll()
     }
+    if !isCometRunning{
+        cometWindowsInfo.removeAll()
+    }
     return totalTabsCount
 }
 
@@ -500,10 +526,12 @@ func getBrowserAllWindowStruct(browser:BROWSER)->[String:[String]]?{
         browserName = "Microsoft Edge"
     }else if browser == ._ARC_{
         browserName = "Arc"
+    }else if browser == ._COMET_{
+        browserName = "Comet"
     }
-    
+
     var script: String = ""
-    
+
     if browser == ._ARC_{
         script =
         """
@@ -540,17 +568,10 @@ func getBrowserAllWindowStruct(browser:BROWSER)->[String:[String]]?{
     }
     
     
-    if let appleScript = NSAppleScript(source: script) {
-        
-        var errors : NSDictionary? = nil
-        let desc = appleScript.executeAndReturnError(&errors)
-        if errors != nil {
-            print(errors)
-        }
+    if let desc = runBrowserAppleScript(script) {
         if browser == ._ARC_{
             return ["window": desc.toStringArray()]
         }
-        
         return desc.toAnyArray()
     }
     return nil
@@ -578,10 +599,12 @@ func closeTabAt(index:Int, browser:BROWSER){
         browserName = "Microsoft Edge"
     }else if browser == ._ARC_{
         browserName = "Arc"
+    }else if browser == ._COMET_{
+        browserName = "Comet"
     }
-    
+
     var script: String = ""
-    
+
     if browser == ._ARC_{
         script =
         """
@@ -629,6 +652,8 @@ func getCurrentBrowserFrom(browserName:String)->BROWSER?{
         return ._SIGMA_OS_
     }else if browserName == "sigmaos_latest"{
         return ._SIGMA_OS_
+    }else if browserName == "comet"{
+        return ._COMET_
     }else{
         return nil
     }
@@ -657,6 +682,8 @@ func getCurrentBrowserNameFrom(browser:BROWSER)->String?{
         return "Firefox"
     }else if browser == ._SIGMA_OS_{
         return sigmaOsBrowserName
+    }else if browser == ._COMET_{
+        return "Comet"
     }else{
         return nil
     }
@@ -692,6 +719,8 @@ func setUrlToBrowser(browser:BROWSER, url:String){
         browserName = "Firefox"
     case ._SIGMA_OS_:
         browserName = sigmaOsBrowserName
+    case ._COMET_:
+        browserName = "Comet"
     }
     
     
@@ -1337,8 +1366,49 @@ func getArcBlockScript(url:String)->String{
     """
 }
 
-//*******************************************************//
+func getCometActiveTabUrl()->String?{
+    var script: String = ""
+    
+    script =
+    """
+    tell application "Comet"
+    set the_wnd to front window
+    set active_tab to active tab in the_wnd
+    set taburl to URL of active_tab
+    end tell
+    """
+    
+    return executeScriptAndReturnString(script: script)
+}
 
+func getCometActiveTabTitle()->String?{
+    var script: String = ""
+    
+    script =
+    """
+    tell application "Comet"
+    set the_wnd to front window
+    set active_tab to active tab in the_wnd
+    set tabtitle to title of active_tab
+    end tell
+    """
+    
+    return executeScriptAndReturnString(script: script)
+}
+
+func getCometBlockScript(url:String)->String{
+    let params = "<PARAMS>"
+    let newPageParam = "<NEWPAGE>"
+    return """
+    tell application "Comet"
+    set the_wnd to front window
+    set active_tab to active tab in the_wnd
+    set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "\(params)" & "&encouraging_info=\(getGoalsAndFocusdJsonForBlockedScript())" & "&version=\(appVersion)" & "\(newPageParam)"
+    end tell
+    """
+}
+
+//*******************************************************//
 
 
 
@@ -1462,6 +1532,18 @@ func getNumberOfOpenTabsPerBrowserInString()->(Int,String){
     totalTabsCount = arcBrowserTabsInfo.count
     if totalTabsCount != 0{
         title += "\nArc - \(totalTabsCount)"
+        allBrowsersTabCount += totalTabsCount
+    }
+
+    totalTabsCount = 0
+    keys = cometWindowsInfo.keys
+    for key in keys{
+        if let browserTabsArr = cometWindowsInfo[key]{
+            totalTabsCount += browserTabsArr.count
+        }
+    }
+    if totalTabsCount != 0{
+        title += "\nComet - \(totalTabsCount)"
         allBrowsersTabCount += totalTabsCount
     }
     return (allBrowsersTabCount, title)

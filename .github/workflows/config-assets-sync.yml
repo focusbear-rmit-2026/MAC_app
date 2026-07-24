@@ -1,0 +1,50 @@
+name: Config ↔ Assets Sync
+
+# Fails a PR that adds a user-facing string to FocusBear/config.json without also adding it
+# to the assets repo (Focus-Bear/assets), from which the Spanish translation is derived. The
+# assets repo's own CI enforces English<->Spanish parity, so checking that every local string
+# key exists in the assets English config is enough to stop English-only strings shipping.
+#
+# Runs only when config.json (or this check itself) changes, so it never blocks unrelated PRs.
+
+on:
+  pull_request:
+    paths:
+      - 'FocusBear/config.json'
+      - 'scripts/check-config-assets-sync.py'
+      - 'scripts/config-assets-ignore.txt'
+      - '.github/workflows/config-assets-sync.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: config-assets-sync-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  config-assets-sync:
+    name: Local config strings exist in assets repo
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Mac-App
+        uses: actions/checkout@v4
+
+      # Needs read access to the private Focus-Bear/assets repo. GH_PROJECT_TOKEN is the
+      # existing org PAT (already used by qa-evidence-check.yml); if it lacks access to
+      # the assets repo, point this at a token/secret that does.
+      - name: Checkout assets repo (config only)
+        uses: actions/checkout@v4
+        with:
+          repository: Focus-Bear/assets
+          ref: main
+          token: ${{ secrets.GH_PROJECT_TOKEN }}
+          path: assets-repo
+          sparse-checkout: config
+
+      - name: Check local config strings are present in the assets repo
+        run: |
+          python3 scripts/check-config-assets-sync.py \
+            FocusBear/config.json \
+            assets-repo/config/config.json \
+            scripts/config-assets-ignore.txt

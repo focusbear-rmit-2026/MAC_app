@@ -26,7 +26,22 @@ class accordionBox: NSBox {
     }
     
     var onStateChanged: ((Bool) -> Void)?
-    
+
+    /// Set to show a gear icon to the left of the chevron (e.g. TOOLS, to restore hidden rows).
+    /// Left nil for sections that don't need one.
+    var onGearClicked: (() -> Void)? {
+        didSet { gearButton.isHidden = (onGearClicked == nil) }
+    }
+
+    private lazy var gearButton: cursorButton = {
+        let button = cursorButton(title: "", target: self, action: #selector(gearButtonClicked))
+        button.image = NSImage(systemSymbolName: "gearshape", accessibilityDescription: "Manage hidden tools")
+        button.isBordered = false
+        button.isHidden = true
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+
     let titleLabel: NSTextField = {
         let label = NSTextField(labelWithString: "")
         label.font = NSFont.systemFont(ofSize: 13, weight: .medium)
@@ -69,16 +84,22 @@ class accordionBox: NSBox {
         self.titlePosition = .noTitle
         
         addSubview(titleLabel)
+        addSubview(gearButton)
         addSubview(arrowImageView)
-        
+
         NSLayoutConstraint.activate([
             titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-            
+
             arrowImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             arrowImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
             arrowImageView.widthAnchor.constraint(equalToConstant: 18),
-            arrowImageView.heightAnchor.constraint(equalToConstant: 18)
+            arrowImageView.heightAnchor.constraint(equalToConstant: 18),
+
+            gearButton.trailingAnchor.constraint(equalTo: arrowImageView.leadingAnchor, constant: -8),
+            gearButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            gearButton.widthAnchor.constraint(equalToConstant: 18),
+            gearButton.heightAnchor.constraint(equalToConstant: 18)
         ])
         
         updateAppearance()
@@ -141,5 +162,9 @@ class accordionBox: NSBox {
     // MARK: - Public Methods
     func setExpanded(_ expanded: Bool, animated: Bool = false) {
         isExpanded = expanded
+    }
+
+    @objc private func gearButtonClicked() {
+        onGearClicked?()
     }
 }

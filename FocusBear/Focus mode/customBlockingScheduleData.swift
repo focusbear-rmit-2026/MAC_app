@@ -37,9 +37,29 @@ struct customBlockingSchedule: Codable, Identifiable {
     var blockLevel: FOCUSMODESTRICTNESS
     var isAIBlockingEnabled: Bool
     var isMicroBreaksEnabled: Bool
+    var emoji: String?          // backend top-level per-schedule emoji (nullable, ≤32 chars). backend#2094
     var state:State = .off
     var displayString: String {
         "\(daysOfWeek.formattedDays()), \(startTime.formattedTime()) to \(endTime.formattedTime())"
+    }
+
+    /// Emoji to show for this schedule: the explicit one, else a leading emoji already present in the
+    /// name, else a shield default. Keeps a sensible icon even before the user picks one.
+    var displayEmoji: String {
+        if let e = emoji?.trimmingCharacters(in: .whitespaces), !e.isEmpty { return e }
+        if nameHasLeadingEmoji { return String(name.trimmingCharacters(in: .whitespaces).unicodeScalars.first!) }
+        return "🛡️"
+    }
+
+    private var nameHasLeadingEmoji: Bool {
+        guard let first = name.trimmingCharacters(in: .whitespaces).unicodeScalars.first else { return false }
+        return first.properties.isEmoji && first.value > 0x2300   // skip ASCII digits/letters
+    }
+
+    /// Schedule name with its emoji in front for list display — uses the explicit/default emoji, but
+    /// leaves the name untouched when it already starts with one (so we never double the emoji).
+    var titleWithEmoji: String {
+        nameHasLeadingEmoji ? name : "\(displayEmoji) \(name)"
     }
     
     
@@ -60,8 +80,7 @@ struct customBlockingSchedule: Codable, Identifiable {
     // - schedule.startTime and schedule.endTime are Date objects that contain the time-of-day you saved
     //   (date components will be ignored; only hour/minute/second are used)
 
-    func isBlockingActive() -> Bool {
-        let now = Date()
+    func isBlockingActive(now: Date = Date()) -> Bool {
         let calendar = Calendar.current
         let todayWeekday = calendar.component(.weekday, from: now)
 
@@ -115,8 +134,7 @@ struct customBlockingSchedule: Codable, Identifiable {
         }
     }
     
-    func remainingBlockingDuration() -> TimeInterval {
-        let now = Date()
+    func remainingBlockingDuration(now: Date = Date()) -> TimeInterval {
         let calendar = Calendar.current
 
         // Extract time components from stored start/end Dates (time-of-day only)
@@ -187,6 +205,7 @@ struct customBlockingSchedule: Codable, Identifiable {
         case blockLevel = "block_level"
         case isAIBlockingEnabled = "is_ai_blocking_enabled"
         case isMicroBreaksEnabled = "is_micro_breaks_enabled"
+        case emoji = "emoji"
         case metadata = "metadata"
     }
     
@@ -238,6 +257,7 @@ struct customBlockingSchedule: Codable, Identifiable {
         
         isAIBlockingEnabled = try container.decodeIfPresent(Bool.self, forKey: .isAIBlockingEnabled) ?? false
         isMicroBreaksEnabled = false
+        emoji = try container.decodeIfPresent(String.self, forKey: .emoji)
         
         startTimeString = try container.decodeIfPresent(String.self, forKey: .startTime) ?? "09:00"
         endTimeString = try container.decodeIfPresent(String.self, forKey: .endTime) ?? "18:00"
@@ -253,6 +273,7 @@ struct customBlockingSchedule: Codable, Identifiable {
         if let metadata = try container.decodeIfPresent([String: Bool].self, forKey: .metadata) {
             isMicroBreaksEnabled = metadata["is_micro_breaks_enabled"] ?? false
         }
+        emoji = try container.decodeIfPresent(String.self, forKey: .emoji)
     }
     
     func encode(to encoder: Encoder) throws {
@@ -277,10 +298,14 @@ struct customBlockingSchedule: Codable, Identifiable {
         try container.encode(blockLevelString, forKey: .blockLevel)
         
         try container.encode(isAIBlockingEnabled, forKey: .isAIBlockingEnabled)
+        // full-replace semantics: omit emoji to clear it (backend#2093)
+        try container.encodeIfPresent(emoji, forKey: .emoji)
        // try container.encode(isMicroBreaksEnabled, forKey: .isMicroBreaksEnabled)
         
         try container.encode(startTimeString, forKey: .startTime)
         try container.encode(endTimeString, forKey: .endTime)
+        // Top-level emoji (nullable). Full-replace semantics on the backend — encode null to clear.
+        try container.encode(emoji, forKey: .emoji)
         //var dic = [String:Any]()
         let metadata = ["is_micro_breaks_enabled": isMicroBreaksEnabled]
         try container.encode(metadata, forKey: .metadata)
@@ -338,10 +363,12 @@ extension customBlockingSchedule {
         //        pauseFriction: PauseFriction,
         blockLevel: FOCUSMODESTRICTNESS,
         isAIBlockingEnabled: Bool,
-        isMicroBreaksEnabled:Bool
+        isMicroBreaksEnabled:Bool,
+        emoji: String? = nil
     ) {
         self.id = id
         self.name = name
+        self.emoji = emoji
         self.startTimeString = start
         self.endTimeString = end
         self.startTime = Self.parseTime(start) ?? Date()
@@ -349,6 +376,35 @@ extension customBlockingSchedule {
         self.daysOfWeek = daysOfWeek
         self.focusModeID = focusModeID
         //        self.pauseFriction = pauseFriction
+        self.blockLevel = blockLevel
+        self.isAIBlockingEnabled = isAIBlockingEnabled
+        self.isMicroBreaksEnabled = isMicroBreaksEnabled
+        self.emoji = emoji
+    }
+
+    // Accepts pre-built Date values for startTime/endTime — used by unit tests to construct
+    // schedules relative to a known reference time without going through string parsing.
+    init(
+        id: String,
+        name: String,
+        startTime: Date,
+        endTime: Date,
+        startTimeString: String,
+        endTimeString: String,
+        daysOfWeek: [Int],
+        focusModeID: String,
+        blockLevel: FOCUSMODESTRICTNESS,
+        isAIBlockingEnabled: Bool,
+        isMicroBreaksEnabled: Bool
+    ) {
+        self.id = id
+        self.name = name
+        self.startTime = startTime
+        self.endTime = endTime
+        self.startTimeString = startTimeString
+        self.endTimeString = endTimeString
+        self.daysOfWeek = daysOfWeek
+        self.focusModeID = focusModeID
         self.blockLevel = blockLevel
         self.isAIBlockingEnabled = isAIBlockingEnabled
         self.isMicroBreaksEnabled = isMicroBreaksEnabled

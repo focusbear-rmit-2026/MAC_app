@@ -18,6 +18,16 @@ let recorder = audioRecorder()
 
 let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
 
+// Suite name shared with FBHelper — must derive identically in both targets.
+// The team prefix comes from the build's DEVELOPMENT_TEAM (via FBTeamIdentifierPrefix in
+// Info.plist) so a contributor building under their own team still gets a matching suite.
+let fbSharedDefaultsSuiteName: String = {
+    if let team = Bundle.main.object(forInfoDictionaryKey: "FBTeamIdentifierPrefix") as? String, !team.isEmpty {
+        return "\(team).group.com.focusbear.fbmac"
+    }
+    return "TCUD568B3U.group.com.focusbear.fbmac"
+}()
+
 
 func getBlockedUrlsToBlock()->[String]{
     if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
@@ -36,10 +46,10 @@ func getBlockedUrlsToBlock()->[String]{
             }
         }
         
-        if appdelegate!.isUserOnMeeting && !SettingsManagerObject.isBlockDistractingSitesDuringMeetingsEnabled{
+        if appdelegate?.isUserOnMeeting == true && !SettingsManagerObject.isBlockDistractingSitesDuringMeetingsEnabled{
             return [];
         }
-        
+
     }
     var arrBlockedUrls = [String]()
     var blockedUrlsCount = SettingsManagerObject.arrBlockedUrls.count
@@ -72,12 +82,12 @@ func getBlockedAppsToBlock()->[String]{
             }
         }
         
-        if appdelegate!.isUserOnMeeting && !SettingsManagerObject.isBlockDistractingSitesDuringMeetingsEnabled{
+        if appdelegate?.isUserOnMeeting == true && !SettingsManagerObject.isBlockDistractingSitesDuringMeetingsEnabled{
             return [];
         }
-        
+
     }
-    
+
     var arrBlockedApps = [String]()
     var blockedAppsCount = SettingsManagerObject.arrBlockedApps.count
     if isExpired{
@@ -123,6 +133,7 @@ var configjson = NSDictionary()
 var currentDeviceId = ""
 var currentUserName = ""
 var currentUserEmail = ""
+var currentLeaderboardUsername = ""
 
 
 //var shouldShowOnboardingBlockedUrlsView = true
@@ -139,6 +150,149 @@ var startTime:Time?
 var shutOffTime:Time?
 var cutOffTime:Time?
 var has_edited_settings = false
+
+let kDayPlanCompletedHabitIds = "kDayPlanCompletedHabitIds"
+let kDayPlanCompletedHabitIdsDate = "kDayPlanCompletedHabitIdsDate"
+let kDayPlanCompletedHabitIdsByDay = "kDayPlanCompletedHabitIdsByDay"
+
+/// #2012: per-day completed habit ids, keyed by yyyy-MM-dd. `dayPlanCompletedHabitIds` above only tracks
+/// TODAY; this lets a PAST-day habit strike through immediately after a backdated completion (which we
+/// sync to the backend via /completed-activity with the real past timestamp — the same path the offline
+/// activity-sync uses). Persisted so the strike-through survives a relaunch until the backend day-view
+/// becomes the source of truth. Change → requestDayPlanRefresh() re-renders the Day Plan.
+var dayPlanCompletedHabitIdsByDay: [String: Set<String>] = {
+    guard let raw = UserDefaults.standard.dictionary(forKey: kDayPlanCompletedHabitIdsByDay) as? [String: [String]] else { return [:] }
+    return raw.mapValues { Set($0) }
+}() {
+    didSet {
+        UserDefaults.standard.set(dayPlanCompletedHabitIdsByDay.mapValues { Array($0) }, forKey: kDayPlanCompletedHabitIdsByDay)
+        requestDayPlanRefresh()
+    }
+}
+
+/// Whether `habitId` is done for `dayKey` (yyyy-MM-dd): checks the per-day cache, plus the today-only
+/// `dayPlanCompletedHabitIds` set when dayKey is today (so the live day and past days share one check).
+func isHabitDoneForDay(_ habitId: String, dayKey: String) -> Bool {
+    if dayPlanCompletedHabitIdsByDay[dayKey]?.contains(habitId) == true { return true }
+    if dayKey == getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd") { return dayPlanCompletedHabitIds.contains(habitId) }
+    return false
+}
+
+/// Today's server-confirmed completed habit ids (both routines). The Day Plan filters these out so
+/// it never shows a habit the backend says is done — a safety net over the arrFiltered* arrays,
+/// which aren't always re-filtered on the remote-completion path. Reassigned on each routine refetch,
+/// persisted (with today's date) so the next launch can filter on the FIRST Day Plan render — before
+/// current-activity-props returns — and re-filters the visible Day Plan whenever it changes.
+var dayPlanCompletedHabitIds = Set<String>() {
+    didSet {
+        let today = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd")
+        UserDefaults.standard.set(Array(dayPlanCompletedHabitIds), forKey: kDayPlanCompletedHabitIds)
+        UserDefaults.standard.set(today, forKey: kDayPlanCompletedHabitIdsDate)
+        requestDayPlanRefresh()
+    }
+}
+
+/// #2012: mark a past morning habit done in the Day Plan after a by-id completion (direct API, or via
+/// the log-quantity / take-notes popups). Inserting into dayPlanCompletedHabitIds persists it and, via
+/// the didSet above, requests a schedule refresh — so the "earlier today" accordion strikes it through.
+/// #2012: record a PAST habit completion through the offline activity-sync pipeline — write it to the
+/// offline activities CSV with the BACKDATED start/finish, then flush via `processOfflineData()` →
+/// `POST /completed-activity/sync`. The backend confirmed /sync is the correct path for backdated data:
+/// it attaches the completion to the per-DATE activity-sequence log (derived from start_time), updates
+/// that day's stats, has no 30-day clamp, and does NOT disturb today's current-activity pointer for a
+/// past-dated record — unlike the single /completed-activity endpoint, which skips stats + sequence-log
+/// attachment when should_not_update_current_activity is set. Also marks the Day Plan done locally so the
+/// row strikes through immediately.
+func recordPastHabitCompletionViaOfflineSync(activity_id: String, activity_sequence_id: String,
+                                             performedAt: Date, duration: Int, quantity: Double?,
+                                             notes: String, dayKey: String) {
+    let fmt = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+    let startStr = getStringFromDateInUtc(date: performedAt, dateFormat: fmt)
+    let finish = Calendar.current.date(byAdding: .second, value: max(duration, 1), to: performedAt) ?? performedAt
+    let finishStr = getStringFromDateInUtc(date: finish, dateFormat: fmt)
+    let qtyStr = quantity.map { "\($0)" } ?? ""
+    // skipped_did_complete = "true": "I already did this" semantics, matching the live already-done action.
+    addEntryInofflineActivitiesCsv(activity_id: activity_id, duration_logged: "\(duration)",
+                                   device_id: currentDeviceId, activity_sequence_id: activity_sequence_id,
+                                   start_time: startStr, finish_time: finishStr,
+                                   skipped_did_complete: "true", choice_id: "", quantity_logged: qtyStr,
+                                   skipped_did_not_complete: "", note_logged: notes)
+    appdelegate?.processOfflineData()   // flush now via /completed-activity/sync
+    markPastHabitDoneInDayPlan(id: activity_id, dayKey: dayKey)
+}
+
+/// Per-user key: the current user's id is appended in SettingsManager.resetAllKeys() (the app-wide
+/// convention for per-user UserDefaults keys), so a shutdown prompt one account triggers can't leak to
+/// a different account that signs in on the same device — UserDefaults.standard is shared across
+/// Focus Bear accounts. `var` (not `let`) so resetAllKeys() can append the id.
+var kEveningShutdownPromptDate = "kEveningShutdownPromptDate"
+
+/// The evening routine finished today → the Day Plan shows the shutdown prompt at its bottom (#2005
+/// part 4). Not a standalone window — only inside the Day Plan, only for the rest of today.
+func markEveningRoutineDoneForShutdownPrompt() {
+    UserDefaults.standard.set(getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd"), forKey: kEveningShutdownPromptDate)
+    requestDayPlanRefresh()
+}
+func shouldShowEveningShutdownPrompt() -> Bool {
+    UserDefaults.standard.string(forKey: kEveningShutdownPromptDate) == getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd")
+}
+func dismissEveningShutdownPrompt() {
+    UserDefaults.standard.removeObject(forKey: kEveningShutdownPromptDate)
+    requestDayPlanRefresh()
+}
+
+func markPastHabitDoneInDayPlan(id: String?, dayKey: String? = nil) {
+    guard let id = id, !id.isEmpty else { return }
+    let todayKey = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd")
+    let key = dayKey ?? todayKey
+    dayPlanCompletedHabitIdsByDay[key, default: []].insert(id)
+    // Today also feeds the today-only set the live day relies on everywhere else.
+    if key == todayKey { dayPlanCompletedHabitIds.insert(id) }
+}
+
+/// Seed dayPlanCompletedHabitIds from the persisted cache (today only) so the first Day Plan render
+/// reflects already-completed habits before the current-activity-props refetch lands. No-op once the
+/// server data is present (so it never overrides fresher state).
+func loadPersistedDayPlanCompletedIds() {
+    guard dayPlanCompletedHabitIds.isEmpty else { return }
+    var ids = offlineCompletedHabitIds()   // unsynced offline completions (today)
+    // Plus the last server-confirmed set (the current-activity-props response isn't itself cached).
+    let today = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd")
+    if UserDefaults.standard.string(forKey: kDayPlanCompletedHabitIdsDate) == today,
+       let saved = UserDefaults.standard.array(forKey: kDayPlanCompletedHabitIds) as? [String] {
+        ids.formUnion(saved)
+    }
+    if !ids.isEmpty { dayPlanCompletedHabitIds = ids }
+}
+
+/// Today's completed/skipped habit ids from the offline activities CSV — the local cache of activity
+/// completions made while offline that the backend (and current-activity-props) doesn't know about
+/// yet. Folding these in keeps the Day Plan correct for offline completions until they sync.
+func offlineCompletedHabitIds() -> Set<String> {
+    guard let url = offlineActivitiesCsvURL,
+          let content = try? String(contentsOf: url, encoding: .utf8) else { return [] }
+    // CSV: activity_id,duration_logged,device_id,activity_sequence_id,start_time,finish_time,…
+    let todayUtc = getStringFromDateInUtc(date: Date(), dateFormat: "yyyy-MM-dd")
+    var ids = Set<String>()
+    for (i, row) in content.components(separatedBy: "\n").enumerated() where i > 0 && !row.isEmpty {
+        let cols = row.components(separatedBy: ",")
+        guard cols.count > 5, !cols[0].isEmpty, cols[5].hasPrefix(todayUtc) else { continue }
+        ids.insert(cols[0])
+    }
+    return ids
+}
+
+/// Capture today's completed habit ids from a `today_routine_progress` payload (both routines), unioned
+/// with the offline cache so unsynced completions stay filtered even after the server response lands.
+func captureDayPlanCompletedIds(_ progress: NSDictionary) {
+    var ids = Set<String>()
+    if let m = progress.value(forKey: "morning_routine") as? NSDictionary,
+       let arr = m.value(forKey: "completed_habit_ids") as? [String] { ids.formUnion(arr) }
+    if let e = progress.value(forKey: "evening_routine") as? NSDictionary,
+       let arr = e.value(forKey: "completed_habit_ids") as? [String] { ids.formUnion(arr) }
+    ids.formUnion(offlineCompletedHabitIds())
+    dayPlanCompletedHabitIds = ids
+}
 
 var isMainWindowLoaded = false
 
@@ -349,9 +503,28 @@ var currentState:CURRENTSTATE = ._NOTHING_{
                 leftMenuVcObj?.habitStarted()
             }
         }
+        if oldValue != currentState {
+            // Defer to the next runloop. Mutating the Schedule view's hierarchy synchronously here
+            // collides with the window style-mask change that follows in the same call stack during
+            // the break transition (activityOver → showBreaksView → showSmallSizeWindow), which
+            // crashes AppKit's AutoLayout engine. Deferring also lets the routine arrays settle so
+            // the schedule re-reads the *same* (completed-filtered) data the habit list shows —
+            // e.g. after a remote completion rebuilds the routine and flips the state back.
+            DispatchQueue.main.async {
+                firstViewControllerObj?.updateScheduleTabForState()
+                routinePostponedInfoVcObj?.updateScheduleTabForState()
+                firstViewControllerObj?.refreshScheduleIfVisible()
+                routinePostponedInfoVcObj?.refreshScheduleIfVisible()
+            }
+        }
     }
 }
 
+
+/// Set when a remote (other-device) habit completion arrives while the user is viewing the
+/// Schedule tab, so that after the routine re-syncs we return them to the schedule instead of
+/// navigating into the next habit.
+var pendingReturnToSchedule = false
 
 var currentAction:ACTION = ACTION._START_
 
@@ -360,6 +533,35 @@ var lastCurrentAction:ACTION = ACTION._START_
 
 
 
+// NSSound.play() blocks its calling thread while CoreAudio wakes/primes the output device
+// (StartIO_Sync / AudioQueue prime) — routinely >2s when the device is idle or a Bluetooth output has
+// to reconnect. All the play*Sound helpers below called it on the main thread, which froze the UI
+// (Sentry AppHang, culprits playEveryActivitySound / playStartMorningEveningRoutineSound /
+// playFocusPomodorBreakEndsSound). Play on a background queue instead, and keep the NSSound retained
+// until playback should be finished so async playback isn't cut off when the caller returns.
+private final class BackgroundSoundPlayer {
+    static let shared = BackgroundSoundPlayer()
+    private let lock = NSLock()
+    private var playing: [NSSound] = []
+
+    func play(_ name: String) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            guard let sound = NSSound(named: name) else { return }
+            self.lock.lock(); self.playing.append(sound); self.lock.unlock()
+            sound.play()   // blocks THIS background thread on CoreAudio startup, not the main thread
+            // NSSound plays asynchronously; its delegate isn't reliably delivered without a run loop on
+            // this queue, so just drop the strong reference after the clip's own duration (+ margin).
+            let ttl = sound.duration > 0 ? sound.duration + 1 : 8
+            DispatchQueue.global().asyncAfter(deadline: .now() + ttl) {
+                self.lock.lock(); self.playing.removeAll { $0 === sound }; self.lock.unlock()
+            }
+        }
+    }
+}
+
+/// Play a bundled named sound effect off the main thread (see BackgroundSoundPlayer).
+func playNamedSound(_ name: String) { BackgroundSoundPlayer.shared.play(name) }
+
 func playEveryActivitySound(){
     if appdelegate!.isUserOnMeeting{//Don't play sound effects during mid-meeting breaks#662
         return;
@@ -367,11 +569,12 @@ func playEveryActivitySound(){
     if SettingsManagerObject.isSoundEnabled{
         if let sound = arrCompletingHabitSound.randomElement(){
             addLog(text: "Sound name: \(sound)")
-            NSSound(named: sound)?.play()
+            playNamedSound(sound)
         }
         addLog(text: "Play Every Activity Sound")
+        focusButtonServiceObject.beep()
     }
-    
+
 }
 
 func playAfterMorningEveningRoutineSound(isMorning:Bool){
@@ -382,16 +585,17 @@ func playAfterMorningEveningRoutineSound(isMorning:Bool){
         if isMorning{
             if let sound = arrCompletingWholeMorningRoutineSound.randomElement(){
                 addLog(text: "Sound name: \(sound)")
-                NSSound(named: sound)?.play()
+                playNamedSound(sound)
             }
             addLog(text: "Play Morning Routine End Sound")
         }else{
             if let sound = arrCompletingWholeEveningRoutineSound.randomElement(){
                 addLog(text: "Sound name: \(sound)")
-                NSSound(named: sound)?.play()
+                playNamedSound(sound)
             }
             addLog(text: "Play Evening Routine End Sound")
         }
+        focusButtonServiceObject.beep()
     }
 }
 
@@ -399,9 +603,10 @@ func playFocusModeStartedSound(){
     if SettingsManagerObject.isSoundEnabled{
         if let sound = arrStartFocusSound.randomElement(){
             addLog(text: "Sound name: \(sound)")
-            NSSound(named: sound)?.play()
+            playNamedSound(sound)
         }
         addLog(text: "Play Focus Mode Started Sound")
+        focusButtonServiceObject.beep()
     }
 }
 func playStartMorningEveningRoutineSound(){
@@ -411,25 +616,27 @@ func playStartMorningEveningRoutineSound(){
     if SettingsManagerObject.isSoundEnabled{
         if let sound = arrStartingMorningEveningRoutineSound.randomElement(){
             addLog(text: "Sound name: \(sound)")
-            NSSound(named: sound)?.play()
+            playNamedSound(sound)
         }
         addLog(text: "Play Start Morning Evening Routine Sound")
+        focusButtonServiceObject.beep()
     }
 }
 func playFocusPomodorBreakEndsSound(){
     if SettingsManagerObject.isSoundEnabled{
         if let sound = arrCompletingHabitSound.randomElement(){
             addLog(text: "Sound name: \(sound)")
-            NSSound(named: sound)?.play()
+            playNamedSound(sound)
         }
         addLog(text: "Play Focus Pomodor Break Ends Sound")
+        focusButtonServiceObject.beep()
     }
 }
 
 
-var arrStartingMorningEveningRoutineSound = ["Starting the Morning:Evening Routine_2",
-                                             "Starting the Morning:Evening Routine_4",
-                                             "Starting the Morning:Evening Routine_5"]
+var arrStartingMorningEveningRoutineSound = ["Starting the MorningEvening Routine_2",
+                                             "Starting the MorningEvening Routine_4",
+                                             "Starting the MorningEvening Routine_5"]
 
 var arrStartFocusSound = ["Start Focus Button_1",
                           "Start Focus Button_2"]
@@ -458,9 +665,9 @@ var startNonTimerActivityButtonText = "Start <NAME>"
 var startActivityButtonText = "Start <TIME> <NAME>"
 var unlockMachineButtonText = "Unlock the machine"
 var activityFinishedText = "<ACTIVITY> finished!✅"
-var lastActivityFinishedText = "<ACTIVITY> finished!✅ You’ve earned your screen time. 💪"
+var lastActivityFinishedText = "<ACTIVITY> finished!✅ Nice break - Let's get back into it 💪"
 var activitySkippedText = "<ACTIVITY> skipped!"
-var lastActivitySkippedText = "<ACTIVITY> skipped! You’ve earned your screen time. 💪"
+var lastActivitySkippedText = "<ACTIVITY> skipped! Nice break - Let's get back into it 💪"
 var startBreakActivityTitleText = "It’s time for a break. Do <TIME> of <ACTIVITY> to earn more screentime."
 var startNonTimerBreakActivityTitleText = "It’s time for a micro break. Let’s do <ACTIVITY> to keep your mind and body sharp."
 var doSomeActivityText = "Do some <ACTIVITY>."
@@ -952,7 +1159,7 @@ func reloadFocusMusicListIfVisible(){
     if allTracksVcObj != nil && mainWindowControllerObj != nil{
         if mainWindowControllerObj?.window?.isVisible ?? false{
             if leftMenuVcObj?.boxFocusMusic.isSelected ?? false{
-                allTracksVcObj?.tblView.reloadData()
+                allTracksVcObj?.model.refresh()
             }
         }
     }
@@ -1368,6 +1575,8 @@ func getBlurFrameForBrowser(x:Int, y:Int, width:Int, height:Int, browser:BROWSER
         return NSRect(x: x, y: y + 81, width: width, height: height - 81)
     case ._SIGMA_OS_:
         return NSRect(x: x + 288, y: y + 48, width: width - 288, height: height - 48)
+    case ._COMET_:
+        return NSRect(x: x, y: y + 85, width: width, height: height - 85)
     }
 }
 
@@ -1653,15 +1862,12 @@ func checkDocBarState()->String?{
     end tell
     """
     
-    if let appleScript = NSAppleScript(source: script) {
-        var errors : NSDictionary? = nil
-        let desc = appleScript.executeAndReturnError(&errors)
-        if errors != nil {
-            print(errors!)
-        }
-        return desc.stringValue
+    var errors : NSDictionary? = nil
+    let desc = runAppleScriptSafely(script, errors: &errors)
+    if errors != nil {
+        print(errors!)
     }
-    return nil
+    return desc?.stringValue
 }
 
 
@@ -1708,7 +1914,11 @@ let arrFont:[fontStyle] = [fontStyle(name: "System Font", regularFontName: "Syst
                            fontStyle(name: "Helvetica", regularFontName: "Helvetica", boldFontName: "Helvetica Bold", webFontName: "Helvetica"),
                            fontStyle(name: "IntelOneMono", regularFontName: "IntelOneMono-Regular", boldFontName: "IntelOneMono-Regular", webFontName: "Intel One Mono"),
                            fontStyle(name: "OpenDyslexic", regularFontName: "OpenDyslexicThree-Regular", boldFontName: "OpenDyslexicThree-Regular", webFontName: "Open Dyslexic"),
-                           fontStyle(name: "Poppins", regularFontName: "Poppins-Regular", boldFontName: "Poppins-Regular", webFontName: "Poppins")]
+                           fontStyle(name: "Poppins", regularFontName: "Poppins-Regular", boldFontName: "Poppins-Regular", webFontName: "Poppins"),
+                           fontStyle(name: "Lexend", regularFontName: "Lexend-Regular", boldFontName: "Lexend-Bold", webFontName: "Lexend")]
+
+/// Index of Lexend in arrFont — the app's default font.
+let lexendFontIndex = 10
 
 struct fontStyle{
     var name = ""
@@ -2069,6 +2279,9 @@ func createZipArchive(zipPath: String, logFolder: String, screenshots: [URL]) th
 
 
 var arrAllTracks = [[String:Any]]()
+/// True while focus music is playing because the user accepted the post-session-start prompt — so
+/// it can be stopped when that focus session ends (music the user started manually is left alone).
+var isFocusMusicStartedFromPrompt = false
 
 func checkAllTracksDownloadState(){
     for track in arrAllTracks{
@@ -2142,33 +2355,70 @@ var shouldEndPomodoroBreakAtTime:Date?
 var arrFocusBlockNotificationShownForApps = [""]
 
 
-func executeScript(script:String){
-    if let appleScript = NSAppleScript(source: script) {
-        var errors : NSDictionary? = nil
-        appleScript.executeAndReturnError(&errors)
-        if errors != nil {
-            print(errors!)
+/// Dedicated serial queue that owns ALL AppleScript execution. NSAppleScript is NOT thread-safe —
+/// compiling/running it from more than one thread at once corrupts the shared AppleScript component
+/// (the EXC_BAD_ACCESS segfault inside Apple's AppleScript compiler). Funnelling every script through
+/// one serial queue means two scripts never run concurrently, which removes the crash — without
+/// pinning the work to the main thread (the frequent focus-timer / browser detection scripts run on
+/// this background queue and never block the UI).
+private let appleScriptSerialQueue = DispatchQueue(label: "com.focusbear.applescript")
+
+/// Single safe entry point for running AppleScript. Serialised on `appleScriptSerialQueue` (see above)
+/// so it can't run concurrently from multiple threads. The source is wrapped in `with timeout of N
+/// seconds`, and we additionally guard with a wall-clock timeout so an unresponsive target app can't
+/// wedge the queue or block the caller indefinitely.
+@discardableResult
+func runAppleScriptSafely(_ source: String, timeoutSeconds: Int = 5, errors: inout NSDictionary?) -> NSAppleEventDescriptor? {
+    // The script runs on `appleScriptSerialQueue`, but the semaphore wait below blocks the *caller*.
+    // On the MAIN thread that means a frozen UI, so cap the main-thread wait hard: browser/URL and
+    // focus-timer scripts return in well under 100 ms normally, and only a hung target app would ever
+    // approach the cap — in which case we'd far rather skip this detection cycle (the callers poll, e.g.
+    // the 1 s URL-block timer) than lock the UI. The dropped script keeps running on the queue; we just
+    // don't read its result. Background callers keep the full, generous timeout.
+    let onMain = Thread.isMainThread
+    let scriptTimeout = onMain ? min(timeoutSeconds, 1) : timeoutSeconds
+    let waitCap: DispatchTimeInterval = onMain ? .milliseconds(1200) : .seconds(timeoutSeconds + 2)
+    let bounded = "with timeout of \(scriptTimeout) seconds\n" + source + "\nend timeout\n"
+    var capturedErrors: NSDictionary?
+    var result: NSAppleEventDescriptor?
+    let done = DispatchSemaphore(value: 0)
+    appleScriptSerialQueue.async {
+        if let appleScript = NSAppleScript(source: bounded) {
+            result = appleScript.executeAndReturnError(&capturedErrors)
         }
+        done.signal()
+    }
+    // Wall-clock guard a little longer than the AppleScript `with timeout`, so the script normally
+    // finishes first. On timeout we return without reading the still-running block's outputs.
+    if done.wait(timeout: .now() + waitCap) == .timedOut {
+        errors = nil
+        return nil
+    }
+    errors = capturedErrors
+    return result
+}
+
+func executeScript(script:String){
+    var errors : NSDictionary? = nil
+    runAppleScriptSafely(script, errors: &errors)
+    if errors != nil {
+        print(errors!)
     }
 }
 
 func executeScriptAndReturnBool(script:String)->Bool{
-    if let appleScript = NSAppleScript(source: script) {
-        var errors : NSDictionary? = nil
-        let desc = appleScript.executeAndReturnError(&errors)
-        if errors != nil {
-            print(errors!)
-        }
-        return desc.booleanValue
+    var errors : NSDictionary? = nil
+    let desc = runAppleScriptSafely(script, errors: &errors)
+    if errors != nil {
+        print(errors!)
     }
-    return false
+    return desc?.booleanValue ?? false
 }
 
 func executeScriptAndReturnString(script:String)->String?{
-    if let appleScript = NSAppleScript(source: script) {
-        var errors : NSDictionary? = nil
-        let desc = appleScript.executeAndReturnError(&errors)
-        if errors != nil {
+    var errors : NSDictionary? = nil
+    guard let desc = runAppleScriptSafely(script, errors: &errors) else { return nil }
+    if errors != nil {
             print(errors!)
             if let appName = errors?.value(forKey: "NSAppleScriptErrorAppName") as? String, let errorCode = errors?.value(forKey: "NSAppleScriptErrorNumber") as? Int{
                 let lowerCaseAppName = appName.lowercased()
@@ -2192,9 +2442,7 @@ func executeScriptAndReturnString(script:String)->String?{
                 }
             }
         }
-        return desc.stringValue ?? ""
-    }
-    return nil
+    return desc.stringValue ?? ""
 }
 
 func showFocusAppBlockNotification(appName:String){
@@ -2353,8 +2601,76 @@ func enableTimeTracker(){
     
     let appPath = "/Applications/Focus Bear Time Tracker.app"
     let configuration = NSWorkspace.OpenConfiguration()//.arguments = [appPath]
-    NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: appPath), configuration: configuration)
+    if FileManager.default.fileExists(atPath: "/Applications/Focus Bear Time Tracker.app") {
+        NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: appPath), configuration: configuration)
+    }
     writeSettingForScreeenTime(habitInfo: "")
+    // Let any live FBTT "Today" view re-sync its toggle (e.g. enabled via the first-run window).
+    NotificationCenter.default.post(name: .timeTrackerEnabledStateChanged, object: nil)
+}
+
+/// Central enable/disable flow for the Focus Bear Time Tracker. Extracted from the old
+/// Advanced → Add-Ons toggle so the FBTT "Today" view can own the switch. `presentingWindow`
+/// hosts the download alert (falls back to a modal if nil). `completion` reports the RESOLVED
+/// enabled state — the switch must reflect reality, so it stays off until the tracker is
+/// actually installed and enabled (first-run and not-installed both resolve to false).
+func setTimeTrackerEnabled(_ enabled: Bool, presentingWindow: NSWindow?, completion: @escaping (Bool) -> Void) {
+    guard enabled else {
+        allApiObject.capturePosthog(event: "settings-changed-disable-time-tracker", metadata: [:])
+        UserDefaults.standard.set(false, forKey: kUserdefaultsScreenTimeEnabled)
+        writeSettingForScreeenTime(habitInfo: "")
+        NotificationCenter.default.post(name: .timeTrackerEnabledStateChanged, object: nil)
+        completion(false)
+        return
+    }
+
+    // Time Tracker is a Pro feature — if the trial/subscription has lapsed, don't enable it; prompt
+    // to upgrade instead and leave the switch off.
+    if !(isPurchased || daysLeft > 0) {
+        showUpgradeNowWindow(reason: "time_tracker_expired")
+        completion(false)
+        return
+    }
+
+    // First time enabling → run the intro window flow; leave the switch off until it enables there.
+    if UserDefaults.standard.object(forKey: kUserdefaultsScreenTimeEnabledOneTime) == nil {
+        showTimeTrackerWindow(showingAutomatically: false)
+        completion(false)
+        return
+    }
+
+    if FileManager.default.fileExists(atPath: "/Applications/Focus Bear Time Tracker.app") {
+        enableTimeTracker()
+        completion(true)
+        return
+    }
+    
+    enableTimeTracker()
+    // Installed component missing → offer to download it; switch stays off.
+    let alert = NSAlert()
+    alert.setSharingType()
+    alert.alertStyle = .informational
+    var titleDownloadTimeTrackerText = "Focus Bear Time Tracker needs to be downloaded and installed as a separate component."
+    var buttonDownloadTimeTrackerText = "Download Now"
+    if let settingsNew = configjson.value(forKey: "settingsNew") as? NSDictionary {
+        titleDownloadTimeTrackerText = settingsNew.value(forKey: "titleDownloadTimeTrackerText") as? String ?? titleDownloadTimeTrackerText
+        buttonDownloadTimeTrackerText = settingsNew.value(forKey: "buttonDownloadTimeTrackerText") as? String ?? buttonDownloadTimeTrackerText
+    }
+    alert.messageText = titleDownloadTimeTrackerText
+    alert.addButton(withTitle: buttonDownloadTimeTrackerText)
+    alert.addButton(withTitle: buttonCancelText)
+    let handleResponse: (NSApplication.ModalResponse) -> Void = { modalResponse in
+        if modalResponse == .alertFirstButtonReturn,
+           let url = URL(string: "https://downloads.focusbear.io/fbtt/FocusBearTimeTracker.dmg") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+    if let window = presentingWindow {
+        alert.beginSheetModal(for: window, completionHandler: handleResponse)
+    } else {
+        handleResponse(alert.runModal())
+    }
+    completion(false)
 }
 
 
@@ -2366,13 +2682,41 @@ func enableTimeTracker(){
 var lastAppUnlockTime:Date?
 var lastUnlockTimeByAccountabilityBuddy:Date?
 
-func shouldAskPassword()->Bool{
-    if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{
-        if Date() < lastUnlockTimeByAccountabilityBuddy{
-            return false
+/// Returns true if a full-screen (locked) window is currently on screen. Used to suppress the
+/// password grace period there — full-screen habit/focus mode is exactly when accountability
+/// matters most, so a recent unlock shouldn't be reusable to slip past the lock.
+func isFullScreenWindowCurrentlyShowing()->Bool{
+    if mainWindowControllerObj?.window?.styleMask.contains(.fullScreen) ?? false{ return true }
+    if mainWindowControllerObj?.isFullScreenVisible ?? false{ return true }
+    return false
+}
+
+/// - Parameter forPostpone: pass `true` from postpone / extend-postpone gates. Postponing must never
+///   reuse a grace window — otherwise a single unlock (e.g. an accountability buddy granting 10 min)
+///   can be leveraged into a much longer postpone by extending it within the grace period.
+func shouldAskPassword(forPostpone:Bool = false)->Bool{
+    // A full-screen (locked) window always re-asks. Postponing used to bypass the grace too, but that
+    // re-prompted even moments after the password was entered for the SAME postpone (the flow gates twice:
+    // once before the duration picker, once when applying the chosen duration) — so it never unlocked and
+    // looped (bug report 2026-07-06). Now a postpone honours the recent-unlock grace: the password is
+    // asked once, then again only after the grace (~2 min) — "unlock for the postpone, ask next time".
+    // A postpone must honour the recent-unlock grace EVEN in the borderless full-screen routine window
+    // (the evening routine runs there). Without the `!forPostpone`, full-screen forced bypassGrace=true,
+    // so shouldAskPassword returned true before the grace was ever consulted — the postpone flow's second
+    // gate re-prompted the instant after the password was entered, and it looped (report 2026-07-07).
+    // The lock screen itself (non-postpone) still always re-asks in full-screen.
+    let bypassGrace = isFullScreenWindowCurrentlyShowing() && !forPostpone
+    if !bypassGrace{
+        if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{
+            if Date() < lastUnlockTimeByAccountabilityBuddy{
+                return false
+            }
         }
     }
     if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+        if bypassGrace{
+            return true
+        }
         if let lastAppUnlockTime = lastAppUnlockTime{
             let diffSeconds = Calendar.current.dateComponents([.second], from: lastAppUnlockTime, to: Date()).second ?? 0
             if diffSeconds > 120{
@@ -2689,16 +3033,12 @@ func shutDownMac() {
             shut down
         end tell
         """
-    if let appleScript = NSAppleScript(source: script) {
-        var error: NSDictionary?
-        appleScript.executeAndReturnError(&error)
-        if let error = error {
-            print("Error: \(error)")
-        } else {
-            print("Shutdown command executed successfully.")
-        }
+    var error: NSDictionary?
+    runAppleScriptSafely(script, errors: &error)
+    if let error = error {
+        print("Error: \(error)")
     } else {
-        print("Failed to create AppleScript.")
+        print("Shutdown command executed successfully.")
     }
 }
 
@@ -2710,16 +3050,12 @@ func sleepMac() {
             sleep
         end tell
         """
-    if let appleScript = NSAppleScript(source: script) {
-        var error: NSDictionary?
-        appleScript.executeAndReturnError(&error)
-        if let error = error {
-            print("Error: \(error)")
-        } else {
-            print("sleep command executed successfully.")
-        }
+    var error: NSDictionary?
+    runAppleScriptSafely(script, errors: &error)
+    if let error = error {
+        print("Error: \(error)")
     } else {
-        print("Failed to create AppleScript.")
+        print("sleep command executed successfully.")
     }
 }
 

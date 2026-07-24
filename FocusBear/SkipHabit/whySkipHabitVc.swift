@@ -40,6 +40,14 @@ class whySkipHabitVc: NSViewController {
     }
     
     func skipActivityAlreadyDid(){
+        // A running habit is being skipped. Tell the Focus Button to stop it —
+        // otherwise the device keeps counting down the skipped habit, because it
+        // only learns a habit ended when its own timer reaches 0 (EVENT|DONE),
+        // which never happens on a skip. (currentAction == ._INPROGRESS_ means a
+        // habit timer is actually running, i.e. mirrored on the device.)
+        if currentAction == ._INPROGRESS_ {
+            focusButtonServiceObject.cancelHabit()
+        }
         if rememberNextHabitVcObj != nil{
             if activityCompletionVcObj!.view.subviews.contains(rememberNextHabitVcObj!.view){
                 rememberNextHabitVcObj!.view.removeFromSuperview()

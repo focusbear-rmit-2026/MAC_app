@@ -1,0 +1,66 @@
+# Config keys intentionally present only in the local Mac-App config.json and NOT in the
+# assets repo (so the Config ↔ Assets Sync check skips them). One dotted key path per line.
+# Keep this list SMALL and justified — the default is that every user-facing string belongs
+# in the assets repo (with a Spanish translation). Add a key here only when it is genuinely
+# not user-facing / not translatable.
+#
+# --- PRE-EXISTING BASELINE (prune as these land in the assets repo) ---
+# Drift that already existed when this check was introduced: strings in Mac-App config.json not
+# yet in the assets repo. Being backfilled by assets PR #366 (full config sync, en+es). Remove
+# each entry once it lands in the assets repo's main branch — the goal is an empty baseline.
+accountVcInfo.leaderboardUsernamePlaceholder
+accountVcInfo.titleLeaderboardUsernameText
+eveningShutdownInfo.buttonNotNowText
+eveningShutdownInfo.buttonShutDownText
+eveningShutdownInfo.buttonSleepText
+eveningShutdownInfo.subtitle
+eveningShutdownInfo.title
+focusMusicPromptInfo.buttonDontAskAgainText
+focusMusicPromptInfo.buttonNoText
+focusMusicPromptInfo.buttonYesText
+focusMusicPromptInfo.title
+menuInfo.menuItemMeetingDetectionBreaksOnTooltip
+officeModeSettingsVcInfo.addBtnTitle
+officeModeSettingsVcInfo.addCurrentBtnTitle
+officeModeSettingsVcInfo.alertAddInfo
+officeModeSettingsVcInfo.alertAddTitle
+officeModeSettingsVcInfo.alertBtnAdd
+officeModeSettingsVcInfo.alertBtnCancel
+officeModeSettingsVcInfo.alertModeLabel
+officeModeSettingsVcInfo.alertNotConnectedMessage
+officeModeSettingsVcInfo.alertNotConnectedTitle
+officeModeSettingsVcInfo.alertSSIDPlaceholder
+officeModeSettingsVcInfo.autoSwitchDescription
+officeModeSettingsVcInfo.autoSwitchSectionTitle
+officeModeSettingsVcInfo.colProfileTitle
+officeModeSettingsVcInfo.colSSIDTitle
+officeModeSettingsVcInfo.descriptionText
+officeModeSettingsVcInfo.officeModeOptionText
+officeModeSettingsVcInfo.permissionWarningText
+officeModeSettingsVcInfo.removeBtnTitle
+officeModeSettingsVcInfo.settingTitle
+officeModeSettingsVcInfo.wfhModeOptionText
+preferencesInfo.descriptionFocusGlowBorderText
+preferencesInfo.switchButtonFocusGlowBorderText
+scheduleViewInfo.dismissRepeatingAllSeries
+scheduleViewInfo.dismissRepeatingCancel
+scheduleViewInfo.dismissRepeatingInfo
+scheduleViewInfo.dismissRepeatingJustThisOne
+scheduleViewInfo.dismissRepeatingTitle
+scheduleViewInfo.pastHabitComplete
+scheduleViewInfo.pastHabitCompleteHint
+scheduleViewInfo.tasksDetailsLabel
+scheduleViewInfo.tasksImportanceLabel
+scheduleViewInfo.tasksImportanceTooltip
+scheduleViewInfo.tasksImportanceUnset
+talkingClockSettingsInfo.announceEvery
+talkingClockSettingsInfo.back
+talkingClockSettingsInfo.enableSubtitle
+talkingClockSettingsInfo.enableTitle
+talkingClockSettingsInfo.end
+talkingClockSettingsInfo.minutes
+talkingClockSettingsInfo.quietHours
+talkingClockSettingsInfo.start
+talkingClockSettingsInfo.suppressSubtitle
+talkingClockSettingsInfo.suppressTitle
+talkingClockSettingsInfo.title

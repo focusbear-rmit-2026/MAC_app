@@ -14,37 +14,42 @@ class advancedVc: NSViewController {
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var boxMain: NSBox!
     @IBOutlet weak var stackView: NSStackView!
-    
+
     let meetingsListItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let privacyListItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
 //    let breaksListItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let addOnsItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let researchItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
+    let talkingClockListItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
 
     override func viewDidLoad() {
         super.viewDidLoad()
         stackView.subviews.removeAll()
-        
+
         var meetingsSettingTitle = "Meetings"
         var privacySettingTitle = "Privacy"
         var addOnsSettingTitle = "Add Ons"
         var researchSettingTitle = "Research"
+        let talkingClockSettingTitle = "Talking Clock"
         
         var iconPrivacy:NSImage?
         var iconMeetings:NSImage?
         var iconAddOns:NSImage?
         var iconResearch:NSImage?
+        var iconTalkingClock:NSImage?
         
         if #available(macOS 11.0, *) {
             iconPrivacy = NSImage(systemSymbolName: "eye", accessibilityDescription: nil)
             iconMeetings = NSImage(systemSymbolName: "headphones.circle", accessibilityDescription: nil)
             iconAddOns = NSImage(systemSymbolName: "plus.diamond", accessibilityDescription: nil)
             iconResearch = NSImage(systemSymbolName: "doc.text.magnifyingglass", accessibilityDescription: nil)
+            iconTalkingClock = NSImage(systemSymbolName: "clock.badge.fill", accessibilityDescription: nil)
         } else {
             iconPrivacy = NSImage(named: NSImage.touchBarHistoryTemplateName)
             iconMeetings = NSImage(named: NSImage.everyoneName)
             iconAddOns = NSImage(named: NSImage.touchBarAddDetailTemplateName)
             iconResearch = NSImage(named: NSImage.touchBarSearchTemplateName)
+            iconTalkingClock = NSImage(named: NSImage.touchBarAlarmTemplateName)
         }
         if let settingsNew = configjson.value(forKey: "settingsNew") as? NSDictionary{
             meetingsSettingTitle = settingsNew.value(forKey: "meetingsSettingTitle") as? String ?? meetingsSettingTitle
@@ -55,7 +60,8 @@ class advancedVc: NSViewController {
         
         var advanced_Meetings = "Change settings related to meetings"
         var advanced_Privacy = "Configure privacy related settings"
-        var advanced_AddOns = "We’ve built add ons to help you with punctuality and tracking your time."
+        var advanced_AddOns = "We've built add ons to help you with punctuality and tracking your time."
+        let advanced_TalkingClock = "Announce the current time at regular intervals to help you stay time-aware."
         
         if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary{
             advanced_Meetings = tooltips.value(forKey: "advanced_Meetings") as? String ?? advanced_Meetings
@@ -86,6 +92,12 @@ class advancedVc: NSViewController {
         addOnsItemVcObj?.delegate = self
         addOnsItemVcObj?.toolTip = advanced_AddOns
 
+        stackView.addView(talkingClockListItemVcObj!.view, in: .bottom)
+        talkingClockListItemVcObj?.lblTitle.stringValue = talkingClockSettingTitle
+        talkingClockListItemVcObj?.imgViewIcon.image = iconTalkingClock
+        talkingClockListItemVcObj?.lblDescription.isHidden = true
+        talkingClockListItemVcObj?.delegate = self
+        talkingClockListItemVcObj?.toolTip = advanced_TalkingClock
 
         stackView.addView(researchItemVcObj!.view, in: .bottom)
         researchItemVcObj?.lblTitle.stringValue = researchSettingTitle
@@ -99,8 +111,9 @@ class advancedVc: NSViewController {
         arrForSearchFromSettings.append(["title": privacyListItemVcObj!.lblTitle.stringValue, "tabId": idAdvanced, "object": privacyListItemVcObj!.bgBox as Any])
 //        arrForSearchFromSettings.append(["title": breaksListItemVcObj!.lblTitle.stringValue, "tabId": idAdvanced, "object": breaksListItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": addOnsItemVcObj!.lblTitle.stringValue, "tabId": idAdvanced, "object": addOnsItemVcObj!.bgBox as Any])
+        arrForSearchFromSettings.append(["title": talkingClockListItemVcObj!.lblTitle.stringValue, "tabId": idAdvanced, "object": talkingClockListItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": researchItemVcObj!.lblTitle.stringValue, "tabId": idAdvanced, "object": researchItemVcObj!.bgBox as Any])
-        
+
     }
     override func viewWillAppear() {
         if settingsSideBarVcObj != nil{
@@ -122,6 +135,8 @@ extension advancedVc: SettingListItemDelegate{
             settingsContainerVcObj?.showPrivacyView()
         }else if object == addOnsItemVcObj{
             settingsContainerVcObj?.showAddOnsView()
+        }else if object == talkingClockListItemVcObj{
+            settingsContainerVcObj?.showTalkingClockView()
         }else if object == researchItemVcObj{
             settingsContainerVcObj?.showResearchSettingView()
         }

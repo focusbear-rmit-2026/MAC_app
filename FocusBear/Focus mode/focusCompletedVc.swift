@@ -361,6 +361,9 @@ class focusCompletedVc: NSViewController {
     override func viewWillAppear() {
         isFinishFocusModeApiCalled = false
         loader.isHidden = true
+        // Prevent focus mode name from overlapping adjacent labels on smaller screens (#1659)
+        lblTitle.lineBreakMode = .byTruncatingTail
+        lblTitle.maximumNumberOfLines = 1
         if isHardCorePomodoroModeOn{
             btnStartAnotherFocusBlock.isHidden = true
         }else{
@@ -726,7 +729,7 @@ class focusCompletedVc: NSViewController {
             let textRange = fieldEditor.selectedRange
             let replaceString = menuItem.title
             fieldEditor.replaceCharacters(in: textRange, with: replaceString)
-            fieldEditor.selectedRange = NSMakeRange(textRange.location, replaceString.count)
+            fieldEditor.selectedRange = NSMakeRange(textRange.location, (replaceString as NSString).length)
         }
     }
     
@@ -1191,14 +1194,10 @@ class focusCompletedVc: NSViewController {
     
     @IBAction func btnActivateTimeTrackerClicked(_ sender: Any) {
         addLog(text: "[user-action] btnActivateTimeTrackerClicked")
-        leftMenuVcObj?.showSettingsView()
-        
-        if settingsSideBarVcObj != nil{
-            settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
-            settingsContainerVcObj?.showAddOnsView()
-            getAddOnsVcObject().highlightTimeTrackerEnableItemBox()
-        }
-
+        // The enable toggle now lives at the top of the Time Tracker tool view (moved out of
+        // Advanced → Add-Ons), so take the user straight there.
+        mainViewControllerObj?.showTimeTrackerToolView()
+        leftMenuVcObj?.boxTimeTrackerTool?.isSelected = true
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
     

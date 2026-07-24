@@ -47,7 +47,7 @@ var eveningRoutineLastPostponeTime:Date?
 var focusSummaryLastPostponeTime:Date?
 
 
-var arrAllCustomRoutine = [routine]()
+var arrAllCustomRoutine = [routine]() { didSet { requestDayPlanRefresh() } }
 struct routine {
     var title:String
     var sequenceId:String
@@ -70,8 +70,90 @@ var arrAllDaysEveningHabits = [habit]()
 var arrPreFilteredMorningHabits = [habit]()
 var arrPreFilteredEveningHabits = [habit]()
 
-var arrFilteredMorningHabits = [habit]()
-var arrFilteredEveningHabits = [habit]()
+/// Coalesced Day Plan refresh. arrFiltered{Morning,Evening}Habits and arrAllCustomRoutine are mutated
+/// from many paths (the server progress filtering that runs on launch, skip/done, the resort loop), and
+/// the Day Plan reads those same arrays. Their didSet re-renders the Day Plan so it always matches the
+/// habit table by construction — debounced to the next runloop tick so a burst of mutations triggers a
+/// single refresh instead of one per element.
+var dayPlanRefreshPending = false
+func requestDayPlanRefresh() {
+    if dayPlanRefreshPending { return }
+    dayPlanRefreshPending = true
+    DispatchQueue.main.async {
+        dayPlanRefreshPending = false
+        // Refresh whichever Day Plan host is on screen — it varies by app state (firstViewController
+        // normally, routinePostponedInfoVc when the routine is postponed, habitsStateVc between
+        // routines). Each refreshScheduleIfVisible() reloads only if its OWN scheduleVC is visible, so
+        // calling all three is safe. (Was firstViewController-only, so a past-habit completion made in
+        // the postponed state didn't strike through until the next manual reload.)
+        firstViewControllerObj?.refreshScheduleIfVisible()
+        routinePostponedInfoVcObj?.refreshScheduleIfVisible()
+        habitsStateVcObj?.refreshScheduleIfVisible()
+    }
+}
+
+/// Cancel (force-complete for today) the current routine. Extracted from chooseHabitsVC.btnCancelClicked
+/// so the exact same actions run from BOTH the chooser's Cancel button and the Day Plan's "skip routine
+/// for today" (✕) confirmation alert. It does NOT dismiss the chooser — each caller owns its own UI
+/// (btnCancelClicked dismisses the sheet; the alert path has no sheet). `openedFromDayPlan` keeps the
+/// window open + re-shows the Day Plan (planning) instead of closing it (in-routine skip).
+func cancelRoutineForToday(openedFromDayPlan: Bool) {
+    let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+    let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+
+    var sequenceId = ""
+    if currentState == ._MORNING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_{
+        sequenceId = (arrFilteredMorningHabits.first ?? arrAllDaysMorningHabits.first)?.activity_sequence_id ?? ""
+        UserDefaults.standard.set(startDate, forKey: kUserdefaultsLastHabitShowDate)
+        allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-from":"chooseHabits"])
+    }else if currentState == ._FOCUS_SUMMARY_ || currentState == ._EVENING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
+        let curreentDate = Date()
+        if curreentDate > shutOffdate{// iska matlab 20-24 k bich
+            let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+            let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
+            UserDefaults.standard.set(startDate, forKey: kUserdefaultsEveningHabitsShowedTillDate)
+        }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
+            UserDefaults.standard.set(startDate, forKey: kUserdefaultsEveningHabitsShowedTillDate)
+        }
+        sequenceId = (arrFilteredEveningHabits.first ?? arrAllDaysEveningHabits.first)?.activity_sequence_id ?? ""
+        allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-from":"chooseHabits"])
+    }
+
+    if sequenceId.isEmpty {
+        // No sequence id anywhere — don't POST /completed-activity-sequence//force-complete (400).
+        addLog(text: "skip routine: sequenceId blank for state \(currentState) — skipping force-complete API")
+    } else {
+        allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: true, completionHandler: {json in
+            print("forceCompleteCurrentSequence success")
+        })
+    }
+
+    UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
+    isHabitAlreadyShowed = true
+    // Skipping from the Day Plan keeps the window open (planning, not in the routine); the in-routine
+    // skip closes it as before.
+    if !openedFromDayPlan {
+        mainWindowControllerObj?.window?.close()
+    }
+    hideBlankWindowInSecondaryMonitor()
+    currentState = ._NOTHING_
+    // #2050: routine skipped for today — clear so a playing allowed-activity habit doesn't leave
+    // isAllowedActivityHabitPlaying stale in ._NOTHING_ (minimise would background without postpone).
+    isAllowedActivityHabitPlaying = false
+    getHabitsVcObject().setActivityTimer()
+    leftMenuVcObj?.habitOver()
+    // Re-run the host's reloadData so the "Uncancel <routine>" state is recomputed and its button
+    // appears immediately (see chooseHabitsVC.btnCancelClicked for the original rationale).
+    if openedFromDayPlan { leftMenuVcObj?.showDayPlanForCurrentState() }
+    // #2065: rebuild the menu-bar popover's Day Plan so a cancel made while it's open reflects
+    // immediately (tickMenu only refreshes live fields, not the Day Plan section). Guarded internally,
+    // so it's a no-op when the popover isn't set up.
+    menuViewControllerObj?.refreshSwiftUIMenu()
+    addLog(text: "Routine skipped by user")
+}
+
+var arrFilteredMorningHabits = [habit]() { didSet { requestDayPlanRefresh() } }
+var arrFilteredEveningHabits = [habit]() { didSet { requestDayPlanRefresh() } }
 var isLastActivityStoppedInRunningState = false// only use ful in morning habit evening habit
 var lastActivityRunningId = ""// only use ful in morning habit evening habit
 var lastActivityStoppedTimerCount = 0
@@ -79,6 +161,7 @@ struct habit {
     var id:String!
     var name:String!
     var nameWithoutIcon:String = ""
+    var habitIcon:String = ""      // the habit_icon emoji field (kept separate from name; sent to emoji-capable Focus Button firmware)
     var durationSeconds:Int!
     var urlsArray:[String]
     var logQuantity:Bool!
@@ -125,9 +208,41 @@ struct habit {
         self.checkList = checkList
         self.tutorial = tutorial
     }
+
+    /// True for "allowed activity" habits — ones that intentionally let you use your computer during
+    /// them (an allowed-apps habit or an allowed focus mode). These get the Habit Player | Day Plan
+    /// tabs and a postpone-free minimise.
+    ///
+    /// NOTE: allowUrls is deliberately NOT counted here. Allowed URLs only mean something when there's
+    /// an app (a browser) to open them in — with no allowApps and no allowedFocusMode, the URLs can't
+    /// be used during a blocking session, so the habit isn't really an "allowed activity". Counting
+    /// allowUrls made a URL-only habit read as allowed, which flipped isAllowedActivityHabitCurrentlyRunning
+    /// true and made btnMinimizeClicked close the window instead of showing AskPostpone (the postpone
+    /// popup looked "invisible" because it was never presented).
+    var isAllowedActivityHabit: Bool {
+        (allowApps?.count ?? 0) > 0
+            || !((allowedFocusMode ?? "").isEmpty)
+    }
 }
 
 var isHighPrioritySequenceGoing = false
+
+/// True while the habit currently being played is an "allowed activity" habit (see
+/// habit.isAllowedActivityHabit). Set in timerViewcontroller.startTimerHabit and used by the window
+/// close/minimise logic so these habits — which run in the background — minimise without the postpone
+/// prompt. Covers allow-URLs habits too, where currentHabitPlaying is nil.
+var isAllowedActivityHabitPlaying = false
+
+/// Robust "is an allowed-activity habit currently running" check used by the close/minimise paths.
+/// The per-habit flag above is the primary signal, but it isn't set if the habit was started on a
+/// prior build/session; the focus-mode + currentHabitPlaying/currentRelaxHabitPlaying signals are the
+/// safety net so minimise/close reliably backgrounds the window instead of prompting to postpone.
+var isAllowedActivityHabitCurrentlyRunning: Bool {
+    isAllowedActivityHabitPlaying
+        || isAnyAllowedFocusModeActivityRunning
+        || (currentHabitPlaying?.isAllowedActivityHabit ?? false)
+        || (currentRelaxHabitPlaying?.isAllowedActivityHabit ?? false)
+}
 
 
 var introActivity:habit?
@@ -188,6 +303,31 @@ struct activityChoice {
 
 var currentRoutineIndex = 0
 func startCustomRoutine(index:Int, isOnDemand:Bool){
+    // On-demand start (Custom Routines panel / menu) while a Morning/Evening routine is active:
+    // postpone that routine first — mirroring menuItemStartCustomRoutineClicked — otherwise it
+    // reasserts within a few seconds and replaces the custom routine. On-demand, so no
+    // isCustomRoutineTime gate. Postpone by the custom routine's own length (timer habits use their
+    // duration; non-timer habits count as 5 min, matching isCustomRoutineTime) so the Morning/Evening
+    // routine resumes right after the custom routine. Placed before the flag block below: once
+    // currentState is set to ._CUSTOM_ROUTINE_ here, that block leaves these resume flags intact.
+    if isOnDemand && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_) {
+        var secondsToPostpone = 0
+        for h in arrAllCustomRoutine[index].arrAllHabits {
+            secondsToPostpone += h.useTimer ? h.durationSeconds : 5 * 60
+        }
+        isCustomRoutineWasRunningInPostponeMorningHabit = false
+        isCustomRoutineWasRunningInPostponeEveningHabit = false
+        mainWindowControllerObj?.window?.close()
+        hideBlankWindowInSecondaryMonitor()
+        if currentState == ._MORNING_HABIT_ {
+            getHabitsVcObject().postponeMorningHabitFor(minutes: 0, secondsToPostpone: secondsToPostpone, showAskFocusModeView: false, showAskIntention: false)
+            isCustomRoutineWasRunningInPostponeMorningHabit = true
+        } else {
+            getHabitsVcObject().postponeEveningHabitFor(minutes: 0, secondsToPostpone: secondsToPostpone, showAskFocusModeView: false, showAskIntention: false)
+            isCustomRoutineWasRunningInPostponeEveningHabit = true
+        }
+        currentState = ._CUSTOM_ROUTINE_
+    }
     isCustomRoutineWasRunningBetweenMorningHabit = false
     isCustomRoutineWasRunningBetweenEveningHabit = false
     if currentState == ._POSTPONE_MORNING_HABIT_{
@@ -231,8 +371,12 @@ func startCustomRoutine(index:Int, isOnDemand:Bool){
         showBlankWindowInSecondaryMonitor()
         leftMenuVcObj?.showCustomRoutineView()
         getHabitsVcObject().showRoutineAllHabits(routineIndex: index)
+        // Reload the Day Plan now (currentState is already ._CUSTOM_ROUTINE_) so the Custom Routines
+        // panel hides immediately — it's gated on ._CUSTOM_ROUTINE_ — instead of lingering until the
+        // next auto-refresh tick (~30s).
+        firstViewControllerObj?.refreshScheduleIfVisible()
     }
-    
+
     getHabitsVcObject().showLoaderView()
     leftMenuVcObj?.customRoutineStarted()
     
@@ -299,9 +443,27 @@ func startCustomRoutine(index:Int, isOnDemand:Bool){
 }
 
 
+/// Whether a server days-of-week list ("all" / "weekdays" / "weekend" / day names like
+/// "MON"…"SUN") includes the given weekday. Weekend = Saturday or Sunday.
+func isScheduledForWeekday(_ daysOfWeek: [String], currentWeekDay: String) -> Bool {
+    let isWeekend = currentWeekDay.localizedCaseInsensitiveContains("sat")
+        || currentWeekDay.localizedCaseInsensitiveContains("sun")
+    if daysOfWeek.contains(where: {$0.compare("all", options: .caseInsensitive) == .orderedSame}) {
+        return true
+    }
+    if daysOfWeek.contains(where: {$0.compare("weekdays", options: .caseInsensitive) == .orderedSame}) {
+        return !isWeekend
+    }
+    if daysOfWeek.contains(where: {$0.compare("weekend", options: .caseInsensitive) == .orderedSame}) {
+        return isWeekend
+    }
+    return daysOfWeek.contains(where: {$0.compare(currentWeekDay, options: .caseInsensitive) == .orderedSame})
+}
+
+
 func checkCustomRoutineTime(){
     // will not excute during morning routine and shutoff time
-    
+
     if isPurchased == false && daysLeft <= 0{//
         // will execute custom rouine if app subscription is active
         return;
@@ -340,21 +502,7 @@ func checkCustomRoutineTime(){
                 // check is current routine is allowd for today or not
                  
                 let currentWeekDay = Date().dayOfWeek()
-                var isAllowedCurrentRoutine = false
-                
-                if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("all", options: .caseInsensitive) == .orderedSame}) {
-                    isAllowedCurrentRoutine = true
-                }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("weekdays", options: .caseInsensitive) == .orderedSame}) {
-                    if !currentWeekDay.localizedCaseInsensitiveContains("sat") && !currentWeekDay.localizedCaseInsensitiveContains("sat"){
-                        isAllowedCurrentRoutine = true
-                    }
-                }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("weekend", options: .caseInsensitive) == .orderedSame}) {
-                    if currentWeekDay.localizedCaseInsensitiveContains("sat") || currentWeekDay.localizedCaseInsensitiveContains("sat"){
-                        isAllowedCurrentRoutine = true
-                    }
-                }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare(currentWeekDay, options: .caseInsensitive) == .orderedSame}) {
-                    isAllowedCurrentRoutine = true
-                }
+                let isAllowedCurrentRoutine = isScheduledForWeekday(arrAllCustomRoutine[i].days_of_week, currentWeekDay: currentWeekDay)
                  
                  
                 if !isAllowedCurrentRoutine{
@@ -498,21 +646,7 @@ func getListCustomRoutineTime()->[routine]{
             // check is current routine is allowd for today or not
             
             let currentWeekDay = Date().dayOfWeek()
-            var isAllowedCurrentRoutine = false
-            
-            if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("all", options: .caseInsensitive) == .orderedSame}) {
-                isAllowedCurrentRoutine = true
-            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("weekdays", options: .caseInsensitive) == .orderedSame}) {
-                if !currentWeekDay.localizedCaseInsensitiveContains("sat") && !currentWeekDay.localizedCaseInsensitiveContains("sat"){
-                    isAllowedCurrentRoutine = true
-                }
-            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("weekend", options: .caseInsensitive) == .orderedSame}) {
-                if currentWeekDay.localizedCaseInsensitiveContains("sat") || currentWeekDay.localizedCaseInsensitiveContains("sat"){
-                    isAllowedCurrentRoutine = true
-                }
-            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare(currentWeekDay, options: .caseInsensitive) == .orderedSame}) {
-                isAllowedCurrentRoutine = true
-            }
+            let isAllowedCurrentRoutine = isScheduledForWeekday(arrAllCustomRoutine[i].days_of_week, currentWeekDay: currentWeekDay)
             
             
             if !isAllowedCurrentRoutine{
@@ -904,21 +1038,7 @@ func getNextRoutineInfo()->(Date, String, Bool){
             // check is current routine is allowd for today or not
              
             let currentWeekDay = Date().dayOfWeek()
-            var isAllowedCurrentRoutine = false
-            
-            if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("all", options: .caseInsensitive) == .orderedSame}) {
-                isAllowedCurrentRoutine = true
-            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("weekdays", options: .caseInsensitive) == .orderedSame}) {
-                if !currentWeekDay.localizedCaseInsensitiveContains("sat") && !currentWeekDay.localizedCaseInsensitiveContains("sat"){
-                    isAllowedCurrentRoutine = true
-                }
-            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("weekend", options: .caseInsensitive) == .orderedSame}) {
-                if currentWeekDay.localizedCaseInsensitiveContains("sat") || currentWeekDay.localizedCaseInsensitiveContains("sat"){
-                    isAllowedCurrentRoutine = true
-                }
-            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare(currentWeekDay, options: .caseInsensitive) == .orderedSame}) {
-                isAllowedCurrentRoutine = true
-            }
+            let isAllowedCurrentRoutine = isScheduledForWeekday(arrAllCustomRoutine[i].days_of_week, currentWeekDay: currentWeekDay)
              
              
             if !isAllowedCurrentRoutine{
@@ -1038,12 +1158,34 @@ func restorePostponeStateIfNeeded() {
         let remainingSeconds = Int(remaining)
         if state == CURRENTSTATE._POSTPONE_MORNING_HABIT_.rawValue{
             addLog(text: "Restored morning postpone: \(remainingSeconds)s left")
-            getHabitsVcObject().postponeMorningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false, isExtendingPostponeFromAppStart: true)
-
+            // #1982 follow-up: only re-arm the postpone if the morning routine hasn't already been
+            // completed today. If it has (isHabitAlreadyShowed), the saved postpone is stale — clear it
+            // so launch doesn't restore the postponed habit list.
+            if !isHabitAlreadyShowed{
+                getHabitsVcObject().postponeMorningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false, isExtendingPostponeFromAppStart: true)
+            }else{
+                addLog(text: "Restored morning postpone cancelled: morning habit already completed for today.")
+                UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+                UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+            }
         }else if state == CURRENTSTATE._POSTPONE_EVENING_HABIT_.rawValue{
             addLog(text: "Restored evening postpone: \(remainingSeconds)s left")
             if isShutOffTimeGoing(){
-                getHabitsVcObject().postponeEveningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false, isExtendingPostponeFromAppStart: true)
+                // #1982 follow-up: kUserdefaultsEveningHabitsShowedTillDate marks the point up to which
+                // today's evening routine is considered already done. If now is still before that point,
+                // the saved postpone is stale (routine already completed) — clear it; only re-arm the
+                // postpone once we're past it. (No marker → restore as before.)
+                if let date = UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date{
+                    if Date().compare(date) == .orderedDescending {
+                        getHabitsVcObject().postponeEveningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false, isExtendingPostponeFromAppStart: true)
+                    }else{
+                        addLog(text: "Restored evening postpone cancelled: evening habit already completed for today.")
+                        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+                        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+                    }
+                }else{
+                    getHabitsVcObject().postponeEveningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false, isExtendingPostponeFromAppStart: true)
+                }
             }else{
                 UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
                 UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)

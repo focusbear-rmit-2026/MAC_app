@@ -78,9 +78,11 @@ extension Date {
     
     func dayOfWeek() -> String{
         let dateFormatter = DateFormatter()
+        // Fixed locale: the result is matched against English server values ("MON"…"SUN",
+        // "weekdays", "weekend") — a localized day name (e.g. Spanish "SÁB") never matches.
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         dateFormatter.dateFormat = "EEE"
         return dateFormatter.string(from: self).uppercased()
-        // or use capitalized(with: locale) if you want
     }
     
     func interval(ofComponent comp: Calendar.Component, fromDate date: Date) -> Int {
@@ -469,6 +471,25 @@ extension NSColor {
         let g:CGFloat  = .random(in: 0...1)
         let b:CGFloat  = .random(in: 0...1)
         return NSColor(red: r, green: g, blue: b, alpha: 1)
+    }
+
+    /// "#RRGGBB" → colour. Returns nil for malformed input.
+    convenience init?(hex: String) {
+        var s = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        if s.hasPrefix("#") { s.removeFirst() }
+        guard s.count == 6, let v = UInt32(s, radix: 16) else { return nil }
+        self.init(srgbRed: CGFloat((v >> 16) & 0xFF) / 255.0,
+                  green: CGFloat((v >> 8) & 0xFF) / 255.0,
+                  blue: CGFloat(v & 0xFF) / 255.0, alpha: 1)
+    }
+
+    /// Colour → "#RRGGBB".
+    var hexString: String {
+        guard let c = usingColorSpace(.sRGB) else { return "#000000" }
+        return String(format: "#%02X%02X%02X",
+                      Int(round(c.redComponent * 255)),
+                      Int(round(c.greenComponent * 255)),
+                      Int(round(c.blueComponent * 255)))
     }
 }
 

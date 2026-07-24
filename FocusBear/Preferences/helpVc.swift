@@ -8,6 +8,8 @@
 
 import Cocoa
 import WebKit
+import SwiftUI
+import UniformTypeIdentifiers
 
 class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate {
 
@@ -96,8 +98,11 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
         tabView.selectTabViewItem(at: 0)
         
         dropView.delegate = self
-        
         btnSelectScreenshots.isSecondaryButton = true
+
+        // The Report Problem submit area is now a SwiftUI form (feedback + screenshots + Send, plus a
+        // destination radio for one user), hosted over the AppKit controls above.
+        setupReportProblemSwiftUI()
     }
     
     func loadGetSupportWebView(){
@@ -378,5 +383,312 @@ extension helpVc:NSCollectionViewDelegate, NSCollectionViewDataSource, dropViewD
     func filesAddedInDropView(filesAdded: [URL]) {
         arrScrrenshots = arrScrrenshots + filesAdded
         collectionView.reloadData()
+    }
+}
+
+
+// MARK: - SwiftUI Report-a-Problem form
+//
+// The Report Problem tab's submit form (feedback + screenshots + Send) rebuilt in SwiftUI, hosted over
+// the AppKit controls. For one user it also shows a destination radio to send to Focus Bear support
+// (R2 + Cliq, the existing path) or to write a local Claude task instead.
+
+/// Bundle the current logs + this feedback (+ screenshots) into ~/FocusBear-Claude-Tasks/<timestamp>/
+/// with a TASK.md, ready to hand to Claude. Returns the folder.
+@discardableResult
+func writeFocusBearClaudeTask(note: String, screenshots: [URL]) -> URL? {
+    let fm = FileManager.default
+    let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+    let stamp = f.string(from: Date())
+    let folder = fm.homeDirectoryForCurrentUser.appendingPathComponent("FocusBear-Claude-Tasks/\(stamp)")
+    try? fm.createDirectory(at: folder, withIntermediateDirectories: true)
+
+    var copied: [String] = []
+    if let logsURL = DebugLogsFolderURL, let items = try? fm.contentsOfDirectory(at: logsURL, includingPropertiesForKeys: nil) {
+        let dst = folder.appendingPathComponent("logs"); try? fm.createDirectory(at: dst, withIntermediateDirectories: true)
+        for src in items where src.pathExtension == "txt" {
+            try? fm.copyItem(at: src, to: dst.appendingPathComponent(src.lastPathComponent)); copied.append("logs/\(src.lastPathComponent)")
+        }
+    }
+    var shots: [String] = []
+    if !screenshots.isEmpty {
+        let dst = folder.appendingPathComponent("screenshots"); try? fm.createDirectory(at: dst, withIntermediateDirectories: true)
+        for src in screenshots {
+            try? fm.copyItem(at: src, to: dst.appendingPathComponent(src.lastPathComponent)); shots.append("screenshots/\(src.lastPathComponent)")
+        }
+    }
+    let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? ""
+    let body = """
+    # Focus Bear — Claude debug task
+
+    - Created: \(stamp)
+    - App version: \(version)
+    - User: \(appdelegate?.user?.userId ?? "")
+
+    ## What to investigate
+    \(note.isEmpty ? "_(no description provided)_" : note)
+
+    ## Logs
+    \(copied.isEmpty ? "_(none found)_" : copied.map { "- \($0)" }.joined(separator: "\n"))
+
+    ## Screenshots
+    \(shots.isEmpty ? "_(none)_" : shots.map { "- \($0)" }.joined(separator: "\n"))
+
+    ---
+    Hand this to Claude with: "work on the task in \(folder.path)"
+    """
+    try? body.write(to: folder.appendingPathComponent("TASK.md"), atomically: true, encoding: .utf8)
+    return folder
+}
+
+@available(macOS 11.0, *)
+enum ReportDestination: String, CaseIterable, Identifiable {
+    case support = "Focus Bear support (R2 + Cliq)"
+    case localClaude = "Local Claude task"
+    var id: String { rawValue }
+}
+
+@available(macOS 11.0, *)
+struct ReportProblemForm: View {
+    @SwiftUI.State private var feedback = ""
+    @SwiftUI.State private var screenshots: [URL] = []
+    @SwiftUI.State private var destination: ReportDestination = .support
+    @SwiftUI.State private var isSending = false
+    @SwiftUI.State private var status: String?
+    @SwiftUI.State private var dropTargeted = false
+    @SwiftUI.State private var isPicking = false
+    let showDestination: Bool
+    let onSend: (String, [URL], ReportDestination, @escaping (Bool) -> Void) -> Void
+    /// Opens a window-attached file picker (handled by helpVc, which has the window). Done there rather
+    /// than with NSOpenPanel.runModal() in SwiftUI — runModal stacked a nested modal loop per click and
+    /// the panels opened behind the kiosk window, freezing the app.
+    let onPickScreenshots: (@escaping ([URL]) -> Void) -> Void
+
+    init(showDestination: Bool,
+         onPickScreenshots: @escaping (@escaping ([URL]) -> Void) -> Void,
+         onSend: @escaping (String, [URL], ReportDestination, @escaping (Bool) -> Void) -> Void) {
+        self.showDestination = showDestination
+        self.onPickScreenshots = onPickScreenshots
+        self.onSend = onSend
+    }
+
+    private static let imageExts = ["png", "jpg", "jpeg", "heic", "gif", "tiff", "bmp"]
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Report a problem or share an idea").font(.headline)
+                Text("Screenshots and your logs help us understand what happened.")
+                    .font(.subheadline).foregroundColor(.secondary)
+
+                ZStack(alignment: .topLeading) {
+                    TextEditor(text: $feedback)
+                        .font(.system(size: 13)).frame(minHeight: 90)
+                        .padding(4)
+                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.3)))
+                    if feedback.isEmpty {
+                        Text("What happened?").foregroundColor(.secondary).padding(10).allowsHitTesting(false)
+                    }
+                }
+
+                screenshotsZone
+
+                if showDestination {
+                    Picker("Send to:", selection: $destination) {
+                        ForEach(ReportDestination.allCases) { Text($0.rawValue).tag($0) }
+                    }
+                    .pickerStyle(RadioGroupPickerStyle())
+                }
+
+                HStack(spacing: 10) {
+                    SwiftUI.Button(isSending ? "Sending…" : "Send") { send() }
+                        .keyboardShortcut(.defaultAction).disabled(isSending)
+                    if let s = status { Text(s).foregroundColor(.secondary) }
+                    Spacer()
+                }
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var screenshotsZone: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if !screenshots.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(screenshots, id: \.self) { url in
+                            ZStack(alignment: .topTrailing) {
+                                if let img = NSImage(contentsOf: url) {
+                                    Image(nsImage: img).resizable().scaledToFill()
+                                        .frame(width: 60, height: 60).clipped().cornerRadius(4)
+                                } else {
+                                    RoundedRectangle(cornerRadius: 4).fill(Color.secondary.opacity(0.2)).frame(width: 60, height: 60)
+                                }
+                                SwiftUI.Button { screenshots.removeAll { $0 == url } } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                }.buttonStyle(.plain).padding(2)
+                            }
+                        }
+                    }.padding(.vertical, 2)
+                }
+            }
+            HStack {
+                Text(isPicking ? "Opening…" : "➕ Drag, paste, or click to choose")
+                    .foregroundColor(.secondary)
+                if isPicking { ProgressView().scaleEffect(0.5).frame(width: 14, height: 14) }
+            }
+                .frame(maxWidth: .infinity, minHeight: 54)
+                .background(RoundedRectangle(cornerRadius: 6).fill(Color.secondary.opacity(dropTargeted ? 0.18 : 0.06)))
+                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [4])).foregroundColor(.secondary.opacity(0.4)))
+                .contentShape(Rectangle())
+                .onTapGesture { chooseScreenshots() }
+                .onDrop(of: [UTType.fileURL.identifier, UTType.image.identifier], isTargeted: $dropTargeted) { providers in
+                    handleDrop(providers)
+                }
+                .onPasteCommand(of: [UTType.fileURL.identifier, UTType.image.identifier]) { providers in
+                    _ = handleDrop(providers)
+                }
+            SwiftUI.Button { pasteScreenshots() } label: {
+                Label("Paste from clipboard", systemImage: "doc.on.clipboard")
+            }.buttonStyle(.link).font(.caption)
+        }
+    }
+
+    /// Opens the picker exactly once (guarded by isPicking) via helpVc, which presents it as a
+    /// window-attached sheet — so repeated clicks can't stack modal loops or hide it behind the app.
+    private func chooseScreenshots() {
+        guard !isPicking else { return }
+        isPicking = true
+        onPickScreenshots { urls in
+            isPicking = false
+            for u in urls where !screenshots.contains(u) { screenshots.append(u) }
+        }
+    }
+
+    /// Pastes images or image-file URLs from the clipboard. Prefers file URLs and only falls back to
+    /// raw images — a screenshot on the clipboard carries BOTH, so handling both would add it twice.
+    private func pasteScreenshots() {
+        let pb = NSPasteboard.general
+        let fileURLs = (pb.readObjects(forClasses: [NSURL.self],
+                                       options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? [])
+            .filter { ReportProblemForm.imageExts.contains($0.pathExtension.lowercased()) }
+        if !fileURLs.isEmpty {
+            for u in fileURLs where !screenshots.contains(u) { screenshots.append(u) }
+            return
+        }
+        if let imgs = pb.readObjects(forClasses: [NSImage.self], options: nil) as? [NSImage] {
+            for img in imgs {
+                guard let tiff = img.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff),
+                      let png = rep.representation(using: .png, properties: [:]) else { continue }
+                let tmp = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("pasted-screenshot-\(UUID().uuidString).png")
+                if (try? png.write(to: tmp)) != nil { screenshots.append(tmp) }
+            }
+        }
+    }
+
+    /// Accepts both dragged files and raw image data (e.g. from CleanShot/Preview, which provide
+    /// image bytes rather than a file URL). Raw data is written to a temp PNG so it can be uploaded.
+    private func handleDrop(_ providers: [NSItemProvider]) -> Bool {
+        var handled = false
+        for p in providers {
+            if p.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+                handled = true
+                _ = p.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
+                    var url: URL?
+                    if let data = item as? Data { url = URL(dataRepresentation: data, relativeTo: nil) }
+                    else if let u = item as? URL { url = u }
+                    if let url = url, ReportProblemForm.imageExts.contains(url.pathExtension.lowercased()) {
+                        DispatchQueue.main.async { if !screenshots.contains(url) { screenshots.append(url) } }
+                    }
+                }
+            } else if p.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
+                handled = true
+                p.loadDataRepresentation(forTypeIdentifier: UTType.image.identifier) { data, _ in
+                    guard let data = data else { return }
+                    let tmp = FileManager.default.temporaryDirectory
+                        .appendingPathComponent("dropped-screenshot-\(UUID().uuidString).png")
+                    guard (try? data.write(to: tmp)) != nil else { return }
+                    DispatchQueue.main.async { screenshots.append(tmp) }
+                }
+            }
+        }
+        return handled
+    }
+
+    private func send() {
+        guard !isSending else { return }
+        isSending = true; status = nil
+        onSend(feedback, screenshots, showDestination ? destination : .support) { ok in
+            isSending = false
+            status = ok ? "Sent ✓" : "Failed — please try again"
+            if ok { feedback = ""; screenshots = [] }
+        }
+    }
+}
+
+extension helpVc {
+    /// Host the SwiftUI report form over the AppKit Report Problem controls.
+    func setupReportProblemSwiftUI() {
+        guard #available(macOS 11.0, *), let container = tabViewReportProblem.view else { return }
+        let gated = (appdelegate?.user?.userId ?? "") == "9884b0af-dc9f-4207-964e-e4db537a2234"
+        let form = ReportProblemForm(
+            showDestination: gated,
+            onPickScreenshots: { [weak self] completion in self?.pickReportScreenshots(completion) },
+            onSend: { [weak self] feedback, shots, dest, done in
+                self?.sendReport(feedback: feedback, screenshots: shots, destination: dest, completion: done)
+            })
+        let hosting = NSHostingView(rootView: form)
+        hosting.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(hosting)
+        NSLayoutConstraint.activate([
+            hosting.topAnchor.constraint(equalTo: container.topAnchor),
+            hosting.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            hosting.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            hosting.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+        // Hide the old AppKit controls — the SwiftUI form replaces them.
+        let old: [NSView?] = [lblTitle, textView.enclosingScrollView ?? textView, dropView,
+                              collectionView.enclosingScrollView ?? collectionView,
+                              lblAddScreenshots, btnSelectScreenshots, btnExportLogs]
+        old.forEach { $0?.isHidden = true }
+    }
+
+    /// Presents the screenshot picker as a sheet attached to the Help window. A sheet can't be opened
+    /// twice (guarded again by `attachedSheet`) and can't fall behind the kiosk window — both were the
+    /// cause of the freeze from the earlier runModal() approach.
+    func pickReportScreenshots(_ completion: @escaping ([URL]) -> Void) {
+        guard let window = view.window, window.attachedSheet == nil else { completion([]); return }
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        if #available(macOS 11.0, *) { panel.allowedContentTypes = [.image] }
+        panel.message = "Choose screenshots to attach"
+        panel.beginSheetModal(for: window) { resp in
+            completion(resp == .OK ? panel.urls : [])
+        }
+    }
+
+    @available(macOS 11.0, *)
+    func sendReport(feedback: String, screenshots: [URL], destination: ReportDestination, completion: @escaping (Bool) -> Void) {
+        switch destination {
+        case .support:
+            let message = feedback.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? feedback
+            view.addSubview(getLogsUploadingVcObjObj().view)
+            view.addConstraints(subView: getLogsUploadingVcObjObj().view)
+            allApiObject.uploadAppLogs(feedback: message, screenShots: screenshots) { uploaded in
+                DispatchQueue.main.async {
+                    getLogsUploadingVcObjObj().view.removeFromSuperview()
+                    completion(uploaded ?? false)
+                }
+            }
+        case .localClaude:
+            let folder = writeFocusBearClaudeTask(note: feedback, screenshots: screenshots)
+            // Don't reveal the folder in Finder — submitting several reports piled up Finder windows
+            // the user had to close one by one. The report still lands in ~/FocusBear-Claude-Tasks.
+            completion(folder != nil)
+        }
     }
 }

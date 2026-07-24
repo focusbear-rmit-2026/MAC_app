@@ -141,9 +141,8 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
             .start { result in
                 switch result {
                 case .success(let credentials):
-                    print("Logged in with Google: \(credentials)")
+                    addLog(text: "Logged in with Google")
                     // Handle successful login, save credentials, or transition to the next screen
-                    print(credentials.accessToken)
                     DispatchQueue.main.async {
                         askLogInWcObj?.window?.close()
                         appdelegate!.statusbutton?.action = nil
@@ -178,8 +177,8 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
             .start { result in
                 switch result {
                 case .success(let credentials):
-                    print("Logged in with Apple: \(credentials)")
-                    
+                    addLog(text: "Logged in with Apple")
+
                     DispatchQueue.main.async {
                         askLogInWcObj?.window?.close()
                         appdelegate?.statusbutton?.action = nil

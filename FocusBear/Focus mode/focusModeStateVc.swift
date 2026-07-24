@@ -269,8 +269,16 @@ class focusModeStateVc: NSViewController {
     
     @IBAction func btnStopFocusModeClicked(_ sender: Any) {
 
+        // C3:- a teacher-controlled class session can't be stopped early. It runs outside
+        // arrFocusType, so the loop below would find nothing and silently no-op — instead route to
+        // the unlock-request UX via the locked alert.
+        if teacherSessionManagerObject.isTeacherSessionActive(){
+            teacherSessionManagerObject.showTeacherSessionLockedAlert()
+            return
+        }
+
         var isFocusModeOn = false
-        
+
         for index in 0..<arrFocusType.count{
             if arrFocusType[index]["isOn"] as? Bool == true || arrFocusType[index]["isPaused"] as? Bool == true{
                 //abort focus mode

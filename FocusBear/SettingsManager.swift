@@ -30,11 +30,34 @@ class SettingsManager:NSObject{
     var isDetectNatualBreaksEnabled = true// 19/7/25 version 1.26.392   "Don't show this again" option for natural break detection popups #1466
     
     var isFocusVisualIndicatorEnabled = true
-    
+
+    /// Show the glowing screen-edge border during focus sessions. Backed by
+    /// kUserdefaultsFocusGlowBorderEnabled for local persistence, and synced to the server via the
+    /// device-settings upload/load below so it follows the user across devices. Default on.
+    var isFocusGlowBorderEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: kUserdefaultsFocusGlowBorderEnabled) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: kUserdefaultsFocusGlowBorderEnabled) }
+    }
+
+    /// The user's saved answer to the post-session-start "play focus music?" prompt: .ask shows the
+    /// prompt each focus session (default), .play auto-starts music, .off stays silent. Surfaced as a
+    /// toggle in Settings → Accessibility (on = .play). Backed by kUserdefaultsFocusMusicAutoStartPreference
+    /// and synced to the server via the device-settings upload/load below, so it follows the user across
+    /// devices (user-specific, not device-specific).
+    var focusMusicAutoStart: FocusMusicAutoStart {
+        get { FocusMusicAutoStart(rawValue: UserDefaults.standard.string(forKey: kUserdefaultsFocusMusicAutoStartPreference) ?? "") ?? .ask }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: kUserdefaultsFocusMusicAutoStartPreference) }
+    }
+
     var isPasswordRequireInChangeSettings = true
     var isPasswordRequireInSkipMorning = true
     var isPasswordRequireInSkipEvening = true
     var isPasswordRequireInSkipEveningAfterCutOff = true
+    // Separate password rules for POSTPONE (vs Skip). Local device settings; default OFF (set per
+    // user via the Settings checkboxes). See kUserdefaultsPasswordRequireInPostpone*.
+    var isPasswordRequireInPostponeMorning = false
+    var isPasswordRequireInPostponeEvening = false
+    var isPasswordRequireInPostponeEveningAfterCutOff = false
     var isPasswordRequireInAbortShutoff = true
     var isPasswordRequireInStopPomodoro = true
     var isPasswordRequireInQuitApp = true
@@ -43,7 +66,16 @@ class SettingsManager:NSObject{
     var isPasswordRequireInPreferencesAfterCutoff = true
     
     
-    var isCuddlyModeEnabled = true
+    /// The user's real cuddly/grizzly preference (backing store). Persist/sync from THIS, not the
+    /// computed `isCuddlyModeEnabled` below, so a teacher session can't overwrite the saved value.
+    var storedCuddlyModeEnabled = true
+    /// Effective cuddly-mode flag. A teacher (class) session forces grizzly mode
+    /// (isCuddlyModeEnabled == false) regardless of the user's setting; when the session ends the
+    /// user's stored preference resumes automatically.
+    var isCuddlyModeEnabled: Bool {
+        get { teacherSessionManagerObject.isTeacherSessionActive() ? false : storedCuddlyModeEnabled }
+        set { storedCuddlyModeEnabled = newValue }
+    }
     var immediatelyBlockDistractingSites = false
     var immediatelyBlockDistractingApps = false
     
@@ -79,6 +111,13 @@ class SettingsManager:NSObject{
     var isMeetingDetectionEnabled = true
     var isBlockDistractingSitesDuringMeetingsEnabled = false
     var showMeetingDetectionAlert = false
+    var isTalkingClockEnabled = false
+    var talkingClockIntervalMinutes = 30
+    var talkingClockQuietStartHour = 22
+    var talkingClockQuietStartMinute = 0
+    var talkingClockQuietEndHour = 8
+    var talkingClockQuietEndMinute = 0
+    var talkingClockSuppressDuringMeetings = true
     var isHideDockInActivity = false
     var isPromptToRememberHabit = true
     var isEasySkipEnabled = true
@@ -94,10 +133,7 @@ class SettingsManager:NSObject{
     var isMicroBreaksEnabled = true
     
     var isSkipBreakActivityDuringPomodoro = false
-    
-    var brainDumpCustomUrlEnabled = false
-    var brainDumpCustomUrlValue = ""
-    
+
     var shouldReloadAfterForceQuitEnabled = false
     var selectedFontIndex = 0
     var cuddlyModeProgressCount = 0
@@ -114,6 +150,9 @@ class SettingsManager:NSObject{
     var kUserdefaultsPasswordRequireInSkipMorning = "kUserdefaultsPasswordRequireInSkipMorning"
     var kUserdefaultsPasswordRequireInSkipEvening = "kUserdefaultsPasswordRequireInSkipEvening"
     var kUserdefaultsPasswordRequireInSkipEveningAfterCutOff = "kUserdefaultsPasswordRequireInSkipEveningAfterCutOff"
+    var kUserdefaultsPasswordRequireInPostponeMorning = "kUserdefaultsPasswordRequireInPostponeMorning"
+    var kUserdefaultsPasswordRequireInPostponeEvening = "kUserdefaultsPasswordRequireInPostponeEvening"
+    var kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff = "kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff"
     var kUserdefaultsPasswordRequireInAbortShutoff = "kUserdefaultsPasswordRequireInAbortShutoff"
     var kUserdefaultsPasswordRequireInStopPomodoro = "kUserdefaultsPasswordRequireInStopPomodoro"
     var kUserdefaultsPasswordRequireInQuitApp = "kUserdefaultsPasswordRequireInQuitApp"
@@ -231,13 +270,18 @@ class SettingsManager:NSObject{
     
     func resetAllKeys() {
         kUserdefaultsLocalDeviceSettings = kUserdefaultsLocalDeviceSettings + (appdelegate?.user?.userId ?? "")
-        
+        // Per-user so the evening shutdown prompt doesn't leak across accounts on the same device.
+        kEveningShutdownPromptDate = kEveningShutdownPromptDate + (appdelegate?.user?.userId ?? "")
+
         kUserdefaultsAppPassword = kUserdefaultsAppPassword + (appdelegate?.user?.userId ?? "")
         
         kUserdefaultsPasswordRequireInChangeSettings = kUserdefaultsPasswordRequireInChangeSettings + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInSkipMorning = kUserdefaultsPasswordRequireInSkipMorning + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInSkipEvening = kUserdefaultsPasswordRequireInSkipEvening + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInSkipEveningAfterCutOff = kUserdefaultsPasswordRequireInSkipEveningAfterCutOff + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsPasswordRequireInPostponeMorning = kUserdefaultsPasswordRequireInPostponeMorning + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsPasswordRequireInPostponeEvening = kUserdefaultsPasswordRequireInPostponeEvening + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff = kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInAbortShutoff = kUserdefaultsPasswordRequireInAbortShutoff + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInStopPomodoro = kUserdefaultsPasswordRequireInStopPomodoro + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInQuitApp = kUserdefaultsPasswordRequireInQuitApp + (appdelegate?.user?.userId ?? "")
@@ -390,6 +434,9 @@ class SettingsManager:NSObject{
                 let kIsPasswordRequireInSkipMorning = "kIsPasswordRequireInSkipMorning"
                 let kIsPasswordRequireInSkipEvening = "kIsPasswordRequireInSkipEvening"
                 let kIsPasswordRequireInSkipEveningAfterCutOff = "kIsPasswordRequireInSkipEveningAfterCutOff"
+                let kIsPasswordRequireInPostponeMorning = "kIsPasswordRequireInPostponeMorning"
+                let kIsPasswordRequireInPostponeEvening = "kIsPasswordRequireInPostponeEvening"
+                let kIsPasswordRequireInPostponeEveningAfterCutOff = "kIsPasswordRequireInPostponeEveningAfterCutOff"
                 let kIsPasswordRequireInAbortShutoff = "kIsPasswordRequireInAbortShutoff"
                 let kIsPasswordRequireInStopPomodoro = "kIsPasswordRequireInStopPomodoro"
                 let kIsPasswordRequireInQuitApp = "kIsPasswordRequireInQuitApp"
@@ -448,19 +495,26 @@ class SettingsManager:NSObject{
                 let kAiCheckUrlEnabled = "kAiCheckUrlEnabled"
                 
                 let kShowToDoPlayerAutomatically = "kShowToDoPlayerAutomatically"
-                let kBrainDumpCustomUrlEnabled = "kBrainDumpCustomUrlEnabled"
                 let kIsMenuPopoverEnabled = "kIsMenuPopoverEnabled"
                 let kIsAdvancedAnalyticsInFocusModeEnabled = "kIsAdvancedAnalyticsInFocusModeEnabled"
                 let kIsDataCollectionModeEnabled = "kIsDataCollectionModeEnabled"
                 let kDetectNatualBreaksEnabled = "kDetectNatualBreaksEnabled"
                 
                 let kIsFocusVisualIndicatorEnabled = "kIsFocusVisualIndicatorEnabled"
-                let kBrainDumpCustomUrlValue = "kBrainDumpCustomUrlValue"
+                let kIsFocusGlowBorderEnabled = "kIsFocusGlowBorderEnabled"
+                let kFocusMusicAutoStartPreference = "kFocusMusicAutoStartPreference"
                 let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
                 let kMicroBreaksEnabled = "kMicroBreaksEnabled"
                 
                 let kSkipBreakActivityDuringFocusSession = "kSkipBreakActivityDuringFocusSession"
-                
+
+                // Talking Clock keys — must match the ones written in getLocalJsonToUpload().
+                let kTalkingClockEnabled = "kTalkingClockEnabled"
+                let kTalkingClockInterval = "kTalkingClockInterval"
+                let kTalkingClockQuietStart = "kTalkingClockQuietStart"
+                let kTalkingClockQuietEnd = "kTalkingClockQuietEnd"
+                let kTalkingClockSuppressMeetings = "kTalkingClockSuppressMeetings"
+
                 addLog(text: "Parse ReducedMotion")
                 if let val = settings.value(forKey: kIsReducedMotionEnabled) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsReducedMotion)
@@ -476,7 +530,25 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kShowMeetingDetectionAlert) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsShowMeetingDetectionAlert)
                 }
-                
+
+                // Talking Clock — apply the synced values into UserDefaults before the local read
+                // block below reads them into the in-memory properties (same flow as the settings above).
+                if let val = settings.value(forKey: kTalkingClockEnabled) as? Bool{
+                    UserDefaults.standard.set(val, forKey: kUserdefaultsTalkingClockEnabled)
+                }
+                if let val = settings.value(forKey: kTalkingClockInterval) as? Int{
+                    UserDefaults.standard.set(val, forKey: kUserdefaultsTalkingClockInterval)
+                }
+                if let val = settings.value(forKey: kTalkingClockQuietStart) as? Int{
+                    UserDefaults.standard.set(val, forKey: kUserdefaultsTalkingClockQuietStart)
+                }
+                if let val = settings.value(forKey: kTalkingClockQuietEnd) as? Int{
+                    UserDefaults.standard.set(val, forKey: kUserdefaultsTalkingClockQuietEnd)
+                }
+                if let val = settings.value(forKey: kTalkingClockSuppressMeetings) as? Bool{
+                    UserDefaults.standard.set(val, forKey: kUserdefaultsTalkingClockSuppressMeetings)
+                }
+
                 if let val = settings.value(forKey: kIsPasswordRequireInChangeSettings) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInChangeSettings)
                 }
@@ -491,7 +563,16 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kIsPasswordRequireInSkipEveningAfterCutOff) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInSkipEveningAfterCutOff)
                 }
-                
+                if let val = settings.value(forKey: kIsPasswordRequireInPostponeMorning) as? Bool{
+                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInPostponeMorning)
+                }
+                if let val = settings.value(forKey: kIsPasswordRequireInPostponeEvening) as? Bool{
+                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInPostponeEvening)
+                }
+                if let val = settings.value(forKey: kIsPasswordRequireInPostponeEveningAfterCutOff) as? Bool{
+                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff)
+                }
+
                 if let val = settings.value(forKey: kIsPasswordRequireInAbortShutoff) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInAbortShutoff)
                 }
@@ -691,9 +772,6 @@ class SettingsManager:NSObject{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsAiCheckUrlEnabled)
                 }
                 
-                if let val = settings.value(forKey: kBrainDumpCustomUrlEnabled) as? Bool{
-                    brainDumpCustomUrlEnabled = val
-                }
                 if let val = settings.value(forKey: kSkipBreakActivityDuringFocusSession) as? Bool{
                     isSkipBreakActivityDuringPomodoro = val
                 }
@@ -723,11 +801,15 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kIsFocusVisualIndicatorEnabled) as? Bool{
                     isFocusVisualIndicatorEnabled = val
                 }
-                
-                if let val = settings.value(forKey: kBrainDumpCustomUrlValue) as? String{
-                    brainDumpCustomUrlValue = val
+
+                if let val = settings.value(forKey: kIsFocusGlowBorderEnabled) as? Bool{
+                    isFocusGlowBorderEnabled = val
                 }
-                
+
+                if let val = settings.value(forKey: kFocusMusicAutoStartPreference) as? String{
+                    focusMusicAutoStart = FocusMusicAutoStart(rawValue: val) ?? .ask
+                }
+
                 if let val = settings.value(forKey: kShowToDoPlayerAutomatically) as? Bool{
                     showToDoPlayerAutomaticallyEnabled = val
                 }
@@ -815,6 +897,42 @@ class SettingsManager:NSObject{
             }else{
                 UserDefaults.standard.set(isBlockDistractingSitesDuringMeetingsEnabled, forKey: kUserdefaultsBlockDistractingSitesDuringMeetingsEnabled)
             }
+            //  ---------------------------SETTINGS Talking Clock--------------------------
+            if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsTalkingClockEnabled) as? Bool {
+                isTalkingClockEnabled = isEnabled
+            } else {
+                UserDefaults.standard.set(false, forKey: kUserdefaultsTalkingClockEnabled)
+                isTalkingClockEnabled = false
+            }
+            if let interval = UserDefaults.standard.object(forKey: kUserdefaultsTalkingClockInterval) as? Int {
+                talkingClockIntervalMinutes = interval
+            } else {
+                UserDefaults.standard.set(30, forKey: kUserdefaultsTalkingClockInterval)
+                talkingClockIntervalMinutes = 30
+            }
+            if let quietStart = UserDefaults.standard.object(forKey: kUserdefaultsTalkingClockQuietStart) as? Int {
+                talkingClockQuietStartHour = quietStart / 60
+                talkingClockQuietStartMinute = quietStart % 60
+            } else {
+                UserDefaults.standard.set(22 * 60, forKey: kUserdefaultsTalkingClockQuietStart)
+                talkingClockQuietStartHour = 22
+                talkingClockQuietStartMinute = 0
+            }
+            if let quietEnd = UserDefaults.standard.object(forKey: kUserdefaultsTalkingClockQuietEnd) as? Int {
+                talkingClockQuietEndHour = quietEnd / 60
+                talkingClockQuietEndMinute = quietEnd % 60
+            } else {
+                UserDefaults.standard.set(8 * 60, forKey: kUserdefaultsTalkingClockQuietEnd)
+                talkingClockQuietEndHour = 8
+                talkingClockQuietEndMinute = 0
+            }
+            if let suppress = UserDefaults.standard.object(forKey: kUserdefaultsTalkingClockSuppressMeetings) as? Bool {
+                talkingClockSuppressDuringMeetings = suppress
+            } else {
+                UserDefaults.standard.set(true, forKey: kUserdefaultsTalkingClockSuppressMeetings)
+                talkingClockSuppressDuringMeetings = true
+            }
+
             addLog(text: "Parse PasswordRequireInChangeSettings")
             //  ---------------------------SETTINGS Password Require--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInChangeSettings) as? Bool{
@@ -857,7 +975,25 @@ class SettingsManager:NSObject{
             }else{
                 UserDefaults.standard.set(isPasswordRequireInSkipEveningAfterCutOff, forKey: kUserdefaultsPasswordRequireInSkipEveningAfterCutOff)
             }
-            
+
+            // Postpone password rules — separate from Skip (default ON so postpone stays protected
+            // while Skip is open). Persisted as local device settings so a toggle can sync later.
+            if let v = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInPostponeMorning) as? Bool {
+                isPasswordRequireInPostponeMorning = v
+            } else {
+                UserDefaults.standard.set(isPasswordRequireInPostponeMorning, forKey: kUserdefaultsPasswordRequireInPostponeMorning)
+            }
+            if let v = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInPostponeEvening) as? Bool {
+                isPasswordRequireInPostponeEvening = v
+            } else {
+                UserDefaults.standard.set(isPasswordRequireInPostponeEvening, forKey: kUserdefaultsPasswordRequireInPostponeEvening)
+            }
+            if let v = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff) as? Bool {
+                isPasswordRequireInPostponeEveningAfterCutOff = v
+            } else {
+                UserDefaults.standard.set(isPasswordRequireInPostponeEveningAfterCutOff, forKey: kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff)
+            }
+
             
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInAbortShutoff) as? Bool{
                 if isEnabled{
@@ -992,6 +1128,15 @@ class SettingsManager:NSObject{
             }else{
                 UserDefaults.standard.set(selectedFontIndex, forKey: kUserdefaultsselectedFontIndex)
             }
+            // The short-lived "Lexend as default" migration was reverted — undo it once so anyone it had
+            // auto-switched goes back to System (Lexend stays available as a manual choice). Self-removing.
+            if UserDefaults.standard.bool(forKey: "kLexendDefaultMigrated") {
+                if selectedFontIndex == lexendFontIndex {
+                    selectedFontIndex = systemFontIndex
+                    UserDefaults.standard.set(systemFontIndex, forKey: kUserdefaultsselectedFontIndex)
+                }
+                UserDefaults.standard.removeObject(forKey: "kLexendDefaultMigrated")
+            }
             addLog(text: "Parse selectedFontIndex")
             //  ---------------------------SETTINGS Progress Count--------------------------
             if let progressCount = UserDefaults.standard.object(forKey: kUserdefaultsCuddlyModeProgressCount) as? Int{
@@ -1020,9 +1165,9 @@ class SettingsManager:NSObject{
             
             //  ---------------------------SETTINGS Focus bear mode--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsCuddlyModeEnabled) as? Bool{
-                isCuddlyModeEnabled = isEnabled
+                storedCuddlyModeEnabled = isEnabled
             }else{
-                UserDefaults.standard.set(isCuddlyModeEnabled, forKey: kUserdefaultsCuddlyModeEnabled)
+                UserDefaults.standard.set(storedCuddlyModeEnabled, forKey: kUserdefaultsCuddlyModeEnabled)
             }
             
             
@@ -1244,6 +1389,9 @@ class SettingsManager:NSObject{
         let kIsPasswordRequireInSkipMorning = "kIsPasswordRequireInSkipMorning"
         let kIsPasswordRequireInSkipEvening = "kIsPasswordRequireInSkipEvening"
         let kIsPasswordRequireInSkipEveningAfterCutOff = "kIsPasswordRequireInSkipEveningAfterCutOff"
+        let kIsPasswordRequireInPostponeMorning = "kIsPasswordRequireInPostponeMorning"
+        let kIsPasswordRequireInPostponeEvening = "kIsPasswordRequireInPostponeEvening"
+        let kIsPasswordRequireInPostponeEveningAfterCutOff = "kIsPasswordRequireInPostponeEveningAfterCutOff"
         let kIsPasswordRequireInAbortShutoff = "kIsPasswordRequireInAbortShutoff"
         let kIsPasswordRequireInStopPomodoro = "kIsPasswordRequireInStopPomodoro"
         let kIsPasswordRequireInQuitApp = "kIsPasswordRequireInQuitApp"
@@ -1266,16 +1414,25 @@ class SettingsManager:NSObject{
         let kMotivationalMessageEnabled = "kMotivationalMessageEnabled"
         let kAiCheckUrlEnabled = "kAiCheckUrlEnabled"
         let kShowToDoPlayerAutomatically = "kShowToDoPlayerAutomatically"
-        let kBrainDumpCustomUrlEnabled = "kBrainDumpCustomUrlEnabled"
         let kIsMenuPopoverEnabled = "kIsMenuPopoverEnabled"
         let kIsAdvancedAnalyticsInFocusModeEnabled = "kIsAdvancedAnalyticsInFocusModeEnabled"
         let kIsDataCollectionModeEnabled = "kIsDataCollectionModeEnabled"
         let kDetectNatualBreaksEnabled = "kDetectNatualBreaksEnabled"
         let kIsFocusVisualIndicatorEnabled = "kIsFocusVisualIndicatorEnabled"
-        let kBrainDumpCustomUrlValue = "kBrainDumpCustomUrlValue"
+        let kIsFocusGlowBorderEnabled = "kIsFocusGlowBorderEnabled"
+        let kFocusMusicAutoStartPreference = "kFocusMusicAutoStartPreference"
         let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
         let kMicroBreaksEnabled = "kMicroBreaksEnabled"
         let kSkipBreakActivityDuringFocusSession = "kSkipBreakActivityDuringFocusSession"
+
+        // Talking Clock — synced to the user's account (cross-device) like the other settings,
+        // rather than staying device-local. Quiet hours travel as combined minutes-of-day ints
+        // (hour*60 + minute), matching how they're stored in UserDefaults.
+        let kTalkingClockEnabled = "kTalkingClockEnabled"
+        let kTalkingClockInterval = "kTalkingClockInterval"
+        let kTalkingClockQuietStart = "kTalkingClockQuietStart"
+        let kTalkingClockQuietEnd = "kTalkingClockQuietEnd"
+        let kTalkingClockSuppressMeetings = "kTalkingClockSuppressMeetings"
 
         //        let kAiAllowUrlShowAlertEnabled = "kAiAllowUrlShowAlertEnabled"
         let isEditBlockedUrlsOnce = UserDefaults.standard.object(forKey: kUserdefaultsEditBlockedUrlsOnce) as? Bool ?? false
@@ -1314,7 +1471,7 @@ class SettingsManager:NSObject{
             kArrBlockedUrls:arrBlockedUrls,
             kArrBlockedApps:arrBlockedApps,
             kArrAlwaysAllowedApps:arrAlwaysAllowedApps,
-            kCuddlyModeEnabled:isCuddlyModeEnabled,
+            kCuddlyModeEnabled:storedCuddlyModeEnabled,
             kIsGeekModeEnabled:isGeekModeEnabled,
             kImmediatelyBlockDistractingSites:immediatelyBlockDistractingSites,
             kImmediatelyBlockDistractingApps:immediatelyBlockDistractingApps,
@@ -1330,6 +1487,9 @@ class SettingsManager:NSObject{
             kIsPasswordRequireInSkipMorning:isPasswordRequireInSkipMorning,
             kIsPasswordRequireInSkipEvening:isPasswordRequireInSkipEvening,
             kIsPasswordRequireInSkipEveningAfterCutOff:isPasswordRequireInSkipEveningAfterCutOff,
+            kIsPasswordRequireInPostponeMorning:isPasswordRequireInPostponeMorning,
+            kIsPasswordRequireInPostponeEvening:isPasswordRequireInPostponeEvening,
+            kIsPasswordRequireInPostponeEveningAfterCutOff:isPasswordRequireInPostponeEveningAfterCutOff,
             kIsPasswordRequireInAbortShutoff:isPasswordRequireInAbortShutoff,
             kIsPasswordRequireInStopPomodoro:isPasswordRequireInStopPomodoro,
             kIsPasswordRequireInQuitApp:isPasswordRequireInQuitApp,
@@ -1339,16 +1499,21 @@ class SettingsManager:NSObject{
             kMotivationalMessageEnabled:isMotivationalMessageEnabled,
             kAiCheckUrlEnabled:isAiCheckUrlEnabled,
             kShowToDoPlayerAutomatically:showToDoPlayerAutomaticallyEnabled,
-            kBrainDumpCustomUrlEnabled:brainDumpCustomUrlEnabled,
             kIsMenuPopoverEnabled: isMenuPopoverEnabled,
             kIsAdvancedAnalyticsInFocusModeEnabled:isAdvancedAnalyticsInFocusModeEnabled,
             kIsDataCollectionModeEnabled:isDataCollectionModeEnabled,
             kDetectNatualBreaksEnabled:isDetectNatualBreaksEnabled,
             kIsFocusVisualIndicatorEnabled:isFocusVisualIndicatorEnabled,
-            kBrainDumpCustomUrlValue:brainDumpCustomUrlValue,
+            kIsFocusGlowBorderEnabled:isFocusGlowBorderEnabled,
+            kFocusMusicAutoStartPreference:focusMusicAutoStart.rawValue,
             kShowBrainDumpAfterMorningRoutine:showBrainDumpAfterMorningRoutineEnabled,
             kMicroBreaksEnabled:isMicroBreaksEnabled,
             kSkipBreakActivityDuringFocusSession:isSkipBreakActivityDuringPomodoro,
+            kTalkingClockEnabled:isTalkingClockEnabled,
+            kTalkingClockInterval:talkingClockIntervalMinutes,
+            kTalkingClockQuietStart:talkingClockQuietStartHour * 60 + talkingClockQuietStartMinute,
+            kTalkingClockQuietEnd:talkingClockQuietEndHour * 60 + talkingClockQuietEndMinute,
+            kTalkingClockSuppressMeetings:talkingClockSuppressDuringMeetings,
             "has_edited_blocked_urls":isEditBlockedUrlsOnce
         ]
         if let password = UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) as? String{
@@ -1370,6 +1535,11 @@ class SettingsManager:NSObject{
         UserDefaults.standard.set(isMeetingDetectionEnabled, forKey: kUserdefaultsMeetingDetectionEnabled)
         UserDefaults.standard.set(isBlockDistractingSitesDuringMeetingsEnabled, forKey: kUserdefaultsBlockDistractingSitesDuringMeetingsEnabled)
         UserDefaults.standard.set(showMeetingDetectionAlert, forKey: kUserdefaultsShowMeetingDetectionAlert)
+        UserDefaults.standard.set(isTalkingClockEnabled, forKey: kUserdefaultsTalkingClockEnabled)
+        UserDefaults.standard.set(talkingClockIntervalMinutes, forKey: kUserdefaultsTalkingClockInterval)
+        UserDefaults.standard.set(talkingClockQuietStartHour * 60 + talkingClockQuietStartMinute, forKey: kUserdefaultsTalkingClockQuietStart)
+        UserDefaults.standard.set(talkingClockQuietEndHour * 60 + talkingClockQuietEndMinute, forKey: kUserdefaultsTalkingClockQuietEnd)
+        UserDefaults.standard.set(talkingClockSuppressDuringMeetings, forKey: kUserdefaultsTalkingClockSuppressMeetings)
         UserDefaults.standard.set(isHideDockInActivity, forKey: kUserdefaultsHideDockInActivity)
         UserDefaults.standard.set(isPromptToRememberHabit, forKey: kUserdefaultsPromptToRememberHabit)
         UserDefaults.standard.set(isEasySkipEnabled, forKey: kUserdefaultsEasySkipEnabled)
@@ -1385,7 +1555,7 @@ class SettingsManager:NSObject{
         UserDefaults.standard.set(cuddlyModeProgressCount, forKey: kUserdefaultsCuddlyModeProgressCount)
         UserDefaults.standard.set(selectedAppAppearanceIndex, forKey: kUserdefaultsSelectedAppAppearanceIndex)
         UserDefaults.standard.set(isOfficeModeEnabled, forKey: kUserdefaultsOfficeModeEnabled)
-        UserDefaults.standard.set(isCuddlyModeEnabled, forKey: kUserdefaultsCuddlyModeEnabled)
+        UserDefaults.standard.set(storedCuddlyModeEnabled, forKey: kUserdefaultsCuddlyModeEnabled)
         UserDefaults.standard.set(isGeekModeEnabled, forKey: kUserdefaultsGeekModeEnabled)
         UserDefaults.standard.set(immediatelyBlockDistractingSites, forKey: kUserdefaultsImmediatelyBlockDistractingSites)
         UserDefaults.standard.set(immediatelyBlockDistractingApps, forKey: kUserdefaultsImmediatelyBlockDistractingApps)
@@ -1554,7 +1724,9 @@ class SettingsManager:NSObject{
             superGentleSettingsEnableCount += 1
         }
         
-        if isCuddlyModeEnabled{
+        // Score the user's chosen strictness, so an active teacher session (which forces grizzly)
+        // doesn't temporarily inflate this settings-based level — use the stored preference.
+        if storedCuddlyModeEnabled{
             superGentleSettingsEnableCount += 1
             gentleSettingsEnableCount += 1
             slightlyStrictSettingsEnableCount += 1
@@ -1648,6 +1820,16 @@ class SettingsManager:NSObject{
     }
     
     func isAIBlockingEnabled()->Bool{
+        // A teacher-controlled class session takes precedence over the custom schedule and the user's
+        // global setting: AI relevance-checking is on only if the teacher enabled it for the
+        // allow-list (`isAiBlockingEnabledForAllowList`). This keeps every AI/block/score path in
+        // sync with the teacher's choice rather than the student's own setting — and, when the teacher
+        // hasn't asked for AI, makes not-on-list URLs block immediately (no ~3-4s AI round trip).
+        if teacherSessionManagerObject.isTeacherSessionActive(){
+            let teacherAi = currentRunningFocusType["isAiBlockingEnabledForAllowList"] as? Bool ?? false
+            addLog(text: "isAIBlockingEnabled: teacher session → \(teacherAi)")
+            return teacherAi
+        }
         // Fix #1584: log which code path is taken to diagnose the ~50% activation rate.
         let customScheduleOn = customBlockingScheduleManagerObj.isAnyCustomScheduleOn
         let result = customScheduleOn ? customBlockingScheduleManagerObj.isAIBlockingEnabled() : isAiCheckUrlEnabled

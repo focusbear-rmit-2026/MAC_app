@@ -122,7 +122,15 @@ class permissionsVc: NSViewController {
             let fileIcon = NSWorkspace.shared.icon(forFile: "/Applications/SigmaOS_latest.app")
             arrBrowsers.append(["name": "SigmaOS", "image": fileIcon, "isEnabled": false, "browser":BROWSER._SIGMA_OS_])
         }
-        
+
+        if filemanager.fileExists(atPath: "/Applications/Comet.app"){
+            let fileIcon = NSWorkspace.shared.icon(forFile: "/Applications/Comet.app")
+            arrBrowsers.append(["name": "Comet", "image": fileIcon, "isEnabled": false, "browser":BROWSER._COMET_])
+        }else if filemanager.fileExists(atPath: NSString(string: "~/Applications/Comet.app").expandingTildeInPath){
+            let fileIcon = NSWorkspace.shared.icon(forFile: NSString(string: "~/Applications/Comet.app").expandingTildeInPath)
+            arrBrowsers.append(["name": "Comet", "image": fileIcon, "isEnabled": false, "browser":BROWSER._COMET_])
+        }
+
         let height = CGFloat((60 * arrBrowsers.count) + 2)
         if heightScrollView.constant != height{
             heightScrollView.constant = height

@@ -1587,6 +1587,10 @@ class activityCompletionVc: NSViewController {
     
     func customRoutineHabitSkipped() {
         addLog(text:"customRoutineHabitSkipped")
+        // #2050: parity with morning/evening skip — clear so a skipped allowed-activity custom-routine
+        // habit doesn't leave isAllowedActivityHabitPlaying stale (minimise would then background
+        // without the postpone prompt). startTimerHabit re-sets it for the next habit.
+        isAllowedActivityHabitPlaying = false
         btnSkipHabit.title = buttonMoreActionsText
 
         if currentAction != ._INPROGRESS_{// if inprogess it means already updated cutrrenthabitindex
@@ -2134,6 +2138,7 @@ class activityCompletionVc: NSViewController {
             closeNudgeFocusAlignmentScoreWindow()
         }
         isAnyAllowedFocusModeActivityRunning = false
+        isAllowedActivityHabitPlaying = false   // clear alongside the focus-mode flag so a finished allowed-activity habit doesn't leave minimise in "background without postpone" mode
         currentHabitPlaying = nil
         habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
@@ -2315,14 +2320,24 @@ class activityCompletionVc: NSViewController {
         lblProgress.isHidden = false
         boxBreathingFinished.isHidden = true
         lastHabitIndex = index
-        let lastHabit = arrFilteredMorningHabits[lastHabitIndex].name
+        // arrFilteredMorningHabits can shrink (completed habits are removed) between this call and the
+        // async getActivityStats completion below, so `index`/lastHabitIndex may be stale by then.
+        // Guard on entry and capture the finished habit once, then reuse it in the closure instead of
+        // re-subscripting — fixes an out-of-range crash (EXC_BREAKPOINT in the completion accessing
+        // arrFilteredMorningHabits[self.lastHabitIndex]).
+        guard arrFilteredMorningHabits.indices.contains(lastHabitIndex) else {
+            addLog(text: "morningHabitFinishedAndStartIncompleteNew: index \(index) out of range (count \(arrFilteredMorningHabits.count)); skipping")
+            return
+        }
+        let finishedHabit = arrFilteredMorningHabits[lastHabitIndex]
+        let lastHabit = finishedHabit.name
         stackViewGraph.isHidden = false
         self.webViewGraph1.isHidden = true
         self.webViewGraph2.isHidden = true
-        
-        allApiObject.getACtivityStats(activityId: arrFilteredMorningHabits[lastHabitIndex].id, activityChoiceId: nil, completionHandler: {dic in
+
+        allApiObject.getACtivityStats(activityId: finishedHabit.id, activityChoiceId: nil, completionHandler: {dic in
             DispatchQueue.main.async {
-                self.loadGraph(activityId: arrFilteredMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: arrFilteredMorningHabits[self.lastHabitIndex].logQuantity, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
+                self.loadGraph(activityId: finishedHabit.id, activityName: lastHabit ?? "", logQuantity: finishedHabit.logQuantity, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
             }
         })
         
@@ -2376,6 +2391,7 @@ class activityCompletionVc: NSViewController {
             closeNudgeFocusAlignmentScoreWindow()
         }
         isAnyAllowedFocusModeActivityRunning = false
+        isAllowedActivityHabitPlaying = false   // clear alongside the focus-mode flag so a finished allowed-activity habit doesn't leave minimise in "background without postpone" mode
         currentHabitPlaying = nil
         habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
@@ -2471,8 +2487,16 @@ class activityCompletionVc: NSViewController {
     var isSequenceFinished = false
     
     func eveningHabitFinished(index:Int) {
+        // The global arrFilteredEveningHabits can be re-filtered/emptied (AppDelegate,
+        // routinePostponedInfoVc) while a habit timer is still counting, so its completion can fire
+        // eveningHabitOver() → here with a currentHabitIndex that no longer exists. Subscripting it
+        // crashed on the main thread (EXC_BREAKPOINT, "Array index out of range"). Bail safely.
+        guard index >= 0, index < arrFilteredEveningHabits.count else {
+            addLog(text: "eveningHabitFinished: stale index \(index) vs count \(arrFilteredEveningHabits.count) — skipping to avoid out-of-range crash")
+            return
+        }
         btnSkipHabit.title = buttonMoreActionsText
-        
+
         lblCreateAccount.isHidden = true
         lblDescriptionHabits.isHidden = true
         currentGraphIndex = 0
@@ -2744,6 +2768,7 @@ class activityCompletionVc: NSViewController {
             closeNudgeFocusAlignmentScoreWindow()
         }
         isAnyAllowedFocusModeActivityRunning = false
+        isAllowedActivityHabitPlaying = false   // clear alongside the focus-mode flag so a finished allowed-activity habit doesn't leave minimise in "background without postpone" mode
         currentHabitPlaying = nil
         habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
@@ -3045,8 +3070,14 @@ class activityCompletionVc: NSViewController {
     }
     
     func eveningHabitFinishedAndStartIncompleteNew(index:Int, isLastActivitySkipped:Bool) {
+        // Same stale-index guard as eveningHabitFinished(index:): the global evening-habits array can
+        // be re-filtered out from under a running timer, leaving currentHabitIndex out of range.
+        guard index >= 0, index < arrFilteredEveningHabits.count else {
+            addLog(text: "eveningHabitFinishedAndStartIncompleteNew: stale index \(index) vs count \(arrFilteredEveningHabits.count) — skipping to avoid out-of-range crash")
+            return
+        }
         btnSkipHabit.title = buttonMoreActionsText
-        
+
         lblCreateAccount.isHidden = true
         lblDescriptionHabits.isHidden = true
         currentGraphIndex = 0
@@ -3189,6 +3220,7 @@ class activityCompletionVc: NSViewController {
             closeNudgeFocusAlignmentScoreWindow()
         }
         isAnyAllowedFocusModeActivityRunning = false
+        isAllowedActivityHabitPlaying = false   // clear alongside the focus-mode flag so a finished allowed-activity habit doesn't leave minimise in "background without postpone" mode
         currentHabitPlaying = nil
         habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()

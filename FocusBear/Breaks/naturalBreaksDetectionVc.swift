@@ -115,10 +115,10 @@ class naturalBreaksDetectionVc: NSViewController {
             addLog(text: "Break start time is undefined or not initialized")
         }
         if getHabitsVcObject().breakTimer != nil{
-            getHabitsVcObject().setActivityTimer()
+            getHabitsVcObject().setActivityTimer(forceReset: true)   // natural break taken — reset to a full interval
         }
     }
-    
+
     @IBAction func btnFirstClicked(_ sender: Any) {
         if isNormalState{
             addLog(text: "[user-action] naturalBreaksDetectionVc - btnThanksClicked")
@@ -150,7 +150,7 @@ class naturalBreaksDetectionVc: NSViewController {
                 getHabitsVcObject().breaksScreenIsIdleResetBreaks()
             }else{
                 if getHabitsVcObject().breakTimer != nil{
-                    getHabitsVcObject().setActivityTimer()
+                    getHabitsVcObject().setActivityTimer(forceReset: true)   // natural break taken — reset to a full interval
                 }
             }
             

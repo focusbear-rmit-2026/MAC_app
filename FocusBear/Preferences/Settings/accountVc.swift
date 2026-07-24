@@ -50,13 +50,13 @@ class accountVc: NSViewController {
         
         lblTitleUserId.stringValue = "User Id:"
         lblTitle.stringValue = "Your Account Information"
-        lblTitleName.stringValue = "Name:"
+        lblTitleName.stringValue = "Leaderboard Username:"
         lblTitleEmailId.stringValue = "Email Id:"
         btnLogout.title = "Logout"
         btnResetPassword.title = "Reset Password"
         if let accountVcInfo = configjson.value(forKey: "accountVcInfo") as? NSDictionary{
             lblTitle.stringValue = accountVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
-            lblTitleName.stringValue = accountVcInfo.value(forKey: "titleNameText") as? String ?? lblTitleName.stringValue
+            lblTitleName.stringValue = accountVcInfo.value(forKey: "titleLeaderboardUsernameText") as? String ?? accountVcInfo.value(forKey: "titleNameText") as? String ?? lblTitleName.stringValue
             lblTitleEmailId.stringValue = accountVcInfo.value(forKey: "titleEmailIdText") as? String ?? lblTitleEmailId.stringValue
             btnLogout.title = accountVcInfo.value(forKey: "buttonLogoutText") as? String ?? btnLogout.title
             lblTitleUserId.stringValue = accountVcInfo.value(forKey: "titleUserIdText") as? String ?? lblTitleUserId.stringValue
@@ -90,14 +90,22 @@ class accountVc: NSViewController {
         addLog(text: "accountVc:- viewWillAppear")
         reloadView()
     }
-    
+
     func reloadView(){
         if let userId = appdelegate!.user?.userId{
             lblUserId.stringValue = userId
         }else{
             lblUserId.stringValue = ""
         }
-        lblName.stringValue = currentUserName
+        if currentLeaderboardUsername.isEmpty {
+            var leaderboardUsernamePlaceholder = "Not set — update your leaderboard username in the web app"
+            if let accountVcInfo = configjson.value(forKey: "accountVcInfo") as? NSDictionary{
+                leaderboardUsernamePlaceholder = accountVcInfo.value(forKey: "leaderboardUsernamePlaceholder") as? String ?? leaderboardUsernamePlaceholder
+            }
+            lblName.stringValue = leaderboardUsernamePlaceholder
+        } else {
+            lblName.stringValue = currentLeaderboardUsername
+        }
         lblEmaiId.stringValue = currentUserEmail
         
         var daysRemainingText = "Trial version - <DAYS> of 21 trial days remaining"
@@ -285,7 +293,7 @@ class accountVc: NSViewController {
             DispatchQueue.main.async {
                 self.loader.stopAnimation(self)
                 self.btnRestorePurchase.isEnabled = true
-                self.viewWillAppear()
+                self.reloadView()
             }
             
         })

@@ -67,6 +67,9 @@ var kUserdefaultsFocusTipsShown = "kUserdefaultsFocusTipsShown"
 
 var kUserdefaultsShowDockIcon = "kUserdefaultsShowDockIcon"
 
+/// Absent key means "on" — the glow is on by default during focus sessions.
+var kUserdefaultsFocusGlowBorderEnabled = "kUserdefaultsFocusGlowBorderEnabled"
+
 let kUserdefaultsLastHabitShowDate = "UserdefaultsLastHabitShowDate"
 
 var kUserdefaultsLastHabitsStartedDate = "kUserdefaultsLastHabitsStartedDate"
@@ -95,6 +98,7 @@ var kUserdefaultsAllFocusModesTags = "kUserdefaultsAllFocusModesTags"
 var kUserdefaultsIsAppEnabled = "kUserdefaultsIsAppEnabled"
 var kUserdefaultsLastAppAbortedDate = "kUserdefaultsLastAppAbortedDate"
 var kUserdefaultsLastFocusModeDoneDate = "kUserdefaultsLastFocusModeDoneDate"
+var kUserdefaultsLastFocusModeMinutes = "kUserdefaultsLastFocusModeMinutes"   // menu quick-start default duration
 
 var kUserdefaultsLastInactivityNagShowDate = "kUserdefaultsLastInactivityNagShowDate"
 
@@ -165,6 +169,14 @@ var kUserdefaultsLastCustomRoutineHabitSavedNotes = "kUserdefaultsLastCustomRout
 
 var kUserdefaultsLastSpecaialActivitySavedNotes = "kUserdefaultsLastSpecaialActivitySavedNotes"
 var kUserdefaultsAllTracks = "kUserdefaultsAllTracks"
+// User-added Spotify track/album/playlist links (Focus Music), separate from
+// kUserdefaultsAllTracks which is overwritten wholesale from the backend on every launch.
+var kUserdefaultsCustomSpotifyTracks = "kUserdefaultsCustomSpotifyTracks"
+// User-added YouTube/YouTube Music links (Focus Music), same idea as kUserdefaultsCustomSpotifyTracks.
+var kUserdefaultsYouTubeMusicTracks = "kUserdefaultsYouTubeMusicTracks"
+// Track id last started via the Play button — used to resume the same track when the
+// post-session-start "want to play some focus music?" prompt is accepted.
+var kUserdefaultsLastPlayedTrackId = "kUserdefaultsLastPlayedTrackId"
 var kUserdefaultsDontConfirmBeforeExecuteScript = "kUserdefaultsDontConfirmBeforeExecuteScript"
 
 var kUserdefaultsIsGlobalUUIDLinked = "kUserdefaultsIsGlobalUUIDLinked"
@@ -173,6 +185,12 @@ var kUserdefaultsIsMacIdLinked = "kUserdefaultsIsMacIdLinked"
 var kUserdefaultsLastFocusModeStrictness = "kUserdefaultsLastFocusModeStrictness"
 
 var kUserdefaultsDontShowConfirmGeekModeAlert = "kUserdefaultsDontShowConfirmGeekModeAlert"
+// Suppresses the "Want to play some focus music?" prompt shown after a focus session starts.
+var kUserdefaultsDontAskFocusMusicPrompt = "kUserdefaultsDontAskFocusMusicPrompt"
+// The user's saved answer to the focus-music prompt: "ask" (default, prompt each focus session),
+// "play" (auto-start music), "off" (stay silent). Surfaced as a toggle in Settings → Accessibility
+// (on = play) and synced to the account (see SettingsManager.focusMusicAutoStart). Per-user suffixed.
+var kUserdefaultsFocusMusicAutoStartPreference = "kUserdefaultsFocusMusicAutoStartPreference"
 var kUserDefaultsOpenTodoPlayerFirstTime = "kUserDefaultsOpenTodoPlayerFirstTime"
 
 var kUserDefaultsHideAppModeOption = "kUserDefaultsHideAppModeOption"
@@ -225,16 +243,35 @@ var kUserDefaultsLastRoutinePostponeState = "kLastRoutinePostponeState"// mornin
 
 var kUserDefaultsBlockingScheduleAddedFirstTime = "kBlockingScheduleAddedFirstTime"// v2.29.461
 
-var kUserdefaultsIsGuestAccount = "kUserdefaultsIsGuestAccount"
-
 // Break frequency prompt streak tracking (#1144)
 let kUserdefaultsBreakOffDates         = "kFBBreakOffDates"
 let kUserdefaultsBreakOffPromptShown   = "kFBBreakOffPromptShownDate"
 let kUserdefaultsBreakFrequencyMinutes = "kFBBreakFrequencyMinutes"
 
+var kUserdefaultsHiddenFocusModeIDs = "kHiddenFocusModeIDs"
+// IDs of TOOLS sidebar rows the user hid via the hover ✕ (restored via the TOOLS gear icon).
+var kUserdefaultsHiddenToolIds = "kUserdefaultsHiddenToolIds"
 var kUserdefaultsLastFocusModeId = "kLastRunningFocusModeId"
+// Block list the user last picked on the Focus-time (pomodoro) screen. Dedicated key so it isn't
+// clobbered by kUserdefaultsLastFocusModeId, which any focus mode (incl. scheduled blocking) sets.
+var kUserdefaultsLastPomodoroFocusModeId = "kLastPomodoroFocusModeId"
 
 var kUserdefaultsLastHabitsIdsBeforePostpone = "kRemainingHabitIdsBeforePostpone"
 var kUserdefaultsPrefilterLastHabitsIdsBeforePostpone = "kPrefilterRemainingHabitIdsBeforePostpone"
 
 var kUserdefaultsLastRunningFocusModeInfo = "kLastRunningFocusModeInfo"
+
+var kUserdefaultsIsGuestAccount = "kUserdefaultsIsGuestAccount"
+
+// WiFi profile auto-switching (#1000)
+let kUserdefaultsWiFiProfileMappings = "kFBWiFiProfileMappings"
+
+
+var kUserdefaultsBrainDumpSentToWebView = "kUserdefaultsBrainDumpSentToWebView"
+
+// Talking clock (#1674)
+var kUserdefaultsTalkingClockEnabled = "kUserdefaultsTalkingClockEnabled"
+var kUserdefaultsTalkingClockInterval = "kUserdefaultsTalkingClockInterval"
+var kUserdefaultsTalkingClockQuietStart = "kUserdefaultsTalkingClockQuietStart"
+var kUserdefaultsTalkingClockQuietEnd = "kUserdefaultsTalkingClockQuietEnd"
+var kUserdefaultsTalkingClockSuppressMeetings = "kUserdefaultsTalkingClockSuppressMeetings"

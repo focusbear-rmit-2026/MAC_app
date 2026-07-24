@@ -139,7 +139,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
     func reloadClicked(webView:WKWebView){
         loadWebView()
     }
-    var count = 0
+
     func setSettingsToWebView(requestId: String? = nil){
         let theme = getWindowTheme()
         var flags = "[\"settings-updated\"]"
@@ -150,10 +150,6 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
         }
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         let accessToken = appdelegate!.credential?.accessToken ?? ""
-//        count += 1
-//        if count == 5{//todo rmeove 
-//            accessToken = accessToken + "1"
-//        }
         var settingsJson = "{\"access_token\":\"\(accessToken)\",\"platform\":\"mac\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"flags\":\(flags)}"
         if let requestId = requestId {
             settingsJson = String(settingsJson.dropLast()) + ",\"requestId\":\"\(requestId)\"}"

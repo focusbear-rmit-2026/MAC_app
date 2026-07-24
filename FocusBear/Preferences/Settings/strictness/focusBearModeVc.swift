@@ -78,22 +78,22 @@ class focusBearModeVc: NSViewController {
     }
 
     @IBAction func radioBtnCuddlyBearClicked(_ sender: Any) {
-        if SettingsManagerObject.isCuddlyModeEnabled == true{
+        if SettingsManagerObject.storedCuddlyModeEnabled == true{
             return;
         }
         SettingsManagerObject.isSettingsChanged = true
         radioBtnGrizzlyBear.state = .off
-        SettingsManagerObject.isCuddlyModeEnabled = true
+        SettingsManagerObject.storedCuddlyModeEnabled = true
         allApiObject.capturePosthog(event: "settings-changed-focus-bear-mode-cuddly", metadata: [:])//#490
     }
     
     @IBAction func radioBtnGrizzlyBearClicked(_ sender: Any) {
-        if SettingsManagerObject.isCuddlyModeEnabled == false{
+        if SettingsManagerObject.storedCuddlyModeEnabled == false{
             return;
         }
         SettingsManagerObject.isSettingsChanged = true
         radioBtnCuddlyBear.state = .off
-        SettingsManagerObject.isCuddlyModeEnabled = false
+        SettingsManagerObject.storedCuddlyModeEnabled = false
         allApiObject.capturePosthog(event: "settings-changed-focus-bear-mode-grizzly", metadata: [:])//#490
         
         let alert = NSAlert()

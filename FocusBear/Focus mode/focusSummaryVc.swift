@@ -344,11 +344,19 @@ class focusSummaryVc: NSViewController {
     }
     
     func setScrollViewFocusSummaryWidth(){
-        if self.view.frame.width < 1100{
+        let windowWidth = self.view.frame.width
+        if windowWidth < 1100 {
+            // Very narrow window: use smallest scroll view width
+            widthScrollViewFocusSummary.constant = 800
+        } else if windowWidth < 1300 {
+            // 13-inch MacBook range (~1280px): reduce width to prevent label overlap
             widthScrollViewFocusSummary.constant = 900
-        }else{
+        } else {
             widthScrollViewFocusSummary.constant = 1000
         }
+        // Ensure the title label truncates gracefully rather than overlapping
+        lblTitle.lineBreakMode = .byTruncatingTail
+        lblTitle.maximumNumberOfLines = 1
     }
     
     
@@ -587,15 +595,25 @@ class focusSummaryVc: NSViewController {
         }
         
         UserDefaults.standard.removeObject(forKey: kUserdefaultsArrayBreaksDurations)
+
+        // #1942: clear any pending "one more minute" timer and its countdown box before
+        // proceeding, so it can't re-show the Focus Summary on top of the evening routine.
+        getHabitsVcObject().timerGiveOneMoreMinut?.invalidate()
+        getHabitsVcObject().timerGiveOneMoreMinut = nil
+        closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
+
+        // Clear ._FOCUS_SUMMARY_ first: shutOffMac() early-returns when currentState is ._FOCUS_SUMMARY_,
+        // so without this the call would do nothing. Then route the Focus Summary "Continue" through the
+        // shutdown flow so shutOffMac() can display the completed evening routine before the shutdown prompt.
         currentState = ._NOTHING_
-        appdelegate?.shutOffMac()
         viewVisibleCount = 0
+        appdelegate?.shutOffMac()
     }
     
     @IBAction func btnNeedMoreTimeClicked(_ sender: Any) {        
         if viewVisibleCount == 0{
             addLog(text: "[user-action] button Need one More minute Clicked from focus summary")
-            if cutOffTime != nil && SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff && !SettingsManagerObject.isEasySkipEnabled{
+            if cutOffTime != nil && SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff && !SettingsManagerObject.isEasySkipEnabled{
                 if isCutOffTimeGoing() && shouldAskPassword(){
                     mainViewControllerObj?.showPasswordView()
                 }else{

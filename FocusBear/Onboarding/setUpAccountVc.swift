@@ -122,7 +122,7 @@ class setUpAccountVc: NSViewController {
                                 }
                                 switch result {
                                 case .success(let credentials):
-                                    print("Obtained credentials: \(credentials)")
+                                    addLog(text: "Obtained credentials")
                                     DispatchQueue.main.async {
                                         if !getCustomLoginVcObject().isViewLoaded{
                                             getCustomLoginVcObject().loadView()

@@ -30,6 +30,10 @@ class chooseHabitsVC: NSViewController {
         var habit:habit!
         var state:Bool!
     }
+    /// Opened from the Day Plan's "skip routine for today" (vs the in-routine Habits view). When true, the
+    /// skip must NOT close the main window — the user is planning, not in the routine — it just refreshes
+    /// the Day Plan in place.
+    var openedFromDayPlan = false
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -331,42 +335,10 @@ class chooseHabitsVC: NSViewController {
     }
     
     @IBAction func btnCancelClicked(_ sender: Any) {
-        let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
-        let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
-
-        var sequenceId = ""
-        if currentState == ._MORNING_HABIT_{// no need to force complete in morning routine
-            sequenceId = arrFilteredMorningHabits.first?.activity_sequence_id ?? ""
-            UserDefaults.standard.set(startDate, forKey: kUserdefaultsLastHabitShowDate)
-            allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-from":"chooseHabits"])
-        }else if currentState == ._FOCUS_SUMMARY_ || currentState == ._EVENING_HABIT_{
-            let curreentDate = Date()
-            if curreentDate > shutOffdate{// iska matlab 20-24 k bich
-                let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
-                let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
-                UserDefaults.standard.set(startDate, forKey: kUserdefaultsEveningHabitsShowedTillDate)
-            }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
-                UserDefaults.standard.set(startDate, forKey: kUserdefaultsEveningHabitsShowedTillDate)
-            }
-            sequenceId = arrFilteredEveningHabits.first?.activity_sequence_id ?? ""
-            allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-from":"chooseHabits"])
-        }
-        
-        allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: true, completionHandler: {json in
-            print("forceCompleteCurrentSequence success")
-        })
-        
-        
+        // Dismiss the chooser, then run the shared cancel-routine actions (see cancelRoutineForToday in
+        // routineData.swift — extracted so the Day Plan ✕ confirmation alert runs the exact same flow).
         self.dismiss(self)
-        
-        UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
-        isHabitAlreadyShowed = true
-        mainWindowControllerObj?.window?.close()
-        hideBlankWindowInSecondaryMonitor()
-        currentState = ._NOTHING_
-        getHabitsVcObject().setActivityTimer()
-        leftMenuVcObj?.habitOver()
-        addLog(text: "Routine skipped by user")//addLog(text: "morning habit skipped by user")
+        cancelRoutineForToday(openedFromDayPlan: openedFromDayPlan)
     }
     
     @IBAction func btnCloseClicked(_ sender: Any) {

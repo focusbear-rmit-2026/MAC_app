@@ -518,6 +518,14 @@ func getResearchVcObject()->researchVc{
     return researchVcObj!
 }
 
+//talkingClockSettingsVcObj
+var talkingClockSettingsVcObj:talkingClockSettingsVc?
+func getTalkingClockSettingsVcObject()->talkingClockSettingsVc{
+    if talkingClockSettingsVcObj == nil{
+        talkingClockSettingsVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("talkingClockSettingsVc")) as? talkingClockSettingsVc
+    }
+    return talkingClockSettingsVcObj!
+}
 
 //microBreaksSettingsVcObj
 var microBreaksSettingsVcObj:microBreaksSettingsVc?
@@ -2096,3 +2104,13 @@ func getMessageBoxVcObject()->messageBoxVc{
     return messageBoxVcObj!
 }
 
+
+// officeModeSettingsVcObj — Office Mode settings: direct Office/WFH toggle + Wi-Fi auto-switching (#1000)
+// Note: officeModeSettingsVc creates its UI programmatically; no storyboard scene required.
+var officeModeSettingsVcObj: officeModeSettingsVc?
+func getOfficeModeSettingsVcObject() -> officeModeSettingsVc {
+    if officeModeSettingsVcObj == nil {
+        officeModeSettingsVcObj = officeModeSettingsVc()
+    }
+    return officeModeSettingsVcObj!
+}
