@@ -205,7 +205,8 @@ final class EditOnClickTextField: NSTextField {
 }
 
 /// Parse a natural-language snooze ("2d", "2w", "3mo", "1y", "tue", "tom", "today") into a target
-/// day. Returns nil if it can't be parsed.
+/// day. A leading `-` (or "yesterday") moves to a PAST day so a task can be back-dated. Returns nil
+/// if it can't be parsed.
 func parseSnoozeDate(_ input: String, from base: Date) -> Date? {
     let s = input.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     guard !s.isEmpty else { return nil }
@@ -213,6 +214,7 @@ func parseSnoozeDate(_ input: String, from base: Date) -> Date? {
     let today = cal.startOfDay(for: base)
     if s == "today" || s == "tod" { return today }
     if s == "tom" || s == "tmr" || s == "tomorrow" { return cal.date(byAdding: .day, value: 1, to: today) }
+    if s == "yesterday" || s == "yest" || s == "yd" { return cal.date(byAdding: .day, value: -1, to: today) }
     // Weekday name → next occurrence (strictly after today).
     let weekdays: [(String, Int)] = [("sun",1),("mon",2),("tue",3),("wed",4),("thu",5),("fri",6),("sat",7)]
     for (name, wd) in weekdays where s.hasPrefix(name) {
@@ -220,14 +222,19 @@ func parseSnoozeDate(_ input: String, from base: Date) -> Date? {
         while cal.component(.weekday, from: d) != wd { d = cal.date(byAdding: .day, value: 1, to: d)! }
         return d
     }
-    // <number><unit>: d/w/mo/y.
-    if let n = Int(s.prefix(while: { $0.isNumber })), n > 0 {
-        let unit = String(s.drop(while: { $0.isNumber }))
+    // [±]<number><unit>: d/w/mo/y. A leading "-" back-dates the task (e.g. "-1d" = yesterday).
+    var body = s
+    var sign = 1
+    if body.hasPrefix("-") { sign = -1; body = String(body.dropFirst()) }
+    else if body.hasPrefix("+") { body = String(body.dropFirst()) }
+    if let n = Int(body.prefix(while: { $0.isNumber })), n > 0 {
+        let unit = String(body.drop(while: { $0.isNumber }))
+        let m = sign * n
         switch unit {
-        case "d", "day", "days":        return cal.date(byAdding: .day, value: n, to: today)
-        case "w", "wk", "wks", "week", "weeks": return cal.date(byAdding: .day, value: n * 7, to: today)
-        case "mo", "month", "months":   return cal.date(byAdding: .month, value: n, to: today)
-        case "y", "yr", "yrs", "year", "years": return cal.date(byAdding: .year, value: n, to: today)
+        case "d", "day", "days":        return cal.date(byAdding: .day, value: m, to: today)
+        case "w", "wk", "wks", "week", "weeks": return cal.date(byAdding: .day, value: m * 7, to: today)
+        case "mo", "month", "months":   return cal.date(byAdding: .month, value: m, to: today)
+        case "y", "yr", "yrs", "year", "years": return cal.date(byAdding: .year, value: m, to: today)
         default: break   // not a relative unit — fall through to absolute-date parsing ("1st July", "1/7"…)
         }
     }
@@ -419,6 +426,11 @@ struct DayPlanTask: Codable, Equatable {
     /// `PUT /to-do` upsert (plan / complete) without clobbering it. nil for from-scratch tasks and for
     /// tasks imported before this field existed — sync is skipped in that case rather than risk a clobber.
     var eisenhowerQuadrant: Int?
+    /// Set when the user deliberately moved this task to a PAST day (snooze/back-date). Rollover
+    /// (which otherwise carries incomplete past tasks forward to today) skips these so a back-dated
+    /// task stays where the user put it. nil/false = normal (rolls forward if left incomplete in the
+    /// past). Optional so tasks stored before this field existed decode fine.
+    var manuallyPlanned: Bool?
 
     /// Sub-tasks as a non-optional list, for convenient counting/rendering.
     var subtaskList: [DayPlanSubtask] { subtasks ?? [] }
@@ -426,11 +438,12 @@ struct DayPlanTask: Codable, Equatable {
     init(id: String = UUID().uuidString, title: String, durationMinutes: Int = 15,
          done: Bool = false, sourceTaskId: String? = nil, blockKey: String? = nil,
          project: String? = nil, notes: String? = nil, subtasks: [DayPlanSubtask]? = nil,
-         outcome: Int? = nil, eisenhowerQuadrant: Int? = nil) {
+         outcome: Int? = nil, eisenhowerQuadrant: Int? = nil, manuallyPlanned: Bool? = nil) {
         self.id = id; self.title = title; self.durationMinutes = durationMinutes
         self.done = done; self.sourceTaskId = sourceTaskId; self.blockKey = blockKey
         self.project = project; self.notes = notes; self.subtasks = subtasks
         self.outcome = outcome; self.eisenhowerQuadrant = eisenhowerQuadrant
+        self.manuallyPlanned = manuallyPlanned
     }
 
     /// Colour for an importance value, banded into 4 (higher = hotter). nil when unset.
@@ -569,7 +582,8 @@ final class DayPlanTaskStore {
         defer { isRollingOver = false }
         var changed = false
         for (dayK, tasks) in byDay where dayK < todayKey {   // yyyy-MM-dd sorts chronologically
-            let incomplete = tasks.filter { !$0.done }
+            // Don't roll tasks the user deliberately back-dated (manuallyPlanned) — leave them put.
+            let incomplete = tasks.filter { !$0.done && $0.manuallyPlanned != true }
             guard !incomplete.isEmpty else { continue }
             for var t in incomplete {
                 // Don't duplicate an imported to-do that's already on today.
@@ -577,7 +591,7 @@ final class DayPlanTaskStore {
                 t.blockKey = nil                       // re-plan onto today, untimed
                 byDay[todayKey, default: []].append(t)
             }
-            byDay[dayK]?.removeAll { !$0.done }          // remove the moved (incomplete) ones
+            byDay[dayK]?.removeAll { !$0.done && $0.manuallyPlanned != true }   // remove only the moved ones
             changed = true
         }
         UserDefaults.standard.set(todayKey, forKey: lastRolloverKey)
@@ -771,8 +785,19 @@ final class DayPlanTaskStore {
         guard fk != tk, let i = byDay[fk]?.firstIndex(where: { $0.id == id }) else { return }
         var task = byDay[fk]!.remove(at: i)
         task.blockKey = nil
+        // Back-dating: mark a task moved to a PAST day as manually planned so rollover doesn't drag it
+        // back to today. Moving to today/future clears the flag (rollover doesn't touch those days
+        // anyway, and it should roll normally if later left incomplete in the past).
+        task.manuallyPlanned = (tk < dayKey(Date())) ? true : nil
         byDay[tk, default: []].append(task)
         save()
+        // Keep the backend's planned_date in sync for imported to-dos, otherwise the next hydrate
+        // re-plants the task on its old day (the backend still says it's planned there). From-scratch
+        // tasks (no sourceTaskId / quadrant) have no backend pointer, so nothing to update.
+        if let sid = task.sourceTaskId, let q = task.eisenhowerQuadrant {
+            DayPlanSync.shared.setTodoPlanned(todoID: sid, title: task.title, quadrant: q,
+                                              plannedDate: to, blockKey: nil, order: nil)
+        }
     }
 
     private func load() {
@@ -789,9 +814,10 @@ final class DayPlanTaskStore {
         let todayKey = dayKey(Date())
         var changed = false
         for (k, tasks) in byDay where k < todayKey {   // "yyyy-MM-dd" sorts chronologically
-            let incomplete = tasks.filter { !$0.done }
+            // Don't roll tasks the user deliberately back-dated (manuallyPlanned) — leave them put.
+            let incomplete = tasks.filter { !$0.done && $0.manuallyPlanned != true }
             guard !incomplete.isEmpty else { continue }
-            byDay[k] = tasks.filter { $0.done }
+            byDay[k] = tasks.filter { $0.done || $0.manuallyPlanned == true }
             for var t in incomplete { t.blockKey = nil; byDay[todayKey, default: []].append(t) }
             changed = true
         }
@@ -1010,6 +1036,12 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         scroll.scrollerStyle = .legacy   // always-visible scrollbar on the tasks list, even with no custom routines below
         scroll.documentView = stack
         scroll.translatesAutoresizingMaskIntoConstraints = false
+        // The inline #project suggestion list is a panel subview anchored to the field's on-screen
+        // position — it can't follow the rows as they scroll. So close it when the task list scrolls
+        // instead of letting it float detached at the old spot.
+        clip.postsBoundsChangedNotifications = true
+        NotificationCenter.default.addObserver(self, selector: #selector(tasksDidScroll),
+                                               name: NSView.boundsDidChangeNotification, object: clip)
         // NB: room to scroll past the last task is reserved via a trailing spacer arranged subview in
         // reload(), NOT scroll.contentInsets — verified (offscreen AppKit harness) that contentInsets.bottom
         // does not extend NSClipView's constrainBoundsRect/documentRect, so it never actually created any
@@ -1494,12 +1526,18 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
         guard let field = control as? NSTextField, let id = field.identifier?.rawValue else { return false }
 
-        // Tab accepts the top `#project` suggestion if the list is showing; otherwise it jumps from
-        // the name field to its duration field (the multi-line name editor would otherwise insert a
+        // ↑/↓ move the highlighted `#project` suggestion when the list is showing; otherwise let the
+        // arrow keys move the caret in the multi-line name editor as usual.
+        if id.hasPrefix("name:"), suggestOverlay != nil {
+            if commandSelector == #selector(NSResponder.moveDown(_:)) { return moveSuggestSelection(by: 1) }
+            if commandSelector == #selector(NSResponder.moveUp(_:)) { return moveSuggestSelection(by: -1) }
+        }
+        // Tab accepts the highlighted `#project` suggestion if the list is showing; otherwise it jumps
+        // from the name field to its duration field (the multi-line name editor would otherwise insert a
         // literal tab).
         if commandSelector == #selector(NSResponder.insertTab(_:)), id.hasPrefix("name:") {
-            if suggestOverlay != nil, let top = suggestMatches.first {
-                acceptProjectSuggestion(top)
+            if suggestOverlay != nil, suggestMatches.indices.contains(suggestSelectedIndex) {
+                acceptProjectSuggestion(suggestMatches[suggestSelectedIndex])
                 return true
             }
             let taskID = String(id.dropFirst("name:".count))
@@ -1507,17 +1545,32 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
             if let dur = durationField(forTaskID: taskID) { window?.makeFirstResponder(dur) }
             return true
         }
-        // Enter commits and ends editing (so it can't bubble up and start a habit).
+        // Enter inside the "create new project" name field saves the new project.
+        if commandSelector == #selector(NSResponder.insertNewline(_:)), id == "newProjectName" {
+            saveNewProject(); return true
+        }
+        // Enter accepts the highlighted `#project` suggestion when the list is open, or creates the
+        // new project when the create-prompt is open; otherwise it commits and ends editing (so it
+        // can't bubble up and start a habit).
         if commandSelector == #selector(NSResponder.insertNewline(_:)) {
+            if id.hasPrefix("name:"), suggestOverlay != nil {
+                if suggestMatches.indices.contains(suggestSelectedIndex) {
+                    acceptProjectSuggestion(suggestMatches[suggestSelectedIndex]); return true
+                }
+                if createProjectField != nil { saveNewProject(); return true }
+            }
             dismissProjectSuggestions()
             if id == "snoozeInput" { confirmSnooze(); return true }
             if id.hasPrefix("name:") { commitName(field) } else if id.hasPrefix("dur:") { commitDuration(field) }
             window?.makeFirstResponder(nil)
             return true
         }
-        // Escape in the snooze field closes the popover (rather than bubbling anywhere).
-        if commandSelector == #selector(NSResponder.cancelOperation(_:)), id == "snoozeInput" {
-            cancelSnooze(); return true
+        // Escape in the snooze field closes the popover; Escape in the new-project prompt dismisses it.
+        if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
+            if id == "snoozeInput" { cancelSnooze(); return true }
+            if id == "newProjectName" { dismissProjectSuggestions(); window?.makeFirstResponder(nil); return true }
+            // Escape while the #project suggestion list is open just closes the list (keeps editing the name).
+            if id.hasPrefix("name:"), suggestOverlay != nil { dismissProjectSuggestions(); return true }
         }
         return false
     }
@@ -2117,6 +2170,13 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
     private weak var suggestField: NSTextField?
     private var suggestMatches: [String] = []
     private var suggestOverlay: NSView?
+    // Keyboard-highlighted row in the `#project` suggestion list (↑/↓ to move, Tab/Return to accept).
+    private var suggestSelectedIndex = 0
+    private var suggestButtons: [NSButton] = []
+    /// Range of the `#token` currently being typed (from its `#` up to the caret), captured when the
+    /// suggestions are shown. Accepting a suggestion removes exactly this range — so a `#` typed in the
+    /// MIDDLE of a name replaces only the token, without truncating the rest of the title.
+    private var suggestTokenRange: NSRange?
 
     /// The `#token` (sans `#`) immediately before the caret. nil if there's no live `#` token.
     private func projectTokenBeforeCaret(in editor: NSTextView) -> String? {
@@ -2137,6 +2197,12 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
               raw.trimmingCharacters(in: .whitespaces).count >= 2 else {
             dismissProjectSuggestions(); return
         }
+        // Record the exact range of the `#token` (its `#` up to the caret) so accepting a suggestion
+        // removes ONLY the token, not everything after it — a `#` typed mid-name mustn't truncate the rest.
+        let ns = editor.string as NSString
+        let caret = min(editor.selectedRange().location, ns.length)
+        let hashLoc = (ns.substring(to: caret) as NSString).range(of: "#", options: .backwards).location
+        suggestTokenRange = hashLoc == NSNotFound ? nil : NSRange(location: hashLoc, length: caret - hashLoc)
         // Underscores are equivalent to spaces, so "#Focus_B" matches the "Focus Bear" project.
         let token = raw.replacingOccurrences(of: "_", with: " ")
         let all = DayPlanTaskStore.shared.allProjectNames()
@@ -2145,32 +2211,57 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
             !prefix.contains(p) && p.range(of: token, options: [.caseInsensitive, .diacriticInsensitive]) != nil
         }
         let matches = Array((prefix + contains).prefix(6))
-        guard !matches.isEmpty else { dismissProjectSuggestions(); return }
+        // No existing project matches the typed `#token`: offer to create it as a new project.
+        guard !matches.isEmpty else { showCreateProjectPrompt(token.trimmingCharacters(in: .whitespaces), for: field); return }
         showProjectSuggestions(matches, for: field)
     }
 
+    /// Style an inline #project overlay as a floating menu: themed fill + hairline border, rounded
+    /// corners, and a drop shadow so it reads as elevated above the task list. masksToBounds stays
+    /// false so the shadow isn't clipped (content is inset enough not to reach the corners). Must be
+    /// called within the panel's appearance context so the cgColors resolve to the right theme.
+    private func styleSuggestionBox(_ box: NSView) {
+        box.wantsLayer = true
+        box.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+        box.layer?.borderColor = NSColor.separatorColor.cgColor
+        box.layer?.borderWidth = 1
+        box.layer?.cornerRadius = 8
+        box.layer?.masksToBounds = false
+        box.layer?.shadowColor = NSColor.black.cgColor
+        box.layer?.shadowOpacity = 0.28
+        box.layer?.shadowRadius = 12
+        box.layer?.shadowOffset = CGSize(width: 0, height: -3)
+    }
+
     private func showProjectSuggestions(_ matches: [String], for field: NSTextField) {
+        // Resolve the layer cgColors below against THIS panel's appearance, not NSApp's — otherwise the
+        // box background/border bake to the wrong theme (e.g. a light box in dark mode).
+        let savedAppearance = NSAppearance.current
+        NSAppearance.current = effectiveAppearance
+        defer { NSAppearance.current = savedAppearance }
         suggestField = field
         suggestMatches = matches
+        suggestSelectedIndex = 0
+        suggestButtons = []
         suggestOverlay?.removeFromSuperview()
 
         let list = NSStackView()
         list.orientation = .vertical; list.alignment = .leading; list.spacing = 0
         list.translatesAutoresizingMaskIntoConstraints = false
         for (i, name) in matches.enumerated() {
-            let b = NSButton(title: (i == 0 ? "↹ " : "  ") + name, target: self, action: #selector(suggestionClicked(_:)))
+            let b = NSButton(title: name, target: self, action: #selector(suggestionClicked(_:)))
             b.isBordered = false; b.bezelStyle = .inline; b.alignment = .left
             b.contentTintColor = .controlAccentColor
+            b.wantsLayer = true
             b.tag = i
             list.addArrangedSubview(b)
+            b.widthAnchor.constraint(equalTo: list.widthAnchor).isActive = true
+            suggestButtons.append(b)
         }
+        updateSuggestHighlight()
         let box = NSView()
-        box.wantsLayer = true
-        box.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
-        box.layer?.borderColor = NSColor.separatorColor.cgColor
-        box.layer?.borderWidth = 1
-        box.layer?.cornerRadius = 6
         box.translatesAutoresizingMaskIntoConstraints = false
+        styleSuggestionBox(box)
         box.addSubview(list)
         NSLayoutConstraint.activate([
             list.topAnchor.constraint(equalTo: box.topAnchor, constant: 5),
@@ -2187,13 +2278,146 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         let belowY = rect.minY - h - 2
         let y = belowY < 2 ? rect.maxY + 2 : belowY
         box.setFrameOrigin(NSPoint(x: rect.minX, y: y))
-        box.setFrameSize(NSSize(width: max(160, rect.width), height: h))
+        // Wide enough that no row truncates: measure the actual button fitting width (which includes the
+        // cell's own insets + the head-indent) for the widest title, plus the list's 8+8 insets.
+        let measurer = NSButton(); measurer.isBordered = false; measurer.bezelStyle = .inline
+        let mpara = NSMutableParagraphStyle(); mpara.firstLineHeadIndent = 8; mpara.headIndent = 8
+        let mfont = NSFont.systemFont(ofSize: 13)
+        var widestButton: CGFloat = 0
+        for m in matches {
+            measurer.attributedTitle = NSAttributedString(string: "↹ " + m, attributes: [.font: mfont, .paragraphStyle: mpara])
+            widestButton = max(widestButton, measurer.fittingSize.width)
+        }
+        box.setFrameSize(NSSize(width: max(160, rect.width, ceil(widestButton) + 16 + 6), height: h))
         suggestOverlay = box
+    }
+
+    deinit { NotificationCenter.default.removeObserver(self) }
+
+    /// Close the inline #project suggestion list when the task list scrolls (the overlay is anchored to
+    /// the field's on-screen position and can't follow the scrolling rows).
+    @objc private func tasksDidScroll() {
+        if suggestOverlay != nil { dismissProjectSuggestions() }
     }
 
     private func dismissProjectSuggestions() {
         suggestOverlay?.removeFromSuperview(); suggestOverlay = nil
-        suggestField = nil; suggestMatches = []
+        suggestField = nil; suggestMatches = []; suggestButtons = []; suggestSelectedIndex = 0
+        suggestTokenRange = nil
+        createProjectField = nil
+    }
+
+    // The editable name field inside the "create new project" prompt (shown when the typed `#token`
+    // matches no existing project). Non-nil only while that prompt is on screen.
+    private weak var createProjectField: NSTextField?
+
+    /// Shown when the typed `#token` matches no project: a small labelled text field (pre-filled with
+    /// the token) plus a Save button, so the user can confirm/adjust the name and create the project.
+    /// Reuses the suggestion overlay's slot/position; saving assigns the new project to the task, which
+    /// makes it a known project for future autocomplete.
+    private func showCreateProjectPrompt(_ suggestedName: String, for field: NSTextField) {
+        guard !suggestedName.isEmpty else { dismissProjectSuggestions(); return }
+        // Resolve the layer cgColors below against THIS panel's appearance (see showProjectSuggestions).
+        let savedAppearance = NSAppearance.current
+        NSAppearance.current = effectiveAppearance
+        defer { NSAppearance.current = savedAppearance }
+        suggestField = field
+        suggestMatches = []
+        suggestButtons = []
+        suggestOverlay?.removeFromSuperview()
+
+        let caption = label(ScheduleText.tasksNewProjectPrompt, size: 11, bold: false)
+        caption.textColor = .secondaryLabelColor
+
+        let input = NSTextField(string: suggestedName)
+        input.identifier = NSUserInterfaceItemIdentifier("newProjectName")
+        input.delegate = self
+        input.translatesAutoresizingMaskIntoConstraints = false
+        input.widthAnchor.constraint(equalToConstant: 150).isActive = true
+        createProjectField = input
+
+        let save = NSButton(title: ScheduleText.tasksNewProjectSave, target: self, action: #selector(saveNewProjectClicked(_:)))
+        save.bezelStyle = .rounded; save.controlSize = .small
+
+        let row = NSStackView(views: [input, save])
+        row.orientation = .horizontal; row.spacing = 6; row.alignment = .firstBaseline
+
+        let stack = NSStackView(views: [caption, row])
+        stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 4
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        let box = NSView()
+        box.translatesAutoresizingMaskIntoConstraints = false
+        styleSuggestionBox(box)
+        box.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: box.topAnchor, constant: 6),
+            stack.bottomAnchor.constraint(equalTo: box.bottomAnchor, constant: -6),
+            stack.leadingAnchor.constraint(equalTo: box.leadingAnchor, constant: 8),
+            stack.trailingAnchor.constraint(equalTo: box.trailingAnchor, constant: -8),
+        ])
+        addSubview(box)
+        let rect = convert(field.bounds, from: field)
+        box.layoutSubtreeIfNeeded()
+        let h = box.fittingSize.height
+        let belowY = rect.minY - h - 2
+        let y = belowY < 2 ? rect.maxY + 2 : belowY
+        box.setFrameOrigin(NSPoint(x: rect.minX, y: y))
+        box.setFrameSize(NSSize(width: max(200, rect.width) - 20, height: h))
+        suggestOverlay = box
+    }
+
+    @objc private func saveNewProjectClicked(_ sender: NSButton) { saveNewProject() }
+
+    /// Create the project named in the prompt and assign it to the task (via acceptProjectSuggestion,
+    /// which also strips the typed `#partial`). Used names become known projects automatically.
+    private func saveNewProject() {
+        let name = (createProjectField?.stringValue ?? "").trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { NSSound.beep(); return }
+        acceptProjectSuggestion(name)
+    }
+
+    /// Redraw the suggestion rows so the keyboard-selected one is highlighted and prefixed with the
+    /// accept marker (the same marker Tab/Return act on). The selected row draws white text on a solid
+    /// accent fill. Use controlAccentColor (a stable, saturated blue) for the fill rather than
+    /// selectedContentBackgroundColor, which dims to a low-contrast grey when the app's borderless
+    /// full-screen window isn't the emphasised/key window — that greying is why the text was still hard
+    /// to read. contentTintColor is set alongside the attributed title so the button cell can't override
+    /// the colour.
+    private func updateSuggestHighlight() {
+        // Resolve the highlight cgColors against THIS panel's appearance (called on arrow-key nav too).
+        let savedAppearance = NSAppearance.current
+        NSAppearance.current = effectiveAppearance
+        defer { NSAppearance.current = savedAppearance }
+        let para = NSMutableParagraphStyle()
+        para.firstLineHeadIndent = 8   // left padding so the arrow/title isn't flush against the row edge
+        para.headIndent = 8
+        let font = NSFont.systemFont(ofSize: 13)
+        for (i, b) in suggestButtons.enumerated() {
+            let selected = i == suggestSelectedIndex
+            let textColor: NSColor = selected ? .white : .controlAccentColor
+            b.contentTintColor = textColor
+            // Keep the "↹ " slot in EVERY row (transparent when not selected) so selecting a row doesn't
+            // widen its text and truncate the title. Only the colours/fill change on selection.
+            let attr = NSMutableAttributedString(string: "↹ ", attributes: [
+                .foregroundColor: selected ? textColor : NSColor.clear, .font: font, .paragraphStyle: para,
+            ])
+            attr.append(NSAttributedString(string: suggestMatches[i], attributes: [
+                .foregroundColor: textColor, .font: font, .paragraphStyle: para,
+            ]))
+            b.attributedTitle = attr
+            b.layer?.cornerRadius = 4
+            b.layer?.backgroundColor = selected ? NSColor.controlAccentColor.cgColor : NSColor.clear.cgColor
+        }
+    }
+
+    /// Move the highlighted `#project` suggestion by ±1 (clamped). Returns false if no list is showing,
+    /// so the caller can let the arrow key fall through to normal caret movement.
+    private func moveSuggestSelection(by delta: Int) -> Bool {
+        guard suggestOverlay != nil, !suggestMatches.isEmpty else { return false }
+        suggestSelectedIndex = max(0, min(suggestMatches.count - 1, suggestSelectedIndex + delta))
+        updateSuggestHighlight()
+        return true
     }
 
     @objc private func suggestionClicked(_ sender: NSButton) {
@@ -2207,9 +2431,16 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
             dismissProjectSuggestions(); return
         }
         let id = String(raw.dropFirst("name:".count))
-        // Strip the trailing `#partial` (from the last '#') from what's typed so far.
+        // Remove ONLY the typed `#token` (the range captured when suggestions were shown), keeping any
+        // text after it — a `#` typed in the MIDDLE of a name must not truncate the rest of the title.
+        // Fall back to stripping from the last `#` to the end only if we have no captured range.
         var text = field.stringValue
-        if let hash = text.lastIndex(of: "#") { text.removeSubrange(hash...) }
+        let ns = text as NSString
+        if let r = suggestTokenRange, r.location != NSNotFound, r.location + r.length <= ns.length {
+            text = ns.replacingCharacters(in: r, with: "")
+        } else if let hash = text.lastIndex(of: "#") {
+            text.removeSubrange(hash...)
+        }
         let cleanTitle = text.replacingOccurrences(of: "  ", with: " ").trimmingCharacters(in: .whitespaces)
         if var t = task(for: id) {
             t.project = project
@@ -2321,6 +2552,10 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         guard let field = obj.object as? NSTextField, let id = field.identifier?.rawValue else { return }
         if id == "projectFilter" { dismissComboProjectSuggestions(); return }
         if id.hasPrefix("name:") {
+            // Losing focus (clicking outside, or into another field) closes the #project suggestion list.
+            // Deferred so a click ON a suggestion button still fires its action before the overlay is torn
+            // down (acceptProjectSuggestion dismisses it first, making this a no-op in that case).
+            DispatchQueue.main.async { [weak self] in self?.dismissProjectSuggestions() }
             // Reload on blur only for a *structural* change (project assigned/stripped, or deleted) so
             // the task regroups immediately. A plain rename doesn't reload, so switching fields stays
             // a single click.

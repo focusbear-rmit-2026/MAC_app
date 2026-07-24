@@ -2813,7 +2813,11 @@
         "tasksDragHint": "Arrastra a un bloque para programarla",
         "tasksReturnToPanel": "Devolver a tareas",
         "tasksTimeBoxed": "Con tiempo asignado",
-        "tasksNotTimeBoxed": "Sin tiempo asignado"
+        "tasksNotTimeBoxed": "Sin tiempo asignado",
+        "tasksNewProjectPrompt": "Crear nuevo proyecto:",
+        "tasksNewProjectSave": "Guardar",
+        "tasksSnoozePlaceholder": "p. ej. 2d, -1d, mar, mañ",
+        "tasksSnoozeHelp": "2d = en 2 días · 2w = en 2 semanas · mar = el próximo martes · mañ = mañana · -1d / ayer = un día pasado · 1 Jul = una fecha"
     },
     "timeTrackerViewInfo":{
         "menuTimeTracker": "Seguimiento de tiempo",

@@ -105,6 +105,8 @@ enum ScheduleText {
     static var tasksShowCompleted: String { t("tasksShowCompleted", "Show completed") }
     static var tasksShowCompletedCount: String { t("tasksShowCompletedCount", "Show completed (%d)") }
     static var tasksExpand: String { t("tasksExpand", "Details") }
+    static var tasksNewProjectPrompt: String { t("tasksNewProjectPrompt", "Create new project:") }
+    static var tasksNewProjectSave: String { t("tasksNewProjectSave", "Save") }
     static var tasksSnooze: String { t("tasksSnooze", "Snooze") }
     static var tasksRemove: String { t("tasksRemove", "Remove") }
     static var tasksDetailsTitle: String { t("tasksDetailsTitle", "Task details") }
@@ -134,8 +136,8 @@ enum ScheduleText {
     static var tasksNotTimeBoxed: String { t("tasksNotTimeBoxed", "Not yet time boxed") }
     static var tasksSnoozeHint: String { t("tasksSnoozeHint", "Snooze — move to another day") }
     static var tasksSnoozeTitle: String { t("tasksSnoozeTitle", "Move task to…") }
-    static var tasksSnoozePlaceholder: String { t("tasksSnoozePlaceholder", "e.g. 2d, 2w, tue, tom") }
-    static var tasksSnoozeHelp: String { t("tasksSnoozeHelp", "2d = in 2 days · 2w = in 2 weeks · tue = next Tuesday · tom = tomorrow · 1 Jul = a date") }
+    static var tasksSnoozePlaceholder: String { t("tasksSnoozePlaceholder", "e.g. 2d, -1d, tue, tom") }
+    static var tasksSnoozeHelp: String { t("tasksSnoozeHelp", "2d = in 2 days · 2w = in 2 weeks · tue = next Tuesday · tom = tomorrow · -1d / yesterday = a past day · 1 Jul = a date") }
     static var tasksSnoozeConfirm: String { t("tasksSnoozeConfirm", "Move") }
     static var tasksSnoozeCancel: String { t("tasksSnoozeCancel", "Cancel") }
     static var tasksNoProject: String { t("tasksNoProject", "No project") }
