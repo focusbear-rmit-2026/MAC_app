@@ -18,70 +18,9 @@
 
 import Cocoa
 
-class BreakFrequencyPromptVc: NSViewController {
-
-    // MARK: - Outlets
-    @IBOutlet weak var lblTitle: NSTextField!
-    @IBOutlet weak var lblCurrentFrequency: NSTextField!
-    @IBOutlet weak var stepper: NSStepper!
-    @IBOutlet weak var txtMinutes: NSTextField!
-    @IBOutlet weak var btnChange: NSButton!
-    @IBOutlet weak var btnKeep: NSButton!
-
-    // MARK: - State
-    /// The proposed new break frequency (minutes).  Initialised to current + 10.
-    private var proposedMinutes: Int = 30
-
-    // MARK: - Lifecycle
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        let currentFrequency = breakAfterMinutes > 0 ? breakAfterMinutes : 20
-        proposedMinutes = currentFrequency + 10
-
-        lblTitle.stringValue = "Want to make breaks less frequent?"
-        lblCurrentFrequency.stringValue = "Your current break frequency is every \(currentFrequency) minutes"
-
-        txtMinutes.integerValue = proposedMinutes
-        stepper.minValue = 5
-        stepper.maxValue = 120
-        stepper.increment = 5
-        stepper.integerValue = proposedMinutes
-
-        btnChange.title = "Change Break Frequency"
-        btnKeep.title = "Keep as is"
-
-        addLog(text: "BreakFrequencyPromptVc: showing dialog — current=\(currentFrequency), proposed=\(proposedMinutes)")
-    }
-
-    // MARK: - Actions
-
-    @IBAction func stepperChanged(_ sender: NSStepper) {
-        proposedMinutes = sender.integerValue
-        txtMinutes.integerValue = proposedMinutes
-    }
-
-    @IBAction func txtMinutesChanged(_ sender: NSTextField) {
-        let val = max(5, min(120, sender.integerValue))
-        proposedMinutes = val
-        stepper.integerValue = val
-        txtMinutes.integerValue = val
-    }
-
-    @IBAction func btnChangeClicked(_ sender: Any) {
-        addLog(text: "BreakFrequencyPromptVc: user chose to change break frequency to \(proposedMinutes) min")
-        allApiObject.capturePosthog(event: "break-frequency-increased-from-prompt", metadata: ["new_frequency_minutes": proposedMinutes])
-        BreakFrequencyStreakTracker.shared.saveNewBreakFrequency(proposedMinutes)
-        self.view.window?.close()
-    }
-
-    @IBAction func btnKeepClicked(_ sender: Any) {
-        addLog(text: "BreakFrequencyPromptVc: user chose to keep current break frequency")
-        allApiObject.capturePosthog(event: "break-frequency-prompt-dismissed", metadata: [:])
-        self.view.window?.close()
-    }
-}
+/// The break-frequency prompt (#1744). It's presented programmatically as an `NSAlert`
+/// (see `showIfNeeded`) — there's no storyboard scene wired up, so there's no view-controller UI here.
+final class BreakFrequencyPromptVc: NSObject {}
 
 private final class _StepperFieldLink: NSObject {
     weak var field: NSTextField?
@@ -108,17 +47,31 @@ extension BreakFrequencyPromptVc {
         let currentFrequency = breakAfterMinutes > 0 ? breakAfterMinutes : 20
         let proposedDefault  = currentFrequency + 10
 
+        // User-facing text lives in config.json (breakFrequencyVcInfo) so it can be translated.
+        var title = "Want to make breaks less frequent?"
+        var currentFrequencyText = "Your current break frequency is every %d minutes"
+        var buttonChangeText = "Change Break Frequency"
+        var buttonKeepText = "Keep as is"
+        var newFrequencyLabel = "New frequency (min):"
+        if let info = configjson.value(forKey: "breakFrequencyVcInfo") as? NSDictionary {
+            title = info.value(forKey: "title") as? String ?? title
+            currentFrequencyText = info.value(forKey: "currentFrequencyText") as? String ?? currentFrequencyText
+            buttonChangeText = info.value(forKey: "buttonChangeText") as? String ?? buttonChangeText
+            buttonKeepText = info.value(forKey: "buttonKeepText") as? String ?? buttonKeepText
+            newFrequencyLabel = info.value(forKey: "newFrequencyLabel") as? String ?? newFrequencyLabel
+        }
+
         let alert = NSAlert()
         alert.setSharingType()
-        alert.messageText     = "Want to make breaks less frequent?"
-        alert.informativeText = "Your current break frequency is every \(currentFrequency) minutes"
-        alert.addButton(withTitle: "Change Break Frequency")
-        alert.addButton(withTitle: "Keep as is")
+        alert.messageText     = title
+        alert.informativeText = String(format: currentFrequencyText, currentFrequency)
+        alert.addButton(withTitle: buttonChangeText)
+        alert.addButton(withTitle: buttonKeepText)
 
         // Accessory: stepper + text field for the new frequency
         let accessory = NSView(frame: NSRect(x: 0, y: 0, width: 260, height: 36))
 
-        let label = NSTextField(labelWithString: "New frequency (min):")
+        let label = NSTextField(labelWithString: newFrequencyLabel)
         label.frame = NSRect(x: 0, y: 8, width: 160, height: 20)
         label.sizeToFit()   // shrink to the real text width so the field sits right next to it
         accessory.addSubview(label)
