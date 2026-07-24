@@ -1343,6 +1343,10 @@ class scheduleViewController: NSViewController {
     // MARK: - Lifecycle / refresh
 
     func startAutoRefresh() {
+        // Every time the Day Plan is (re)shown, force a fresh task hydrate — the same thing navigating
+        // days does. Without this, re-opening the Day Plan keeps whatever the local store had, missing
+        // completions/changes made elsewhere since it was last hydrated this session.
+        lastHydratedDay = nil
         reload()
         refreshTimer?.invalidate()
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
@@ -1361,6 +1365,9 @@ class scheduleViewController: NSViewController {
                 // passive reload would keep reading `.denied`, so when we're in the denied state issue
                 // an explicit re-request first (no dialog for an already-decided status) to refresh
                 // the in-process status, then reload so the banner clears.
+                // Returning to the app should re-fetch task status too (tasks may have been completed on
+                // another device while away) — reset the hydrate throttle so the reload re-hydrates.
+                self.lastHydratedDay = nil
                 if CalendarManager.shared.access == .denied {
                     CalendarManager.shared.revalidateAccess { [weak self] in
                         self?.lastRenderSignature = nil
@@ -1503,6 +1510,9 @@ class scheduleViewController: NSViewController {
     /// Last day we pulled the backend Day Plan for, so hydration fires once per day shown (not on
     /// every timer-driven reload). Reset when the selected day changes.
     private var lastHydratedDay: Date?
+    /// The day whose task hydrate is currently in flight — stops the 30s refresh from firing overlapping
+    /// fetches while one is pending (lastHydratedDay is now only stamped once a fetch actually lands).
+    private var hydratingDay: Date?
     /// Separate throttle for the #2150 routine-progress fetch: unlike task hydration it also fires for
     /// TODAY once the routine completes (see hydrateTasksIfNeeded), so it can't share lastHydratedDay
     /// (which was already set when the Day Plan was first shown earlier today, before completion).
@@ -1552,12 +1562,23 @@ class scheduleViewController: NSViewController {
     /// strikes through. Today's habit completions already come from current-activity-props, so we only
     /// fetch routine-progress for past days. Throttled by `lastHydratedDay`.
     private func hydrateTasksIfNeeded() {
-        // Task-panel hydration — once per day shown.
-        if lastHydratedDay == nil || !Calendar.current.isDate(lastHydratedDay!, inSameDayAs: selectedDate) {
-            lastHydratedDay = selectedDate
-            DayPlanTaskStore.shared.loadAndHydrate(for: selectedDate) { [weak self] in
+        // Task-panel hydration — once per day shown, but only stamp lastHydratedDay AFTER a real (authed)
+        // fetch actually lands. Stamping it optimistically (before the async result) meant a fetch that
+        // bailed because the Auth0 token wasn't ready yet at launch marked today "hydrated" for the whole
+        // session — so the stale local store kept showing and the 30s refresh never retried (only
+        // navigating days reset it). Now the timer retries today until the fetch succeeds, then throttles.
+        let day = selectedDate
+        let needsHydrate = lastHydratedDay == nil || !Calendar.current.isDate(lastHydratedDay!, inSameDayAs: day)
+        let inFlight = hydratingDay.map { Calendar.current.isDate($0, inSameDayAs: day) } ?? false
+        if needsHydrate && !inFlight {
+            hydratingDay = day
+            DayPlanTaskStore.shared.loadAndHydrate(for: day, onChange: { [weak self] in
                 self?.tasksPanel.reload()
-            }
+            }, onComplete: { [weak self] fetched in
+                guard let self = self else { return }
+                self.hydratingDay = nil
+                if fetched { self.lastHydratedDay = day }
+            })
         }
 
         // Routine-progress (#2150) → per-day completed-habit cache (strike-through). Fetch for PAST

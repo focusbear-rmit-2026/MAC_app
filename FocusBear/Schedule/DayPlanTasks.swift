@@ -628,10 +628,14 @@ final class DayPlanTaskStore {
     /// `planned_date` is this day. Matching is by `sourceTaskId == to-do id`; backend `status` wins
     /// for the `done` flag; a planned to-do we don't have locally is brought onto the Day Plan.
     /// Local from-scratch tasks (no sourceTaskId) are never touched. Returns true if anything changed.
-    func loadAndHydrate(for date: Date, onChange: @escaping () -> Void) {
+    /// `onComplete(fetched:)` reports whether the backend actually returned data (false when the request
+    /// was skipped because we're not authed yet, e.g. right after launch) so the caller can retry rather
+    /// than treat a no-op as a successful hydrate.
+    func loadAndHydrate(for date: Date, onChange: @escaping () -> Void, onComplete: ((_ fetched: Bool) -> Void)? = nil) {
         DayPlanSync.shared.loadDay(date) { [weak self] _, raw in
-            guard let self = self, let raw = raw else { return }
+            guard let self = self, let raw = raw else { onComplete?(false); return }
             if self.hydrate(fromDay: raw, for: date) { onChange() }
+            onComplete?(true)
         }
     }
 
