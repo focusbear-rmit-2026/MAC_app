@@ -114,7 +114,7 @@ struct FocusMusicView: View {
             // instantiated once, so it moved out of the YouTube track list below when playing.
             if let playingId = model.youtubePlayingId, let playingKind = model.youtubePlayingKind {
                 ZStack(alignment: .bottomTrailing) {
-                    YouTubeMusicPlayerView(id: playingId, kind: playingKind, volume: model.volume, isMuted: model.youtubeMuted,
+                    YouTubeMusicPlayerView(id: playingId, kind: playingKind, volume: model.volume, isMuted: model.youtubeMuted, isPaused: model.youtubePaused,
                                            onResolvedTitle: { id, title, author in
                                                model.resolvePlayingYouTubeTitle(id: id, title: title, author: author)
                                            })

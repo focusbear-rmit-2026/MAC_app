@@ -7,6 +7,7 @@
 
 import Cocoa
 import SwiftUI
+import MediaPlayer
 
 /// One row of the curated Focus Music library (arrAllTracks), reshaped into a SwiftUI-friendly,
 /// value-typed snapshot. arrAllTracks itself stays the source of truth — other files (menu "now
@@ -62,15 +63,20 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
     // Refresh the menu popup's now-playing row whenever Spotify/YouTube playback starts or stops —
     // those tracks live outside arrAllTracks, so the menu can't otherwise notice them (mirrors the
     // reloadIfNeeded() call the local-track play/stop paths already make).
-    @Published private(set) var spotifyPlayingId: String? { didSet { menuViewControllerObj?.reloadIfNeeded() } }
+    @Published private(set) var spotifyPlayingId: String? { didSet { menuViewControllerObj?.reloadIfNeeded(); updateNowPlaying() } }
 
     @Published var youtubeTracks: [YouTubeMusicTrack] = YouTubeMusicTrackStore.load()
     // See spotifyUrlInput — editing clears the stale invalid-link warning.
     @Published var youtubeUrlInput = "" { didSet { if youtubeError != nil { youtubeError = nil } } }
     @Published var youtubeError: String?
-    @Published private(set) var youtubePlayingId: String? { didSet { menuViewControllerObj?.reloadIfNeeded() } }
+    @Published private(set) var youtubePlayingId: String? { didSet { menuViewControllerObj?.reloadIfNeeded(); updateNowPlaying() } }
     @Published private(set) var youtubePlayingKind: YouTubeMusicTrack.Kind?
     @Published private(set) var youtubeMuted = false
+    // Unlike toggleYouTubeTrack (which is play/STOP), the hardware media key / Control Center pause a
+    // YouTube track in place: youtubePlayingId stays set and the embedded player is paused (see
+    // YouTubeMusicPlayerView.isPaused), so we remain the Now Playing app and can resume. Kept in the
+    // Now Playing state via updateNowPlaying().
+    @Published private(set) var youtubePaused = false { didSet { updateNowPlaying() } }
 
     /// Read directly by other files (e.g. pause/resume-during-meetings) via allTracksVcObj?.currentSound.
     var currentSound: NSSound?
@@ -89,6 +95,8 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
     // Source labels used as the "Now Playing" subtitle for the non-local sources.
     private(set) var spotifySourceLabel = "Spotify"
     private(set) var youtubeSourceLabel = "YouTube Music"
+    // Now Playing title fallback when a library track somehow has no name (localized in init).
+    private var nowPlayingFallbackTitle = "Focus Music"
 
     override init() {
         super.init()
@@ -98,6 +106,10 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
             youtubeInvalidLinkText = focusMusicInfo.value(forKey: "youtubeInvalidLinkError") as? String ?? youtubeInvalidLinkText
             spotifySourceLabel = focusMusicInfo.value(forKey: "sectionTitleSpotify") as? String ?? spotifySourceLabel
             youtubeSourceLabel = focusMusicInfo.value(forKey: "sectionTitleYouTubeMusic") as? String ?? youtubeSourceLabel
+        }
+        if let menuInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary,
+           let focusMusic = menuInfo.value(forKey: "menuFocusMusic") as? String, !focusMusic.isEmpty {
+            nowPlayingFallbackTitle = focusMusic
         }
         refresh()
         backfillLinkTitles()
@@ -197,6 +209,7 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
 
         refresh()
         menuViewControllerObj?.reloadIfNeeded()
+        updateNowPlaying()
     }
 
     /// Play the last local track the user played (if still downloaded), otherwise a random downloaded
@@ -224,6 +237,84 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
         }
         refresh()
         menuViewControllerObj?.reloadIfNeeded()
+        updateNowPlaying()
+    }
+
+    // MARK: - Hardware media key (play/pause) → focus music
+
+    private var remoteCommandsRegistered = false
+    private var isNowPlayingActive = false
+
+    /// One-time registration of the Mac's hardware play/pause media key so it toggles focus music.
+    /// The commands only actually fire when we're the system "Now Playing" app, which updateNowPlaying()
+    /// arranges while focus music is playing.
+    private func registerRemoteCommandsIfNeeded() {
+        guard !remoteCommandsRegistered else { return }
+        remoteCommandsRegistered = true
+        let center = MPRemoteCommandCenter.shared()
+        let toggle: (MPRemoteCommandEvent) -> MPRemoteCommandHandlerStatus = { [weak self] _ in
+            self?.togglePlayPauseFromMediaKey(); return .success
+        }
+        center.togglePlayPauseCommand.addTarget(handler: toggle)
+        center.playCommand.addTarget(handler: toggle)
+        center.pauseCommand.addTarget(handler: toggle)
+    }
+
+    /// Publish focus-music playback to the system Now Playing centre so the hardware play/pause key is
+    /// routed to us. Done for the library (NSSound) and YouTube sources; when the source is Spotify its
+    /// own app is already Now Playing and owns the key, so we don't fight it — we just release our role.
+    func updateNowPlaying() {
+        registerRemoteCommandsIfNeeded()
+        let center = MPNowPlayingInfoCenter.default()
+
+        if let i = arrAllTracks.firstIndex(where: { ($0["isPlaying"] as? Bool == true) || ($0["isPaused"] as? Bool == true) }) {
+            let playing = arrAllTracks[i]["isPlaying"] as? Bool == true
+            setNowPlaying(center, title: arrAllTracks[i]["name"] as? String ?? nowPlayingFallbackTitle, playing: playing)
+        } else if let id = youtubePlayingId, let track = youtubeTracks.first(where: { $0.id == id }) {
+            setNowPlaying(center, title: track.name, playing: !youtubePaused)
+        } else if isNowPlayingActive {
+            // Nothing we own is active any more — hand the Now Playing role back.
+            center.nowPlayingInfo = nil
+            center.playbackState = .stopped
+            isNowPlayingActive = false
+        }
+    }
+
+    private func setNowPlaying(_ center: MPNowPlayingInfoCenter, title: String, playing: Bool) {
+        center.nowPlayingInfo = [
+            MPMediaItemPropertyTitle: title,
+            MPMediaItemPropertyArtist: "Focus Bear",
+            MPNowPlayingInfoPropertyPlaybackRate: playing ? 1.0 : 0.0,
+        ]
+        center.playbackState = playing ? .playing : .paused
+        isNowPlayingActive = true
+    }
+
+    /// Toggle whatever focus-music source is active. Called from the hardware media key (may arrive off
+    /// the main thread) and reused by the menu's play/pause control.
+    func togglePlayPauseFromMediaKey() {
+        guard Thread.isMainThread else { DispatchQueue.main.async { [weak self] in self?.togglePlayPauseFromMediaKey() }; return }
+        if currentSound != nil,
+           let i = arrAllTracks.firstIndex(where: { ($0["isPlaying"] as? Bool == true) || ($0["isPaused"] as? Bool == true) }) {
+            let sound = currentSound
+            if arrAllTracks[i]["isPlaying"] as? Bool == true {
+                sound?.pause()
+                arrAllTracks[i]["isPlaying"] = false
+                arrAllTracks[i]["isPaused"] = true
+            } else {
+                sound?.resume()
+                arrAllTracks[i]["isPlaying"] = true
+                arrAllTracks[i]["isPaused"] = false
+            }
+            refresh()
+            menuViewControllerObj?.reloadIfNeeded()
+            updateNowPlaying()
+            return
+        }
+        // YouTube: pause/resume in place (not stop) so we stay Now Playing and can resume — see
+        // youtubePaused. Shared with the menu control via toggleYouTubePlayPause().
+        if youtubePlayingId != nil { toggleYouTubePlayPause(); return }
+        if let id = spotifyPlayingId, let track = spotifyTracks.first(where: { $0.id == id }) { toggleSpotifyTrack(track); return }
     }
 
     func setVolume(_ value: Float) {
@@ -393,6 +484,7 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
         } else {
             stopLocalTrack()
             stopSpotify()
+            youtubePaused = false   // a freshly-started track is playing, not paused
             youtubePlayingId = track.id
             youtubePlayingKind = track.kind
         }
@@ -406,8 +498,18 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
 
     func stopYouTube() {
         guard youtubePlayingId != nil else { return }
+        youtubePaused = false
         youtubePlayingId = nil
         youtubePlayingKind = nil
+    }
+
+    /// Pause/resume the current YouTube track in place (not stop) — used by both the hardware media key
+    /// and the menu now-playing play/pause control, so they behave the same. Keeps youtubePlayingId set
+    /// so we stay the Now Playing app and can resume. No-op if no YouTube track is active.
+    func toggleYouTubePlayPause() {
+        guard youtubePlayingId != nil else { return }
+        youtubePaused.toggle()
+        menuViewControllerObj?.reloadIfNeeded()
     }
 
     func toggleYoutubeMute() {

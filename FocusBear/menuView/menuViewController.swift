@@ -2082,9 +2082,10 @@ class menuViewController: NSViewController {
                 }
                 
                 imgViewCurrentTrackState.image = NSImage(named: NSImage.touchBarPlayTemplateName)
-                
+
                 reloadFocusMusicListIfVisible()
-                
+                FocusMusicViewModel.shared.updateNowPlaying()   // keep the hardware media-key state in sync
+
                 return;
             }else if arrAllTracks[i]["isPaused"] as? Bool == true{
                 
@@ -2093,8 +2094,9 @@ class menuViewController: NSViewController {
                 allTracksVcObj?.currentSound?.resume()
                 
                 imgViewCurrentTrackState.image = NSImage(named: NSImage.touchBarPauseTemplateName)
-                
+
                 reloadFocusMusicListIfVisible()
+                FocusMusicViewModel.shared.updateNowPlaying()   // keep the hardware media-key state in sync
                 return;
                 
             }
@@ -2502,7 +2504,8 @@ extension menuViewController {
             if localActive { self?.btnCurrentTrackClicked(self as Any); return }
             switch FocusMusicViewModel.shared.nowPlaying?.source {
             case .spotify(let track): FocusMusicViewModel.shared.toggleSpotifyTrack(track)
-            case .youtube(let track): FocusMusicViewModel.shared.toggleYouTubeTrack(track)
+            // YouTube pauses/resumes in place (matches the hardware media key) rather than stopping.
+            case .youtube: FocusMusicViewModel.shared.toggleYouTubePlayPause()
             default: self?.btnCurrentTrackClicked(self as Any)
             }
         }
@@ -2792,9 +2795,12 @@ extension menuViewController {
         }
         if trackName.isEmpty, let np = FocusMusicViewModel.shared.nowPlaying {
             switch np.source {
-            case .spotify, .youtube:
+            case .spotify:
                 trackName = np.title
-                playing = true   // Spotify/YouTube expose play/stop, not a paused state — treat as playing.
+                playing = true   // Spotify exposes play/stop, not a paused state — treat as playing.
+            case .youtube:
+                trackName = np.title
+                playing = !FocusMusicViewModel.shared.youtubePaused   // YouTube can be paused in place.
             case .local:
                 break            // handled by the arrAllTracks scan above
             }

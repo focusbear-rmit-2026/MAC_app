@@ -25,6 +25,9 @@ struct YouTubeMusicPlayerView: NSViewRepresentable {
     let kind: YouTubeMusicTrack.Kind
     var volume: Float
     var isMuted: Bool
+    /// Pause/resume the embedded player in place (via the IFrame API's pauseVideo()/playVideo()), so the
+    /// hardware media key / Control Center can pause YouTube focus music without tearing the player down.
+    var isPaused: Bool = false
     /// Called with (trackId, title, author) once the player reports the currently-playing track's
     /// metadata. Lets a placeholder name ("YouTube Music playlist") be upgraded to a real title even
     /// for RD… radio mixes, whose title isn't available from oEmbed or the server HTML.
@@ -34,6 +37,7 @@ struct YouTubeMusicPlayerView: NSViewRepresentable {
         var loadedKey: String?
         var lastAppliedVolume: Int?
         var lastAppliedMuted: Bool?
+        var lastAppliedPaused: Bool?
         var trackId = ""
         var onResolvedTitle: ((String, String, String) -> Void)?
 
@@ -76,6 +80,7 @@ struct YouTubeMusicPlayerView: NSViewRepresentable {
         context.coordinator.trackId = id
         context.coordinator.lastAppliedVolume = nil
         context.coordinator.lastAppliedMuted = nil
+        context.coordinator.lastAppliedPaused = nil
 
         let videoIdLine: String
         let playlistVars: String
@@ -133,6 +138,7 @@ struct YouTubeMusicPlayerView: NSViewRepresentable {
         }
         function fbSetVolume(v) { if (window.fbPlayerReady && fbPlayer.setVolume) fbPlayer.setVolume(v); }
         function fbSetMuted(m) { if (window.fbPlayerReady) { if (m) fbPlayer.mute(); else fbPlayer.unMute(); } }
+        function fbSetPaused(p) { if (window.fbPlayerReady) { if (p) fbPlayer.pauseVideo(); else fbPlayer.playVideo(); } }
         </script>
         </body></html>
         """
@@ -148,6 +154,10 @@ struct YouTubeMusicPlayerView: NSViewRepresentable {
         if context.coordinator.lastAppliedMuted != isMuted {
             context.coordinator.lastAppliedMuted = isMuted
             webView.evaluateJavaScript("fbSetMuted(\(isMuted ? "true" : "false"));", completionHandler: nil)
+        }
+        if context.coordinator.lastAppliedPaused != isPaused {
+            context.coordinator.lastAppliedPaused = isPaused
+            webView.evaluateJavaScript("fbSetPaused(\(isPaused ? "true" : "false"));", completionHandler: nil)
         }
     }
 }
