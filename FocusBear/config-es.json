@@ -3163,6 +3163,17 @@
         "taskListTitle": "Abrir lista de tareas:",
         "focusSessionTitle": "Iniciar sesión de enfoque:"
     },
+    "focusButtonInfo":{
+        "focusSessionEmoji": "Emoji de sesión de enfoque",
+        "focusEmojiHint": "Elige hasta 5 emoji: el botón muestra uno al azar como protagonista cuando inicias una sesión de enfoque.",
+        "save": "Guardar",
+        "habitIconsLabel": "Iconos de hábitos",
+        "focusIconsLabel": "Iconos de sesión de enfoque",
+        "iconsUpToDate": "actualizado",
+        "checkingHabitIcons": "Comprobando iconos de hábitos…",
+        "checkingFocusIcons": "Comprobando iconos de enfoque…",
+        "focusIconsSyncIncomplete": "⚠️ No se pudieron sincronizar todos los iconos de enfoque — inténtalo de nuevo"
+    },
     "officeModeSettingsVcInfo": {
         "settingTitle": "Modo de Oficina",
         "descriptionText": "Durante el modo de oficina, Focus Bear solo te dará hábitos de descanso aptos para la oficina (p. ej. estiramientos en vez de flexiones).",

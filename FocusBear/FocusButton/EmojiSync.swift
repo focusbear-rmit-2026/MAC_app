@@ -66,6 +66,10 @@ final class EmojiSync {
     // Progress = (icons on the device now, total wanted). "done" counts real completions + already-cached,
     // not upload attempts, so the UI shows how many icons are actually synced.
     var onProgress: ((_ done: Int, _ total: Int) -> Void)?
+    /// Fired once when a sync run ENDS — no further upload or retry pass will run — whether it finished
+    /// complete or not. onProgress alone can't tell "still uploading (0/N)" from "gave up at 0/N", so the
+    /// UI kept a spinner forever on an incomplete sync; onFinished lets it settle that final state.
+    var onFinished: ((_ done: Int, _ total: Int) -> Void)?
     private var totalToUpload = 0
     private var completedThisRun = 0
     private var cachedWantedCount = 0   // wanted keys already on the device this pass (not all cached emoji)
@@ -217,7 +221,10 @@ final class EmojiSync {
                     guard let self = self, self.generation == g, self.phase == .idle else { return }
                     self.beginPass()
                 }
+                return
             }
+            // No further pass will run — the run is over (complete or not). Let the UI settle.
+            onFinished?(synced, wantedKeys.count)
             return
         }
         let key = uploadQueue.removeFirst()
@@ -289,7 +296,9 @@ final class EmojiSync {
         // the list phase just times out.
         if code == "fs_unavailable" {
             logIt("EmojiSync: device has no emoji partition (fs_unavailable) — stopping")
+            let synced = cachedWantedCount + completedThisRun
             cancel()
+            onFinished?(synced, wantedKeys.count)
             return
         }
         guard current != nil else { return }

@@ -702,6 +702,9 @@ class focusButtonService: NSObject {
     /// Progress for the FOCUS-mode emoji pool sync — separate from habit-icon progress even though both
     /// go through the one serial uploader (only one runs at a time). Delivered on the main thread.
     var onFocusEmojiProgress: ((_ done: Int, _ total: Int) -> Void)?
+    /// Fired once when the FOCUS-mode emoji pool sync ENDS (complete or not) — lets the UI settle the
+    /// "syncing…" spinner even when the run finished incomplete. Delivered on the main thread.
+    var onFocusEmojiFinished: ((_ done: Int, _ total: Int) -> Void)?
     private enum EmojiSyncKind { case habit, focus }
     private var emojiSyncKind: EmojiSyncKind = .habit
 
@@ -718,6 +721,14 @@ class focusButtonService: NSObject {
                 case .habit: self.onEmojiProgress?(done, total)
                 case .focus: self.onFocusEmojiProgress?(done, total)
                 }
+            }
+        }
+        sync.onFinished = { [weak self] done, total in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                // Only the focus pool needs a terminal signal (its spinner auto-clears only on success);
+                // habit-icon status is meant to stay pinned, so it has no finished hook.
+                if self.emojiSyncKind == .focus { self.onFocusEmojiFinished?(done, total) }
             }
         }
         return sync

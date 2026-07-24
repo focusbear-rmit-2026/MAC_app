@@ -3287,6 +3287,7 @@
         "focusIconsLabel": "Focus session icons",
         "iconsUpToDate": "up to date",
         "checkingHabitIcons": "Checking habit icons…",
-        "checkingFocusIcons": "Checking focus icons…"
+        "checkingFocusIcons": "Checking focus icons…",
+        "focusIconsSyncIncomplete": "⚠️ Couldn't sync all focus icons — try again"
     }
 }

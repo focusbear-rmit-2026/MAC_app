@@ -855,6 +855,7 @@ enum FocusButtonText {
     static var upToDate: String { t("iconsUpToDate", "up to date") }
     static var checkingHabitIcons: String { t("checkingHabitIcons", "Checking habit icons…") }
     static var checkingFocusIcons: String { t("checkingFocusIcons", "Checking focus icons…") }
+    static var focusIconsSyncIncomplete: String { t("focusIconsSyncIncomplete", "⚠️ Couldn't sync all focus icons — try again") }
 }
 
 /// Drives the Focus Button screen's single SwiftUI `.alert` — either a flash confirmation or a
@@ -916,6 +917,7 @@ final class FocusButtonToolModel: ObservableObject {
     private var savedOnConnected: ((String) -> Void)?
     private var savedOnEmojiProgress: ((Int, Int) -> Void)?
     private var savedOnFocusEmojiProgress: ((Int, Int) -> Void)?
+    private var savedOnFocusEmojiFinished: ((Int, Int) -> Void)?
 
     /// "<label>: <synced>/<total>" while uploading, "✓ <label> up to date" when done. synced = icons
     /// actually on the device (cached + completed), not attempts.
@@ -929,6 +931,7 @@ final class FocusButtonToolModel: ObservableObject {
         savedOnConnected = focusButtonServiceObject.onDeviceConnected
         savedOnEmojiProgress = focusButtonServiceObject.onEmojiProgress
         savedOnFocusEmojiProgress = focusButtonServiceObject.onFocusEmojiProgress
+        savedOnFocusEmojiFinished = focusButtonServiceObject.onFocusEmojiFinished
         // HABIT icon upload progress — kept separate from the focus-emoji pool below. Unlike the
         // focus-emoji status below, this line is meant to stay visible permanently once known (see
         // checkHabitIconsIfNeeded / the view) rather than fading out — it doubles as the icon-sync
@@ -948,6 +951,17 @@ final class FocusButtonToolModel: ObservableObject {
                 }
             }
         }
+        // The sync ended. On success onFocusEmojiProgress already showed "✓ … up to date"; on an
+        // incomplete run it left a "N/total" spinner that would otherwise stay up forever — replace it
+        // with a brief non-spinning notice (the ⚠️ prefix stops the view spinner), then clear.
+        focusButtonServiceObject.onFocusEmojiFinished = { [weak self] synced, total in
+            guard let self = self, synced < total else { return }
+            self.focusIconUploadStatus = FocusButtonText.focusIconsSyncIncomplete
+            let shown = self.focusIconUploadStatus
+            DispatchQueue.main.asyncAfter(deadline: .now() + 6) { [weak self] in
+                if self?.focusIconUploadStatus == shown { self?.focusIconUploadStatus = "" }
+            }
+        }
         refresh()
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in self?.refresh() }
@@ -958,6 +972,7 @@ final class FocusButtonToolModel: ObservableObject {
         focusButtonServiceObject.onDeviceConnected = savedOnConnected
         focusButtonServiceObject.onEmojiProgress = savedOnEmojiProgress
         focusButtonServiceObject.onFocusEmojiProgress = savedOnFocusEmojiProgress
+        focusButtonServiceObject.onFocusEmojiFinished = savedOnFocusEmojiFinished
     }
     func refresh() {
         // While a firmware check/flash is in flight, don't touch isConnected: the flash releases the
@@ -1184,7 +1199,9 @@ struct FocusButtonToolView: View {
                     // Focus-icon sync progress on its own line (separate from the habit-icon line above).
                     if !model.focusIconUploadStatus.isEmpty {
                         HStack(spacing: 6) {
-                            if !model.focusIconUploadStatus.hasPrefix("✓") {
+                            // Spinner only while actually syncing — not on the terminal ✓ (done) or ⚠️
+                            // (couldn't finish) states, which would otherwise spin forever.
+                            if !model.focusIconUploadStatus.hasPrefix("✓") && !model.focusIconUploadStatus.hasPrefix("⚠️") {
                                 ProgressView().scaleEffect(0.5).frame(width: 14, height: 14)
                             }
                             Text(model.focusIconUploadStatus).font(.callout).foregroundColor(.secondary)
