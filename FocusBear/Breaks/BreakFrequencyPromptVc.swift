@@ -120,13 +120,15 @@ extension BreakFrequencyPromptVc {
 
         let label = NSTextField(labelWithString: "New frequency (min):")
         label.frame = NSRect(x: 0, y: 8, width: 160, height: 20)
+        label.sizeToFit()   // shrink to the real text width so the field sits right next to it
         accessory.addSubview(label)
 
-        let field = NSTextField(frame: NSRect(x: 166, y: 4, width: 50, height: 26))
+        let fieldX = label.frame.maxX + 6   // small fixed gap instead of the old ~30px of empty label
+        let field = NSTextField(frame: NSRect(x: fieldX, y: 4, width: 50, height: 26))
         field.integerValue = proposedDefault
         accessory.addSubview(field)
 
-        let stepper = NSStepper(frame: NSRect(x: 216, y: 4, width: 22, height: 26))
+        let stepper = NSStepper(frame: NSRect(x: fieldX + 52, y: 4, width: 22, height: 26))
         stepper.minValue  = 5
         stepper.maxValue  = 120
         stepper.increment = 5
@@ -137,6 +139,7 @@ extension BreakFrequencyPromptVc {
         stepper.action = #selector(_StepperFieldLink.stepperChanged(_:))
 
         accessory.addSubview(stepper)
+        accessory.setFrameSize(NSSize(width: stepper.frame.maxX + 4, height: 36))   // fit the tightened layout
 
         alert.accessoryView = accessory
 

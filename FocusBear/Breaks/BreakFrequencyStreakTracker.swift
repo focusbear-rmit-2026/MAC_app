@@ -28,9 +28,12 @@ final class BreakFrequencyStreakTracker {
     static let shared = BreakFrequencyStreakTracker()
 
     // MARK: - UserDefaults keys
-    private let kBreakOffDates          = "kFBBreakOffDates"          // [String] — "yyyy-MM-dd"
-    private let kBreakOffPromptShown    = "kFBBreakOffPromptShownDate" // String — last date prompt was shown
-    private let kBreakFrequencyMinutes  = "kFBBreakFrequencyMinutes"   // Int — overridden frequency
+    // Use the GLOBAL keys (allUserdefaults.swift), which get the userId appended on login (AppDelegate),
+    // so each account's off-streak / frequency is separate on a shared device. Computed (not stored) so
+    // they read the current per-user value — this singleton can be created before the login-keying runs.
+    private var kBreakOffDates: String          { kUserdefaultsBreakOffDates }         // [String] — "yyyy-MM-dd"
+    private var kBreakOffPromptShown: String    { kUserdefaultsBreakOffPromptShown }   // String — last date prompt shown
+    private var kBreakFrequencyMinutes: String  { kUserdefaultsBreakFrequencyMinutes } // Int — overridden frequency
 
     private let dateFormatter: DateFormatter = {
         let df = DateFormatter()

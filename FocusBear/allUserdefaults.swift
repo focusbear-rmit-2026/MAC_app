@@ -243,10 +243,11 @@ var kUserDefaultsLastRoutinePostponeState = "kLastRoutinePostponeState"// mornin
 
 var kUserDefaultsBlockingScheduleAddedFirstTime = "kBlockingScheduleAddedFirstTime"// v2.29.461
 
-// Break frequency prompt streak tracking (#1144)
-let kUserdefaultsBreakOffDates         = "kFBBreakOffDates"
-let kUserdefaultsBreakOffPromptShown   = "kFBBreakOffPromptShownDate"
-let kUserdefaultsBreakFrequencyMinutes = "kFBBreakFrequencyMinutes"
+// Break frequency prompt streak tracking (#1144). `var` (not `let`) so they get the userId appended on
+// login (see AppDelegate) — keeps each account's off-streak / frequency separate on a shared device.
+var kUserdefaultsBreakOffDates         = "kFBBreakOffDates"
+var kUserdefaultsBreakOffPromptShown   = "kFBBreakOffPromptShownDate"
+var kUserdefaultsBreakFrequencyMinutes = "kFBBreakFrequencyMinutes"
 
 var kUserdefaultsHiddenFocusModeIDs = "kHiddenFocusModeIDs"
 // IDs of TOOLS sidebar rows the user hid via the hover ✕ (restored via the TOOLS gear icon).
