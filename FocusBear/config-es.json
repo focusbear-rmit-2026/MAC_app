@@ -2868,6 +2868,8 @@
         "menuPause": "Pausar",
         "menuResume": "Reanudar",
         "menuStopSession": "Detener sesión",
+        "menuPauseSession": "Pausar sesión",
+        "menuResumeSession": "Reanudar sesión",
         "menuSessionRunning": "Sesión en curso",
         "menuRemaining": "restante",
         "menuFocusedToday": "Enfocado hoy",

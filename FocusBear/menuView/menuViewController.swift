@@ -2491,6 +2491,10 @@ extension menuViewController {
         model.onShowStats      = { [weak self] in self?.btnPreferencesClicked(self as Any) }
         model.onUpgrade        = { showUpgradeNowWindow(reason: "menu_subscription_status") }   // #2081
         model.onStopFocus      = { [weak self] in self?.stopFocusMode() }
+        // #2148: restore Pause/Resume. These route through the same handlers the legacy Stop-Focus
+        // popup menu used, so strictness / teacher-session / password checks are preserved.
+        model.onPauseFocus     = { [weak self] in self?.pauseFocusModeClicked() }
+        model.onResumeFocus    = { [weak self] in self?.resumeFocusMode() }
         model.onTogglePin      = { [weak self] in self?.btnPinClicked(self as Any) }   // popover <-> window
         model.onOpenBreaks     = { [weak self] in self?.btnStartBreakClicked(self as Any) }
         model.onOpenDayPlan    = { [weak self] in self?.openDayPlanSchedule() }
@@ -2706,6 +2710,8 @@ extension menuViewController {
         let running = isFocusModeOnOrPaused()
         model.focusRunning     = running
         model.focusPaused      = isFocusModePaused()
+        // Only timed sessions can be paused (matches the legacy `timerForFocusMode != nil` gate). #2148
+        model.focusPausable    = (timerForFocusMode != nil)
         model.focusRemaining   = formatFocusRemaining(lblTimerFocusMode?.stringValue ?? "")
         model.focusedTodayText = lblTotalFocusedTimeToday?.stringValue ?? ""
         model.focusTaskTitle   = lblFocusModeIntention?.stringValue ?? ""

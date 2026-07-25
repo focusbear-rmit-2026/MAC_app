@@ -174,6 +174,11 @@ final class MenuModel: ObservableObject {
     @Published var selectedBlockListId = ""
     var onStartFocusConfigured: (Int, String, String) -> Void = { _, _, _ in }   // minutes, intention, blockListId
     var onStopFocus: () -> Void = {}
+    var onPauseFocus: () -> Void = {}
+    var onResumeFocus: () -> Void = {}
+    // Whether the running session can be paused (only timed sessions can — mirrors the legacy
+    // `timerForFocusMode != nil` gate). Hides the Pause button for open-ended sessions.
+    @Published var focusPausable = false
     var onOpenBreaks: () -> Void = {}
     var onOpenDayPlan: () -> Void = {}
     var onOpenFocusMusic: () -> Void = {}
@@ -734,16 +739,28 @@ struct FocusBearMenuView: View {
                         .font(MenuTheme.font(12, .regular))
                         .foregroundColor(MenuTheme.subtitle(scheme))
                 }
-                SwiftUI.Button(action: model.onStopFocus) {
-                    Text(menuLocalized("menuStopSession", "Stop session"))
-                        .font(MenuTheme.font(13, .semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 9)
-                        .background(MenuTheme.orange)
-                        .foregroundColor(.white)
-                        .cornerRadius(9)
+                // Pause / Resume alongside Stop (#2148): the legacy menu offered "Pause Session" when
+                // clicking Stop; the redesign dropped it and Stop ended the session outright. A paused
+                // session shows Resume instead of Pause; open-ended (non-timed) sessions show neither.
+                HStack(spacing: 8) {
+                    if model.focusPaused {
+                        habitActionButton(menuLocalized("menuResumeSession", "Resume session"),
+                                          action: model.onResumeFocus)
+                    } else if model.focusPausable {
+                        habitActionButton(menuLocalized("menuPauseSession", "Pause session"),
+                                          action: model.onPauseFocus)
+                    }
+                    SwiftUI.Button(action: model.onStopFocus) {
+                        Text(menuLocalized("menuStopSession", "Stop session"))
+                            .font(MenuTheme.font(13, .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 9)
+                            .background(MenuTheme.orange)
+                            .foregroundColor(.white)
+                            .cornerRadius(9)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .buttonStyle(PlainButtonStyle())
             }
         }
     }
