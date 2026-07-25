@@ -10,6 +10,7 @@
 //
 
 import Cocoa
+import EventKit
 import SwiftUI
 
 /// All user-facing strings for the Schedule tab, read from the `scheduleViewInfo` config block
@@ -93,6 +94,10 @@ enum ScheduleText {
     static var eventRepeatLabel: String { t("eventRepeatLabel", "Repeat") }
     static var eventColorLabel: String { t("eventColorLabel", "Colour") }
     static var eventParticipantsLabel: String { t("eventParticipantsLabel", "Participants") }
+    static var eventParticipantAccepted: String { t("eventParticipantAccepted", "Accepted") }
+    static var eventParticipantDeclined: String { t("eventParticipantDeclined", "Declined") }
+    static var eventParticipantTentative: String { t("eventParticipantTentative", "Tentative") }
+    static var eventParticipantNoResponse: String { t("eventParticipantNoResponse", "No response") }
     static var eventNotesLabel: String { t("eventNotesLabel", "Description (shared with other attendees)") }
     static var eventPrivateNotesLabel: String { t("eventPrivateNotesLabel", "My private notes (only you)") }
     static var freeTimeToday: String { t("freeTimeToday", "🕒 %@ free") }
@@ -1181,18 +1186,15 @@ class scheduleViewController: NSViewController {
         if let attendees = existing?.attendees, !attendees.isEmpty {
             let others = attendees.filter { !$0.isCurrentUser }
             let people = others.isEmpty ? attendees : others
-            let names: [String] = people.map { p in
-                if let n = p.name?.trimmingCharacters(in: .whitespacesAndNewlines), !n.isEmpty { return n }
-                let s = p.url.absoluteString
-                return s.hasPrefix("mailto:") ? String(s.dropFirst("mailto:".count)) : s
-            }
-            let value = makeLabel(names.joined(separator: ", "), size: 13, bold: false)
-            value.translatesAutoresizingMaskIntoConstraints = false
-            value.usesSingleLineMode = false
-            value.lineBreakMode = .byWordWrapping
-            value.preferredMaxLayoutWidth = 300
-            value.widthAnchor.constraint(equalToConstant: 300).isActive = true
-            attendeeViews = [makeLabel(ScheduleText.eventParticipantsLabel, size: 12, bold: false), value]
+            // One row per participant so each can show its own RSVP status (accepted / declined /
+            // tentative / no response). A single joined label couldn't carry per-person status.
+            let rows: [NSView] = people.map { p in makeParticipantRow(p) }
+            let peopleStack = NSStackView(views: rows)
+            peopleStack.orientation = .vertical
+            peopleStack.alignment = .leading
+            peopleStack.spacing = 2
+            peopleStack.translatesAutoresizingMaskIntoConstraints = false
+            attendeeViews = [makeLabel(ScheduleText.eventParticipantsLabel, size: 12, bold: false), peopleStack]
         }
 
         var formViews: [NSView] = [
@@ -3308,6 +3310,40 @@ class scheduleViewController: NSViewController {
         l.font = bold ? .boldSystemFont(ofSize: size) : .systemFont(ofSize: size)
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
+    }
+
+    /// A participant's RSVP status as a status glyph + human-readable word. The word is nil for
+    /// statuses we don't surface (unknown / delegated / completed / in-process) — many calendar
+    /// providers report `.unknown` when they don't expose RSVPs, and we'd rather show just the name
+    /// than assert a status we don't actually have.
+    private func participantStatusDisplay(_ status: EKParticipantStatus) -> (glyph: String, word: String?) {
+        switch status {
+        case .accepted:  return ("✅", ScheduleText.eventParticipantAccepted)
+        case .declined:  return ("❌", ScheduleText.eventParticipantDeclined)
+        case .tentative: return ("🟡", ScheduleText.eventParticipantTentative)
+        case .pending:   return ("⚪️", ScheduleText.eventParticipantNoResponse)
+        default:         return ("•", nil)
+        }
+    }
+
+    /// Display name for a participant, falling back to the bare email when EventKit has no name.
+    private func participantDisplayName(_ p: EKParticipant) -> String {
+        if let n = p.name?.trimmingCharacters(in: .whitespacesAndNewlines), !n.isEmpty { return n }
+        let s = p.url.absoluteString
+        return s.hasPrefix("mailto:") ? String(s.dropFirst("mailto:".count)) : s
+    }
+
+    /// One wrapping row in the Edit-event participants list: "<glyph> <name> · <status>".
+    private func makeParticipantRow(_ p: EKParticipant) -> NSView {
+        let (glyph, word) = participantStatusDisplay(p.participantStatus)
+        let name = participantDisplayName(p)
+        let text = word.map { "\(glyph) \(name) · \($0)" } ?? "\(glyph) \(name)"
+        let label = makeLabel(text, size: 13, bold: false)
+        label.usesSingleLineMode = false
+        label.lineBreakMode = .byWordWrapping
+        label.preferredMaxLayoutWidth = 300
+        label.widthAnchor.constraint(lessThanOrEqualToConstant: 300).isActive = true
+        return label
     }
 
     /// A time-range label with a fixed width and monospaced digits, so every row's emoji and
