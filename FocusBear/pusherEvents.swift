@@ -28,10 +28,35 @@ func focusModeStrictness(fromBlockLevel blockLevel: String?) -> FOCUSMODESTRICTN
 
 class pusherEvents:NSObject, PusherDelegate {
     var pusher: Pusher!
+    /// The user id whose `private-<id>` channel the current `pusher` is subscribed to. Used to keep
+    /// startEventNotifications() idempotent — see the note in that method.
+    private var subscribedUserId: String?
 
     func startEventNotifications() {
-        // Insert code here to initialize your application //AuthMethod.authRequestBuilder(authRequestBuilder: AuthRequestBuilder())
-        
+        var userId = ""
+        if let id = appdelegate?.user?.userId{
+            userId = id
+        }
+
+        // startEventNotifications() is called from readSettingsAndLoadApp — i.e. on every settings
+        // refresh / offline-recovery / re-login, not just once at launch. Building a fresh Pusher each
+        // time spins up a new NWWebSocket/NWConnection and abandons the previous one WITHOUT
+        // disconnecting it; that orphaned connection's state-update handler can then fire after it's
+        // been deallocated, which crashes deep in Network.framework (_Block_copy on the
+        // com.apple.network.connection queue — EXC_BAD_ACCESS). So only (re)connect when there's no
+        // client yet or the subscribed user actually changed, and tear the old client down explicitly
+        // first so its socket is cancelled cleanly rather than released mid-callback.
+        if pusher != nil, userId == subscribedUserId {
+            return
+        }
+        if let existing = pusher {
+            existing.unbindAll()
+            existing.unsubscribeAll()
+            existing.disconnect()
+            pusher = nil
+        }
+        subscribedUserId = userId
+
         let options = PusherClientOptions(
             authMethod: AuthMethod.authRequestBuilder(authRequestBuilder: AuthRequestBuilder()), host: .cluster("mt1")
         )
@@ -39,13 +64,9 @@ class pusherEvents:NSObject, PusherDelegate {
             key: "e6efc69cb17b6816c56c",
             options: options
         )
-        
+
         pusher.delegate = self
-        var userId = ""
-        if let id = appdelegate!.user?.userId{
-            userId = id
-        }
-    
+
         let channelName = "private-"+userId
         let channel = pusher.subscribe(channelName)
         
