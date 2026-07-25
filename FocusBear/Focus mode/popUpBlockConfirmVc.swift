@@ -1605,51 +1605,63 @@ class popUpBlockConfirmVc: NSViewController {
         
         taskPlayerVcObj?.updateIntentionToPlayer()
         
-        let currentTask = comboBoxSelectTask.stringValue.lowercased()
-        var taskAlreadyAdded = false
-        var taskAddedIndex = 0
-        if !currentTask.isEmpty{
-            for i in 0..<arrAllTasks.count{
-                let task = arrAllTasks[i]
-                let taskName = task.value(forKey: "title") as? String ?? ""
-                if taskName.lowercased() == currentTask{
-                    taskAlreadyAdded = true
-                    taskAddedIndex = i
-                    break;
+        let taskName = comboBoxSelectTask.stringValue
+        guard !taskName.isEmpty else { return }
+
+        let shouldComplete = checkBoxMarkCurrentTaskAsCompleted.state == .on
+
+        // If arrAllTasks is already populated (cache hit), deduplicate synchronously.
+        // Otherwise fetch fresh tasks first to avoid a race condition where the async
+        // load cleared arrAllTasks before the user tapped "Set Task" (#1679).
+        let tasksToCheck = arrAllTasks
+        if !tasksToCheck.isEmpty {
+            addLog(text: "popUpBlockConfirmVc btnSetTaskClicked: using cached \(tasksToCheck.count) tasks for dedup")
+            setTaskWithDeduplication(taskName: taskName, candidateTasks: tasksToCheck, shouldComplete: shouldComplete)
+        } else {
+            addLog(text: "popUpBlockConfirmVc btnSetTaskClicked: arrAllTasks empty – fetching fresh list for dedup")
+            loader.startAnimation(self)
+            allApiObject.getAllTasks { [weak self] freshTasks in
+                guard let self = self else { return }
+                let tasks = freshTasks ?? []
+                DispatchQueue.main.async {
+                    self.loader.stopAnimation(self)
+                    self.arrAllTasks = tasks
+                    self.setTaskWithDeduplication(taskName: taskName, candidateTasks: tasks, shouldComplete: shouldComplete)
                 }
             }
-            
-            if !taskAlreadyAdded{
-                //lblGettingTasks.isHidden = false
-                loader.startAnimation(self)
-                let today = Date()
-                let taskName = comboBoxSelectTask.stringValue
-                let nextWeek = Calendar.current.date(byAdding: .day, value: 7, to: today) ?? Date()
-                let dateString = getStringFromDateInUtc(date: nextWeek, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-                addLog(text: "Create new task:- name: \(taskName)")
-                allApiObject.addTask(title: taskName, details: "", eisenhowerQuadrant: 1, dueDate: dateString, objective: "", tags: [], completionHandler: { result,json in
-                    if result{
-                        addLog(text: "\(taskName) task created successfully.")
-                    }
-                    DispatchQueue.main.async { [self] in
-                        loader.stopAnimation(self)
-                        closeWindow()
-                        if let json = json{
-                            if let id = json.value(forKey: "id") as? String{
-                                taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskName, id: id, duration: 600, shouldCompleteCurrentTask: checkBoxMarkCurrentTaskAsCompleted.state == .on)
-                            }
+        }
+    }
+
+    /// Creates a new task **or** reuses an existing one with the same name (case-insensitive).
+    /// Extracted so both the cached and fresh-fetch paths share the same logic (#1679).
+    private func setTaskWithDeduplication(taskName: String, candidateTasks: [NSDictionary], shouldComplete: Bool) {
+        if let match = TaskDeduplicationHelper.existingTask(named: taskName, in: candidateTasks) {
+            addLog(text: "popUpBlockConfirmVc: task '\(taskName)' already exists – reusing existing task, skipping creation.")
+            closeWindow()
+            if let id = match.task.value(forKey: "id") as? String,
+               let taskTitle = match.task.value(forKey: "title") as? String {
+                taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskTitle, id: id, duration: 600, shouldCompleteCurrentTask: shouldComplete)
+            }
+        } else {
+            loader.startAnimation(self)
+            let today = Date()
+            let nextWeek = Calendar.current.date(byAdding: .day, value: 7, to: today) ?? Date()
+            let dateString = getStringFromDateInUtc(date: nextWeek, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+            addLog(text: "Create new task:- name: \(taskName)")
+            allApiObject.addTask(title: taskName, details: "", eisenhowerQuadrant: 1, dueDate: dateString, objective: "", tags: [], completionHandler: { result, json in
+                if result {
+                    addLog(text: "\(taskName) task created successfully.")
+                }
+                DispatchQueue.main.async { [self] in
+                    loader.stopAnimation(self)
+                    closeWindow()
+                    if let json = json {
+                        if let id = json.value(forKey: "id") as? String {
+                            taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskName, id: id, duration: 600, shouldCompleteCurrentTask: shouldComplete)
                         }
                     }
-                })
-            }else{
-                closeWindow()
-                let task = arrAllTasks[taskAddedIndex]
-                if let id = task.value(forKey: "id") as? String, let taskTitle = task.value(forKey: "title") as? String{
-                    taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskTitle, id: id, duration: 600, shouldCompleteCurrentTask: checkBoxMarkCurrentTaskAsCompleted.state == .on)
                 }
-            }
-        }else{
-            return;
+            })
         }
     }
     

@@ -44,22 +44,43 @@ class popUpSaveThisTaskForLaterVc: NSViewController {
     
     @IBAction func btnYesSaveClicked(_ sender: Any) {
         addLog(text: "[user-action] popUpSaveThisTaskForLaterVc:- btnYesSaveClicked")
-        let today = Date()
         let taskName = textView.string
-        let nextWeek = Calendar.current.date(byAdding: .day, value: 7, to: today) ?? Date()
-        let dateString = getStringFromDateInUtc(date: nextWeek, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-        allApiObject.addTask(title: textView.string, details: "", eisenhowerQuadrant: 1, dueDate: dateString, objective: "", tags: [], completionHandler: { result,json in
-            if result{
-                addLog(text: "\(taskName) task created successfully.")
-                DispatchQueue.main.async { [self] in
-                    if let json = json{
-                        if let id = json.value(forKey: "id") as? String{
-                            taskPlayerVcObj?.addTaskInCurrentList(taskName: textView.string, id: id, duration: 600)
-                        }
+
+        // Fetch existing tasks first to avoid creating a duplicate (#1679).
+        // If a task with the same name (case-insensitive) already exists,
+        // reuse it instead of creating a new one.
+        // getAllTasks fires its completion on a background (URLSession) thread,
+        // so hop to the main thread before doing any UI/addTask work.
+        allApiObject.getAllTasks { [weak self] existingTasks in
+            DispatchQueue.main.async {
+                guard self != nil else { return }
+                let tasks = existingTasks ?? []
+
+                if let match = TaskDeduplicationHelper.existingTask(named: taskName, in: tasks) {
+                    addLog(text: "popUpSaveThisTaskForLaterVc: task '\(taskName)' already exists (id: \(match.task.value(forKey: "id") as? String ?? "?")) – reusing, skipping creation.")
+                    if let id = match.task.value(forKey: "id") as? String {
+                        taskPlayerVcObj?.addTaskInCurrentList(taskName: taskName, id: id, duration: 600)
                     }
+                } else {
+                    let today = Date()
+                    let nextWeek = Calendar.current.date(byAdding: .day, value: 7, to: today) ?? Date()
+                    let dateString = getStringFromDateInUtc(date: nextWeek, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                    allApiObject.addTask(title: taskName, details: "", eisenhowerQuadrant: 1, dueDate: dateString, objective: "", tags: [], completionHandler: { result, json in
+                        if result {
+                            addLog(text: "\(taskName) task created successfully.")
+                            DispatchQueue.main.async { [weak self] in
+                                guard self != nil else { return }
+                                if let json = json {
+                                    if let id = json.value(forKey: "id") as? String {
+                                        taskPlayerVcObj?.addTaskInCurrentList(taskName: taskName, id: id, duration: 600)
+                                    }
+                                }
+                            }
+                        }
+                    })
                 }
             }
-        })
+        }
         self.view.removeFromSuperview()
         popUpBlockConfirmVcObj?.blockClicked()
     }
