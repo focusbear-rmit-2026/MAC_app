@@ -2528,20 +2528,18 @@ extension menuViewController {
             self?.lblFocusModeIntention?.stringValue = newIntention
             taskPlayerVcObj?.updateIntentionToPlayer()
         }
+        // Forward Skip / Postpone to the exact handlers the floating timer popup (smallCountDownVc)
+        // uses, so the menu's habit card behaves identically to it. The habit card only shows in the
+        // same routine-in-progress states (_MORNING_/_EVENING_HABIT_/_CUSTOM_ROUTINE_ + _INPROGRESS_)
+        // that those handlers' first branch acts on, so this is state-consistent. Forwarding (rather
+        // than re-implementing) also picks up the pause + isLastActivityStopped bookkeeping and the
+        // navigation back to the habits view that the previous menu handlers were missing.
         model.onSkipHabit      = {
-            // The "why skip" flow renders inside the main window, so it's a no-op during an allowed-app
-            // habit (main window closed). Open the main window first so Skip actually prompts.
-            if !(mainWindowControllerObj?.window?.isVisible ?? false){
-                mainWindowControllerObj?.showWindow(nil)
-            }
-            NSApplication.shared.activate(ignoringOtherApps: true)
-            timerViewcontrollerObj?.menuItemSkipHabitClicked()
+            getsmallCountDownVcObject().btnSkipClicked(NSNull())
             closeMenuWindowIsVisible()
         }
         model.onPostponeHabit  = {
-            // Standalone postpone window (duration picker + password if required) — works even when the
-            // main window is closed (the same path the floating timer popup uses).
-            showEasyPostponeWindow()
+            getsmallCountDownVcObject().btnPostponeClicked(NSNull())
             closeMenuWindowIsVisible()
         }
         model.onOpenBrainDump  = { [weak self] in self?.btnBrainDumpClicked(self as Any) }
