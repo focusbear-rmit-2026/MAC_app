@@ -1163,6 +1163,13 @@
         "buttonShutDownText": "Apagar",
         "buttonNotNowText": "Ahora no"
     },
+    "breakFrequencyVcInfo": {
+        "title": "¿Quieres que los descansos sean menos frecuentes?",
+        "currentFrequencyText": "Tu frecuencia de descanso actual es cada %d minutos",
+        "buttonChangeText": "Cambiar frecuencia de descanso",
+        "buttonKeepText": "Dejar como está",
+        "newFrequencyLabel": "Nueva frecuencia (min):"
+    },
     "brainDumpVcInfo": {
         "title": "Focus Bear - Volcado de cerebros",
         "titleIntentionText": "Intención de bloque de enfoque:",

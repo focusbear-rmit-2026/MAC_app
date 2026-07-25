@@ -35,6 +35,11 @@ class deactivateBreaksVc: NSViewController {
     @IBAction func btnTurnOffForTodayClicked(_ sender: Any) {
         allApiObject.capturePosthog(event: "disable-breaks-for-today", metadata: [:])
         UserDefaults.standard.set(Date(), forKey: kUserdefaultsDisableBreaksForToday)
+
+        // Track consecutive break-off days and prompt to increase frequency if
+        // the user has turned off breaks for 2 days in a row (#1144).
+        BreakFrequencyStreakTracker.shared.recordBreaksOffForToday()
+
         self.view.window?.close()
     }
     

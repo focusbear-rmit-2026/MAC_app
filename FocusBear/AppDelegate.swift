@@ -1009,6 +1009,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 kUserdefaultsTotalDistractingSitesBlocked = kUserdefaultsTotalDistractingSitesBlocked + (self.user?.userId ?? "")
                 kUserdefaultsSimplePomodoroAiBlockingSelected = kUserdefaultsSimplePomodoroAiBlockingSelected + (self.user?.userId ?? "")
                 kUserdefaultsDisableBreaksForToday = kUserdefaultsDisableBreaksForToday + (self.user?.userId ?? "")
+                kUserdefaultsBreakOffDates = kUserdefaultsBreakOffDates + (self.user?.userId ?? "")
+                kUserdefaultsBreakOffPromptShown = kUserdefaultsBreakOffPromptShown + (self.user?.userId ?? "")
+                kUserdefaultsBreakFrequencyMinutes = kUserdefaultsBreakFrequencyMinutes + (self.user?.userId ?? "")
                 kUserdefaultsLastFocusModeStrictness = kUserdefaultsLastFocusModeStrictness + (self.user?.userId ?? "")
                 kUserdefaultsDontShowConfirmGeekModeAlert = kUserdefaultsDontShowConfirmGeekModeAlert + (self.user?.userId ?? "")
                 kUserDefaultsOpenTodoPlayerFirstTime = kUserDefaultsOpenTodoPlayerFirstTime + (self.user?.userId ?? "")
@@ -2383,9 +2386,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
             
             if let breakMinutes = jsonResult!.value(forKey: "break_after_minutes") as? Int {
-                //                print("breakAfterMinutes")
-                breakAfterMinutes = breakMinutes
-                print(breakAfterMinutes)
+                // Respect a locally-chosen break frequency (set via the break-frequency
+                // prompt) so the server sync does not clobber the user's choice.
+                let localOverride = UserDefaults.standard.integer(forKey: kUserdefaultsBreakFrequencyMinutes)
+                breakAfterMinutes = localOverride > 0 ? localOverride : breakMinutes
             }
             
             if let customRoutines = jsonResult!.value(forKey: "custom_routines") as? [NSDictionary] {

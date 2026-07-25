@@ -116,6 +116,8 @@
 		274E0F4928902CF1000234A3 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E0F4828902CF1000234A3 /* User.swift */; };
 		274E0F4C28902E29000234A3 /* Auth0.plist in Resources */ = {isa = PBXBuildFile; fileRef = 274E0F4B28902E28000234A3 /* Auth0.plist */; };
 		274E671628951DDD0030163F /* AllApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E671528951DDC0030163F /* AllApi.swift */; };
+		5A6A3D7A2FAEB776007ED01F /* BreakFrequencyPromptVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6A3D792FAEB776007ED01F /* BreakFrequencyPromptVc.swift */; };
+		5A6A3D7C2FAEB7D8007ED01F /* BreakFrequencyStreakTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6A3D7B2FAEB7D8007ED01F /* BreakFrequencyStreakTracker.swift */; };
 		E0AA4E363AFEF2F7180E9848 /* TalkingClockManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2AFF50781FF64A00B0C9A64 /* TalkingClockManager.swift */; };
 		5A3E0C8D2FA42A4700301BE2 /* HiddenFocusModeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3E0C8C2FA42A4700301BE2 /* HiddenFocusModeManager.swift */; };
 		5AA6CC882FBC0A1F007BD5D1 /* WiFiMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA6CC872FBC0A1F007BD5D1 /* WiFiMonitorService.swift */; };
@@ -550,6 +552,8 @@
 		274E0F4828902CF1000234A3 /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		274E0F4B28902E28000234A3 /* Auth0.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Auth0.plist; sourceTree = "<group>"; };
 		274E671528951DDC0030163F /* AllApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllApi.swift; sourceTree = "<group>"; };
+		5A6A3D792FAEB776007ED01F /* BreakFrequencyPromptVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakFrequencyPromptVc.swift; sourceTree = "<group>"; };
+		5A6A3D7B2FAEB7D8007ED01F /* BreakFrequencyStreakTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakFrequencyStreakTracker.swift; sourceTree = "<group>"; };
 		E2AFF50781FF64A00B0C9A64 /* TalkingClockManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkingClockManager.swift; sourceTree = "<group>"; };
 		5A3E0C8C2FA42A4700301BE2 /* HiddenFocusModeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiddenFocusModeManager.swift; sourceTree = "<group>"; };
 		5AA6CC872FBC0A1F007BD5D1 /* WiFiMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiMonitorService.swift; sourceTree = "<group>"; };
@@ -1103,6 +1107,8 @@
 		8F3A28972C22A429002AD2E3 /* Breaks */ = {
 			isa = PBXGroup;
 			children = (
+				5A6A3D7B2FAEB7D8007ED01F /* BreakFrequencyStreakTracker.swift */,
+				5A6A3D792FAEB776007ED01F /* BreakFrequencyPromptVc.swift */,
 				8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */,
 				13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */,
 				ESD00002 /* EveningShutdownScreen.swift */,
@@ -2123,6 +2129,7 @@
 				13FB9DFE2DE9D9DF00C11AA2 /* researchVc.swift in Sources */,
 				8F752CC92B4960AB00B21914 /* askPostponeIntentionVc.swift in Sources */,
 				8F371A6829E434770043D7B3 /* tblCellBrowsers.swift in Sources */,
+				5A6A3D7C2FAEB7D8007ED01F /* BreakFrequencyStreakTracker.swift in Sources */,
 				8F98294F2806976B00B17414 /* quittingConfirmVc.swift in Sources */,
 				13E599A82F72B25E00C2B1E0 /* ArrowPopupView.swift in Sources */,
 				8F3A28992C22A46F002AD2E3 /* deactivateBreaksVc.swift in Sources */,
@@ -2167,6 +2174,7 @@
 				13F46AFF2ECB4F4300BA2F44 /* noBuddyFoundVc.swift in Sources */,
 				8F0E69DA290267DE0042FAF4 /* customNotificationVc.swift in Sources */,
 				13B74D5B2E87AA6B00556C79 /* dropView.swift in Sources */,
+				5A6A3D7A2FAEB776007ED01F /* BreakFrequencyPromptVc.swift in Sources */,
 				13A45A2E2DB3DB12009ECF81 /* superGentleQuitVc.swift in Sources */,
 				13776EA52F7669E40006A461 /* distractionBlockingProgressVc.swift in Sources */,
 				8F344A042D882532003D82A4 /* allCsvFilesData.swift in Sources */,
