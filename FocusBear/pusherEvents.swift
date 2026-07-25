@@ -487,6 +487,33 @@ class pusherEvents:NSObject, PusherDelegate {
         })
         pusher.connect()
     }
+
+    /// Cleanly drop the realtime connection before the Mac sleeps. On sleep — especially with the lid
+    /// closed and no network — PusherSwift's NWWebSocket keeps trying to reconnect and hits a
+    /// use-after-free in Network.framework (nw_connection_report_state → objc_retain; see #2125).
+    /// Disconnecting ourselves takes the socket out of that unstable transition window before the OS
+    /// tears the network down; reconnectAfterWake() brings it back.
+    func disconnectForSleep() {
+        guard pusher != nil else { return }
+        addLog(text: "Pusher: disconnect before sleep")
+        pusher.disconnect()
+    }
+
+    /// Reconnect the realtime socket after wake, but only once the network is actually back —
+    /// reconnecting into no network is the churn that crashes. If it isn't up yet, retry a few times as
+    /// it comes back; a still-connected Pusher just no-ops on connect().
+    func reconnectAfterWake(attempt: Int = 0) {
+        guard pusher != nil else { return }
+        if Reachability.isConnectedToNetwork() {
+            addLog(text: "Pusher: reconnect after wake")
+            pusher.connect()
+        } else if attempt < 6 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+                self?.reconnectAfterWake(attempt: attempt + 1)
+            }
+        }
+    }
+
     func changedConnectionState(from old: ConnectionState, to new: ConnectionState) {
         print("changedConnectionState")
     }
