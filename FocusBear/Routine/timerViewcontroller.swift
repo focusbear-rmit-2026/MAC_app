@@ -270,13 +270,6 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             if isVideoLoding{
                 isVideoLoding = false
             }
-            if currentState == ._MICRO_BREAK_ && appdelegate!.isUserOnMeeting{//Mute video volume during in meeting breaks #796
-                if #available(macOS 12.0, *) {
-                    self.webView.pauseAllMediaPlayback()
-                } else {
-                    // Fallback on earlier versions
-                }
-            }
             if isActivityPaused{
                 DispatchQueue.global().async {
                     sleep(2)// for vimeo it needs 2 seconds for youtube it need 1 second
@@ -435,6 +428,24 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         return nil
     }
     
+    /// Pause any break/habit activity video that is already playing when a meeting starts, so it
+    /// doesn't keep blasting audio/video into the user's call (#1878). Complements the autoplay
+    /// suppression in `loadWebViewTo`, which only covers videos loaded after a meeting is detected.
+    func suspendActivityVideoForMeeting(){
+        // Only pause when a break/habit activity is actually in progress. `isVideoLodded` can still be
+        // true for a stale video left in the webview after the previous activity ended, so gate on the
+        // live routine state too — otherwise we'd suspend media that isn't part of a running activity.
+        guard currentAction == ._INPROGRESS_, isVideoLodded else { return }
+        if #available(macOS 12.0, *) {
+            // A one-shot pause, NOT setAllMediaPlaybackSuspended(true): the video is already playing
+            // when the meeting is detected, so pause reliably stops it (no embed race like the old
+            // didFinish attempt). Suspend would be a sticky trap — the pause button also sets it and
+            // the restart path doesn't reliably clear it, leaving the video un-playable after a
+            // postpone→restart with no meeting. Meeting detection re-fires per poll, re-pausing if needed.
+            self.webView.pauseAllMediaPlayback()
+        }
+    }
+
     func loadWebViewTo(url:String?){
         btnTabVideo.isHidden = true
         isVideoLodded = false
@@ -486,14 +497,19 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }
             
             let videoIDUnwrapped = videoID ?? ""
-            
-            if !SettingsManagerObject.isOfficeModeEnabled || currentState == ._BREATHING_{
+
+            // Don't autoplay a break/habit activity video while a meeting is detected — otherwise a
+            // YouTube video blasts audio/video into the user's call (#1878). Suppressing the URL's
+            // autoplay param (the same mechanism office mode uses) is robust; #796's post-load
+            // pauseAllMediaPlayback fired with no delay and raced YouTube's embed, so it missed.
+            let isMeetingInProgress = appdelegate?.isUserOnMeeting == true
+            if !isMeetingInProgress && (!SettingsManagerObject.isOfficeModeEnabled || currentState == ._BREATHING_){
                 if videoUrl.contains("?"){
                     videoUrl = videoUrl + "&autoplay=1"
                 }else{
                     videoUrl = videoUrl + "?autoplay=1"
                 }
-                
+
                 //If a video finishes before the end of a habit, automatically restart it #1476 28/7/25 v 1.26.395
                 if videoUrl.contains("?"){
                     videoUrl = videoUrl + "&loop=1&playlist=\(videoIDUnwrapped)"

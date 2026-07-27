@@ -3945,6 +3945,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         isUserOnMeeting = true
         meetingStartTime = Date()
         writeSettingForScreeenTime(habitInfo: "")
+
+        // A break/habit activity video already playing when the meeting starts must be paused so it
+        // doesn't blast audio/video into the call (#1878).
+        DispatchQueue.main.async {
+            timerViewcontrollerObj?.suspendActivityVideoForMeeting()
+        }
         
         if isFocusModeOn(){
             DispatchQueue.main.async {
