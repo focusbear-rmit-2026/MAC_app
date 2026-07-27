@@ -2686,6 +2686,12 @@ extension menuViewController {
                 if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary {
                     waiting = menuInfo.value(forKey: "waitingBreakTimeText") as? String ?? waiting
                 }
+                // Put the "waiting for a good moment" clause on its own line in the menu card by
+                // breaking at the first sentence boundary. Only affects this menu subtitle (not the
+                // breaks-state label, which reads waitingBreakTimeText directly).
+                if let sentenceBreak = waiting.range(of: ". ") {
+                    waiting.replaceSubrange(sentenceBreak, with: ".\n")
+                }
                 return waiting
             }
         }

@@ -1323,7 +1323,8 @@ private struct AccordionRow<Body: View>: View {
                         Text(subtitle)
                             .font(MenuTheme.font(12, .regular))
                             .foregroundColor(subColor)
-                            .lineLimit(1)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer(minLength: 8)
                     // The accessory is its own Button, so tapping it fires its action instead of
