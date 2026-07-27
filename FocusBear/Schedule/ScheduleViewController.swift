@@ -1931,10 +1931,11 @@ class scheduleViewController: NSViewController {
                 dwRunIndex += 1
             } else {
                 let block = blocks[i]
-                // Hide-deep-work setting: skip the deep-work card (and its nested tasks) entirely, so
-                // the plan shows just appointments/routines. Keep dwOrdinal in step with dwBlocks.
-                if block.kind == .deepWork, hideDeepWorkBlocks {
-                    dwOrdinal += 1
+                // Hide-deep-work setting: skip the deep-work card (and its nested tasks) plus the
+                // 5-minute break blocks paired with each sprint, so the plan shows just
+                // appointments/routines. Keep dwOrdinal in step with dwBlocks (deep-work blocks only).
+                if hideDeepWorkBlocks, block.kind == .deepWork || block.kind == .breakSprint {
+                    if block.kind == .deepWork { dwOrdinal += 1 }
                     i += 1
                     continue
                 }
