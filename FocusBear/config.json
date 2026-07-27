@@ -2927,6 +2927,7 @@
         "menuPauseMusic": "Pause music",
         "menuBrainDump": "Brain Dump",
         "menuToDoPlayer": "To-Do Player",
+        "menuShortcutHint": "Try %1$@ next time to open %2$@",
         "menuTasksForToday": "TASKS FOR TODAY",
         "menuDayPlan": "Day Plan",
         "menuViewFullDayPlan": "View full day plan",

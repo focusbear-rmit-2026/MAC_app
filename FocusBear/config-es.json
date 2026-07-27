@@ -2855,6 +2855,7 @@
         "menuPauseMusic": "Pausar música",
         "menuBrainDump": "Volcado de ideas",
         "menuToDoPlayer": "Reproductor de tareas",
+        "menuShortcutHint": "Prueba %1$@ la próxima vez para abrir %2$@",
         "menuTasksForToday": "TAREAS DE HOY",
         "menuDayPlan": "Plan del día",
         "menuViewFullDayPlan": "Ver plan del día completo",

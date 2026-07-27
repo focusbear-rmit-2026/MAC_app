@@ -1517,17 +1517,27 @@ class menuViewController: NSViewController {
         addLog(text: "[user-action] button Brain Dump Clicked")
         showBrainDumpWindow()
         closeMenuWindowIsVisible()
+        teachShortcut(.brainDump)
     }
-    
+
     @IBAction func btnToDoPlayerClicked(_ sender: Any) {
         addLog(text: "[user-action] btnToDoPlayerClicked")
         openToDoListClicked()
         closeMenuWindowIsVisible()
+        teachShortcut(.taskList)
     }
-    
+
     @IBAction func btnFocusMusicClicked(_ sender: Any) {
         openAllTracksClicked()
         closeMenuWindowIsVisible()
+        teachShortcut(.focusMusic)
+    }
+
+    /// Show the "try the shortcut next time" toast. Only called from the click entry points
+    /// above — the Carbon hotkey handlers bypass these, so users who already use the shortcut
+    /// don't get nagged (#2003).
+    private func teachShortcut(_ action: ShortcutTeachableAction) {
+        ShortcutHintToast.shared.teach(action)
     }
     
     @objc func openToolBoxClicked(){

@@ -1530,3 +1530,173 @@ enum MenuSnapshot {
         return m
     }
 }
+
+// MARK: - Teach-the-shortcut toast (#2003)
+
+/// Fixed width of the hint toast; the height hugs the message (1–2 lines).
+private let shortcutHintToastWidth: CGFloat = 320
+
+/// A menu action that has a configurable global shortcut we can teach the user about.
+/// Resolves its feature name (localized, matching the menu button label) and the user's
+/// currently-configured shortcut so the toast reflects the real, possibly-customised combo.
+enum ShortcutTeachableAction {
+    case focusMusic
+    case brainDump
+    case taskList
+
+    var featureName: String {
+        switch self {
+        case .focusMusic: return menuLocalized("menuFocusMusic", "Focus Music")
+        case .brainDump:  return menuLocalized("menuBrainDump", "Brain Dump")
+        case .taskList:   return menuLocalized("menuToDoPlayer", "To-Do Player")
+        }
+    }
+
+    var char: String {
+        switch self {
+        case .focusMusic: return SettingsManagerObject.focusMusicShortcutChar
+        case .brainDump:  return SettingsManagerObject.brainDumpShortcutChar
+        case .taskList:   return SettingsManagerObject.taskListShortcutChar
+        }
+    }
+
+    var flagInts: [Int] {
+        switch self {
+        case .focusMusic: return SettingsManagerObject.focusMusicShortcutFlags
+        case .brainDump:  return SettingsManagerObject.brainDumpShortcutFlags
+        case .taskList:   return SettingsManagerObject.taskListShortcutFlags
+        }
+    }
+
+    /// Stable key used to throttle how often this action's hint is shown.
+    fileprivate var throttleKey: String {
+        switch self {
+        case .focusMusic: return "focusMusic"
+        case .brainDump:  return "brainDump"
+        case .taskList:   return "taskList"
+        }
+    }
+}
+
+/// Shows a small transient toast that teaches the keyboard shortcut for a menu action the user
+/// just triggered by CLICK. Call it only from the click entry points (the `@IBAction`s) — never
+/// from the Carbon hotkey handlers — so users who already use the shortcut aren't nagged.
+@available(macOS 11.0, *)
+final class ShortcutHintToast {
+
+    static let shared = ShortcutHintToast()
+    private init() {}
+
+    private var panel: NSPanel?
+    private var dismissWorkItem: DispatchWorkItem?
+
+    private static let displayDuration: TimeInterval = 4
+    private static let throttleInterval: TimeInterval = 24 * 60 * 60   // at most once per action per day
+    private static let lastShownKeyPrefix = "shortcutHintLastShown_"
+    private static let configKey = "menuShortcutHint"
+    private static let fallbackTemplate = "Try %1$@ next time to open %2$@"
+    private static let screenEdgeInset: CGFloat = 16
+
+    func teach(_ action: ShortcutTeachableAction) {
+        // Nothing to teach if the user cleared this shortcut.
+        guard !action.char.isEmpty, !action.flagInts.isEmpty else { return }
+        guard shouldShow(action) else { return }
+        markShown(action)
+
+        let shortcut = HotkeyService.spokenString(char: action.char, flagInts: action.flagInts)
+        let template = menuLocalized(ShortcutHintToast.configKey, ShortcutHintToast.fallbackTemplate)
+        let message = String(format: template, shortcut, action.featureName)
+        present(message: message)
+    }
+
+    // MARK: Throttle
+
+    private func lastShownKey(_ action: ShortcutTeachableAction) -> String {
+        ShortcutHintToast.lastShownKeyPrefix + action.throttleKey
+    }
+
+    private func shouldShow(_ action: ShortcutTeachableAction) -> Bool {
+        let last = UserDefaults.standard.double(forKey: lastShownKey(action))
+        guard last > 0 else { return true }
+        return Date().timeIntervalSince1970 - last >= ShortcutHintToast.throttleInterval
+    }
+
+    private func markShown(_ action: ShortcutTeachableAction) {
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: lastShownKey(action))
+    }
+
+    // MARK: Presentation
+
+    private func present(message: String) {
+        dismiss()
+
+        let hosting = NSHostingView(rootView: ShortcutHintToastView(message: message))
+        // Size the panel to the card's natural height for this message instead of a fixed height —
+        // a fixed 68pt left the hosting view's flexible SwiftUI frame stretching the borderless
+        // panel into a tall empty box (#2003 follow-up). The card fixes its own width.
+        let size = NSSize(width: shortcutHintToastWidth, height: hosting.fittingSize.height)
+        hosting.frame = NSRect(origin: .zero, size: size)
+
+        let toast = NSPanel(contentRect: NSRect(origin: .zero, size: size),
+                            styleMask: [.borderless, .nonactivatingPanel],
+                            backing: .buffered,
+                            defer: false)
+        toast.isOpaque = false
+        toast.backgroundColor = .clear
+        toast.hasShadow = true
+        toast.level = .floating
+        toast.isMovableByWindowBackground = false
+        toast.ignoresMouseEvents = true
+        toast.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        toast.contentView = hosting
+
+        let visible = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let inset = ShortcutHintToast.screenEdgeInset
+        let origin = NSPoint(x: visible.maxX - size.width - inset,
+                             y: visible.maxY - size.height - inset)
+        toast.setFrameOrigin(origin)
+        toast.orderFrontRegardless()
+        panel = toast
+
+        let work = DispatchWorkItem { [weak self] in self?.dismiss() }
+        dismissWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + ShortcutHintToast.displayDuration, execute: work)
+    }
+
+    private func dismiss() {
+        dismissWorkItem?.cancel()
+        dismissWorkItem = nil
+        panel?.orderOut(nil)
+        panel = nil
+    }
+}
+
+/// The toast card itself — a compact rounded banner with a keyboard glyph and the hint text.
+@available(macOS 11.0, *)
+private struct ShortcutHintToastView: View {
+    let message: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "command")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(MenuTheme.orange)
+            Text(message)
+                .font(.system(size: 13, weight: .medium))
+                .fixedSize(horizontal: false, vertical: true)
+                .multilineTextAlignment(.leading)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(width: shortcutHintToastWidth, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(NSColor.windowBackgroundColor))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(MenuTheme.orange.opacity(0.35), lineWidth: 1)
+        )
+    }
+}

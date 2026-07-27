@@ -157,4 +157,26 @@ final class HotkeyService {
         parts += char.uppercased()
         return parts
     }
+
+    /// Spelled-out form of a shortcut combo for teaching hints, e.g. "cmd-alt-m".
+    /// Deliberately uses words, NOT symbols (⌘⌥), per issue #2003 — symbols are hard to
+    /// read/say aloud, so the toast that teaches a shortcut spells it out.
+    static func spokenString(char: String, flagInts: [Int]) -> String {
+        var parts: [String] = []
+        if flagInts.contains(shortcutFlags._COMMAND_.rawValue) { parts.append(ModifierWord.command) }
+        if flagInts.contains(shortcutFlags._CONTROL_.rawValue) { parts.append(ModifierWord.control) }
+        if flagInts.contains(shortcutFlags._OPTION_.rawValue)  { parts.append(ModifierWord.option) }
+        if flagInts.contains(shortcutFlags._SHIFT_.rawValue)   { parts.append(ModifierWord.shift) }
+        if !char.isEmpty { parts.append(char.lowercased()) }
+        return parts.joined(separator: ModifierWord.separator)
+    }
+}
+
+/// Spelled-out modifier words used by `HotkeyService.spokenString` (words, not ⌘⌥ symbols).
+private enum ModifierWord {
+    static let command   = "cmd"
+    static let control   = "ctrl"
+    static let option    = "alt"
+    static let shift     = "shift"
+    static let separator = "-"
 }
