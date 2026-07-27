@@ -1191,7 +1191,7 @@ struct FocusButtonToolView: View {
                     Text(FocusButtonText.focusEmojiHint)
                         .font(.callout).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 8) {
-                        TextField("😀🔥🧘💻📚", text: $model.focusEmojiText, onCommit: { model.saveFocusEmoji() })
+                        TextField(focusButtonService.defaultFocusEmojiPoolText, text: $model.focusEmojiText, onCommit: { model.saveFocusEmoji() })
                             .frame(maxWidth: 220)
                         SwiftUI.Button(FocusButtonText.save) { model.saveFocusEmoji() }
                             .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 27))

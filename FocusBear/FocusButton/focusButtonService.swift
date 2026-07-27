@@ -75,6 +75,16 @@ class focusButtonService: NSObject {
         set { UserDefaults.standard.set(newValue, forKey: hasEverConnectedKey) }
     }
 
+    private let defaultFocusIconsSyncedKey = "focusButtonDefaultFocusIconsSynced"
+    /// True once we've auto-pushed the default FOCUS-mode emoji pool to a device (persisted across
+    /// launches). One-time so a reconnect doesn't re-declare defaults over a pool the user has since
+    /// customised or deliberately cleared; the chunked bitmap upload is itself idempotent device-side
+    /// (GET|EMOJILIST skips cached keys), so this only gates the one-time default *declaration*.
+    private var defaultFocusIconsSynced: Bool {
+        get { UserDefaults.standard.bool(forKey: defaultFocusIconsSyncedKey) }
+        set { UserDefaults.standard.set(newValue, forKey: defaultFocusIconsSyncedKey) }
+    }
+
     // MARK: - Device validation (don't hold the port unless it's a Focus device)
     //
     // Any ESP32 native-USB board (VID 0x303a) enumerates as an identical
@@ -769,6 +779,35 @@ class focusButtonService: NSObject {
         }
     }
 
+    /// Emoji the device draws its focus-ring hero from out of the box, before the user picks their own
+    /// pool on the Add-ons screen. Also backs that screen's text-field placeholder so the two stay in
+    /// sync. Capped at 5 by `syncFocusEmojiPool` (the device's pool size).
+    static let defaultFocusEmojiPool = ["😀", "🔥", "🧘", "💻", "📚"]
+    /// The default pool as a single string, for UI (text-field placeholder / hints).
+    static var defaultFocusEmojiPoolText: String { defaultFocusEmojiPool.joined() }
+
+    /// Seconds to wait after a first connect before pushing the default focus emoji, so the connect
+    /// handshake (SET|TIME / GET|HABITCOUNT → GET|HABIT reads) settles first — the emoji uploader is
+    /// ACK-gated lockstep and must not race those command/response round-trips.
+    private static let defaultFocusIconsSyncDelay: TimeInterval = 2.0
+
+    /// On the first connect of an emoji-capable device, push the default FOCUS-mode emoji pool so a
+    /// plain focus session shows a hero icon out of the box — without the user manually pushing each
+    /// one. Idempotent: gated by a persisted flag (declares defaults only once) and skipped once the
+    /// user has set their own pool on the Add-ons screen, so we never clobber a deliberate choice.
+    private func syncDefaultFocusEmojiIfNeeded() {
+        guard firmwareSupportsFocusEmoji else { return }   // device firmware can't use a focus pool
+        guard !defaultFocusIconsSynced else { return }     // already declared defaults on a prior connect
+        let userPool = UserDefaults.standard.string(forKey: FocusButtonToolModel.focusEmojiKey) ?? ""
+        guard userPool.isEmpty else {
+            defaultFocusIconsSynced = true   // user configured their own pool — respect it, don't override
+            return
+        }
+        log("FocusButton: first connect — syncing default FOCUS emoji pool")
+        syncFocusEmojiPool(focusButtonService.defaultFocusEmojiPool)
+        defaultFocusIconsSynced = true
+    }
+
     /// Write a raw line to the device without the command/response-check machinery. Used by the emoji
     /// uploader, which runs its own ACK-gated lockstep and must not have STATUS injected mid-transfer.
     func sendRawLine(_ line: String) {
@@ -1225,6 +1264,14 @@ extension focusButtonService: ORSSerialPortDelegate {
         DispatchQueue.main.async { [weak self] in
             self?.onDeviceConnected?(path)
             self?.onDeviceConnectedRestore?()   // re-push the running session/habit onto the device
+        }
+
+        // First connect: seed the device with the default focus-ring emoji so a plain focus session
+        // has a hero icon without the user configuring one. Delayed so it doesn't race the handshake
+        // reads above (see defaultFocusIconsSyncDelay); no-op after the first time (see method).
+        DispatchQueue.main.asyncAfter(deadline: .now() + focusButtonService.defaultFocusIconsSyncDelay) { [weak self] in
+            guard let self = self, self.isConnected else { return }
+            self.syncDefaultFocusEmojiIfNeeded()
         }
     }
 
