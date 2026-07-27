@@ -28,6 +28,39 @@ let fbSharedDefaultsSuiteName: String = {
     return "TCUD568B3U.group.com.focusbear.fbmac"
 }()
 
+/// Recursively strip anything that is not a property-list type so a value is always safe to hand
+/// to `UserDefaults.set`. The focus-mode JSON from the API can carry `null`s (bridged to `NSNull`)
+/// and other non-plist values; inserting one throws `NSInvalidArgumentException` and crashed app
+/// startup (Sentry FOCUS-BEAR-MACOS-15N). Null-valued keys/elements are DROPPED rather than
+/// replaced with a placeholder — they were absent-equivalent anyway, and read sites already treat
+/// missing keys as optional.
+func plistSanitized(_ value: Any) -> Any? {
+    switch value {
+    case is NSNull:
+        return nil
+    case let dictionary as [String: Any]:
+        var clean = [String: Any]()
+        for (key, child) in dictionary {
+            if let sanitizedChild = plistSanitized(child) {
+                clean[key] = sanitizedChild
+            }
+        }
+        return clean
+    case let array as [Any]:
+        return array.compactMap { plistSanitized($0) }
+    case is String, is NSNumber, is Date, is Data:
+        return value
+    default:
+        return nil
+    }
+}
+
+/// Property-list-safe view of the focus-mode array, safe to persist under
+/// `kUserdefaultsArrFocusTypes` without risking an `NSInvalidArgumentException` crash.
+func plistSafeFocusModes(_ modes: [[String: Any]]) -> [[String: Any]] {
+    modes.compactMap { plistSanitized($0) as? [String: Any] }
+}
+
 
 func getBlockedUrlsToBlock()->[String]{
     if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{

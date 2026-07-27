@@ -1267,7 +1267,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             focusDic.removeValue(forKey: "user_id")
                             focusDic.removeValue(forKey: "deleted_at")
                             focusDic.removeValue(forKey: "doNotSuggestAnyMore")
-                            focusDic.removeValue(forKey: "focus_mode_template_id")//todo remove after null remove from this and  check
                             var newDic = [String:Any]()
                             for key in focusDic.keys{
                                 if key == "metadata"{
@@ -1295,7 +1294,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             
                         }
                         
-                        UserDefaults.standard.set(newArr, forKey: kUserdefaultsArrFocusTypes)
+                        UserDefaults.standard.set(plistSafeFocusModes(newArr), forKey: kUserdefaultsArrFocusTypes)
                     }
                     
                     checkAllFocusModes()
