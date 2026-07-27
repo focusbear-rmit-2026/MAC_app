@@ -2750,6 +2750,11 @@
         "titleTask": "Task title:",
         "taskNameString": "To work on: <URL>"
     },
+    "dragAwayPostponeVcInfo":{
+        "titleText": "I noticed you moved the routine window away. Do you want to postpone it?",
+        "buttonPostponeText": "Postpone",
+        "buttonKeepGoingText": "Keep going"
+    },
     "habitsStateVcInfo":{
         "morningRoutinePostponedText": "Morning routine postponed. Resume it now by clicking 'Resume Habits'.",
         "eveningRoutinePostponedText": "Evening routine postponed. Resume it now by clicking 'Resume Habits'.",

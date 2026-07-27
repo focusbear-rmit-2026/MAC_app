@@ -83,6 +83,7 @@
 		13C6BF0B2FB19D750074DD63 /* ORSSerial in Frameworks */ = {isa = PBXBuildFile; productRef = 13C6BF0A2FB19D750074DD63 /* ORSSerial */; };
 		13C6BF0E2FB211CA0074DD63 /* audioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */; };
 		13C6C2A22FE2615E00B1F278 /* BreakWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */; };
+		AA2091010000000000002091 /* DragAwayPostponePrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2091020000000000002091 /* DragAwayPostponePrompt.swift */; };
 		13CBE7652F07E9660025544E /* enableAIBlockingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */; };
 		13D5D0112FD0396E00AB474C /* micMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D5D0102FD0396E00AB474C /* micMonitor.swift */; };
 		13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */; };
@@ -521,6 +522,7 @@
 		13C6BF0A2FB199E70074DD63 /* EmojiSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiSync.swift; sourceTree = "<group>"; };
 		13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = audioRecorder.swift; sourceTree = "<group>"; };
 		13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakWarningView.swift; sourceTree = "<group>"; };
+		AA2091020000000000002091 /* DragAwayPostponePrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragAwayPostponePrompt.swift; sourceTree = "<group>"; };
 		13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = enableAIBlockingVc.swift; sourceTree = "<group>"; };
 		13D5D0102FD0396E00AB474C /* micMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = micMonitor.swift; sourceTree = "<group>"; };
 		13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineStateVc.swift; sourceTree = "<group>"; };
@@ -948,6 +950,7 @@
 			isa = PBXGroup;
 			children = (
 				134D1DEF2E42378B00328E84 /* habitsVc.swift */,
+				AA2091020000000000002091 /* DragAwayPostponePrompt.swift */,
 				8FAC6C9C27806DCB008A4180 /* firstViewController.swift */,
 				8F99C8D52A13AE1D00FD2403 /* editHabitRoutineVc.swift */,
 				8F6138B528B7698300A45B1A /* visualizeInstructionsVc.swift */,
@@ -2164,6 +2167,7 @@
 				8F212FE829DAFF02006620DF /* helpVc.swift in Sources */,
 				13188D742DEEE30300E67A44 /* flaskServer.swift in Sources */,
 				134D1DF02E42378B00328E84 /* habitsVc.swift in Sources */,
+				AA2091010000000000002091 /* DragAwayPostponePrompt.swift in Sources */,
 				130FFDBD2E4C666300694795 /* logsUploadingVc.swift in Sources */,
 				8FB222172BA865F400F3DA68 /* blankLayerWc.swift in Sources */,
 				8F1E18A028EAF3FF00367413 /* macInfo.swift in Sources */,

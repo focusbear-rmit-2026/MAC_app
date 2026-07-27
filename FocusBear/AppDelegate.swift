@@ -7072,9 +7072,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._CUSTOM_ROUTINE_{
             if !SettingsManagerObject.isFullScreenEnabled{
                 if mainWindowControllerObj?.window?.isVisible ?? false{
-                    mainWindowControllerObj?.window?.center()
-                    //                    NSApp.activate(ignoringOtherApps: true)
-                    NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
+                    // #2091: same center()+activate as before, but also records that a re-centre has
+                    // happened this session — so a subsequent user drag asks to postpone (see
+                    // scheduleDragAwayCheck) instead of silently re-centring again.
+                    mainWindowControllerObj?.recenterRoutineWindowForAwayTimer()
                 }
             }
         }

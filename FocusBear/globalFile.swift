@@ -521,10 +521,14 @@ var currentState:CURRENTSTATE = ._NOTHING_{
         
         if currentState == ._MORNING_HABIT_{
             if oldValue != currentState{
+                // New routine session → reset the #2091 grace so the away-timer re-centres once before
+                // a drag triggers the postpone prompt.
+                mainWindowControllerObj?.hasRecenteredRoutineWindowThisSession = false
                 leftMenuVcObj?.habitStarted()
             }
         }else if currentState == ._EVENING_HABIT_{
             if oldValue != currentState{
+                mainWindowControllerObj?.hasRecenteredRoutineWindowThisSession = false
                 leftMenuVcObj?.habitStarted()
             }
         }else if currentState == ._FOCUS_SUMMARY_{

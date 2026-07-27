@@ -2724,6 +2724,11 @@
         "titleTask": "Título de la tarea:",
         "taskNameString": "Para trabajar en: <URL>"
     },
+    "dragAwayPostponeVcInfo":{
+        "titleText": "Noté que moviste la ventana de la rutina a un lado. ¿Quieres posponerla?",
+        "buttonPostponeText": "Posponer",
+        "buttonKeepGoingText": "Continuar"
+    },
     "habitsStateVcInfo":{
         "morningRoutinePostponedText": "Rutina matutina pospuesta. Reanúdala ahora haciendo clic en 'Reanudar hábitos'.",
         "eveningRoutinePostponedText": "Rutina nocturna pospuesta. Reanúdala ahora haciendo clic en 'Reanudar hábitos'.",

@@ -16,7 +16,24 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     let smallWindowAvgWidth = 1008
     let spaceKeyCode:uint16 = 49
     let escKeyCode:uint16 = 53
-    
+
+    // Issue #2091 — a user who steps away is given a grace period: the 60s away-timer re-centres the
+    // routine window once (moveWindowToCenter). Only AFTER that first re-centre, if the user drags the
+    // window aside again in the same routine session, do we ask whether to postpone rather than
+    // silently fighting them. This only applies to the small, titled routine window — the borderless
+    // full-screen window has no title bar and isn't movable-by-background, so it can't be dragged.
+    let dragAwayDriftThreshold: CGFloat = 40
+    let dragAwaySettleDelay: TimeInterval = 0.35
+    private var dragAwayCheckWorkItem: DispatchWorkItem?
+    // Set true once the away-timer re-centres the routine window; reset at each routine-session start
+    // (currentState.didSet). Gates whether a further drag triggers the postpone prompt.
+    var hasRecenteredRoutineWindowThisSession = false
+    // The origin the window sat at right after the programmatic re-centre, so "moved away" is measured
+    // from where WE put it (exact) rather than a guessed geometric centre.
+    var routineWindowCenteredOrigin: NSPoint?
+    // Guards the windowDidMove that our own center() triggers so it isn't read as a user drag.
+    private var isProgrammaticallyCenteringRoutineWindow = false
+
     var isFullScreenVisible = false
     override func windowDidLoad() {
         super.windowDidLoad()
@@ -453,6 +470,61 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         self.window?.close()
     }
     
+    /// Re-centre the routine window for the 60s away-timer (#2091). Marks the move as programmatic so
+    /// the resulting windowDidMove isn't read as a user drag, records the centred origin, and flags
+    /// that a re-centre has happened this session — so a *subsequent* user drag triggers the postpone
+    /// prompt instead of another silent re-centre. Preserves the old center()+activate behaviour.
+    func recenterRoutineWindowForAwayTimer() {
+        guard let window = self.window, window.isVisible else { return }
+        isProgrammaticallyCenteringRoutineWindow = true
+        window.center()
+        routineWindowCenteredOrigin = window.frame.origin
+        hasRecenteredRoutineWindowThisSession = true
+        NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
+        // Clear the guard after the move settles so genuine user drags are seen again.
+        DispatchQueue.main.async { [weak self] in self?.isProgrammaticallyCenteringRoutineWindow = false }
+    }
+
+    func windowDidMove(_ notification: Notification) {
+        scheduleDragAwayCheck()
+    }
+
+    /// Issue #2091: debounce window-move events so a settled user drag — not our own re-centre —
+    /// triggers the postpone prompt exactly once, and only after the away-timer already re-centred.
+    private func scheduleDragAwayCheck() {
+        guard currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ else { return }
+        // No full-screen check needed: the away-timer re-centre (which sets hasRecentered) only runs in
+        // the non-full-screen path, so this gate already implies we're on the small, draggable window.
+        guard hasRecenteredRoutineWindowThisSession, !isProgrammaticallyCenteringRoutineWindow else { return }
+        dragAwayCheckWorkItem?.cancel()
+        let work = DispatchWorkItem { [weak self] in self?.presentDragAwayPromptIfStillDrifted() }
+        dragAwayCheckWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + dragAwaySettleDelay, execute: work)
+    }
+
+    private func presentDragAwayPromptIfStillDrifted() {
+        guard currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ else { return }
+        guard hasRecenteredRoutineWindowThisSession else { return }
+        guard !DragAwayPostponePromptManager.shared.isVisible else { return }
+        guard let window = self.window, window.isVisible, let centered = routineWindowCenteredOrigin else { return }
+
+        let drift = hypot(window.frame.origin.x - centered.x, window.frame.origin.y - centered.y)
+        guard drift > dragAwayDriftThreshold else { return }
+
+        // Bring the window back to centre and to the front BEFORE showing the prompt: the overlay is
+        // hosted on the window's content view, so on the dragged-aside window the user might never see
+        // it. Centring here puts the nag where they're looking. #2091
+        recenterRoutineWindowForAwayTimer()
+
+        DragAwayPostponePromptManager.shared.present(onPostpone: {
+            // Reuse the existing postpone path — same as the on-screen Postpone / abort button.
+            getHabitsVcObject().abortCurrentState()
+        }, onKeepGoing: {
+            // Keep going: the window is already centred+front from the recenter above, so just dismiss
+            // (handled by the manager). The flag stays set, so a further drag asks once more.
+        })
+    }
+
     func windowDidExitFullScreen(_ notification: Notification) {
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_ || currentState == ._CUSTOM_ROUTINE_{
             if checkIsFullScreenEnabled(){
