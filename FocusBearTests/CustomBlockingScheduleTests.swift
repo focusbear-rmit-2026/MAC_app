@@ -306,6 +306,63 @@ class CustomBlockingScheduleTests: XCTestCase {
         ))
     }
 
+    // MARK: - Resilient list decode (days_of_week int/string mix)
+    //
+    // Regression: the backend returned two schedules where one had
+    // days_of_week: [0…6] (ints) and the other ["ALL"] (strings). The whole-array
+    // decode threw on the string element, dropping ALL custom blocking schedules.
+
+    /// Backend 0-based days [0…6] become Calendar weekdays [1…7] (Sunday = 1).
+    private let allWeekdays = Array(1...7)
+
+    private func decodeSchedules(_ json: String) throws -> [customBlockingSchedule] {
+        let data = Data(json.utf8)
+        let wrapped = try JSONDecoder().decode([FailableDecodable<customBlockingSchedule>].self, from: data)
+        return wrapped.compactMap { $0.value }
+    }
+
+    func test_mixed_int_and_all_string_days_decodes_both_schedules() throws {
+        let json = """
+        [
+          { "name": "Work", "days_of_week": [0,1,2,3,4,5,6] },
+          { "name": "Sleep Time", "days_of_week": ["ALL"] }
+        ]
+        """
+        let schedules = try decodeSchedules(json)
+        XCTAssertEqual(schedules.count, 2)
+        XCTAssertEqual(schedules[0].daysOfWeek.sorted(), allWeekdays)
+        XCTAssertEqual(schedules[1].name, "Sleep Time")
+        XCTAssertEqual(schedules[1].daysOfWeek.sorted(), allWeekdays)
+    }
+
+    func test_all_token_is_case_insensitive() throws {
+        let schedules = try decodeSchedules(#"[ { "name": "S", "days_of_week": ["All"] } ]"#)
+        XCTAssertEqual(schedules.first?.daysOfWeek.sorted(), allWeekdays)
+    }
+
+    func test_day_name_strings_map_to_specific_weekdays() throws {
+        // ["mon","wed","fri"] → backend 1,3,5 → Calendar weekdays 2,4,6
+        let schedules = try decodeSchedules(#"[ { "name": "S", "days_of_week": ["mon","wed","fri"] } ]"#)
+        XCTAssertEqual(schedules.first?.daysOfWeek.sorted(), [2, 4, 6])
+    }
+
+    func test_unrecognized_day_names_fall_back_to_full_week() throws {
+        let schedules = try decodeSchedules(#"[ { "name": "S", "days_of_week": ["notaday"] } ]"#)
+        XCTAssertEqual(schedules.first?.daysOfWeek.sorted(), allWeekdays)
+    }
+
+    func test_one_malformed_element_does_not_drop_the_valid_ones() throws {
+        let json = """
+        [
+          { "name": "Good" },
+          "totally broken",
+          { "name": "AlsoGood" }
+        ]
+        """
+        let schedules = try decodeSchedules(json)
+        XCTAssertEqual(schedules.map { $0.name }, ["Good", "AlsoGood"])
+    }
+
     func test_schedule_excluded_from_overlap_check_by_id() {
         let now = Date()
         let todayWeekday = calendar.component(.weekday, from: now)

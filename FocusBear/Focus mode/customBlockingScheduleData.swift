@@ -215,34 +215,9 @@ struct customBlockingSchedule: Codable, Identifiable {
         id = try container.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
         name = try container.decodeIfPresent(String.self, forKey: .name) ?? "Untitled"
         
-        // Default full week
-        let defaultDays = Array(0...6)
-
-        let decodedDays: [Int]
-
-        if container.contains(.daysOfWeek) {
-            
-            // Case 1: [Int]
-            if let intDays = try? container.decode([Int].self, forKey: .daysOfWeek) {
-                decodedDays = intDays
-            }
-            // Case 2: ["all"]
-            else if let stringDays = try? container.decode([String].self, forKey: .daysOfWeek),
-                    stringDays.contains("all") {
-                decodedDays = defaultDays
-            }
-            // Case 3: Wrong type / corrupted → fallback
-            else {
-                decodedDays = defaultDays
-            }
-            
-        } else {
-            // Case 4: Key missing → full week
-            decodedDays = defaultDays
-        }
-
-        // Your +1 logic
-        daysOfWeek = decodedDays.map { $0 + 1 }
+        // Shift the backend's 0-based days (0 = Sunday … 6 = Saturday) into Calendar's
+        // 1-based weekday convention (1 = Sunday … 7 = Saturday); encode() shifts back with -1.
+        daysOfWeek = Self.decodeDaysOfWeek(from: container, scheduleName: name).map { $0 + 1 }
         
         
         focusModeID = try container.decodeIfPresent(String.self, forKey: .focusModeID) ?? ""
@@ -276,6 +251,58 @@ struct customBlockingSchedule: Codable, Identifiable {
         emoji = try container.decodeIfPresent(String.self, forKey: .emoji)
     }
     
+    // Backend day-of-week convention: 0 = Sunday … 6 = Saturday.
+    private static let backendWeekDays = Array(0...6)
+
+    // Token (case-insensitive) the backend uses to mean "every day".
+    private static let allDaysToken = "all"
+
+    // Lower-cased day names (full + common abbreviations) → backend 0-based index.
+    private static let dayNameToIndex: [String: Int] = [
+        "sunday": 0, "sun": 0,
+        "monday": 1, "mon": 1,
+        "tuesday": 2, "tue": 2, "tues": 2,
+        "wednesday": 3, "wed": 3,
+        "thursday": 4, "thu": 4, "thur": 4, "thurs": 4,
+        "friday": 5, "fri": 5,
+        "saturday": 6, "sat": 6,
+    ]
+
+    /// Robustly decodes `days_of_week`, which the backend may send as ints (`[0…6]`),
+    /// the "ALL" token (case-insensitive, meaning every day), or day-name strings.
+    /// Returns backend 0-based indices; the caller applies the +1 Calendar shift.
+    /// Unrecognized shapes fall back to the full week (so a schedule is never silently
+    /// disabled) and are logged rather than mis-read as "all".
+    private static func decodeDaysOfWeek(
+        from container: KeyedDecodingContainer<CodingKeys>,
+        scheduleName: String
+    ) -> [Int] {
+        guard container.contains(.daysOfWeek) else { return backendWeekDays }
+
+        if let intDays = try? container.decode([Int].self, forKey: .daysOfWeek) {
+            return intDays
+        }
+
+        guard let stringDays = try? container.decode([String].self, forKey: .daysOfWeek) else {
+            addLog(text: "⚠️ days_of_week for '\(scheduleName)' is an unrecognized type — defaulting to every day")
+            return backendWeekDays
+        }
+
+        let normalized = stringDays.map { $0.trimmingCharacters(in: .whitespaces).lowercased() }
+
+        if normalized.contains(allDaysToken) {
+            return backendWeekDays
+        }
+
+        let mapped = normalized.compactMap { dayNameToIndex[$0] }
+        if !mapped.isEmpty && mapped.count == normalized.count {
+            return mapped
+        }
+
+        addLog(text: "⚠️ days_of_week for '\(scheduleName)' had unrecognized day names \(stringDays) — defaulting to every day")
+        return backendWeekDays
+    }
+
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
@@ -472,6 +499,25 @@ extension Date {
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm a"
         return formatter.string(from: self)
+    }
+}
+
+/// Wraps a `Decodable` so a single element's failure is captured instead of thrown.
+/// Decoding `[FailableDecodable<T>]` lets the array's unkeyed container keep going past a
+/// bad element (its `init` never throws, so the container always advances), which is what
+/// makes the schedule-list decode resilient to one malformed entry.
+struct FailableDecodable<T: Decodable>: Decodable {
+    let value: T?
+    let error: Error?
+
+    init(from decoder: Decoder) throws {
+        do {
+            value = try T(from: decoder)
+            error = nil
+        } catch let caughtError {
+            value = nil
+            error = caughtError
+        }
     }
 }
 
@@ -823,36 +869,44 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         let decoder = JSONDecoder()
 
         do {
-            let schedule = try decoder.decode([customBlockingSchedule].self, from: jsonData)
-            arrBlockingSchedule = schedule
-            saveBlockingSchedulesToLocal()
-        } catch {
-            addLog(text: "❌ Failed to decode customBlockingSchedule")
-            addLog(text: "Error: \(error.localizedDescription)")
-
-            // Optional: detailed decoding error info
-            if let decodingError = error as? DecodingError {
-                switch decodingError {
-                case .typeMismatch(let type, let context):
-                    addLog(text: "Type mismatch for type \(type): \(context.debugDescription)")
-                    addLog(text: "Coding path: \(context.codingPath)")
-
-                case .valueNotFound(let type, let context):
-                    addLog(text: "Value not found for type \(type): \(context.debugDescription)")
-                    addLog(text: "Coding path: \(context.codingPath)")
-
-                case .keyNotFound(let key, let context):
-                    addLog(text: "Key '\(key.stringValue)' not found: \(context.debugDescription)")
-                    addLog(text: "Coding path: \(context.codingPath)")
-
-                case .dataCorrupted(let context):
-                    addLog(text: "Data corrupted: \(context.debugDescription)")
-                    addLog(text: "Coding path: \(context.codingPath)")
-
-                @unknown default:
-                    addLog(text: "Unknown decoding error")
+            // Decode element-by-element so a single malformed schedule (e.g. one with a
+            // string days_of_week the backend didn't expect) is skipped-and-logged rather
+            // than throwing and discarding EVERY custom blocking schedule.
+            let wrapped = try decoder.decode([FailableDecodable<customBlockingSchedule>].self, from: jsonData)
+            var schedules: [customBlockingSchedule] = []
+            for (index, element) in wrapped.enumerated() {
+                if let schedule = element.value {
+                    schedules.append(schedule)
+                } else if let error = element.error {
+                    addLog(text: "⚠️ Skipped malformed customBlockingSchedule at index \(index): \(Self.describeDecodingError(error))")
                 }
             }
+            arrBlockingSchedule = schedules
+            saveBlockingSchedulesToLocal()
+        } catch {
+            // Only a structural failure (e.g. the payload isn't a JSON array) reaches here.
+            addLog(text: "❌ Failed to decode customBlockingSchedule list")
+            addLog(text: "Error: \(Self.describeDecodingError(error))")
+        }
+    }
+
+    /// Human-readable description of a decoding error, so both the whole-list failure and
+    /// the per-element skips report the same detail (type, coding path, reason).
+    private static func describeDecodingError(_ error: Error) -> String {
+        guard let decodingError = error as? DecodingError else {
+            return error.localizedDescription
+        }
+        switch decodingError {
+        case .typeMismatch(let type, let context):
+            return "Type mismatch for \(type) at \(context.codingPath): \(context.debugDescription)"
+        case .valueNotFound(let type, let context):
+            return "Value not found for \(type) at \(context.codingPath): \(context.debugDescription)"
+        case .keyNotFound(let key, let context):
+            return "Key '\(key.stringValue)' not found at \(context.codingPath): \(context.debugDescription)"
+        case .dataCorrupted(let context):
+            return "Data corrupted at \(context.codingPath): \(context.debugDescription)"
+        @unknown default:
+            return "Unknown decoding error"
         }
     }
 
@@ -896,10 +950,14 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
             let data = try Data(contentsOf: url)
             
             let decoder = JSONDecoder()
-            let schedules = try decoder.decode([customBlockingSchedule].self, from: data)
-            
-            arrBlockingSchedule = schedules
-            
+            let wrapped = try decoder.decode([FailableDecodable<customBlockingSchedule>].self, from: data)
+            arrBlockingSchedule = wrapped.enumerated().compactMap { index, element in
+                if element.value == nil, let error = element.error {
+                    addLog(text: "⚠️ Skipped malformed cached customBlockingSchedule at index \(index): \(Self.describeDecodingError(error))")
+                }
+                return element.value
+            }
+
             addLog(text: "Loaded blocking schedules from local cache.")
             
         } catch {
