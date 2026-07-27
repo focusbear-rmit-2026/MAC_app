@@ -31,6 +31,14 @@ final class CalendarManager {
     /// Show the "connect your calendar" banner whenever we can't read events yet.
     func shouldShowPermissionBanner() -> Bool { access != .authorized }
 
+    /// Whether the Mac has any event calendars at all. An authorized user with zero calendars (no
+    /// account added in the macOS Calendar app) can't see meetings or add events, so callers show a
+    /// "no calendars connected" info message instead of silently rendering an empty schedule.
+    func hasAnyCalendars() -> Bool {
+        guard access == .authorized else { return false }
+        return !store.calendars(for: .event).isEmpty
+    }
+
     func requestAccess(completion: @escaping (Bool) -> Void) {
         // The system TCC permission dialog is a separate process shown at the normal window level.
         // Focus Bear's window can sit at an elevated level (floating / status-bar during routines and

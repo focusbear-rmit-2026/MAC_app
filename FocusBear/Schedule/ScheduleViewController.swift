@@ -33,6 +33,12 @@ enum ScheduleText {
     static var calendarBanner: String { t("calendarBanner", "Connect your calendar to see meetings and free time for deep work.") }
     static var grantAccess: String { t("grantAccess", "Grant access") }
     static var removingFullScreen: String { t("removingFullScreen", "Removing full screen for 30 seconds to grant calendar permissions") }
+    // Shown when Focus Bear HAS calendar access but the Mac has no calendars at all (no account added
+    // in the macOS Calendar app), so clicking "Connect calendar" would otherwise silently do nothing.
+    static var noCalendarsTitle: String { t("noCalendarsTitle", "No calendars connected") }
+    static var noCalendarsMessage: String { t("noCalendarsMessage", "Focus Bear has calendar access, but there are no calendars on this Mac yet. Add a calendar account in the macOS Calendar app (or System Settings › Internet Accounts), then reopen your Day Plan to see your meetings and free time for deep work.") }
+    static var noCalendarsOpenSettings: String { t("noCalendarsOpenSettings", "Add a calendar account") }
+    static var noCalendarsDismiss: String { t("noCalendarsDismiss", "Not now") }
     static var today: String { t("today", "Today") }
     static var backToToday: String { t("backToToday", "Back to today") }
     static var habitPlayerTab: String { t("habitPlayerTab", "Habit Player") }   // allowed-activity player tabs
@@ -1025,13 +1031,18 @@ class scheduleViewController: NSViewController {
     private func requestCalendarThen(_ action: @escaping () -> Void) {
         switch CalendarManager.shared.access {
         case .authorized:
+            guard CalendarManager.shared.hasAnyCalendars() else { showNoCalendarsInfo(); return }
             action()
         case .notDetermined:
             CalendarManager.shared.requestAccess { [weak self] granted in
                 DispatchQueue.main.async {
                     self?.lastRenderSignature = nil
                     self?.reload()                      // refresh banner / meetings now we may have access
-                    if granted { action() }
+                    guard granted else { return }
+                    // Access without any calendars can't hold a new event — explain rather than
+                    // opening an event form that could never save (issue #2115).
+                    guard CalendarManager.shared.hasAnyCalendars() else { self?.showNoCalendarsInfo(); return }
+                    action()
                 }
             }
         case .denied:
@@ -3020,7 +3031,7 @@ class scheduleViewController: NSViewController {
     @objc private func grantCalendarClicked() {
         switch CalendarManager.shared.access {
         case .authorized:
-            reload()
+            reloadOrExplainNoCalendars()
         case .notDetermined:
             // First-time ask: show the system (TCC) prompt. It can't appear over Focus Bear's
             // borderless full-screen cover window, so drop full-screen (with a countdown) first.
@@ -3029,7 +3040,7 @@ class scheduleViewController: NSViewController {
             } else {
                 NSApplication.shared.activate(ignoringOtherApps: true)   // make sure the prompt is frontmost
                 CalendarManager.shared.requestAccess { [weak self] _ in
-                    DispatchQueue.main.async { self?.reload() }
+                    DispatchQueue.main.async { self?.reloadOrExplainNoCalendars() }
                 }
             }
         case .denied:
@@ -3039,13 +3050,56 @@ class scheduleViewController: NSViewController {
         }
     }
 
+    /// Refresh the schedule after we (may) have access — but if the user is authorized yet has no
+    /// calendars at all, the schedule would silently stay empty, so explain that instead of leaving
+    /// the "Connect calendar" click looking like a no-op (issue #2115).
+    private func reloadOrExplainNoCalendars() {
+        if CalendarManager.shared.access == .authorized && !CalendarManager.shared.hasAnyCalendars() {
+            showNoCalendarsInfo()
+            return
+        }
+        reload()
+    }
+
+    /// Tell the user Focus Bear has calendar access but the Mac has no calendars, and offer to open
+    /// the settings where a calendar account is added.
+    private func showNoCalendarsInfo() {
+        guard let window = view.window else { NSSound.beep(); return }
+        let alert = NSAlert()
+        alert.messageText = ScheduleText.noCalendarsTitle
+        alert.informativeText = ScheduleText.noCalendarsMessage
+        alert.addButton(withTitle: ScheduleText.noCalendarsOpenSettings)   // first button → .alertFirstButtonReturn
+        alert.addButton(withTitle: ScheduleText.noCalendarsDismiss)
+        alert.beginSheetModal(for: window) { [weak self] response in
+            guard response == .alertFirstButtonReturn else { return }
+            self?.openInternetAccountsSettings()
+        }
+    }
+
     private func openSystemCalendarSettings() {
-        // Focus Bear's window can sit at an elevated level (floating during routines, or the
-        // borderless full-screen cover). Elevated levels float above other apps' windows too, so the
-        // System Settings window we're about to open would appear *behind* ours and be unreachable.
-        // Drop any elevated windows to normal so Settings is reachable, then restore them once the
-        // user returns to Focus Bear. (Same idea as CalendarManager.requestAccess does for the TCC
-        // prompt; opening Settings has no completion callback, so we restore on app reactivation.)
+        openReachableExternalWindow {
+            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars") {
+                NSWorkspace.shared.open(url)
+            }
+        }
+    }
+
+    /// System Settings › Internet Accounts — where the user adds a calendar account (iCloud, Google, …).
+    private func openInternetAccountsSettings() {
+        openReachableExternalWindow {
+            if let url = URL(string: "x-apple.systempreferences:com.apple.preferences.internetaccounts") {
+                NSWorkspace.shared.open(url)
+            }
+        }
+    }
+
+    /// Run `open` (which surfaces another app's window, e.g. System Settings) with any elevated Focus
+    /// Bear windows temporarily dropped to normal level. Focus Bear's window can sit at an elevated
+    /// level (floating during routines, or the borderless full-screen cover), which floats above other
+    /// apps' windows too — so the window we open would otherwise appear *behind* ours and be
+    /// unreachable. Levels are restored once the user returns to Focus Bear (these opens have no
+    /// completion callback, so we restore on app reactivation).
+    private func openReachableExternalWindow(_ open: () -> Void) {
         let elevated = NSApp.windows.filter { $0.level.rawValue > NSWindow.Level.normal.rawValue }
         if !elevated.isEmpty {
             let savedLevels = elevated.map { (window: $0, level: $0.level) }
@@ -3057,9 +3111,7 @@ class scheduleViewController: NSViewController {
                 if let token = token { NotificationCenter.default.removeObserver(token) }
             }
         }
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars") {
-            NSWorkspace.shared.open(url)
-        }
+        open()
     }
 
     // MARK: - Add tasks from the to-do list
@@ -3218,7 +3270,7 @@ class scheduleViewController: NSViewController {
         CalendarManager.shared.requestAccess { [weak self] granted in
             DispatchQueue.main.async {
                 self?.endFullScreenCalendarGrant()           // restore full-screen as soon as answered
-                self?.reload()
+                self?.reloadOrExplainNoCalendars()
             }
         }
     }
