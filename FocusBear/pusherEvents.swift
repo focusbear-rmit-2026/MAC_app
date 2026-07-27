@@ -74,7 +74,9 @@ class pusherEvents:NSObject, PusherDelegate {
         // bind a callback to handle an event
         _ = channel.bind(eventName: "focus-mode-started", eventCallback: { (event: PusherEvent) in
             if let data = event.data {
+                addLog(text: "Pusher focus-mode-started received (focusOn=\(isFocusModeOn()), state=\(currentState))")
                 if isFocusModeOn() || isHardCorePomodoroModeOn || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._SHUTOFFMAC_ || currentState == ._CUSTOM_ROUTINE_{
+                    addLog(text: "Pusher focus-mode-started IGNORED: Mac already busy (focusOn=\(isFocusModeOn()), hardcore=\(isHardCorePomodoroModeOn), state=\(currentState))")
                     return;
                 }
                 if let data = data.data(using: .utf8) {
@@ -82,6 +84,7 @@ class pusherEvents:NSObject, PusherDelegate {
                             if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]{
                                 print(dictionary)
                                 if dictionary["device_id"] as? String == currentDeviceId{
+                                    addLog(text: "Pusher focus-mode-started IGNORED: event is from this device")
                                     return;
                                 }
                                 let startTimeString = dictionary["start_time"] as? String ?? ""
@@ -98,6 +101,7 @@ class pusherEvents:NSObject, PusherDelegate {
                                      
                                     let diffMinutes = Calendar.current.dateComponents([.minute], from: startTime, to: finishTime).minute ?? 0
                                     print(diffMinutes)
+                                    if diffMinutes <= 0 { addLog(text: "Pusher focus-mode-started IGNORED: non-positive duration (\(diffMinutes) min)") }
                                     if diffMinutes > 0{
                                         addLog(text: "Start focus mode from pusher event")// v 2.32484
                                         if !getTaskPlayerVcObject().isViewLoaded{
@@ -114,6 +118,7 @@ class pusherEvents:NSObject, PusherDelegate {
                                         }
                                         
                                         if currentFocusModeIndex == -1{
+                                            addLog(text: "Pusher focus-mode-started IGNORED: focus_mode_id \(focusModeId) not in local arrFocusType (count \(arrFocusType.count))")
                                             return;
                                         }
                                         
