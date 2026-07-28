@@ -26,3 +26,9 @@ build/
 
 # Swift Package Manager checkouts (resolved by Xcode, not source)
 /SourcePackages/
+
+# Never commit Sentry auth tokens. dSYM upload reads SENTRY_AUTH_TOKEN from the
+# environment (see scripts/upload-dsyms.sh + docs/sentry-dsym-upload.md).
+# The provision profiles in Certificates/ are intentionally tracked; this only
+# excludes the leaked-token note that used to live here.
+Certificates/Upload sentry files using sentry cli.rtfd/

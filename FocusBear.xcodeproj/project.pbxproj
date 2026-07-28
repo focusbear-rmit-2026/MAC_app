@@ -1796,6 +1796,7 @@
 				3F268440EC1EB9CD7C1DB69B /* [CP] Embed Pods Frameworks */,
 				137CD6052D9D4ACC00A8385A /* Embed Frameworks */,
 				FBE57001FBE57001FBE57001 /* Embed esptool */,
+				5E71D5F0000000005E71D5F0 /* [Sentry] Upload Debug Symbols */,
 			);
 			buildRules = (
 			);
@@ -1971,6 +1972,23 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		5E71D5F0000000005E71D5F0 /* [Sentry] Upload Debug Symbols */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/upload-dsyms.sh",
+			);
+			name = "[Sentry] Upload Debug Symbols";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Uploads dSYMs to Sentry so crash + App-Hang stacks symbolicate (Mac-App#1954/#1955).\n# No-ops for non-Release builds. See scripts/upload-dsyms.sh and docs/sentry-dsym-upload.md.\n\"${SRCROOT}/scripts/upload-dsyms.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		3F268440EC1EB9CD7C1DB69B /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;

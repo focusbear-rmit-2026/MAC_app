@@ -130,4 +130,23 @@ Rename Focus Bear.dmg to something like Focus Bear 1.23.365.dmg based on the cur
 
 ---
 
+🐞 8. Sentry Debug Symbols (dSYMs) — MANDATORY
+
+Every Release Archive automatically uploads dSYMs to Sentry via the
+"[Sentry] Upload Debug Symbols" Xcode Run Script build phase, so crashes AND
+App Hangs symbolicate (Mac-App#1954 / #1955). For this to run you MUST have
+`sentry-cli` installed and `SENTRY_AUTH_TOKEN` exported before archiving — a
+Release build fails if either is missing.
+
+  brew install getsentry/tools/sentry-cli
+  export SENTRY_AUTH_TOKEN=...   # token with project:releases + project:write
+
+To back-fill an already-shipped build, run:
+
+  ./scripts/upload-dsyms.sh "path/to/Focus Bear.xcarchive"
+
+Full details: docs/sentry-dsym-upload.md
+
+---
+
 End of instructions.
