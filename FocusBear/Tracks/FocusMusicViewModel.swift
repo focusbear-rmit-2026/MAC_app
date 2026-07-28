@@ -470,7 +470,10 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
         }
         spotifyTracks = SpotifyTrackStore.load()
 
-        for track in youtubeTracks where track.name.contains("http") {
+        // Re-resolve tracks still showing the raw URL OR the generic placeholder (e.g. added before the
+        // og:title fallback could name playlists oEmbed 404s on). Cheap best-effort each launch.
+        let youtubePlaceholders = [youtubeSourceLabel, "\(youtubeSourceLabel) playlist"]
+        for track in youtubeTracks where track.name.contains("http") || youtubePlaceholders.contains(track.name) {
             let placeholder = track.kind == .playlist ? "\(youtubeSourceLabel) playlist" : youtubeSourceLabel
             YouTubeMusicTrackStore.updateName(id: track.id, name: placeholder)
             resolveYouTubeTitle(id: track.id, kind: track.kind)
