@@ -7163,21 +7163,37 @@ func makeRequest(responsePathUrl: NSURL)->NSMutableURLRequest{
 //------Event Buffer Singleton--------//new events endpoint #1536 v 2.28.436
 final class EventBuffer {
     static let shared = EventBuffer()
-    
+
     private var events: [[String: Any]] = []
     private var timer: Timer?
     private var batchMinCount = 0
-    
+
+    // Chunking guards against 413 (payload too large) — ~4.9k of these were silently dropping
+    // batches over 30 days per the #1767 investigation (a single flush can accumulate a lot of
+    // events if the app's been offline, or the earlier events include unusually large metadata).
+    // Conservative limits, well under AWS API Gateway/Lambda's payload ceilings.
+    private let maxEventsPerChunk = 200
+    private let maxChunkBytes = 1_000_000 // 1MB
+
+    // Backoff after a 4xx — the endpoint told us the request itself is bad (or, per Denzel's
+    // investigation, this account's auth0_id doesn't resolve server-side), so retrying the exact
+    // same shape 30s later just repeats the same failure forever. Doubles per consecutive 4xx,
+    // capped at 30 minutes; resets on the next success.
+    private var backoffUntil: Date?
+    private var consecutive4xxCount = 0
+    private let baseBackoffSeconds: TimeInterval = 60
+    private let maxBackoffSeconds: TimeInterval = 30 * 60
+
     private init() {
         startBatchTimer()
     }
-    
+
     func addEvent(_ event: [String: Any]) {
         DispatchQueue.main.async {
             self.events.append(event)
         }
     }
-    
+
     private func startBatchTimer() {
         timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { _ in
             self.flushEvents()
@@ -7191,14 +7207,41 @@ extension EventBuffer {
         addLog(text: "func flushEvents events: \(events.count)")
         guard events.count > batchMinCount else { return }
 
+        if let backoffUntil = backoffUntil, Date() < backoffUntil {
+            addLog(text: "func flushEvents: backing off until \(backoffUntil) (\(events.count) events queued, not dropped)")
+            return
+        }
+
         let batch = events
         events.removeAll()
 
-        sendBatchToServer(batch)
+        for chunk in chunkedForPayloadLimits(batch) {
+            sendBatchToServer(chunk)
+        }
     }
-    
+
+    /// Splits a batch by event count AND serialized byte size — either limit alone can trip a 413
+    /// depending on whether the flush has many small events or few large ones.
+    private func chunkedForPayloadLimits(_ batch: [[String: Any]]) -> [[[String: Any]]] {
+        var chunks: [[[String: Any]]] = []
+        var current: [[String: Any]] = []
+        var currentBytes = 0
+        for event in batch {
+            let eventBytes = (try? JSONSerialization.data(withJSONObject: event))?.count ?? 0
+            if !current.isEmpty && (current.count >= maxEventsPerChunk || currentBytes + eventBytes > maxChunkBytes) {
+                chunks.append(current)
+                current = []
+                currentBytes = 0
+            }
+            current.append(event)
+            currentBytes += eventBytes
+        }
+        if !current.isEmpty { chunks.append(current) }
+        return chunks
+    }
+
     private func sendBatchToServer(_ batch: [[String: Any]]) {
-        guard let url = URL(string: "https://events.aws.focusbear.io/batch-ingest-events/events")
+        guard let url = URL(string: "https://events.aws.focusbear.io/events")
         else { return }
 
 //        var request = URLRequest(url: url)
@@ -7214,23 +7257,70 @@ extension EventBuffer {
 
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
+        URLSession.shared.dataTask(with: request as URLRequest) { [weak self] data, response, error in
             if let error = error {
                 print("Upload error:", error)
-                addLog(text: "api call batch-ingest-events error: \(error.localizedDescription)")
+                addLog(text: "api call events error: \(error.localizedDescription)")
                 return
             }
 
-            if let http = response as? HTTPURLResponse {
-                print("Batch Uploaded. Status:", http.statusCode)
-                if http.statusCode == 204{ //success
-                    return;
-                }else{
-                    addLog(text: "api call captureEventEndpoint error:- statusCode is \(http.statusCode)")
-                    allApiObject.writeJsonInLog(data: data)
+            guard let http = response as? HTTPURLResponse else { return }
+            print("Batch Uploaded. Status:", http.statusCode)
+
+            // 207 means the server accepted the batch but rejected some events in it — log the
+            // response body (not just the status code) so we can see which, per Denzel's PR review.
+            // Check this before the general 2xx branch since 207 is itself in the 200...299 range.
+            if http.statusCode == 207{
+                addLog(text: "api call events: batch partially rejected (207)")
+                allApiObject.writeJsonInLog(data: data)
+                self?.resetBackoff()
+                return
+            }
+            if (200...299).contains(http.statusCode){ //success
+                self?.resetBackoff()
+                return
+            }
+
+            addLog(text: "api call captureEventEndpoint error:- statusCode is \(http.statusCode)")
+            allApiObject.writeJsonInLog(data: data)
+
+            if (400...499).contains(http.statusCode){
+                self?.registerFailureAndBackOff(statusCode: http.statusCode)
+                if http.statusCode == 404{
+                    self?.logTokenValidityFor404()
                 }
             }
         }.resume()
+    }
+
+    private func resetBackoff() {
+        consecutive4xxCount = 0
+        backoffUntil = nil
+    }
+
+    private func registerFailureAndBackOff(statusCode: Int) {
+        consecutive4xxCount += 1
+        let backoffSeconds = min(baseBackoffSeconds * pow(2.0, Double(consecutive4xxCount - 1)), maxBackoffSeconds)
+        backoffUntil = Date().addingTimeInterval(backoffSeconds)
+        addLog(text: "api call events: got \(statusCode), backing off \(Int(backoffSeconds))s (consecutive 4xx: \(consecutive4xxCount))")
+    }
+
+    /// A 404 here means the server says "user not found for this auth0 id" — per Denzel's #1767
+    /// investigation, that's either a genuinely dead local session (expired/revoked token) or a
+    /// server-side orphaned account with a still-valid token, and telling those apart was exactly
+    /// the open question. This doesn't force a logout — a background telemetry flush is the wrong
+    /// place for a disruptive re-auth prompt — it just logs which case it is so it's visible in
+    /// Debug_Logs.txt / support investigations.
+    private func logTokenValidityFor404() {
+        guard let credentialsManager = appdelegate?.credentialsManager else { return }
+        credentialsManager.credentials { credentialsInfo in
+            switch credentialsInfo {
+            case .success:
+                addLog(text: "api call events: 404 but local credentials are valid — likely a server-side orphaned account (auth0_id has no matching user row), not a dead session")
+            case .failure(let error):
+                addLog(text: "api call events: 404 AND local credentials are invalid/expired (\(error.localizedDescription)) — this session is genuinely dead")
+            }
+        }
     }
 }
 
