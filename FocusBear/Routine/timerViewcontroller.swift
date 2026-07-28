@@ -76,6 +76,12 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     var isActivityPaused = false
     
     var isVideoLodded = false
+
+    /// Resumes the top-level embedded player's `<video>` element. YouTube/Vimeo embed URLs load as the
+    /// top document, so the element is same-origin and scriptable — used to un-pause the activity video
+    /// after a mid-break meeting ends.
+    private static let resumeVideoPlaybackScript = "document.querySelector('video')?.play();"
+
     var arrImgUrls = [String]()
     var arrCheckList = [[String:Any]]()
     var images: [NSImage?] = []
@@ -443,6 +449,21 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             // the restart path doesn't reliably clear it, leaving the video un-playable after a
             // postpone→restart with no meeting. Meeting detection re-fires per poll, re-pausing if needed.
             self.webView.pauseAllMediaPlayback()
+        }
+    }
+
+    /// Resume the break/habit activity video after a meeting ends. `suspendActivityVideoForMeeting`
+    /// paused it when the meeting was detected; without a paired resume, a meeting detected mid-break
+    /// left the video paused for the rest of the break (the #1878 suspend had no counterpart). Only
+    /// resume when an activity is genuinely in progress, a video is loaded, and the user hasn't
+    /// manually paused it — otherwise we'd start media that shouldn't be playing.
+    func resumeActivityVideoAfterMeeting(){
+        guard currentAction == ._INPROGRESS_, isVideoLodded, !isActivityPaused else { return }
+        if #available(macOS 12.0, *) {
+            // Reverse of suspendActivityVideoForMeeting's pauseAllMediaPlayback(): play() the embed's
+            // <video>. (No setAllMediaPlaybackSuspended(false) — nothing was suspended; the meeting
+            // pause is a one-shot pauseAllMediaPlayback, so play() is the matching resume.)
+            self.webView.evaluateJavaScript(Self.resumeVideoPlaybackScript, completionHandler: nil)
         }
     }
 

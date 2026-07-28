@@ -3889,6 +3889,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if isUserOnMeeting{
             isUserOnMeeting = false
             writeSettingForScreeenTime(habitInfo: "")
+
+            // A break/habit activity video paused when the meeting started (see
+            // `suspendActivityVideoForMeeting`) must be resumed, otherwise a meeting detected mid-break
+            // leaves it paused for the rest of the break (#1878 regression).
+            DispatchQueue.main.async {
+                timerViewcontrollerObj?.resumeActivityVideoAfterMeeting()
+            }
             DispatchQueue.main.async { [self] in
                 if alertSuggestFocusMode != nil{
                     if alertSuggestFocusMode!.window.isVisible{
