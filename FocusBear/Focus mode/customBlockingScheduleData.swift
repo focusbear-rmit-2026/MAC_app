@@ -726,6 +726,11 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     
     func startCustomBlockingSchedule(index:Int){
         addLog(text: "Custom blocking schedule started.")
+        // Guard a stale index: the array can shrink between when the caller captured `index` and here,
+        // which would trap on the subscripts below. (Salvaged from #1794 / the #1793 crash work; no
+        // stateQueue.sync wrapper — arrBlockingSchedule's accessor already serializes, so wrapping
+        // would deadlock.)
+        guard index < arrBlockingSchedule.count else { return }
         arrBlockingSchedule[index].state = .on
         isAnyCustomScheduleOn = true
         isAnyCustomSchedulePaused = false
@@ -1034,6 +1039,9 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     
     func deleteScheduleAt(_ index:Int){
         allApiObject.capturePosthog(event: "delete-blocking-schedule", metadata: [:])//2.27.421
+        // Guard a stale index (array shrank since the caller captured it) before the subscripts and
+        // remove(at:) below, which would otherwise trap. (Salvaged from #1794 / the #1793 crash work.)
+        guard index < arrBlockingSchedule.count else { return }
         if arrBlockingSchedule[index].state == .on{
             customBlockingScheduleFinished()
         }

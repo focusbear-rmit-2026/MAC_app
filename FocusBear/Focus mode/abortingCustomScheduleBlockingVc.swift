@@ -56,6 +56,12 @@ class abortingCustomScheduleBlockingVc: NSViewController {
     
     override func viewWillDisappear() {
         isViewVisible = false
+        // Stop the repeating countdown timer as soon as the view is dismissed, rather than letting it
+        // keep ticking until the countdown self-completes. performTimerCount's own guard only catches
+        // a hidden-but-present window (`window?.isVisible == false`), not a dismissed view whose window
+        // is already nil. (Salvaged from #1794 / the #1793 crash work.)
+        timer?.invalidate()
+        timer = nil
     }
 
     func resetData(){
