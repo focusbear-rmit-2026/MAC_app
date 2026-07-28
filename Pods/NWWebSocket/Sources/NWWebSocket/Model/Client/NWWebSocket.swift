@@ -83,6 +83,21 @@ open class NWWebSocket: WebSocketConnection {
 
     deinit {
         connection?.intentionalDisconnection = true
+        cancelConnectionSafely()
+    }
+
+    // FOCUS BEAR VENDORED PATCH (#2125): clear the connection's update handlers before cancelling it.
+    // Without this, a cancelled NWConnection can still deliver a final state/path report on the network
+    // queue into a handler whose captured context has been freed during reconnect churn — the
+    // nw_connection_report_state → objc_retain use-after-free that crashed the app on sleep / network
+    // loss. This is exactly the fix upstream NWWebSocket shipped in 0.5.10; vendored into the pinned
+    // 0.5.4 because a full pod update to 0.5.10 regenerates the Pods project and breaks the Sentry pod
+    // build under Xcode 26 (tracked separately). Re-applied by the Podfile post_install hook so a future
+    // `pod install` can't silently drop it.
+    private func cancelConnectionSafely() {
+        connection?.stateUpdateHandler = nil
+        connection?.betterPathUpdateHandler = nil
+        connection?.viabilityUpdateHandler = nil
         connection?.cancel()
     }
 
@@ -191,7 +206,7 @@ open class NWWebSocket: WebSocketConnection {
         // Call `cancel()` directly for a `normalClosure`
         // (Otherwise send the custom closeCode as a message).
         if closeCode == .protocolCode(.normalClosure) {
-            connection?.cancel()
+            cancelConnectionSafely()
             scheduleDisconnectionReporting(closeCode: closeCode,
                                            reason: nil)
         } else {
@@ -272,7 +287,7 @@ open class NWWebSocket: WebSocketConnection {
     private func migrateConnection(completionHandler: @escaping (Result<WebSocketConnection, NWError>) -> Void) {
         guard !isMigratingConnection else { return }
         connection?.intentionalDisconnection = true
-        connection?.cancel()
+        cancelConnectionSafely()
         isMigratingConnection = true
         connection = NWConnection(to: endpoint, using: parameters)
         connection?.stateUpdateHandler = { [weak self] state in
@@ -383,7 +398,7 @@ open class NWWebSocket: WebSocketConnection {
             delegate?.webSocketDidReceiveError(connection: self, error: error)
         }
         pingTimer?.invalidate()
-        connection?.cancel()
+        cancelConnectionSafely()
         connection = nil
 
         if let disconnectionWorkItem = disconnectionWorkItem {

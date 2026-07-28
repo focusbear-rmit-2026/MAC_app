@@ -531,13 +531,33 @@ class pusherEvents:NSObject, PusherDelegate {
     func reconnectAfterWake(attempt: Int = 0) {
         guard pusher != nil else { return }
         if Reachability.isConnectedToNetwork() {
-            addLog(text: "Pusher: reconnect after wake")
-            pusher.connect()
+            // A bare connect() can't recover a socket stuck mid-teardown: if the pre-sleep disconnect
+            // didn't finish before the Mac slept, the connection wakes stuck in `disconnecting`, and
+            // connect() from there transitions to `connecting` but never reaches `connected` (confirmed
+            // in the logs). Rebuild the client from scratch so we always get a clean NWWebSocket — safe
+            // now that the vendored NWWebSocket fix cancels the old connection without a use-after-free.
+            addLog(text: "Pusher: reconnect after wake — rebuilding client")
+            rebuildConnection()
         } else if attempt < 6 {
             DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
                 self?.reconnectAfterWake(attempt: attempt + 1)
             }
         }
+    }
+
+    /// Fully tear down the current Pusher client (which can be stuck half-disconnected after sleep) and
+    /// build a fresh one via startEventNotifications(). Clears subscribedUserId so that method doesn't
+    /// treat the rebuild as a no-op. The unbind/unsubscribe/disconnect mirrors startEventNotifications'
+    /// own teardown path, and the vendored NWWebSocket fix makes cancelling the old socket crash-safe.
+    private func rebuildConnection() {
+        if let existing = pusher {
+            existing.unbindAll()
+            existing.unsubscribeAll()
+            existing.disconnect()
+        }
+        pusher = nil
+        subscribedUserId = nil
+        startEventNotifications()
     }
 
     func changedConnectionState(from old: ConnectionState, to new: ConnectionState) {
