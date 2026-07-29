@@ -1525,6 +1525,18 @@ class scheduleViewController: NSViewController {
     /// Last day we pulled the backend Day Plan for, so hydration fires once per day shown (not on
     /// every timer-driven reload). Reset when the selected day changes.
     private var lastHydratedDay: Date?
+    /// How often TODAY's planned-tasks are re-pulled from the backend. Past/future days are immutable
+    /// so they hydrate exactly once; only today re-hydrates on this interval, so a task completed on
+    /// another device (mobile/web) shows here without a manual day-navigation — the earlier once-per-day
+    /// throttle meant a completion made after the first successful fetch never appeared until you
+    /// stepped to another day and back (which resets `lastHydratedDay`). Kept well above the 30s reload
+    /// cadence so re-hydrating stays gentle on the backend, and `hydrate()` only re-renders the panel
+    /// when the fetched status actually changed, so idle ticks don't flicker or re-order the list.
+    private static let todayTaskRehydrateInterval: TimeInterval = 60
+    /// When the last successful task hydrate landed, so TODAY can be re-pulled once it goes stale (see
+    /// `todayTaskRehydrateInterval`). Only advanced after a real fetch — a skipped/failed fetch leaves it
+    /// unchanged so the retry keeps firing (same guarantee as `lastHydratedDay`; does not regress #2145).
+    private var lastTaskHydrateAt: Date?
     /// The day whose task hydrate is currently in flight — stops the 30s refresh from firing overlapping
     /// fetches while one is pending (lastHydratedDay is now only stamped once a fetch actually lands).
     private var hydratingDay: Date?
@@ -1583,7 +1595,13 @@ class scheduleViewController: NSViewController {
         // session — so the stale local store kept showing and the 30s refresh never retried (only
         // navigating days reset it). Now the timer retries today until the fetch succeeds, then throttles.
         let day = selectedDate
-        let needsHydrate = lastHydratedDay == nil || !Calendar.current.isDate(lastHydratedDay!, inSameDayAs: day)
+        let isNewDay = lastHydratedDay == nil || !Calendar.current.isDate(lastHydratedDay!, inSameDayAs: day)
+        // Today additionally re-hydrates once the last successful pull goes stale, so completions made
+        // elsewhere surface without a day-navigation. Past/future days never change, so they only need
+        // the once-per-day `isNewDay` pull.
+        let todayIsStale = isViewingToday
+            && (lastTaskHydrateAt.map { Date().timeIntervalSince($0) >= Self.todayTaskRehydrateInterval } ?? true)
+        let needsHydrate = isNewDay || todayIsStale
         let inFlight = hydratingDay.map { Calendar.current.isDate($0, inSameDayAs: day) } ?? false
         if needsHydrate && !inFlight {
             hydratingDay = day
@@ -1592,7 +1610,7 @@ class scheduleViewController: NSViewController {
             }, onComplete: { [weak self] fetched in
                 guard let self = self else { return }
                 self.hydratingDay = nil
-                if fetched { self.lastHydratedDay = day }
+                if fetched { self.lastHydratedDay = day; self.lastTaskHydrateAt = Date() }
             })
         }
 
@@ -1761,6 +1779,15 @@ class scheduleViewController: NSViewController {
     /// explicit refresh firing together) don't needlessly rebuild the stack and reset scroll.
     private var lastRenderSignature: String?
 
+    /// Signature of the day's task state (id + assignment + done + title) as of the last render, so a
+    /// task-done event — including one hydrated from another device — reloads the right-hand tasks
+    /// panel in lockstep with the nested rows (which rebuild from the same `taskSig` below). Without
+    /// this the panel only reloaded on `loadAndHydrate`'s one-shot `onChange`; if that single reload
+    /// was missed, a task completed elsewhere kept showing in the panel until a day-navigation, even
+    /// though its nested row (keyed on `taskSig`) had already struck through. Tracked separately from
+    /// `lastRenderSignature` so a forced rebuild with unchanged tasks doesn't needlessly reload.
+    private var lastTaskSig: String?
+
     /// Unscheduled time inside the day's active span: the span from the first to the last time-occupying
     /// block, minus the union of those blocks (so overlaps aren't double-counted). Sleep and the
     /// zero-length markers (all-done / routine transitions) don't count as "busy".
@@ -1875,6 +1902,16 @@ class scheduleViewController: NSViewController {
             + blocks.map { "\($0.kind)\($0.title)\(minuteEpoch($0.start))\(minuteEpoch($0.end))\($0.isCurrent)\($0.isActionable)" }.joined(separator: ";")
         if signature == lastRenderSignature, !stackView.arrangedSubviews.isEmpty { return }
         lastRenderSignature = signature
+
+        // A task-done event reloads the panel on the SAME signal that rebuilds the nested rows below,
+        // so the two can't diverge (nested struck / panel still showing). Only when the task state
+        // actually changed — not on every clock-tick rebuild — so panel scroll/edit isn't disturbed
+        // needlessly. Local task edits already reload the panel directly; this additionally covers the
+        // cross-device path (hydrate flips `done`, `taskSig` changes) that the one-shot onChange missed.
+        if taskSig != lastTaskSig {
+            lastTaskSig = taskSig
+            tasksPanel.reload()
+        }
 
         stackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
