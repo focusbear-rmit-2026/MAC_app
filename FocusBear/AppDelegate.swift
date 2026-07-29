@@ -2396,7 +2396,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
             
             if let customRoutines = jsonResult!.value(forKey: "custom_routines") as? [NSDictionary] {
-                
+                // Rebuild the list from this payload rather than appending to it. readSettingsJsonDictionary
+                // runs a few times per session — via initialWork() (launch/login, and after an upgrade) and the
+                // abort-confirm path — and nothing else clears arrAllCustomRoutine (a plain in-memory global). So
+                // without this, each of those events appended another full copy of every custom routine, and
+                // CustomRoutinesPanel.reload() renders one NSStackView row per entry — so repeated logins/upgrades
+                // accumulate duplicate routines and duplicate rows. Clearing first keeps the list to exactly the
+                // current payload. (Defensive: not confirmed as the root cause of the reported Day Plan hang — that
+                // would need a trace showing arrAllCustomRoutine had actually grown large.)
+                arrAllCustomRoutine.removeAll()
                 for routineDic in customRoutines{
                     let title = routineDic.value(forKey: "name") as? String ?? ""
                     let id = routineDic.value(forKey: "activity_sequence_id") as? String ?? ""
