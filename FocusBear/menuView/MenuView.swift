@@ -525,6 +525,7 @@ struct FocusBearMenuView: View {
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(PlainButtonStyle())
+                        .pointingHandCursor()
                         .help(menuLocalized("menuAdvancedFocus", "Advanced"))
                     }
                     .padding(10)
@@ -563,12 +564,14 @@ struct FocusBearMenuView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .pointingHandCursor()
                     HoldRepeatButton(systemName: "plus") { adjustFocusMinutes(5) }
                     SwiftUI.Button(action: startFocusNow) {
                         Image(systemName: "play.fill").font(.system(size: 13, weight: .bold))
                             .frame(width: 34).contentShape(Rectangle())
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .pointingHandCursor()
                 }
                 .padding(.vertical, 12)
                 .background(MenuTheme.orange)
@@ -597,6 +600,7 @@ struct FocusBearMenuView: View {
                     .shadow(color: MenuTheme.orange.opacity(0.30), radius: 5, x: 0, y: 2)
                 }
                 .buttonStyle(PlainButtonStyle())
+                .pointingHandCursor()
             }
         }
     }
@@ -685,6 +689,7 @@ struct FocusBearMenuView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(PlainButtonStyle())
+            .pointingHandCursor()
 
             SwiftUI.Button(action: model.onToggleBlockingSchedule) {
                 Text(model.blockingSchedulePaused ? menuLocalized("menuResume", "Resume")
@@ -696,6 +701,7 @@ struct FocusBearMenuView: View {
                     .cornerRadius(8)
             }
             .buttonStyle(PlainButtonStyle())
+            .pointingHandCursor()
             .fixedSize()
         }
         .padding(12)
@@ -717,6 +723,7 @@ struct FocusBearMenuView: View {
                 .overlay(RoundedRectangle(cornerRadius: 9).stroke(MenuTheme.border(scheme), lineWidth: 1))
         }
         .buttonStyle(PlainButtonStyle())
+        .pointingHandCursor()
     }
 
     // MARK: Focus accordion (running)
@@ -760,6 +767,7 @@ struct FocusBearMenuView: View {
                             .cornerRadius(9)
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .pointingHandCursor()
                 }
             }
         }
@@ -783,6 +791,7 @@ struct FocusBearMenuView: View {
                         .foregroundColor(MenuTheme.orange)
                 }
                 .buttonStyle(PlainButtonStyle())
+                .pointingHandCursor()
                 .help(menuLocalized("menuSaveIntention", "Save"))
             }
         } else if !model.focusTaskTitle.isEmpty {
@@ -802,6 +811,7 @@ struct FocusBearMenuView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(PlainButtonStyle())
+            .pointingHandCursor()
             .help(menuLocalized("menuEditIntention", "Edit intention"))
         }
     }
@@ -892,6 +902,7 @@ struct FocusBearMenuView: View {
                                 .foregroundColor(.white)
                         }
                         .buttonStyle(PlainButtonStyle())
+                        .pointingHandCursor()
                     }
                 }
             }
@@ -918,6 +929,7 @@ struct FocusBearMenuView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .pointingHandCursor()
                 }
             }
 
@@ -992,6 +1004,7 @@ private struct VoiceView: View {
                     .background(MenuTheme.orange).foregroundColor(.white).cornerRadius(11)
             }
             .buttonStyle(PlainButtonStyle())
+            .pointingHandCursor()
             secondaryButton(menuLocalized("voiceBack", "Back"), action: onClose)
         }
         .padding(.top, 4)
@@ -1081,6 +1094,7 @@ private struct VoiceView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
+        .pointingHandCursor()
     }
 
     @ViewBuilder private var micGlyph: some View {
@@ -1111,6 +1125,7 @@ private struct VoiceView: View {
                 .background(MenuTheme.orange).foregroundColor(.white).cornerRadius(11)
         }
         .buttonStyle(PlainButtonStyle())
+        .pointingHandCursor()
     }
 
     private func secondaryButton(_ title: String, icon: String? = nil, action: @escaping () -> Void) -> some View {
@@ -1126,6 +1141,7 @@ private struct VoiceView: View {
             .overlay(RoundedRectangle(cornerRadius: 11).stroke(MenuTheme.border(scheme), lineWidth: 1))
         }
         .buttonStyle(PlainButtonStyle())
+        .pointingHandCursor()
     }
 
     private func suggestion(_ text: String, _ action: @escaping () -> Void) -> some View {
@@ -1147,6 +1163,7 @@ private struct VoiceView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
+        .pointingHandCursor()
     }
 }
 
@@ -1197,6 +1214,7 @@ private struct SubscriptionBanner: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
+        .pointingHandCursor()
     }
 }
 
@@ -1238,6 +1256,7 @@ private struct BlockingBanner: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(PlainButtonStyle())
+            .pointingHandCursor()
 
             SwiftUI.Button(action: onDismiss) {
                 Image(systemName: "xmark")
@@ -1247,6 +1266,7 @@ private struct BlockingBanner: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(PlainButtonStyle())
+            .pointingHandCursor()
         }
         .background(
             LinearGradient(colors: [Color(hex: 0x7A5733), Color(hex: 0x553D22)],
@@ -1287,6 +1307,7 @@ private struct MusicToggleButton: View {
                 .contentShape(Circle())
         }
         .buttonStyle(PlainButtonStyle())
+        .pointingHandCursor()
         .help(playing ? menuLocalized("menuPauseMusic", "Pause music") : menuLocalized("menuPlayMusic", "Play music"))
     }
 }
@@ -1343,6 +1364,7 @@ private struct AccordionRow<Body: View>: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(PlainButtonStyle())
+            .pointingHandCursor()
 
             if isOpen {
                 content()
@@ -1389,6 +1411,7 @@ private struct LinkButton: View {
                 .foregroundColor(MenuTheme.orange)
         }
         .buttonStyle(PlainButtonStyle())
+        .pointingHandCursor()
     }
 }
 
@@ -1414,6 +1437,7 @@ private struct ToolButton: View {
             .cornerRadius(9)
         }
         .buttonStyle(PlainButtonStyle())
+        .pointingHandCursor()
     }
 }
 
@@ -1432,6 +1456,7 @@ private struct IconButton: View {
                 .clipShape(Circle())
         }
         .buttonStyle(PlainButtonStyle())
+        .pointingHandCursor()
     }
 }
 
