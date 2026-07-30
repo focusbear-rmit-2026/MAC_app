@@ -116,6 +116,10 @@ extension habitsStateVc: ScheduleHost {
     func scheduleDone(index: Int)  { }
     func scheduleSkip(index: Int)  { }
     func scheduleSkipRoutineForToday() { }
+    // Between routines is READ-ONLY (see above): the Play/Done/Skip/skip-routine actions are no-ops
+    // here, so the Schedule view must not render the (dead) action bar even when a block is still
+    // flagged isActionable (e.g. an evening routine shown after being force-completed).
+    var supportsLiveHabitActions: Bool { false }
     // A PAST habit completes BY ID, independent of the live routine state — so it's valid even here
     // (between-routines). Forward to the shared firstViewController flow (backdated /sync + popup on the
     // key window). Without this the default no-op ate the tap and nothing happened. See Mac #2005/#2012.

@@ -203,11 +203,21 @@ protocol ScheduleHost: AnyObject {
     /// routine is in progress closes the window, like an in-routine skip. The planning hosts
     /// (routinePostponedInfoVc / habitsStateVc) keep it open and reload the Day Plan.
     var cancelRoutineKeepsWindowOpen: Bool { get }
+
+    /// Whether this host can actually perform the live Play/Done/Skip habit actions. The between-
+    /// routines host (`habitsStateVc`, `currentState == ._NOTHING_`) is READ-ONLY — its
+    /// scheduleStart/Done/Skip are deliberate no-ops (the live flows + their skip-password gates only
+    /// apply while a routine is active). A block can still be flagged `isActionable` there (e.g. an
+    /// evening routine shown after it was force-completed), so the Schedule view must gate the
+    /// Play/Done/Skip bar on THIS, not just `isActionable` — otherwise it renders a dead action bar
+    /// whose buttons do nothing. Default true; only the idle between-routines host returns false.
+    var supportsLiveHabitActions: Bool { get }
 }
 
 extension ScheduleHost {
     func cancelledRoutine() -> (sectionName: String, message: String, buttonTitle: String)? { nil }
     func uncancelRoutine() {}
+    var supportsLiveHabitActions: Bool { true }
     // Default no-op so hosts that don't surface past habits (routinePostponedInfoVc, habitsStateVc)
     // needn't implement it — past-habit completion is only actionable on the active host.
     func schedulePastHabitDone(id: String, performedAt: Date) {}
@@ -2251,10 +2261,15 @@ class scheduleViewController: NSViewController {
         inner.spacing = 4
         inner.translatesAutoresizingMaskIntoConstraints = false
 
+        // Only render live-action affordances (Play/Done/Skip bar, "Skip routine", habit selection)
+        // when the current host can actually perform them. The between-routines host (habitsStateVc,
+        // ._NOTHING_) leaves those actions as no-ops, so without this gate a still-`isActionable`
+        // block renders a dead action bar (buttons do nothing).
+        let canAct = host?.supportsLiveHabitActions ?? false
         // The active routine (the one with the currently-actionable habit) gets a quick
         // "Skip routine for today" action on its header — the Day Plan equivalent of the Habits
         // view's "I don't have time for all these habits".
-        let isActiveRoutine = habits.contains { $0.isActionable }
+        let isActiveRoutine = canAct && habits.contains { $0.isActionable }
         // Routine sections are accordions: the header toggles collapse (chevron ▸/▾). They start
         // collapsed on future days so the plan is easy to scan for appointments.
         let routineName = habits.first?.routineName ?? "Habits"
@@ -2325,7 +2340,7 @@ class scheduleViewController: NSViewController {
         // as is today's "earlier today" accordion (h.isEarlier). A future day is neither.
         let isPastDay = Calendar.current.startOfDay(for: selectedDate) < Calendar.current.startOfDay(for: Date())
         for h in habits where !collapsed {
-            let isSel = h.isActionable && h.habitIndex == selected
+            let isSel = canAct && h.isActionable && h.habitIndex == selected
             let isPastCompletable = (h.isEarlier || isPastDay) && !h.isDone && h.habitId != nil
             let rowView: NSView
             if isPastCompletable, let id = h.habitId {
@@ -2481,7 +2496,9 @@ class scheduleViewController: NSViewController {
         // selects itself by index.
         if let onSelect = onSelect {
             container.onClick = onSelect
-        } else if block.isActionable, let idx = block.habitIndex {
+        } else if block.isActionable, let idx = block.habitIndex, host?.supportsLiveHabitActions ?? false {
+            // Only allow tap-to-select (which reveals the Play/Done/Skip bar) when the host can act;
+            // in the read-only between-routines state selecting would just show a dead bar.
             container.onClick = { [weak self] in
                 self?.selectedHabitIndex = idx
                 self?.reload()
