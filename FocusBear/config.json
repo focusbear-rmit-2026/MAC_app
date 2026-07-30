@@ -2965,6 +2965,7 @@
         "menuFocusGoalPlaceholder": "Enter Focus Goal here",
         "menuNextEventLabel": "NEXT EVENT",
         "menuNextHabitLabel": "NEXT HABIT",
+        "menuHabitsPostponedUntil": "Habits postponed until %@",
         "menuNothingScheduled": "Nothing scheduled right now",
         "menuBlockingScheduleActive": "Blocking schedule active",
         "menuBlockingSchedulePaused": "Blocking schedule paused",

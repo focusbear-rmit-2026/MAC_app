@@ -2897,6 +2897,15 @@ extension menuViewController {
 
         // "Start" next to the next habit only makes sense when habits are postponed (you can resume them).
         model.nextHabitStartable = (currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_)
+        // Surface when the postpone ends, e.g. "Habits postponed until 10:07 PM", from the stored postpone
+        // end date. Only while a routine is postponed and the end time is still in the future.
+        if model.nextHabitStartable,
+           let postponeEnd = UserDefaults.standard.object(forKey: kUserDefaultsLastRoutinePostponeEndDate) as? Date,
+           postponeEnd > Date() {
+            model.habitsPostponedUntil = String(format: menuLocalized("menuHabitsPostponedUntil", "Habits postponed until %@"), menuTimeString(postponeEnd))
+        } else {
+            model.habitsPostponedUntil = ""
+        }
 
         // Date subtitle, e.g. "Tuesday, June 25".
         let dateFmt = DateFormatter()

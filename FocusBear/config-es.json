@@ -2890,6 +2890,7 @@
         "menuFocusGoalPlaceholder": "Escribe aquí tu objetivo de enfoque",
         "menuNextEventLabel": "PRÓXIMO EVENTO",
         "menuNextHabitLabel": "PRÓXIMO HÁBITO",
+        "menuHabitsPostponedUntil": "Hábitos pospuestos hasta %@",
         "menuNothingScheduled": "Nada programado en este momento",
         "menuBlockingScheduleActive": "Horario de bloqueo activo",
         "menuBlockingSchedulePaused": "Horario de bloqueo en pausa",

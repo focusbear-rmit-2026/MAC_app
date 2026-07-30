@@ -120,6 +120,7 @@ final class MenuModel: ObservableObject {
     @Published var dayPlanNextEventRelative = "" // "in 40 min"
     @Published var dayPlanNextHabit = ""    // next habit (raw, no prefix) or "Evening Routine starts at 5pm"
     @Published var nextHabitStartable = false // show the "Start" button only when habits are postponed
+    @Published var habitsPostponedUntil = ""  // "Habits postponed until 10:07 PM" while a routine is postponed; empty otherwise
     @Published var dayPlanTasks: [DayPlanMenuTask] = []
 
     // Focus music
@@ -904,6 +905,18 @@ struct FocusBearMenuView: View {
                         .buttonStyle(PlainButtonStyle())
                         .pointingHandCursor()
                     }
+                }
+            }
+
+            // Habits postponed until <time> — shown while a morning/evening routine is postponed.
+            if !model.habitsPostponedUntil.isEmpty {
+                HStack(spacing: 8) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 11))
+                        .foregroundColor(MenuTheme.subtitle(scheme))
+                    Text(model.habitsPostponedUntil)
+                        .font(MenuTheme.font(12, .regular))
+                        .foregroundColor(MenuTheme.subtitle(scheme))
                 }
             }
 
