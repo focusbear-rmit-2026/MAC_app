@@ -65,6 +65,11 @@ class suggestWorkFocusManager {
     
     
     func checkCheckApp(runningApp:NSRunningApplication){
+        // While a super-strict custom blocking schedule is active, do NOT suggest starting a
+        // focus session — its more permissive blocklist would override/loosen the schedule.
+        if customBlockingScheduleManagerObj.isSuperStrictScheduleActive(){
+            return;
+        }
         if let appUrl = runningApp.bundleURL{
             let name = appUrl.deletingPathExtension().lastPathComponent
             let nameLowercased = name.lowercased()
@@ -146,6 +151,12 @@ class suggestWorkFocusManager {
     
     @objc func checkInBackground(){
         if alertIsVisible || isFocusModeRunning{
+            return;
+        }
+
+        // While a super-strict custom blocking schedule is active, do NOT suggest starting a
+        // focus session — its more permissive blocklist would override/loosen the schedule.
+        if customBlockingScheduleManagerObj.isSuperStrictScheduleActive(){
             return;
         }
         

@@ -2239,7 +2239,14 @@ final class SafeDict {
 
 func startWorkFocusAutomaticallyClicked(id:String, minutes:Int, intention:String){
     addLog(text: "Alert Start Wrok Focus Clicked")
-    
+
+    // Defense in depth: never start an auto-suggested focus session while a super-strict custom
+    // blocking schedule is active — its blocklist must not be overridden by a stale suggestion.
+    if customBlockingScheduleManagerObj.isSuperStrictScheduleActive(){
+        addLog(text: "Ignored auto-suggested focus start: super-strict blocking schedule active")
+        return;
+    }
+
     if !getTaskPlayerVcObject().isViewLoaded{
         getTaskPlayerVcObject().loadView()
     }

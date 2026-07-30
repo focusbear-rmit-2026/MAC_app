@@ -1070,6 +1070,15 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         }
         return true
     }
+
+    /// True only when a custom blocking schedule is currently running AND it is super-strict.
+    /// Used to suppress the "start Focus Mode now?" auto-suggestion — starting that session would
+    /// apply the suggested focus mode's (more permissive) blocklist and bypass the super-strict
+    /// schedule, which is not allowed while a super-strict schedule is active.
+    func isSuperStrictScheduleActive()->Bool{
+        guard isAnyCustomScheduleOn else { return false }
+        return arrBlockingSchedule.contains { $0.state == .on && $0.blockLevel == ._SUPER_STRICT_ }
+    }
     
     func isBlockingScheduleOverlapping(
         newSchedule: customBlockingSchedule,
