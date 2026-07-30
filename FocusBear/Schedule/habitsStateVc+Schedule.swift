@@ -81,6 +81,13 @@ extension habitsStateVc: ScheduleHost {
         // runs during the shutoff window where isHabitAlreadyShowed doesn't apply.
         let routineRanToday = todayHabits.contains { $0.id.map { isHabitDoneForDay($0, dayKey: dayKey) } ?? false }
             || (isMorning && isHabitAlreadyShowed)
+            // Evening's counterpart to the morning `isHabitAlreadyShowed` fallback: treat the evening
+            // routine as ran-today when it's already been shown for the current shutoff window, even
+            // before the #2150 completion refetch lands. Without this, returning to the Day Plan right
+            // after aborting shutoff (completion data not yet loaded) fell through to the "not run yet"
+            // branch and rendered the live (here no-op) view instead of the read-only struck / Done-by-id
+            // one. `!isMorning` already implies the evening/shutoff window (see isMorning above).
+            || (!isMorning && eveningAlreadyShownToday())
         if routineRanToday {
             let pastHabits = ScheduleTab.habitInputs(from: todayHabits, now: now, dropCompleted: false)
             if !pastHabits.isEmpty {

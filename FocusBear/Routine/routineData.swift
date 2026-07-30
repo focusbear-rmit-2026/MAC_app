@@ -1086,6 +1086,17 @@ func isShutOffTimeGoing()->Bool{
     return isShutOffTime
 }
 
+/// True while the evening routine has already been shown/run for the CURRENT shutoff window.
+/// `kUserdefaultsEveningHabitsShowedTillDate` is set to the window's end (next morning's start time)
+/// once the evening has been shown, so we're "already shown" until then — matching the re-show gate in
+/// AppDelegate (`Date() > till` re-shows). Keyed on the WINDOW, not the calendar day, so it stays
+/// correct across midnight (unlike a per-day completion check, whose dayKey flips at 00:00 while the
+/// shutoff window runs on). Evening's counterpart to `isHabitAlreadyShowed` for the morning routine.
+func eveningAlreadyShownToday() -> Bool {
+    guard let till = UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date else { return false }
+    return Date() <= till
+}
+
 
 func isCutOffTimeGoing()->Bool{
     if startTime == nil || cutOffTime == nil{
