@@ -657,6 +657,11 @@ class shutOffTimeVc: NSViewController {
         
         if SettingsManagerObject.isGeekModeEnabled{
             appdelegate?.menuShowPomodoroModeView()
+        } else {
+            // #1976: simple mode has no pomodoro view to render, so the removeSubViews() above left the
+            // Habits tab blank. Close the window instead — reopening re-renders the current state fresh
+            // (and after an emergency unlock the user wants the window out of the way anyway).
+            mainWindowControllerObj?.window?.close()
         }
         if !isCutOffTimeGoing(){
             if startTime == nil || shutOffTime == nil{
