@@ -15,6 +15,13 @@ class askPostponeVc: NSViewController {
     // countdown with the same press-and-hold-to-postpone friction used on the
     // pre-break warning popup (escalating hold time by activityPostponeCount).
     private var holdHostingView: NSView?
+    private var eveningInstructionHostingView: NSView?
+    private var eveningHoldGuide: NSLayoutGuide?
+
+    /// Evening "hold-to-set" postpone: minutes resolved from the last press-and-hold.
+    /// Readers on the evening postpone path (this VC and enterPasswordVc) use this
+    /// instead of `popUpButtonSelectMinutes.title`, which the evening flow hides.
+    var resolvedEveningPostponeMinutes: Int?
 
     @IBOutlet weak var btnCancelPostpone: cursorButton!
     @IBOutlet weak var lblSelectMinutes: NSTextField!
@@ -74,6 +81,7 @@ class askPostponeVc: NSViewController {
     func resetView(){
         addLog(text: "Ask postpone view - resetView")
         hideHoldToPostpone()
+        resolvedEveningPostponeMinutes = nil
         isShowingAskOfficeModeView = false
         btnPostpone.isHidden = false
         btnAbortBreak.isHidden = false
@@ -181,6 +189,9 @@ class askPostponeVc: NSViewController {
     private func hideHoldToPostpone() {
         holdHostingView?.removeFromSuperview()
         holdHostingView = nil
+        eveningInstructionHostingView?.removeFromSuperview()
+        eveningInstructionHostingView = nil
+        if let g = eveningHoldGuide { view.removeLayoutGuide(g); eveningHoldGuide = nil }
     }
 
     private func performMicroBreakHoldPostpone() {
@@ -259,6 +270,13 @@ class askPostponeVc: NSViewController {
     }
     
     func showHabitPostponeView(){
+        // Evening postpone uses a press-and-hold "hold-to-set" control instead of the
+        // minutes dropdown — deliberate friction so a long postpone can't be picked by
+        // accident. Morning/other routines keep the existing dropdown.
+        if currentState == ._EVENING_HABIT_{
+            showEveningHoldToSetPostponeView()
+            return
+        }
         popUpButtonSelectMinutes.isHidden = false
         lblSelectMinutes.isHidden = false
         popUpButtonSelectMinutes.selectItem(at: 0)
@@ -278,8 +296,116 @@ class askPostponeVc: NSViewController {
         btnPostpone.isHidden = false
         btnAbortBreak.isHidden = false
     }
-    
-    
+
+    /// Evening-only postpone screen: the minutes dropdown + "Postpone Habit" button are
+    /// replaced by a press-and-hold control that accumulates the postpone duration while
+    /// held (see `HoldToSetPostponeControl`). "Completely Skip" (btnAbortBreak) stays.
+    private func showEveningHoldToSetPostponeView(){
+        popUpButtonSelectMinutes.isHidden = true
+        lblSelectMinutes.isHidden = true
+        btnPostpone.isHidden = true
+        btnOkIWillDoBreak.isHidden = true
+        lblTimer.isHidden = true
+
+        let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary
+        lblTitle.stringValue = activityPostponeInfo?.value(forKey: "postponeHabitsText") as? String ?? "If you have something urgent, you can postpone Habits for a few minutes." // i18n-ignore
+        btnAbortBreak.title = activityPostponeInfo?.value(forKey: "buttonCompletelySkipText") as? String ?? "Completely Skip" // i18n-ignore
+        btnAbortBreak.isSecondaryButton = true
+        btnAbortBreak.isHidden = false
+
+        showEveningHoldToSetControl()
+    }
+
+    /// Hosts the SwiftUI hold-to-set control over the dropdown's position. On release it
+    /// resolves the held minutes, records them for the password-path reader, and runs the
+    /// same evening postpone decision as the old "Postpone Habit" button.
+    private func showEveningHoldToSetControl(){
+        hideHoldToPostpone()
+        var instruction = "Press and hold to choose how long to postpone — the longer you hold, the longer the postpone. Release to confirm."
+        var liveTemplate = "Postpone for <MIN> min…"
+        var idleTitle = "Hold to postpone"
+        if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
+            instruction = activityPostponeInfo.value(forKey: "eveningHoldInstruction") as? String ?? instruction
+            liveTemplate = activityPostponeInfo.value(forKey: "eveningHoldLiveText") as? String ?? liveTemplate
+            idleTitle = activityPostponeInfo.value(forKey: "eveningHoldIdleText") as? String ?? idleTitle
+        }
+        let accent = Color(red: 232 / 255, green: 136 / 255, blue: 0 / 255)
+
+        // Instruction is its own view (intrinsic height, NOT greedy) pinned a comfortable gap below
+        // the title — so it can never pull the title's bottom up / compress the title away.
+        let instructionText = Text(instruction)
+            .font(postponeMediumFont(12))
+            .foregroundColor(.secondary)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+        let instrHV = NSHostingView(rootView: instructionText)
+        instrHV.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(instrHV)
+        eveningInstructionHostingView = instrHV
+
+        let control = HoldToSetPostponeControl(accent: accent,
+                                               instruction: instruction,
+                                               liveTemplate: liveTemplate,
+                                               idleTitle: idleTitle,
+                                               onCommit: { [weak self] minutes in
+                                                   guard let self = self else { return }
+                                                   self.resolvedEveningPostponeMinutes = minutes
+                                                   self.hideHoldToPostpone()
+                                                   self.commitEveningPostpone(minutes: minutes)
+                                               })
+        let hv = NSHostingView(rootView: control)
+        hv.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(hv)
+        holdHostingView = hv
+
+        // A guide spanning the gap between the instruction's bottom and "Completely Skip"; the hold
+        // button is centred in it, so it sits midway between the instruction and Skip regardless of
+        // how many lines the instruction wraps to.
+        let guide = NSLayoutGuide()
+        view.addLayoutGuide(guide)
+        eveningHoldGuide = guide
+
+        NSLayoutConstraint.activate([
+            instrHV.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            instrHV.widthAnchor.constraint(equalToConstant: 360),
+            instrHV.topAnchor.constraint(equalTo: lblTitle.bottomAnchor, constant: 30),
+
+            guide.topAnchor.constraint(equalTo: instrHV.bottomAnchor),
+            guide.bottomAnchor.constraint(equalTo: btnAbortBreak.topAnchor),
+
+            hv.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            hv.widthAnchor.constraint(equalToConstant: 360),
+            hv.centerYAnchor.constraint(equalTo: guide.centerYAnchor),
+        ])
+    }
+
+    /// Evening postpone decision (password gating vs. postpone), shared by the hold-to-set
+    /// control and the legacy `btnPostponeClicked` path. `shouldAskPassword`'s 2-minute
+    /// window prevents a double prompt if a password was just entered.
+    private func commitEveningPostpone(minutes postponeTime: Int){
+        // After the cutoff time the "require password to postpone evening after cutoff" rule
+        // applies for ANY postpone length. Before cutoff, only the first >15-minute postpone
+        // is gated (#441).
+        var requirePassword = false
+        if shouldAskPassword(forPostpone: true){
+            if isCutOffTimeGoing(){// changed in 2.27.422 : isHighPrioritySequenceGoing -> isCutOffTimeGoing()
+                requirePassword = SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff
+            }else if activityPostponeCount == 0 && postponeTime > 15{
+                requirePassword = SettingsManagerObject.isPasswordRequireInPostponeEvening
+            }
+        }
+        if requirePassword{
+            self.view.removeFromSuperview()
+            getHabitsVcObject().showPasswordView()
+            enterPasswordVcObj?.parentVc = self
+        }else{
+            activityPostponeCount += 1
+            self.view.removeFromSuperview()
+            getHabitsVcObject().postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
+        }
+    }
+
+
     @IBAction func btnPostponeClicked(_ sender: Any) {
         addLog(text: "[user-action] Ask postpone view - button Postpone Clicked")
         let postponeTime = Int(popUpButtonSelectMinutes.title) ?? 15
@@ -304,30 +430,9 @@ class askPostponeVc: NSViewController {
             }
             
         }else if currentState == ._EVENING_HABIT_{
-            // Decide whether THIS postpone needs the password. After the cutoff time the
-            // "require password to postpone evening after cutoff" rule applies for ANY postpone
-            // length — previously this branch assumed the password had already been asked and let
-            // every after-cutoff postpone (incl. the ≤15-minute ones) through for free. Before cutoff,
-            // only the first >15-minute postpone is gated (#441). shouldAskPassword()'s 2-minute window
-            // still prevents a double prompt if a password was just entered.
-            var requirePassword = false
-            if shouldAskPassword(forPostpone: true){
-                if isCutOffTimeGoing(){// changed in 2.27.422 : isHighPrioritySequenceGoing -> isCutOffTimeGoing()
-                    requirePassword = SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff
-                }else if activityPostponeCount == 0 && postponeTime > 15{
-                    requirePassword = SettingsManagerObject.isPasswordRequireInPostponeEvening
-                }
-            }
-            if requirePassword{
-                self.view.removeFromSuperview()
-                getHabitsVcObject().showPasswordView()
-                enterPasswordVcObj?.parentVc = self
-            }else{
-                activityPostponeCount += 1
-                self.view.removeFromSuperview()
-                getHabitsVcObject().postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
-            }
-
+            // Evening now commits via the hold-to-set control (see commitEveningPostpone);
+            // fall back to resolved/dropdown minutes if the button is ever reached directly.
+            commitEveningPostpone(minutes: resolvedEveningPostponeMinutes ?? postponeTime)
         }else if currentState == ._MICRO_BREAK_{
             if isShowingAskOfficeModeView{
                 addLog(text: "Ask postpone view - Show Activity postpone View")
@@ -559,5 +664,99 @@ class askPostponeVc: NSViewController {
                 }
             }
         }
+    }
+}
+
+/// Tuning for the evening "hold-to-set" postpone control. Holding accumulates minutes at
+/// `minutesPerSecondHeld`; a quick tap yields `floorMinutes`, and holding is capped at
+/// `capMinutes`. At 6 min/sec, reaching 90 min needs a ~15s hold and the 120-min cap ~20s.
+private enum EveningPostponeHold {
+    static let minutesPerSecondHeld: Double = 6
+    static let floorMinutes = 5
+    static let capMinutes = 120
+    static let tickInterval: TimeInterval = 0.05
+}
+
+private func postponeMediumFont(_ size: CGFloat) -> Font { Font(getMediumFont(size: size)) }
+
+/// Press-and-hold control for choosing the evening postpone duration. While pressed, the
+/// duration accumulates at `EveningPostponeHold.minutesPerSecondHeld` and is shown live; a
+/// progress fill tracks how close the hold is to the cap. Releasing commits the accumulated
+/// value (floored/capped) via `onCommit`. This deliberate friction stops a long postpone
+/// from being chosen with a single accidental click.
+struct HoldToSetPostponeControl: View {
+    let accent: Color
+    let instruction: String
+    let liveTemplate: String   // contains the "<MIN>" placeholder
+    let idleTitle: String
+    var onCommit: (Int) -> Void
+
+    @SwiftUI.State private var minutesHeld: Double = 0
+    @SwiftUI.State private var isPressing = false
+    @SwiftUI.State private var accumulator: Timer?
+
+    private var displayMinutes: Int {
+        max(EveningPostponeHold.floorMinutes, min(EveningPostponeHold.capMinutes, Int(minutesHeld.rounded())))
+    }
+
+    private var progress: CGFloat {
+        CGFloat(min(1, minutesHeld / Double(EveningPostponeHold.capMinutes)))
+    }
+
+    private var buttonLabel: String {
+        guard isPressing else { return idleTitle }
+        return liveTemplate.replacingOccurrences(of: "<MIN>", with: "\(displayMinutes)")
+    }
+
+    var body: some View {
+        // Button only. The instruction line is a separate view positioned in
+        // `showEveningHoldToSetControl`, so the button can be centred between the instruction and
+        // "Completely Skip" without this view greedily filling height (which compressed the title).
+        ZStack {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 8).fill(accent.opacity(0.12))
+                    RoundedRectangle(cornerRadius: 8).fill(accent.opacity(0.35))
+                        .frame(width: geo.size.width * progress)
+                }
+            }
+            Text(buttonLabel)
+                .font(postponeMediumFont(13))
+                .foregroundColor(accent)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .padding(.horizontal, 8)
+        }
+        .frame(height: 40)
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(accent, lineWidth: 1))
+        .contentShape(RoundedRectangle(cornerRadius: 8))
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in if !isPressing { startHold() } }
+                .onEnded { _ in endHold() }
+        )
+        .accessibility(label: Text(instruction))
+    }
+
+    private func startHold() {
+        isPressing = true
+        minutesHeld = 0
+        accumulator?.invalidate()
+        let tick = Timer(timeInterval: EveningPostponeHold.tickInterval, repeats: true) { _ in
+            let next = minutesHeld + EveningPostponeHold.minutesPerSecondHeld * EveningPostponeHold.tickInterval
+            minutesHeld = min(Double(EveningPostponeHold.capMinutes), next)
+        }
+        RunLoop.main.add(tick, forMode: .common)
+        accumulator = tick
+    }
+
+    private func endHold() {
+        accumulator?.invalidate()
+        accumulator = nil
+        guard isPressing else { return }
+        isPressing = false
+        let resolved = displayMinutes
+        minutesHeld = 0
+        onCommit(resolved)
     }
 }

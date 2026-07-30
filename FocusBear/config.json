@@ -1143,7 +1143,10 @@
         "buttonSkipCompletelyText": "Skip Completely",
         "titleAskOfficeMode": "Do you not have time for a break right now or are you in the office and it's not appropriate to do <ACTIVITY>?",
         "buttonDontHaveTimeText": "I don't have time",
-        "buttonInTheOffIceText": "I'm in the offIce"
+        "buttonInTheOffIceText": "I'm in the offIce",
+        "eveningHoldInstruction": "Press and hold to choose how long to postpone — the longer you hold, the longer the postpone. Release to confirm.",
+        "eveningHoldLiveText": "Postpone for <MIN> min…",
+        "eveningHoldIdleText": "Hold to postpone"
     },
     "talkingClockSettingsInfo": {
         "title": "Talking Clock",

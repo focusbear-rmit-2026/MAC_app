@@ -357,11 +357,13 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                     
                     
                 }else if lastCurrentState == ._EVENING_HABIT_{
+                    // Evening uses the hold-to-set control, so read the minutes it resolved
+                    // rather than the (now hidden) dropdown title.
                     var postponeTime = 0
-                    if askPostponeVcObj != nil{
-                        if askPostponeVcObj!.popUpButtonSelectMinutes != nil{
-                            postponeTime = Int(askPostponeVcObj!.popUpButtonSelectMinutes.title) ?? 15
-                        }
+                    if let resolvedEveningMinutes = askPostponeVcObj?.resolvedEveningPostponeMinutes{
+                        postponeTime = resolvedEveningMinutes
+                    }else if askPostponeVcObj?.popUpButtonSelectMinutes != nil{
+                        postponeTime = Int(askPostponeVcObj!.popUpButtonSelectMinutes.title) ?? 15
                     }
                     if activityPostponeCount == 0 && postponeTime > 15{
                         activityPostponeCount += 1
