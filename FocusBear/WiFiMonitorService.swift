@@ -239,7 +239,10 @@ extension SettingsManager {
                 appdelegate?.statusbutton?.image = NSImage(named: NSImage.Name("Bear-Small"))
                 NSApplication.shared.applicationIconImage = nil
             }
-            getHabitsVcObject().reFillBreakActivitiesArray()
+            // Don't rebuild the break list here — reFillBreakActivitiesArray only matters when a
+            // microbreak actually starts (it's already called from the break-start paths), and calling
+            // it on a mode switch is what silently turned office mode back off when there were no
+            // office-friendly activities (its auto-disable guard), desyncing the icon.
             addLog(text: "SettingsManager.applyProfile: office mode set to \(enableOfficeMode)")
         }
     }

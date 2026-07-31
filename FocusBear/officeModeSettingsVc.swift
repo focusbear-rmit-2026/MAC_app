@@ -337,9 +337,48 @@ class officeModeSettingsVc: NSViewController {
     @objc private func modeRadioChanged(_ sender: NSButton) {
         let isOffice = (sender == radioOffice)
         addLog(text: "[user-action] officeModeSettingsVc: mode set -> \(isOffice ? "office" : "wfh")")
+        // Enabling office mode needs at least one office-friendly break activity — otherwise the shared
+        // reFillBreakActivitiesArray path silently turns office mode back OFF (and desyncs the icon).
+        // Offer to add one. This prompt is deliberately only on THIS explicit user click; the Wi-Fi
+        // auto-switch calls applyProfile directly and stays silent (no alert in the background).
+        if isOffice, !arrAllbreakActivities.contains(where: { $0.isOfficeFriendly }) {
+            promptToAddOfficeFriendlyActivityThenEnable()
+            return
+        }
         // Reuse the shared profile switch so the status-bar/dock icon and break
         // activities update exactly as they do from the routine view / Wi-Fi auto-switch.
         SettingsManagerObject.applyProfile(named: isOffice ? "office" : "wfh")
+    }
+
+    /// No office-friendly break activity yet: offer to add one (mirrors the routine view's check at
+    /// firstViewController.segmentControlOfficeModeClicked). Yes → add it and switch to office; No →
+    /// revert the radios to the unchanged (WFH) state and don't switch.
+    private func promptToAddOfficeFriendlyActivityThenEnable() {
+        let alert = NSAlert()
+        alert.setSharingType()
+        var text = "You don't have any office friendly break activities. Do you want me to add one for you to stand up and stretch for 20 seconds?"
+        var firstBtn = "Yeah sounds good"
+        var secondBtn = "No I'm a machine! I don't need breaks"
+        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary {
+            text = menuInfo.value(forKey: "noOfficeFriendlyActivityAlertText") as? String ?? text
+            firstBtn = menuInfo.value(forKey: "noOfficeFriendlyActivityButtonFirstText") as? String ?? firstBtn
+            secondBtn = menuInfo.value(forKey: "noOfficeFriendlyActivityButtonSecondText") as? String ?? secondBtn
+        }
+        alert.messageText = text
+        alert.addButton(withTitle: firstBtn)
+        alert.addButton(withTitle: secondBtn)
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        guard let window = self.view.window else { refreshModeSelection(); return }
+        alert.beginSheetModal(for: window) { [weak self] result in
+            guard let self = self else { return }
+            if result == .alertFirstButtonReturn {
+                menuViewControllerObj?.addOfficeFriendlyActivityInSettings()
+                SettingsManagerObject.applyProfile(named: "office")
+            }else{
+                self.refreshModeSelection()
+            }
+            
+        }
     }
 
     // MARK: - Data
