@@ -720,6 +720,14 @@ final class DayPlanTaskStore {
                 // eisenhower_quadrant — and clobbering local `done` here made ticked tasks reappear
                 // un-ticked on the next Day Plan open (reported 2026-07-08).
                 if done, !list[idx].done { list[idx].done = true; changed = true }
+                // Pull a rename made on another device — the backend to-do's title is the source of
+                // truth for a synced task, so reflect it locally (a local rename was already pushed via
+                // setTodoTitle, so the backend is up to date by the next hydrate). Unlike `done` this
+                // is last-write-wins, not upgrade-only, since a title has no "greater" value.
+                if let backendTitle = obj["title"] as? String,
+                   !backendTitle.isEmpty, backendTitle != list[idx].title {
+                    list[idx].title = backendTitle; changed = true
+                }
             } else {
                 let title = (obj["title"] as? String) ?? "Task"
                 let secs = (obj["duration"] as? Int) ?? 0
