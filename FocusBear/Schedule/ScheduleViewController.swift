@@ -501,6 +501,15 @@ class scheduleViewController: NSViewController {
     private var scheduleSettingsPopover: NSPopover?
     private let todayIndicatorLabel = NSTextField(labelWithString: "")
     private let addEventButton = NSButton()
+    /// Add-event button's vertical alignment vs. the date bar. Normally 0 (centred). For the
+    /// allowed-activity Day Plan overlay it's dropped a little so it clears the "Habit Player | Day
+    /// Plan" tab bar sitting at the top of that overlay (#2083). fileprivate so the host VC can set it
+    /// on the overlay instance it creates.
+    fileprivate var addEventCenterYConstraint: NSLayoutConstraint?
+    /// Date bar's horizontal offset from the schedule column centre. Normally 0. For the allowed-
+    /// activity Day Plan overlay it's shifted left so the date's ▶ arrow clears the centred
+    /// "Habit Player | Day Plan" tabs (#2083). fileprivate so the host VC can set it on the overlay.
+    fileprivate var dateBarCenterXConstraint: NSLayoutConstraint?
     private var datePopover: NSPopover?
     private var dismissRepeatingPopover: NSPopover?
 
@@ -734,6 +743,8 @@ class scheduleViewController: NSViewController {
         ])
         let dateBarTop = dateBar.topAnchor.constraint(equalTo: root.safeAreaLayoutGuide.topAnchor, constant: 14)
         dateBarTopConstraint = dateBarTop
+        let dateBarCenterX = dateBar.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor)
+        dateBarCenterXConstraint = dateBarCenterX
         let crHeight = customRoutinesPanel.heightAnchor.constraint(equalToConstant: customRoutinesPanel.preferredHeight)
         crHeight.priority = .defaultHigh   // yields to the ≤1/5 max above
         crHeightConstraint = crHeight
@@ -742,6 +753,8 @@ class scheduleViewController: NSViewController {
         let cogLeadDefault = scheduleCog.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 16)
         cogLeadingDefault = cogLeadDefault
         cogLeadingBesideToggle = scheduleCog.leadingAnchor.constraint(equalTo: routineToggle.trailingAnchor, constant: 10)
+        let addEventCenterY = addEventButton.centerYAnchor.constraint(equalTo: dateBar.centerYAnchor)
+        addEventCenterYConstraint = addEventCenterY
         NSLayoutConstraint.activate([
             // ("Back to today" now lives under the date inside the date bar — see makeDateBar.)
             // Settings cog, level with the date line (centred on the date-bar row with the toggle/add).
@@ -777,10 +790,10 @@ class scheduleViewController: NSViewController {
             // `dateBarTopConstraint.constant` gets extra padding in full screen (set in
             // updateFullScreenInsets) so it clears the menu-bar reveal overlay.
             dateBarTop,
-            dateBar.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
+            dateBarCenterX,
 
             // Add-event button at the right of the schedule column, level with the date bar.
-            addEventButton.centerYAnchor.constraint(equalTo: dateBar.centerYAnchor),
+            addEventCenterY,
             addEventButton.trailingAnchor.constraint(equalTo: separator.leadingAnchor, constant: -16),
 
             // Schedule scroll fills the left column (up to the panel separator).
@@ -3639,7 +3652,7 @@ extension timerViewcontroller {
 
     /// Whether the allowed-activity player's embedded "Day Plan" tab is the visible pane. The habit
     /// player's time-of-day clock must be hidden then (it overlaps the Day Plan's tasks panel and the
-    /// Day Plan has its own clock) — same as the other Day Plan hosts.
+    /// Day Plan 2has its own clock) — same as the other Day Plan hosts.
     var isAllowedActivityDayPlanFront: Bool {
         guard let seg = allowedActivitySegment, seg.superview?.isHidden == false else { return false }
         return seg.selectedSegment == 1
@@ -3669,6 +3682,14 @@ extension timerViewcontroller {
         ])
         allowedActivityScheduleVC = sched
         allowedActivityDayPlanBox = plan
+        // #2083: this overlay always sits under the "Habit Player | Day Plan" tab bar, so its
+        // "+ Add event" button (top-right, level with the date bar) collides with the tabs. Drop it
+        // a little so it clears them. Only this overlay instance is affected — the normal Day Plan
+        // has no tab bar and keeps the button centred on the date bar (constant 0).
+        sched.addEventCenterYConstraint?.constant = 13
+        // Shift the date section (date + ◀ ▶ arrows) left so its right arrow clears the centred tabs
+        // too (negative moves left). Overlay-only, like the drop above.
+        sched.dateBarCenterXConstraint?.constant = -50
 
         // Segmented control sits in a top bar added LAST, so it stays on top of (and clickable over)
         // either pane.
