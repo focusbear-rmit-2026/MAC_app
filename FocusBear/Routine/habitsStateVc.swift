@@ -373,6 +373,13 @@ class habitsStateVc: NSViewController {
                     if json != nil{
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsEveningHabitsShowedTillDate)
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutdownAborted)
+                        // #2065 (evening): the re-derivation that clears cancelledRoutineName —
+                        // updateUncancelRoutineButtonVisibility(isEveningRoutine: true) in reloadData — is
+                        // gated behind the two UserDefaults keys we just removed above, so it never runs
+                        // on uncancel and the Day Plan kept showing the evening routine as cancelled.
+                        // Clear the marker explicitly and reload so it reflects immediately.
+                        self.cancelledRoutineName = nil
+                        self.refreshScheduleIfVisible()
                         appdelegate!.backgroundThread()
                         // #2065: rebuild the menu-bar popover's Day Plan so an uncancel made while it's
                         // open reflects immediately (backgroundThread re-derives state but doesn't touch
@@ -393,6 +400,11 @@ class habitsStateVc: NSViewController {
                     if json != nil{
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitShowDate)
                         isHabitAlreadyShowed = false
+                        // #2065: clear the marker + reload explicitly here too (morning's re-derivation
+                        // path already cleared it, but doing it here makes both routines immediate and
+                        // consistent).
+                        self.cancelledRoutineName = nil
+                        self.refreshScheduleIfVisible()
                         appdelegate!.backgroundThread()
                         // #2065: see the evening branch above — refresh the popover Day Plan on uncancel.
                         menuViewControllerObj?.refreshSwiftUIMenu()
