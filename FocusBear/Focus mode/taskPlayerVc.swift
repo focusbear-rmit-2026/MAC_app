@@ -88,7 +88,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     }
 
     func setFocusAlignmentScore(){
-        if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
+        if SettingsManagerObject.isAIBlockingEnabled(){
             updateAlignmentScoreToPlayer()
         }
     }

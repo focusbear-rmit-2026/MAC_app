@@ -1154,7 +1154,7 @@ class menuViewController: NSViewController {
             
             if isFocusModeOn || isFocusModePaused{
                 if isFocusModeOn{
-                    if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
+                    if SettingsManagerObject.isAIBlockingEnabled(){
                         boxFocusAlignmentScore.isHidden = false
                         setFocusAlignmentScore(totalSeconds: focusModeMinutesToPerform * 60)
                     }else{
@@ -1204,7 +1204,7 @@ class menuViewController: NSViewController {
             
             if boxFocusAlignmentScore.isHidden{
                 if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && (currentHabitPlaying != nil) && isAnyAllowedFocusModeActivityRunning{
-                    if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
+                    if SettingsManagerObject.isAIBlockingEnabled(){
                         boxFocusAlignmentScore.isHidden = false
                         setFocusAlignmentScore(totalSeconds: currentHabitPlaying?.durationSeconds ?? 200)
                     }
@@ -2759,12 +2759,13 @@ extension menuViewController {
             let lastMinutes = UserDefaults.standard.integer(forKey: kUserdefaultsLastFocusModeMinutes)
             if lastMinutes > 0 { model.focusMinutes = min(180, max(5, lastMinutes)) }
         }
-        // The focus-alignment score only exists when AI blocking is on. The storyboard label is just
-        // a cache that the gated reloadData() paths refresh; it's never cleared when AI is off, so it
-        // retains a previous session's score (or its "xx…" placeholder). Gate on AI here — matching
-        // the boxFocusAlignmentScore gating — so a no-AI focus session doesn't surface a stale score.
+        // The focus-alignment score exists whenever AI blocking is on — including during a
+        // super-distracting session (no special-case for it; it's shown just like the nudge does). The
+        // storyboard label is a cache the gated reloadData() paths refresh; it's never cleared when AI
+        // is off, so gate here — matching the boxFocusAlignmentScore gating — so a no-AI session doesn't
+        // surface a stale score.
         let onTask = lblFocusAlignmentScore?.stringValue ?? ""
-        let aiScoreAvailable = SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn()
+        let aiScoreAvailable = SettingsManagerObject.isAIBlockingEnabled()
         model.focusOnTaskText  = (running && aiScoreAvailable && !onTask.isEmpty) ? onTask : ""
 
         // Breaks: normally subtitle = "next break in"; but during an allowed-app habit (breaks are

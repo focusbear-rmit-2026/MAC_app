@@ -2704,6 +2704,7 @@
         "toolTipShowToDoPlayer": "Show To Do Player",
         "currentTaskText": "Current task is \"<TASK>\"",
         "aiIsDisabledText": "AI is not enabled.",
+        "aiNotApplicableText": "AI not applicable.",
         "noCurrentTaskText": "No Current Task",
         "toolTipAlignmentScore": "This shows what % of the time you've been on websites/apps that are relevant to your focus goal. We use AI to check the relevance.",
         "aiScoreNotCalculatedText": "AI score not calculated."

@@ -174,7 +174,14 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
             }
         }
         
-        if !SettingsManagerObject.isAIBlockingEnabled() || isBlockSuperDistractingFocusModeOn(){
+        if isBlockSuperDistractingFocusModeOn(){
+            // A super-distracting session blocks by list, not by AI, so AI scoring doesn't apply here —
+            // distinct from AI being turned off (handled below).
+            lblDescriptionText.stringValue = "AI not applicable."
+            if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
+                lblDescriptionText.stringValue = info.value(forKey: "aiNotApplicableText") as? String ?? lblDescriptionText.stringValue
+            }
+        } else if !SettingsManagerObject.isAIBlockingEnabled(){
             lblDescriptionText.stringValue = "AI is not enabled."
             if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
                 lblDescriptionText.stringValue = info.value(forKey: "aiIsDisabledText") as? String ?? lblDescriptionText.stringValue

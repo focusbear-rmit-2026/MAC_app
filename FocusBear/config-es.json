@@ -2675,6 +2675,7 @@
         "toolTipShowToDoPlayer": "Mostrar reproductor de tareas",
         "currentTaskText": "La tarea actual es \"<TASK>\"",
         "aiIsDisabledText": "La IA no está activada.",
+        "aiNotApplicableText": "La IA no es aplicable.",
         "noCurrentTaskText": "Sin tarea actual",
         "toolTipAlignmentScore": "Esto muestra el % del tiempo que has estado en sitios web/apps relevantes para tu objetivo de enfoque. Usamos IA para comprobar la relevancia.",
         "aiScoreNotCalculatedText": "Puntaje de IA no calculado."
