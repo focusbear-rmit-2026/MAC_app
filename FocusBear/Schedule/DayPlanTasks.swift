@@ -554,6 +554,9 @@ final class DayPlanTaskStore {
 
     private let key = "dayPlanTasksByDay"
     private var byDay: [String: [DayPlanTask]] = [:]
+    /// Local ids of from-scratch tasks currently having a backend to-do minted for them, so a rapid
+    /// second edit doesn't mint a duplicate before the first create returns.
+    private var mintingTaskIds = Set<String>()
 
     private static let dayFormatter: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.calendar = Calendar.current; return f
@@ -603,12 +606,11 @@ final class DayPlanTaskStore {
         if let sid = task.sourceTaskId, contains(sourceTaskId: sid, for: date) { return }
         byDay[dayKey(date), default: []].append(task); save()
         // #2148: a Day Plan task backed by a to-do is planned via `planned_date` (the pointer model);
-        // this makes it show on GET /day-plan/day and hydrate on other devices. From-scratch tasks
-        // (no sourceTaskId / no captured quadrant) stay local-only — the pointer model has nowhere to
-        // put them without minting a to-do.
-        if let sid = task.sourceTaskId, let q = task.eisenhowerQuadrant {
-            DayPlanSync.shared.setTodoPlanned(todoID: sid, title: task.title, quadrant: q,
-                                              plannedDate: date, blockKey: task.blockKey, order: nil)
+        // this makes it show on GET /day-plan/day and hydrate on other devices. Any to-do-backed task
+        // syncs (PATCH /to-do/:id needs only its id — no quadrant). From-scratch tasks (no
+        // sourceTaskId) stay local-only — the pointer model has nowhere to put them without minting a to-do.
+        if let sid = task.sourceTaskId {
+            DayPlanSync.shared.setTodoPlanned(todoID: sid, plannedDate: date, blockKey: task.blockKey, order: nil)
         }
     }
 
@@ -625,14 +627,61 @@ final class DayPlanTaskStore {
         }
     }
 
+    /// Call when a task's name is FINALIZED (Enter/blur), not on every keystroke. For a from-scratch
+    /// task this mints a backend to-do (named after the whole title, not the first character typed);
+    /// for an already-synced task it pushes the renamed title to its to-do so the new name syncs to
+    /// other devices too.
+    func syncNameOnCommit(_ task: DayPlanTask, on date: Date) {
+        guard !task.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        if let sid = task.sourceTaskId {
+            DayPlanSync.shared.setTodoTitle(todoID: sid, title: task.title, quadrant: task.eisenhowerQuadrant ?? 4)
+        } else {
+            mintTodoIfNeeded(for: task, on: date)
+        }
+    }
+
+    /// Give a from-scratch task a backend to-do so it syncs across devices (the pointer model can only
+    /// sync to-do-backed tasks). Mints once — on the first non-empty title — via `PUT /to-do` (create),
+    /// then backfills the new id as `sourceTaskId` and plans it (`PATCH /to-do/:id`). Best-effort: on a
+    /// failed create (e.g. offline) the task stays local and we retry on the next edit. No-op for tasks
+    /// already backed by a to-do, blank rows, or those with a mint in kflight.
+    private func mintTodoIfNeeded(for task: DayPlanTask, on date: Date) {
+        guard task.sourceTaskId == nil,
+              !task.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              !mintingTaskIds.contains(task.id) else { return }
+        mintingTaskIds.insert(task.id)
+        let localId = task.id
+        let quadrant = task.eisenhowerQuadrant ?? 4   // neutral default (not urgent / not important)
+        // The /to-do API requires a real Date for due_date (empty string → 400 "due_date must be a Date
+        // instance"), so use the day the task is planned on, ISO-8601 UTC like the other addTask callers.
+        let dueDate = getStringFromDateInUtc(date: date, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+        allApiObject.addTask(title: task.title, details: "", eisenhowerQuadrant: quadrant,
+                             dueDate: dueDate, objective: "", tags: []) { [weak self] ok, json in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.mintingTaskIds.remove(localId)
+                guard ok, let newId = json?["id"] as? String else { return }
+                let k = self.dayKey(date)
+                // The row may have moved/been deleted, or been imported over, while we waited.
+                guard let idx = self.byDay[k]?.firstIndex(where: { $0.id == localId }),
+                      self.byDay[k]?[idx].sourceTaskId == nil else { return }
+                self.byDay[k]?[idx].sourceTaskId = newId
+                self.byDay[k]?[idx].eisenhowerQuadrant = quadrant
+                self.save()
+                let planned = self.byDay[k]![idx]
+                DayPlanSync.shared.setTodoPlanned(todoID: newId, plannedDate: date,
+                                                  blockKey: planned.blockKey, order: nil)
+            }
+        }
+    }
+
     func delete(id: String, for date: Date) {
         let removed = byDay[dayKey(date)]?.first { $0.id == id }
         byDay[dayKey(date)]?.removeAll { $0.id == id }; save()
         // Removing a to-do-backed task from the Day Plan just unplans it (clears planned_date); the
         // to-do itself is kept. From-scratch tasks have no backend row to clear.
-        if let sid = removed?.sourceTaskId, let q = removed?.eisenhowerQuadrant {
-            DayPlanSync.shared.setTodoPlanned(todoID: sid, title: removed!.title, quadrant: q,
-                                              plannedDate: nil, blockKey: nil, order: nil)
+        if let sid = removed?.sourceTaskId {
+            DayPlanSync.shared.setTodoPlanned(todoID: sid, plannedDate: nil, blockKey: nil, order: nil)
         }
     }
 
@@ -793,10 +842,9 @@ final class DayPlanTaskStore {
         save()
         // Keep the backend's planned_date in sync for imported to-dos, otherwise the next hydrate
         // re-plants the task on its old day (the backend still says it's planned there). From-scratch
-        // tasks (no sourceTaskId / quadrant) have no backend pointer, so nothing to update.
-        if let sid = task.sourceTaskId, let q = task.eisenhowerQuadrant {
-            DayPlanSync.shared.setTodoPlanned(todoID: sid, title: task.title, quadrant: q,
-                                              plannedDate: to, blockKey: nil, order: nil)
+        // tasks (no sourceTaskId) have no backend pointer, so nothing to update.
+        if let sid = task.sourceTaskId {
+            DayPlanSync.shared.setTodoPlanned(todoID: sid, plannedDate: to, blockKey: nil, order: nil)
         }
     }
 
@@ -2004,6 +2052,16 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         }
         t.title = newTitle
         DayPlanTaskStore.shared.update(t, for: date)
+        // Name is finalized here (Enter/blur) — now, not per-keystroke, sync it: mint a to-do for a
+        // from-scratch task, or push the renamed title to an already-synced one. Skip the rename API
+        // when the title didn't actually change (a plain click-in/out) — but a from-scratch task still
+        // attempts to mint (idempotent) since it may not be synced yet. `nil` original (begin-edit not
+        // seen) is treated as "changed" so a genuine rename is never missed.
+        let original = titleBeforeEdit.removeValue(forKey: id)
+        let titleChanged = (original == nil) || (original != newTitle)
+        if t.sourceTaskId == nil || titleChanged {
+            DayPlanTaskStore.shared.syncNameOnCommit(t, on: date)
+        }
         return (t.project != oldProject) || (t.outcome != oldOutcome) || (newTitle != trimmed)
     }
 
@@ -2459,6 +2517,9 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
     // the window default and fires on Return via performKeyEquivalent — before the field sees Enter).
     private var savedDefaultButtonCell: NSButtonCell?
     private var editingFieldCount = 0
+    /// Title of a task when its name field began editing, so on commit we only push a rename to the
+    /// backend if it actually changed (a plain click-in/click-out shouldn't hit the API).
+    private var titleBeforeEdit: [String: String] = [:]
     // Live project suggestions shown under the project combo. NSComboBox's own dropdown only opens on
     // the chevron, not as you type, so we draw our own list (case-insensitive substring) inside the
     // task-details popover.
@@ -2540,6 +2601,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         // Clicking (focusing) a task reveals its Expand / Snooze / Remove action row beneath it.
         if let id = (obj.object as? NSTextField)?.identifier?.rawValue, id.hasPrefix("name:") {
             let taskID = String(id.dropFirst("name:".count))
+            titleBeforeEdit[taskID] = task(for: taskID)?.title ?? ""
             DispatchQueue.main.async { [weak self] in self?.showActionRow(forTaskID: taskID) }
         }
     }

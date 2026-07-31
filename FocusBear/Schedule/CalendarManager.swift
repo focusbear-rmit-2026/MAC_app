@@ -418,8 +418,9 @@ final class DayPlanSync {
     // MARK: Day Plan tasks (per day)
     // #2104 (final) makes the Day Plan a POINTER into to-dos via `planned_date`, not a copy table —
     // there is no `/day-plan/day/:day/task` route. So a Day Plan task that came from a to-do syncs
-    // through the normal `PUT /to-do` upsert: `setTodoPlanned` (below) plans/unplans it and
-    // `setTodoStatus` marks it complete. From-scratch tasks (no `sourceTaskId`) stay local-only.
+    // through the to-do itself: `setTodoPlanned` (below) plans/unplans it via `PATCH /to-do/:id`
+    // (the planner fields only), matching the web/mobile clients; `setTodoStatus` marks it complete
+    // via the `PUT /to-do` upsert. From-scratch tasks (no `sourceTaskId`) stay local-only.
 
     /// Reflect a Day Plan task's completion onto its backend to-do so web/mobile lists update too.
     /// The upsert reuses the create DTO, so `title` + `quadrant` are echoed back to avoid clobbering.
@@ -458,17 +459,28 @@ final class DayPlanSync {
         send(req, label: "deleteEventColour")
     }
 
-    // MARK: Planned tasks (pointer-based, via the existing /to-do upsert)
-    /// Sets/clears the day-plan pointer fields on an existing todo. `plannedDate` nil unplans it (the
-    /// todo is kept). The /to-do upsert requires the todo's title + eisenhower quadrant. Best-effort;
-    /// planned_* only sticks on plain-local todos (per the backend note). Not yet wired — increment 2.
-    func setTodoPlanned(todoID: String, title: String, quadrant: Int,
-                        plannedDate: Date?, blockKey: String?, order: Int?) {
-        var body: [String: Any] = ["id": todoID, "title": title, "eisenhower_quadrant": quadrant]
+    // MARK: Planned tasks (pointer-based, PATCH /to-do/:id)
+    /// Sets/clears the day-plan pointer fields on an existing todo so its Day Plan placement syncs
+    /// across devices (GET /day-plan/day hydrates it on the other device). `plannedDate` nil unplans
+    /// it (the todo is kept). Mirrors what the web/mobile clients send: PATCH /to-do/:id with ONLY the
+    /// planner fields — the old PUT /to-do upsert (id+title+quadrant in the body) did not persist
+    /// planned_* for synced todos, so tasks never appeared on other devices (#2103/#2148).
+    func setTodoPlanned(todoID: String, plannedDate: Date?, blockKey: String?, order: Int?) {
+        var body: [String: Any] = [:]
         body["planned_date"] = plannedDate.map { dayString($0) } ?? NSNull()
         if let blockKey = blockKey { body["planned_block_key"] = blockKey }
         if let order = order { body["planned_order"] = order }
-        guard let req = request("/to-do", method: "PUT", body: body) else { return }
+        guard let req = request("/to-do/\(todoID)", method: "PATCH", body: body) else { return }
         send(req, label: "setTodoPlanned")
+    }
+
+    /// Push a renamed Day Plan task's title onto its backend to-do so the new name syncs to other
+    /// devices. Uses the `PUT /to-do` upsert (like `setTodoStatus`) — the planner PATCH /to-do/:id
+    /// endpoint only accepts the planned_* fields and 400s on a bare title. The upsert reuses the
+    /// create DTO, so the quadrant is echoed back to avoid clobbering it.
+    func setTodoTitle(todoID: String, title: String, quadrant: Int) {
+        let body: [String: Any] = ["id": todoID, "title": title, "eisenhower_quadrant": quadrant]
+        guard let req = request("/to-do", method: "PUT", body: body) else { return }
+        send(req, label: "setTodoTitle")
     }
 }
