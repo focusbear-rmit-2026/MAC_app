@@ -1582,12 +1582,14 @@ enum ShortcutTeachableAction {
     case focusMusic
     case brainDump
     case taskList
+    case startFocus   // the "Advanced" button next to the Focus Goal — opens the Start Focus Session view
 
     var featureName: String {
         switch self {
         case .focusMusic: return menuLocalized("menuFocusMusic", "Focus Music")
         case .brainDump:  return menuLocalized("menuBrainDump", "Brain Dump")
         case .taskList:   return menuLocalized("menuToDoPlayer", "To-Do Player")
+        case .startFocus: return menuLocalized("menuStartFocusSession", "Start Focus Session")
         }
     }
 
@@ -1596,6 +1598,7 @@ enum ShortcutTeachableAction {
         case .focusMusic: return SettingsManagerObject.focusMusicShortcutChar
         case .brainDump:  return SettingsManagerObject.brainDumpShortcutChar
         case .taskList:   return SettingsManagerObject.taskListShortcutChar
+        case .startFocus: return SettingsManagerObject.startPomodoroShortcutChar
         }
     }
 
@@ -1604,6 +1607,7 @@ enum ShortcutTeachableAction {
         case .focusMusic: return SettingsManagerObject.focusMusicShortcutFlags
         case .brainDump:  return SettingsManagerObject.brainDumpShortcutFlags
         case .taskList:   return SettingsManagerObject.taskListShortcutFlags
+        case .startFocus: return SettingsManagerObject.startPomodoroShortcutFlags
         }
     }
 
@@ -1613,6 +1617,7 @@ enum ShortcutTeachableAction {
         case .focusMusic: return "focusMusic"
         case .brainDump:  return "brainDump"
         case .taskList:   return "taskList"
+        case .startFocus: return "startFocus"
         }
     }
 }
@@ -1683,7 +1688,11 @@ final class ShortcutHintToast {
         toast.isOpaque = false
         toast.backgroundColor = .clear
         toast.hasShadow = true
-        toast.level = .floating
+        // Sit above the menu — which is shown at the modal-panel level as a pinned window
+        // (getViewControllersObject) or as a pop-up-menu-level popover — so the hint isn't hidden
+        // behind it (was .floating, which is below both). Still below screen-saver / shielding levels,
+        // so it can't cover critical system UI.
+        toast.level = NSWindow.Level(rawValue: NSWindow.Level.popUpMenu.rawValue + 1)
         toast.isMovableByWindowBackground = false
         toast.ignoresMouseEvents = true
         toast.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]

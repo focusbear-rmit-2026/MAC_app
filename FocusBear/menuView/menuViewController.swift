@@ -2478,6 +2478,9 @@ extension menuViewController {
                 appdelegate?.menuShowSimplePomodoroModeView()
             }
             closeMenuWindowIsVisible()
+            // #2003: this "Advanced" button opens the same Start Focus Session view as the start-pomodoro
+            // shortcut, so teach that shortcut. (Only here — NOT the inline TAP-TO-START quick start.)
+            self.teachShortcut(.startFocus)
         }
         // Inline quick-start: begin a focus session directly with the chosen minutes/intention/block list.
         model.onStartFocusConfigured = { [weak self] minutes, intention, blockListId in
