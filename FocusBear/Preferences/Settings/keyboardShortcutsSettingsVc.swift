@@ -75,7 +75,7 @@ class keyboardShortcutsSettingsVc: NSViewController {
     private var brainDumpTitle = "Open Brain Dump:"
     private var focusMusicTitle = "Open Focus Music:"
     private var taskListTitle = "Open Task List:"
-    private var startFocusSessionTitle = "Start focus session:"
+    private var startFocusSessionTitle = "Open Focus Session:"
     
     override func viewDidLoad() {
         super.viewDidLoad()
