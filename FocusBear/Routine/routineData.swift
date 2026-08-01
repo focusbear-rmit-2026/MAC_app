@@ -115,6 +115,22 @@ func cancelRoutineForToday(openedFromDayPlan: Bool) {
         }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
             UserDefaults.standard.set(startDate, forKey: kUserdefaultsEveningHabitsShowedTillDate)
         }
+        // Cancelling the evening routine while the Focus Summary is showing or postponed must ALSO mark
+        // the Focus Summary as done. Otherwise its "showed till" date is never set (and, for a postponed
+        // summary, ._POSTPONE_FOCUS_SUMMARY_ is restored from the saved postpone on the next launch), so
+        // the summary keeps reappearing. Mirror markPostponedFocusSummaryResumed: pin it to the next
+        // routine start and drop the saved postpone so the state isn't restored.
+        if currentState == ._FOCUS_SUMMARY_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
+            if curreentDate > shutOffdate{
+                let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+                let tomorrowStart = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
+                UserDefaults.standard.set(tomorrowStart, forKey: kUserdefaultsFocusSummaryShowedTillDate)
+            }else if curreentDate < startDate{
+                UserDefaults.standard.set(startDate, forKey: kUserdefaultsFocusSummaryShowedTillDate)
+            }
+            UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+            UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+        }
         sequenceId = (arrFilteredEveningHabits.first ?? arrAllDaysEveningHabits.first)?.activity_sequence_id ?? ""
         allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-from":"chooseHabits"])
     }
