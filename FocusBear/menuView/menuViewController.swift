@@ -202,6 +202,11 @@ class menuViewController: NSViewController {
     /// made the mic "open the menu but not go into listening state"). Consumed by refreshSwiftUIMenu().
     var pendingDeviceListening = false
     var nextDayPlanHabitName: String?   // raw name of the Day Plan "next habit" (for the play button)
+    // Routine signals that drive the Day Plan section. tickMenu() re-runs updateDayPlan when this changes
+    // so postpone / resume / start-habit / habit-advance reflect live (within ~1s) while the menu is open,
+    // instead of only on reopen. Kept as a change-check so we don't re-fetch meetings/tasks every tick.
+    private var lastDayPlanSignature = ""
+    private var dayPlanSignature: String { "\(currentState)|\(currentAction)|\(currentHabitIndex)|\(currentRoutineIndex)" }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -2624,6 +2629,7 @@ extension menuViewController {
             && UserDefaults.standard.object(forKey: kUserDefaultsBlockingScheduleAddedFirstTime) == nil
         // (Active blocking-schedule card is populated in updateLiveMenuFields so it refreshes every tick.)
         updateDayPlan(model)
+        lastDayPlanSignature = dayPlanSignature
     }
 
     /// Time-sensitive fields, refreshed every second while the menu is open (timer counts down,
@@ -2633,6 +2639,13 @@ extension menuViewController {
         // Don't churn the model while the voice screen is up — its updates can disrupt that view.
         if model.inVoiceMode { return }
         updateLiveMenuFields(model)
+        // Refresh the Day Plan the moment a routine signal changes (postpone / resume / start / advance),
+        // so it doesn't need a menu reopen to catch up. Guarded on the signature so meetings/tasks aren't
+        // re-fetched every tick.
+        if dayPlanSignature != lastDayPlanSignature {
+            lastDayPlanSignature = dayPlanSignature
+            updateDayPlan(model)
+        }
     }
 
     /// Live break subtitle for the SwiftUI menu. Returns the disable reason when breaks are currently
@@ -2852,6 +2865,11 @@ extension menuViewController {
     /// Day Plan: next uncompleted habit in the active routine; if that routine is done, the next
     /// routine's start time; plus today's top undone tasks.
     private func updateDayPlan(_ model: MenuModel) {
+        // Seed today's completed-habit ids from the persisted cache if they aren't loaded yet. Normally
+        // the schedule build does this (firstViewController+Schedule), but on a postponed-routine restart
+        // the main window never appears, so without this the menu would treat an already-done habit as
+        // "next". No-op once the set is populated (so it never overrides fresher server state).
+        loadPersistedDayPlanCompletedIds()
         let activeHabits: [habit]
         let isMorningRoutine: Bool
         switch currentState {
@@ -2866,7 +2884,6 @@ extension menuViewController {
             activeHabits = arrFilteredMorningHabits
             isMorningRoutine = true
         }
-        let playingId = currentHabitPlaying?.id ?? ""
         // #2013: once the morning routine is done (before shutoff) and we're no longer in it, don't
         // surface a leftover "next" morning habit. Some completed habits may not be in
         // dayPlanCompletedHabitIds yet (e.g. before the #2150 refetch), so the first-not-completed check
@@ -2874,26 +2891,57 @@ extension menuViewController {
         // then shows the next routine's start ("Evening routine starts at …") instead.
         let morningRoutineDone = isMorningRoutine && isHabitAlreadyShowed && !isShutOffTimeGoing()
             && currentState != ._MORNING_HABIT_ && currentState != ._POSTPONE_MORNING_HABIT_
-        let nextHabit = morningRoutineDone ? nil : activeHabits.first { h in
-            let id = h.id ?? ""
-            return id != playingId && !dayPlanCompletedHabitIds.contains(id)
+        // Habit indices: while a routine actively runs, the app plays activeHabits[currentHabitIndex]
+        // (startFirstMorningHabit / changeMorningHabit et al.), so THAT is the current habit and
+        // currentHabitIndex+1 is the next. currentHabitPlaying is NOT usable here — it's only set for
+        // allowed-app / allowed-focus-mode habits (nil for a normal timer habit).
+        let inLiveRoutine = currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_
+        // The habit currently in progress → shown in the Day Plan header so it's never echoed as "next".
+        let currentHabit: habit? = (inLiveRoutine && currentAction == ._INPROGRESS_ && activeHabits.indices.contains(currentHabitIndex))
+            ? activeHabits[currentHabitIndex] : nil
+        model.dayPlanCurrentHabit = currentHabit.map { $0.nameWithoutIcon.isEmpty ? ($0.name ?? "") : $0.nameWithoutIcon } ?? ""
+
+        let nextHabit: habit?
+        if morningRoutineDone {
+            nextHabit = nil
+        } else if inLiveRoutine {
+            let nextIdx = currentHabitIndex + 1   // out of range = current is the last habit → no next
+            nextHabit = activeHabits.indices.contains(nextIdx) ? activeHabits[nextIdx] : nil
+        } else {
+            nextHabit = activeHabits.first { !dayPlanCompletedHabitIds.contains($0.id ?? "") }
         }
-        if let nh = nextHabit {
-            model.dayPlanNextHabit = nh.nameWithoutIcon.isEmpty ? (nh.name ?? "") : nh.nameWithoutIcon
-            nextDayPlanHabitName = nh.name
-        } else if shutOffTime != nil {
+        // In a routine (live, or postponed and resumable) we show habits; only OUTSIDE a routine do we
+        // fall through to the next routine's start time — so a last-habit-in-progress never flips to
+        // "next routine starts at …".
+        let inRoutine = inLiveRoutine || currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_
+        // Start is only offered to RESUME a postponed routine. While a routine is actively in progress
+        // (morning/evening/custom), the habit is already running in the routine window, so a Start button
+        // here would be redundant/misleading — don't show it.
+        let startableState = currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_
+
+        if inRoutine {
+            // Show the (real) next habit, if any; the current in-progress habit is in the header above.
+            model.dayPlanNextHabit = nextHabit.map { $0.nameWithoutIcon.isEmpty ? ($0.name ?? "") : $0.nameWithoutIcon } ?? ""
+            model.dayPlanRoutineStart = ""
+            model.nextHabitStartable = startableState && nextHabit != nil
+            nextDayPlanHabitName = startableState ? nextHabit?.name : nil
+        } else if shutOffTime != nil, startTime != nil {
+            // Nothing startable right now (routine finished, or a next-day preview): show the NEXT routine's
+            // start time in the header and preview that routine's first habit in the NEXT HABIT line, with
+            // NO Start button. Never offer Start for a past/preview/next-day habit.
+            let (routineStart, isMorning, firstHabitName) = nextRoutineStartForMenu()
+            let name = isMorning ? menuMorningRoutineName() : menuEveningRoutineName()
+            let icon = isMorning ? "🌅" : "🌙"
+            model.dayPlanRoutineStart = icon + " " + name + " " + menuLocalized("dayPlanStartsAt", "starts at") + " " + menuTimeString(routineStart)
+            model.dayPlanNextHabit = firstHabitName ?? ""
+            model.nextHabitStartable = false
             nextDayPlanHabitName = nil
-            // All habits in the current routine are done — show the next routine's start.
-            // (getNextRoutineInfo() force-unwraps shutOffTime, so only call it once that's loaded.)
-            let (date, name, _) = getNextRoutineInfo()
-            model.dayPlanNextHabit = name + " " + menuLocalized("dayPlanStartsAt", "starts at") + " " + menuTimeString(date)
         } else {
             model.dayPlanNextHabit = ""
+            model.dayPlanRoutineStart = ""
+            model.nextHabitStartable = false
             nextDayPlanHabitName = nil
         }
-
-        // "Start" next to the next habit only makes sense when habits are postponed (you can resume them).
-        model.nextHabitStartable = (currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_)
         // Surface when the postpone ends, e.g. "Habits postponed until 10:07 PM", from the stored postpone
         // end date. Only while a routine is postponed and the end time is still in the future.
         if model.nextHabitStartable,
@@ -2978,6 +3026,43 @@ extension menuViewController {
         df.dateFormat = "h:mm a"
         df.locale = Locale(identifier: currentLanguageCode)
         return df.string(from: date)
+    }
+
+    /// Resolve a `scheduleViewInfo` config string (keyed per language) with an English fallback — mirrors
+    /// menuLocalized but for the schedule block, so routine names reuse the existing (already-translated)
+    /// scheduleViewInfo strings without a new config key.
+    private func scheduleLocalized(_ key: String, _ fallback: String) -> String {
+        if let dict = configjson.value(forKey: "scheduleViewInfo") as? NSDictionary,
+           let s = dict.value(forKey: key) as? String, !s.isEmpty {
+            return s
+        }
+        return fallback
+    }
+
+    private func menuEveningRoutineName() -> String { scheduleLocalized("eveningRoutine", "Evening routine") }
+    private func menuMorningRoutineName() -> String { scheduleLocalized("morningRoutine", "Morning routine") }
+
+    /// The next routine the user can actually start, for the menu's "nothing startable now" state: the
+    /// evening routine if it's still ahead today (and not already done for this window), otherwise the next
+    /// morning routine — today if its start time is still ahead, else tomorrow. Returns the start date,
+    /// whether it's the morning routine (icon/name), and that routine's first habit name (nil if none).
+    /// Callers must ensure `shutOffTime` and `startTime` are loaded (both are force-unwrapped here).
+    private func nextRoutineStartForMenu() -> (Date, Bool, String?) {
+        let cal = Calendar.current
+        let now = Date()
+        func firstHabitName(_ habits: [habit]) -> String? {
+            guard let h = habits.first else { return nil }
+            return h.nameWithoutIcon.isEmpty ? h.name : h.nameWithoutIcon
+        }
+        let eveningStart = cal.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: now)!
+        if eveningStart > now, !eveningAlreadyShownToday() {
+            let habits = arrFilteredEveningHabits.isEmpty ? arrAllDaysEveningHabits : arrFilteredEveningHabits
+            return (eveningStart, false, firstHabitName(habits))
+        }
+        let morningStartToday = cal.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: now)!
+        let morningStart = morningStartToday > now ? morningStartToday : cal.date(byAdding: .day, value: 1, to: morningStartToday)!
+        let habits = arrFilteredMorningHabits.isEmpty ? arrAllDaysMorningHabits : arrFilteredMorningHabits
+        return (morningStart, true, firstHabitName(habits))
     }
 
     /// Start the Day Plan "next habit" from its play button (mirrors the device-button habit start).

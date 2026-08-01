@@ -120,8 +120,10 @@ final class MenuModel: ObservableObject {
     @Published var dayPlanNextEventTitle = ""   // next calendar event title (may be empty)
     @Published var dayPlanNextEventTime = ""    // its start time, e.g. "5:00 PM"
     @Published var dayPlanNextEventRelative = "" // "in 40 min"
-    @Published var dayPlanNextHabit = ""    // next habit (raw, no prefix) or "Evening Routine starts at 5pm"
-    @Published var nextHabitStartable = false // show the "Start" button only when habits are postponed
+    @Published var dayPlanNextHabit = ""    // next habit name (raw, no prefix); when nothing is startable it's the upcoming routine's first habit (a preview)
+    @Published var nextHabitStartable = false // show the "Start" button only when the shown habit is startable right now (live/actionable or resumable-postponed routine)
+    @Published var dayPlanRoutineStart = "" // when nothing is startable: "🌅 Morning Routine starts at 7:00 AM" (header only); empty while a routine is live/startable
+    @Published var dayPlanCurrentHabit = "" // the habit currently in progress (header only); empty when no habit is running
     @Published var habitsPostponedUntil = ""  // "Habits postponed until 10:07 PM" while a routine is postponed; empty otherwise
     @Published var dayPlanTasks: [DayPlanMenuTask] = []
 
@@ -842,6 +844,12 @@ struct FocusBearMenuView: View {
             let time = model.dayPlanNextEventTime.isEmpty ? "" : "  ·  \(model.dayPlanNextEventTime)"
             return model.dayPlanNextEventTitle + time
         }
+        // A habit is in progress → the header shows the CURRENT habit (the NEXT HABIT line below shows the
+        // following one), so the two rows never duplicate.
+        if !model.dayPlanCurrentHabit.isEmpty { return model.dayPlanCurrentHabit }
+        // Nothing startable right now → surface the next routine's start time here (the first-habit
+        // preview goes in the NEXT HABIT line below).
+        if !model.dayPlanRoutineStart.isEmpty { return model.dayPlanRoutineStart }
         if !model.dayPlanNextHabit.isEmpty { return model.dayPlanNextHabit }
         return model.dayPlanDate.isEmpty ? menuLocalized("menuDayPlan", "Day Plan") : model.dayPlanDate
     }
