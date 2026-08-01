@@ -9,7 +9,7 @@
 import Cocoa
 import WebKit
 
-class brainDumpVc: NSViewController, NSTextViewDelegate {
+class brainDumpVc: NSViewController, NSTextViewDelegate, webViewLoadFailedDelegate {
     
     @IBOutlet weak var boxBrainDumpWebView: NSBox!
     @IBOutlet weak var webView: WKWebView!
@@ -56,7 +56,7 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
     override func viewWillAppear() {
         resetData()
     }
-    
+
     func resetData() {
         let existingNotes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String ?? ""
         let hasOldContent = !existingNotes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -172,6 +172,32 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
         self.view.window?.close()
     }
     
+    func reloadClicked(webView:WKWebView){
+        loadWebView()
+    }
+    
+    var webViewLoadFailedVcObj:webViewLoadFailedVc?
+    func removeWebViewLoadFailedView(webView: WKWebView) {
+        if webViewLoadFailedVcObj != nil{
+            if webView.subviews.contains(webViewLoadFailedVcObj!.view){
+                webViewLoadFailedVcObj?.view.removeFromSuperview()
+            }
+        }
+    }
+    func handleLoadError(webView: WKWebView) {
+        if webViewLoadFailedVcObj != nil{
+            if webView.subviews.contains(webViewLoadFailedVcObj!.view){
+                webViewLoadFailedVcObj?.reloadData()
+                return;
+            }
+        }
+        webViewLoadFailedVcObj = getWebViewLoadFailedVcObject()
+        webViewLoadFailedVcObj!.customDelegate = self
+        webViewLoadFailedVcObj?.webView = webView
+        webView.addSubview(webViewLoadFailedVcObj!.view)
+        webView.addConstraints(subView: webViewLoadFailedVcObj!.view)
+        webViewLoadFailedVcObj?.reloadData()
+    }
 }
 
 
@@ -187,6 +213,14 @@ extension brainDumpVc: WKNavigationDelegate {
         // poll loop; the persisted "sent" flag is only set once delivery is confirmed (see below).
         hasInjectedInitialBrainDump = true
         injectInitialBrainDumpNotes(into: webView)
+    }
+    
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        handleLoadError(webView: webView)
+    }
+    
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        handleLoadError(webView: webView)
     }
 }
 
