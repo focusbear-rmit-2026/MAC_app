@@ -706,6 +706,18 @@ class menuViewController: NSViewController {
         lblFocusAlignmentScore.stringValue = focusAlignmentScoreText.replacingOccurrences(of: "<SCORE>", with: "\(totalAlignmentScore)%")
     }
     
+    /// Whether "Start a break now" should be offered in the menu. Only when the app is enabled, we're
+    /// not in shut-off time, we're not mid morning-habit / micro-break / custom-routine / special-
+    /// activity, and there are break activities to run. Drives both the legacy boxStartBreak/
+    /// menuItemStartBreak and the SwiftUI menu's break button so they stay in sync.
+    func shouldShowStartBreakInMenu() -> Bool {
+        guard isAppEnable, !isShutOffTimeGoing() else { return false }
+        if currentState == ._MORNING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._CUSTOM_ROUTINE_ || currentState == ._SPECIAL_ACTIVITY_ {
+            return false
+        }
+        return arrAllbreakActivities.count > 0
+    }
+
     func reloadData(){
         allApiObject.capturePosthog(event: "opened-menu", metadata: [:])
         
@@ -926,35 +938,15 @@ class menuViewController: NSViewController {
             btnStartHabitsFirstTime.isHidden = true
         }
         
-        if isAppEnable{
-            if isShutOffTimeGoing(){
-                boxStartBreak.isHidden = true
-                menuItemStartBreak.isHidden = true
-            }else{
-                if isHabitAlreadyShowed{
-                    if currentState == ._MORNING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._CUSTOM_ROUTINE_ || arrAllbreakActivities.count == 0 || currentState == ._SPECIAL_ACTIVITY_{
-                        menuItemStartBreak.isHidden = true
-                        boxStartBreak.isHidden = true
-                    }else{
-                        menuItemStartBreak.isHidden = false
-                        boxStartBreak.isHidden = false
-                    }
-                }else{
-                    menuItemStartBreak.isHidden = true
-                    boxStartBreak.isHidden = true
-
-                }
-            }
-        }else{
-            menuItemStartBreak.isHidden = true
-            boxStartBreak.isHidden = true
-        }
+        // Single source of truth for whether "Start a break now" is offered (see
+        // shouldShowStartBreakInMenu). Both the legacy boxes and the SwiftUI menu read it so they
+        // can't diverge — the SwiftUI "Start a break now" button used to ignore this gate and stay
+        // visible in every state.
+        let showStartBreak = shouldShowStartBreakInMenu()
+        menuItemStartBreak.isHidden = !showStartBreak
+        boxStartBreak.isHidden = !showStartBreak
         boxStartBreakNew.isHidden = boxStartBreak.isHidden
-        
-        
-        
-        
-        
+
         
         if arrAllTracks.count == 0{
             menuItemFocusMusic.isHidden = true
@@ -2789,6 +2781,7 @@ extension menuViewController {
             model.breaksSummary = nextBreak.isEmpty ? takeBreak : nextBreak
             model.lastBreakText = lastBreakStr
         }
+        model.canStartBreak = shouldShowStartBreakInMenu()
 
         // Active blocking-schedule card — refreshed every tick so it appears/updates as soon as a
         // schedule turns on (or is loaded after the menu opened), not just on the initial open.

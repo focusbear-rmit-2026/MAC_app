@@ -104,6 +104,8 @@ final class MenuModel: ObservableObject {
 
     @Published var breaksSummary = ""       // subtitle: "Next break in 28 minutes"
     @Published var lastBreakText = ""       // expanded body: "Last break 5m ago"
+    // Whether the "Start a break now" button is offered (mirrors the legacy boxStartBreak gate).
+    @Published var canStartBreak = false
 
     // Currently-playing habit (replaces the Start Focus button while a habit runs)
     @Published var habitPlaying = false
@@ -424,7 +426,9 @@ struct FocusBearMenuView: View {
                             .font(MenuTheme.font(12, .regular))
                             .foregroundColor(MenuTheme.subtitle(scheme))
                     }
-                    LinkButton(title: menuLocalized("menuStartBreak", "Start a break now"), scheme: scheme, action: model.onOpenBreaks)
+                    if model.canStartBreak {
+                        LinkButton(title: menuLocalized("menuStartBreak", "Start a break now"), scheme: scheme, action: model.onOpenBreaks)
+                    }
                 }
             }
 
