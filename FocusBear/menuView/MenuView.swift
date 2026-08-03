@@ -37,6 +37,79 @@ func menuLocalized(_ key: String, _ fallback: String) -> String {
     return fallback
 }
 
+/// The "Focus Goal:" label — reuses the existing `popUpAddNewFocusGoalVcInfo.titleGoal` config string
+/// (already translated), so no new localization key is needed.
+func menuFocusGoalLabel() -> String {
+    let fallback = "Focus Goal:"   // i18n-ignore: last-resort default; the real string comes from config
+    if let dict = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary,
+       let s = dict.value(forKey: "titleGoal") as? String, !s.isEmpty {
+        return s
+    }
+    return fallback
+}
+
+/// The "goal can't be changed in super-strict mode" note — reuses the existing
+/// `popUpAddNewFocusGoalVcInfo.cannotChangeIntentionInSuperStrictText` config string (already translated).
+func menuCannotChangeGoalNote() -> String {
+    let fallback = "Focus goal cannot be changed in super strict mode"   // i18n-ignore: config-backed default
+    if let dict = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary,
+       let s = dict.value(forKey: "cannotChangeIntentionInSuperStrictText") as? String, !s.isEmpty {
+        return s
+    }
+    return fallback
+}
+
+/// An SF-Symbol icon backed by AppKit so hovering shows the app's INSTANT tooltip
+/// (showTooltipWithOsTahoe) rather than SwiftUI's `.help`, which only appears after the slow system delay.
+@available(macOS 11.0, *)
+struct InstantTooltipIcon: NSViewRepresentable {
+    let symbol: String
+    let message: String
+    var pointSize: CGFloat = 15
+    var preferredEdge: NSRectEdge = .minY
+
+    func makeNSView(context: Context) -> HoverTooltipIconView {
+        HoverTooltipIconView(symbol: symbol, message: message, pointSize: pointSize, preferredEdge: preferredEdge)
+    }
+    func updateNSView(_ nsView: HoverTooltipIconView, context: Context) {
+        nsView.message = message
+    }
+}
+
+@available(macOS 11.0, *)
+final class HoverTooltipIconView: NSImageView {
+    var message: String
+    private let preferredEdge: NSRectEdge
+
+    init(symbol: String, message: String, pointSize: CGFloat, preferredEdge: NSRectEdge) {
+        self.message = message
+        self.preferredEdge = preferredEdge
+        super.init(frame: .zero)
+        let cfg = NSImage.SymbolConfiguration(pointSize: pointSize, weight: .regular)
+        image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?.withSymbolConfiguration(cfg)
+        contentTintColor = .secondaryLabelColor
+        imageScaling = .scaleNone
+        setContentHuggingPriority(.required, for: .horizontal)
+        setContentHuggingPriority(.required, for: .vertical)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        trackingAreas.forEach(removeTrackingArea)
+        addTrackingArea(NSTrackingArea(rect: bounds,
+                                       options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+                                       owner: self, userInfo: nil))
+    }
+    override func mouseEntered(with event: NSEvent) {
+        showTooltipWithOsTahoe(sender: self, msg: message, preferredEdge: preferredEdge,
+                               maxWidthVal: 230, autoCloseOnMouseExit: true)
+    }
+    override func mouseExited(with event: NSEvent) {
+        closePopoverTooltipIfVisible()
+    }
+}
+
 /// Time-Tracker "today" view strings, resolved from the `timeTrackerViewInfo` config section (keyed
 /// per language) with an English fallback. Kept separate from `menuLocalized`/`menuView` so the
 /// Time-Tracker view's copy lives in its own dictionary rather than being mixed into the menu's.
@@ -96,7 +169,9 @@ extension Color {
 final class MenuModel: ObservableObject {
     @Published var focusRunning = false
     @Published var focusPaused = false
-    @Published var focusTaskTitle = ""
+    @Published var focusTaskTitle = ""       // the focus goal / intention
+    @Published var focusModeName = ""        // the running focus mode/block-list name (e.g. "Deep Work")
+    @Published var focusGoalEditable = true  // false in super-strict mode — the goal can't be changed
     var onSaveIntention: (String) -> Void = { _ in }   // edit the running focus session's intention
     @Published var focusOnTaskText = ""
     @Published var focusRemaining = ""
@@ -736,8 +811,8 @@ struct FocusBearMenuView: View {
     // MARK: Focus accordion (running)
     private var focusAccordion: some View {
         AccordionRow(icon: "timer",
-                     // Show the focus goal as the section title once one is set; fall back to "Focus".
-                     title: model.focusTaskTitle.isEmpty ? menuLocalized("menuFocus", "Focus") : model.focusTaskTitle,
+                     // Always "Focus:" with the running focus mode/name to the right (never the goal).
+                     title: focusAccordionTitle,
                      subtitle: focusSubtitle,
                      solid: highlightedSection == .focus,
                      isOpen: binding(.focus), scheme: scheme) {
@@ -783,8 +858,29 @@ struct FocusBearMenuView: View {
     /// The focus-session intention: tap it (dotted underline signals it's editable) to type a new one,
     /// confirm with the tick. Saving routes through onSaveIntention → updateFocusModeIntention.
     @ViewBuilder private var intentionEditor: some View {
-        if editingIntention {
+        if !model.focusGoalEditable {
+            // Super-strict mode: the goal is locked. Show it read-only (no pencil / no tap); the reason
+            // ("can't change in super-strict") is a tooltip on the lock icon.
+            HStack(alignment: .center, spacing: 6) {
+                Text(menuFocusGoalLabel())
+                    .font(MenuTheme.font(13, .medium))
+                    .foregroundColor(MenuTheme.subtitle(scheme))
+                if !model.focusTaskTitle.isEmpty {
+                    Text(model.focusTaskTitle)
+                        .font(MenuTheme.font(13, .medium))
+                        .foregroundColor(MenuTheme.primaryText(scheme))
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 0)
+                // AppKit-backed so the tooltip shows the instant the pointer enters (SwiftUI `.help` is slow).
+                InstantTooltipIcon(symbol: "lock.fill", message: menuCannotChangeGoalNote())
+                    .frame(width: 18, height: 18)
+            }
+        } else if editingIntention {
             HStack(spacing: 6) {
+                Text(menuFocusGoalLabel())
+                    .font(MenuTheme.font(13, .medium))
+                    .foregroundColor(MenuTheme.subtitle(scheme))
                 TextField("", text: $intentionDraft, onCommit: saveIntention)
                     .textFieldStyle(PlainTextFieldStyle())
                     .font(MenuTheme.font(13, .medium))
@@ -801,21 +897,35 @@ struct FocusBearMenuView: View {
                 .pointingHandCursor()
                 .help(menuLocalized("menuSaveIntention", "Save"))
             }
-        } else if !model.focusTaskTitle.isEmpty {
+        } else {
+            // Always show the "Focus Goal:" label; the goal value (editable, dashed underline) sits to its
+            // right, or nothing when no goal is set.
             SwiftUI.Button(action: { intentionDraft = model.focusTaskTitle; editingIntention = true }) {
-                Text(model.focusTaskTitle)
-                    .font(MenuTheme.font(13, .medium))
-                    .foregroundColor(MenuTheme.primaryText(scheme))
-                    .lineLimit(2)
-                    .padding(.bottom, 2)
-                    .overlay(
-                        DashedUnderline()
-                            .stroke(MenuTheme.orange.opacity(0.75),
-                                    style: StrokeStyle(lineWidth: 1, dash: [2.5, 2.5]))
-                            .frame(height: 1),
-                        alignment: .bottom
-                    )
-                    .contentShape(Rectangle())
+                HStack(alignment: .center, spacing: 6) {
+                    Text(menuFocusGoalLabel())
+                        .font(MenuTheme.font(13, .medium))
+                        .foregroundColor(MenuTheme.subtitle(scheme))
+                    if !model.focusTaskTitle.isEmpty {
+                        Text(model.focusTaskTitle)
+                            .font(MenuTheme.font(13, .medium))
+                            .foregroundColor(MenuTheme.primaryText(scheme))
+                            .lineLimit(2)
+                            .padding(.bottom, 2)
+                            .overlay(
+                                DashedUnderline()
+                                    .stroke(MenuTheme.orange.opacity(0.75),
+                                            style: StrokeStyle(lineWidth: 1, dash: [2.5, 2.5]))
+                                    .frame(height: 1),
+                                alignment: .bottom
+                            )
+                    }
+                    Spacer(minLength: 6)
+                    // Pencil (kept right-aligned) so the row reads as editable even when no goal is set.
+                    Image(systemName: "pencil")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(MenuTheme.orange.opacity(0.85))
+                }
+                .contentShape(Rectangle())
             }
             .buttonStyle(PlainButtonStyle())
             .pointingHandCursor()
@@ -824,8 +934,15 @@ struct FocusBearMenuView: View {
     }
 
     private func saveIntention() {
+        // Never change the goal in super-strict mode (defensive — the edit UI isn't reachable there).
+        guard model.focusGoalEditable else { editingIntention = false; return }
+        // Save whatever was entered, including an empty string — clearing the goal is a valid edit
+        // (onSaveIntention → updateFocusModeIntention clears whatToAchieveInFocusBlock + the label).
         let trimmed = intentionDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty { model.onSaveIntention(trimmed) }
+        model.onSaveIntention(trimmed)
+        // Reflect the new goal in the model immediately; otherwise the view shows the old value until the
+        // next ~1s tick re-reads it from the legacy label.
+        model.focusTaskTitle = trimmed
         editingIntention = false
     }
 
@@ -833,6 +950,12 @@ struct FocusBearMenuView: View {
         model.focusRemaining.isEmpty
             ? menuLocalized("menuSessionRunning", "Session running")
             : "\(model.focusRemaining) " + menuLocalized("menuRemaining", "remaining")
+    }
+
+    /// Always the static "Focus:" label, with the running focus mode/name to its right when available.
+    private var focusAccordionTitle: String {
+        let label = menuLocalized("menuFocus", "Focus") + ":"
+        return model.focusModeName.isEmpty ? label : label + " " + model.focusModeName
     }
 
     // MARK: Day Plan body

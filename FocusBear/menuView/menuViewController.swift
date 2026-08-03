@@ -2739,6 +2739,9 @@ extension menuViewController {
         model.focusRemaining   = formatFocusRemaining(lblTimerFocusMode?.stringValue ?? "")
         model.focusedTodayText = lblTotalFocusedTimeToday?.stringValue ?? ""
         model.focusTaskTitle   = lblFocusModeIntention?.stringValue ?? ""
+        model.focusModeName    = currentRunningFocusType["name"] as? String ?? ""
+        // Super-strict sessions lock the focus goal (mirrors focusModeStateVc making the field read-only).
+        model.focusGoalEditable = (currentFocusModeStrictness != ._SUPER_STRICT_)
 
         // Inline focus-starter: offer the available block lists (focus modes) and default the duration
         // to the last session's. Only sync the duration/selection while the card is collapsed so a
