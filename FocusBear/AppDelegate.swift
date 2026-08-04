@@ -3785,9 +3785,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
             var micStatus: MicStatus?
             if isMicAlreadyOn{
-                let status = micMonitor().microphoneStatus()
-                print(status)
+                let monitor = micMonitor()
+                let status = monitor.microphoneStatus()
                 micStatus = status
+                // Instrumentation: per-app mic attribution (microphoneStatus) has been observed to return
+                // an empty/partial apps list on some Bluetooth inputs — the browser then never matches a
+                // meeting app and, because micStatus is non-nil, the runningAppNames fallback below is
+                // skipped, so a browser call goes undetected. Log the input route + attributed apps so a
+                // meeting-detection miss can be correlated with the active mic device.
+                let micApps = status.apps.map { "\($0.appName)[\($0.bundleID)]" }.joined(separator: ", ")
+                addLog(text: "func checkIsMeetingsGoingOn:- input=\(monitor.defaultInputDeviceInfo()) micApps(\(status.apps.count))=[\(micApps)]")
             }
             for i in 0..<arrFocusType.count{
                 let focus = arrFocusType[i]
@@ -3882,15 +3889,44 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 }
                             }
                         }
+                        // No known meeting *app* matched. Fall back to detecting a browser-based call by
+                        // its live meeting URL (e.g. Google Meet), independent of allowed_apps membership
+                        // and of per-app mic attribution (which misses browser calls on some Bluetooth
+                        // inputs — see the instrumentation above). Only reached with mic/camera/keep-awake
+                        // already on, so an idle open tab alone won't trip it.
+                        if detectBrowserMeeting(focus: focus, runningAppNames: runningAppNames){
+                            return;
+                        }
+                        addLog(text: "func checkIsMeetingsGoingOn:- no meeting app or browser-meeting matched (mic=\(isMicAlreadyOn) cam=\(isCameraAlreadyOn))")
                         handleMeetingEnded()
                         break;
                     }
                 }
             }
-            
-            
+
+
         }
-        
+
+    }
+
+    /// Fallback browser-meeting detection. The `allowed_apps` scan only matches a browser when the
+    /// Meetings focus type lists that browser AND the mic is attributed to it — the latter fails for
+    /// browser calls on some Bluetooth inputs (`microphoneStatus` returns no apps), so a Google Meet
+    /// call slips through with mic/camera live but nothing matched. Check any running, recognised
+    /// browser for a live meeting URL (`meet.google.com/<room>`, or the focus's `allowed_urls`) and
+    /// treat that as the meeting. Returns true if one was found + handled. Runs on the detection
+    /// background queue; reads browser tabs via the AppHang-safe `fetchBrowserAllTabUrlsInBackground`.
+    private func detectBrowserMeeting(focus: [String: Any], runningAppNames: Set<String>) -> Bool {
+        for name in runningAppNames {
+            guard let browser = getCurrentBrowserFrom(browserName: name) else { continue }
+            if isBrowserMeetingAllowed(focus: focus, browser: browser){
+                addLog(text: "func checkIsMeetingsGoingOn:- browser meeting detected in \(name)")
+                appUsedInAutoMeetingFocusMode = name
+                handleMeetingDetected()
+                return true
+            }
+        }
+        return false
     }
     
     private func handleMeetingEnded(){

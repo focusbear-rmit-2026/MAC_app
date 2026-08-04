@@ -224,24 +224,49 @@ bail:
 //is built-in mic on?
 -(BOOL)isMicOn
 {
-    BOOL isMicOn = NO;
-    //mic's ID
-    AudioObjectID builtInMic = 0;
-
-    
     //find mic
-    builtInMic = [self findBuiltInMic];
+    AudioObjectID builtInMic = [self findBuiltInMic];
     if( (0 != builtInMic) &&
         (NSControlStateValueOn == [self getMicState:builtInMic]) )
     {
         //dbg msg
         //os_log_debug(logHandle, "built-in mic is on");
-        
-        //set
-        isMicOn = YES;
+        return YES;
     }
 
-    return isMicOn;
+    // The built-in mic alone misses calls on Bluetooth/USB headphones: there the
+    // active input is the external device and the built-in mic sits idle, so a
+    // Google Meet on Bluetooth read as "mic off" and meeting detection lost its
+    // primary signal (symptom: Talking Clock announced the time mid-call). Also
+    // check the current default input device's running state so any active input
+    // route counts.
+    AudioObjectID defaultInput = [self defaultInputDevice];
+    if( (0 != defaultInput) &&
+        (defaultInput != builtInMic) &&
+        (NSControlStateValueOn == [self getMicState:defaultInput]) )
+    {
+        return YES;
+    }
+
+    return NO;
+}
+
+//current default input device (Bluetooth/USB/built-in), 0 if unavailable
+-(AudioObjectID)defaultInputDevice
+{
+    AudioObjectID deviceID = 0;
+    UInt32 propertySize = sizeof(deviceID);
+    AudioObjectPropertyAddress address = {
+        kAudioHardwarePropertyDefaultInputDevice,
+        kAudioObjectPropertyScopeGlobal,
+        kAudioObjectPropertyElementMain
+    };
+    OSStatus status = AudioObjectGetPropertyData(kAudioObjectSystemObject, &address, 0, NULL, &propertySize, &deviceID);
+    if(noErr != status)
+    {
+        return 0;
+    }
+    return deviceID;
 }
     
 

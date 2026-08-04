@@ -127,3 +127,56 @@ struct MicStatus {
     let isMicOn: Bool
     let apps: [MicApp]
 }
+
+extension micMonitor {
+    /// Diagnostic only: the current default input device as "name (transport)", e.g.
+    /// "WH-CH720N (Bluetooth)" or "MacBook Air Microphone (Built-in)". Used to correlate
+    /// meeting-detection misses with the active input route — per-process mic attribution
+    /// (`microphoneStatus`) has been observed to miss apps on some Bluetooth inputs.
+    func defaultInputDeviceInfo() -> String {
+        var deviceID = AudioObjectID(0)
+        var size = UInt32(MemoryLayout<AudioObjectID>.size)
+        var defaultAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultInputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        guard AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject),
+                                         &defaultAddress, 0, nil, &size, &deviceID) == noErr else {
+            return "unknown-input"
+        }
+        let name = stringProperty(deviceID, kAudioObjectPropertyName) ?? "unknown"
+        return "\(name) (\(transportTypeString(deviceID)))"
+    }
+
+    private func stringProperty(_ deviceID: AudioObjectID, _ selector: AudioObjectPropertySelector) -> String? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: selector,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var value: CFString = "" as CFString
+        var size = UInt32(MemoryLayout<CFString>.size)
+        guard AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &value) == noErr else { return nil }
+        return value as String
+    }
+
+    private func transportTypeString(_ deviceID: AudioObjectID) -> String {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyTransportType,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var transport = UInt32(0)
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        guard AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &transport) == noErr else { return "unknown" }
+        switch transport {
+        case kAudioDeviceTransportTypeBluetooth, kAudioDeviceTransportTypeBluetoothLE: return "Bluetooth"
+        case kAudioDeviceTransportTypeBuiltIn: return "Built-in"
+        case kAudioDeviceTransportTypeUSB: return "USB"
+        case kAudioDeviceTransportTypeVirtual: return "Virtual"
+        case kAudioDeviceTransportTypeAggregate: return "Aggregate"
+        default: return "other(\(transport))"
+        }
+    }
+}
