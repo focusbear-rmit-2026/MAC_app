@@ -7341,13 +7341,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             return;
         }
         if isFocusModeOn(){
-            if isUserOnMeeting{
-                addLog(text: "user is On Meeting auto extend focus session for 5 minutes")
-                allApiObject.capturePosthog(event: "auto-extend-focus-session", metadata: [:])
-                extendFocusModeFor(minutes: 5)
-                return;
-            }
-            
+            // Previously, being on a meeting silently auto-extended the session by 5 minutes and
+            // re-armed this warning timer, so the countdown visibly jumped up (e.g. 2 min -> 5 min)
+            // and looped for the whole call with no way to opt out (#2207). Instead, show the same
+            // end-warning window as any other session — it already offers an extend-by-N-minutes
+            // picker and an "I'm done, End focus session" button — so the user stays in control.
             if breakWarningWcObj != nil{
                 if breakWarningWcObj?.window?.isVisible ?? false{
                     addLog(text: "func showFocusModeEndWarningWindow: return reason breakWarning window is visible")
