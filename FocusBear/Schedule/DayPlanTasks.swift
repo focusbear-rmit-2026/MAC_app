@@ -177,6 +177,31 @@ final class EditOnClickTextField: NSTextField {
         }
         return super.performKeyEquivalent(with: event)
     }
+    // A task name is drawn transparently over the dark task panel / a coloured importance band, so
+    // its display colour is often white (or a band-contrast colour). While editing, AppKit shows the
+    // standard focused text-field surface, on which that light text is unreadable (reported: task
+    // text illegible when clicking a task to edit it). For the duration of editing give the field a
+    // real text box — system text background + matching text colour, which are guaranteed legible
+    // together in any appearance — then restore the display colour when editing ends.
+    private var displayTextColor: NSColor?
+    override func becomeFirstResponder() -> Bool {
+        let began = super.becomeFirstResponder()
+        if began, displayTextColor == nil {
+            displayTextColor = textColor
+            textColor = .textColor
+            backgroundColor = .textBackgroundColor
+            drawsBackground = true
+        }
+        return began
+    }
+    override func textDidEndEditing(_ notification: Notification) {
+        super.textDidEndEditing(notification)
+        if let restore = displayTextColor {
+            textColor = restore
+            drawsBackground = false
+            displayTextColor = nil
+        }
+    }
     // Keep the wrap width in sync with the field's actual width so a multi-line field reports a
     // taller intrinsic size and grows over multiple lines.
     override func setFrameSize(_ newSize: NSSize) {
