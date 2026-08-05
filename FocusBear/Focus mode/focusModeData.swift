@@ -10,6 +10,14 @@
 var focusModeTaskString = ""
 var taskCreatedByBlockPopup = ""
 
+// #2216: class focus session (teacher) TodoPlayer state — parity with windows-app-v2#1393.
+// When `classSessionTodoSessionId` is non-empty the TodoPlayer runs in class-session mode: it opens with
+// an empty task list + the `class_session_id`, and the frontend loads/completes the class checklist via
+// class-session APIs. `personalFocusTaskStringBackup` holds the student's personal `focusModeTaskString`
+// captured at session start, restored when the session ends. In-memory only (not persisted).
+var classSessionTodoSessionId = ""
+var personalFocusTaskStringBackup = ""
+
 var arrCurrentFocusTasks = [[String:Any]]()
 var arrFocusType = [[String:Any]]()
 var nextFocusSessionIntention = ""
@@ -1725,6 +1733,12 @@ func updateFocusModeIntention(intention:String){
 }
 
 func updateFocusModeTask(taskString:String){
+    // #2216: during a class focus session the TodoPlayer shows the FE-owned class checklist, not the
+    // student's personal tasks — never write the player's tasks back into the personal focus task list.
+    if !classSessionTodoSessionId.isEmpty{
+        addLog(text: "#2216: skip player→personal task sync during class session \(classSessionTodoSessionId)")
+        return
+    }
     focusModeTaskString = taskString
     taskCreatedByBlockPopup = ""
     getArrayOfTaskForApi()

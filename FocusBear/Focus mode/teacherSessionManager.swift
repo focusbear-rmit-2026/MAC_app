@@ -335,6 +335,25 @@ class teacherSessionManager: NSObject {
         sendTeacherSessionHeartbeat()// immediate first beat so the teacher roster updates right away
         appdelegate?.checkFcousAllowedApp()
 
+        // #2216: hand the TodoPlayer off to the frontend-owned class checklist (parity with windows#1393).
+        // Back up the student's personal focus tasks, remember the class_session_id, and force the
+        // player-facing task list empty so loadMetaDataForToDoPlayer emits tasks:[] + class_session_id (the
+        // frontend loads/completes the class checklist itself). Only on this committed start path, so an
+        // aborted start (the early-returns above) never strands the personal tasks.
+        personalFocusTaskStringBackup = focusModeTaskString
+        classSessionTodoSessionId = sessionId
+        focusModeTaskString = "[]"
+        arrCurrentFocusTasks = []
+
+        // #2216: force a fresh TodoPlayer load so it re-reads the class-session metadata (class_session_id
+        // + empty tasks) even when its tab was ALREADY selected — an already-loaded webview otherwise
+        // keeps showing the student's stale personal task list. Mirrors the pusher focus-mode-started flow.
+        if !getTaskPlayerVcObject().isViewLoaded{
+            getTaskPlayerVcObject().loadView()
+        }
+        getTaskPlayerVcObject().loadRequest()
+        shouldReloadTaskPlayer = true
+
         // Mirror the normal focus-start post-start UX (see focusModeData startFocusMode). Without this,
         // a student who joins while sitting on the Start Focus Session tab would keep seeing that stale
         // view — joining must move them into the active-session UI. Auto: surface the task player;
@@ -405,7 +424,16 @@ class teacherSessionManager: NSObject {
         closeTeacherUnlockRequestWindowIfVisible()
 
         // local cleanup mirrors the pusher focus-mode-finished handler (the server already finished the block, no api call here)
-        taskPlayerVcObj?.getToDosFromPlayer()
+        // #2216: during a class session the TodoPlayer holds the FE-owned class checklist (not the
+        // student's personal tasks) — do NOT sync it back into focusModeTaskString. Skip the player
+        // read-back and restore the personal tasks captured at session start (guaranteed finish path).
+        if classSessionTodoSessionId.isEmpty{
+            taskPlayerVcObj?.getToDosFromPlayer()
+        }else{
+            focusModeTaskString = personalFocusTaskStringBackup
+            classSessionTodoSessionId = ""
+            personalFocusTaskStringBackup = ""
+        }
         setAppIconForFocusModeScore(probability: nil)
         isSkipBreakActivityDuringFocus = false
         lastFocusModeTempInfo = nil

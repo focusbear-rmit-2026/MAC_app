@@ -131,7 +131,10 @@ class focusModeStateVc: NSViewController {
                 lblGettingTasks.isHidden = false
                 allApiObject.getAllTasks(completionHandler: {json in
                     DispatchQueue.main.async { [self] in
-                        comboBoxTask.isEnabled = true
+                        // #2216: during a class session the frontend owns the class checklist — keep the
+                        // task selector disabled so the student can't change the current task from here
+                        // (mirrors the focus goal being locked in a super-strict session).
+                        comboBoxTask.isEnabled = !teacherSessionManagerObject.isTeacherSessionActive()
                         lblGettingTasks.isHidden = true
                         if let json = json{
                             
@@ -395,6 +398,11 @@ class focusModeStateVc: NSViewController {
 
 extension focusModeStateVc: SearchableComboBoxDelegate{
     func itemSelectedByUser(comboBox: searchableComboBox) {
+        // #2216: never change the current task while a class session is active — the frontend owns the
+        // class checklist. Defensive: the combo box is also kept disabled during the session.
+        if teacherSessionManagerObject.isTeacherSessionActive(){
+            return
+        }
         if !comboBox.stringValue.isEmpty{
             comboBoxTask.isEnabled = false
             let currentTask = comboBoxTask.stringValue.lowercased()
