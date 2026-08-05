@@ -753,6 +753,14 @@ class ViewController: NSViewController {
     func collapseLeftPanel(){
         setLeftPaneWidthTemporarily(to: 50)
     }
+
+    /// True while the left sidebar is in its narrow, icon-only (collapsed) width. Used to decide whether
+    /// list rows should surface their title as a hover tooltip — their labels are hidden when collapsed.
+    /// (Collapsed width is 50; expanded is 230, so the 60 threshold cleanly separates the two.)
+    var isLeftPanelCollapsed: Bool {
+        guard splitView.subviews.count >= 2 else { return false }
+        return splitView.subviews[0].frame.width <= 60
+    }
     
     private var leftWidthConstraint: NSLayoutConstraint?
 

@@ -223,6 +223,11 @@ class mainWindowListBox: NSBox {
     override func mouseEntered(with event: NSEvent) {
         super.mouseEntered(with: event)
         if isEnabled{
+            // Collapsed sidebar hides the row labels, so surface the item's title on hover. Only enabled
+            // items reach here (they never carry a disableReason), so the disabled tooltip below is untouched.
+            if (mainViewControllerObj?.isLeftPanelCollapsed ?? false), !title.isEmpty{
+                showTooltip(sender: self, msg: title, preferredEdge: .maxX, maxWidthVal: 250, autoCloseOnMouseExit: true)
+            }
             hovered = true
             updateAppearance()   // reveals the hover ✕ (see updateAppearance)
             DispatchQueue.global().async {
@@ -242,20 +247,21 @@ class mainWindowListBox: NSBox {
                 }
             }
         }else{
+            // Disabled item: keep showing its disableReason (unchanged behavior).
             if !disableReason.isEmpty{
                 showTooltip(sender: self, msg: disableReason, preferredEdge: .maxX, maxWidthVal: 250, autoCloseOnMouseExit: true)
             }
         }
     }
-    
+
     override func mouseExited(with event: NSEvent) {
         super.mouseExited(with: event)
+        // Close whatever hover tooltip we showed (disableReason or the collapsed-title one).
+        closePopoverTooltipIfVisible()
         if isEnabled{
             hovered = false
             updateAppearance()   // hides the hover ✕ (see updateAppearance)
             NSCursor.arrow.set()
-        }else{
-            closePopoverTooltipIfVisible()
         }
     }
     
