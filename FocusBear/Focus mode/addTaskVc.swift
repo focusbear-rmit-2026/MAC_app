@@ -482,7 +482,12 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                                         self.presentAsSheet(self.enterPasswordVcObj!)
                                         self.enterPasswordVcObj?.parentVc = self
                                     }else{
-                                        if currentState == ._EVENING_HABIT_{
+                                        // This branch is only reached when currentState is
+                                        // ._POSTPONE_EVENING_HABIT_ / ._POSTPONE_FOCUS_SUMMARY_, so the
+                                        // evening check must be ._POSTPONE_EVENING_HABIT_ — comparing
+                                        // against ._EVENING_HABIT_ can never be true, so evening habits
+                                        // were never re-postponed on this path (#2213).
+                                        if currentState == ._POSTPONE_EVENING_HABIT_{
                                             getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                         }else if currentState == ._POSTPONE_FOCUS_SUMMARY_{
                                             getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
@@ -503,7 +508,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         
         extendFocusMode()
     }
-    
+
     func extendFocusMode(){
         allApiObject.capturePosthog(event: "extend-focus-session-from-popup", metadata: [:])
         self.dismiss(self)
