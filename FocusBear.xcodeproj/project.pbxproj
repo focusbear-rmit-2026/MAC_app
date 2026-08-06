@@ -113,6 +113,7 @@
 		52E1363556E99AFB2A80EAD6 /* FBTTTodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC187A9D44C75F344A462A1 /* FBTTTodayView.swift */; };
 		5790A2029EF7B5F4A5EF47B8 /* routinePostponedInfoVc+Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE3FA8163BBB36B02EF947DD /* routinePostponedInfoVc+Schedule.swift */; };
 		57ED7D19F5DC0C0735C2F34B /* ScheduleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B215C30047E6A2A37A923150 /* ScheduleViewController.swift */; };
+		59C0A9A1B1E57A66AB82EA0C /* BertWordPieceTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83A82B992463E408B12B0380 /* BertWordPieceTokenizer.swift */; };
 		5A3E0C8D2FA42A4700301BE2 /* HiddenFocusModeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3E0C8C2FA42A4700301BE2 /* HiddenFocusModeManager.swift */; };
 		5A6A3D7A2FAEB776007ED01F /* BreakFrequencyPromptVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6A3D792FAEB776007ED01F /* BreakFrequencyPromptVc.swift */; };
 		5A6A3D7C2FAEB7D8007ED01F /* BreakFrequencyStreakTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6A3D7B2FAEB7D8007ED01F /* BreakFrequencyStreakTracker.swift */; };
@@ -122,7 +123,9 @@
 		606CECE6CEC925F9058E4F6F /* FocusGlowBorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7450DC23C9B4D42F5A7EE22 /* FocusGlowBorderView.swift */; };
 		64206D6037E4BA7EA7DD14DA /* CalendarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6917674BE2A776D2F47EDE3 /* CalendarManager.swift */; };
 		64A623D93155CBE05F5C8FAE /* ToolVisibilityStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 804A3787372D3AE68B541AEF /* ToolVisibilityStore.swift */; };
+		7069D6D93E84DCBD6369291B /* RelevanceOnnxModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D26510E64AEF16D11162CD0 /* RelevanceOnnxModel.swift */; };
 		7476A99B06ABC3EB040F5633 /* DayPlanTasks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 060DBE94CCB418D4071A43CB /* DayPlanTasks.swift */; };
+		7803A49E247B4CB03B0185AC /* RelevanceModelDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B53899A75071A11A5946BC44 /* RelevanceModelDownloader.swift */; };
 		7D9EE7D2F809B0E3AEECD72F /* FocusGlowBorderManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F29AACE7F6D8CF44F9B3C22 /* FocusGlowBorderManager.swift */; };
 		7DC90FC77F5432F8C21012C0 /* firstViewController+Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DEF19BEE8458F980B62C5C3 /* firstViewController+Schedule.swift */; };
 		7DC9C1133BB9459EBD6AE8FB /* FocusMusicViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F482F6107468499198DC3FB2 /* FocusMusicViewModel.swift */; };
@@ -391,6 +394,7 @@
 		B9E5CE9C47907EAB2CF6BB48 /* libonnxruntime.1.19.2.dylib in Embed ORT */ = {isa = PBXBuildFile; fileRef = 9E77B89BB3F9938EEBB5BC80 /* libonnxruntime.1.19.2.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		BEAR0001 /* blocking_bear.png in Resources */ = {isa = PBXBuildFile; fileRef = BEARF001 /* blocking_bear.png */; };
 		BEED37F6C1373AFCB67BCF04 /* Pods_Focus_Bear.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E339C651791746EA3D066A6A /* Pods_Focus_Bear.framework */; };
+		C6BCFBBCBB91AA0D2788FEF4 /* KerasTextTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F28FFF50530C3773A8BC944 /* KerasTextTokenizer.swift */; };
 		CBS00001 /* CustomBlockingScheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBS00002 /* CustomBlockingScheduleTests.swift */; };
 		E0AA4E363AFEF2F7180E9848 /* TalkingClockManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2AFF50781FF64A00B0C9A64 /* TalkingClockManager.swift */; };
 		E8856235EAE1570EE7E26EF1 /* ORTBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = 276F8B5EEE7EC9C4B2DA2895 /* ORTBridge.mm */; };
@@ -565,10 +569,13 @@
 		5AA6CC872FBC0A1F007BD5D1 /* WiFiMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiMonitorService.swift; sourceTree = "<group>"; };
 		5AA6CC892FBC0A49007BD5D1 /* WiFiProfileMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiProfileMapping.swift; sourceTree = "<group>"; };
 		5AA6CC8B2FBC0A91007BD5D1 /* officeModeSettingsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = officeModeSettingsVc.swift; sourceTree = "<group>"; };
+		5D26510E64AEF16D11162CD0 /* RelevanceOnnxModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RelevanceOnnxModel.swift; path = FocusBear/RelevanceModel/RelevanceOnnxModel.swift; sourceTree = "<group>"; };
 		5F7C4CC4D1F38E18CC9D5E55 /* FocusBear-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "FocusBear-Release.xcconfig"; sourceTree = "<group>"; };
 		6EC187A9D44C75F344A462A1 /* FBTTTodayView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FBTTTodayView.swift; sourceTree = "<group>"; };
+		6F28FFF50530C3773A8BC944 /* KerasTextTokenizer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = KerasTextTokenizer.swift; path = FocusBear/RelevanceModel/KerasTextTokenizer.swift; sourceTree = "<group>"; };
 		7F29AACE7F6D8CF44F9B3C22 /* FocusGlowBorderManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusGlowBorderManager.swift; sourceTree = "<group>"; };
 		804A3787372D3AE68B541AEF /* ToolVisibilityStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolVisibilityStore.swift; sourceTree = "<group>"; };
+		83A82B992463E408B12B0380 /* BertWordPieceTokenizer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BertWordPieceTokenizer.swift; path = FocusBear/RelevanceModel/BertWordPieceTokenizer.swift; sourceTree = "<group>"; };
 		889FCE3E1080DC22C97AB6D8 /* Pods-Focus Bear.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Focus Bear.debug.xcconfig"; path = "Target Support Files/Pods-Focus Bear/Pods-Focus Bear.debug.xcconfig"; sourceTree = "<group>"; };
 		8E5DEAA96AD3FCA949FF525B /* Local.xcconfig.example */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = Local.xcconfig.example; sourceTree = "<group>"; };
 		8F02AF412A751A5200BA6536 /* blockedAppsVc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = blockedAppsVc.swift; sourceTree = "<group>"; };
@@ -857,6 +864,7 @@
 		ABH00011 /* ScheduleKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleKitTests.swift; sourceTree = "<group>"; };
 		ABH00021 /* DaysOfWeekTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaysOfWeekTests.swift; sourceTree = "<group>"; };
 		B215C30047E6A2A37A923150 /* ScheduleViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScheduleViewController.swift; sourceTree = "<group>"; };
+		B53899A75071A11A5946BC44 /* RelevanceModelDownloader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RelevanceModelDownloader.swift; path = FocusBear/RelevanceModel/RelevanceModelDownloader.swift; sourceTree = "<group>"; };
 		B6917674BE2A776D2F47EDE3 /* CalendarManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarManager.swift; sourceTree = "<group>"; };
 		BEARF001 /* blocking_bear.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = blocking_bear.png; sourceTree = "<group>"; };
 		CBS00002 /* CustomBlockingScheduleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomBlockingScheduleTests.swift; sourceTree = "<group>"; };
@@ -1751,6 +1759,10 @@
 				276F8B5EEE7EC9C4B2DA2895 /* ORTBridge.mm */,
 				AB35A2AEE01B3C26A9986891 /* ORTBridge.h */,
 				9E77B89BB3F9938EEBB5BC80 /* libonnxruntime.1.19.2.dylib */,
+				6F28FFF50530C3773A8BC944 /* KerasTextTokenizer.swift */,
+				83A82B992463E408B12B0380 /* BertWordPieceTokenizer.swift */,
+				5D26510E64AEF16D11162CD0 /* RelevanceOnnxModel.swift */,
+				B53899A75071A11A5946BC44 /* RelevanceModelDownloader.swift */,
 			);
 			name = RelevanceModel;
 			sourceTree = SOURCE_ROOT;
@@ -2417,6 +2429,10 @@
 				HSS00001 /* habitsStateVc+Schedule.swift in Sources */,
 				E8F2E77638719E0C61AFC6A9 /* TaskDeduplicationHelper.swift in Sources */,
 				E8856235EAE1570EE7E26EF1 /* ORTBridge.mm in Sources */,
+				C6BCFBBCBB91AA0D2788FEF4 /* KerasTextTokenizer.swift in Sources */,
+				59C0A9A1B1E57A66AB82EA0C /* BertWordPieceTokenizer.swift in Sources */,
+				7069D6D93E84DCBD6369291B /* RelevanceOnnxModel.swift in Sources */,
+				7803A49E247B4CB03B0185AC /* RelevanceModelDownloader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

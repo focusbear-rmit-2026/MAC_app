@@ -1,0 +1,117 @@
+//
+//  RelevanceModelDownloader.swift
+//  Focus Bear
+//
+//  First-run download + cache of the relevance model artifacts (~34 MB) — they're not bundled so
+//  they can be updated without an app release. Files land in Application Support/RelevanceModel/;
+//  once all are present, RelevanceOnnxModel loads from there. Until then the caller falls back to
+//  the existing path. See RelevanceModel/README.
+//
+
+import Foundation
+
+enum RelevanceModelArtifacts {
+    /// Bump when the model is retrained so clients re-download into a fresh versioned folder.
+    static let version = "v1"
+
+    // TODO(hosting): move to a Focus Bear-owned CDN before wide rollout. Interim dev host is set at
+    // build/config time; keep the `<version>/<file>` layout so `version` bumps invalidate the cache.
+    static let baseURL = "https://pub-e8f70f74a2cf4722964f7214b4bebae0.r2.dev/relevance-model"
+
+    static let textcnn = "textcnn_cosine.onnx"
+    static let minilm = "minilm_quantized.onnx"
+    static let wordIndex = "tokenizer_word_index.json"
+    static let vocab = "minilm_vocab.txt"
+    static let all = [textcnn, minilm, wordIndex, vocab]
+
+    /// Local cache directory (…/Application Support/RelevanceModel/<version>/).
+    static func cacheDirectory() -> URL? {
+        guard let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+        return base.appendingPathComponent("RelevanceModel/\(version)", isDirectory: true)
+    }
+
+    static func localURL(_ file: String) -> URL? {
+        cacheDirectory()?.appendingPathComponent(file)
+    }
+
+    static var allPresent: Bool {
+        guard let dir = cacheDirectory() else { return false }
+        return all.allSatisfy { file in
+            let path = dir.appendingPathComponent(file).path
+            guard let size = try? FileManager.default.attributesOfItem(atPath: path)[.size] as? Int else { return false }
+            return size > 0
+        }
+    }
+}
+
+final class RelevanceModelDownloader {
+    static let shared = RelevanceModelDownloader()
+    private let queue = DispatchQueue(label: "relevance.model.download")
+    private var inFlight = false
+
+    private init() {}
+
+    /// Ensures all artifacts are cached, downloading any that are missing. `completion` runs with the
+    /// cache directory once everything is present, or nil on failure / no network. Idempotent and
+    /// safe to call on every relevance check — it no-ops when already present or already downloading.
+    func ensureAvailable(completion: @escaping (URL?) -> Void) {
+        if RelevanceModelArtifacts.allPresent {
+            completion(RelevanceModelArtifacts.cacheDirectory())
+            return
+        }
+        queue.async { [weak self] in
+            guard let self = self, !self.inFlight else { completion(nil); return }
+            self.inFlight = true
+            defer { self.inFlight = false }
+
+            guard let dir = RelevanceModelArtifacts.cacheDirectory() else { completion(nil); return }
+            do {
+                try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            } catch {
+                addLog(text: "RelevanceModelDownloader: can't create cache dir: \(error.localizedDescription)")
+                completion(nil); return
+            }
+
+            for file in RelevanceModelArtifacts.all {
+                let dest = dir.appendingPathComponent(file)
+                if let size = try? FileManager.default.attributesOfItem(atPath: dest.path)[.size] as? Int, size > 0 {
+                    continue
+                }
+                guard let remote = URL(string: "\(RelevanceModelArtifacts.baseURL)/\(RelevanceModelArtifacts.version)/\(file)"),
+                      self.downloadSync(from: remote, to: dest) else {
+                    addLog(text: "RelevanceModelDownloader: failed to fetch \(file) — will retry next run.")
+                    completion(nil); return
+                }
+            }
+            addLog(text: "RelevanceModelDownloader: all relevance artifacts cached at \(dir.path)")
+            completion(dir)
+        }
+    }
+
+    /// Blocking download to a temp file then atomic move — runs on the private queue.
+    private func downloadSync(from remote: URL, to dest: URL) -> Bool {
+        let sem = DispatchSemaphore(value: 0)
+        var ok = false
+        let task = URLSession.shared.downloadTask(with: remote) { tmp, response, error in
+            defer { sem.signal() }
+            guard let tmp = tmp, error == nil,
+                  let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+                return
+            }
+            do {
+                if FileManager.default.fileExists(atPath: dest.path) {
+                    try FileManager.default.removeItem(at: dest)
+                }
+                try FileManager.default.moveItem(at: tmp, to: dest)
+                ok = true
+            } catch {
+                addLog(text: "RelevanceModelDownloader: move failed: \(error.localizedDescription)")
+            }
+        }
+        task.resume()
+        sem.wait()
+        return ok
+    }
+}
