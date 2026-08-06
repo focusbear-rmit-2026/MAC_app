@@ -14,9 +14,10 @@ enum RelevanceModelArtifacts {
     /// Bump when the model is retrained so clients re-download into a fresh versioned folder.
     static let version = "v1"
 
-    // TODO(hosting): move to a Focus Bear-owned CDN before wide rollout. Interim dev host is set at
-    // build/config time; keep the `<version>/<file>` layout so `version` bumps invalidate the cache.
-    static let baseURL = "https://pub-e8f70f74a2cf4722964f7214b4bebae0.r2.dev/relevance-model"
+    // Dedicated public R2 bucket `focusbear-relevance-model`. The `<version>/<file>` layout means a
+    // `version` bump invalidates the cache. NOTE: currently in a personal Cloudflare account — move
+    // to a Focus Bear-org bucket (and consider signed URLs rather than public) before wide rollout.
+    static let baseURL = "https://pub-a0f25f0d306d4d63bbfc52aa624ae389.r2.dev"
 
     static let textcnn = "textcnn_cosine.onnx"
     static let minilm = "minilm_quantized.onnx"
