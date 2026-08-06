@@ -32,3 +32,8 @@ build/
 # The provision profiles in Certificates/ are intentionally tracked; this only
 # excludes the leaked-token note that used to live here.
 Certificates/Upload sentry files using sentry cli.rtfd/
+
+# Vendored ONNX Runtime (fetched via scripts/fetch-onnxruntime.sh, not committed) — see
+# FocusBear/RelevanceModel/README.md. Large prebuilt lib; pinned + checksum-verified.
+FocusBear/RelevanceModel/onnxruntime/lib/
+FocusBear/RelevanceModel/onnxruntime/include/

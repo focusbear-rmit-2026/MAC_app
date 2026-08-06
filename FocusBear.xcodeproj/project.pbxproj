@@ -83,7 +83,6 @@
 		13C6BF0B2FB19D750074DD63 /* ORSSerial in Frameworks */ = {isa = PBXBuildFile; productRef = 13C6BF0A2FB19D750074DD63 /* ORSSerial */; };
 		13C6BF0E2FB211CA0074DD63 /* audioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */; };
 		13C6C2A22FE2615E00B1F278 /* BreakWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */; };
-		AA2091010000000000002091 /* DragAwayPostponePrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2091020000000000002091 /* DragAwayPostponePrompt.swift */; };
 		13CBE7652F07E9660025544E /* enableAIBlockingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */; };
 		13D5D0112FD0396E00AB474C /* micMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D5D0102FD0396E00AB474C /* micMonitor.swift */; };
 		13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */; };
@@ -383,17 +382,21 @@
 		8FFF70652858A59800164E2B /* GraphDaysDuration.html in Resources */ = {isa = PBXBuildFile; fileRef = 8FFF70642858A59800164E2B /* GraphDaysDuration.html */; };
 		A1B2C3D40000000000000010 /* TaskPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000011 /* TaskPlayerView.swift */; };
 		A1B2C3D40000000000000020 /* MusicTrackTitleFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000021 /* MusicTrackTitleFetcher.swift */; };
+		AA2091010000000000002091 /* DragAwayPostponePrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2091020000000000002091 /* DragAwayPostponePrompt.swift */; };
 		AAW00002 /* alwaysAllowedAppsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAW00001 /* alwaysAllowedAppsVc.swift */; };
 		ABH00001 /* AppBlockingHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00002 /* AppBlockingHelper.swift */; };
 		ABH00003 /* AppBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00004 /* AppBlockingTests.swift */; };
 		ABH00010 /* ScheduleKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00011 /* ScheduleKitTests.swift */; };
 		ABH00020 /* DaysOfWeekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00021 /* DaysOfWeekTests.swift */; };
+		B9E5CE9C47907EAB2CF6BB48 /* libonnxruntime.1.19.2.dylib in Embed ORT */ = {isa = PBXBuildFile; fileRef = 9E77B89BB3F9938EEBB5BC80 /* libonnxruntime.1.19.2.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		BEAR0001 /* blocking_bear.png in Resources */ = {isa = PBXBuildFile; fileRef = BEARF001 /* blocking_bear.png */; };
 		BEED37F6C1373AFCB67BCF04 /* Pods_Focus_Bear.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E339C651791746EA3D066A6A /* Pods_Focus_Bear.framework */; };
 		CBS00001 /* CustomBlockingScheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBS00002 /* CustomBlockingScheduleTests.swift */; };
 		E0AA4E363AFEF2F7180E9848 /* TalkingClockManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2AFF50781FF64A00B0C9A64 /* TalkingClockManager.swift */; };
+		E8856235EAE1570EE7E26EF1 /* ORTBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = 276F8B5EEE7EC9C4B2DA2895 /* ORTBridge.mm */; };
 		E8F2E77638719E0C61AFC6A9 /* TaskDeduplicationHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD4B08AEBA86C6C7E5F11357 /* TaskDeduplicationHelper.swift */; };
 		ESD00001 /* EveningShutdownScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = ESD00002 /* EveningShutdownScreen.swift */; };
+		F8D86C780DCCA30475AF0CCF /* libonnxruntime.1.19.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 9E77B89BB3F9938EEBB5BC80 /* libonnxruntime.1.19.2.dylib */; };
 		FB0000000000000000000002 /* BlockingScheduleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0000000000000000000001 /* BlockingScheduleStore.swift */; };
 		FB0000000000000000000004 /* BlockingScheduleListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0000000000000000000003 /* BlockingScheduleListView.swift */; };
 		FB0000000000000000000006 /* BlockingScheduleCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0000000000000000000005 /* BlockingScheduleCalendarView.swift */; };
@@ -433,6 +436,17 @@
 				137CD6042D9D4ACC00A8385A /* Sparkle.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		511B1AF418874EC559B3C970 /* Embed ORT */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				B9E5CE9C47907EAB2CF6BB48 /* libonnxruntime.1.19.2.dylib in Embed ORT */,
+			);
+			name = "Embed ORT";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		8F77575828DD96D9007A976D /* CopyFiles */ = {
@@ -522,7 +536,6 @@
 		13C6BF0A2FB199E70074DD63 /* EmojiSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiSync.swift; sourceTree = "<group>"; };
 		13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = audioRecorder.swift; sourceTree = "<group>"; };
 		13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakWarningView.swift; sourceTree = "<group>"; };
-		AA2091020000000000002091 /* DragAwayPostponePrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragAwayPostponePrompt.swift; sourceTree = "<group>"; };
 		13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = enableAIBlockingVc.swift; sourceTree = "<group>"; };
 		13D5D0102FD0396E00AB474C /* micMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = micMonitor.swift; sourceTree = "<group>"; };
 		13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineStateVc.swift; sourceTree = "<group>"; };
@@ -544,6 +557,7 @@
 		274E0F4828902CF1000234A3 /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		274E0F4B28902E28000234A3 /* Auth0.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Auth0.plist; sourceTree = "<group>"; };
 		274E671528951DDC0030163F /* AllApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllApi.swift; sourceTree = "<group>"; };
+		276F8B5EEE7EC9C4B2DA2895 /* ORTBridge.mm */ = {isa = PBXFileReference; includeInIndex = 1; name = ORTBridge.mm; path = FocusBear/RelevanceModel/ORTBridge.mm; sourceTree = "<group>"; };
 		2DEF19BEE8458F980B62C5C3 /* firstViewController+Schedule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "firstViewController+Schedule.swift"; sourceTree = "<group>"; };
 		5A3E0C8C2FA42A4700301BE2 /* HiddenFocusModeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiddenFocusModeManager.swift; sourceTree = "<group>"; };
 		5A6A3D792FAEB776007ED01F /* BreakFrequencyPromptVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakFrequencyPromptVc.swift; sourceTree = "<group>"; };
@@ -831,10 +845,13 @@
 		923E7D62446EEA6F34FEF7D1 /* RestoreHiddenToolsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreHiddenToolsView.swift; sourceTree = "<group>"; };
 		94DF69464D5A8BE205353BD5 /* TaskDeduplicationHelperTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TaskDeduplicationHelperTests.swift; sourceTree = "<group>"; };
 		9989E00FEA15521B6C3FE5FE /* ScheduleKit.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScheduleKit.swift; sourceTree = "<group>"; };
+		9E77B89BB3F9938EEBB5BC80 /* libonnxruntime.1.19.2.dylib */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = "compiled.mach-o.dylib"; name = libonnxruntime.1.19.2.dylib; path = FocusBear/RelevanceModel/onnxruntime/lib/libonnxruntime.1.19.2.dylib; sourceTree = "<group>"; };
 		A1B2C3D40000000000000011 /* TaskPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskPlayerView.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000021 /* MusicTrackTitleFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicTrackTitleFetcher.swift; sourceTree = "<group>"; };
 		A3571BB6ACEBCB217ABDB57F /* FocusBear-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "FocusBear-Debug.xcconfig"; sourceTree = "<group>"; };
+		AA2091020000000000002091 /* DragAwayPostponePrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragAwayPostponePrompt.swift; sourceTree = "<group>"; };
 		AAW00001 /* alwaysAllowedAppsVc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = alwaysAllowedAppsVc.swift; sourceTree = "<group>"; };
+		AB35A2AEE01B3C26A9986891 /* ORTBridge.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = ORTBridge.h; path = FocusBear/RelevanceModel/ORTBridge.h; sourceTree = "<group>"; };
 		ABH00002 /* AppBlockingHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingHelper.swift; sourceTree = "<group>"; };
 		ABH00004 /* AppBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingTests.swift; sourceTree = "<group>"; };
 		ABH00011 /* ScheduleKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleKitTests.swift; sourceTree = "<group>"; };
@@ -895,6 +912,7 @@
 				13C6BF0B2FB19D750074DD63 /* ORSSerial in Frameworks */,
 				13AAC9DC2D97CC76000AD619 /* WebKit.framework in Frameworks */,
 				BEED37F6C1373AFCB67BCF04 /* Pods_Focus_Bear.framework in Frameworks */,
+				F8D86C780DCCA30475AF0CCF /* libonnxruntime.1.19.2.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1559,6 +1577,7 @@
 				8FBE2E152B65191100482A6E /* FB-Firefox.mov */,
 				6EC187A9D44C75F344A462A1 /* FBTTTodayView.swift */,
 				FD7C1298E1FEC6F3419C2616 /* Schedule */,
+				93B27B97FD13BF479EC84EF9 /* RelevanceModel */,
 			);
 			path = FocusBear;
 			sourceTree = "<group>";
@@ -1726,6 +1745,16 @@
 			path = Onboarding;
 			sourceTree = "<group>";
 		};
+		93B27B97FD13BF479EC84EF9 /* RelevanceModel */ = {
+			isa = PBXGroup;
+			children = (
+				276F8B5EEE7EC9C4B2DA2895 /* ORTBridge.mm */,
+				AB35A2AEE01B3C26A9986891 /* ORTBridge.h */,
+				9E77B89BB3F9938EEBB5BC80 /* libonnxruntime.1.19.2.dylib */,
+			);
+			name = RelevanceModel;
+			sourceTree = SOURCE_ROOT;
+		};
 		B5F745AF8D0F3894431BA120 /* Config */ = {
 			isa = PBXGroup;
 			children = (
@@ -1797,6 +1826,7 @@
 				137CD6052D9D4ACC00A8385A /* Embed Frameworks */,
 				FBE57001FBE57001FBE57001 /* Embed esptool */,
 				5E71D5F0000000005E71D5F0 /* [Sentry] Upload Debug Symbols */,
+				511B1AF418874EC559B3C970 /* Embed ORT */,
 			);
 			buildRules = (
 			);
@@ -1972,23 +2002,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		5E71D5F0000000005E71D5F0 /* [Sentry] Upload Debug Symbols */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/scripts/upload-dsyms.sh",
-			);
-			name = "[Sentry] Upload Debug Symbols";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Uploads dSYMs to Sentry so crash + App-Hang stacks symbolicate (Mac-App#1954/#1955).\n# No-ops for non-Release builds. See scripts/upload-dsyms.sh and docs/sentry-dsym-upload.md.\n\"${SRCROOT}/scripts/upload-dsyms.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		3F268440EC1EB9CD7C1DB69B /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -2004,6 +2017,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Focus Bear/Pods-Focus Bear-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		5E71D5F0000000005E71D5F0 /* [Sentry] Upload Debug Symbols */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/upload-dsyms.sh",
+			);
+			name = "[Sentry] Upload Debug Symbols";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Uploads dSYMs to Sentry so crash + App-Hang stacks symbolicate (Mac-App#1954/#1955).\n# No-ops for non-Release builds. See scripts/upload-dsyms.sh and docs/sentry-dsym-upload.md.\n\"${SRCROOT}/scripts/upload-dsyms.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		FBE57001FBE57001FBE57001 /* Embed esptool */ = {
@@ -2386,6 +2416,7 @@
 				5790A2029EF7B5F4A5EF47B8 /* routinePostponedInfoVc+Schedule.swift in Sources */,
 				HSS00001 /* habitsStateVc+Schedule.swift in Sources */,
 				E8F2E77638719E0C61AFC6A9 /* TaskDeduplicationHelper.swift in Sources */,
+				E8856235EAE1570EE7E26EF1 /* ORTBridge.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2666,11 +2697,19 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)",
 				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/FocusBear/RelevanceModel/onnxruntime/include",
+				);
 				INFOPLIST_FILE = FocusBear/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/FocusBear/RelevanceModel/onnxruntime/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11;
 				MARKETING_VERSION = 3.33;
@@ -2698,11 +2737,19 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)",
 				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/FocusBear/RelevanceModel/onnxruntime/include",
+				);
 				INFOPLIST_FILE = FocusBear/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/FocusBear/RelevanceModel/onnxruntime/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11;
 				MARKETING_VERSION = 3.33;
