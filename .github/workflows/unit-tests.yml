@@ -52,6 +52,11 @@ jobs:
       - name: Fetch Sparkle.framework
         run: ./scripts/fetch-sparkle.sh
 
+      # ONNX Runtime (relevance model) is not committed either; fetch the pinned,
+      # checksum-verified arm64 dylib + headers the project links/embeds.
+      - name: Fetch ONNX Runtime
+        run: ./scripts/fetch-onnxruntime.sh
+
       - name: Run logic unit tests
         run: |
           set -o pipefail
