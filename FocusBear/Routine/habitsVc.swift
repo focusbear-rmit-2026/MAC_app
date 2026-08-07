@@ -263,8 +263,18 @@ class habitsVc: NSViewController {
     @objc func showFocusSummaryViewAgain(){
         DispatchQueue.main.async {
             addLog(text: "Showing Focus Summary again")
-            
+
+            // If the user spent the one-minute break in another app's native full screen (it sits on its
+            // own Space), Focus Bear can't surface over it — activate() alone is refused on macOS 14+.
+            // Drop that app out of full screen (same AXFullScreen helper the blocking flow uses; it's a
+            // no-op if the app isn't full screen) so we're back on the desktop Space, then show the
+            // summary and bring Focus Bear forward.
+            if let frontApp = NSWorkspace.shared.frontmostApplication,
+               frontApp.processIdentifier != NSRunningApplication.current.processIdentifier {
+                exitFullScreen(runningApp: frontApp)
+            }
             self.showFocusSummaryView()
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
     
