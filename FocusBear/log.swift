@@ -50,17 +50,24 @@ class Log: TextOutputStream {
     private init() {}
 
     func write(_ string: String) {
-        guard let log = DebugLogsURL else { return }
+        guard let log = DebugLogsURL, let data = string.data(using: .utf8) else { return }
 
         Self.queue.async {
-            if let handle = try? FileHandle(forWritingTo: log) {
-                handle.seekToEndOfFile()
-                if let data = string.data(using: .utf8) {
-                    handle.write(data)
-                }
-                handle.closeFile()
-            } else {
-                try? string.data(using: .utf8)?.write(to: log)
+            // The deprecated non-throwing FileHandle seek/write raise an Objective-C
+            // NSException on failure (e.g. NSFileHandleOperationException when the volume
+            // is full) that Swift cannot catch — it hits the terminate handler and aborts
+            // the whole app. Use the throwing API and swallow errors so logging can never
+            // crash the process. (Root cause of the SIGABRT-on-full-disk crashes.)
+            guard let handle = try? FileHandle(forWritingTo: log) else {
+                try? data.write(to: log) // file doesn't exist yet — create it
+                return
+            }
+            defer { try? handle.close() }
+            do {
+                try handle.seekToEnd()
+                try handle.write(contentsOf: data)
+            } catch {
+                // out of space / write error — drop this line rather than abort
             }
         }
     }
