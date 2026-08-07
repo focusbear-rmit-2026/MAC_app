@@ -1420,9 +1420,14 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         }
 
         // Importance: tint the whole task row with the band colour and draw its text in a
-        // high-contrast colour (instead of a small dot).
+        // high-contrast colour (instead of a small dot). Skip the band foreground when the row is
+        // selected — the selection highlight below replaces the band, and the band's contrast colour
+        // (black on a light band) would be illegible on the dark highlight. Keeping the default label
+        // colours (white in dark appearance) stays readable on the highlight. Reproduced when a
+        // single project makes its task selected by default.
+        let isSelected = selectedTaskIDs.contains(task.id)
         let importanceBG = DayPlanTask.outcomeColor(task.outcome)
-        if let fg = DayPlanTask.outcomeForeground(task.outcome) {
+        if !isSelected, let fg = DayPlanTask.outcomeForeground(task.outcome) {
             if !task.done { name.textColor = fg }
             dur.textColor = fg.withAlphaComponent(0.85)
             if task.blockKey != nil { timeBadge.contentTintColor = fg }
@@ -1440,7 +1445,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         row.alignment = .top   // top-align so a wrapped (multi-line) name keeps the controls aligned
         row.spacing = 6
         row.edgeInsets = NSEdgeInsets(top: 10, left: 8, bottom: 14, right: 8)   // breathing room around the importance tint; extra at the bottom because the multi-line name label under-reports its height, so its last line otherwise sits tight against the colour band's lower edge
-        if selectedTaskIDs.contains(task.id) {   // selection highlight wins over the importance tint
+        if isSelected {   // selection highlight wins over the importance tint
             row.wantsLayer = true
             row.layer?.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.15).cgColor
             row.layer?.cornerRadius = 4

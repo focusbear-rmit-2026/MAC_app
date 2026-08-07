@@ -965,14 +965,26 @@ class scheduleViewController: NSViewController {
     }
 
     /// Refresh the date label + today indicator to match `selectedDate`.
+    // Cached formatters: creating a DateFormatter (or reassigning its dateFormat) triggers an
+    // expensive ICU pattern regeneration. updateDateBar runs on the main thread on every reload/day
+    // change, and building fresh formatters each time stalled it long enough to trip Sentry's
+    // "App Hanging (>= 2000 ms)" in ScheduleViewController.updateDateBar. Reuse per-format instances.
+    private static let dateFormatterThisYear: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "EEE d MMM"; return f
+    }()
+    private static let dateFormatterOtherYear: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "EEE d MMM yyyy"; return f
+    }()
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "h:mm a"; return f
+    }()
+
     private func updateDateBar() {
-        let f = DateFormatter()
-        f.dateFormat = Calendar.current.isDate(selectedDate, equalTo: Date(), toGranularity: .year)
-            ? "EEE d MMM" : "EEE d MMM yyyy"
+        let sameYear = Calendar.current.isDate(selectedDate, equalTo: Date(), toGranularity: .year)
+        let f = sameYear ? Self.dateFormatterThisYear : Self.dateFormatterOtherYear
         dateLabelButton.title = f.string(from: selectedDate)   // date only — "Today" goes below
         if isViewingToday {
-            let tf = DateFormatter(); tf.dateFormat = "h:mm a"
-            todayIndicatorLabel.stringValue = ScheduleText.today.uppercased() + " · " + tf.string(from: Date())
+            todayIndicatorLabel.stringValue = ScheduleText.today.uppercased() + " · " + Self.timeFormatter.string(from: Date())
         } else {
             todayIndicatorLabel.stringValue = ""
         }
