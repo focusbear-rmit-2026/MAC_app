@@ -881,6 +881,18 @@ final class DayPlanTaskStore {
         }
     }
 
+    /// Snooze a task to `to`. Same as moveTask (re-points the day + planned_date), but also pushes the
+    /// new date onto the backing to-do's `due_date` — snoozing is an explicit "this is due later",
+    /// which a plain day-to-day drag is not. No-op on the due date for local-only tasks (no to-do).
+    func snooze(id: String, from: Date, to: Date) {
+        let snapshot = byDay[dayKey(from)]?.first(where: { $0.id == id })
+        moveTask(id: id, from: from, to: to)
+        if let task = snapshot, let sid = task.sourceTaskId {
+            DayPlanSync.shared.setTodoDueDate(todoID: sid, title: task.title,
+                                              quadrant: task.eisenhowerQuadrant ?? 4, dueDate: to)
+        }
+    }
+
     private func load() {
         guard let data = UserDefaults.standard.data(forKey: key),
               let decoded = try? JSONDecoder().decode([String: [DayPlanTask]].self, from: data) else { return }
@@ -2214,10 +2226,10 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         guard let input = snoozeField?.stringValue,
               let target = parseSnoozeDate(input, from: date) else { NSSound.beep(); return }
         if snoozeBulk {
-            for id in selectedTaskIDs { DayPlanTaskStore.shared.moveTask(id: id, from: date, to: target) }
+            for id in selectedTaskIDs { DayPlanTaskStore.shared.snooze(id: id, from: date, to: target) }
             selectedTaskIDs.removeAll()
         } else if let id = snoozeTaskID {
-            DayPlanTaskStore.shared.moveTask(id: id, from: date, to: target)
+            DayPlanTaskStore.shared.snooze(id: id, from: date, to: target)
         } else {
             NSSound.beep(); return
         }

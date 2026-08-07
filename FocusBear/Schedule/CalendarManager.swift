@@ -483,4 +483,19 @@ final class DayPlanSync {
         guard let req = request("/to-do", method: "PUT", body: body) else { return }
         send(req, label: "setTodoTitle")
     }
+
+    /// Push a snoozed Day Plan task's new due date onto its backend to-do. Snoozing is an explicit
+    /// "this is now due later" (unlike a plain day-to-day move, which only re-points `planned_date`),
+    /// so it writes `due_date`. Uses the `PUT /to-do` upsert (the planner PATCH /to-do/:id only
+    /// accepts planned_* fields); echoes title + quadrant to avoid clobbering them.
+    func setTodoDueDate(todoID: String, title: String, quadrant: Int, dueDate: Date) {
+        let body: [String: Any] = [
+            "id": todoID,
+            "title": title,
+            "eisenhower_quadrant": quadrant,
+            "due_date": getStringFromDateInUtc(date: dueDate, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+        ]
+        guard let req = request("/to-do", method: "PUT", body: body) else { return }
+        send(req, label: "setTodoDueDate")
+    }
 }
