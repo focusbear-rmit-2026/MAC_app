@@ -73,6 +73,7 @@ enum ScheduleText {
     static var eventSaveError: String { t("eventSaveError", "Couldn't save the event. Check calendar access and try again.") }
     static var showEarlierEvents: String { t("showEarlierEvents", "Show events from earlier today") }
     static var hideDeepWork: String { t("hideDeepWork", "Hide deep work blocks") }
+    static var hideHabitBlocks: String { t("hideHabitBlocks", "Hide habits") }
     static var showDismissedEvents: String { t("showDismissedEvents", "Show dismissed events") }
     static var showEventAgain: String { t("showEventAgain", "Show this event again") }
     static var hideEvent: String { t("hideEvent", "Hide this event") }
@@ -571,6 +572,13 @@ class scheduleViewController: NSViewController {
         set { UserDefaults.standard.set(newValue, forKey: "kUserdefaultsHideDeepWorkInDayPlan") }
     }
 
+    /// Persisted setting: hide habit/routine blocks in the Day Plan, so the user sees just their
+    /// calendar events. The habits still run as normal; the routine accordion rows are just not drawn.
+    private var hideHabitBlocks: Bool {
+        get { UserDefaults.standard.bool(forKey: "kUserdefaultsHideHabitsInDayPlan") }
+        set { UserDefaults.standard.set(newValue, forKey: "kUserdefaultsHideHabitsInDayPlan") }
+    }
+
     /// Persisted setting: show events the user dismissed (✕) — rendered struck-through with a 👀 to
     /// bring them back — instead of hiding them.
     private var showDismissedEvents: Bool {
@@ -579,7 +587,13 @@ class scheduleViewController: NSViewController {
     }
 
     /// Explicit expand/collapse overrides for routine sections (accordions), keyed by
-    /// "routineName|dayOrdinal". Absent → default: collapsed on future days, expanded today/past.
+    /// "routineName|dayOrdinal|sectionId", where sectionId is the section's FIRST habit id. A day can
+    /// hold several same-named routine sections (e.g. two "Morning routine habits" runs split by a
+    /// meeting), and keying by name alone made them all toggle together (#accordion). The first-habit
+    /// id is unique per section AND stable across reloads — unlike the section start, which for the
+    /// active routine re-packs from `now` every reload, so a start-keyed override went stale between
+    /// the header click and the re-render and the toggle silently did nothing. Absent → default:
+    /// collapsed on future days, expanded today/past.
     private var routineCollapseOverrides: [String: Bool] = [:]
 
     /// #2010: routine sections surfaced as *earlier today* items under the "Show events from earlier
@@ -588,19 +602,19 @@ class scheduleViewController: NSViewController {
     /// unlike the active routine. Rebuilt each reload(); a user click still overrides (see below).
     private var earlierRoutineNames: Set<String> = []
 
-    private func routineCollapseKey(_ name: String, date: Date) -> String {
-        "\(name)|\(Int(date.timeIntervalSince1970 / 86400))"
+    private func routineCollapseKey(_ name: String, sectionId: String, date: Date) -> String {
+        "\(name)|\(Int(date.timeIntervalSince1970 / 86400))|\(sectionId)"
     }
-    private func isRoutineCollapsed(name: String, date: Date) -> Bool {
-        if let explicit = routineCollapseOverrides[routineCollapseKey(name, date: date)] { return explicit }
+    private func isRoutineCollapsed(name: String, sectionId: String, date: Date) -> Bool {
+        if let explicit = routineCollapseOverrides[routineCollapseKey(name, sectionId: sectionId, date: date)] { return explicit }
         // Past routines shown under the "earlier today" toggle start collapsed even on today.
         if earlierRoutineNames.contains(name) { return true }
         // Default: future days start collapsed; today (and past) stay expanded.
         return Calendar.current.compare(date, to: Date(), toGranularity: .day) == .orderedDescending
     }
-    private func toggleRoutineCollapsed(name: String, date: Date) {
-        let key = routineCollapseKey(name, date: date)
-        routineCollapseOverrides[key] = !isRoutineCollapsed(name: name, date: date)
+    private func toggleRoutineCollapsed(name: String, sectionId: String, date: Date) {
+        let key = routineCollapseKey(name, sectionId: sectionId, date: date)
+        routineCollapseOverrides[key] = !isRoutineCollapsed(name: name, sectionId: sectionId, date: date)
         lastRenderSignature = nil
         reload()
     }
@@ -1946,7 +1960,7 @@ class scheduleViewController: NSViewController {
         // Round to the minute — matching what's actually shown — so a reload that only advanced the
         // clock without changing anything visible correctly no-ops instead of rebuilding.
         func minuteEpoch(_ date: Date) -> Int { Int(date.timeIntervalSince1970 / 60) }
-        let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(selectedPastHabitId ?? "-")|\(completedSig)|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(collapseSig)|\(dwCollapseSig)|\(cancelledSig)|\(shouldShowEveningShutdownPrompt())|\(taskSig)|"
+        let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(selectedPastHabitId ?? "-")|\(completedSig)|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(hideHabitBlocks)|\(collapseSig)|\(dwCollapseSig)|\(cancelledSig)|\(shouldShowEveningShutdownPrompt())|\(taskSig)|"
             + blocks.map { "\($0.kind)\($0.title)\(minuteEpoch($0.start))\(minuteEpoch($0.end))\($0.isCurrent)\($0.isActionable)" }.joined(separator: ";")
         if signature == lastRenderSignature, !stackView.arrangedSubviews.isEmpty { return }
         lastRenderSignature = signature
@@ -2002,6 +2016,9 @@ class scheduleViewController: NSViewController {
                 while i < blocks.count, blocks[i].kind == .habit, blocks[i].routineName == name {
                     group.append(blocks[i]); i += 1
                 }
+                // Hide-habits setting: drop the whole routine group so the plan shows just calendar
+                // events. The group is still consumed above so `i` has advanced past it.
+                if hideHabitBlocks { continue }
                 // Each habit inside the group is its own drop target (handled in makeHabitGroupCard).
                 addCard(makeHabitGroupCard(group))
             } else if !hideDeepWorkBlocks, blocks[i].kind == .deepWork {
@@ -2228,10 +2245,13 @@ class scheduleViewController: NSViewController {
         let hideDW = NSButton(checkboxWithTitle: ScheduleText.hideDeepWork,
                               target: self, action: #selector(toggleHideDeepWork(_:)))
         hideDW.state = hideDeepWorkBlocks ? .on : .off
+        let hideHabits = NSButton(checkboxWithTitle: ScheduleText.hideHabitBlocks,
+                                  target: self, action: #selector(toggleHideHabits(_:)))
+        hideHabits.state = hideHabitBlocks ? .on : .off
         let showDismissed = NSButton(checkboxWithTitle: ScheduleText.showDismissedEvents,
                                      target: self, action: #selector(toggleShowDismissedEvents(_:)))
         showDismissed.state = showDismissedEvents ? .on : .off
-        let form = NSStackView(views: [heading, check, hideDW, showDismissed])
+        let form = NSStackView(views: [heading, check, hideDW, hideHabits, showDismissed])
         form.orientation = .vertical; form.alignment = .leading; form.spacing = 10
         form.translatesAutoresizingMaskIntoConstraints = false
         let container = NSView(); container.addSubview(form)
@@ -2255,6 +2275,12 @@ class scheduleViewController: NSViewController {
 
     @objc private func toggleHideDeepWork(_ sender: NSButton) {
         hideDeepWorkBlocks = (sender.state == .on)
+        lastRenderSignature = nil
+        reload()
+    }
+
+    @objc private func toggleHideHabits(_ sender: NSButton) {
+        hideHabitBlocks = (sender.state == .on)
         lastRenderSignature = nil
         reload()
     }
@@ -2315,8 +2341,16 @@ class scheduleViewController: NSViewController {
         // Routine sections are accordions: the header toggles collapse (chevron ▸/▾). They start
         // collapsed on future days so the plan is easy to scan for appointments.
         let routineName = habits.first?.routineName ?? "Habits"
+        // The section's FIRST habit id keys the accordion so several same-named runs on one day
+        // (e.g. two "Morning routine habits" blocks split by a meeting) expand/collapse independently.
+        // It's stable across reloads — unlike the section start, which for the active routine re-packs
+        // from `now` and would leave a start-keyed override stale after the toggle's reload. Falls back
+        // to the habit index, then a start stamp, if a block ever lacks a server id.
+        let sectionId = habits.first?.habitId
+            ?? habits.first.flatMap { $0.habitIndex.map { "idx\($0)" } }
+            ?? "start\(Int((habits.first?.start ?? selectedDate).timeIntervalSince1970))" // i18n-ignore — internal accordion key, never shown
         let dateForToggle = selectedDate
-        let collapsed = isRoutineCollapsed(name: routineName, date: dateForToggle)
+        let collapsed = isRoutineCollapsed(name: routineName, sectionId: sectionId, date: dateForToggle)
         // #2010: is THIS routine's section force-cancelled? Drives the uncancel message and hides the
         // "Skip routine for today" action (there's nothing to skip once it's cancelled).
         let cancel = host?.cancelledRoutine()
@@ -2347,7 +2381,7 @@ class scheduleViewController: NSViewController {
                 skipBtn.setContentCompressionResistancePriority(.required, for: .horizontal)
                 headerRow.addArrangedSubview(skipBtn)
             }
-            headerRow.onClick = { [weak self] in self?.toggleRoutineCollapsed(name: routineName, date: dateForToggle) }
+            headerRow.onClick = { [weak self] in self?.toggleRoutineCollapsed(name: routineName, sectionId: sectionId, date: dateForToggle) }
             headerRow.toolTip = collapsed ? ScheduleText.showHabits : ScheduleText.hideHabits
             inner.addArrangedSubview(headerRow)
             headerRow.widthAnchor.constraint(equalTo: inner.widthAnchor).isActive = true

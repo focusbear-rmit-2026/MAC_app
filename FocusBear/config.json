@@ -2846,6 +2846,7 @@
         "eventCancel": "Cancel",
         "eventSaveError": "Couldn't save the event. Check calendar access and try again.",
         "showEarlierEvents": "Show events from earlier today",
+        "hideHabitBlocks": "Hide habits",
         "scheduleSettings": "Schedule settings",
         "hideEarlierEvents": "Hide events from earlier today",
         "viewTomorrow": "View tomorrow's schedule",

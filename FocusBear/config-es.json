@@ -2811,6 +2811,7 @@
         "eventSaveError": "No se pudo guardar el evento. Comprueba el acceso al calendario e inténtalo de nuevo.",
         "showEarlierEvents": "Mostrar eventos anteriores de hoy",
         "hideEarlierEvents": "Ocultar eventos anteriores de hoy",
+        "hideHabitBlocks": "Ocultar hábitos",
         "viewTomorrow": "Ver el horario de mañana",
         "editEventTitle": "Editar evento",
         "eventRepeatLabel": "Repetir",
