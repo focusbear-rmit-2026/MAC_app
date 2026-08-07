@@ -83,7 +83,6 @@
 		13C6BF0B2FB19D750074DD63 /* ORSSerial in Frameworks */ = {isa = PBXBuildFile; productRef = 13C6BF0A2FB19D750074DD63 /* ORSSerial */; };
 		13C6BF0E2FB211CA0074DD63 /* audioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */; };
 		13C6C2A22FE2615E00B1F278 /* BreakWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */; };
-		AA2091010000000000002091 /* DragAwayPostponePrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2091020000000000002091 /* DragAwayPostponePrompt.swift */; };
 		13CBE7652F07E9660025544E /* enableAIBlockingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */; };
 		13D5D0112FD0396E00AB474C /* micMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D5D0102FD0396E00AB474C /* micMonitor.swift */; };
 		13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */; };
@@ -108,6 +107,7 @@
 		274E671628951DDD0030163F /* AllApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E671528951DDC0030163F /* AllApi.swift */; };
 		2BC962788650BE9B5AF7744A /* RestoreHiddenToolsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 923E7D62446EEA6F34FEF7D1 /* RestoreHiddenToolsView.swift */; };
 		2D64BA07FDD9863D4274B076 /* SpotifyTrackStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6F1F3A7517EFCBB53BA0EC6 /* SpotifyTrackStore.swift */; };
+		3CA46A649FBC8560EF565A9F /* DayPlanAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857B70E324DC67D18F73EA70 /* DayPlanAnalytics.swift */; };
 		3F4020B2A99A7285EA411042 /* TaskDeduplicationHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94DF69464D5A8BE205353BD5 /* TaskDeduplicationHelperTests.swift */; };
 		44893728E4D2BE20B7672984 /* ScheduleKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9989E00FEA15521B6C3FE5FE /* ScheduleKit.swift */; };
 		4E6B03630E634FEDE6CC03F4 /* FocusMusicPromptManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14B38BBF7930DF9BE6761295 /* FocusMusicPromptManager.swift */; };
@@ -383,6 +383,7 @@
 		8FFF70652858A59800164E2B /* GraphDaysDuration.html in Resources */ = {isa = PBXBuildFile; fileRef = 8FFF70642858A59800164E2B /* GraphDaysDuration.html */; };
 		A1B2C3D40000000000000010 /* TaskPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000011 /* TaskPlayerView.swift */; };
 		A1B2C3D40000000000000020 /* MusicTrackTitleFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000021 /* MusicTrackTitleFetcher.swift */; };
+		AA2091010000000000002091 /* DragAwayPostponePrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2091020000000000002091 /* DragAwayPostponePrompt.swift */; };
 		AAW00002 /* alwaysAllowedAppsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAW00001 /* alwaysAllowedAppsVc.swift */; };
 		ABH00001 /* AppBlockingHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00002 /* AppBlockingHelper.swift */; };
 		ABH00003 /* AppBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00004 /* AppBlockingTests.swift */; };
@@ -522,7 +523,6 @@
 		13C6BF0A2FB199E70074DD63 /* EmojiSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiSync.swift; sourceTree = "<group>"; };
 		13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = audioRecorder.swift; sourceTree = "<group>"; };
 		13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakWarningView.swift; sourceTree = "<group>"; };
-		AA2091020000000000002091 /* DragAwayPostponePrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragAwayPostponePrompt.swift; sourceTree = "<group>"; };
 		13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = enableAIBlockingVc.swift; sourceTree = "<group>"; };
 		13D5D0102FD0396E00AB474C /* micMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = micMonitor.swift; sourceTree = "<group>"; };
 		13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineStateVc.swift; sourceTree = "<group>"; };
@@ -555,6 +555,7 @@
 		6EC187A9D44C75F344A462A1 /* FBTTTodayView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FBTTTodayView.swift; sourceTree = "<group>"; };
 		7F29AACE7F6D8CF44F9B3C22 /* FocusGlowBorderManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusGlowBorderManager.swift; sourceTree = "<group>"; };
 		804A3787372D3AE68B541AEF /* ToolVisibilityStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolVisibilityStore.swift; sourceTree = "<group>"; };
+		857B70E324DC67D18F73EA70 /* DayPlanAnalytics.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DayPlanAnalytics.swift; sourceTree = "<group>"; };
 		889FCE3E1080DC22C97AB6D8 /* Pods-Focus Bear.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Focus Bear.debug.xcconfig"; path = "Target Support Files/Pods-Focus Bear/Pods-Focus Bear.debug.xcconfig"; sourceTree = "<group>"; };
 		8E5DEAA96AD3FCA949FF525B /* Local.xcconfig.example */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = Local.xcconfig.example; sourceTree = "<group>"; };
 		8F02AF412A751A5200BA6536 /* blockedAppsVc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = blockedAppsVc.swift; sourceTree = "<group>"; };
@@ -834,6 +835,7 @@
 		A1B2C3D40000000000000011 /* TaskPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskPlayerView.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000021 /* MusicTrackTitleFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicTrackTitleFetcher.swift; sourceTree = "<group>"; };
 		A3571BB6ACEBCB217ABDB57F /* FocusBear-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "FocusBear-Debug.xcconfig"; sourceTree = "<group>"; };
+		AA2091020000000000002091 /* DragAwayPostponePrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragAwayPostponePrompt.swift; sourceTree = "<group>"; };
 		AAW00001 /* alwaysAllowedAppsVc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = alwaysAllowedAppsVc.swift; sourceTree = "<group>"; };
 		ABH00002 /* AppBlockingHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingHelper.swift; sourceTree = "<group>"; };
 		ABH00004 /* AppBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingTests.swift; sourceTree = "<group>"; };
@@ -1759,6 +1761,7 @@
 				2DEF19BEE8458F980B62C5C3 /* firstViewController+Schedule.swift */,
 				FE3FA8163BBB36B02EF947DD /* routinePostponedInfoVc+Schedule.swift */,
 				HSS00002 /* habitsStateVc+Schedule.swift */,
+				857B70E324DC67D18F73EA70 /* DayPlanAnalytics.swift */,
 			);
 			name = Schedule;
 			path = Schedule;
@@ -1972,23 +1975,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		5E71D5F0000000005E71D5F0 /* [Sentry] Upload Debug Symbols */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/scripts/upload-dsyms.sh",
-			);
-			name = "[Sentry] Upload Debug Symbols";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Uploads dSYMs to Sentry so crash + App-Hang stacks symbolicate (Mac-App#1954/#1955).\n# No-ops for non-Release builds. See scripts/upload-dsyms.sh and docs/sentry-dsym-upload.md.\n\"${SRCROOT}/scripts/upload-dsyms.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		3F268440EC1EB9CD7C1DB69B /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -2004,6 +1990,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Focus Bear/Pods-Focus Bear-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		5E71D5F0000000005E71D5F0 /* [Sentry] Upload Debug Symbols */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/upload-dsyms.sh",
+			);
+			name = "[Sentry] Upload Debug Symbols";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Uploads dSYMs to Sentry so crash + App-Hang stacks symbolicate (Mac-App#1954/#1955).\n# No-ops for non-Release builds. See scripts/upload-dsyms.sh and docs/sentry-dsym-upload.md.\n\"${SRCROOT}/scripts/upload-dsyms.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		FBE57001FBE57001FBE57001 /* Embed esptool */ = {
@@ -2386,6 +2389,7 @@
 				5790A2029EF7B5F4A5EF47B8 /* routinePostponedInfoVc+Schedule.swift in Sources */,
 				HSS00001 /* habitsStateVc+Schedule.swift in Sources */,
 				E8F2E77638719E0C61AFC6A9 /* TaskDeduplicationHelper.swift in Sources */,
+				3CA46A649FBC8560EF565A9F /* DayPlanAnalytics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

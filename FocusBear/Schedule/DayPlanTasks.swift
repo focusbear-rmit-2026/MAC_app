@@ -1701,6 +1701,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         where t.sourceTaskId == nil && t.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             DayPlanTaskStore.shared.delete(id: t.id, for: date)
         }
+        DayPlanAnalytics.capture(DayPlanAnalytics.taskAdded, ["source": "scratch", "has_project": project != nil])
         let t = DayPlanTask(title: "", project: project)
         DayPlanTaskStore.shared.add(t, for: date)
         reload()
@@ -1808,6 +1809,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
     }
 
     @objc private func bulkRemoveClicked() {
+        DayPlanAnalytics.capture(DayPlanAnalytics.taskRemoved, ["bulk": true, "count": selectedTaskIDs.count])
         for id in selectedTaskIDs { DayPlanTaskStore.shared.delete(id: id, for: date) }
         selectedTaskIDs.removeAll()
         reload(); onChange?()
@@ -1821,6 +1823,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
 
     private func openTaskModal(taskID: String, from anchor: NSView) {
         guard let task = task(for: taskID) else { return }
+        DayPlanAnalytics.capture(DayPlanAnalytics.taskSettingsOpened, ["from_todo": task.sourceTaskId != nil])
         modalTaskID = taskID
         modalSubtasks = task.subtaskList
 
@@ -2059,6 +2062,8 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
     @objc private func toggleDone(_ sender: NSButton) {
         guard let id = sender.identifier?.rawValue, var t = task(for: id) else { return }
         t.done = (sender.state == .on)
+        DayPlanAnalytics.capture(t.done ? DayPlanAnalytics.taskCompleted : DayPlanAnalytics.taskUncompleted,
+                                 ["from_todo": t.sourceTaskId != nil])
         DayPlanTaskStore.shared.update(t, for: date)
         reload(); onChange?()
     }
@@ -2146,6 +2151,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
 
     @objc private func deleteTask(_ sender: NSButton) {
         guard let id = sender.identifier?.rawValue else { return }
+        DayPlanAnalytics.capture(DayPlanAnalytics.taskRemoved, ["bulk": false])
         DayPlanTaskStore.shared.delete(id: id, for: date)
         reload(); onChange?()
     }
@@ -2233,6 +2239,8 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         } else {
             NSSound.beep(); return
         }
+        let daysAhead = Calendar.current.dateComponents([.day], from: date, to: target).day ?? 0
+        DayPlanAnalytics.capture(DayPlanAnalytics.taskSnoozed, ["bulk": snoozeBulk, "days_ahead": daysAhead])
         cancelSnooze()
         reload(); onChange?()
     }

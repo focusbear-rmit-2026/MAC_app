@@ -40,6 +40,10 @@ final class CalendarManager {
     }
 
     func requestAccess(completion: @escaping (Bool) -> Void) {
+        // Only an undetermined status shows a real system prompt — treat that as the user's calendar
+        // connect attempt (an already-decided status returns immediately, no dialog, so don't log it).
+        let isConnectAttempt = (access == .notDetermined)
+        if isConnectAttempt { DayPlanAnalytics.capture(DayPlanAnalytics.calendarConnectStarted) }
         // The system TCC permission dialog is a separate process shown at the normal window level.
         // Focus Bear's window can sit at an elevated level (floating / status-bar during routines and
         // full screen), which covers the dialog so the user never sees it and the app looks stuck.
@@ -52,6 +56,10 @@ final class CalendarManager {
 
         let handler: (Bool, Error?) -> Void = { granted, _ in
             DispatchQueue.main.async { restore() }
+            if isConnectAttempt {
+                DayPlanAnalytics.capture(granted ? DayPlanAnalytics.calendarConnectSucceeded
+                                                 : DayPlanAnalytics.calendarConnectFailed)
+            }
             completion(granted)
         }
         if #available(macOS 14.0, *) {

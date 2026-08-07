@@ -984,6 +984,9 @@ class scheduleViewController: NSViewController {
     private func changeDay(by days: Int) {
         guard let d = Calendar.current.date(byAdding: .day, value: days, to: selectedDate) else { return }
         selectedDate = d
+        DayPlanAnalytics.capture(DayPlanAnalytics.dayChanged,
+                                 ["days": days, "direction": days >= 0 ? "forward" : "back",
+                                  "is_today": Calendar.current.isDateInToday(d)])
         selectedHabitIndex = nil
         selectedPastHabitId = nil       // a past selection is date-specific
         lastRenderSignature = nil
@@ -1003,7 +1006,10 @@ class scheduleViewController: NSViewController {
     @objc private func prevDayClicked() { changeDay(by: -1) }
     @objc private func nextDayClicked() { changeDay(by: 1) }
     @objc private func goTodayClicked() {
-        selectedDate = Date(); selectedHabitIndex = nil; selectedPastHabitId = nil; lastRenderSignature = nil; reload()
+        selectedDate = Date()
+        // "Back to today" is a day change too (like the prev/next arrows in changeDay) — track it.
+        DayPlanAnalytics.capture(DayPlanAnalytics.dayChanged, ["direction": "today", "is_today": true])
+        selectedHabitIndex = nil; selectedPastHabitId = nil; lastRenderSignature = nil; reload()
     }
 
     @objc private func pickDateClicked() {
@@ -1029,7 +1035,13 @@ class scheduleViewController: NSViewController {
     }
 
     @objc private func datePicked(_ sender: NSDatePicker) {
+        // NSDatePicker (.clockAndCalendar) can fire its action twice for a single selection. Ignore the
+        // repeat — only the DAY matters here — so we don't emit a duplicate day-changed event or reload.
+        guard !Calendar.current.isDate(sender.dateValue, inSameDayAs: selectedDate) else { return }
         selectedDate = sender.dateValue
+        // Picking a date from the calendar is a day change too — track it (segmented as "picker").
+        DayPlanAnalytics.capture(DayPlanAnalytics.dayChanged,
+                                 ["direction": "picker", "is_today": Calendar.current.isDateInToday(selectedDate)])
         selectedHabitIndex = nil
         selectedPastHabitId = nil
         lastRenderSignature = nil
@@ -1047,6 +1059,7 @@ class scheduleViewController: NSViewController {
 
     /// Open the edit form for an existing calendar event, anchored to its card.
     func openEventEditor(eventID: String, from view: NSView) {
+        DayPlanAnalytics.capture(DayPlanAnalytics.eventSettingsOpened)
         requestCalendarThen { [weak self] in self?.presentEventForm(editingID: eventID, relativeTo: view) }
     }
 
@@ -2179,6 +2192,10 @@ class scheduleViewController: NSViewController {
         guard let id = sender.identifier?.rawValue,
               var t = DayPlanTaskStore.shared.task(withID: id, for: selectedDate) else { return }
         t.done = (sender.state == .on)
+        // A task nested under a habit toggles here, NOT via DayPlanTasks.toggleDone — capture the same
+        // completed/uncompleted event so these aren't missed. `nested: true` segments this entry point.
+        DayPlanAnalytics.capture(t.done ? DayPlanAnalytics.taskCompleted : DayPlanAnalytics.taskUncompleted,
+                                 ["from_todo": t.sourceTaskId != nil, "nested": true])
         DayPlanTaskStore.shared.update(t, for: selectedDate)
         lastRenderSignature = nil; reload(); tasksPanel.reload()
     }
@@ -3056,6 +3073,7 @@ class scheduleViewController: NSViewController {
     /// Shared by both the recurring-event confirmation and the direct (non-recurring) dismiss path.
     private func dismissMeeting(eventId: String, seriesWide: Bool) {
         pendingDismissEventId = nil
+        DayPlanAnalytics.capture(DayPlanAnalytics.eventRemoved, ["series_wide": seriesWide])
         // Force a re-render — see the matching comment in dismissMeetingClicked's undismiss path.
         lastRenderSignature = nil
         if seriesWide {
@@ -3305,6 +3323,7 @@ class scheduleViewController: NSViewController {
     }
     @objc private func closeTodoPicker() { todoPopover?.close(); todoPopover = nil }
     @objc private func addSelectedTodos() {
+        var addedCount = 0
         for task in todoAllTasks {
             let id = (task.value(forKey: "id") as? String) ?? ""
             guard todoSelectedIDs.contains(id) else { continue }
@@ -3321,6 +3340,12 @@ class scheduleViewController: NSViewController {
             DayPlanTaskStore.shared.add(DayPlanTask(title: title, durationMinutes: minutes, sourceTaskId: id,
                                                     project: project, eisenhowerQuadrant: quadrant),
                                         for: selectedDate)
+            addedCount += 1
+        }
+        // Adding from the to-do list is a task-added action too (the scratch add already captures this);
+        // fire one event with the count so the metric covers both entry points, segmented by source.
+        if addedCount > 0 {
+            DayPlanAnalytics.capture(DayPlanAnalytics.taskAdded, ["source": "todo_list", "count": addedCount])
         }
         closeTodoPicker()
         tasksPanel.reload()
