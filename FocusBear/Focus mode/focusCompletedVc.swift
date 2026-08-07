@@ -803,16 +803,10 @@ class focusCompletedVc: NSViewController {
     func workDone(){
         isFinishFocusModeApiCalled = true// perfect place this will ensure that api will called 100%
         whatToAchieveInFocusBlock = ""
-        if !isShutOffTime{
-            if currentState != ._MORNING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && isMicroBreaksRunning(){
-                if let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String {
-                    if !notes.isEmpty{
-                        showBrainDumpWindow()
-                    }
-                }
-            }
-            
-        }else{
+        // #2142: the brain dump is now webview/API-backed. The old post-focus auto-open, gated on the
+        // legacy local `kUserdefaultsFocusModeNotes`, has been removed — that key is no longer the source
+        // of truth for the brain dump.
+        if isShutOffTime{
             btnTakeBreak.isEnabled = false
             loader.isHidden = false
             loader.startAnimation(self)

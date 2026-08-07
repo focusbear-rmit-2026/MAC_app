@@ -164,9 +164,8 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         let theme = getWindowTheme()
         
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
-        var brainDump = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String ?? ""
-        brainDump = brainDump.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? brainDump
-        
+        // #2142: the brain dump is now API-backed — the task player loads it from the API, so we no
+        // longer push the legacy local kUserdefaultsFocusModeNotes into the webview.
         var isFirstTime = false
         if UserDefaults.standard.object(forKey: kUserDefaultsOpenTodoPlayerFirstTime) == nil{
             UserDefaults.standard.set(true, forKey: kUserDefaultsOpenTodoPlayerFirstTime)
@@ -181,15 +180,15 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         
         let isSuperStrictMode = currentFocusModeStrictness == ._SUPER_STRICT_
         
-        var stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"brain_dump\":\"\(brainDump)\",\"isOnboarding\":\(isFirstTime),\"focusmode_endtime\":\"\(finish_time_string)\",\"is_super_strict_mode\":\(isSuperStrictMode)}"
+        var stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"isOnboarding\":\(isFirstTime),\"focusmode_endtime\":\"\(finish_time_string)\",\"is_super_strict_mode\":\(isSuperStrictMode)}"
         
         if !focusModeTaskStringIsEmpty(){
-            stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"tasks\":\(focusModeTaskString),\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"brain_dump\":\"\(brainDump)\",\"isOnboarding\":\(isFirstTime),\"focusmode_endtime\":\"\(finish_time_string)\",\"is_super_strict_mode\":\(isSuperStrictMode)}"
+            stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"tasks\":\(focusModeTaskString),\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"isOnboarding\":\(isFirstTime),\"focusmode_endtime\":\"\(finish_time_string)\",\"is_super_strict_mode\":\(isSuperStrictMode)}"
         }
         // #2216: class focus session — hand off an empty task list + the class_session_id; the frontend
         // loads and completes the class checklist itself via class-session APIs (parity with windows#1393).
         if !classSessionTodoSessionId.isEmpty{
-            stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"tasks\":[],\"class_session_id\":\"\(classSessionTodoSessionId)\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"brain_dump\":\"\(brainDump)\",\"isOnboarding\":\(isFirstTime),\"focusmode_endtime\":\"\(finish_time_string)\",\"is_super_strict_mode\":\(isSuperStrictMode)}"
+            stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"tasks\":[],\"class_session_id\":\"\(classSessionTodoSessionId)\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"isOnboarding\":\(isFirstTime),\"focusmode_endtime\":\"\(finish_time_string)\",\"is_super_strict_mode\":\(isSuperStrictMode)}"
         }
         if let requestId = requestId {
             stringJson = String(stringJson.dropLast()) + ",\"requestId\":\"\(requestId)\"}"
@@ -269,19 +268,6 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         
         // Notify Focus Button of the updated goal
         focusButtonServiceObject.updateFocusGoal(goal: focusButtonServiceObject.currentFocusGoal())
-    }
-    
-    func updateBrainDumpToPlayer(){
-        let brainDump = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String ?? ""
-        let script = "updateBrainDumpFromDesktopApp('\(brainDump)');"
-        
-        webView?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
-            print(error)
-            print(html)
-            if let error = error {
-                addLog(text: "updateBrainDumpToPlayer:- JavaScript evaluation error: \(error)")// v 2.28.441
-            }
-        })
     }
     
     func updateAlignmentScoreToPlayer(){

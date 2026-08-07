@@ -139,6 +139,10 @@ let kUserdefaultsFocusAddedFromFirstHabit = "kUserdefaultsFocusAddedFromFirstHab
 
 var kUserdefaultsFocusModeNotes = "kUserdefaultsFocusModeNotes"
 
+// #2142: set once the saved brain dump has been seeded into the notes webview via initAppMetaData.
+// After that, the webview loads the brain dump from the API (token-only), so we never re-seed it.
+var kUserdefaultsBrainDumpSentToWebView = "kUserdefaultsBrainDumpSentToWebView"
+
 let kUserdefaultsFocusCompletedTourShown = "kUserdefaultsFocusCompletedTourShown"
 
 let kUserdefaultsPomodoroTourShown = "kUserdefaultsPomodoroTourShown"
@@ -267,8 +271,6 @@ var kUserdefaultsIsGuestAccount = "kUserdefaultsIsGuestAccount"
 // WiFi profile auto-switching (#1000)
 let kUserdefaultsWiFiProfileMappings = "kFBWiFiProfileMappings"
 
-
-var kUserdefaultsBrainDumpSentToWebView = "kUserdefaultsBrainDumpSentToWebView"
 
 // Talking clock (#1674)
 var kUserdefaultsTalkingClockEnabled = "kUserdefaultsTalkingClockEnabled"

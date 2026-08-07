@@ -983,6 +983,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 kUserdefaultsLastShutdownAbortedDate = kUserdefaultsLastShutdownAbortedDate + (self.user?.userId ?? "")
                 kUserdefaultsEveningHabitsShowedTillDate = kUserdefaultsEveningHabitsShowedTillDate + (self.user?.userId ?? "")
                 kUserdefaultsFocusSummaryShowedTillDate = kUserdefaultsFocusSummaryShowedTillDate + (self.user?.userId ?? "")
+                // #2142: namespace the brain-dump seed flag per user, so each user on this device gets
+                // their saved brain dump seeded into the webview once (not shared across accounts).
+                kUserdefaultsBrainDumpSentToWebView = kUserdefaultsBrainDumpSentToWebView + (self.user?.userId ?? "")
                 kUserdefaultsArrFocusTypes = kUserdefaultsArrFocusTypes + (self.user?.userId ?? "")
                 kUserdefaults24HoursClearPasswordTime = kUserdefaults24HoursClearPasswordTime + (self.user?.userId ?? "")
                 
@@ -1038,8 +1041,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 
                 kUserDefaultsLastRoutinePostponeEndDate = kUserDefaultsLastRoutinePostponeEndDate + (self.user?.userId ?? "")
                 kUserDefaultsLastRoutinePostponeState = kUserDefaultsLastRoutinePostponeState + (self.user?.userId ?? "")
-                
-                kUserdefaultsBrainDumpSentToWebView = kUserdefaultsBrainDumpSentToWebView + (self.user?.userId ?? "")
 
                 kUserdefaultsHiddenFocusModeIDs = kUserdefaultsHiddenFocusModeIDs + (self.user?.userId ?? "")
 
@@ -1047,10 +1048,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
                 connectGlobalAndMacIDWithDistinctUserID()
                 
-                if let notes = UserDefaults.standard.object(forKey: "kUserdefaultsFocusModeNotes") as? String{// get notes from old key and remove it from old key
-                    UserDefaults.standard.set(notes, forKey: kUserdefaultsFocusModeNotes)
-                    UserDefaults.standard.removeObject(forKey: "kUserdefaultsFocusModeNotes")
-                }
                 
                 SettingsManagerObject.resetAllKeys()
                 
@@ -3470,6 +3467,34 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         loadMenuWindow()
     }
 
+    // #2142: guards the one-time brain-dump migration so overlapping checkWindowState calls don't each
+    // fire an upsert — without an id the API creates a new note, so two racing calls would duplicate it.
+    private var isBrainDumpMigrationInFlight = false
+
+    /// #2142: one-time migration of the saved local brain dump into the backend (PUT /note upsert), run
+    /// at startup from checkWindowState so the web Brain Dump loads the migrated note from the API when it
+    /// opens. Guarded per-user by `kUserdefaultsBrainDumpSentToWebView`; an empty local brain dump is a
+    /// no-op upsert-wise (don't clobber whatever the backend already has) but still marks migration done.
+    /// The flag is set only on a 200, so a failed upsert (logged in AllApi via writeJsonInLog) retries.
+    private func migrateBrainDumpToBackendIfNeeded() {
+        guard UserDefaults.standard.value(forKey: kUserdefaultsBrainDumpSentToWebView) == nil,
+              !isBrainDumpMigrationInFlight else { return }
+        let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String ?? ""
+        guard !notes.isEmpty else {
+            UserDefaults.standard.set(true, forKey: kUserdefaultsBrainDumpSentToWebView)
+            return
+        }
+        isBrainDumpMigrationInFlight = true
+        allApiObject.upsertBrainDumpNote(body: notes) { [weak self] _, statusCode in
+            DispatchQueue.main.async {
+                self?.isBrainDumpMigrationInFlight = false
+                if statusCode == 200 {
+                    UserDefaults.standard.set(true, forKey: kUserdefaultsBrainDumpSentToWebView)
+                }
+            }
+        }
+    }
+
     @objc func checkWindowState(){
         loadAllWindows()
         isFirstRun = false
@@ -3484,6 +3509,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         getAllLongTermGoals()
         getTotalFocuedTime()
+        migrateBrainDumpToBackendIfNeeded()
         if !lastOpenUrlString.isEmpty{
             filterUrl(url: lastOpenUrlString)
         }

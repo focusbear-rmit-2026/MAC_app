@@ -161,6 +161,70 @@ class AllApi:NSObject {
             }
         }
     }
+
+    /// #2142: PUT /note (NoteController_upsertNote) — upserts the saved brain dump as the user's
+    /// brain-dump note so the web Brain Dump (which loads from the API) picks it up. Used once, to
+    /// migrate the local brain dump on the first webview open. Mirrors isSettingsValid: refresh the
+    /// credential, PUT with the Bearer token makeRequest attaches, and on a non-2xx log the response
+    /// body via writeJsonInLog so validation errors are visible. completionHandler gets (body, status).
+    func upsertBrainDumpNote(body: String, completionHandler: @escaping (_ result: NSDictionary?, _ statusCode: Int) -> ()) {
+        addLog(text: "func call:- api upsertBrainDumpNote")
+
+        appdelegate!.credentialsManager.credentials { credentialsInfo in
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+
+            if appdelegate!.credential != nil {
+                let responsePath = "\(baseUrl)/note"
+                if let responsePathUrl = NSURL(string: responsePath) {
+                    addLog(text: "api call upsertBrainDumpNote \(responsePathUrl)")
+
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "PUT"
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+                    // The create path requires a non-empty title (400 "title is required when creating
+                    // a note" otherwise); the brain dump is identified by is_brain_dump, so the title is
+                    // just a label.
+                    let payload: [String: Any] = ["title": "Brain dump", "body": body, "is_brain_dump": true]
+                    request.httpBody = try? JSONSerialization.data(withJSONObject: payload)
+
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
+                        if let httpResponse = response as? HTTPURLResponse {
+                            if httpResponse.statusCode == 200 {
+                                addLog(text: "api call upsertBrainDumpNote return success")
+                                var jsonResult: NSDictionary? = nil
+                                if let data = data {
+                                    jsonResult = (try? JSONSerialization.jsonObject(with: data, options: .mutableContainers)) as? NSDictionary
+                                }
+                                completionHandler(jsonResult, httpResponse.statusCode)
+                                return
+                            } else {
+                                addLog(text: "api call upsertBrainDumpNote Api error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                completionHandler(nil, httpResponse.statusCode)
+                                return
+                            }
+                        }
+
+                        if error != nil {
+                            addLog(text: "api call upsertBrainDumpNote return error:- \(error!.localizedDescription)")
+                            completionHandler(nil, 0)
+                            return
+                        }
+                        completionHandler(nil, 0)
+                        return
+                    }
+
+                    task.resume()
+                } else {
+                    completionHandler(nil, 0)
+                }
+            } else {
+                completionHandler(nil, 0)
+            }
+        }
+    }
+
     func writeJsonInLog(data: Data?){
         if data != nil{
             do {
