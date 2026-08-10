@@ -578,6 +578,8 @@ final class DayPlanTaskStore {
     }
 
     private let key = "dayPlanTasksByDay"
+    /// One-time flag: the cross-day snooze-clone de-dupe (see `dedupeSnoozeClones`) has run for this install.
+    private let snoozeCloneDedupeKey = "dayPlanSnoozeCloneDedupeDone"
     private var byDay: [String: [DayPlanTask]] = [:]
     /// Local ids of from-scratch tasks currently having a backend to-do minted for them, so a rapid
     /// second edit doesn't mint a duplicate before the first create returns.
@@ -631,11 +633,11 @@ final class DayPlanTaskStore {
         if let sid = task.sourceTaskId, contains(sourceTaskId: sid, for: date) { return }
         byDay[dayKey(date), default: []].append(task); save()
         // #2148: a Day Plan task backed by a to-do is planned via `planned_date` (the pointer model);
-        // this makes it show on GET /day-plan/day and hydrate on other devices. Any to-do-backed task
-        // syncs (PATCH /to-do/:id needs only its id — no quadrant). From-scratch tasks (no
+        // this makes it show on GET /day-plan/day and hydrate on other devices. From-scratch tasks (no
         // sourceTaskId) stay local-only — the pointer model has nowhere to put them without minting a to-do.
         if let sid = task.sourceTaskId {
-            DayPlanSync.shared.setTodoPlanned(todoID: sid, plannedDate: date, blockKey: task.blockKey, order: nil)
+            DayPlanSync.shared.setTodoPlanned(todoID: sid, title: task.title, quadrant: task.eisenhowerQuadrant ?? 4,
+                                              plannedDate: date, blockKey: task.blockKey, order: nil)
         }
     }
 
@@ -667,7 +669,7 @@ final class DayPlanTaskStore {
 
     /// Give a from-scratch task a backend to-do so it syncs across devices (the pointer model can only
     /// sync to-do-backed tasks). Mints once — on the first non-empty title — via `PUT /to-do` (create),
-    /// then backfills the new id as `sourceTaskId` and plans it (`PATCH /to-do/:id`). Best-effort: on a
+    /// then backfills the new id as `sourceTaskId` and plans it (`PUT /to-do` upsert). Best-effort: on a
     /// failed create (e.g. offline) the task stays local and we retry on the next edit. No-op for tasks
     /// already backed by a to-do, blank rows, or those with a mint in kflight.
     private func mintTodoIfNeeded(for task: DayPlanTask, on date: Date) {
@@ -694,8 +696,8 @@ final class DayPlanTaskStore {
                 self.byDay[k]?[idx].eisenhowerQuadrant = quadrant
                 self.save()
                 let planned = self.byDay[k]![idx]
-                DayPlanSync.shared.setTodoPlanned(todoID: newId, plannedDate: date,
-                                                  blockKey: planned.blockKey, order: nil)
+                DayPlanSync.shared.setTodoPlanned(todoID: newId, title: planned.title, quadrant: quadrant,
+                                                  plannedDate: date, blockKey: planned.blockKey, order: nil)
             }
         }
     }
@@ -705,8 +707,10 @@ final class DayPlanTaskStore {
         byDay[dayKey(date)]?.removeAll { $0.id == id }; save()
         // Removing a to-do-backed task from the Day Plan just unplans it (clears planned_date); the
         // to-do itself is kept. From-scratch tasks have no backend row to clear.
-        if let sid = removed?.sourceTaskId {
-            DayPlanSync.shared.setTodoPlanned(todoID: sid, plannedDate: nil, blockKey: nil, order: nil)
+        if let sid = removed?.sourceTaskId, let removed = removed {
+            DayPlanSync.shared.setTodoPlanned(todoID: sid, title: removed.title,
+                                              quadrant: removed.eisenhowerQuadrant ?? 4,
+                                              plannedDate: nil, blockKey: nil, order: nil)
         }
     }
 
@@ -862,7 +866,7 @@ final class DayPlanTaskStore {
     }
 
     /// Move a task to another day (snooze). Clears any time-box assignment since it no longer applies.
-    func moveTask(id: String, from: Date, to: Date) {
+    func moveTask(id: String, from: Date, to: Date, dueDate: Date? = nil) {
         let fk = dayKey(from), tk = dayKey(to)
         guard fk != tk, let i = byDay[fk]?.firstIndex(where: { $0.id == id }) else { return }
         var task = byDay[fk]!.remove(at: i)
@@ -877,7 +881,8 @@ final class DayPlanTaskStore {
         // re-plants the task on its old day (the backend still says it's planned there). From-scratch
         // tasks (no sourceTaskId) have no backend pointer, so nothing to update.
         if let sid = task.sourceTaskId {
-            DayPlanSync.shared.setTodoPlanned(todoID: sid, plannedDate: to, blockKey: nil, order: nil)
+            DayPlanSync.shared.setTodoPlanned(todoID: sid, title: task.title, quadrant: task.eisenhowerQuadrant ?? 4,
+                                              plannedDate: to, blockKey: nil, order: nil, dueDate: dueDate)
         }
     }
 
@@ -885,12 +890,10 @@ final class DayPlanTaskStore {
     /// new date onto the backing to-do's `due_date` — snoozing is an explicit "this is due later",
     /// which a plain day-to-day drag is not. No-op on the due date for local-only tasks (no to-do).
     func snooze(id: String, from: Date, to: Date) {
-        let snapshot = byDay[dayKey(from)]?.first(where: { $0.id == id })
-        moveTask(id: id, from: from, to: to)
-        if let task = snapshot, let sid = task.sourceTaskId {
-            DayPlanSync.shared.setTodoDueDate(todoID: sid, title: task.title,
-                                              quadrant: task.eisenhowerQuadrant ?? 4, dueDate: to)
-        }
+        // Snooze = move the task to `to` AND push the new date onto the to-do's `due_date`. Both go in
+        // one `PUT /to-do` upsert (planned_date + due_date together) so there's a single, ordered write
+        // — previously a second due-date-only write raced/undid the planned_date and left a duplicate.
+        moveTask(id: id, from: from, to: to, dueDate: to)
     }
 
     private func load() {
@@ -898,7 +901,47 @@ final class DayPlanTaskStore {
               let decoded = try? JSONDecoder().decode([String: [DayPlanTask]].self, from: data) else { return }
         byDay = decoded
         cleanup()
+        dedupeSnoozeClones()
         rolloverIncompleteTasks()
+    }
+
+    /// One-time repair for the pre-#2237 snooze bug, which left a to-do cloned onto its original day
+    /// (usually stripped of its project) while the real task moved to the snoozed day. A to-do
+    /// (`sourceTaskId`) must live on at most one day, so collapse any that appear on several to a single
+    /// copy: keep the copy that still has a project, then the one on the latest day (snoozes always move
+    /// forward), and carry over a completion from any dropped copy so a tick is never lost. Runs once per
+    /// install (guarded by `snoozeCloneDedupeKey`); the going-forward fix means no new clones are made.
+    private func dedupeSnoozeClones() {
+        guard !UserDefaults.standard.bool(forKey: snoozeCloneDedupeKey) else { return }
+        defer { UserDefaults.standard.set(true, forKey: snoozeCloneDedupeKey) }
+
+        var daysBySource: [String: Set<String>] = [:]
+        for (dayKey, tasks) in byDay {
+            for task in tasks where task.sourceTaskId != nil {
+                daysBySource[task.sourceTaskId!, default: []].insert(dayKey)
+            }
+        }
+
+        var changed = false
+        for (sid, days) in daysBySource where days.count > 1 {
+            let copies = days.flatMap { day in
+                (byDay[day] ?? []).filter { $0.sourceTaskId == sid }.map { (day: day, task: $0) }
+            }
+            let anyDone = copies.contains { $0.task.done }
+            // Prefer a copy that kept its project; break ties toward the latest (snoozed-to) day.
+            let keeper = copies.max { a, b in
+                let aHasProject = a.task.project?.isEmpty == false
+                let bHasProject = b.task.project?.isEmpty == false
+                if aHasProject != bHasProject { return !aHasProject && bHasProject }
+                return a.day < b.day
+            }!
+            for day in days { byDay[day]?.removeAll { $0.sourceTaskId == sid } }
+            var kept = keeper.task
+            if anyDone { kept.done = true }
+            byDay[keeper.day, default: []].append(kept)
+            changed = true
+        }
+        if changed { save() }
     }
 
     /// Carry forward any incomplete tasks from past days to today (completed ones stay in their day
