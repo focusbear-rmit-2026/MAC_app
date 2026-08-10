@@ -48,7 +48,7 @@ final class ProjectHeaderView: NSView, NSDraggingSource {
         totalLabel.translatesAutoresizingMaskIntoConstraints = false
         totalLabel.setContentHuggingPriority(.required, for: .horizontal)
 
-        let add = NSButton(title: "", target: self, action: #selector(addClicked))
+        let add = cursorButton(title: "", target: self, action: #selector(addClicked))
         add.bezelStyle = .inline; add.isBordered = false
         if #available(macOS 11.0, *) { add.image = NSImage(systemSymbolName: "plus", accessibilityDescription: "Add task to project") } else { add.title = "+" }
         add.contentTintColor = .controlAccentColor
@@ -1096,7 +1096,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         let toggleTitle = completedCount > 0
             ? String(format: ScheduleText.tasksShowCompletedCount, completedCount)
             : ScheduleText.tasksShowCompleted
-        let check = NSButton(checkboxWithTitle: toggleTitle, target: self, action: #selector(toggleShowCompleted(_:)))
+        let check = cursorButton(checkboxWithTitle: toggleTitle, target: self, action: #selector(toggleShowCompleted(_:)))
         check.state = showCompleted ? .on : .off
         let heading = label(ScheduleText.tasksSettings, size: 13, bold: true)
         let form = NSStackView(views: [heading, check])
@@ -1129,10 +1129,10 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         totalLabel.textColor = .secondaryLabelColor
         totalLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        let addNew = NSButton(title: ScheduleText.tasksAddNew, target: self, action: #selector(addFromScratchClicked))
+        let addNew = cursorButton(title: ScheduleText.tasksAddNew, target: self, action: #selector(addFromScratchClicked))
         addNew.bezelStyle = .rounded
         if #available(macOS 11.0, *) { addNew.image = NSImage(systemSymbolName: "plus", accessibilityDescription: nil); addNew.imagePosition = .imageLeading }
-        let addList = NSButton(title: ScheduleText.tasksAddFromList, target: self, action: #selector(addFromList))
+        let addList = cursorButton(title: ScheduleText.tasksAddFromList, target: self, action: #selector(addFromList))
         addList.bezelStyle = .rounded
         if #available(macOS 11.0, *) { addList.image = NSImage(systemSymbolName: "text.badge.plus", accessibilityDescription: nil); addList.imagePosition = .imageLeading }
         let addRow = NSStackView(views: [addNew, addList])
@@ -1141,7 +1141,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         // Settings cog (holds the show-completed toggle and any future options). It sits on the
         // totals row, right-aligned — NOT the top-right corner, where the full-screen "Exit
         // Fullscreen" button would overlap it.
-        let cog = NSButton(title: "", target: self, action: #selector(openSettingsClicked(_:)))
+        let cog = cursorButton(title: "", target: self, action: #selector(openSettingsClicked(_:)))
         cog.bezelStyle = .inline; cog.isBordered = false
         if #available(macOS 11.0, *) { cog.image = NSImage(systemSymbolName: "gearshape", accessibilityDescription: "Settings") } else { cog.title = "⚙" }
         cog.contentTintColor = .secondaryLabelColor
@@ -1346,7 +1346,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
     // MARK: Rows
 
     private func makeRow(_ task: DayPlanTask) -> NSView {
-        let check = NSButton(checkboxWithTitle: "", target: self, action: #selector(toggleDone(_:)))
+        let check = cursorButton(checkboxWithTitle: "", target: self, action: #selector(toggleDone(_:)))
         check.state = task.done ? .on : .off
         check.identifier = NSUserInterfaceItemIdentifier(task.id)
 
@@ -1403,7 +1403,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         if !subs.isEmpty {
             let doneCount = subs.filter { $0.done }.count
             // Clickable sub-task count — opens the task detail modal.
-            let countBtn = NSButton(title: "", target: self, action: #selector(subtaskCountClicked(_:)))
+            let countBtn = cursorButton(title: "", target: self, action: #selector(subtaskCountClicked(_:)))
             countBtn.isBordered = false; countBtn.bezelStyle = .inline
             countBtn.identifier = NSUserInterfaceItemIdentifier(task.id)
             countBtn.attributedTitle = NSAttributedString(string: "☑ \(doneCount)/\(subs.count)", attributes: [
@@ -1800,7 +1800,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
     }
 
     private func actionButton(_ title: String, symbol: String, id: String, action: Selector) -> NSButton {
-        let b = NSButton(title: " " + title, target: self, action: action)
+        let b = cursorButton(title: " " + title, target: self, action: action)
         b.bezelStyle = .rounded
         b.controlSize = .small
         b.font = .systemFont(ofSize: 11)
@@ -1835,11 +1835,11 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         guard !selectedTaskIDs.isEmpty else { return nil }
         let count = label(String(format: ScheduleText.tasksSelectedCount, selectedTaskIDs.count), size: 11, bold: true)
         count.textColor = .controlAccentColor
-        let snooze = NSButton(title: " " + ScheduleText.tasksSnooze, target: self, action: #selector(bulkSnoozeClicked(_:)))
+        let snooze = cursorButton(title: " " + ScheduleText.tasksSnooze, target: self, action: #selector(bulkSnoozeClicked(_:)))
         snooze.bezelStyle = .rounded; snooze.controlSize = .small
-        let remove = NSButton(title: " " + ScheduleText.tasksRemove, target: self, action: #selector(bulkRemoveClicked))
+        let remove = cursorButton(title: " " + ScheduleText.tasksRemove, target: self, action: #selector(bulkRemoveClicked))
         remove.bezelStyle = .rounded; remove.controlSize = .small
-        let clear = NSButton(title: ScheduleText.tasksClearSelection, target: self, action: #selector(clearSelectionClicked))
+        let clear = cursorButton(title: ScheduleText.tasksClearSelection, target: self, action: #selector(clearSelectionClicked))
         clear.bezelStyle = .rounded; clear.controlSize = .small; clear.isBordered = false
         if #available(macOS 11.0, *) {
             snooze.image = NSImage(systemSymbolName: "clock.arrow.circlepath", accessibilityDescription: nil); snooze.imagePosition = .imageLeading
@@ -1958,13 +1958,13 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         subtaskStack.translatesAutoresizingMaskIntoConstraints = false
         modalSubtaskStack = subtaskStack
 
-        let addSub = NSButton(title: ScheduleText.tasksAddSubtask, target: self, action: #selector(addSubtaskClicked))
+        let addSub = cursorButton(title: ScheduleText.tasksAddSubtask, target: self, action: #selector(addSubtaskClicked))
         addSub.bezelStyle = .rounded; addSub.controlSize = .small
         if #available(macOS 11.0, *) { addSub.image = NSImage(systemSymbolName: "plus", accessibilityDescription: nil); addSub.imagePosition = .imageLeading }
 
-        let cancel = NSButton(title: ScheduleText.eventCancel, target: self, action: #selector(cancelTaskModal))
+        let cancel = cursorButton(title: ScheduleText.eventCancel, target: self, action: #selector(cancelTaskModal))
         cancel.bezelStyle = .rounded; cancel.keyEquivalent = "\u{1b}"
-        let save = NSButton(title: ScheduleText.eventSave, target: self, action: #selector(saveTaskModal))
+        let save = cursorButton(title: ScheduleText.eventSave, target: self, action: #selector(saveTaskModal))
         save.bezelStyle = .rounded; save.keyEquivalent = "\r"
         let buttons = NSStackView(views: [NSView(), cancel, save])
         buttons.orientation = .horizontal; buttons.spacing = 8
@@ -2018,7 +2018,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         guard let stackV = modalSubtaskStack else { return }
         stackV.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for (i, sub) in modalSubtasks.enumerated() {
-            let check = NSButton(checkboxWithTitle: "", target: nil, action: nil)
+            let check = cursorButton(checkboxWithTitle: "", target: nil, action: nil)
             check.state = sub.done ? .on : .off
             check.tag = i
             let field = NSTextField(string: sub.title)
@@ -2027,7 +2027,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
             field.identifier = NSUserInterfaceItemIdentifier("taskModalSubtask:\(i)")
             field.translatesAutoresizingMaskIntoConstraints = false
             field.widthAnchor.constraint(equalToConstant: 250).isActive = true
-            let del = NSButton(title: "✕", target: self, action: #selector(deleteSubtaskClicked(_:)))
+            let del = cursorButton(title: "✕", target: self, action: #selector(deleteSubtaskClicked(_:)))
             del.bezelStyle = .circular; del.controlSize = .small; del.tag = i
             let r = NSStackView(views: [check, field, del])
             r.orientation = .horizontal; r.spacing = 6; r.alignment = .centerY
@@ -2234,9 +2234,9 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         hint.maximumNumberOfLines = 0
         hint.preferredMaxLayoutWidth = 230
 
-        let move = NSButton(title: ScheduleText.tasksSnoozeConfirm, target: self, action: #selector(confirmSnooze))
+        let move = cursorButton(title: ScheduleText.tasksSnoozeConfirm, target: self, action: #selector(confirmSnooze))
         move.bezelStyle = .rounded; move.keyEquivalent = "\r"
-        let cancel = NSButton(title: ScheduleText.tasksSnoozeCancel, target: self, action: #selector(cancelSnooze))
+        let cancel = cursorButton(title: ScheduleText.tasksSnoozeCancel, target: self, action: #selector(cancelSnooze))
         cancel.bezelStyle = .rounded; cancel.keyEquivalent = "\u{1b}"
         let buttons = NSStackView(views: [NSView(), cancel, move])
         buttons.orientation = .horizontal; buttons.spacing = 8
@@ -2408,7 +2408,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         list.orientation = .vertical; list.alignment = .leading; list.spacing = 0
         list.translatesAutoresizingMaskIntoConstraints = false
         for (i, name) in matches.enumerated() {
-            let b = NSButton(title: name, target: self, action: #selector(suggestionClicked(_:)))
+            let b = cursorButton(title: name, target: self, action: #selector(suggestionClicked(_:)))
             b.isBordered = false; b.bezelStyle = .inline; b.alignment = .left
             b.contentTintColor = .controlAccentColor
             b.wantsLayer = true
@@ -2439,7 +2439,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         box.setFrameOrigin(NSPoint(x: rect.minX, y: y))
         // Wide enough that no row truncates: measure the actual button fitting width (which includes the
         // cell's own insets + the head-indent) for the widest title, plus the list's 8+8 insets.
-        let measurer = NSButton(); measurer.isBordered = false; measurer.bezelStyle = .inline
+        let measurer = cursorButton(); measurer.isBordered = false; measurer.bezelStyle = .inline
         let mpara = NSMutableParagraphStyle(); mpara.firstLineHeadIndent = 8; mpara.headIndent = 8
         let mfont = NSFont.systemFont(ofSize: 13)
         var widestButton: CGFloat = 0
@@ -2495,7 +2495,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         input.widthAnchor.constraint(equalToConstant: 150).isActive = true
         createProjectField = input
 
-        let save = NSButton(title: ScheduleText.tasksNewProjectSave, target: self, action: #selector(saveNewProjectClicked(_:)))
+        let save = cursorButton(title: ScheduleText.tasksNewProjectSave, target: self, action: #selector(saveNewProjectClicked(_:)))
         save.bezelStyle = .rounded; save.controlSize = .small
 
         let row = NSStackView(views: [input, save])
@@ -2651,7 +2651,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         list.orientation = .vertical; list.alignment = .leading; list.spacing = 0
         list.translatesAutoresizingMaskIntoConstraints = false
         for (i, name) in matches.enumerated() {
-            let b = NSButton(title: name, target: self, action: #selector(comboSuggestionClicked(_:)))
+            let b = cursorButton(title: name, target: self, action: #selector(comboSuggestionClicked(_:)))
             b.isBordered = false; b.bezelStyle = .inline; b.alignment = .left
             b.contentTintColor = .controlAccentColor
             b.tag = i
@@ -2881,7 +2881,7 @@ final class CustomRoutinesPanel: NSView {
     }
 
     private func makeRow(title: String, index: Int) -> NSView {
-        let play = NSButton(title: "", target: self, action: #selector(playClicked(_:)))
+        let play = cursorButton(title: "", target: self, action: #selector(playClicked(_:)))
         play.bezelStyle = .circular
         play.controlSize = .small
         play.tag = index
