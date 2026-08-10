@@ -49,6 +49,9 @@ class easyPostponeVc: NSViewController {
             btnDeactivateApp.title = easyPostponeVcInfo.value(forKey: "buttonDeactivateText") as? String ?? btnDeactivateApp.title
             lblInfo.stringValue = easyPostponeVcInfo.value(forKey: "infoText") as? String ?? lblInfo.stringValue
         }
+        // Hide the "Deactivate Focus Bear for 4 hours" option — deactivation is no longer offered to
+        // the user from the postpone dialog.
+        btnDeactivateApp.isHidden = true
         btnPostpone.isSecondaryButton = true
     }
     
