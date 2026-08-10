@@ -496,12 +496,12 @@ class scheduleViewController: NSViewController {
     private(set) var isDayPlanContentHidden = false
 
     // Date navigation bar (‹ date › Today).
-    private let dateLabelButton = NSButton()
-    private let todayButton = NSButton()
-    private let scheduleCog = NSButton()
+    private let dateLabelButton = cursorButton()
+    private let todayButton = cursorButton()
+    private let scheduleCog = cursorButton()
     private var scheduleSettingsPopover: NSPopover?
     private let todayIndicatorLabel = NSTextField(labelWithString: "")
-    private let addEventButton = NSButton()
+    private let addEventButton = cursorButton()
     /// Add-event button's vertical alignment vs. the date bar. Normally 0 (centred). For the
     /// allowed-activity Day Plan overlay it's dropped a little so it clears the "Habit Player | Day
     /// Plan" tab bar sitting at the top of that overlay (#2083). fileprivate so the host VC can set it
@@ -847,7 +847,7 @@ class scheduleViewController: NSViewController {
 
     private func makeDateBar() -> NSView {
         func arrow(_ symbol: String, _ action: Selector) -> NSButton {
-            let b = NSButton(title: "", target: self, action: action)
+            let b = cursorButton(title: "", target: self, action: action)
             b.bezelStyle = .texturedRounded
             b.isBordered = false
             if #available(macOS 11.0, *) { b.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) }
@@ -1242,10 +1242,10 @@ class scheduleViewController: NSViewController {
         errorLabel.usesSingleLineMode = false
         addErrorLabel = errorLabel
 
-        let cancelButton = NSButton(title: ScheduleText.eventCancel, target: self, action: #selector(cancelEventForm))
+        let cancelButton = cursorButton(title: ScheduleText.eventCancel, target: self, action: #selector(cancelEventForm))
         cancelButton.bezelStyle = .rounded
         cancelButton.keyEquivalent = "\u{1b}"           // Esc
-        let saveButton = NSButton(title: ScheduleText.eventSave, target: self, action: #selector(saveEventForm))
+        let saveButton = cursorButton(title: ScheduleText.eventSave, target: self, action: #selector(saveEventForm))
         saveButton.bezelStyle = .rounded
         saveButton.keyEquivalent = "\r"                 // Return
         let buttonRow = NSStackView(views: [NSView(), cancelButton, saveButton])
@@ -1315,7 +1315,7 @@ class scheduleViewController: NSViewController {
     }
 
     private func makeColorSwatch(_ color: NSColor, tag: Int) -> NSButton {
-        let b = NSButton(title: "", target: self, action: #selector(colorSwatchClicked(_:)))
+        let b = cursorButton(title: "", target: self, action: #selector(colorSwatchClicked(_:)))
         b.tag = tag
         b.isBordered = false
         b.wantsLayer = true
@@ -2167,7 +2167,7 @@ class scheduleViewController: NSViewController {
     /// A task nested under a schedule block: indented, with a completion checkbox and a button to
     /// send it back to the panel.
     private func makeNestedTaskRow(_ task: DayPlanTask) -> NSView {
-        let check = NSButton(checkboxWithTitle: "", target: self, action: #selector(nestedTaskToggled(_:)))
+        let check = cursorButton(checkboxWithTitle: "", target: self, action: #selector(nestedTaskToggled(_:)))
         check.state = task.done ? .on : .off
         check.identifier = NSUserInterfaceItemIdentifier(task.id)
         let name = WrappingScheduleLabel(labelWithString: task.title)
@@ -2190,7 +2190,7 @@ class scheduleViewController: NSViewController {
         name.setContentHuggingPriority(.defaultLow, for: .horizontal)
         let dur = makeLabel("\(task.durationMinutes)m", size: 12, bold: false)
         dur.textColor = .tertiaryLabelColor
-        let back = NSButton(title: "↩", target: self, action: #selector(nestedTaskUnassign(_:)))
+        let back = cursorButton(title: "↩", target: self, action: #selector(nestedTaskUnassign(_:)))
         back.bezelStyle = .circular; back.controlSize = .small
         back.identifier = NSUserInterfaceItemIdentifier(task.id)
         back.toolTip = ScheduleText.tasksReturnToPanel
@@ -2238,17 +2238,17 @@ class scheduleViewController: NSViewController {
     /// A borderless link that toggles whether earlier-today events are shown.
     @objc private func openScheduleSettings(_ sender: NSButton) {
         let heading = makeLabel(ScheduleText.scheduleSettings, size: 13, bold: true)
-        let check = NSButton(checkboxWithTitle: ScheduleText.showEarlierEvents,
+        let check = cursorButton(checkboxWithTitle: ScheduleText.showEarlierEvents,
                              target: self, action: #selector(toggleEarlierEvents(_:)))
         check.state = showEarlierEvents ? .on : .off
         check.isEnabled = canShowEarlierToggle   // only meaningful when today has earlier events
-        let hideDW = NSButton(checkboxWithTitle: ScheduleText.hideDeepWork,
+        let hideDW = cursorButton(checkboxWithTitle: ScheduleText.hideDeepWork,
                               target: self, action: #selector(toggleHideDeepWork(_:)))
         hideDW.state = hideDeepWorkBlocks ? .on : .off
-        let hideHabits = NSButton(checkboxWithTitle: ScheduleText.hideHabitBlocks,
+        let hideHabits = cursorButton(checkboxWithTitle: ScheduleText.hideHabitBlocks,
                                   target: self, action: #selector(toggleHideHabits(_:)))
         hideHabits.state = hideHabitBlocks ? .on : .off
-        let showDismissed = NSButton(checkboxWithTitle: ScheduleText.showDismissedEvents,
+        let showDismissed = cursorButton(checkboxWithTitle: ScheduleText.showDismissedEvents,
                                      target: self, action: #selector(toggleShowDismissedEvents(_:)))
         showDismissed.state = showDismissedEvents ? .on : .off
         let form = NSStackView(views: [heading, check, hideDW, hideHabits, showDismissed])
@@ -2293,7 +2293,7 @@ class scheduleViewController: NSViewController {
 
     /// A centered button at the bottom of the day to step forward to the next day's schedule.
     private func makeViewTomorrowButton() -> NSView {
-        let button = NSButton(title: ScheduleText.viewTomorrow, target: self, action: #selector(viewTomorrowClicked))
+        let button = cursorButton(title: ScheduleText.viewTomorrow, target: self, action: #selector(viewTomorrowClicked))
         button.bezelStyle = .rounded
         button.controlSize = .regular
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -2491,7 +2491,7 @@ class scheduleViewController: NSViewController {
     /// A compact red "skip routine for today" ICON button (an ✕) for the active routine header — the
     /// text link was replaced with an icon. Tooltip spells out the action so the ✕ isn't ambiguous.
     private func makeSkipRoutineButton() -> NSButton {
-        let btn = NSButton(title: "", target: self, action: #selector(skipRoutineForTodayClicked))
+        let btn = cursorButton(title: "", target: self, action: #selector(skipRoutineForTodayClicked))
         btn.isBordered = false
         btn.bezelStyle = .inline
         btn.imagePosition = .imageOnly
@@ -2765,7 +2765,7 @@ class scheduleViewController: NSViewController {
         disc.layer?.masksToBounds = true
         disc.translatesAutoresizingMaskIntoConstraints = false
 
-        let btn = NSButton(title: "", target: self, action: #selector(pastActionButtonClicked(_:)))
+        let btn = cursorButton(title: "", target: self, action: #selector(pastActionButtonClicked(_:)))
         btn.imagePosition = .imageOnly
         btn.isBordered = false
         btn.wantsLayer = true
@@ -2955,7 +2955,7 @@ class scheduleViewController: NSViewController {
         disc.layer?.masksToBounds = true
         disc.translatesAutoresizingMaskIntoConstraints = false
 
-        let btn = NSButton(title: "", target: self, action: #selector(actionButtonClicked(_:)))
+        let btn = cursorButton(title: "", target: self, action: #selector(actionButtonClicked(_:)))
         btn.imagePosition = .imageOnly
         btn.isBordered = false
         btn.wantsLayer = true
@@ -3139,11 +3139,11 @@ class scheduleViewController: NSViewController {
         label.lineBreakMode = .byWordWrapping
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let grant = NSButton(title: ScheduleText.grantAccess, target: self, action: #selector(grantCalendarClicked))
+        let grant = cursorButton(title: ScheduleText.grantAccess, target: self, action: #selector(grantCalendarClicked))
         grant.bezelStyle = .rounded
         grant.translatesAutoresizingMaskIntoConstraints = false
 
-        let dismiss = NSButton(title: "✕", target: self, action: #selector(dismissBannerClicked))
+        let dismiss = cursorButton(title: "✕", target: self, action: #selector(dismissBannerClicked))
         dismiss.bezelStyle = .circular
         dismiss.translatesAutoresizingMaskIntoConstraints = false
 
@@ -3289,9 +3289,9 @@ class scheduleViewController: NSViewController {
             listStack.widthAnchor.constraint(equalTo: listClip.widthAnchor),
         ])
 
-        let cancel = NSButton(title: ScheduleText.eventCancel, target: self, action: #selector(closeTodoPicker))
+        let cancel = cursorButton(title: ScheduleText.eventCancel, target: self, action: #selector(closeTodoPicker))
         cancel.bezelStyle = .rounded; cancel.keyEquivalent = "\u{1b}"
-        let add = NSButton(title: ScheduleText.tasksAddSelected, target: self, action: #selector(addSelectedTodos))
+        let add = cursorButton(title: ScheduleText.tasksAddSelected, target: self, action: #selector(addSelectedTodos))
         add.bezelStyle = .rounded; add.keyEquivalent = "\r"
         let buttons = NSStackView(views: [NSView(), cancel, add])
         buttons.orientation = .horizontal; buttons.spacing = 8
@@ -3350,7 +3350,7 @@ class scheduleViewController: NSViewController {
         for task in filtered {
             let id = (task.value(forKey: "id") as? String) ?? ""
             let title = (task.value(forKey: "title") as? String) ?? ""
-            let check = NSButton(checkboxWithTitle: title, target: self, action: #selector(todoRowToggled(_:)))
+            let check = cursorButton(checkboxWithTitle: title, target: self, action: #selector(todoRowToggled(_:)))
             check.state = todoSelectedIDs.contains(id) ? .on : .off
             check.identifier = NSUserInterfaceItemIdentifier(id)
             stack.addArrangedSubview(check)
