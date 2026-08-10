@@ -15,6 +15,9 @@ import Cocoa
 class teacherUnlockRequestVc: NSViewController {
 
     var sessionId = ""
+    // Pre-fills the "app name or website" field — e.g. when opened from a blocked-app notification's
+    // "I actually need this" button, so the student doesn't retype the app that was just blocked.
+    var prefillAppOrUrl = ""
 
     var lblTitle: NSTextField!
     var lblAppOrUrl: NSTextField!
@@ -88,7 +91,7 @@ class teacherUnlockRequestVc: NSViewController {
     }
 
     override func viewWillAppear() {
-        textFieldAppOrUrl.stringValue = ""
+        textFieldAppOrUrl.stringValue = prefillAppOrUrl
         textFieldReason.stringValue = ""
         btnCreateRequest.isEnabled = true
     }

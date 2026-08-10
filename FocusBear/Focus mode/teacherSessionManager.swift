@@ -612,13 +612,14 @@ class teacherSessionManager: NSObject {
 
     //***********C6 unlock request***************//
 
-    func showTeacherUnlockRequestWindow(){
+    func showTeacherUnlockRequestWindow(prefillAppOrUrl: String = ""){
         guard let sessionId = activeTeacherSessionId else{
             return;
         }
         closeTeacherUnlockRequestWindowIfVisible()
         let vc = teacherUnlockRequestVc()
         vc.sessionId = sessionId
+        vc.prefillAppOrUrl = prefillAppOrUrl
         let window = NSWindow(contentViewController: vc)
         window.title = appName
         window.styleMask.remove(.miniaturizable)

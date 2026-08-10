@@ -7683,7 +7683,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
         
-        arrFocusBlockNotificationShownForApps.removeAll()
         frontApplicationChanged()// call it because front application is active already
         
         DispatchQueue.global().sync {

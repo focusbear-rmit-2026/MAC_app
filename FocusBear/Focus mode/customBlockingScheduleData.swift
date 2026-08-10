@@ -761,7 +761,6 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
             minFocusAlignmentScoreToShowDistractingPopUp = 0
         }
         
-        arrFocusBlockNotificationShownForApps.removeAll()
         currentRunningAppNameForAi = ""
         currentBrowserUrlForAi = ""
         dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus.removeAll()

@@ -2389,9 +2389,6 @@ var shouldShowPomodoroAfterBreak = false
 var shouldEndPomodoroBreakAtTime:Date?
 
 
-var arrFocusBlockNotificationShownForApps = [""]
-
-
 /// Dedicated serial queue that owns ALL AppleScript execution. NSAppleScript is NOT thread-safe —
 /// compiling/running it from more than one thread at once corrupts the shared AppleScript component
 /// (the EXC_BAD_ACCESS segfault inside Apple's AppleScript compiler). Funnelling every script through
@@ -2482,36 +2479,342 @@ func executeScriptAndReturnString(script:String)->String?{
     return desc.stringValue ?? ""
 }
 
-func showFocusAppBlockNotification(appName:String){
+func showFocusAppBlockNotification(appName: String){
     addLog(text: "show Focus App Block Notification called")
-    if arrFocusBlockNotificationShownForApps.contains(appName){
-        addLog(text: "func showFocusAppBlockNotification:- Notification already shown:- return")
-        return;
-    }
     let arrAppsAvoidNotification = ["loginwindow", "screensaverengine"]//lowercased
-    
     if arrAppsAvoidNotification.contains(appName.lowercased()){
         addLog(text: "func showFocusAppBlockNotification:- AppsAvoidNotification contain app:- return")
         return;
     }
-    arrFocusBlockNotificationShownForApps.append(appName)
-    var msg = "<APP_NAME> isn't allowed in the <FOCUS_NAME> focus mode."
-    if let common = configjson.value(forKey: "common") as? NSDictionary{
-        msg = common.value(forKey: "appBlockNotificationTitle") as? String ?? msg
-    }
-    
-    var focusMode = ""
-    
-    for dic in arrFocusType{
-        if dic["isOn"] as? Bool == true{
-            focusMode = dic["name"] as? String ?? ""
-            break;
+
+    // Teacher-controlled class session: the student can't unblock apps themselves, so the card shows a
+    // class-session message + a "Request unlock" button. A normal focus session keeps the old message
+    // and has no button.
+    let isTeacherSession = teacherSessionManagerObject.isTeacherSessionActive()
+    var msg: String
+    if isTeacherSession {
+        msg = "<APP_NAME> is blocked during your class session. Ask your teacher to unlock it."
+        if let teacherInfo = configjson.value(forKey: "teacherSessionInfo") as? NSDictionary{
+            msg = teacherInfo.value(forKey: "appBlockedClassSessionText") as? String ?? msg
         }
+        msg = msg.replacingOccurrences(of: "<APP_NAME>", with: appName)
+    } else {
+        msg = "<APP_NAME> isn't allowed in the <FOCUS_NAME> focus mode."
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            msg = common.value(forKey: "appBlockNotificationTitle") as? String ?? msg
+        }
+        var focusMode = ""
+        for dic in arrFocusType{
+            if dic["isOn"] as? Bool == true{
+                focusMode = dic["name"] as? String ?? ""
+                break;
+            }
+        }
+        msg = msg.replacingOccurrences(of: "<APP_NAME>", with: appName)
+        msg = msg.replacingOccurrences(of: "<FOCUS_NAME>", with: focusMode)
     }
     addLog(text: "func showFocusAppBlockNotification:- show notification for app:- \(appName)")
-    msg = msg.replacingOccurrences(of: "<APP_NAME>", with: appName)
-    msg = msg.replacingOccurrences(of: "<FOCUS_NAME>", with: focusMode)
-    showNotificationWithMessage(msg: msg)
+    // Show a custom top-right notification every time the app is blocked. Unlike the old
+    // NSUserNotification path there is NO one-time-per-session limit; the manager only suppresses a
+    // duplicate while this app's card is still on screen (see FocusBlockNotificationManager).
+    FocusBlockNotificationManager.shared.show(appName: appName, message: msg, isTeacherSession: isTeacherSession)
+}
+
+/// Shows the custom "app blocked by Focus Mode" notification in the top-right corner of the main
+/// screen. Replaces the deprecated `NSUserNotification` path, which stopped delivering reliably on
+/// modern macOS. The notification is a borderless overlay card that fades in, counts down, then fades
+/// out. Only ONE notification is ever visible: a block of a DIFFERENT app replaces the current one; a
+/// block of the SAME app that's already showing is ignored (so its countdown isn't restarted). There
+/// is deliberately no per-session restriction.
+final class FocusBlockNotificationManager {
+    static let shared = FocusBlockNotificationManager()
+    private init() {}
+
+    private let visibleDuration: TimeInterval = 5
+    private let cardWidth: CGFloat = 340        // height is derived per-card from its content
+    private let edgeMargin: CGFloat = 16
+
+    // The single on-screen notification, if any.
+    private var currentCard: FocusBlockNotificationCard?
+
+    func show(appName: String, message: String, isTeacherSession: Bool) {
+        // UI work — hop to the main thread (the app-blocking monitor runs off-main).
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { self.show(appName: appName, message: message, isTeacherSession: isTeacherSession) }
+            return
+        }
+        // Same app already showing → leave it be (don't restart its countdown).
+        if currentCard?.appName == appName { return }
+        guard let screen = NSScreen.main else { return }
+
+        // Only one notification at a time — drop any existing (different-app) card immediately.
+        removeCurrent()
+
+        // Brand title shown at the top of the card (e.g. "Focus Bear").
+        var brandTitle = "Focus Bear"
+        if let common = configjson.value(forKey: "common") as? NSDictionary {
+            brandTitle = common.value(forKey: "appName") as? String ?? brandTitle
+        }
+        // Teacher session → a "Request unlock" button that opens the unlock-request window pre-filled
+        // with this app. Normal focus session → no button.
+        var requestUnlockTitle: String? = nil
+        if isTeacherSession {
+            var title = "Request unlock"
+            if let teacherInfo = configjson.value(forKey: "teacherSessionInfo") as? NSDictionary {
+                title = teacherInfo.value(forKey: "buttonRequestUnlock") as? String ?? title
+            }
+            requestUnlockTitle = title
+        }
+
+        let card = FocusBlockNotificationCard(appName: appName, brandTitle: brandTitle, message: message,
+                                              requestUnlockTitle: requestUnlockTitle,
+                                              seconds: Int(visibleDuration), width: cardWidth)
+        card.onRequestUnlock = { [weak self, weak card] in
+            teacherSessionManagerObject.showTeacherUnlockRequestWindow(prefillAppOrUrl: appName)
+            guard let self = self, let card = card else { return }
+            self.dismiss(card)
+        }
+        card.onExpire = { [weak self, weak card] in
+            guard let self = self, let card = card else { return }
+            self.dismiss(card)
+        }
+        currentCard = card
+
+        let area = screen.visibleFrame
+        let frame = card.window.frame
+        card.window.setFrameOrigin(NSPoint(x: area.maxX - frame.width - edgeMargin,
+                                           y: area.maxY - edgeMargin - frame.height))
+        card.window.alphaValue = 0
+        card.window.orderFrontRegardless()
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.25
+            card.window.animator().alphaValue = 1
+        }
+        card.startCountdown()
+    }
+
+    /// Instantly tear down the current card (used when a new notification replaces it).
+    private func removeCurrent() {
+        guard let card = currentCard else { return }
+        card.stopCountdown()
+        card.window.orderOut(nil)
+        currentCard = nil
+    }
+
+    /// Fade out and remove `card` when it expires or is dismissed via its button.
+    private func dismiss(_ card: FocusBlockNotificationCard) {
+        guard currentCard === card else { return }   // already replaced/removed
+        card.stopCountdown()
+        currentCard = nil
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.25
+            card.window.animator().alphaValue = 0
+        }, completionHandler: {
+            card.window.orderOut(nil)
+        })
+    }
+}
+
+/// One notification card + its overlay window. Built in AppKit (NSVisualEffectView) so it renders a
+/// native blurred, rounded card and works on the app's macOS 11 deployment target. Layout: the Focus
+/// Bear icon on the left, a bold brand title, the (multi-line) message, and a bottom row with a
+/// live seconds countdown on the right — plus, in a teacher session, an orange "Request unlock" button.
+private final class FocusBlockNotificationCard: NSObject {
+    let appName: String
+    let window: NSWindow
+    private let requestUnlockButton: NSButton?
+    private let secondsLabel: NSTextField
+    private var secondsRemaining: Int
+    private var countdownTimer: Timer?
+    var onRequestUnlock: (() -> Void)?
+    var onExpire: (() -> Void)?
+
+    init(appName: String, brandTitle: String, message: String, requestUnlockTitle: String?,
+         seconds: Int, width: CGFloat) {
+        self.appName = appName
+        self.secondsRemaining = seconds
+
+        let padding: CGFloat = 14
+        let iconSize: CGFloat = 40
+        let gap: CGFloat = 12
+        let cornerRadius: CGFloat = 14
+        let textX = padding + iconSize + gap
+        let textRight = width - padding
+        let textWidth = textRight - textX
+
+        // Title ("Focus Bear").
+        let titleFont = NSFont.systemFont(ofSize: 14, weight: .bold)
+        let titleHeight = ceil((brandTitle as NSString).size(withAttributes: [.font: titleFont]).height)
+
+        // Message — smaller than the title. Measure the WRAPPED height for the fixed text width so it
+        // wraps instead of running off the right edge (sizeToFit would instead widen it to one line).
+        let messageFont = NSFont.systemFont(ofSize: 12, weight: .regular)
+        let messageHeight = ceil((message as NSString).boundingRect(
+            with: NSSize(width: textWidth, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: [.font: messageFont]).height)
+
+        // Optional "Request unlock" button (teacher session only). Reuses the app's `Button` for the
+        // brand-orange fill + pointing-hand cursor on hover. Created in code, so its awakeFromNib visual
+        // setup (layer, tracking area for the cursor) is replicated here.
+        var button: FocusBlockUnlockButton? = nil
+        var buttonSize = NSSize.zero
+        if let unlockTitle = requestUnlockTitle {
+            let buttonFont = NSFont.systemFont(ofSize: 12, weight: .semibold)
+            let b = FocusBlockUnlockButton(title: "", target: nil, action: nil)
+            b.font = buttonFont
+            b.horizontalPadding = 0
+            b.verticalPadding = 0
+            b.wantsLayer = true
+            b.isBordered = false
+            b.title = unlockTitle                      // Button.title didSet → centered white title
+            b.layer?.cornerRadius = 6
+            b.layer?.backgroundColor = b.buttonColor   // brand orange
+            b.contentTintColor = b.titleColor
+            b.addTrackingArea(NSTrackingArea(rect: .zero,
+                                             options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited],
+                                             owner: b, userInfo: nil))
+            let titleWidth = (unlockTitle as NSString).size(withAttributes: [.font: buttonFont]).width
+            buttonSize = NSSize(width: ceil(titleWidth) + 34, height: 28)
+            button = b
+        }
+        self.requestUnlockButton = button
+
+        // Countdown (hourglass + "Ns"), bottom-right.
+        let countdownHeight: CGFloat = 18
+        let hourglassSize = NSSize(width: 11, height: 16)
+        let secondsFont = NSFont.systemFont(ofSize: 12, weight: .medium)
+        let secondsWidth = ceil(("00s" as NSString).size(withAttributes: [.font: secondsFont]).width)
+        let secLabel = NSTextField(labelWithString: "\(seconds)s")
+        secLabel.font = secondsFont
+        secLabel.textColor = .secondaryLabelColor
+        self.secondsLabel = secLabel
+        let countdownWidth = hourglassSize.width + 3 + secondsWidth
+
+        let bottomRowHeight = max(buttonSize.height, countdownHeight)
+
+        let titleToMsg: CGFloat = 6      // clear separation between title and the smaller subtitle
+        let msgToBottom: CGFloat = 8
+        let contentHeight = titleHeight + titleToMsg + messageHeight + msgToBottom + bottomRowHeight
+        let cardHeight = max(iconSize, contentHeight) + padding * 2
+        let size = NSSize(width: width, height: cardHeight)
+
+        let container = NSVisualEffectView(frame: NSRect(origin: .zero, size: size))
+        container.material = .popover      // adapts to light/dark so .labelColor text stays legible
+        container.blendingMode = .behindWindow
+        container.state = .active
+        container.maskImage = FocusBlockNotificationCard.roundedMaskImage(cornerRadius: cornerRadius)
+
+        // Icon — the Focus Bear app icon (branded), not the blocked app's icon.
+        let iconView = NSImageView(frame: NSRect(x: padding, y: cardHeight - padding - iconSize,
+                                                 width: iconSize, height: iconSize))
+        iconView.image = NSImage(named: NSImage.applicationIconName)
+        iconView.imageScaling = .scaleProportionallyUpOrDown
+        container.addSubview(iconView)
+
+        // Title.
+        let titleY = cardHeight - padding - titleHeight
+        let titleLabel = NSTextField(labelWithString: brandTitle)
+        titleLabel.font = titleFont
+        titleLabel.textColor = .labelColor
+        titleLabel.frame = NSRect(x: textX, y: titleY, width: textWidth, height: titleHeight)
+        container.addSubview(titleLabel)
+
+        // Message (wraps within the fixed text width).
+        let messageY = titleY - titleToMsg - messageHeight
+        let messageLabel = NSTextField(wrappingLabelWithString: message)
+        messageLabel.font = messageFont
+        messageLabel.textColor = .labelColor
+        messageLabel.isEditable = false
+        messageLabel.isSelectable = false
+        messageLabel.drawsBackground = false
+        messageLabel.maximumNumberOfLines = 0
+        messageLabel.frame = NSRect(x: textX, y: messageY, width: textWidth, height: messageHeight)
+        container.addSubview(messageLabel)
+
+        // Bottom row: button (left, teacher only) + countdown (right).
+        let bottomRowY = messageY - msgToBottom - bottomRowHeight
+        if let button = button {
+            button.frame = NSRect(x: textX, y: bottomRowY + (bottomRowHeight - buttonSize.height) / 2,
+                                  width: buttonSize.width, height: buttonSize.height)
+            container.addSubview(button)
+        }
+        let cy = bottomRowY + (bottomRowHeight - countdownHeight) / 2
+        let hourglass = NSImageView(frame: NSRect(x: textRight - countdownWidth,
+                                                  y: cy + (countdownHeight - hourglassSize.height) / 2,
+                                                  width: hourglassSize.width, height: hourglassSize.height))
+        hourglass.image = NSImage(systemSymbolName: "hourglass", accessibilityDescription: nil)
+        hourglass.contentTintColor = .secondaryLabelColor
+        hourglass.imageScaling = .scaleProportionallyUpOrDown
+        container.addSubview(hourglass)
+        secLabel.frame = NSRect(x: textRight - secondsWidth, y: cy, width: secondsWidth, height: countdownHeight)
+        container.addSubview(secLabel)
+
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: .borderless,
+                              backing: .buffered, defer: true)
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.hasShadow = true
+        // Click-through unless there's a button — then the card must receive the click.
+        window.ignoresMouseEvents = (button == nil)
+        window.level = .statusBar                  // above other apps' normal windows
+        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+        window.isExcludedFromWindowsMenu = true
+        window.hidesOnDeactivate = false
+        window.isRestorable = false
+        window.animationBehavior = .none
+        window.contentView = container
+        self.window = window
+
+        super.init()
+        button?.target = self
+        button?.action = #selector(requestUnlockClicked)
+    }
+
+    @objc private func requestUnlockClicked() { onRequestUnlock?() }
+
+    /// Start the 1-second countdown that updates the "Ns" label and fires `onExpire` at zero.
+    func startCountdown() {
+        let t = Timer(timeInterval: 1, target: self, selector: #selector(countdownTick), userInfo: nil, repeats: true)
+        RunLoop.main.add(t, forMode: .common)
+        countdownTimer = t
+    }
+
+    func stopCountdown() {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+    }
+
+    @objc private func countdownTick() {
+        secondsRemaining -= 1
+        if secondsRemaining <= 0 {
+            stopCountdown()
+            onExpire?()
+        } else {
+            secondsLabel.stringValue = "\(secondsRemaining)s"
+        }
+    }
+
+    /// A resizable rounded-rect mask — the reliable way to round an NSVisualEffectView's blur (a plain
+    /// layer cornerRadius doesn't clip the vibrancy).
+    private static func roundedMaskImage(cornerRadius r: CGFloat) -> NSImage {
+        let d = r * 2 + 1
+        let image = NSImage(size: NSSize(width: d, height: d), flipped: false) { rect in
+            NSColor.black.setFill()
+            NSBezierPath(roundedRect: rect, xRadius: r, yRadius: r).fill()
+            return true
+        }
+        image.capInsets = NSEdgeInsets(top: r, left: r, bottom: r, right: r)
+        image.resizingMode = .stretch
+        return image
+    }
+}
+
+/// The app's `Button` (brand-orange fill, pointing-hand cursor on hover) that additionally fires on
+/// the FIRST click even when its window isn't key — the notification window is shown non-activating
+/// (orderFrontRegardless), so without this the first click would just be swallowed activating the window.
+private final class FocusBlockUnlockButton: Button {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 
 //*******************GET APP APPEARANCE******************//
