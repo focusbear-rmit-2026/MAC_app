@@ -569,6 +569,46 @@ func showSurveyWindow(){
 //-------------------------------------------------//
 
 
+//***********showAudhdResultsWindow***************//
+// Retained so the window/controller isn't deallocated while shown.
+var audhdResultsVcObj: AudhdResultsWebViewVc?
+private var audhdResultsWindow: NSWindow?
+
+// Opens the gated "advanced AuDHD results" in a full-screen WKWebView with no URL bar.
+// Reached from the `focusbear://view-audhd-results?test-code=<CODE>` deep link.
+func showAudhdResultsWindow(testCode: String) {
+    addLog(text: "showAudhdResultsWindow")
+
+    let vc = audhdResultsVcObj ?? AudhdResultsWebViewVc()
+    audhdResultsVcObj = vc
+
+    let window = audhdResultsWindow ?? NSWindow(
+        contentRect: (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1200, height: 800),
+        styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
+        backing: .buffered,
+        defer: false
+    )
+    audhdResultsWindow = window
+    // NSWindow.isReleasedWhenClosed defaults to true, so closing the window would deallocate it while the
+    // audhdResultsWindow global still points at it — reopening then dereferences a dangling pointer and
+    // crashes (EXC_BAD_ACCESS). Keep it alive so it can be reused; the global holds the only strong ref.
+    window.isReleasedWhenClosed = false
+    window.titlebarAppearsTransparent = true
+    window.titleVisibility = .hidden
+    window.title = appName
+    window.contentViewController = vc
+    if let screen = NSScreen.main ?? NSScreen.screens.first {
+        window.setFrame(screen.visibleFrame, display: true)
+    }
+
+    vc.present(testCode: testCode)
+    window.makeKeyAndOrderFront(nil)
+    NSApplication.shared.activate(ignoringOtherApps: true)
+    allApiObject.capturePosthog(event: "audhd-results-window-shown", metadata: [:])
+}
+//-------------------------------------------------//
+
+
 //***********showTimeTrackerWindow***************//
 func showTimeTrackerWindow(showingAutomatically:Bool){
     addLog(text:"showTimeTrackerWindow")

@@ -4715,6 +4715,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     func filterUrl(url:String){
         addLog(text: "func:- filterUrl \(url)")
+
+        // Growth/unlock flow: open the gated "advanced AuDHD results" webview.
+        // Handled ABOVE the app-enabled / subscription guards below, so it works even
+        // when the app isn't enabled or the subscription has expired. See online-tests#57.
+        let decoded = url.removingPercentEncoding ?? url
+        if decoded.hasPrefix(AudhdResults.deepLinkPrefix) {
+            if let testCode = AudhdResults.testCode(fromDeepLink: decoded), !testCode.isEmpty {
+                addLog(text: "func:- filterUrl- opening AuDHD results webview")
+                showAudhdResultsWindow(testCode: testCode)
+            } else {
+                addLog(text: "func:- filterUrl- view-audhd-results missing \(AudhdResults.testCodeParamKey)")
+            }
+            return
+        }
+
         if !isAppEnable{
             addLog(text: "func:- filterUrl- app is not enabled- return")
             return;

@@ -1,0 +1,109 @@
+//
+//  AudhdResultsWebViewVc.swift
+//  Focus Bear
+//
+//  Full-screen WKWebView that unlocks the gated "advanced AuDHD results" in-app.
+//  Reached via the `focusbear://view-audhd-results?test-code=<CODE>` deep link
+//  (see AppDelegate.filterUrl). Part of Focus-Bear/online-tests#57 (Phase 2 — Mac).
+//
+
+import Cocoa
+import WebKit
+
+/// Named constants for the AuDHD results deep link + results URL, so there are no
+/// magic strings scattered across the deep-link handler and this view controller.
+enum AudhdResults {
+    /// Custom-scheme prefix that triggers the in-app results webview.
+    static let deepLinkPrefix = "focusbear://view-audhd-results?"
+    /// Query-param key carrying the participant's retest / test code.
+    static let testCodeParamKey = "test-code"
+
+    /// Base domain the online AuDHD test is served from. Must match the domain the
+    /// test itself loads on so the results page is same-origin (per online-tests#57
+    /// decision #3). Mirrors the mobile app's `WEB_URL.AUDHD_TEST`
+    /// (`https://www.focusbear.io/tests/audhd-test`).
+    static let baseDomain = "https://www.focusbear.io/tests"
+    /// Path (under `baseDomain`) of the gated advanced-results page.
+    static let resultsPath = "/view-results"
+
+    /// Builds the full results URL for a given test code, url-encoding the value.
+    static func resultsURL(testCode: String) -> URL? {
+        let encodedCode = testCode.addingPercentEncoding(withAllowedCharacters: .urlQueryValueAllowed) ?? testCode
+        return URL(string: "\(baseDomain)\(resultsPath)?\(testCodeParamKey)=\(encodedCode)")
+    }
+
+    /// Extracts the (url-decoded) `test-code` value from a full deep-link URL such as
+    /// `focusbear://view-audhd-results?test-code=BEAR-1234[&other=…]`. Tolerates the
+    /// param appearing anywhere among `&`-separated params. Returns nil if absent.
+    static func testCode(fromDeepLink deepLink: String) -> String? {
+        guard deepLink.hasPrefix(deepLinkPrefix) else { return nil }
+        let query = String(deepLink.dropFirst(deepLinkPrefix.count))
+        for pair in query.components(separatedBy: "&") {
+            let parts = pair.components(separatedBy: "=")
+            guard parts.count >= 2, parts[0] == testCodeParamKey else { continue }
+            let rawValue = parts[1...].joined(separator: "=")
+            return rawValue.removingPercentEncoding ?? rawValue
+        }
+        return nil
+    }
+}
+
+private extension CharacterSet {
+    /// Query-value-safe set: the standard query set minus the sub-delimiters that
+    /// carry structural meaning in a query string.
+    static let urlQueryValueAllowed: CharacterSet = {
+        var set = CharacterSet.urlQueryAllowed
+        set.remove(charactersIn: "&=?+")
+        return set
+    }()
+}
+
+/// Code-only view controller hosting a full-size WKWebView with no URL bar.
+/// Modelled on `surveyVc` but without the storyboard outlet / access-token handshake,
+/// since the results page is a plain external URL.
+final class AudhdResultsWebViewVc: NSViewController, WKNavigationDelegate {
+
+    private var testCode: String = ""
+
+    private lazy var webView: WKWebView = {
+        let webView = WKWebView(frame: .zero)
+        webView.navigationDelegate = self
+        webView.translatesAutoresizingMaskIntoConstraints = false
+        return webView
+    }()
+
+    override func loadView() {
+        // Provide a container view; the webView fills it edge-to-edge (no chrome).
+        view = NSView(frame: NSRect(x: 0, y: 0, width: 1024, height: 768))
+        view.addSubview(webView)
+        NSLayoutConstraint.activate([
+            webView.topAnchor.constraint(equalTo: view.topAnchor),
+            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+        ])
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        loadResults()
+    }
+
+    /// Sets the test code and (re)loads the results page. Safe to call before the
+    /// view is loaded — `viewDidLoad` will trigger the initial load.
+    func present(testCode: String) {
+        self.testCode = testCode
+        if isViewLoaded {
+            loadResults()
+        }
+    }
+
+    private func loadResults() {
+        guard let url = AudhdResults.resultsURL(testCode: testCode) else {
+            addLog(text: "AudhdResultsWebViewVc: could not build results URL for code")
+            return
+        }
+        addLog(text: "AudhdResultsWebViewVc: loading advanced AuDHD results")
+        webView.load(URLRequest(url: url))
+    }
+}

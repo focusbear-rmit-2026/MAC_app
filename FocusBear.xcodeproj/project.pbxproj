@@ -127,6 +127,7 @@
 		7D9EE7D2F809B0E3AEECD72F /* FocusGlowBorderManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F29AACE7F6D8CF44F9B3C22 /* FocusGlowBorderManager.swift */; };
 		7DC90FC77F5432F8C21012C0 /* firstViewController+Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DEF19BEE8458F980B62C5C3 /* firstViewController+Schedule.swift */; };
 		7DC9C1133BB9459EBD6AE8FB /* FocusMusicViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F482F6107468499198DC3FB2 /* FocusMusicViewModel.swift */; };
+		7F9BA16602335B11CA55F1DA /* AudhdResultsWebViewVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CF73881601C673C133AD36E /* AudhdResultsWebViewVc.swift */; };
 		8F02AF422A751A5200BA6536 /* blockedAppsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F02AF412A751A5200BA6536 /* blockedAppsVc.swift */; };
 		8F0419442C353B9C00481ACD /* breakSurveyVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0419432C353B9C00481ACD /* breakSurveyVc.swift */; };
 		8F0419462C353D4100481ACD /* getViewControllersObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0419452C353D4100481ACD /* getViewControllersObject.swift */; };
@@ -552,6 +553,7 @@
 		5AA6CC892FBC0A49007BD5D1 /* WiFiProfileMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiProfileMapping.swift; sourceTree = "<group>"; };
 		5AA6CC8B2FBC0A91007BD5D1 /* officeModeSettingsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = officeModeSettingsVc.swift; sourceTree = "<group>"; };
 		5F7C4CC4D1F38E18CC9D5E55 /* FocusBear-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "FocusBear-Release.xcconfig"; sourceTree = "<group>"; };
+		6CF73881601C673C133AD36E /* AudhdResultsWebViewVc.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AudhdResultsWebViewVc.swift; sourceTree = "<group>"; };
 		6EC187A9D44C75F344A462A1 /* FBTTTodayView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FBTTTodayView.swift; sourceTree = "<group>"; };
 		7F29AACE7F6D8CF44F9B3C22 /* FocusGlowBorderManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusGlowBorderManager.swift; sourceTree = "<group>"; };
 		804A3787372D3AE68B541AEF /* ToolVisibilityStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolVisibilityStore.swift; sourceTree = "<group>"; };
@@ -1687,6 +1689,7 @@
 				1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */,
 				13501E282E7C2B020055ACB1 /* browsersTabAuditVc.swift */,
 				13501E2A2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift */,
+				6CF73881601C673C133AD36E /* AudhdResultsWebViewVc.swift */,
 			);
 			path = Popups;
 			sourceTree = "<group>";
@@ -2389,6 +2392,7 @@
 				5790A2029EF7B5F4A5EF47B8 /* routinePostponedInfoVc+Schedule.swift in Sources */,
 				HSS00001 /* habitsStateVc+Schedule.swift in Sources */,
 				E8F2E77638719E0C61AFC6A9 /* TaskDeduplicationHelper.swift in Sources */,
+				7F9BA16602335B11CA55F1DA /* AudhdResultsWebViewVc.swift in Sources */,
 				3CA46A649FBC8560EF565A9F /* DayPlanAnalytics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
