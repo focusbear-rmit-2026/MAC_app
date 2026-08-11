@@ -562,6 +562,19 @@ class simplePomodoroVc: NSViewController {
 //            btnLetsDoIt.isEnabled = true
 //        }
     }
+
+    /// #777: default duration (minutes) for the focus mode in use (`focusModeKey`) — its own last-used
+    /// duration, else the last duration used for any focus mode, else 20 (spec default when nothing ran).
+    private func defaultDurationMinutesForDefaultMode() -> Int {
+        for i in 0..<arrFocusType.count {
+            if arrFocusType[i][focusModeKey] as? Bool == true,
+               let perMode = arrFocusType[i]["lastDurationUsed"] as? Int, perMode > 0 {
+                return perMode
+            }
+        }
+        let lastAny = UserDefaults.standard.integer(forKey: kUserdefaultsLastFocusModeMinutes)
+        return lastAny > 0 ? lastAny : 20
+    }
     
     override func viewWillAppear() {
         getTaskPlayerVcObject().loadView()
@@ -605,9 +618,9 @@ class simplePomodoroVc: NSViewController {
         textFieldBreakDuration.isEnabled = true
         btnLetsDoIt.isEnabled = true
         
-        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
-            textFieldWorkDuration.stringValue = "\(duration)"
-        }
+        // #777: default the duration to the focus mode's last-used duration (fallback: last focus mode's
+        // duration, then 20). loadLastIntentionOfFocusMode() above has set focusModeKey to the mode in use.
+        textFieldWorkDuration.integerValue = defaultDurationMinutesForDefaultMode()
         updateBreakDuration()
         
 
@@ -1028,6 +1041,11 @@ class simplePomodoroVc: NSViewController {
                     }else{
                         arrFocusType[i]["lastIntentionUsed"] = ""
                     }
+                    // #777: remember the chosen duration for this focus mode so it defaults to its own
+                    // last duration next time. Also bump the global last-duration so a brand-new focus
+                    // mode inherits it via the fallback.
+                    arrFocusType[i]["lastDurationUsed"] = textFieldWorkDuration.integerValue
+                    UserDefaults.standard.set(textFieldWorkDuration.integerValue, forKey: kUserdefaultsLastFocusModeMinutes)
                     focusModeTaskString = arrFocusType[i]["lastTaskUsed"] as? String ?? ""
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                     updateAllFocusModes()

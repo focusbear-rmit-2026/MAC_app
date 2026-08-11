@@ -267,6 +267,9 @@ final class MenuModel: ObservableObject {
     var onPreferences: () -> Void = {}
     var onQuit: () -> Void = {}
     var onTogglePin: () -> Void = {}            // switch the menu between popover and window (pinned) mode
+    // #777: recompute the duration for the currently-selected focus mode when the starter expands, so it
+    // defaults to that mode's last-used duration. Implemented in menuViewController (needs the mode data).
+    var onFocusStarterExpanded: () -> Void = {}
     @Published var menuPinnedAsWindow = false   // true = shown as a detached window; false = popover
 }
 
@@ -622,6 +625,9 @@ struct FocusBearMenuView: View {
                                 // Typeahead combo box: type to autocomplete a block list, or open the dropdown.
                                 BlockListComboBox(items: model.focusBlockLists, selectedId: $model.selectedBlockListId)
                                     .frame(height: 24)
+                                    // #777: switching mode in the expanded list re-defaults the duration to
+                                    // the newly-selected mode's last-used value (same handler as expand).
+                                    .onChange(of: model.selectedBlockListId) { _ in model.onFocusStarterExpanded() }
                             }
                         }
                         .padding(10)
@@ -668,7 +674,7 @@ struct FocusBearMenuView: View {
                 // Initial state: the plain button. Tapping it reveals the goal box + duration stepper.
                 // Collapse any open accordion (Day Plan / Breaks / Tools) so the focus starter takes
                 // over cleanly and nothing else keeps refreshing underneath it.
-                SwiftUI.Button(action: { withAnimation(.easeInOut(duration: 0.15)) { expanded = nil; model.focusStarterExpanded = true } }) {
+                SwiftUI.Button(action: { withAnimation(.easeInOut(duration: 0.15)) { expanded = nil; model.focusStarterExpanded = true; model.onFocusStarterExpanded() } }) {
                     HStack(spacing: 8) {
                         Image(systemName: "play.fill").font(.system(size: 12, weight: .bold))
                         Text(menuLocalized("menuStartFocus", "START FOCUS SESSION"))

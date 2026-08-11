@@ -2513,6 +2513,13 @@ extension menuViewController {
         model.onTogglePin      = { [weak self] in self?.btnPinClicked(self as Any) }   // popover <-> window
         model.onOpenBreaks     = { [weak self] in self?.btnStartBreakClicked(self as Any) }
         model.onOpenDayPlan    = { [weak self] in self?.openDayPlanSchedule() }
+        // #777: when the focus starter expands, default the duration to the selected mode's last-used
+        // duration (fallback: last focus mode's duration, then 20).
+        model.onFocusStarterExpanded = { [weak self, weak model] in
+            guard let self = self, let model = model else { return }
+            let minutes = self.menuDefaultDurationMinutes(forFocusModeId: model.selectedBlockListId)
+            model.focusMinutes = min(180, max(5, minutes))
+        }
         model.onOpenFocusMusic = { [weak self] in self?.btnFocusMusicClicked(self as Any) }
         model.onToggleMusic    = { [weak self] in
             // A built-in track (in arrAllTracks) uses the local play/pause. Otherwise toggle the
@@ -2626,6 +2633,14 @@ extension menuViewController {
             model.inVoiceMode = false   // opening the menu always starts on the menu, never a stale voice screen
         }
         updateLiveMenuFields(model)
+        // #777: on every menu open, reflect the last-started focus mode (from menu OR pomodoro) as the
+        // selected one — even if the focus starter is currently expanded (updateLiveMenuFields only sets
+        // it while collapsed), so a session started from the pomodoro screen shows up here.
+        let lastPomodoroModeId = UserDefaults.standard.string(forKey: kUserdefaultsLastPomodoroFocusModeId) ?? ""
+        if let id = model.focusBlockLists.first(where: { $0.id == lastPomodoroModeId })?.id {
+            model.selectedBlockListId = id
+            model.focusMinutes = min(180, max(5, menuDefaultDurationMinutes(forFocusModeId: id)))
+        }
         model.micAvailable = isPurchased || daysLeft > 0
         // Show the "set up distraction blocking" card only when there's no schedule AND the user
         // hasn't already set one up or dismissed the card (persisted via the first-time flag) — so
@@ -2716,6 +2731,21 @@ extension menuViewController {
         return nextBreakText.replacingOccurrences(of: "<DURATION>", with: timeText)
     }
 
+    /// #777: default duration (minutes) for the focus mode `id` — its own last-used duration, else the
+    /// last duration used for any focus mode, else 20 (spec default when nothing has ever run).
+    private func menuDefaultDurationMinutes(forFocusModeId id: String) -> Int {
+        var focusTypes = arrFocusType
+        if focusTypes.isEmpty {
+            focusTypes = (UserDefaults.standard.object(forKey: kUserdefaultsArrFocusTypes) as? [[String: Any]]) ?? []
+        }
+        if let ft = focusTypes.first(where: { ($0["id"] as? String) == id }),
+           let perMode = ft["lastDurationUsed"] as? Int, perMode > 0 {
+            return perMode
+        }
+        let lastAny = UserDefaults.standard.integer(forKey: kUserdefaultsLastFocusModeMinutes)
+        return lastAny > 0 ? lastAny : 20
+    }
+
     private func updateLiveMenuFields(_ model: MenuModel) {
         // Reflect the current menu presentation so the header's pin icon matches reality
         // (window/pinned vs popover). The pin button toggles between the two via btnPinClicked.
@@ -2762,15 +2792,22 @@ extension menuViewController {
             return MenuBlockList(id: id, name: name)
         }
         if !model.focusStarterExpanded {
-            if model.selectedBlockListId.isEmpty || !model.focusBlockLists.contains(where: { $0.id == model.selectedBlockListId }) {
-                let lastId = UserDefaults.standard.string(forKey: kUserdefaultsLastFocusModeId) ?? ""
-                let defaultId = focusTypes.first(where: { ($0["isDefault"] as? Bool) == true })?["id"] as? String ?? ""
-                model.selectedBlockListId = model.focusBlockLists.first(where: { $0.id == lastId })?.id
-                    ?? model.focusBlockLists.first(where: { $0.id == defaultId })?.id
-                    ?? model.focusBlockLists.first?.id ?? ""
-            }
-            let lastMinutes = UserDefaults.standard.integer(forKey: kUserdefaultsLastFocusModeMinutes)
-            if lastMinutes > 0 { model.focusMinutes = min(180, max(5, lastMinutes)) }
+            // #777: reflect the last-started focus mode as the selected one every time the menu shows.
+            // kUserdefaultsLastPomodoroFocusModeId is set by BOTH the menu and pomodoro start paths and
+            // isn't clobbered by scheduled blocking (unlike kUserdefaultsLastFocusModeId), so a session
+            // started from the pomodoro screen is now reflected here too. Always re-apply (not just when
+            // the current selection is empty/invalid) so it stays in sync.
+            let lastId = UserDefaults.standard.string(forKey: kUserdefaultsLastPomodoroFocusModeId) ?? ""
+            let defaultId = focusTypes.first(where: { ($0["isDefault"] as? Bool) == true })?["id"] as? String ?? ""
+            model.selectedBlockListId = model.focusBlockLists.first(where: { $0.id == lastId })?.id
+                ?? model.focusBlockLists.first(where: { $0.id == defaultId })?.id
+                ?? model.focusBlockLists.first?.id ?? ""
+            // Default the duration to that mode's last-used value (per-mode → global last → 20).
+            model.focusMinutes = min(180, max(5, menuDefaultDurationMinutes(forFocusModeId: model.selectedBlockListId)))
+        } else {
+            // #777: the focus starter is already open when the menu re-shows — refresh the duration to the
+            // currently-selected mode's last-used value (it may have changed since the menu was last shown).
+            model.focusMinutes = min(180, max(5, menuDefaultDurationMinutes(forFocusModeId: model.selectedBlockListId)))
         }
         // The focus-alignment score exists whenever AI blocking is on — including during a
         // super-distracting session (no special-case for it; it's shown just like the nudge does). The

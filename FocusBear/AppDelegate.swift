@@ -7286,6 +7286,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             arrFocusType[i]["lastScheduledEndDate"] = getStringFromDate(date: end, dateFormat: "yyyy-MM-dd HH:mm:ss")
         }
         arrFocusType[i]["lastIntentionUsed"] = intention
+        // #777: remember the chosen duration per focus mode, so each mode defaults to its own last
+        // duration next time (persisted with arrFocusType below and synced via updateAllFocusModes).
+        arrFocusType[i]["lastDurationUsed"] = minute
         if isAccessibilityEnabled(isPrompt: true) {
             DNDManager.shared.setDND(true)
         }
@@ -7311,6 +7314,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
         // Remember this duration so the menu defaults to it next time.
         UserDefaults.standard.set(minute, forKey: kUserdefaultsLastFocusModeMinutes)
+        // #777: a focus mode started from the menu becomes the pomodoro screen's last-used mode too, so
+        // opening pomodoro pre-selects it. kUserdefaultsLastPomodoroFocusModeId is the pomodoro-specific
+        // "last mode" (not clobbered by scheduled blocking, unlike kUserdefaultsLastFocusModeId).
+        UserDefaults.standard.set(arrFocusType[i]["id"] as? String ?? "", forKey: kUserdefaultsLastPomodoroFocusModeId)
 
         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled {
             showTaskPlayerWindow(totalDuration: minute, intention: intention, automatically: true)

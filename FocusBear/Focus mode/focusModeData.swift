@@ -2555,8 +2555,10 @@ func startFocusModeFromFocusDeviceButton(diffMinutes:Int, shouldUpdateFocusButto
         arrFocusType[currentFocusModeIndex]["isOn"] = true
         arrFocusType[currentFocusModeIndex]["lastStartedDate"] = getStringFromDate(date: startFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
         arrFocusType[currentFocusModeIndex]["lastScheduledEndDate"] = getStringFromDate(date: endFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-        
-        
+        // #777: remember the chosen duration per focus mode (rides the same arrFocusType persistence/sync
+        // as lastIntentionUsed) so each mode defaults to its own last duration next time.
+        arrFocusType[currentFocusModeIndex]["lastDurationUsed"] = diffMinutes
+
         var intention = ""
         if let goal = goal{
             arrFocusType[currentFocusModeIndex]["lastIntentionUsed"] = goal
