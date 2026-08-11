@@ -866,13 +866,13 @@
                                                             </view>
                                                         </box>
                                                         <box hidden="YES" boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="5PV-ED-2LN">
-                                                            <rect key="frame" x="0.0" y="63" width="400" height="21"/>
+                                                            <rect key="frame" x="0.0" y="43" width="400" height="41"/>
                                                             <view key="contentView" id="vMg-RO-YMl">
-                                                                <rect key="frame" x="0.0" y="0.0" width="400" height="21"/>
+                                                                <rect key="frame" x="0.0" y="0.0" width="400" height="41"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
                                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2Er-Nm-mfN">
-                                                                        <rect key="frame" x="11" y="3" width="367" height="15"/>
+                                                                        <rect key="frame" x="11" y="3" width="367" height="35"/>
                                                                         <constraints>
                                                                             <constraint firstAttribute="height" relation="lessThanOrEqual" constant="35" id="eDo-xP-TYQ"/>
                                                                         </constraints>
@@ -883,7 +883,7 @@
                                                                         </textFieldCell>
                                                                     </textField>
                                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="epq-EP-fT5">
-                                                                        <rect key="frame" x="-2" y="3" width="12" height="15"/>
+                                                                        <rect key="frame" x="-2" y="23" width="12" height="15"/>
                                                                         <textFieldCell key="cell" title="*" id="jcJ-vi-fy4">
                                                                             <font key="font" size="13" name="CourierNewPSMT"/>
                                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -891,7 +891,7 @@
                                                                         </textFieldCell>
                                                                     </textField>
                                                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="diQ-6n-BpF">
-                                                                        <rect key="frame" x="385" y="3" width="15" height="15"/>
+                                                                        <rect key="frame" x="385" y="23" width="15" height="15"/>
                                                                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="validIcon" id="cUZ-fV-ac9"/>
                                                                     </imageView>
                                                                 </subviews>
@@ -7144,7 +7144,7 @@ Edit setting -"search" in Firefox</string>
                                                                                                     <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                                                                     <prototypeCellViews>
                                                                                                         <tableCellView identifier="tblCellOnboardingBlockedUrls" id="4gG-Av-Tuz" customClass="tblCellOnboardingBlockedUrls" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                                            <rect key="frame" x="10" y="0.0" width="615" height="27"/>
+                                                                                                            <rect key="frame" x="10" y="0.0" width="614" height="27"/>
                                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                             <subviews>
                                                                                                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="8xQ-o0-Ejq">
@@ -7643,12 +7643,12 @@ Edit setting -"search" in Firefox</string>
                                                                                                             <rect key="frame" x="1" y="1" width="344" height="33"/>
                                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                             <subviews>
-                                                                                                                <datePicker verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="mBf-wV-exX">
-                                                                                                                    <rect key="frame" x="5" y="4" width="82" height="28"/>
+                                                                                                                <datePicker horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="mBf-wV-exX">
+                                                                                                                    <rect key="frame" x="5" y="4" width="86" height="28"/>
                                                                                                                     <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="Des-YI-ybj">
-                                                                                                                        <font key="font" metaFont="system"/>
-                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="805363155.81186903">
-                                                                                                                            <!--2026-07-10 07:59:15 +0000-->
+                                                                                                                        <font key="font" metaFont="system" size="14"/>
+                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="808139285.80439198">
+                                                                                                                            <!--2026-08-11 11:08:05 +0000-->
                                                                                                                         </date>
                                                                                                                         <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -7694,12 +7694,12 @@ Edit setting -"search" in Firefox</string>
                                                                                                             <rect key="frame" x="1" y="1" width="344" height="33"/>
                                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                             <subviews>
-                                                                                                                <datePicker verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sM3-vy-eOj">
-                                                                                                                    <rect key="frame" x="5" y="4" width="82" height="28"/>
+                                                                                                                <datePicker horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="sM3-vy-eOj">
+                                                                                                                    <rect key="frame" x="5" y="4" width="86" height="28"/>
                                                                                                                     <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="z7A-mY-tK3">
-                                                                                                                        <font key="font" metaFont="system"/>
-                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="805363155.81531203">
-                                                                                                                            <!--2026-07-10 07:59:15 +0000-->
+                                                                                                                        <font key="font" metaFont="system" size="14"/>
+                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="808139285.80812395">
+                                                                                                                            <!--2026-08-11 11:08:05 +0000-->
                                                                                                                         </date>
                                                                                                                         <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -7888,7 +7888,7 @@ Edit setting -"search" in Firefox</string>
                                                                                         <rect key="frame" x="0.0" y="194" width="700" height="16"/>
                                                                                         <subviews>
                                                                                             <button horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="wTy-Qj-wUI">
-                                                                                                <rect key="frame" x="-2" y="-1" width="144" height="18"/>
+                                                                                                <rect key="frame" x="-2" y="-1" width="143" height="18"/>
                                                                                                 <buttonCell key="cell" type="check" title="xxSkip microbreaks" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="z0C-14-wCg">
                                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                                                                     <font key="font" metaFont="system"/>
@@ -7898,7 +7898,7 @@ Edit setting -"search" in Firefox</string>
                                                                                                 </connections>
                                                                                             </button>
                                                                                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="TrS-iB-ntQ" customClass="hoverInfoButton" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                                <rect key="frame" x="142" y="0.0" width="16" height="16"/>
+                                                                                                <rect key="frame" x="141" y="0.0" width="16" height="16"/>
                                                                                                 <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSInfo" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="kdv-I5-iq8">
                                                                                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                                     <font key="font" metaFont="system"/>
@@ -7912,9 +7912,9 @@ Edit setting -"search" in Firefox</string>
                                                                                                 </connections>
                                                                                             </button>
                                                                                             <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="xn9-4E-wgR">
-                                                                                                <rect key="frame" x="158" y="7" width="542" height="1"/>
+                                                                                                <rect key="frame" x="157" y="7" width="543" height="1"/>
                                                                                                 <view key="contentView" id="cfI-Sl-8xE">
-                                                                                                    <rect key="frame" x="0.0" y="0.0" width="542" height="1"/>
+                                                                                                    <rect key="frame" x="0.0" y="0.0" width="543" height="1"/>
                                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                 </view>
                                                                                                 <constraints>
@@ -7937,7 +7937,7 @@ Edit setting -"search" in Firefox</string>
                                                                                         <rect key="frame" x="0.0" y="162" width="700" height="16"/>
                                                                                         <subviews>
                                                                                             <button horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="BAW-jp-yVs">
-                                                                                                <rect key="frame" x="-2" y="-1" width="320" height="18"/>
+                                                                                                <rect key="frame" x="-2" y="-1" width="319" height="18"/>
                                                                                                 <buttonCell key="cell" type="check" title="xxUse Al to decide if websites should be allowed" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="443-81-5yM">
                                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                                                                     <font key="font" metaFont="system"/>
@@ -7947,7 +7947,7 @@ Edit setting -"search" in Firefox</string>
                                                                                                 </connections>
                                                                                             </button>
                                                                                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="omZ-k5-YaC" customClass="hoverInfoButton" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                                <rect key="frame" x="318" y="0.0" width="16" height="16"/>
+                                                                                                <rect key="frame" x="317" y="0.0" width="16" height="16"/>
                                                                                                 <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSInfo" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="O7Z-EQ-8XB">
                                                                                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                                     <font key="font" metaFont="system"/>
@@ -7961,9 +7961,9 @@ Edit setting -"search" in Firefox</string>
                                                                                                 </connections>
                                                                                             </button>
                                                                                             <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="INY-8e-wsz">
-                                                                                                <rect key="frame" x="334" y="7" width="366" height="1"/>
+                                                                                                <rect key="frame" x="333" y="7" width="367" height="1"/>
                                                                                                 <view key="contentView" id="n3x-7O-oOy">
-                                                                                                    <rect key="frame" x="0.0" y="0.0" width="366" height="1"/>
+                                                                                                    <rect key="frame" x="0.0" y="0.0" width="367" height="1"/>
                                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                 </view>
                                                                                                 <constraints>

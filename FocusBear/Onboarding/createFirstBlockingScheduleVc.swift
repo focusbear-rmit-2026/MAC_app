@@ -168,6 +168,11 @@ class createFirstBlockingScheduleVc: NSViewController {
     override func viewWillAppear() {
         allApiObject.capturePosthog(event: "create-first-blocking-schedule-screen-shown", metadata: [:])
         showSelectedStrictnessLevel()
+        // Default the schedule to start at the current time and end one hour later. Without this the
+        // storyboard's useCurrentDate leaves both pickers at the current time.
+        let now = Date()
+        datePickerFrom.dateValue = now
+        datePickerTill.dateValue = Calendar.current.date(byAdding: .hour, value: 1, to: now) ?? now
     }
     
     override func viewDidAppear() {
