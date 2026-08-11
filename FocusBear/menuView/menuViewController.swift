@@ -220,7 +220,12 @@ class menuViewController: NSViewController {
         lblRemaining.stringValue = "remaining"
         
         lblTotalFocusedTimeToday.stringValue = ""
-        
+        // Clear the storyboard placeholder ("xxFocus Alignment score"). setFocusAlignmentScore() fills
+        // it in with the real value; until then it's read into the SwiftUI menu's focusOnTaskText, so an
+        // uncleared placeholder leaks through as "xx..." when the menu renders before the score is
+        // computed (e.g. under memory pressure). Blank passes the !isEmpty guard → nothing is shown. #2205
+        lblFocusAlignmentScore.stringValue = ""
+
         boxTipPermissions.isHidden = true
         lblTitleBlockingDisabledFirstTime.stringValue = "Get the most out of Focus Bear"
         
