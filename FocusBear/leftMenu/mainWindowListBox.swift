@@ -217,6 +217,12 @@ class mainWindowListBox: NSBox {
         // tool opens its window and steals focus, the follow-up mouseExited never arrives. Any state
         // change that touches `hovered`/`isSelected`/`isEnabled` and calls updateAppearance keeps it right.
         hideButton?.isHidden = !(showsHideButton && hovered && isEnabled)
+        // #2252: keep the ✕ readable in every state. A selected row uses a solid light fill and forces
+        // its label to black; the ✕ was left at the appearance-adaptive labelColor (white in dark mode),
+        // so it vanished on the selected fill. Match the ✕ to the label's colour so it always contrasts.
+        if let color = label?.textColor {
+            hideButton?.attributedTitle = NSAttributedString(string: "✕", attributes: [.foregroundColor: color])
+        }
     }
     
     // MARK: - Mouse Events
