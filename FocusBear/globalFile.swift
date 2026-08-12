@@ -1046,6 +1046,22 @@ func getDaysSinceAppInstalled()->Int{
     return diffDays
 }
 
+/// True when the app is running inside CI / an automated test harness. Used to suppress ALL analytics
+/// sends so CI-launched builds never pollute the PostHog onboarding funnel with fake "users": a CI
+/// build boots to the welcome screen and would otherwise fire welcome-screen-shown etc. from cloud
+/// runners (Focus-Bear/analytics#33). Detected via the standard CI env vars, the XCTest harness, or an
+/// explicit FOCUSBEAR_DISABLE_TELEMETRY opt-out CI can set when those env vars don't propagate to the
+/// launched app. Computed each call (cheap) so it reflects the actual process environment.
+let isRunningInCIOrAutomatedTest: Bool = {
+    let env = ProcessInfo.processInfo.environment
+    for key in ["CI", "GITHUB_ACTIONS", "FOCUSBEAR_DISABLE_TELEMETRY",
+                "XCTestConfigurationFilePath", "XCTestSessionIdentifier"] {
+        if let value = env[key], !value.isEmpty { return true }
+    }
+    // A unit/UI-test bundle injects XCTest into the running process.
+    return NSClassFromString("XCTestCase") != nil
+}()
+
 func isAppInstalledWithinLast3Days() -> Bool {
     let currentDate = Date()
     let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate

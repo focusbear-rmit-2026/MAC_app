@@ -405,8 +405,11 @@ class AllApi:NSObject {
     
     func captureEventEndpoint (event:String, metadata:[String:Any]){
         addLog(text: "captureEventEndpoint event: \(event)")
-        
-        
+
+        // Never emit analytics from a CI/E2E/test run — see isRunningInCIOrAutomatedTest
+        // (Focus-Bear/analytics#33). Guards direct callers too, not just those via capturePosthog.
+        if isRunningInCIOrAutomatedTest { return }
+
         guard (appdelegate!.credential?.accessToken) != nil else{
             addLog(text: "func call:- captureEventEndpoint return:- no accessToken found")
             return
@@ -492,6 +495,9 @@ class AllApi:NSObject {
         if currentUserEmail.lowercased().contains("internaltest") || isTestUser{
             return;
         }
+        // CI/E2E builds boot to the welcome screen on cloud runners and would otherwise inflate the
+        // PostHog onboarding funnel with fake "users" (Focus-Bear/analytics#33). Kill telemetry here.
+        if isRunningInCIOrAutomatedTest { return }
         captureEventEndpoint(event: event, metadata: metadata)
 
         addLog(text: "capturePosthog event: \(event)")
@@ -5087,7 +5093,10 @@ class AllApi:NSObject {
     
     func capturePosthogIdentify(sAliasID:String, completionHandler: @escaping(_ result:Bool) -> ()){
         addLog(text: "capturePosthogIdentify")
-        
+
+        // No PostHog identify from CI/E2E/test runs — see isRunningInCIOrAutomatedTest (analytics#33).
+        if isRunningInCIOrAutomatedTest { completionHandler(false); return }
+
         let responsePath = "https://app.posthog.com/capture/"
         if let responsePathUrl = NSURL(string: responsePath){
             
