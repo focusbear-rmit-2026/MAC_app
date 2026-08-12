@@ -3317,54 +3317,24 @@ func getGoalsAndFocusdJsonForBlockedScript()-> String{
 }
 
 
-func exitFullScreen(runningApp:NSRunningApplication){
-    var script: String = ""
+// Reads whether the app currently has a native-fullscreen window. A fullscreen window sits on its own
+// Space, so from a background query `count of windows` can report 0. Reading AXFocusedWindow first primes
+// the AX window list; the sweep of any enumerable windows then catches the fullscreen one. Must be called
+// after a warm-up read (see exitFullScreen) — the first cold AX query returns empty.
+func isAppInFullScreen(runningApp:NSRunningApplication) -> Bool {
     let appName = runningApp.localizedName ?? ""
-    script =
-        """
-        tell application "System Events" to tell process "\(appName)"
-        set fullScreenStatus to value of attribute "AXFullScreen" of window 1
-        if fullScreenStatus then
-        tell application "System Events" to tell process "\(appName)"
-        set value of attribute "AXFullScreen" of window 1 to false
-        end tell
-        end if
-        end tell
-        """
-    
-    
-    executeScript(script: script)
-}
-
-func isRunningAppFullScreen(runningApp:NSRunningApplication, browser: BROWSER?)->Bool{
-    if let browser = browser {
-        if browser == ._GOOGLE_CHROME_{
-            return isChromeFullScreen(runningApp:runningApp)
-        }
-    }
-    var script: String = ""
-    let appName = runningApp.localizedName ?? ""
-    script =
-        """
-        tell application "System Events" to tell process "\(appName)"
-        set fullScreenStatus to value of attribute "AXFullScreen" of window 1
-        end tell
-        """
-    return executeScriptAndReturnBool(script: script)
-}
-
-func isChromeFullScreen(runningApp:NSRunningApplication) -> Bool {
-    var script: String = ""
-    let appName = runningApp.localizedName ?? ""
-    script =
+    let script =
     """
     tell application "System Events"
     tell process "\(appName)"
-    set windowCount to count of windows
-    repeat with i from 1 to windowCount
     try
-    set fullScreenStatus to value of attribute "AXFullScreen" of window i
-    if fullScreenStatus is true then
+    if value of attribute "AXFullScreen" of (value of attribute "AXFocusedWindow") is true then
+    return true
+    end if
+    end try
+    repeat with i from 1 to (count of windows)
+    try
+    if value of attribute "AXFullScreen" of window i is true then
     return true
     end if
     end try
@@ -3373,8 +3343,55 @@ func isChromeFullScreen(runningApp:NSRunningApplication) -> Bool {
     end tell
     return false
     """
-                        
     return executeScriptAndReturnBool(script: script)
+}
+
+// Exits an app's native fullscreen with the system-standard ⌃⌘F toggle — the one method every
+// fullscreen-capable app honors. An Accessibility *write* to AXFullScreen is unreliable: Safari accepts
+// it, but Chrome, Calendar and others silently ignore it, so `set AXFullScreen to false` is a no-op for
+// them. We only send the toggle when the app is ACTUALLY fullscreen (else ⌃⌘F would send it INTO
+// fullscreen), and activate it first so the keystroke lands on the right app.
+func exitFullScreen(runningApp:NSRunningApplication){
+    let appName = runningApp.localizedName ?? ""
+    // Warm up Accessibility first. The FIRST AX query to an app whose fullscreen window is on its own
+    // Space comes back "cold" — `count of windows` = 0 and `window 1` throws -1719 — and only the NEXT
+    // query returns the real state. This throwaway read that touches `count of windows`, AXFocusedWindow
+    // AND `window 1` primes the AX window list so the detection below is accurate. Without it, detection
+    // always reads cold, returns false, and the block never exits fullscreen (verified: builds that
+    // issued this extra AX read first worked for every app; removing it broke all of them).
+    let warmUp =
+        """
+        tell application "System Events" to tell process "\(appName)"
+        try
+        set warmCount to (count of windows)
+        end try
+        try
+        set warmFocused to value of attribute "AXFocusedWindow"
+        set warmRole to (role of warmFocused)
+        set warmFS to (value of attribute "AXFullScreen" of warmFocused)
+        end try
+        try
+        set warmWin1 to (value of attribute "AXFullScreen" of window 1)
+        end try
+        end tell
+        """
+    _ = executeScriptAndReturnString(script: warmUp)
+    guard isAppInFullScreen(runningApp: runningApp) else { return }
+    runningApp.activate(options: [.activateIgnoringOtherApps])
+    let script =
+        """
+        tell application "System Events"
+        keystroke "f" using {command down, control down}
+        end tell
+        """
+    executeScript(script: script)
+}
+
+func isRunningAppFullScreen(runningApp:NSRunningApplication, browser: BROWSER?)->Bool{
+    // One generic AXFocusedWindow-based read for every app (Safari, Chrome/Chromium, native apps),
+    // replacing the old per-browser split and the hard-coded `window 1` that threw -1719 when the
+    // fullscreen window was on its own Space with no windows enumerable.
+    return isAppInFullScreen(runningApp: runningApp)
 }
 
 
