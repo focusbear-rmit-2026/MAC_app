@@ -2165,7 +2165,10 @@ func focusTryToBlockUnwantedApp(runningApp: NSRunningApplication, appName:String
             }
         }
     }
-    exitFullScreen(runningApp:runningApp)
+    // NOTE: don't exit fullscreen here — this runs BEFORE the block/allow decision below, so an app that
+    // ends up allowed (e.g. a browser silently allowed by tryCheckAppFromAi) would be yanked out of
+    // fullscreen for nothing. Fullscreen is now exited only where a block actually happens:
+    // focusBlockUnwantedApp() and showPopupBlockConfirmWindow() each do it themselves.
     addLog(text: "focusTryToBlockUnwantedApp:- \(appName)")
     if SettingsManagerObject.isCuddlyModeEnabled{
         if arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){

@@ -151,6 +151,12 @@ func showBrowsersTabAuditView(){
 
 func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningApplication?, url:String, script:String, isBlockApp:Bool, browser:BROWSER?, tabTitle:String?, fullUrl:String, aiBlockReason:String?, isTimeOut:Bool, isBlockByAi:Bool, scoreForThisSiteApp: Double?, payload: [String : Any]?, isBrowser:Bool, suggestedTask:String?, suggestedTaskId:String?){
     addLog(text: "func:- PopupBlockConfirmWindow")
+    // Exit the app's fullscreen so this block-confirm popup is actually visible. Done here (rather than
+    // before the block/allow decision) so an app that ends up allowed is never pulled out of fullscreen.
+    // Only for app blocks — URL popups pass currentApp: nil and exit fullscreen on their own paths.
+    if let currentApp = currentApp {
+        exitFullScreen(runningApp: currentApp)
+    }
     var currentPid: pid_t?
     if let runningApp = NSWorkspace.shared.frontmostApplication{
         let pid = runningApp.processIdentifier
