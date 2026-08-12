@@ -18,13 +18,18 @@ enum AudhdResults {
     /// Query-param key carrying the participant's retest / test code.
     static let testCodeParamKey = "test-code"
 
-    /// Base domain the online AuDHD test is served from. Must match the domain the
-    /// test itself loads on so the results page is same-origin (per online-tests#57
-    /// decision #3). Mirrors the mobile app's `WEB_URL.AUDHD_TEST`
-    /// (`https://www.focusbear.io/tests/audhd-test`).
-    static let baseDomain = "https://www.focusbear.io/tests"
-    /// Path (under `baseDomain`) of the gated advanced-results page.
+    /// Base domain the gated results page is served from. This is the Cloudflare Pages host the online
+    /// AuDHD test runs on — the results page + its Worker API (`/api/advanced-results`) live here, so the
+    /// webview must load THIS domain (online-tests#57). `www.focusbear.io/tests/view-results` 404s.
+    static let baseDomain = "https://audhdtest-focusbear.pages.dev"
+    /// Path (under `baseDomain`) of the gated advanced-results page. NOTE: `/view-results` (200), NOT
+    /// `/view-audhd-results` — the latter is only the custom-scheme deep-link path and 404s as a web URL.
     static let resultsPath = "/view-results"
+
+    /// Case-sensitive marker the results Worker requires in the webview's User-Agent to serve the gated
+    /// profile — without it `/api/advanced-results` returns 403 and the page shows "Open in the app"
+    /// (online-tests#57). Same marker the mobile app uses.
+    static let userAgentAppMarker = "FocusBearApp"
 
     /// Builds the full results URL for a given test code, url-encoding the value.
     static func resultsURL(testCode: String) -> URL? {
@@ -66,7 +71,13 @@ final class AudhdResultsWebViewVc: NSViewController, WKNavigationDelegate {
     private var testCode: String = ""
 
     private lazy var webView: WKWebView = {
-        let webView = WKWebView(frame: .zero)
+        // applicationNameForUserAgent APPENDS the marker to the default WebKit User-Agent (keeping a
+        // valid browser UA), and it rides both the page load AND its subresource fetches — which is
+        // exactly what the results Worker checks, so the gated `/api/advanced-results` returns 200
+        // instead of 403. Must be set on the configuration before the webView is created.
+        let configuration = WKWebViewConfiguration()
+        configuration.applicationNameForUserAgent = AudhdResults.userAgentAppMarker
+        let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = self
         webView.translatesAutoresizingMaskIntoConstraints = false
         return webView
