@@ -979,7 +979,15 @@ func showWelcomeWindow(){
 
 func showQuitWindow(){
     addLog(text: "[user-action] - func showQuitWindow")
-    
+
+    // Teacher session:- the student can't quit the app to escape a class focus session. Show the
+    // teacher-locked alert (with Request unlock) instead of the quit flow.
+    if teacherSessionManagerObject.isTeacherSessionActive(){
+        addLog(text: "[user-action] quit blocked during teacher session — showing locked alert")
+        teacherSessionManagerObject.showTeacherSessionLockedAlert()
+        return
+    }
+
     showQuittingConfirmView()
     quittingWcObj?.showWindow(appdelegate!)
     quittingWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))//modalPanelWindow

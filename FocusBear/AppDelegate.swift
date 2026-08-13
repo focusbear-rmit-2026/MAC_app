@@ -7006,6 +7006,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             terminateFromSelf = false
             return .terminateNow
         }else {
+            // Teacher session:- block user-initiated quit (Cmd+Q / dock / menu) so a student can't
+            // quit the app to escape a class focus session. Show the teacher-locked alert (with Request
+            // unlock) instead. Placed before the quit flow below so it also covers the case where the
+            // main window is visible (which otherwise routes to abortCurrentState, not showQuitWindow).
+            if teacherSessionManagerObject.isTeacherSessionActive(){
+                addLog(text: "[user-action] quit blocked during teacher session — showing locked alert")
+                teacherSessionManagerObject.showTeacherSessionLockedAlert()
+                return .terminateCancel
+            }
             if currentState == ._ONBOARDING_{
                 
                 if UserDefaults.standard.object(forKey: kUserdefaultsIsUserLoggedIn) as? Bool == nil{
