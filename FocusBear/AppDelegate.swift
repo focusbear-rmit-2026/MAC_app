@@ -7888,7 +7888,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 }
                                 
                                 
-                                for path in SettingsManagerObject.arrAlwaysAllowedApps{
+                                for path in SettingsManagerObject.effectiveAlwaysAllowedApps{
                                     let url = URL(fileURLWithPath: path)
                                     if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
                                         isAppAllowed = true
@@ -7921,7 +7921,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 return;
                             }
                             
-                            for path in SettingsManagerObject.arrAlwaysAllowedApps{
+                            for path in SettingsManagerObject.effectiveAlwaysAllowedApps{
                                 let url = URL(fileURLWithPath: path)
                                 if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
                                     setFocusBearIconToNormal()
@@ -8110,7 +8110,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         return;
                     }
                     
-                    for path in SettingsManagerObject.arrAlwaysAllowedApps{
+                    for path in SettingsManagerObject.effectiveAlwaysAllowedApps{
                         let url = URL(fileURLWithPath: path)
                         if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
                             setFocusBearIconToNormal()
@@ -8763,7 +8763,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 // browser — see startTeacherSession), and every real app switch restarts it via
                 // frontApplicationChanged(). A per-tick self-heal for the "no app-switch notification"
                 // case is therefore redundant.
-                for path in SettingsManagerObject.arrAlwaysAllowedApps{
+                for path in SettingsManagerObject.effectiveAlwaysAllowedApps{
                     let url = URL(fileURLWithPath: path)
                     if url.deletingPathExtension().lastPathComponent.lowercased() == name{
                         DispatchQueue.main.async {
@@ -9071,7 +9071,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func tryToBlockAlwaysBlockedApp(runningApp: NSRunningApplication, appName:String)->Bool{
         print("tryToBlockAlwaysBlockedApp*************")
         
-        for path in SettingsManagerObject.arrAlwaysAllowedApps{
+        for path in SettingsManagerObject.effectiveAlwaysAllowedApps{
             let url = URL(fileURLWithPath: path)
             if url.deletingPathExtension().lastPathComponent.lowercased() == appName.lowercased(){
                 print("App \(appName) is in Always Allowed list, skipping block")
@@ -9422,7 +9422,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         return;
                     }
                     
-                    for path in SettingsManagerObject.arrAlwaysAllowedApps{
+                    for path in SettingsManagerObject.effectiveAlwaysAllowedApps{
                         let url = URL(fileURLWithPath: path)
                         if url.deletingPathExtension().lastPathComponent.lowercased() == name{
                             DispatchQueue.main.async {

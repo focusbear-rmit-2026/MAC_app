@@ -104,7 +104,16 @@ class SettingsManager:NSObject{
     
     // **always allowed apps (global whitelist)**
     var arrAlwaysAllowedApps = [String]()
-    
+
+    // The global whitelist that currently applies to app-blocking enforcement. During a teacher class
+    // session it's empty: the student's personal "Always Allowed Apps" must NOT override the teacher's
+    // allow-list — only teacher-allowed apps are permitted (#2266, mirrors the Windows fix). Outside a
+    // teacher session it's the normal whitelist. Use this (not arrAlwaysAllowedApps) in blocking checks;
+    // the Settings UI / storage still use arrAlwaysAllowedApps directly.
+    var effectiveAlwaysAllowedApps: [String] {
+        teacherSessionManagerObject.isTeacherSessionActive() ? [] : arrAlwaysAllowedApps
+    }
+
     
     var isOfficeModeEnabled = true
     var kIsReducedMotion = false
