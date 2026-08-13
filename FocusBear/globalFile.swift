@@ -3399,6 +3399,24 @@ func isRunningAppFullScreen(runningApp:NSRunningApplication, browser: BROWSER?)-
 
 
 
+// Whether the running app (its lowercased localized name) is in a focus mode's allowed_apps list.
+// allowed_apps entries are usually app paths ("/Applications/Google Chrome.app"), so we match on the
+// app-name component. During a TEACHER session we also accept the case where the running app's name
+// CONTAINS the allow-list entry — e.g. an allowed "Chrome" permits the running "Google Chrome".
+// Outside a teacher session we keep the strict exact-name match to avoid over-allowing
+// (e.g. "Notes" must not allow "Notes Plus").
+func isRunningAppInAllowedApps(_ allowedAppPaths: [String], runningAppNameLowercased name: String) -> Bool {
+    if name.isEmpty { return false }
+    let teacherSession = teacherSessionManagerObject.isTeacherSessionActive()
+    for path in allowedAppPaths {
+        let allowedName = URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent.lowercased()
+        if allowedName.isEmpty { continue }
+        if allowedName == name { return true }
+        if teacherSession && name.contains(allowedName) { return true }
+    }
+    return false
+}
+
 func shutDownMac() {
     addLog(text: "shut Down Mac")
     let script = """

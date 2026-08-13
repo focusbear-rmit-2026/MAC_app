@@ -7971,12 +7971,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     isAppAllowed = true
                                     isAllowedAppIsDefault = true
                                 }else{
-                                    for path in allowAppsPath{
-                                        let url = URL(fileURLWithPath: path)
-                                        if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
-                                            isAppAllowed = true
-                                            break;
-                                        }
+                                    if isRunningAppInAllowedApps(allowAppsPath, runningAppNameLowercased: nameLowercased){
+                                        isAppAllowed = true
                                     }
                                 }
                             }
@@ -8159,12 +8155,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             isAppAllowed = true
                             isAllowedAppIsDefault = true
                         }else{
-                            for path in allowAppsPath{
-                                let url = URL(fileURLWithPath: path)
-                                if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
-                                    isAppAllowed = true
-                                    break;
-                                }
+                            if isRunningAppInAllowedApps(allowAppsPath, runningAppNameLowercased: nameLowercased){
+                                isAppAllowed = true
                             }
                         }
                     }
@@ -8810,12 +8802,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     
                     
                     let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-                    for path in allowAppsPath{
-                        let url = URL(fileURLWithPath: path)
-                        if url.deletingPathExtension().lastPathComponent.lowercased() == name{
-                            isAppAllowed = true
-                            break;
-                        }
+                    if isRunningAppInAllowedApps(allowAppsPath, runningAppNameLowercased: name){
+                        isAppAllowed = true
                     }
                 }
                 
@@ -9493,12 +9481,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             isAppAllowed = true
                         }else{
                             let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-                            for path in allowAppsPath{
-                                let url = URL(fileURLWithPath: path)
-                                if url.deletingPathExtension().lastPathComponent.lowercased() == name{
-                                    isAppAllowed = true
-                                    break;
-                                }
+                            if isRunningAppInAllowedApps(allowAppsPath, runningAppNameLowercased: name){
+                                isAppAllowed = true
                             }
                         }
                         
