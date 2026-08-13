@@ -228,6 +228,12 @@ final class MenuModel: ObservableObject {
     var onToggleBlockingSchedule: () -> Void = {}
     var onOpenBlockingScheduleConfig: () -> Void = {}   // tap the card → blocking-schedule settings
 
+    // Re-join card (#2267):- shown when the student declined a class focus session that's still live and
+    // no session is currently active. The "Join session" button re-joins it.
+    @Published var classSessionJoinable = false
+    @Published var classSessionName = ""
+    var onJoinClassSession: () -> Void = {}
+
     // Voice screen state
     @Published var inVoiceMode = false
     @Published var voicePermissionDenied = false
@@ -493,6 +499,10 @@ struct FocusBearMenuView: View {
 
             if model.blockingScheduleActive {
                 blockingScheduleCard
+            }
+
+            if model.classSessionJoinable {
+                classSessionCard
             }
 
             AccordionRow(icon: "cup.and.saucer.fill",
@@ -797,6 +807,68 @@ struct FocusBearMenuView: View {
         .background(MenuTheme.cardBg(scheme))
         .cornerRadius(13)
         .overlay(RoundedRectangle(cornerRadius: 13).stroke(MenuTheme.orange.opacity(0.3), lineWidth: 1))
+    }
+
+    // "A class focus session is running" + a "Join session" button, for a student who declined/dismissed
+    // the join prompt while the session is still live (#2267). Styled like blockingScheduleCard.
+    private var classSessionCard: some View {
+        HStack(spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "graduationcap.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(MenuTheme.orange)
+                // Title wraps to as many lines as it needs (no truncation) so it's fully visible even
+                // when the Join button narrows the column; the session name sits below in a smaller font.
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(classSessionRunningTitleText)
+                        .font(MenuTheme.font(14, .semibold))
+                        .foregroundColor(MenuTheme.primaryText(scheme))
+                        .fixedSize(horizontal: false, vertical: true)
+                    if !model.classSessionName.isEmpty {
+                        Text(model.classSessionName)
+                            .font(MenuTheme.font(11, .regular))
+                            .foregroundColor(MenuTheme.subtitle(scheme))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer(minLength: 8)
+            }
+
+            SwiftUI.Button(action: model.onJoinClassSession) {
+                Text(classSessionJoinButtonText)
+                    .font(MenuTheme.font(12, .semibold))
+                    .foregroundColor(MenuTheme.orange)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(MenuTheme.orange.opacity(0.15))
+                    .cornerRadius(8)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .pointingHandCursor()
+            .fixedSize()
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity)
+        .background(MenuTheme.cardBg(scheme))
+        .cornerRadius(13)
+        .overlay(RoundedRectangle(cornerRadius: 13).stroke(MenuTheme.orange.opacity(0.3), lineWidth: 1))
+    }
+
+    // Card title + button read from the teacherSessionInfo config block (same block the join prompt uses),
+    // so they localize consistently and fall back to English if the block/key isn't present.
+    private var classSessionRunningTitleText: String {
+        if let info = configjson.value(forKey: "teacherSessionInfo") as? NSDictionary,
+           let s = info.value(forKey: "classSessionRunningTitle") as? String, !s.isEmpty {
+            return s
+        }
+        return "A class focus session is running"
+    }
+
+    private var classSessionJoinButtonText: String {
+        if let info = configjson.value(forKey: "teacherSessionInfo") as? NSDictionary,
+           let s = info.value(forKey: "buttonJoin") as? String, !s.isEmpty {
+            return s
+        }
+        return "Join session"
     }
 
     private func habitActionButton(_ title: String, action: @escaping () -> Void) -> some View {

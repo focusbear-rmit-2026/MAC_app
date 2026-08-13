@@ -2546,6 +2546,12 @@ extension menuViewController {
         model.onDismissBlocking = { UserDefaults.standard.set(true, forKey: kUserDefaultsBlockingScheduleAddedFirstTime) }
         model.onToggleBlockingSchedule = { [weak self] in self?.btnCustomBlockingClicked(self as Any) }
         model.onOpenBlockingScheduleConfig = { [weak self] in self?.btnEditBlockingScheduleClicked(self as Any) }
+        model.onJoinClassSession = {
+            // Re-join the declined class session (#2267), then dismiss the menu — startTeacherSession
+            // takes over the UI on success, or an alert shows if the session is no longer joinable.
+            closeMenuWindowIsVisible()
+            teacherSessionManagerObject.joinDeclinedSession()
+        }
         model.onSaveIntention = { [weak self] newIntention in
             // Persist via the canonical setter (updates whatToAchieveInFocusBlock + resets the
             // convince-AI caches), then refresh the legacy label that feeds the menu and the in-focus
@@ -2857,6 +2863,11 @@ extension menuViewController {
         } else {
             model.blockingScheduleActive = false
         }
+
+        // Re-join card (#2267): show when the student declined a class session that's still live and no
+        // session is currently active. Evaluated every tick / open so it appears and disappears in step.
+        model.classSessionJoinable = teacherSessionManagerObject.hasJoinableSession()
+        model.classSessionName = teacherSessionManagerObject.declinedJoinableSessionName
 
         // Focus music: current track name + playing/paused state (drives the play/pause control).
         // Built-in tracks live in arrAllTracks; Spotify / YouTube-Music tracks are stored separately and

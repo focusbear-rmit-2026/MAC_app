@@ -24,6 +24,10 @@ class teacherSessionManager: NSObject {
     var teacherSessionScheduledFinishTime:Date?
     var isTeacherSessionEndAllowed = false// only true when class-session-ended arrived or scheduled finish time reached
     var pendingInviteSessionId:String?
+    // A class session the student declined (or dismissed the prompt for) that is still live and can be
+    // re-joined from the status-bar menu (#2267). Held until the join succeeds, the join attempt fails,
+    // or the session ends — cleared in all three cases.
+    var declinedJoinableSessionDic:[String:Any]?
     var timerTeacherSessionHeartbeat:Timer?
     var teacherUnlockRequestWindow:NSWindow?
 
@@ -82,6 +86,12 @@ class teacherSessionManager: NSObject {
 
     func handleSessionEnded(dictionary:[String:Any]){
         let sessionId = getSessionIdFromDictionary(dictionary: dictionary)
+        // If the student had declined this session (never active) and it's now ended, drop the stored
+        // re-join entry so the menu item disappears (#2267). Handled before the active-session guard
+        // below, which would otherwise early-return for a session that was never joined.
+        if let declined = declinedJoinableSessionDic, getSessionIdFromDictionary(dictionary: declined) == sessionId{
+            clearDeclinedJoinableSession()
+        }
         if sessionId.isEmpty || sessionId != activeTeacherSessionId{
             return;
         }
@@ -172,6 +182,9 @@ class teacherSessionManager: NSObject {
                     self.joinTeacherSession(sessionDic: sessionDic)
                 }else{
                     addLog(text: "[user-action] teacher session:- join prompt declined")
+                    // Keep the session so the student can re-join from the status-bar menu (#2267).
+                    self.declinedJoinableSessionDic = sessionDic
+                    self.refreshMenuForJoinableSession()
                     allApiObject.declineClassSession(sessionId: sessionId, completionHandler: {result in
 
                     })
@@ -192,12 +205,53 @@ class teacherSessionManager: NSObject {
                     self.startTeacherSession(sessionDic: newDic)
                 }else{
                     addLog(text: "teacher session:- join api failed for session \(sessionId)")
+                    // The session couldn't be joined (most likely it ended) — drop the stored re-join
+                    // entry so the menu item disappears (#2267).
+                    self.clearDeclinedJoinableSession()
                     showCustomAlert(title: "Could not join the class session", body: "The class focus session is no longer active or could not be joined. Please ask your teacher to start it again.", buttonOkText: "OK", buttonCancelText: nil, checkBoxText: nil, autoClose: true, buttonLinkUrl: nil, buttonLinkText: nil, completionHandler: {isOkClicked in
 
                     })
                 }
             }
         })
+    }
+
+    //***********C2b re-join a declined/dismissed session (#2267)***************//
+
+    // True when there's a class session the student declined that is still live and no session is
+    // currently active — i.e. the "A class focus session is running / Join session" menu item should show.
+    func hasJoinableSession()->Bool{
+        return !isTeacherSessionActive() && declinedJoinableSessionDic != nil
+    }
+
+    // Name of the declined-but-joinable session (shown under the menu card's title). Empty if none.
+    var declinedJoinableSessionName:String{
+        return declinedJoinableSessionDic?["name"] as? String ?? ""
+    }
+
+    // Re-join the previously declined session (same path as accepting the original prompt). On success
+    // startTeacherSession() clears the stored session; on failure joinTeacherSession() clears it.
+    func joinDeclinedSession(){
+        guard let sessionDic = declinedJoinableSessionDic else{
+            return;
+        }
+        addLog(text: "[user-action] teacher session:- re-joining previously declined session from menu")
+        joinTeacherSession(sessionDic: sessionDic)
+    }
+
+    func clearDeclinedJoinableSession(){
+        if declinedJoinableSessionDic != nil{
+            declinedJoinableSessionDic = nil
+            refreshMenuForJoinableSession()
+        }
+    }
+
+    // Refresh the status-bar menu so the "class session running / Join" item appears/disappears in step
+    // with hasJoinableSession().
+    func refreshMenuForJoinableSession(){
+        DispatchQueue.main.async {
+            menuViewControllerObj?.reloadIfNeeded()
+        }
     }
 
     func startTeacherSession(sessionDic:[String:Any]){
@@ -210,6 +264,10 @@ class teacherSessionManager: NSObject {
             return;
         }
         addLog(text: "teacher session:- starting teacher session \(sessionId)")
+
+        // A session is now starting — drop any stored declined-but-joinable session so the menu re-join
+        // item goes away (#2267).
+        clearDeclinedJoinableSession()
 
         // the server force-finished any personal focus block on join, clean the local state silently
         if isFocusModeOnOrPaused(){
