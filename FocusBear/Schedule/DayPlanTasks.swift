@@ -684,12 +684,20 @@ final class DayPlanTaskStore {
         let k = dayKey(date)
         guard let i = byDay[k]?.firstIndex(where: { $0.id == task.id }) else { return }
         let wasDone = byDay[k]![i].done
+        let oldSubtasks = byDay[k]![i].subtasks
         byDay[k]?[i] = task; save()
         // #2148: reflect a completion flip onto the underlying to-do's status so web/mobile update.
         // Only on an actual done transition, and only when we can echo the to-do's title + quadrant
         // back (else we'd risk clobbering them on the upsert).
         if task.done != wasDone, let sid = task.sourceTaskId, let q = task.eisenhowerQuadrant {
             DayPlanSync.shared.setTodoStatus(todoID: sid, title: task.title, quadrant: q, completed: task.done)
+        }
+        // Reflect an edited checklist onto the backing to-do's `subtasks` so web/mobile see them
+        // (they were previously kept only in local UserDefaults, invisible to other devices). Only
+        // on an actual change, and only when we can echo title + quadrant back to avoid clobbering.
+        if task.subtasks != oldSubtasks, let sid = task.sourceTaskId, let q = task.eisenhowerQuadrant {
+            DayPlanSync.shared.setTodoSubtasks(todoID: sid, title: task.title, quadrant: q,
+                                               subtasks: task.subtaskList)
         }
     }
 
@@ -737,6 +745,13 @@ final class DayPlanTaskStore {
                 let planned = self.byDay[k]![idx]
                 DayPlanSync.shared.setTodoPlanned(todoID: newId, title: planned.title, quadrant: quadrant,
                                                   plannedDate: date, blockKey: planned.blockKey, order: nil)
+                // A from-scratch task can already carry subtasks (added in the modal before it was
+                // synced); the create DTO above didn't include them, so push them now that it has a
+                // backing to-do, else they'd stay local-only and never reach web/mobile.
+                if !planned.subtaskList.isEmpty {
+                    DayPlanSync.shared.setTodoSubtasks(todoID: newId, title: planned.title,
+                                                       quadrant: quadrant, subtasks: planned.subtaskList)
+                }
             }
         }
     }
@@ -770,6 +785,19 @@ final class DayPlanTaskStore {
         }
     }
 
+    /// Map a backend to-do's `subtasks` (canonical `{ name, is_completed }` shape) into local
+    /// `DayPlanSubtask`s. Returns nil when the to-do has no (valid) subtasks, matching the "absent =
+    /// nil" convention on `DayPlanTask.subtasks`. Skips entries with an empty name.
+    private func mapSubtasks(from obj: [String: Any]) -> [DayPlanSubtask]? {
+        guard let raw = obj["subtasks"] as? [[String: Any]] else { return nil }
+        let mapped: [DayPlanSubtask] = raw.compactMap { entry in
+            guard let name = entry["name"] as? String,
+                  !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+            return DayPlanSubtask(title: name, done: (entry["is_completed"] as? Bool) ?? false)
+        }
+        return mapped.isEmpty ? nil : mapped
+    }
+
     @discardableResult
     func hydrate(fromDay raw: NSDictionary, for date: Date) -> Bool {
         guard let arr = raw["tasks"] as? [[String: Any]] else { return false }
@@ -796,6 +824,13 @@ final class DayPlanTaskStore {
                    !backendTitle.isEmpty, backendTitle != list[idx].title {
                     list[idx].title = backendTitle; changed = true
                 }
+                // Pull subtasks set on another device onto a task that has none locally. Fill-when-
+                // empty (not last-write-wins) so a local checklist that hasn't finished syncing isn't
+                // clobbered — the local edit was already pushed via setTodoSubtasks, so by the next
+                // hydrate the backend carries it and both sides agree.
+                if list[idx].subtaskList.isEmpty, let backendSubs = mapSubtasks(from: obj) {
+                    list[idx].subtasks = backendSubs; changed = true
+                }
             } else {
                 let title = (obj["title"] as? String) ?? "Task"
                 let secs = (obj["duration"] as? Int) ?? 0
@@ -806,6 +841,7 @@ final class DayPlanTaskStore {
                 let project = tags.first?["text"] as? String
                 list.append(DayPlanTask(title: title, durationMinutes: minutes, done: done,
                                         sourceTaskId: id, blockKey: blockKey, project: project,
+                                        subtasks: mapSubtasks(from: obj),
                                         eisenhowerQuadrant: quadrant))
                 changed = true
             }

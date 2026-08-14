@@ -503,4 +503,22 @@ final class DayPlanSync {
         guard let req = request("/to-do", method: "PUT", body: body) else { return }
         send(req, label: "setTodoTitle")
     }
+
+    /// Push a Day Plan task's checklist sub-tasks onto its backend to-do so they sync to web/mobile
+    /// (which read the to-do's `subtasks` jsonb column). The backend's canonical subtask shape is
+    /// `{ name, is_completed }` — NOT the Mac's local `{ title, done }` — so we map field names on the
+    /// way out; `hydrateSubtasks` maps them back. Uses the `PUT /to-do` upsert (the only to-do write
+    /// endpoint); `title` + `quadrant` are echoed back because the create DTO requires them, and
+    /// sending the FULL list makes the backend take it as authoritative for this to-do.
+    func setTodoSubtasks(todoID: String, title: String, quadrant: Int, subtasks: [DayPlanSubtask]) {
+        let payload = subtasks.map { ["name": $0.title, "is_completed": $0.done] as [String: Any] }
+        let body: [String: Any] = [
+            "id": todoID,
+            "title": title,
+            "eisenhower_quadrant": quadrant,
+            "subtasks": payload,
+        ]
+        guard let req = request("/to-do", method: "PUT", body: body) else { return }
+        send(req, label: "setTodoSubtasks")
+    }
 }
