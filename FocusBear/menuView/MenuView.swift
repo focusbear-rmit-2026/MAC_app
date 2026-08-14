@@ -564,7 +564,10 @@ struct FocusBearMenuView: View {
             }
         }
         .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        // Measure at the REAL popover width, not maxWidth:.infinity — otherwise the GeometryReader below
+        // measures during an unbounded-width pass where wrapping subtitles collapse to one line, under-
+        // reporting the height, so the popover/window is sized too short and clips (top icons + bottom row).
+        .frame(width: FocusBearMenuView.width, alignment: .leading)
         .background(GeometryReader { g in
             Color.clear.preference(key: MenuHeightKey.self, value: g.size.height)
         })
@@ -1188,7 +1191,10 @@ private struct VoiceView: View {
             }
         }
         .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        // Measure at the REAL popover width, not maxWidth:.infinity — otherwise the GeometryReader below
+        // measures during an unbounded-width pass where wrapping subtitles collapse to one line, under-
+        // reporting the height, so the popover/window is sized too short and clips (top icons + bottom row).
+        .frame(width: FocusBearMenuView.width, alignment: .leading)
         .background(GeometryReader { g in
             Color.clear.preference(key: MenuHeightKey.self, value: g.size.height)
         })

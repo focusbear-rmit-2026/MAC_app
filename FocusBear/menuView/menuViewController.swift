@@ -2465,9 +2465,18 @@ extension menuViewController {
         appdelegate?.popover.contentSize = size
         // Window path: resize and keep the top edge pinned under the status bar.
         if let win = view.window {
+            // The storyboard window caps its (content) max height, so setContentSize was clamped and the
+            // taller states (blocking-schedule card, wrapped subtitles) clipped. Lift the caps and allow
+            // resizing so the window can actually grow to the reported content height.
+            win.styleMask.insert(.resizable)
+            win.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+            win.contentMaxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
             let topLeft = NSPoint(x: win.frame.minX, y: win.frame.maxY)
             win.setContentSize(size)
             win.setFrameTopLeftPoint(topLeft)
+            addLog(text: "[menu-height] applied=\(Int(size.height)) winAfter=\(Int(win.frame.height)) contentAfter=\(Int(win.contentView?.frame.height ?? -1)) maxH=\(win.maxSize.height > 1_000_000 ? -1 : Int(win.maxSize.height)) contentMaxH=\(win.contentMaxSize.height > 1_000_000 ? -1 : Int(win.contentMaxSize.height)) resizable=\(win.styleMask.contains(.resizable))")
+        } else {
+            addLog(text: "[menu-height] popover applied=\(Int(size.height)) popoverContentH=\(Int(appdelegate?.popover.contentSize.height ?? -1))")
         }
     }
 
