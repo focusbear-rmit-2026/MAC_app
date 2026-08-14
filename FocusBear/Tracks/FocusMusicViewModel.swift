@@ -8,6 +8,7 @@
 import Cocoa
 import SwiftUI
 import MediaPlayer
+import WebKit
 
 /// One row of the curated Focus Music library (arrAllTracks), reshaped into a SwiftUI-friendly,
 /// value-typed snapshot. arrAllTracks itself stays the source of truth — other files (menu "now
@@ -506,13 +507,28 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
         youtubePlayingKind = nil
     }
 
+    /// The live embedded YouTube WKWebView, registered by YouTubeMusicPlayerView.makeNSView. The player
+    /// lives inside the Focus Music screen's SwiftUI tree; when that screen isn't front (e.g. the user is
+    /// in the menu), its NSHostingView is detached from the window and SwiftUI stops calling updateNSView,
+    /// so a youtubePaused change would never reach the webview. Holding the webview here lets pause/resume
+    /// drive the IFrame API directly, independent of any SwiftUI re-render.
+    weak var youtubeWebView: WKWebView?
+
     /// Pause/resume the current YouTube track in place (not stop) — used by both the hardware media key
     /// and the menu now-playing play/pause control, so they behave the same. Keeps youtubePlayingId set
     /// so we stay the Now Playing app and can resume. No-op if no YouTube track is active.
     func toggleYouTubePlayPause() {
         guard youtubePlayingId != nil else { return }
         youtubePaused.toggle()
+        // Drive the webview directly rather than waiting for a SwiftUI update that won't come while the
+        // Focus Music screen is off-window (the reason the menu's pause button did nothing).
+        applyYouTubePausedToWebView()
         menuViewControllerObj?.reloadIfNeeded()
+    }
+
+    /// Push the current youtubePaused state straight to the embedded player via the IFrame API.
+    func applyYouTubePausedToWebView() {
+        youtubeWebView?.evaluateJavaScript("fbSetPaused(\(youtubePaused ? "true" : "false"));", completionHandler: nil)
     }
 
     func toggleYoutubeMute() {
