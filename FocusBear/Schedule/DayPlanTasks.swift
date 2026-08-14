@@ -185,14 +185,53 @@ final class EditOnClickTextField: NSTextField {
     // together in any appearance — then restore the display colour when editing ends.
     private var displayTextColor: NSColor?
     override func becomeFirstResponder() -> Bool {
-        let began = super.becomeFirstResponder()
-        if began, displayTextColor == nil {
+        // Set the editable colours BEFORE super installs the field editor, so it copies these (not the
+        // selected-row colour the field currently carries). A selected row draws its name in
+        // alternateSelectedControlTextColor; without this the field editor kept that colour and the
+        // text was illegible on the plain edit surface (reported repeatedly: task/project text
+        // unreadable — e.g. blue-on-blue — when clicking a task to edit it).
+        let hadDisplayColor = displayTextColor != nil
+        if !hadDisplayColor {
             displayTextColor = textColor
             textColor = .textColor
             backgroundColor = .textBackgroundColor
             drawsBackground = true
         }
-        return began
+        let began = super.becomeFirstResponder()
+        guard began else {
+            if !hadDisplayColor, let restore = displayTextColor {
+                textColor = restore
+                drawsBackground = false
+                displayTextColor = nil
+            }
+            return false
+        }
+        // super may have already installed the field editor with the old colour — force it here too.
+        forceEditorLegibleColours()
+        return true
+    }
+    // Runs once the field editor is definitely installed and active (unlike becomeFirstResponder, where
+    // currentEditor() can still be nil). This is the reliable place to fix the colour.
+    override func textDidBeginEditing(_ notification: Notification) {
+        super.textDidBeginEditing(notification)
+        forceEditorLegibleColours()
+    }
+    /// Force the ACTIVE field editor to draw dark text on a light box. Setting the field's `textColor`
+    /// alone wasn't enough — a #project token / selected-row colour left the editor's text storage
+    /// carrying an accent (blue) foreground, so the text stayed blue-on-blue while editing. Overwriting
+    /// the text storage's foreground colour over the whole range beats any such attributed colour.
+    private func forceEditorLegibleColours() {
+        guard let editor = currentEditor() as? NSTextView else { return }
+        editor.textColor = .textColor
+        editor.insertionPointColor = .textColor
+        editor.drawsBackground = true
+        editor.backgroundColor = .textBackgroundColor
+        editor.typingAttributes = [
+            .foregroundColor: NSColor.textColor,
+            .font: font ?? NSFont.systemFont(ofSize: 13),
+        ]
+        let fullRange = NSRange(location: 0, length: (editor.string as NSString).length)
+        editor.textStorage?.addAttribute(.foregroundColor, value: NSColor.textColor, range: fullRange)
     }
     override func textDidEndEditing(_ notification: Notification) {
         super.textDidEndEditing(notification)
@@ -2447,7 +2486,12 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
             measurer.attributedTitle = NSAttributedString(string: "↹ " + m, attributes: [.font: mfont, .paragraphStyle: mpara])
             widestButton = max(widestButton, measurer.fittingSize.width)
         }
-        box.setFrameSize(NSSize(width: max(160, rect.width, ceil(widestButton) + 16 + 6), height: h))
+        // The box lays out with autolayout (translatesAutoresizingMaskIntoConstraints = false), so
+        // setFrameSize is IGNORED and the width comes from the list's content. For a single SHORT match
+        // ("PhD") that left the box ~62pt, clipping "↹ PhD" down to just the glyph — the reported "the
+        // project doesn't show for one suggestion". Pin an explicit width so every match stays readable
+        // (min 160, or wider to fit the longest suggestion).
+        box.widthAnchor.constraint(equalToConstant: max(160, rect.width, ceil(widestButton) + 16 + 6)).isActive = true
         suggestOverlay = box
     }
 
@@ -2522,7 +2566,9 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         let belowY = rect.minY - h - 2
         let y = belowY < 2 ? rect.maxY + 2 : belowY
         box.setFrameOrigin(NSPoint(x: rect.minX, y: y))
-        box.setFrameSize(NSSize(width: max(200, rect.width) - 20, height: h))
+        // Autolayout drives the box width here too (see the sibling suggestion box), so pin it instead of
+        // setFrameSize so the caption + input + Save always fit.
+        box.widthAnchor.constraint(equalToConstant: max(200, rect.width) - 20).isActive = true
         suggestOverlay = box
     }
 
