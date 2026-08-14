@@ -1534,7 +1534,13 @@ func checkIsAnyOldFoucsModeRemaining(){
                                 let startDate = getDateFromString(date: startDateString, dateFormat: "yyyy-MM-dd HH:mm:ss") ?? Date()
                                 startFocusModeTime = startDate
                                 var endDate = getDateFromString(date: endDateString, dateFormat: "yyyy-MM-dd HH:mm:ss") ?? finishFocusMoedTime
-                                
+                                // The most this session could legitimately have run: start → its (possibly
+                                // extended) scheduled end. Cap the RECORDED duration at this so a resume after
+                                // the app was quit/asleep for hours doesn't log all that wall-clock time as
+                                // focus (reported: an 18h "focus block" after an overnight force-quit). Captured
+                                // before endDate is reassigned in the resume-with-remaining branch below.
+                                let scheduledDurationSeconds = max(0, Calendar.current.dateComponents([.second], from: startDate, to: endDate).second ?? 0)
+
                                 addLog(text: "Retrieved startDateString: \(startDateString) and endDateString: \(endDateString) from local")
                                 
                                 // Focus mode end time - actual duration to be stored and also the end time..if current time is more than 24 hrs + end time, cancel it, else resume it 3.32.490
@@ -1574,7 +1580,8 @@ func checkIsAnyOldFoucsModeRemaining(){
                                     DispatchQueue.main.async {
                                         addLog(text: "Focus mode resumed. Remaining duration: \(diffSeconds) seconds. Reason: Current time < end time + 24 hrs") // added in v 3.32.490
                                         resumeFocusModeAfterAppStartted(diffSeconds: diffSeconds, focusMode: focusMode, finishFocusMoedTime: endDate, index: i)
-                                        focusModeActualDurationPerformed = Calendar.current.dateComponents([.second], from: startDate, to: Date()).second ?? diffSeconds//dont change this line place because  focusModeActualDurationPerformed = 0 in resumeFocusModeAfterAppStartted func
+                                        // Cap at the scheduled length so an overnight quit/sleep gap isn't recorded as focus time.
+                                        focusModeActualDurationPerformed = min(Calendar.current.dateComponents([.second], from: startDate, to: Date()).second ?? diffSeconds, scheduledDurationSeconds)//dont change this line place because  focusModeActualDurationPerformed = 0 in resumeFocusModeAfterAppStartted func
                                         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
                                             let minute = diffSeconds / 60
                                             getTaskPlayerVcObject().loadView()
@@ -1608,7 +1615,8 @@ func checkIsAnyOldFoucsModeRemaining(){
                                     DispatchQueue.main.async {
                                         addLog(text: "Focus mode resumed. Remaining duration: \(diffSeconds) seconds. Reason: Current time < end time") // added in v 3.32.483
                                         resumeFocusModeAfterAppStartted(diffSeconds: diffSeconds, focusMode: focusMode, finishFocusMoedTime: endDate, index: i)
-                                        focusModeActualDurationPerformed = Calendar.current.dateComponents([.second], from: startDate, to: Date()).second ?? diffSeconds//dont change this line place because  focusModeActualDurationPerformed = 0 in resumeFocusModeAfterAppStartted func
+                                        // Cap at the scheduled length so an overnight quit/sleep gap isn't recorded as focus time.
+                                        focusModeActualDurationPerformed = min(Calendar.current.dateComponents([.second], from: startDate, to: Date()).second ?? diffSeconds, scheduledDurationSeconds)//dont change this line place because  focusModeActualDurationPerformed = 0 in resumeFocusModeAfterAppStartted func
                                         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
                                             let minute = diffSeconds / 60
                                             getTaskPlayerVcObject().loadView()
