@@ -1674,6 +1674,13 @@ class scheduleViewController: NSViewController {
                 self.hydratingDay = nil
                 if fetched { self.lastHydratedDay = day; self.lastTaskHydrateAt = Date() }
             })
+            // Today also surfaces overdue / due-today to-dos that aren't planned for a later day, so a
+            // due-but-unplanned task shows in "Tasks for today" (dedup by sourceTaskId keeps it single).
+            if isViewingToday {
+                DayPlanTaskStore.shared.loadAndMergeDueTodos(for: day, onChange: { [weak self] in
+                    self?.tasksPanel.reload()
+                })
+            }
         }
 
         // Routine-progress (#2150) → per-day completed-habit cache (strike-through). Fetch for PAST

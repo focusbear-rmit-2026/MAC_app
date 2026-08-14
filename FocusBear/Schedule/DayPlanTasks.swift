@@ -850,6 +850,57 @@ final class DayPlanTaskStore {
         return changed
     }
 
+    /// Surface to-dos that are DUE on or before `date` (overdue / due-today) into that day's plan,
+    /// alongside the tasks explicitly planned for it. The Day Plan is a POINTER into to-dos (#2104):
+    /// `loadAndHydrate` only pulls the to-dos whose `planned_date` is this day, so a due-but-unplanned
+    /// to-do never appeared. This pulls the NOT_STARTED to-do list (`getSmartTasks`) and merges the ones
+    /// whose `due_date <= date`. Read-side inclusion only — no backend write, so a surfaced task carries
+    /// no `planned_date` pointer until the user acts on it (drag/complete/snooze all sync as usual).
+    /// Best-effort and intended for TODAY. `onChange` fires only when something new was added.
+    func loadAndMergeDueTodos(for date: Date, onChange: @escaping () -> Void) {
+        guard !Self.mockMode else { return }
+        allApiObject.getSmartTasks { [weak self] todos in
+            guard let self = self, let todos = todos else { return }
+            DispatchQueue.main.async {
+                if self.mergeDueTodos(todos, into: date) { onChange() }
+            }
+        }
+    }
+
+    /// Merge to-dos whose `due_date` is on or before `date` into that day, skipping any already placed
+    /// on ANY day (dedup by `sourceTaskId`, so a to-do both due<=today and planned for today shows once)
+    /// and any the user explicitly planned for a LATER day (that scheduling is respected). Due/planned
+    /// dates are compared by their `yyyy-MM-dd` prefix (the calendar day the backend stored), which
+    /// matches how `planned_date` is handled and sidesteps timezone day-shifts. Returns true if changed.
+    @discardableResult
+    func mergeDueTodos(_ todos: [NSDictionary], into date: Date) -> Bool {
+        let todayKey = dayKey(date)
+        var placed = Set<String>()
+        for (_, tasks) in byDay { for t in tasks { if let s = t.sourceTaskId { placed.insert(s) } } }
+        var list = byDay[todayKey] ?? []
+        var changed = false
+        for todo in todos {
+            guard let id = todo.value(forKey: "id") as? String, !placed.contains(id) else { continue }
+            let due = String(((todo.value(forKey: "due_date") as? String) ?? "").prefix(10))
+            guard !due.isEmpty, due <= todayKey else { continue }
+            // A to-do the user deliberately scheduled for a later day stays there — don't drag it back.
+            let planned = String(((todo.value(forKey: "planned_date") as? String) ?? "").prefix(10))
+            if !planned.isEmpty, planned > todayKey { continue }
+            let title = (todo.value(forKey: "title") as? String) ?? "Task"   // i18n-ignore: defensive fallback for a title-less to-do (mirrors hydrate/picker)
+            let secs = (todo.value(forKey: "duration") as? Int) ?? 0
+            let minutes = secs > 0 ? max(1, secs / 60) : 15
+            let quadrant = todo.value(forKey: "eisenhower_quadrant") as? Int
+            let tags = (todo.value(forKey: "tags") as? [[String: Any]]) ?? []
+            let project = tags.first?["text"] as? String
+            list.append(DayPlanTask(title: title, durationMinutes: minutes, done: false,
+                                    sourceTaskId: id, project: project, eisenhowerQuadrant: quadrant))
+            placed.insert(id)
+            changed = true
+        }
+        if changed { byDay[todayKey] = list; save() }
+        return changed
+    }
+
     /// True if the to-do item is already on the given day (so the picker can avoid duplicates).
     func contains(sourceTaskId: String, for date: Date) -> Bool {
         tasks(for: date).contains { $0.sourceTaskId == sourceTaskId }
