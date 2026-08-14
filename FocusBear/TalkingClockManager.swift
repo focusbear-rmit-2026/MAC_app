@@ -80,9 +80,15 @@ class TalkingClockManager {
         // `say` is still running (e.g. very short intervals or a slow system).
         guard !isAnnouncing else { return }
 
+        // Round to the nearest 15 minutes so the clock says "6:45", not "6:44".
+        let now = Date()
+        let calendar = Calendar.current
+        let minutesIntoDay = calendar.component(.hour, from: now) * 60 + calendar.component(.minute, from: now)
+        let roundedMinutes = Int((Double(minutesIntoDay) / 15.0).rounded()) * 15
+        let roundedTime = calendar.startOfDay(for: now).addingTimeInterval(Double(roundedMinutes) * 60)
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm a"
-        let timeString = formatter.string(from: Date())
+        let timeString = formatter.string(from: roundedTime)
         let text = "The time is now \(timeString)"
 
         isAnnouncing = true
