@@ -4390,16 +4390,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     self.setStatusBarButtonColorForFocusMode(color: nil, colorString: arrFocusType[i]["color"] as? String ?? "")
                     statusbutton?.title = buttonStatusStateFocusText
                     statusbutton?.imagePosition = .imageLeft
-                    if timerForFocusMode != nil{
-                        timerForFocusMode?.invalidate()
-                        timerForFocusMode = nil
-                        setAppIconForFocusModeScore(probability: nil)
-                        timerForFocusModeEndNotification?.invalidate()
-                        timerForFocusModeEndNotification = nil
-                    }
-                    
-                    startFocusModeTimeForPauseAndResume = Date()
-                    focusModeSecondsToPerform = 300
+                    setAppIconForFocusModeScore(probability: nil)
+                    // Arm the focus timers the same way every other focus start does. setFocusModeTimer
+                    // sets up BOTH the session-end timer (timerForFocusMode → focusModeTimerFinished, which
+                    // already handles the meetings case) AND the end-of-session warning
+                    // (timerForFocusModeEndNotification → showFocusModeFinishNotification → the extend/end
+                    // window). This meeting path previously armed NEITHER, so a Meetings focus mode started
+                    // from "Block everything else" never showed the normal end-warning (#2207 Scenario 5).
+                    // 5 = the meeting focus duration (matches endFocusModeTime above); it also sets
+                    // focusModeSecondsToPerform / startFocusModeTimeForPauseAndResume.
+                    setFocusModeTimer(hour: nil, minute: 5)
                     isFocusModeStartedFromPomodoroMode = false
                     whatToAchieveInFocusBlock = ""
                     let time = focusModeSecondsToPerform*60
