@@ -18,7 +18,10 @@ import SwiftUI
 enum ScheduleText {
     private static var info: NSDictionary? { configjson.value(forKey: "scheduleViewInfo") as? NSDictionary }
     static func t(_ key: String, _ fallback: String) -> String {
-        (info?.value(forKey: key) as? String) ?? fallback
+        // Treat an EMPTY config value like a missing one and use the English fallback — a blank string in
+        // the (downloaded) config must never render as an empty label/button (e.g. a blank "Save").
+        let value = info?.value(forKey: key) as? String
+        return (value?.isEmpty == false) ? value! : fallback
     }
     static var morningRoutineHabits: String { t("morningRoutineHabits", "Morning routine habits") }
     static var eveningRoutineHabits: String { t("eveningRoutineHabits", "Evening routine habits") }
@@ -1860,26 +1863,35 @@ class scheduleViewController: NSViewController {
     /// Unscheduled time inside the day's active span: the span from the first to the last time-occupying
     /// block, minus the union of those blocks (so overlaps aren't double-counted). Sleep and the
     /// zero-length markers (all-done / routine transitions) don't count as "busy".
-    private func freeTimeSeconds(in blocks: [ScheduleBlock]) -> Int {
-        // Deep-work blocks are NOT busy — they're the open, task-able time the engine fills with
-        // "deep work" sprints (you can drop tasks into them), so they count as FREE. Only meetings,
-        // breaks and habits are genuinely busy. (Counting deep work as busy made a day full of
-        // deep-work blocks report only the tiny gaps as free, e.g. "42m free".)
+    /// Unscheduled (free) time left in the productive day. Deep-work blocks are NOT busy — they're the
+    /// open, task-able time the engine fills with "deep work" sprints (drop tasks into them), so they
+    /// count as FREE. Only meetings, breaks and habits are genuinely busy.
+    ///
+    /// The window is clipped to `[from, until]`: `from` is NOW for today (so already-elapsed free time
+    /// this morning isn't offered as still-available), and `until` is the evening-routine start (the end
+    /// of the productive day — time after you've wound down doesn't count). Without these clamps a day
+    /// with a big morning gap reported it all as "free" hours into the afternoon.
+    private func freeTimeSeconds(in blocks: [ScheduleBlock], from: Date?, until: Date?) -> Int {
         let busyKinds: Set<ScheduleBlockKind> = [.meeting, .breakSprint, .habit]
         let intervals = blocks.filter { busyKinds.contains($0.kind) && $0.end > $0.start }
             .map { ($0.start, $0.end) }
             .sorted { $0.0 < $1.0 }
-        guard let first = intervals.first?.0, let last = intervals.map({ $0.1 }).max() else { return 0 }
+        guard let firstBusy = intervals.first?.0, let lastBusy = intervals.map({ $0.1 }).max() else { return 0 }
+        let windowStart = max(firstBusy, from ?? firstBusy)
+        let windowEnd = min(lastBusy, until ?? lastBusy)
+        guard windowEnd > windowStart else { return 0 }
         var merged: [(Date, Date)] = []
         for iv in intervals {
-            if let m = merged.last, iv.0 <= m.1 {
-                merged[merged.count - 1].1 = max(m.1, iv.1)
+            let s = max(iv.0, windowStart), e = min(iv.1, windowEnd)   // clip each busy block to the window
+            guard e > s else { continue }
+            if let m = merged.last, s <= m.1 {
+                merged[merged.count - 1].1 = max(m.1, e)
             } else {
-                merged.append(iv)
+                merged.append((s, e))
             }
         }
         let busy = merged.reduce(0) { $0 + Int($1.1.timeIntervalSince($1.0)) }
-        return max(0, Int(last.timeIntervalSince(first)) - busy)
+        return max(0, Int(windowEnd.timeIntervalSince(windowStart)) - busy)
     }
 
     /// Run `body` with this view's appearance current, so any `NSColor.cgColor` resolved inside
@@ -2002,8 +2014,13 @@ class scheduleViewController: NSViewController {
         }
 
         // How much unscheduled (free) time the day's plan leaves — shown in the tasks panel next to
-        // the "tasks to do" total.
-        let freeSecs = freeTimeSeconds(in: blocks)
+        // the "tasks to do" total. Only count time that's still ahead today, and only up to the evening
+        // routine (the end of the productive day) — not the whole 5am-midnight span.
+        let now = Date()
+        let eveningStart = shutOffTime.flatMap {
+            Calendar.current.date(bySettingHour: $0.hour, minute: $0.minute, second: $0.second, of: selectedDate)
+        }
+        let freeSecs = freeTimeSeconds(in: blocks, from: isViewingToday ? now : nil, until: eveningStart)
         tasksPanel.freeTimeMinutes = freeSecs >= 60 ? freeSecs / 60 : nil
 
         // Consecutive habits of the same routine collapse into one grouped block; a routine
