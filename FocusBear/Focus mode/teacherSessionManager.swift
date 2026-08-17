@@ -560,6 +560,15 @@ class teacherSessionManager: NSObject {
                 }else{
                     appdelegate?.menuShowSimplePomodoroModeView()
                 }
+            }else if leftMenuVcObj?.boxTodoPlayer.isSelected ?? false{
+                // #2216 Scenario 2: if the class session ends while the student is sitting on the Todo
+                // Player tab, that tab is still showing the FE-owned class checklist webview. The
+                // personal tasks were restored into focusModeTaskString above, but the visible view
+                // isn't refreshed until the tab is reselected. Re-render it here: now that
+                // isFocusModeRunning is false, showTaskView() swaps the class-checklist player for the
+                // personal Todo List tool (reloaded), so the personal tasks come back immediately
+                // instead of only on a manual tab switch / app restart.
+                mainViewControllerObj?.showTaskView()
             }
         }
         refreshFocusModeData()
