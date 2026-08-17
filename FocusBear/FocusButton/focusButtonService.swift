@@ -135,6 +135,17 @@ class focusButtonService: NSObject {
     /// on disconnect), so settings UI can refresh the displayed version.
     static let firmwareVersionDidChange = Notification.Name("FocusButtonFirmwareVersionDidChange")
 
+    /// Re-requests GET|FIRMWAREVER while the version is still unknown after a connect. The single probe
+    /// in serialPortWasOpened can be dropped on the flaky USB-CDC link — the device still validates via
+    /// its STATUS→INFO reply, so it shows "Connected" but with no version, which silently gates OFF every
+    /// emoji/icon feature (firmwareSupportsEmoji / firmwareSupportsFocusEmoji / supportsEmojiIcons all
+    /// read nil→false: no habit icons upload, no focus pool, and the icon-sync UI never appears). Armed
+    /// on validation; stops the moment a version lands (or after a few tries).
+    private var firmwareRetryTimer: Timer?
+    private var firmwareRetryCount = 0
+    private let maxFirmwareRetries = 5
+    private let firmwareRetryInterval: TimeInterval = 1.0
+
     /// Path of the currently connected serial port (e.g. "/dev/cu.usbmodemXXXX"),
     /// or nil when not connected. Needed to hand the port to the firmware flasher.
     var connectedPortPath: String? { serialPort?.path }
@@ -677,6 +688,10 @@ class focusButtonService: NSObject {
         responseCheckTimer = nil
         validationTimer?.invalidate()
         validationTimer = nil
+        stopFirmwareVersionRetry()
+        // Forget the last icon-sync results so the next connection re-checks (the device may have changed).
+        lastHabitEmojiProgress = nil
+        lastFocusEmojiProgress = nil
 
         if let port = serialPort {
             port.delegate = nil
@@ -715,8 +730,20 @@ class focusButtonService: NSObject {
     /// Fired once when the FOCUS-mode emoji pool sync ENDS (complete or not) — lets the UI settle the
     /// "syncing…" spinner even when the run finished incomplete. Delivered on the main thread.
     var onFocusEmojiFinished: ((_ done: Int, _ total: Int) -> Void)?
+    /// Fired once when the HABIT-icon sync ENDS (complete or not). Used to CHAIN the focus-pool sync
+    /// after it — both go through the one serial uploader, so starting the focus sync while the habit
+    /// sync is still running would cancel() it and strand the "Checking habit icons…" status.
+    /// Delivered on the main thread.
+    var onEmojiFinished: ((_ done: Int, _ total: Int) -> Void)?
     private enum EmojiSyncKind { case habit, focus }
     private var emojiSyncKind: EmojiSyncKind = .habit
+
+    /// Last (done, total) reported for each pool's icon sync — recorded here even while no screen is
+    /// observing (the Focus Button screen detaches only its own onEmojiProgress on hide). Lets the screen
+    /// show the settled status immediately when it's (re)shown, instead of leaving a stale "Checking…"
+    /// pinned when a sync finished off-screen. Reset on disconnect so a fresh connection re-checks.
+    private(set) var lastHabitEmojiProgress: (done: Int, total: Int)?
+    private(set) var lastFocusEmojiProgress: (done: Int, total: Int)?
 
     /// Uploads the emoji in the loaded habit names to the device. Writes via `sendRawLine` (not
     /// `sendCmd`) so its ACK-gated lockstep isn't disrupted by the no-response STATUS watchdog.
@@ -728,17 +755,20 @@ class focusButtonService: NSObject {
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 switch self.emojiSyncKind {
-                case .habit: self.onEmojiProgress?(done, total)
-                case .focus: self.onFocusEmojiProgress?(done, total)
+                case .habit: self.lastHabitEmojiProgress = (done, total); self.onEmojiProgress?(done, total)
+                case .focus: self.lastFocusEmojiProgress = (done, total); self.onFocusEmojiProgress?(done, total)
                 }
             }
         }
         sync.onFinished = { [weak self] done, total in
             DispatchQueue.main.async {
                 guard let self = self else { return }
-                // Only the focus pool needs a terminal signal (its spinner auto-clears only on success);
-                // habit-icon status is meant to stay pinned, so it has no finished hook.
-                if self.emojiSyncKind == .focus { self.onFocusEmojiFinished?(done, total) }
+                // The focus pool settles its spinner off this terminal signal; the habit line uses it to
+                // chain the focus-pool sync (they share this one uploader — see onEmojiFinished).
+                switch self.emojiSyncKind {
+                case .habit: self.onEmojiFinished?(done, total)
+                case .focus: self.onFocusEmojiFinished?(done, total)
+                }
             }
         }
         return sync
@@ -768,15 +798,20 @@ class focusButtonService: NSObject {
     /// via the same chunked SET|EMOJI path as habit emoji (cached keys are skipped; a declared key whose
     /// bitmap isn't cached yet falls back gracefully device-side). Call when the user's selection changes,
     /// not on every habit sync.
-    func syncFocusEmojiPool(_ emoji: [String]) {
-        guard firmwareSupportsFocusEmoji else { return }
+    /// Returns true only when an emoji-bitmap upload run was actually started (supported firmware + at
+    /// least one emoji) — i.e. when onFocusEmojiProgress/onFocusEmojiFinished will fire to settle the UI.
+    /// The caller uses this to avoid stranding a "Checking focus icons…" spinner on firmware that can't
+    /// upload (declaring the pool with SET|FOCUSEMOJIS produces no progress callback on its own).
+    @discardableResult
+    func syncFocusEmojiPool(_ emoji: [String]) -> Bool {
+        guard firmwareSupportsFocusEmoji else { return false }
         let keys = Array(EmojiSync.uniqueEmojiKeys(in: emoji).prefix(5))
         log("FocusButton: SET|FOCUSEMOJIS pool = [\(keys.joined(separator: ", "))]")
         sendRawLine("SET|FOCUSEMOJIS|" + keys.joined(separator: "|"))
-        if firmwareSupportsEmoji, !emoji.isEmpty {
-            emojiSyncKind = .focus
-            emojiSync.syncEmojis(fromHabitNames: emoji)
-        }
+        guard firmwareSupportsEmoji, !emoji.isEmpty else { return false }
+        emojiSyncKind = .focus
+        emojiSync.syncEmojis(fromHabitNames: emoji)
+        return true
     }
 
     /// Emoji the device draws its focus-ring hero from out of the box, before the user picks their own
@@ -958,9 +993,38 @@ class focusButtonService: NSObject {
         let newValue = (version?.isEmpty == true) ? nil : version
         guard newValue != firmwareVersion else { return }
         firmwareVersion = newValue
+        if newValue != nil { stopFirmwareVersionRetry() }   // got it — no more re-requests needed
         DispatchQueue.main.async {
             NotificationCenter.default.post(name: focusButtonService.firmwareVersionDidChange, object: self)
         }
+    }
+
+    /// Keep asking the device for its firmware version until it answers (or we give up). A Focus device
+    /// can validate via its STATUS→INFO reply while the connect-time GET|FIRMWAREVER answer is lost on the
+    /// lossy USB-CDC link, leaving `firmwareVersion` nil forever — which disables every emoji/icon feature.
+    /// Idempotent; self-cancels once a version lands (setFirmwareVersion), on disconnect, or after the cap.
+    private func armFirmwareVersionRetry() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            guard self.firmwareVersion == nil, self.firmwareRetryTimer == nil else { return }
+            self.firmwareRetryCount = 0
+            let timer = Timer.scheduledTimer(withTimeInterval: self.firmwareRetryInterval, repeats: true) { [weak self] _ in
+                guard let self = self else { return }
+                guard self.isConnected, self.firmwareVersion == nil,
+                      self.firmwareRetryCount < self.maxFirmwareRetries else {
+                    self.stopFirmwareVersionRetry(); return
+                }
+                self.firmwareRetryCount += 1
+                self.log("FocusButton: firmware version still unknown — re-requesting GET|FIRMWAREVER (\(self.firmwareRetryCount)/\(self.maxFirmwareRetries))")
+                self.sendCmd("GET|FIRMWAREVER")
+            }
+            self.firmwareRetryTimer = timer
+        }
+    }
+
+    private func stopFirmwareVersionRetry() {
+        firmwareRetryTimer?.invalidate()
+        firmwareRetryTimer = nil
     }
     
     private func handleInfo(_ parts: [String]) {
@@ -1258,6 +1322,11 @@ extension focusButtonService: ORSSerialPortDelegate {
         let localEpoch = Int64(localDate.timeIntervalSince1970) + Int64(timezoneOffset)
         sendCmd("SET|TIME|\(localEpoch)")
         sendCmd("GET|HABITCOUNT")
+
+        // If we validated via the STATUS→INFO reply (older firmware, or a dropped FIRMWAREVER answer),
+        // the version is still unknown here — keep asking until it lands so the emoji/icon features that
+        // gate on it can turn on. No-op once a version is already known.
+        armFirmwareVersionRetry()
 
         applyState(.idle)
         hasEverConnected = true   // remember (persisted) so auto-reconnect kicks in after future drops

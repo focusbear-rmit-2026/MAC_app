@@ -917,8 +917,17 @@ final class FocusButtonToolModel: ObservableObject {
         let emoji = focusEmojiText.filter { EmojiSync.firstEmojiKey(in: String($0)) != nil }.prefix(5).map { String($0) }
         focusEmojiText = emoji.joined()   // normalise the field to just the (≤5) emoji we kept
         UserDefaults.standard.set(focusEmojiText, forKey: FocusButtonToolModel.focusEmojiKey)
-        focusIconUploadStatus = emoji.isEmpty ? "" : FocusButtonText.checkingFocusIcons
-        focusButtonServiceObject.syncFocusEmojiPool(emoji)
+        // Only show the "Checking focus icons…" spinner when an upload actually starts — otherwise
+        // (firmware too old, version still unknown, or no emoji) no progress/finished callback would ever
+        // fire and the spinner would stay up forever.
+        let syncStarted = focusButtonServiceObject.syncFocusEmojiPool(emoji)
+        // Show progress while uploading; otherwise reflect the resting state — "up to date" when there are
+        // emoji (already cached, nothing to push), or blank when the pool was cleared.
+        if syncStarted {
+            focusIconUploadStatus = FocusButtonText.checkingFocusIcons
+        } else {
+            focusIconUploadStatus = emoji.isEmpty ? "" : syncStatus(0, 0, label: FocusButtonText.focusIconsLabel)
+        }
     }
     private var timer: Timer?
     private var savedOnError: ((String) -> Void)?
@@ -926,6 +935,11 @@ final class FocusButtonToolModel: ObservableObject {
     private var savedOnEmojiProgress: ((Int, Int) -> Void)?
     private var savedOnFocusEmojiProgress: ((Int, Int) -> Void)?
     private var savedOnFocusEmojiFinished: ((Int, Int) -> Void)?
+    private var savedOnEmojiFinished: ((Int, Int) -> Void)?
+    /// Habit + focus icons share ONE serial emoji uploader, so the focus-pool sync must wait until the
+    /// habit sync finishes — starting it early would cancel() the habit run and strand its status.
+    /// Set when the habit sync starts; cleared when it ends (onEmojiFinished chains the focus sync).
+    private var focusCheckPendingHabitSync = false
 
     /// "<label>: <synced>/<total>" while uploading, "✓ <label> up to date" when done. synced = icons
     /// actually on the device (cached + completed), not attempts.
@@ -934,12 +948,23 @@ final class FocusButtonToolModel: ObservableObject {
     }
 
     func start() {
+        // Seed the status lines from the LAST sync result the service recorded — it keeps updating even
+        // while this screen is hidden (stop() detaches only OUR progress handler). This shows the settled
+        // "✓ … up to date" immediately on (re)show, fixing the stale "Checking…" that was left pinned when
+        // a sync finished off-screen. No re-sync, so there's no spurious "Checking…" flash on tab open.
+        if let p = focusButtonServiceObject.lastHabitEmojiProgress {
+            iconUploadStatus = syncStatus(p.done, p.total, label: FocusButtonText.habitIconsLabel)
+        }
+        if let p = focusButtonServiceObject.lastFocusEmojiProgress {
+            focusIconUploadStatus = syncStatus(p.done, p.total, label: FocusButtonText.focusIconsLabel)
+        }
         // Remember the app's existing callbacks so leaving the screen doesn't clobber them.
         savedOnError = focusButtonServiceObject.onError
         savedOnConnected = focusButtonServiceObject.onDeviceConnected
         savedOnEmojiProgress = focusButtonServiceObject.onEmojiProgress
         savedOnFocusEmojiProgress = focusButtonServiceObject.onFocusEmojiProgress
         savedOnFocusEmojiFinished = focusButtonServiceObject.onFocusEmojiFinished
+        savedOnEmojiFinished = focusButtonServiceObject.onEmojiFinished
         // HABIT icon upload progress — kept separate from the focus-emoji pool below. Unlike the
         // focus-emoji status below, this line is meant to stay visible permanently once known (see
         // checkHabitIconsIfNeeded / the view) rather than fading out — it doubles as the icon-sync
@@ -949,15 +974,11 @@ final class FocusButtonToolModel: ObservableObject {
             self.iconUploadStatus = self.syncStatus(synced, total, label: FocusButtonText.habitIconsLabel)
         }
         // FOCUS-session emoji pool upload progress — its own line, distinct from habit icons.
+        // Like the habit-icon line, keep this visible permanently once known (including the terminal
+        // "✓ … up to date") — it's the always-on focus-icon sync status, not a transient toast.
         focusButtonServiceObject.onFocusEmojiProgress = { [weak self] synced, total in
             guard let self = self else { return }
             self.focusIconUploadStatus = self.syncStatus(synced, total, label: FocusButtonText.focusIconsLabel)
-            if synced >= total {
-                let done = self.focusIconUploadStatus
-                DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
-                    if self?.focusIconUploadStatus == done { self?.focusIconUploadStatus = "" }
-                }
-            }
         }
         // The sync ended. On success onFocusEmojiProgress already showed "✓ … up to date"; on an
         // incomplete run it left a "N/total" spinner that would otherwise stay up forever — replace it
@@ -970,6 +991,13 @@ final class FocusButtonToolModel: ObservableObject {
                 if self?.focusIconUploadStatus == shown { self?.focusIconUploadStatus = "" }
             }
         }
+        // The HABIT-icon sync ended. onEmojiProgress already settled its status line; now that the shared
+        // uploader is free, run the deferred focus-pool sync (they can't run at once — see refresh()).
+        focusButtonServiceObject.onEmojiFinished = { [weak self] _, _ in
+            guard let self = self else { return }
+            self.focusCheckPendingHabitSync = false
+            self.checkFocusIconsIfNeeded()
+        }
         refresh()
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in self?.refresh() }
@@ -981,6 +1009,7 @@ final class FocusButtonToolModel: ObservableObject {
         focusButtonServiceObject.onEmojiProgress = savedOnEmojiProgress
         focusButtonServiceObject.onFocusEmojiProgress = savedOnFocusEmojiProgress
         focusButtonServiceObject.onFocusEmojiFinished = savedOnFocusEmojiFinished
+        focusButtonServiceObject.onEmojiFinished = savedOnEmojiFinished
     }
     func refresh() {
         // While a firmware check/flash is in flight, don't touch isConnected: the flash releases the
@@ -992,8 +1021,19 @@ final class FocusButtonToolModel: ObservableObject {
         isConnected = focusButtonServiceObject.isRunning
         firmwareVersion = focusButtonServiceObject.firmwareVersion
         iconSyncSupported = focusButtonServiceObject.supportsEmojiIcons
-        if !isConnected { hasCheckedIconsThisConnection = false }
-        checkHabitIconsIfNeeded()
+        if !isConnected {
+            hasCheckedIconsThisConnection = false
+            hasCheckedFocusIconsThisConnection = false
+            focusCheckPendingHabitSync = false
+        }
+        // Habit + focus icons share ONE serial emoji uploader (one sync at a time). Kick the habit sync
+        // first; if it started one, defer the focus-pool sync until it finishes (onEmojiFinished chains
+        // it) — starting focus now would cancel() the in-flight habit run and strand its status.
+        if checkHabitIconsIfNeeded() {
+            focusCheckPendingHabitSync = true
+        } else if !focusCheckPendingHabitSync {
+            checkFocusIconsIfNeeded()
+        }
     }
 
     private var hasCheckedIconsThisConnection = false
@@ -1001,14 +1041,37 @@ final class FocusButtonToolModel: ObservableObject {
     /// Kick off (once per connection) the habit-icon sync check so the icon-sync status line is always
     /// populated whenever a Focus Button that supports it is connected — not just after a routine loads
     /// icons. Re-armed on every fresh connection via `refresh()`.
-    private func checkHabitIconsIfNeeded() {
-        guard isConnected, iconSyncSupported, !hasCheckedIconsThisConnection else { return }
+    /// Returns true when it actually started a habit-icon sync (so the caller can defer the focus-pool
+    /// sync until this one ends — they share one uploader).
+    @discardableResult
+    private func checkHabitIconsIfNeeded() -> Bool {
+        guard isConnected, iconSyncSupported, !hasCheckedIconsThisConnection else { return false }
         hasCheckedIconsThisConnection = true
         if focusButtonServiceObject.refreshEmojiIcons() {
             iconUploadStatus = FocusButtonText.checkingHabitIcons
+            return true
         } else {
             // Nothing pending to upload (already cached, or no habit icons set) — that's "up to date".
             iconUploadStatus = syncStatus(0, 0, label: FocusButtonText.habitIconsLabel)
+            return false
+        }
+    }
+
+    private var hasCheckedFocusIconsThisConnection = false
+
+    /// Populate the FOCUS-session emoji sync line once per connection (mirrors `checkHabitIconsIfNeeded`),
+    /// so the screen always shows whether the focus icons are synced — not only transiently after a Save.
+    /// Uploads any not-yet-cached focus emoji; if nothing is pending it's already "up to date".
+    private func checkFocusIconsIfNeeded() {
+        guard isConnected, iconSyncSupported, !hasCheckedFocusIconsThisConnection else { return }
+        hasCheckedFocusIconsThisConnection = true
+        let emoji = focusEmojiText.filter { EmojiSync.firstEmojiKey(in: String($0)) != nil }.prefix(5).map { String($0) }
+        // No focus emoji configured → nothing to sync; leave the line blank rather than claim "up to date".
+        guard !emoji.isEmpty else { focusIconUploadStatus = ""; return }
+        if focusButtonServiceObject.syncFocusEmojiPool(emoji) {
+            focusIconUploadStatus = FocusButtonText.checkingFocusIcons
+        } else {
+            focusIconUploadStatus = syncStatus(0, 0, label: FocusButtonText.focusIconsLabel)
         }
     }
 
