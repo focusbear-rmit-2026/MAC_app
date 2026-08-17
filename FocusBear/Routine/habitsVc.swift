@@ -1549,6 +1549,13 @@ class habitsVc: NSViewController {
     
     func startDirectIncompleteMorningHabitAtIndex(index:Int, isLastActivitySkipped:Bool) {
         addLog(text:"func:- startDirectIncompleteMorningHabitAtIndex")
+        // Guard the index — the habits array can be shorter than the caller expects (it's refetched/
+        // filtered async), and an out-of-range subscript below crashes (Sentry FOCUS-BEAR-MACOS-18M,
+        // EXC_BREAKPOINT at arrFilteredMorningHabits[index]). Bail safely instead of trapping.
+        guard index >= 0, index < arrFilteredMorningHabits.count else {
+            addLog(text:"startDirectIncompleteMorningHabitAtIndex: index \(index) out of range (count \(arrFilteredMorningHabits.count)) — skipping")
+            return
+        }
         currentState = ._MORNING_HABIT_// changing state here because in load completed habit graph there is a check about current state
         currentAction = ._END_
         isAnyAllowedFocusModeActivityRunning = false

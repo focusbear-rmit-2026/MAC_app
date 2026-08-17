@@ -66,12 +66,16 @@ final class WiFiMonitorService: NSObject {
         // and tap "Use Current Network" (officeModeSettingsVc). Until then SSID reads return nil
         // and auto-switching stays dormant, which is the intended behaviour.
 
-        // Seed the current SSID so we don't fire a spurious change on first tick.
-        // All access to currentSSID must go through stateQueue to avoid data races with
-        // the CoreWLAN delegate callbacks and the polling timer.
-        let seededSSID = readCurrentSSID()
-        stateQueue.sync { currentSSID = seededSSID }
-        addLog(text: "WiFiMonitorService: startMonitoring — initial SSID present = \(seededSSID != nil)")
+        // Seed the current SSID so we don't fire a spurious change on first tick — but do the CoreWLAN
+        // read OFF the main thread. `interface().ssid()` can block, and startMonitoring() runs during
+        // applicationDidFinishLaunching (Sentry FOCUS-BEAR-MACOS-11P, "App hanging" at launch). Until the
+        // seed lands, currentSSID stays nil (auto-switching dormant), which is the intended default.
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            guard let self = self else { return }
+            let seededSSID = self.readCurrentSSID()
+            self.stateQueue.sync { self.currentSSID = seededSSID }
+            addLog(text: "WiFiMonitorService: startMonitoring — initial SSID present = \(seededSSID != nil)")
+        }
 
         // Register for CWWiFiClient interface-event notifications.
         do {
