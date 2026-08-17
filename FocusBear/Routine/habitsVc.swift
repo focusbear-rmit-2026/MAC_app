@@ -2294,13 +2294,12 @@ class habitsVc: NSViewController {
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
         hideCloseButtons()
         removeSubViews()
-        lblMessage.isHidden = false
-        if let common = configjson.value(forKey: "common") as? NSDictionary{
-            lblMessage.stringValue = common.value(forKey: "stayFocusedText") as? String ?? lblMessage.stringValue
-        }
+        // Morning routine done: no "stay focused for the day" message — the app stays open on the Day
+        // Plan instead (set below), so this end-of-routine text is redundant.
+        lblMessage.isHidden = true
         currentHabitIndex = -1
-        
-        
+
+
         unfocusedTime = 0
         let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroModeEnabled) as? Bool ?? false
         if state && SettingsManagerObject.isGeekModeEnabled{
@@ -2312,7 +2311,15 @@ class habitsVc: NSViewController {
             unlockMachineWork()
             hideBlankWindowInSecondaryMonitor()
         }else{
-            self.perform(#selector(unlockMachine), with: nil, afterDelay: 3)
+            // Don't auto-close the routine window (which read like the app quitting). Do the normal
+            // unlock cleanup WITHOUT closing the window, then open the Day Plan so the user lands there.
+            unlockMachineWork()
+            hideBlankWindowInSecondaryMonitor()
+            // Clear the morning-routine state BEFORE opening the Day Plan: showDayPlanForCurrentState()
+            // early-returns (leaving the area blank) while currentState still reads ._MORNING_HABIT_,
+            // which is the case here until line below. Set it now so the Day Plan actually populates.
+            currentState = ._NOTHING_
+            menuViewControllerObj?.openDayPlanSchedule()
         }
 
         currentState = ._NOTHING_
