@@ -805,6 +805,17 @@ final class DayPlanTaskStore {
         var list = byDay[k] ?? []
         var indexBySource = [String: Int]()
         for (i, t) in list.enumerated() { if let s = t.sourceTaskId { indexBySource[s] = i } }
+        // A to-do lives on exactly one day (the pointer model), so never re-add one that already sits on
+        // ANOTHER day locally. The backend's `planned_date` can lag the local placement — a snooze/move
+        // repoints the task instantly but its `setTodoPlanned` push is fire-and-forget, and
+        // `rolloverIncompleteTasks` carries a task forward without touching the backend — so a
+        // GET /day-plan/day for the stale day still returns it. Appending it here (the `else` branch below
+        // only dedups WITHIN `k`) is what stranded a duplicate on both the origin and the target day.
+        // mergeDueTodos guards the same way via its cross-day `placed` set; hydrate lacked it.
+        var placedOnOtherDay = Set<String>()
+        for (day, tasks) in byDay where day != k {
+            for t in tasks { if let s = t.sourceTaskId { placedOnOtherDay.insert(s) } }
+        }
         var changed = false
         for obj in arr {
             guard let id = obj["id"] as? String else { continue }
@@ -831,7 +842,7 @@ final class DayPlanTaskStore {
                 if list[idx].subtaskList.isEmpty, let backendSubs = mapSubtasks(from: obj) {
                     list[idx].subtasks = backendSubs; changed = true
                 }
-            } else {
+            } else if !placedOnOtherDay.contains(id) {
                 let title = (obj["title"] as? String) ?? "Task"
                 let secs = (obj["duration"] as? Int) ?? 0
                 let minutes = secs > 0 ? max(1, secs / 60) : 15
