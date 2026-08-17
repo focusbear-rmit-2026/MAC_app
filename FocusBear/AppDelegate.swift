@@ -5045,6 +5045,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     addLog(text: "event-about-to-start:- ignoring stale trigger, appointment started more than 15 minutes ago at \(startTime)")
                     return
                 }
+                // SECURITY: past the cut-off (the hard evening-routine lock), a Late No More appointment
+                // trigger must NOT pause/unlock the routine — otherwise it's a free bypass of the cut-off
+                // without the required password. This mirrors the enforcement already done for an
+                // already-visible popup in returnFromSystemSleepCheckAppStateAgain (the shut-off/cut-off
+                // branch there); the INITIAL trigger here was missing the same guard. The user must finish
+                // their locked routine.
+                if isCutOffTimeGoing(){
+                    addLog(text: "event-about-to-start:- past cut-off, NOT pausing habits (cut-off lock enforced)")
+                    return
+                }
                 if eventEndTime != nil{
                     addLog(text: "event-about-to-start:- got end time")
                     if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
