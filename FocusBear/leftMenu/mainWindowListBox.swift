@@ -20,7 +20,11 @@ class mainWindowListBox: NSBox {
     var alwaysEnabled = false
     var isEnabled: Bool = true{
         didSet {
-            if alwaysEnabled, !isEnabled, currentState != ._ONBOARDING_ {
+            // alwaysEnabled tabs (Todo List) stay reachable during normal use, but must NOT before the
+            // user is authenticated. The login and onboarding screens disable every tab; letting an
+            // alwaysEnabled tab snap itself back on lets a logged-out user open it and leave the login
+            // view with no way back. Allow the disable to stick in BOTH pre-auth states.
+            if alwaysEnabled, !isEnabled, currentState != ._ONBOARDING_, currentState != ._LOGIN_ {
                 isEnabled = true   // re-entrant set; guard above prevents recursion
                 return
             }

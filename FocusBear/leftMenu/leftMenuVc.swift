@@ -837,6 +837,14 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         
         boxUpgradeNow.setDisableWithRaason(reason: toolTipDisableReason)
         boxHelpAndSupport.setDisableWithRaason(reason: toolTipDisableReason)
+
+        // The add-on TOOLS tabs are created programmatically (installToolsAddOnItems), so they aren't
+        // storyboard outlets and were missing from this disable pass — leaving Focus Button / Time
+        // Tracker / Late No More clickable on the login and onboarding screens, which let a logged-out
+        // user leave the login view with no way back. Optionals: nil until the tools are installed.
+        boxFocusButtonTool?.setDisableWithRaason(reason: toolTipDisableReason)
+        boxTimeTrackerTool?.setDisableWithRaason(reason: toolTipDisableReason)
+        boxLateNoMoreTool?.setDisableWithRaason(reason: toolTipDisableReason)
     }
     
     
@@ -931,6 +939,14 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxCustomRoutine.isEnabled = true
         boxUpgradeNow.isEnabled = true
         boxHelpAndSupport.isEnabled = true
+
+        // Re-enable the programmatic TOOLS tabs alongside the rest, so they recover after the login/
+        // onboarding disable pass (disableAllTabForOnboarding). Optionals: nil until tools are installed.
+        // isEnabled is independent of the user's hide choice (ToolVisibilityStore/isHidden), so a hidden
+        // tool stays hidden regardless.
+        boxFocusButtonTool?.isEnabled = true
+        boxTimeTrackerTool?.isEnabled = true
+        boxLateNoMoreTool?.isEnabled = true
     }
     
     func showPomodoro(pomodoroVcObj:NSView){

@@ -803,9 +803,11 @@ func showAskLoginWindow(){
         }
         
         mainViewControllerObj!.showAskLogInVc()
+        // Set the login state BEFORE disabling tabs, so the alwaysEnabled guard (Todo List) sees
+        // ._LOGIN_ and lets disableAllTabForOnboarding() actually keep it disabled.
+        currentState = ._LOGIN_
         leftMenuVcObj?.disableAllTabForOnboarding()
         mainViewControllerObj?.collapseLeftPanel()
-        currentState = ._LOGIN_
         // Logged out: the menu-bar click must foreground this window (it was a no-op because the
         // action stayed nil on this screen). Set target + action explicitly so dispatch is guaranteed.
         appdelegate!.statusbutton?.target = appdelegate
@@ -835,11 +837,13 @@ func showCustomLoginWindow(isLogin:Bool){
         }
         
         mainViewControllerObj!.showCustomLoginVc()
+        // Set the login state BEFORE disabling tabs, so the alwaysEnabled guard (Todo List) sees
+        // ._LOGIN_ and lets disableAllTabForOnboarding() actually keep it disabled.
+        currentState = ._LOGIN_
         leftMenuVcObj?.disableAllTabForOnboarding()
         mainViewControllerObj?.collapseLeftPanel()
         customLoginVcObj?.isLogin = isLogin
         appdelegate!.statusbutton?.action = #selector(AppDelegate.bringMainWindowToForeground(_:))
-        currentState = ._LOGIN_
         return;
     }
 
