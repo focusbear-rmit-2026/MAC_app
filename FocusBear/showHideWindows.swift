@@ -1216,11 +1216,11 @@ func closeNudgeFocusAlignmentScoreWindow(){
 
 
 
-func showReportBadAIResponseWindow(url:String?, app:String?, payload:[String:Any]?){
+func showReportBadAIResponseWindow(url:String?, app:String?, payload:[String:Any]?, onReported:(() -> Void)? = nil){
     getReportBadAIResponseWindowObject().contentViewController = getReportBadAIResponseVcObject()
     getReportBadAIResponseWindowObject().window?.center()
     getReportBadAIResponseWindowObject().showWindow(nil)
-    getReportBadAIResponseVcObject().resetData(url: url, app: app, payload: payload)
+    getReportBadAIResponseVcObject().resetData(url: url, app: app, payload: payload, onReported: onReported)
 }
 
 

@@ -1561,12 +1561,34 @@ class popUpBlockConfirmVc: NSViewController {
         //        appdelegate!.timerAllowUrl?.invalidate()
         focusModeHelper.stopUrlTimer()
         currentBrowserUrlForAi = ""
-        if isAppBlocking && currentApp != nil{
-            showReportBadAIResponseWindow(url: nil, app: currentAppName, payload: payload)
-        }else{
-            showReportBadAIResponseWindow(url: fullUrl, app: nil, payload: payload)
+
+        // Reporting a bad AI decision means the AI was wrong to block this — allow the current app/site
+        // for the rest of this focus session so it isn't re-blocked on the next check. Snapshot the item
+        // now so it's still correct if this (singleton) popup is later reset for a different block while
+        // the report window is open. The allow only runs if the user actually submits the report (see
+        // reportBadAIResponseVc.btnReportIssueClicked). We deliberately allow ONLY this exact app/URL —
+        // not the whole domain, and not the active tab title (the tab could have changed by submit time,
+        // and a bad-AI report shouldn't broadly unblock beyond the reported item).
+        let reportedApp = self.currentApp
+        let reportedUrl = self.url
+        let reportedIsApp = self.isAppBlocking && self.currentApp != nil
+        let onReported: () -> Void = {
+            if reportedIsApp, let app = reportedApp {
+                if !arrAllowedAppsInCuddlyModeCurrentFocus.contains(app){
+                    arrAllowedAppsInCuddlyModeCurrentFocus.append(app)
+                }
+            }else{
+                arrAllowedUrlsInCuddlyModeCurrentFocus.append(reportedUrl)
+            }
+            addLog(text: "popUpBlockConfirmVc:- bad-AI report submitted — allowed current \(reportedIsApp ? "app" : "site") for this session")
         }
-        
+
+        if isAppBlocking && currentApp != nil{
+            showReportBadAIResponseWindow(url: nil, app: currentAppName, payload: payload, onReported: onReported)
+        }else{
+            showReportBadAIResponseWindow(url: fullUrl, app: nil, payload: payload, onReported: onReported)
+        }
+
     }
     
     @IBAction func btnConvinceAgainClicked(_ sender: Any) {
