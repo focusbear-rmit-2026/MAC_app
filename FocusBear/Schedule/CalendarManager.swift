@@ -15,7 +15,27 @@ final class CalendarManager {
 
     static let shared = CalendarManager()
     private let store = EKEventStore()
-    private init() {}
+
+    // MARK: - Meetings cache
+    //
+    // meetings(for:) is called from the Schedule Day Plan's 30-second auto-refresh timer. EventKit's
+    // events(matching:) is a blocking query that can stall for seconds while the user's calendars sync
+    // — a recurring main-thread App Hang (Sentry FOCUS-BEAR-MACOS-19G). The result only changes on a
+    // calendar edit (which posts .EKEventStoreChanged) or a local dismiss/restore, so cache it and
+    // re-query only when something actually invalidates it — not on every tick. Accessed on the main
+    // thread only (the auto-refresh timer, render, and dismiss actions all run there).
+    private struct MeetingsCacheKey: Hashable { let day: String; let includeDismissed: Bool }
+    private var meetingsCache: [MeetingsCacheKey: [ScheduleMeetingInput]] = [:]
+
+    private init() {
+        // Any change to the store — edits synced from the user's calendar provider, or our own saves —
+        // drops the cache so the next query re-reads fresh events.
+        NotificationCenter.default.addObserver(forName: .EKEventStoreChanged, object: store, queue: .main) { [weak self] _ in
+            self?.invalidateMeetingsCache()
+        }
+    }
+
+    private func invalidateMeetingsCache() { meetingsCache.removeAll() }
 
     enum Access { case notDetermined, denied, authorized }
 
@@ -91,6 +111,17 @@ final class CalendarManager {
     /// user hasn't RSVP'd to yet).
     func meetings(for day: Date, includeDismissed: Bool = false) -> [ScheduleMeetingInput] {
         guard access == .authorized else { return [] }
+        let key = MeetingsCacheKey(day: getStringFromDate(date: day, dateFormat: "yyyy-MM-dd"),
+                                   includeDismissed: includeDismissed)
+        if let cached = meetingsCache[key] { return cached }
+        let result = fetchMeetings(for: day, includeDismissed: includeDismissed)
+        meetingsCache[key] = result
+        return result
+    }
+
+    /// The actual (blocking) EventKit query behind `meetings(for:)`. Split out so the public API can
+    /// serve the cache — this only runs on a cold miss or after an invalidation, never on every tick.
+    private func fetchMeetings(for day: Date, includeDismissed: Bool) -> [ScheduleMeetingInput] {
         let cal = Calendar.current
         let startOfDay = cal.startOfDay(for: day)
         guard let endOfDay = cal.date(byAdding: .day, value: 1, to: startOfDay) else { return [] }
@@ -178,6 +209,7 @@ final class CalendarManager {
         applyRecurrence(recurrence, to: event)
         do {
             try store.save(event, span: recurrence == .none ? .thisEvent : .futureEvents)
+            invalidateMeetingsCache()
             return event.eventIdentifier
         } catch {
             return nil
@@ -215,6 +247,7 @@ final class CalendarManager {
         let recurring = recurrence != .none || (event.recurrenceRules?.isEmpty == false)
         do {
             try store.save(event, span: recurring ? .futureEvents : .thisEvent)
+            invalidateMeetingsCache()
             return true
         } catch {
             return false
@@ -307,6 +340,7 @@ final class CalendarManager {
             ids.insert(id)
         }
         UserDefaults.standard.set(Array(ids), forKey: dismissedKey)
+        invalidateMeetingsCache()
     }
 
     /// Hide a calendar event from the schedule for just this one day (the "Just for today" choice on
@@ -315,6 +349,7 @@ final class CalendarManager {
         var ids = dismissedEventIDs
         ids.insert(perDayDismissKey(id, day))
         UserDefaults.standard.set(Array(ids), forKey: dismissedKey)
+        invalidateMeetingsCache()
     }
 
     /// Un-hide a previously dismissed event (the 👀 shown on a struck-through meeting when
@@ -326,6 +361,7 @@ final class CalendarManager {
         ids.remove(perDayDismissKey(id, day))
         if let event = event(withID: id), let sk = seriesKey(event) { ids.remove(sk) }   // undo a series dismiss too
         UserDefaults.standard.set(Array(ids), forKey: dismissedKey)
+        invalidateMeetingsCache()
     }
 
     /// Merge backend-hidden event ids (from another device) into the local dismissed set.
@@ -333,6 +369,7 @@ final class CalendarManager {
         guard !ids.isEmpty else { return }
         let merged = dismissedEventIDs.union(ids)
         UserDefaults.standard.set(Array(merged), forKey: dismissedKey)
+        invalidateMeetingsCache()
     }
 }
 
