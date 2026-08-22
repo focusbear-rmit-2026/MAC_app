@@ -422,3 +422,12 @@ Fixed the Focus Button getting stuck on "Firmware: unknown" with a spinner that 
 Reliability:
 Fixed a case where a calendar meeting reminder could pull you out of your locked evening routine past the cut-off time without the password. (#2290)
 Several stability fixes for freezes and crashes reported from the field — a hang from the Focus Button, a brief freeze at launch on some Wi-Fi setups, and a crash when starting an incomplete morning habit. (#2289)
+
+
+# v3.35.528
+
+Sign-in screen:
+Fixed left-menu tabs being clickable while logged out. On the login screen, the Todo List, Focus Button, Time Tracker and Late No More tabs could still be opened — which took you off the login screen with no way back. They're now disabled until you sign in. (#2297)
+
+Focus:
+"Report Bad AI decision" now unblocks the site. When you report the AI for wrongly blocking an app or website, that exact app/site is now allowed for the rest of your focus session — instead of being blocked again moments later. (#2302)
