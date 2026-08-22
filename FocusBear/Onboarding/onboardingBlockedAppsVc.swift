@@ -45,7 +45,7 @@ class onboardingBlockedAppsVc: NSViewController {
         //progress
         self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
         self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
-        getDistractionBlockingProgressVcObj().setProgress(level: 1, progress: 0.80)
+        getDistractionBlockingProgressVcObj().setProgress(level: 1, progress: 0.65)
         
         btnAdd.horizontalPadding = 25
         btnRemove.horizontalPadding = 25
@@ -79,7 +79,8 @@ class onboardingBlockedAppsVc: NSViewController {
         let defaultApps = [
             "Chess",
             "Stocks",
-            "TV"
+            "TV",
+            "News"
         ]
 
         for appName in defaultApps {
@@ -99,6 +100,8 @@ class onboardingBlockedAppsVc: NSViewController {
             return "com.apple.stocks"
         case "TV":
             return "com.apple.TV"
+        case "News":
+            return "com.apple.news"
         default:
             return ""
         }
@@ -235,8 +238,10 @@ class onboardingBlockedAppsVc: NSViewController {
         SettingsManagerObject.arrBlockedApps = arrBlockedApps
         UserDefaults.standard.set(SettingsManagerObject.arrBlockedApps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)//
         UserDefaults.standard.set(true, forKey: kUserdefaultsIsAnyDistractionSetByUser)
-        getOnboardingVcObject().navigate(to: ._ASK_CREATE_BLOCKING_SCHEDULE_)
-        
+        // Blocking order: after blocked URLs + blocked apps, show allowed URLs last (navigateToAllowedUrlsVc
+        // resets/populates that list, incl. any occupation-based suggestions). Allowed URLs then → hold on.
+        getOnboardingVcObject().navigateToAllowedUrlsVc()
+
     }
 }
 

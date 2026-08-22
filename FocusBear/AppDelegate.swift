@@ -612,7 +612,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         mainViewControllerObj!.showOnboardingVc()
         leftMenuVcObj?.disableAllTabForOnboarding()
         mainViewControllerObj?.collapseLeftPanel()
-        getOnboardingVcObject().navigate(to: ._HOLD_ON_)
+        // Distraction blocking now comes before habits in onboarding: enter the blocking
+        // section first; it hands off to the habits intro (._HOLD_ON_) once finished.
+        getOnboardingVcObject().navigate(to: ._SET_DISTRACTION_BLOCKING_)
     }
     
     func setCredentialAndUserInfo(credentialsInfo: CredentialsManagerResult<Credentials>, isAppLaunching:Bool){
@@ -1014,7 +1016,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 kUserdefaultsDisableBreaksForToday = kUserdefaultsDisableBreaksForToday + (self.user?.userId ?? "")
                 kUserdefaultsBreakOffDates = kUserdefaultsBreakOffDates + (self.user?.userId ?? "")
                 kUserdefaultsBreakOffPromptShown = kUserdefaultsBreakOffPromptShown + (self.user?.userId ?? "")
-                kUserdefaultsBreakFrequencyMinutes = kUserdefaultsBreakFrequencyMinutes + (self.user?.userId ?? "")
                 kUserdefaultsLastFocusModeStrictness = kUserdefaultsLastFocusModeStrictness + (self.user?.userId ?? "")
                 kUserdefaultsDontShowConfirmGeekModeAlert = kUserdefaultsDontShowConfirmGeekModeAlert + (self.user?.userId ?? "")
                 kUserDefaultsOpenTodoPlayerFirstTime = kUserDefaultsOpenTodoPlayerFirstTime + (self.user?.userId ?? "")
@@ -2386,10 +2387,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
             
             if let breakMinutes = jsonResult!.value(forKey: "break_after_minutes") as? Int {
-                // Respect a locally-chosen break frequency (set via the break-frequency
-                // prompt) so the server sync does not clobber the user's choice.
-                let localOverride = UserDefaults.standard.integer(forKey: kUserdefaultsBreakFrequencyMinutes)
-                breakAfterMinutes = localOverride > 0 ? localOverride : breakMinutes
+                // break_after_minutes is the single source of truth. Changes are written straight to it
+                // (BreakFrequencyStreakTracker.saveNewBreakFrequency → server + re-cached settings), so we
+                // read it directly rather than letting a separate local key shadow the server value.
+                breakAfterMinutes = breakMinutes
             }
             
             if let customRoutines = jsonResult!.value(forKey: "custom_routines") as? [NSDictionary] {
@@ -2565,18 +2566,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             
             if settings != nil{
                 if isFirstTime{
-                    
-                    //                    let breakDuration = UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationValue) as? Int ?? defaultBreakDurationValue
-                    //
-                    //                    var startDate = UserDefaults.standard.object(forKey: kUserdefaultsStartupTimeFromOnboarding) as? String ?? defaultStartTime
-                    //                    var shutOffDate = UserDefaults.standard.object(forKey: kUserdefaultsShutOffTimeFromOnboarding) as? String ?? defaultShutDownTime
-                    //                    var sleepTime = UserDefaults.standard.object(forKey: kUserdefaultsSleepTimeFromOnboarding) as? String ?? defaultSleepTime
-                    
-                    //                    if packId.isEmpty{// work for focus only
-                    //                        startDate = "00:00"
-                    //                        shutOffDate = "23:59"
-                    //                        sleepTime = "23:59"
-                    //                    } //  new v 2.28.447
+                    // Break frequency chosen in onboarding (enableBreaksFromOnboarding seeds 60). Falls
+                    // back to 60 if the in-memory global was reset by the time this first-run save runs,
+                    // so a fresh user always gets an hourly break out of the box. Persisted here with the
+                    // valid full-settings save instead of a standalone PUT (which 400s mid-onboarding).
+                    let breakDuration = breakAfterMinutes > 0 ? breakAfterMinutes : 60
                     let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
                     if isHabitsDisabled{
                         let startDate = "00:00"
@@ -2586,10 +2580,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         
                         settings!["startup_time"] = startDate
                         settings!["shutdown_time"] = shutOffDate
-                        //                            settings!["break_after_minutes"] = breakDuration
+                        settings!["break_after_minutes"] = breakDuration
                         settings!["sleep_time"] = sleepTime
                         
-//                        UserDefaults.standard.removeObject(forKey: kUserdefaultsBreakDurationValue)
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsStartupTimeFromOnboarding)
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffTimeFromOnboarding)
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsSleepTimeFromOnboarding)
@@ -2628,18 +2621,42 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             }
                         })
                     }else{
-                        do {
-                            let data = try (JSONSerialization.data(withJSONObject: settings!, options: .prettyPrinted))
-                            if let str = String(data: data, encoding: String.Encoding.utf8){
-                                UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+                        // Habits enabled: still sync the onboarding break frequency to the server so it
+                        // isn't left local-only (this branch previously just cached). Mirrors the PUT above.
+                        settings!["break_after_minutes"] = breakDuration
+                        allApiObject.isSettingsValid(settings: settings!, isOnboarding:true, completionHandler: {dic,statusCode  in
+                            DispatchQueue.main.async {
+                                if dic == nil{
+                                    self.readSettingsAndLoadApp(settings: settings)
+                                }else{
+                                    if statusCode == 200{
+                                        let settings = dic?.mutableCopy() as? NSMutableDictionary
+                                        self.readSettingsAndLoadApp(settings: settings)
+                                        do {
+                                            let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
+                                            if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
+                                                UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                            }
+                                        } catch let myJSONError {
+                                            print(myJSONError)
+                                        }
+                                    }else{
+                                        do {
+                                            let data = try (JSONSerialization.data(withJSONObject: settings!, options: .prettyPrinted))
+                                            if let str = String(data: data, encoding: String.Encoding.utf8){
+                                                UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+                                            }
+                                        } catch let error as NSError {
+                                            print(error)
+                                        }
+                                        self.readSettingsAndLoadApp(settings: settings)
+                                    }
+                                }
                             }
-                        } catch let error as NSError {
-                            print(error)
-                        }
-                        self.readSettingsAndLoadApp(settings: settings)
+                        })
                     }
-                    
-                    
+
+
                 }else{
                     do {
                         let data = try (JSONSerialization.data(withJSONObject: settings!, options: .prettyPrinted))

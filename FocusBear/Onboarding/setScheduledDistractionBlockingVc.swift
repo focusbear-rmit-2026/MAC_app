@@ -72,7 +72,9 @@ class setScheduledDistractionBlockingVc: NSViewController {
     @IBAction func btnNoThanksClicked(_ sender: Any) {
         addLog(text: "[user-action] setScheduledDistractionBlockingVc:- btnNoThanksClicked")
         allApiObject.capturePosthog(event: "set-distraction-blocking-skipped", metadata: [:])
-        getOnboardingVcObject().navigate(to: ._ALL_SET_)
+        // Blocking is now the first section; skipping it still continues to the habits intro
+        // so the habits section is not orphaned.
+        getOnboardingVcObject().navigate(to: ._HOLD_ON_)
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {

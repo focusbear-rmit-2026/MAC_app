@@ -41,12 +41,16 @@ class onboardingBlockedUrlsVc: NSViewController {
         var categorySocialMedia = "Social Media"
         var categoryNews = "News"
         var categoryStreamingServices = "Streaming services"
-        
+        var categoryDating = "Dating"
+        var categoryRealEstate = "Real estate"
+
         if let onboardingBlockedUrlsInfo = configjson.value(forKey: "onboardingBlockedUrlsInfo") as? NSDictionary{
             categorySocialMedia = onboardingBlockedUrlsInfo.value(forKey: "categorySocialMedia") as? String ?? categorySocialMedia
             categoryNews = onboardingBlockedUrlsInfo.value(forKey: "categoryNews") as? String ?? categoryNews
             categoryOthers = onboardingBlockedUrlsInfo.value(forKey: "categoryOthers") as? String ?? categoryOthers
             categoryStreamingServices = onboardingBlockedUrlsInfo.value(forKey: "categoryStreamingServices") as? String ?? categoryStreamingServices
+            categoryDating = onboardingBlockedUrlsInfo.value(forKey: "categoryDating") as? String ?? categoryDating
+            categoryRealEstate = onboardingBlockedUrlsInfo.value(forKey: "categoryRealEstate") as? String ?? categoryRealEstate
             lblTitle.stringValue = onboardingBlockedUrlsInfo.value(forKey: "titleNew") as? String ?? lblTitle.stringValue
             btnContinue.title = onboardingBlockedUrlsInfo.value(forKey: "buttonProceedText") as? String ?? btnContinue.title
             textFieldPlaceholder = onboardingBlockedUrlsInfo.value(forKey: "textFieldPlaceholder") as? String ?? textFieldPlaceholder
@@ -74,7 +78,7 @@ class onboardingBlockedUrlsVc: NSViewController {
         arrBlockedUrlsStructure.append(dic)
         
         dic = ["category":categoryNews,"isSelected":false,"tag":888,"arrUrls":[NSMutableDictionary](),"isParent":true]
-        let arrNewsUrls: [NSMutableDictionary] = [["url":"bbc.com", "isSelected":true, "tag":7], ["url":"cnn.com", "isSelected":true, "tag":8], ["url":"theguardian.com", "isSelected":true, "tag":11], ["url":"abc.net.au", "isSelected":true, "tag":12], ["url":"news", "isSelected":true, "tag":13]]//if any item added set last item tag
+        let arrNewsUrls: [NSMutableDictionary] = [["url":"bbc.com", "isSelected":true, "tag":7], ["url":"cnn.com", "isSelected":true, "tag":8], ["url":"theguardian.com", "isSelected":true, "tag":11], ["url":"abc.net.au", "isSelected":true, "tag":12], ["url":"news", "isSelected":true, "tag":13], ["url":"nytimes.com", "isSelected":true, "tag":17], ["url":"news.com.au", "isSelected":true, "tag":18], ["url":"smh.com.au", "isSelected":true, "tag":19], ["url":"foxnews.com", "isSelected":true, "tag":20]]//if any item added set last item tag
         
         dic["arrUrls"] = arrNewsUrls
         
@@ -85,16 +89,30 @@ class onboardingBlockedUrlsVc: NSViewController {
         let arrStreamingUrls: [NSMutableDictionary] = [["url":"netflix", "isSelected":true, "tag":14], ["url":"disney", "isSelected":true, "tag":15], ["url":"hulu", "isSelected":true, "tag":16]]//if any item added set last item tag
         
         dic["arrUrls"] = arrStreamingUrls
-        
+
         arrBlockedUrlsStructure.append(dic)
-        
-        lastItemTag = 17
+
+        dic = ["category":categoryDating,"isSelected":false,"tag":1000,"arrUrls":[NSMutableDictionary](),"isParent":true]
+        let arrDatingUrls: [NSMutableDictionary] = [["url":"tinder.com", "isSelected":true, "tag":21], ["url":"bumble.com", "isSelected":true, "tag":22], ["url":"hinge.co", "isSelected":true, "tag":23], ["url":"match.com", "isSelected":true, "tag":24], ["url":"okcupid.com", "isSelected":true, "tag":25], ["url":"pof.com", "isSelected":true, "tag":26], ["url":"eharmony.com", "isSelected":true, "tag":27], ["url":"grindr.com", "isSelected":true, "tag":28]]//if any item added set last item tag
+
+        dic["arrUrls"] = arrDatingUrls
+
+        arrBlockedUrlsStructure.append(dic)
+
+        dic = ["category":categoryRealEstate,"isSelected":false,"tag":1001,"arrUrls":[NSMutableDictionary](),"isParent":true]
+        let arrRealEstateUrls: [NSMutableDictionary] = [["url":"realestate.com.au", "isSelected":true, "tag":29], ["url":"domain.com.au", "isSelected":true, "tag":30], ["url":"zillow.com", "isSelected":true, "tag":31], ["url":"realtor.com", "isSelected":true, "tag":32], ["url":"rightmove.co.uk", "isSelected":true, "tag":33]]//if any item added set last item tag
+
+        dic["arrUrls"] = arrRealEstateUrls
+
+        arrBlockedUrlsStructure.append(dic)
+
+        lastItemTag = 34
         outlineView.reloadData()
         
         //progress
         self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
         self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
-        getDistractionBlockingProgressVcObj().setProgress(level: 1, progress: 0.65)
+        getDistractionBlockingProgressVcObj().setProgress(level: 1, progress: 0.5)
         
         
         textFieldUrl.textColor = .labelColor

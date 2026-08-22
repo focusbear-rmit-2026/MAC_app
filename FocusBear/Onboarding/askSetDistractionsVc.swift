@@ -69,7 +69,8 @@ class askSetDistractionsVc: NSViewController {
 
     @IBAction func btnNoThanksClicked(_ sender: Any) {
         addLog(text: "[user-action] askSetDistractionsVc:- btnNoThanks")
-        getOnboardingVcObject().navigate(to: ._ALLOWED_URLS_)
+        // Blocking order: blocked URLs → blocked apps → allowed URLs (see onboardingBlockedAppsVc).
+        getOnboardingVcObject().navigate(to: ._BLOCKED_URLS_)
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {

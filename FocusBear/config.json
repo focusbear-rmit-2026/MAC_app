@@ -1636,6 +1636,8 @@
         "blockSitesCountText": "<COUNT> websites selected (you can change this later)",
         "oneSiteBlockText": "1 website selected (you can change this later)",
         "categoryStreamingServices": "Streaming services",
+        "categoryDating": "Dating",
+        "categoryRealEstate": "Real estate",
         "titleNew": "Choose websites to block",
         "buttonProceedText": "Proceed",
         "textFieldPlaceholder": "Enter URL or keyword to block",
@@ -2851,13 +2853,21 @@
     "breakStateVcInfo":{
         "buttonEnableBreaks": "Enable Breaks",
         "buttonStartBreak": "Start Break",
+        "breakFrequencyTitleText": "Breaks are off",
+        "breakFrequencyDescriptionText": "Regular breaks keep your energy, focus and posture up. Choose how often you'd like one, then turn breaks back on.",
+        "breakFrequencyEveryText": "A break every <MINUTES> minutes",
+        "breakFrequencyEnableButtonText": "Turn breaks on",
         "titleEnableBreaks": "Breaks are currently disabled. Enable taking breaks at regular intervals to boost your productivity, energy levels, and focus.",
         "pausedBreaksText": "You’ve paused breaks for today. They’ll be back tomorrow to help you recharge and focus.",
         "shutoffTimeText": "App is in shutoff state",
         "noBreakScheduledText": "No upcoming break has been scheduled yet.",
         "noBreakAddedText": "No break activities added yet.",
         "buttonAddBreakActivity": "Add break activity",
-        "buttonChangeTiming": "Change Timing"
+        "buttonChangeTiming": "Change Timing",
+        "unsavedFrequencyMessage": "You changed how often you'd like a break but haven't turned breaks on yet. Turn breaks on with the new interval?",
+        "unsavedFrequencyTurnOnButton": "Turn breaks on",
+        "unsavedFrequencyDiscardButton": "Discard change",
+        "unsavedFrequencyCancelButton": "Cancel"
     },
     "scheduleViewInfo":{
         "showDismissedEvents": "Show dismissed events",
@@ -3298,7 +3308,7 @@
         "titleSignupFailed": "Signup failed."
     },
     "holdOnVcInfo": {
-        "titleText": "Hold on a minute!",
+        "titleText": "You've blocked the bad habits. How about some good habits?",
         "buttonContinueText": "Okay...",
         "bubbleText": "Arr… if you want to focus better, you’ve got to get your habits shipshape first.",
         "alertTitleLogout": "Do you want to log out and start again?",

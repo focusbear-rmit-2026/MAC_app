@@ -297,8 +297,19 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
     @objc func showNextView(){
         addLog(text: "[user-action] installHabitPacksVc:- showNextView")
         hasSkippedHabits = false
+        enableBreaksFromOnboarding()
+        // Habits is the last setup section now (blocking already happened): go to the schedule step.
+        getOnboardingVcObject().navigate(to: ._ASK_CREATE_BLOCKING_SCHEDULE_)
+    }
+
+    /// Turn breaks on by default coming out of onboarding, and seed a sensible 60-minute default frequency
+    /// (unless the user/server already set one) so new users get an hourly break out of the box.
+    private func enableBreaksFromOnboarding() {
         UserDefaults.standard.set(true, forKey: kUserdefaultsBreaksEnabledFromOnboarding)
-        getOnboardingVcObject().navigate(to: ._SET_DISTRACTION_BLOCKING_)
+        // Seed the 60-min default into the live global only. It's persisted to break_after_minutes with
+        // the valid onboarding settings save in AppDelegate.initialWork (isFirstTime) — a standalone
+        // full-settings PUT here 400s because the fresh user's times/activities aren't set yet.
+        breakAfterMinutes = 60
     }
     
     
@@ -312,7 +323,8 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
         }
         allApiObject.capturePosthog(event: "set-up-habits-webview-skipped", metadata: [:])
         hasSkippedHabits = true
-        UserDefaults.standard.set(true, forKey: kUserdefaultsBreaksEnabledFromOnboarding)
-        getOnboardingVcObject().navigate(to: ._SET_DISTRACTION_BLOCKING_)
+        enableBreaksFromOnboarding()
+        // Habits is the last setup section now (blocking already happened): go to the schedule step.
+        getOnboardingVcObject().navigate(to: ._ASK_CREATE_BLOCKING_SCHEDULE_)
     }
 }

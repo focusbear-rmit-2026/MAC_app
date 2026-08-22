@@ -734,6 +734,14 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 }
             }
         }
+
+        // Leaving the Micro Break tab after changing the break interval but not turning breaks on:
+        // confirm first instead of silently discarding the change.
+        if boxMicroBreaks.isSelected, box != boxMicroBreaks,
+           breaksStateVcObj?.hasUnsavedFrequencyChange == true {
+            promptUnsavedBreakFrequency(targetBox: box)
+            return false
+        }
         if box == boxUpgradeNow{
             addLog(text:"[user-action] leftMenuVc:- btnUpgradeNowClicked")
             showUpgradeNowWindow(reason: "upgrade_now_button")
@@ -763,10 +771,53 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             alert.beginSheetModal(for: window, completionHandler: { (modalResponse) in
                 if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                 }
-                
-                
+
+
             })
         }
+    }
+
+    /// The user changed the break interval but didn't turn breaks on, then tried to switch tabs. Confirm
+    /// before leaving: turn breaks on with the new interval, discard the change, or stay.
+    private func promptUnsavedBreakFrequency(targetBox: mainWindowListBox){
+        let alert = NSAlert()
+        alert.setSharingType()
+        alert.alertStyle = .informational
+        var message = "You changed how often you'd like a break but haven't turned breaks on yet. Turn breaks on with the new interval?"
+        var buttonTurnOn = "Turn breaks on"
+        var buttonDiscard = "Discard change"
+        var buttonCancel = "Cancel"
+        if let breakStateVcInfo = configjson.value(forKey: "breakStateVcInfo") as? NSDictionary{
+            message = breakStateVcInfo.value(forKey: "unsavedFrequencyMessage") as? String ?? message
+            buttonTurnOn = breakStateVcInfo.value(forKey: "unsavedFrequencyTurnOnButton") as? String ?? buttonTurnOn
+            buttonDiscard = breakStateVcInfo.value(forKey: "unsavedFrequencyDiscardButton") as? String ?? buttonDiscard
+            buttonCancel = breakStateVcInfo.value(forKey: "unsavedFrequencyCancelButton") as? String ?? buttonCancel
+        }
+        alert.messageText = message
+        alert.addButton(withTitle: buttonTurnOn)   // .alertFirstButtonReturn
+        alert.addButton(withTitle: buttonDiscard)  // .alertSecondButtonReturn
+        alert.addButton(withTitle: buttonCancel)   // .alertThirdButtonReturn
+        guard let window = self.view.window else { return }
+        alert.beginSheetModal(for: window, completionHandler: { [weak self] response in
+            guard let self = self else { return }
+            switch response{
+            case .alertFirstButtonReturn:
+                breaksStateVcObj?.turnOnBreaksWithPendingFrequency()
+                self.switchToTab(targetBox)
+            case .alertSecondButtonReturn:
+                breaksStateVcObj?.discardPendingFrequencyChange()
+                self.switchToTab(targetBox)
+            default:
+                break // Cancel — stay on the Micro Break tab
+            }
+        })
+    }
+
+    /// Programmatically complete a tab switch that selectableListBoxShouldChangeSelection had blocked
+    /// (the pending-change flag is cleared by the callers above, so this won't re-prompt).
+    private func switchToTab(_ box: mainWindowListBox){
+        box.isSelected = true
+        selectableListBoxDidChangeSelectionByUser(box)
     }
     
     

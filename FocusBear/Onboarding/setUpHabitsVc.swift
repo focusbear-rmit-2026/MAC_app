@@ -58,7 +58,8 @@ class setUpHabitsVc: NSViewController {
         allApiObject.capturePosthog(event: "set-up-habits-skipped", metadata: [:])
         isHabitsDisabled = true
         UserDefaults.standard.set(true, forKey: kUserdefaultsIsHabitsDisabledFromOnboarding)
-        getOnboardingVcObject().navigate(to: ._SET_DISTRACTION_BLOCKING_)
+        // Blocking already happened earlier in onboarding; skipping habits goes to the schedule step.
+        getOnboardingVcObject().navigate(to: ._ASK_CREATE_BLOCKING_SCHEDULE_)
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {

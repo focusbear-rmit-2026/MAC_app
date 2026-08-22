@@ -7,17 +7,110 @@
 //
 
 import Cocoa
+import SwiftUI
 
 class breaksStateVc: NSViewController {
 
- 
+
     @IBOutlet weak var lblNextBreakTime: NSTextField!
     @IBOutlet weak var btnEnableMicroBreaks: Button!
     @IBOutlet weak var lblEnableBreaks: NSTextField!
     @IBOutlet weak var btnStartMicroBreaks: Button!
-    
+
     var isViewVisible = false
     var timerReload:Timer?
+
+    // Inline "breaks are off — pick a frequency and turn them back on" control, shown only in the
+    // breaks-disabled state (SwiftUI, hosted over this AppKit view).
+    private var freqPickerHost: NSView?
+
+    /// The frequency the user has selected in the picker but NOT yet turned breaks on with (nil = no
+    /// pending change). Drives (a) preserving the selection across the reload timer and (b) the
+    /// "you changed the interval but didn't turn breaks on" prompt when leaving the tab.
+    private var pendingFrequencyMinutes: Int?
+
+    /// The saved break frequency (break_after_minutes), falling back to 60. What the picker seeds to.
+    private var savedFrequencyMinutes: Int { breakAfterMinutes > 0 ? breakAfterMinutes : 60 }
+
+    /// True when the picker is visible and the user picked a frequency different from the saved one
+    /// without turning breaks on. Read by leftMenuVc before allowing a tab switch.
+    var hasUnsavedFrequencyChange: Bool {
+        guard let host = freqPickerHost, !host.isHidden else { return false }
+        guard let pending = pendingFrequencyMinutes else { return false }
+        return pending != savedFrequencyMinutes
+    }
+
+    /// Show the frequency picker filling this view; hides the plain label/button behind it. Seeded with
+    /// the user's in-progress choice if any, else the current effective frequency (falls back to 60).
+    private func showFrequencyPicker() {
+        let seed = pendingFrequencyMinutes ?? savedFrequencyMinutes
+        if freqPickerHost == nil {
+            let view = BreakFrequencyEnableView(initialMinutes: seed, onChange: { [weak self] minutes in
+                self?.pendingFrequencyMinutes = minutes
+            }, onEnable: { [weak self] minutes in
+                self?.enableBreaks(withFrequency: minutes)
+            })
+            let host = NSHostingView(rootView: view)
+            host.translatesAutoresizingMaskIntoConstraints = false
+            // The host is pinned to fill this view, so it must NOT impose the SwiftUI content's own size
+            // on Auto Layout. The content uses maxHeight: .infinity to centre itself, which makes the
+            // hosting view's intrinsic height enormous; with the required edge pins below, that forced the
+            // window far taller than the intended small size (past the screen bounds). Let the edge
+            // constraints alone size it.
+            if #available(macOS 13.0, *) {
+                host.sizingOptions = []
+            } else {
+                host.setContentHuggingPriority(.defaultLow, for: .vertical)
+                host.setContentHuggingPriority(.defaultLow, for: .horizontal)
+                host.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+                host.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            }
+            self.view.addSubview(host)
+            NSLayoutConstraint.activate([
+                host.topAnchor.constraint(equalTo: self.view.topAnchor),
+                host.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
+                host.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+                host.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            ])
+            freqPickerHost = host
+        }
+        freqPickerHost?.isHidden = false
+    }
+
+    private func hideFrequencyPicker() {
+        freqPickerHost?.removeFromSuperview()
+        freqPickerHost = nil
+        pendingFrequencyMinutes = nil
+    }
+
+    /// Turn breaks on using the frequency the user has selected in the picker (called from the
+    /// leave-tab confirm prompt in leftMenuVc).
+    func turnOnBreaksWithPendingFrequency() {
+        enableBreaks(withFrequency: pendingFrequencyMinutes ?? savedFrequencyMinutes)
+    }
+
+    /// Discard the in-progress picker selection (called from the leave-tab confirm prompt).
+    func discardPendingFrequencyChange() {
+        pendingFrequencyMinutes = nil
+        hideFrequencyPicker()
+    }
+
+    /// Turn breaks back on with the chosen frequency (mirrors btnEnableMicroBreaksClicked, plus the
+    /// frequency override the picker collected).
+    private func enableBreaks(withFrequency minutes: Int) {
+        addLog(text: "[user-action] breaksStateVc:- enable breaks from picker @ \(minutes) min")
+        SettingsManagerObject.isSettingsChanged = true
+        SettingsManagerObject.isMicroBreaksEnabled = true
+        allApiObject.capturePosthog(event: "settings-changed-enable-breaks",
+                                    metadata: ["break_frequency_minutes": "\(minutes)"])
+        SettingsManagerObject.putUserLocalDeviceSettings()
+        // Persist the chosen frequency to break_after_minutes (the single source of truth — synced to the
+        // server and re-cached) rather than a separate local key that would then shadow the server value.
+        // saveNewBreakFrequency also updates the live breakAfterMinutes global and restarts the break timer.
+        BreakFrequencyStreakTracker.shared.saveNewBreakFrequency(minutes)
+        hideFrequencyPicker()
+        reloadData()
+    }
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -59,6 +152,13 @@ class breaksStateVc: NSViewController {
 
     func reloadData() {
         addLog(text:"breaksStateVc:- reloadData")
+        // Only tear the picker down when we're NOT going to show it. Otherwise leave the existing host in
+        // place (showFrequencyPicker no-ops when it already exists) so the user's in-progress selection
+        // survives the 3-second reload timer — recreating it every tick reset the choice back to current.
+        let willShowFrequencyPicker = arrAllbreakActivities.count > 0 && isAppEnable && !SettingsManagerObject.isMicroBreaksEnabled
+        if !willShowFrequencyPicker {
+            hideFrequencyPicker()
+        }
         if arrAllbreakActivities.count == 0 {
             btnEnableMicroBreaks.title = "Edit Habits"
             lblEnableBreaks.stringValue = "No break activities added yet."
@@ -106,15 +206,13 @@ class breaksStateVc: NSViewController {
         var isBreakEnabled = SettingsManagerObject.isMicroBreaksEnabled
         
         if !isBreakEnabled{
-            lblEnableBreaks.stringValue = "Breaks are currently disabled. Enable taking breaks at regular intervals to boost your productivity, energy levels, and focus."
-            
-            if let breakStateVcInfo = configjson.value(forKey: "breakStateVcInfo") as? NSDictionary{
-                lblEnableBreaks.stringValue = breakStateVcInfo.value(forKey: "titleEnableBreaks") as? String ?? lblEnableBreaks.stringValue
-            }
-            lblEnableBreaks.isHidden = false
-            btnEnableMicroBreaks.isHidden = false
+            // Breaks turned off → let the user pick a frequency and turn them back on right here, instead
+            // of just a plain "Enable Breaks" button.
+            lblEnableBreaks.isHidden = true
+            btnEnableMicroBreaks.isHidden = true
             lblNextBreakTime.isHidden = true
             btnStartMicroBreaks.isHidden = true
+            showFrequencyPicker()
             return;
         }
         if let disableBreaksForTodayDate = UserDefaults.standard.object(forKey: kUserdefaultsDisableBreaksForToday) as? Date{
@@ -221,5 +319,61 @@ class breaksStateVc: NSViewController {
         addLog(text:"[user-action] breaksStateVc:- button Start Micro breaks clicked")
         menuViewControllerObj?.btnStartBreakClicked(self)
     }
-    
+
+}
+
+// MARK: - Break-frequency enable control (SwiftUI)
+
+/// Shown when breaks are turned off: reminds the user why breaks help, lets them choose how often they'd
+/// like one, and turns breaks back on with that frequency in a single tap — so they can re-enable AND
+/// re-tune the frequency without leaving this screen.
+struct BreakFrequencyEnableView: View {
+    let onChange: (Int) -> Void
+    let onEnable: (Int) -> Void
+
+    private static let presets = [30, 45, 60, 90, 120]
+    // The app defines global `State`/`Button` types that shadow SwiftUI's — qualify them.
+    @SwiftUI.State private var minutes: Int
+
+    init(initialMinutes: Int, onChange: @escaping (Int) -> Void, onEnable: @escaping (Int) -> Void) {
+        self.onChange = onChange
+        self.onEnable = onEnable
+        let seed = BreakFrequencyEnableView.presets.contains(initialMinutes) ? initialMinutes : 60
+        _minutes = SwiftUI.State(initialValue: seed)
+    }
+
+    /// Reads a translated string from the `breakStateVcInfo` config block, falling back to English.
+    static func configText(_ key: String, _ fallback: String) -> String {
+        (configjson.value(forKey: "breakStateVcInfo") as? NSDictionary)?.value(forKey: key) as? String ?? fallback
+    }
+
+    var body: some View {
+        VStack(spacing: 18) {
+            Spacer()
+            Text(BreakFrequencyEnableView.configText("breakFrequencyTitleText", "Breaks are off"))
+                .font(.system(size: 20, weight: .semibold))
+            Text(BreakFrequencyEnableView.configText("breakFrequencyDescriptionText", "Regular breaks keep your energy, focus and posture up. Choose how often you'd like one, then turn breaks back on."))
+                .font(.callout)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 32)
+            Picker("", selection: $minutes) {
+                ForEach(BreakFrequencyEnableView.presets, id: \.self) { Text("\($0) min").tag($0) } // i18n-ignore
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .labelsHidden()
+            .frame(maxWidth: 340)
+            .onChange(of: minutes) { newValue in onChange(newValue) }
+            Text(BreakFrequencyEnableView.configText("breakFrequencyEveryText", "A break every <MINUTES> minutes")
+                .replacingOccurrences(of: "<MINUTES>", with: "\(minutes)"))
+                .font(.caption)
+                .foregroundColor(.secondary)
+            SwiftUI.Button(BreakFrequencyEnableView.configText("breakFrequencyEnableButtonText", "Turn breaks on")) { onEnable(minutes) }
+                .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 40))
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(NSColor.windowBackgroundColor))
+    }
 }

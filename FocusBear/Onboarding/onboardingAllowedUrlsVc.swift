@@ -59,7 +59,7 @@ class onboardingAllowedUrlsVc: NSViewController {
         //progress
         self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
         self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
-        getDistractionBlockingProgressVcObj().setProgress(level: 1, progress: 0.5)
+        getDistractionBlockingProgressVcObj().setProgress(level: 1, progress: 0.80)
         
 
         textFieldUrl.textColor = .labelColor
@@ -166,7 +166,8 @@ class onboardingAllowedUrlsVc: NSViewController {
     @IBAction func btnSkipClicked(_ sender: Any) {
         addLog(text: "[user-action] onboardingAllowedUrlsVc:- Button skip clicked")
         allApiObject.capturePosthog(event: "onboarding-allowed-urls-skipped", metadata: [:])
-        getOnboardingVcObject().navigate(to: ._BLOCKED_URLS_)
+        // Allowed URLs is now the last blocking step (blocked URLs + apps came first) → hand off to habits.
+        getOnboardingVcObject().navigate(to: ._HOLD_ON_)
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
@@ -185,8 +186,9 @@ class onboardingAllowedUrlsVc: NSViewController {
             occupationSpecificRelevantSitesForFocusMode = [String:Any]()
             occupationSpecificRelevantSitesForFocusMode?["user_relevant_sites"] = arrAllowedUrls
         }
-        
-        getOnboardingVcObject().navigate(to: ._BLOCKED_URLS_)
+
+        // Allowed URLs is now the last blocking step (blocked URLs + apps came first) → hand off to habits.
+        getOnboardingVcObject().navigate(to: ._HOLD_ON_)
     }
     
     @IBAction func btnCheckBoxSelectAllClicked(_ sender: NSButton) {

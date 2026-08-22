@@ -2849,13 +2849,21 @@
     "breakStateVcInfo":{
         "buttonEnableBreaks": "Activar descansos",
         "buttonStartBreak": "Iniciar descanso",
+        "breakFrequencyTitleText": "Los descansos están desactivados",
+        "breakFrequencyDescriptionText": "Los descansos regulares mantienen tu energía, concentración y postura. Elige con qué frecuencia quieres uno y luego vuelve a activar los descansos.",
+        "breakFrequencyEveryText": "Un descanso cada <MINUTES> minutos",
+        "breakFrequencyEnableButtonText": "Activar descansos",
         "titleEnableBreaks": "Los descansos están desactivados. Activa los descansos a intervalos regulares para aumentar tu productividad, energía y enfoque.",
         "pausedBreaksText": "Has pausado los descansos por hoy. Mañana volverán para ayudarte a recargar energías y mantener el enfoque.",
         "shutoffTimeText": "La app está en estado de apagado",
         "noBreakScheduledText": "Aún no se ha programado ningún descanso próximo.",
         "noBreakAddedText": "Aún no se han agregado actividades de descanso.",
         "buttonAddBreakActivity": "Agregar actividad de descanso",
-        "buttonChangeTiming": "Cambiar horario"
+        "buttonChangeTiming": "Cambiar horario",
+        "unsavedFrequencyMessage": "Cambiaste la frecuencia de los descansos pero aún no los has activado. ¿Quieres activar los descansos con el nuevo intervalo?",
+        "unsavedFrequencyTurnOnButton": "Activar descansos",
+        "unsavedFrequencyDiscardButton": "Descartar cambio",
+        "unsavedFrequencyCancelButton": "Cancelar"
     },
     "scheduleViewInfo":{
         "showDismissedEvents": "Mostrar eventos descartados",
@@ -3296,7 +3304,7 @@
         "titleSignupFailed": "Error al registrarse."
     },
     "holdOnVcInfo": {
-        "titleText": "¡Espera un momento!",
+        "titleText": "Has bloqueado los malos hábitos. ¿Qué tal algunos buenos hábitos?",
         "buttonContinueText": "Está bien...",
         "bubbleText": "Arr… si quieres concentrarte mejor, primero debes poner tus hábitos en orden.",
         "alertTitleLogout": "¿Quieres cerrar sesión y empezar de nuevo?",

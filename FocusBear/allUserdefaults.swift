@@ -251,7 +251,6 @@ var kUserDefaultsBlockingScheduleAddedFirstTime = "kBlockingScheduleAddedFirstTi
 // login (see AppDelegate) — keeps each account's off-streak / frequency separate on a shared device.
 var kUserdefaultsBreakOffDates         = "kFBBreakOffDates"
 var kUserdefaultsBreakOffPromptShown   = "kFBBreakOffPromptShownDate"
-var kUserdefaultsBreakFrequencyMinutes = "kFBBreakFrequencyMinutes"
 
 var kUserdefaultsHiddenFocusModeIDs = "kHiddenFocusModeIDs"
 // IDs of TOOLS sidebar rows the user hid via the hover ✕ (restored via the TOOLS gear icon).
