@@ -681,11 +681,11 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         case boxFocusMusic:
             checkScreenSizeIfFullScreenHabitIsRunning()
         case boxBlocks:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            checkScreenSizeIfFullScreenHabitIsRunning()
         case boxSettings:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            checkScreenSizeIfFullScreenHabitIsRunning()
         case boxEditHabits:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            checkScreenSizeIfFullScreenHabitIsRunning()
         case boxMotivation:
             checkScreenSizeIfFullScreenHabitIsRunning()
         case boxHelpAndSupport:
@@ -859,10 +859,12 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             toolTipDisableReason = disableReasonCustomRoutine
         }
         
-        boxEditHabits.setDisableWithRaason(reason: toolTipDisableReason)
-        boxSettings.setDisableWithRaason(reason: toolTipDisableReason)
+        // Settings + Edit Habits stay available during an active routine so the user can
+        // adjust preferences / their habit list without having to end the routine first.
+        boxEditHabits.isEnabled = true
+        boxSettings.isEnabled = true
         boxBlocks.setDisableWithRaason(reason: toolTipDisableReason)
-        
+
         boxMicroBreaks.setDisableWithRaason(reason: toolTipDisableReason)
         boxFocusSession.setDisableWithRaason(reason: toolTipDisableReason)
         boxHabits.isEnabled = true
@@ -914,8 +916,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             toolTipDisableReason = disableReasonCustomRoutine
         }
 
-        boxEditHabits.setDisableWithRaason(reason: toolTipDisableReason)
-        boxSettings.setDisableWithRaason(reason: toolTipDisableReason)
+        // Settings + Edit Habits stay available during an active routine (see disableAllExceptHabitTab).
+        boxEditHabits.isEnabled = true
+        boxSettings.isEnabled = true
         boxBlocks.setDisableWithRaason(reason: toolTipDisableReason)
 
         boxMicroBreaks.setDisableWithRaason(reason: toolTipDisableReason)
