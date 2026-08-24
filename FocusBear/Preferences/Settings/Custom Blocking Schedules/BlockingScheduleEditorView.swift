@@ -53,6 +53,24 @@ struct BlockingScheduleEditorView: View {
     var onDelete: () -> Void
     var onEditBlockList: () -> Void
     var onBack: () -> Void
+    // Onboarding reuses this editor to create the very first blocking schedule, where there is
+    // deliberately no block-list picker (the user hasn't set up any focus modes yet). Default true
+    // keeps the in-app Settings editor unchanged; onboarding passes false to hide the Block-list row.
+    var showBlockList: Bool = true
+    // Onboarding overlays its own step-progress indicator on top of this editor and has no
+    // back/cancel affordance, so it hides the editor's own header + Cancel button. Defaults keep the
+    // in-app Settings editor unchanged.
+    var showHeader: Bool = true
+    var showCancel: Bool = true
+    // Onboarding keeps the storyboard's own "Add Block" CTA and hides the editor's footer entirely.
+    var showFooter: Bool = true
+    // Onboarding showed the AI / skip-microbreaks toggles directly (no collapsed section), so it opens
+    // the "More Options" group by default.
+    var expandMoreOptions: Bool = false
+    // Onboarding runs in a much wider window than the Settings pane, where a full-bleed content column
+    // looks stretched. When set, the scrolling content is capped to this width and centered. nil keeps
+    // the in-app editor full-width as before.
+    var contentMaxWidth: CGFloat? = nil
 
     @SwiftUI.State private var showMoreOptions = false
 
@@ -63,18 +81,21 @@ struct BlockingScheduleEditorView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            header
+            if showHeader { header }
             ScrollView {
                 VStack(spacing: 16) {
                     scheduleCard
                     blockListCard
                     moreOptions
-                    footer
+                    if showFooter { footer }
                 }
                 .padding(20)
+                .frame(maxWidth: contentMaxWidth ?? .infinity)   // cap + center the column (onboarding)
+                .frame(maxWidth: .infinity)                       // outer fills width so the cap centers
             }
         }
         .background(FBColor.background)
+        .onAppear { if expandMoreOptions { showMoreOptions = true } }
     }
 
     private var header: some View {
@@ -189,6 +210,7 @@ struct BlockingScheduleEditorView: View {
 
     private var blockListCard: some View {
         VStack(alignment: .leading, spacing: 16) {
+            if showBlockList {
             field(title: "Block list") {
                 HStack(spacing: 10) {
                     Menu {
@@ -230,6 +252,7 @@ struct BlockingScheduleEditorView: View {
 
                     Spacer(minLength: 0)       // keep the dropdown + link left-aligned
                 }
+            }
             }
 
             field(title: "Strictness") {
@@ -304,10 +327,12 @@ struct BlockingScheduleEditorView: View {
                 .buttonStyle(FBButtonStyle())
             }
             Spacer()
-            SwiftUI.Button(action: onCancel) {
-                Text("Cancel").fbOutlineButtonLabel(.primary)
+            if showCancel {
+                SwiftUI.Button(action: onCancel) {
+                    Text("Cancel").fbOutlineButtonLabel(.primary)
+                }
+                .buttonStyle(FBButtonStyle())
             }
-            .buttonStyle(FBButtonStyle())
             SwiftUI.Button(action: onSave) {
                 Text(model.isEditing ? "Save changes" : "Create")
                     .font(.fbSemibold(13)).foregroundColor(.white)
