@@ -11,6 +11,14 @@ var breakAfterMinutes = 0
 /// blocking schedule / routine), we re-check after this many seconds instead of pushing the break out a
 /// full `breakAfterMinutes` interval — so the break fires soon after the blocking condition clears.
 let breakRetryWhenBlockedSeconds = 60
+/// When the persisted next-break-due time is already reached (or passed) but a plain reschedule ran (e.g.
+/// pause/resume landed after the break came due), re-check after this short delay so the break fires as
+/// soon as conditions allow — WITHOUT resetting the due date to a full interval.
+let breakRetryWhenDueSeconds = 15
+/// How far past the due time counts as "stale" (app was closed a long time / overnight): overdue by more
+/// than this many full `breakAfterMinutes` intervals starts a fresh interval instead of firing a break
+/// right away, so a yesterday break doesn't spam moments after launch.
+let breakStaleOverdueIntervalMultiple = 1.0
 var arrAllbreakActivities = [breakActivity]()
 var arrFinalBreakActivities = [breakActivityFilter]()
 struct breakActivityFilter{
@@ -112,9 +120,12 @@ func writeNaturalBreak(){//2.28.444
         addLog(text: "Last break recorded at \(now). It will be shown in the menu.")
         print("\(diffSeconds) seconds Last break recorded at \(now). It will be shown in the menu.")
         if currentState != ._MICRO_BREAK_{
-            if getHabitsVcObject().breakTimer != nil{
-                getHabitsVcObject().setActivityTimer(forceReset: true)   // a break was taken/recorded — reset to a full interval
-            }
+            // A natural break was just recorded, so reset the countdown to a fresh full interval — even
+            // when breakTimer is currently nil. It usually IS nil here: the screen-lock/sleep that caused
+            // the idle also PAUSED (stopped) the break timer, and this runs on unlock before it's
+            // rescheduled. Without forcing the reset, the persisted next-break-due time from before the
+            // lock survives and a break comes due again too soon after the user just took a real break.
+            getHabitsVcObject().setActivityTimer(forceReset: true)   // a break was taken/recorded — reset to a full interval
         }
     }
 }

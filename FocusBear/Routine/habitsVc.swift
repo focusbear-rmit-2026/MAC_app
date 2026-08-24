@@ -2428,22 +2428,85 @@ class habitsVc: NSViewController {
             return
         }
         if arrAllbreakActivities.count != 0 {
-            // Carry over time already elapsed since the last break (persisted across restarts,
-            // and including natural/idle breaks) instead of always restarting the full
-            // interval — otherwise relaunching the app keeps resetting the break countdown so a
-            // break is never due. See: "Focus Bear isn't prompting breaks".
+            // The break countdown schedules toward a PERSISTED "next break due" wall-clock time
+            // (kUserdefaultsNextBreakDueTime). Only a forced reset — the user actually took/finished a
+            // break or postponed one — restarts a fresh full interval and moves that due date. Every other
+            // caller (pause/resume, settings reload, a deferred break re-checking) reschedules toward the
+            // SAME due date, so a countdown that's already partway through is not thrown away and restarted
+            // each time the app re-evaluates state. Without this, once the last real break drifts older than
+            // one interval the countdown perpetually resets and breaks stop firing entirely.
             let fullInterval = TimeInterval(breakAfterMinutes * 60)
-            var interval = fullInterval
-            // On a forced reset (the user just took/finished a break or postponed one) always use the
-            // full interval — ignore the previous break time entirely. Otherwise, only carry over a
-            // RECENT break (one within the current interval): if the last break is older than a full
-            // interval (e.g. from a previous day, or after the app was closed / idle a long time) it's
-            // stale, so schedule a fresh full interval instead of collapsing to the 60s floor — a
-            // yesterday break must not make today's first break fire ~60s after launch.
-            if !forceReset, let elapsed = secondsSinceLastBreakEnd(), elapsed > 0, elapsed < Int(fullInterval) {
-                interval = max(fullInterval - Double(elapsed), 60)
+            guard fullInterval > 0 else {
+                addLog(text: "Break Activity Timer: breakAfterMinutes is \(breakAfterMinutes) — no break scheduled.")
+                return
             }
-            addLog(text: "Break Activity Timer reset Done. Next break in \(Int(interval))s (interval \(breakAfterMinutes)m, carrying over time since last break).")
+            let now = Date()
+            let dueDefaults = UserDefaults.standard
+            var interval = fullInterval
+            var dueNote = ""
+            // The lastBreakEndTime floor below exists to stop a break firing seconds after a break was
+            // TAKEN (a completed break leaves an overdue due date + short-retry). It must NOT clamp a due
+            // date that's still in the FUTURE — a postpone ("remind me in 10 min") or a normal countdown
+            // resumed after a lock — otherwise it would push those out to a full interval. So only floor
+            // the overdue / seed cases.
+            var applyBreakFloor = true
+
+            if forceReset {
+                dueDefaults.set(now.addingTimeInterval(fullInterval), forKey: kUserdefaultsNextBreakDueTime)
+                interval = fullInterval
+                dueNote = "forceReset → fresh full interval"
+            } else if let due = dueDefaults.object(forKey: kUserdefaultsNextBreakDueTime) as? Date {
+                let remaining = due.timeIntervalSince(now)
+                if remaining > fullInterval {
+                    // Remaining is longer than a whole interval — the interval was shortened (server
+                    // settings change). Cap to the new full interval so we don't wait longer than one.
+                    dueDefaults.set(now.addingTimeInterval(fullInterval), forKey: kUserdefaultsNextBreakDueTime)
+                    interval = fullInterval
+                    dueNote = "remaining \(Int(remaining))s exceeds interval (settings change?) → capped to full interval"
+                    applyBreakFloor = false   // future due — don't floor it out
+                } else if remaining > 0 {
+                    // Preserve progress across the stop/reschedule — this is the key fix.
+                    interval = remaining
+                    dueNote = "preserved remaining \(Int(remaining))s toward existing due date"
+                    applyBreakFloor = false   // future due (incl. a postpone) — respect it, don't floor
+                } else if remaining < -(fullInterval * breakStaleOverdueIntervalMultiple) {
+                    // Overdue by more than one interval (app closed a long time / overnight) — stale.
+                    // Start fresh so a yesterday break doesn't fire moments after launch.
+                    dueDefaults.set(now.addingTimeInterval(fullInterval), forKey: kUserdefaultsNextBreakDueTime)
+                    interval = fullInterval
+                    dueNote = "stale due date (overdue \(Int(-remaining))s) → fresh full interval"
+                } else {
+                    // Due/recently overdue — fire as soon as conditions allow, keep the due date.
+                    interval = TimeInterval(breakRetryWhenDueSeconds)
+                    dueNote = "break due (overdue \(Int(-remaining))s) → short retry, due date preserved"
+                }
+            } else {
+                // First schedule with no persisted due date: seed it, carrying over a RECENT last break
+                // (one within the current interval) so first-schedule-after-launch behaves as before — a
+                // stale/yesterday break falls through to a fresh full interval, not the 60s floor.
+                if let elapsed = secondsSinceLastBreakEnd(), elapsed > 0, elapsed < Int(fullInterval) {
+                    interval = max(fullInterval - Double(elapsed), 60)
+                }
+                dueDefaults.set(now.addingTimeInterval(interval), forKey: kUserdefaultsNextBreakDueTime)
+                dueNote = "no persisted due date → carry-over from last break, seeded due date"
+            }
+            // A break RECORDED since we last scheduled resets the clock: the next break must not come before
+            // lastBreakEndTime + fullInterval. Any break-completion path (a Focus Bear micro-break, a natural
+            // break) writes lastBreakEndTime; not all of them call forceReset. Without this floor, finishing a
+            // break leaves the (now-overdue) persisted due date in place and the short-retry fires ANOTHER
+            // break seconds later ("time since last break: 0m" → a fresh break). Only applies to a RECENT
+            // break (elapsed < one interval); a stale/old break doesn't push the due date out.
+            if applyBreakFloor, !forceReset, let elapsed = secondsSinceLastBreakEnd(), elapsed >= 0, elapsed < Int(fullInterval) {
+                let intervalFromBreak = fullInterval - Double(elapsed)
+                if intervalFromBreak > interval {
+                    interval = intervalFromBreak
+                    dueDefaults.set(now.addingTimeInterval(interval), forKey: kUserdefaultsNextBreakDueTime)
+                    dueNote += " | floored to a full interval from a break \(elapsed)s ago"
+                }
+            }
+            // Never schedule below the short-retry floor (guards against a 0s/near-0s remaining busy-loop).
+            interval = max(interval, TimeInterval(breakRetryWhenDueSeconds))
+            addLog(text: "Break Activity Timer reset Done. Next break in \(Int(interval))s (interval \(breakAfterMinutes)m; \(dueNote)).")
             DispatchQueue.global().sync {
                 stopActivityTimer()
                 self.breakTimer = Timer.scheduledTimer(timeInterval: interval, target: self, selector: #selector(self.timeToStartBreakActivities), userInfo: nil, repeats: false)
@@ -2513,6 +2576,11 @@ class habitsVc: NSViewController {
         }
         
         if arrAllbreakActivities.count != 0 {
+            // Persist the postpone target as the next-break due time so it survives a stop/reschedule —
+            // e.g. a screen-lock/sleep pauses (nils) the live breakTimer below, and on unlock
+            // setActivityTimer reschedules from the PERSISTED due date. Without this it read the stale
+            // pre-postpone due date and the break came due far too soon after a postpone.
+            UserDefaults.standard.set(Date().addingTimeInterval(TimeInterval(seconds)), forKey: kUserdefaultsNextBreakDueTime)
             DispatchQueue.global().sync {//async {
                 print("breakAfterMinutesxxxx")
                 stopActivityTimer()
@@ -3294,7 +3362,9 @@ class habitsVc: NSViewController {
             
             
             if !SettingsManagerObject.isMicroBreaksEnabled{
-                self.setActivityTimer()
+                // Breaks are intentionally off — push the due date out a full interval (forceReset) so this
+                // doesn't short-retry in a tight loop while disabled.
+                self.setActivityTimer(forceReset: true)
                 addLog(text: "Breaks are not enabled :- Break Activities cancelled.")
                 if self.isWaitingForInactivityToStartMicroBreak{
                     self.breakInactivitySecondsToCheck = 5
@@ -3307,7 +3377,9 @@ class habitsVc: NSViewController {
             
             if let disableBreaksForTodayDate = UserDefaults.standard.object(forKey: kUserdefaultsDisableBreaksForToday) as? Date{
                 if Calendar.current.isDateInToday(disableBreaksForTodayDate){
-                    self.setActivityTimer()
+                    // Breaks are intentionally off for today — push the due date out a full interval
+                    // (forceReset) rather than short-retrying in a tight loop.
+                    self.setActivityTimer(forceReset: true)
                     addLog(text: "Breaks are disabled for today :- Break Activities cancelled.")
                     
                     if self.isWaitingForInactivityToStartMicroBreak{

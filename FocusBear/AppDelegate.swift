@@ -1016,6 +1016,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 kUserdefaultsDisableBreaksForToday = kUserdefaultsDisableBreaksForToday + (self.user?.userId ?? "")
                 kUserdefaultsBreakOffDates = kUserdefaultsBreakOffDates + (self.user?.userId ?? "")
                 kUserdefaultsBreakOffPromptShown = kUserdefaultsBreakOffPromptShown + (self.user?.userId ?? "")
+                kUserdefaultsNextBreakDueTime = kUserdefaultsNextBreakDueTime + (self.user?.userId ?? "")
                 kUserdefaultsLastFocusModeStrictness = kUserdefaultsLastFocusModeStrictness + (self.user?.userId ?? "")
                 kUserdefaultsDontShowConfirmGeekModeAlert = kUserdefaultsDontShowConfirmGeekModeAlert + (self.user?.userId ?? "")
                 kUserDefaultsOpenTodoPlayerFirstTime = kUserDefaultsOpenTodoPlayerFirstTime + (self.user?.userId ?? "")

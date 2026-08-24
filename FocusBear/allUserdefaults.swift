@@ -212,6 +212,10 @@ var kUserdefaultsManageTaskFirstTime = "kUserdefaultsManageTaskFirstTime"
 var kUserdefaultsLastBreaksStartTime = "kUserdefaultsLastBreaksStartTime"
 var kUserdefaultsArrayBreaksDurations = "kUserdefaultsArrayBreaksDurations"
 var kUserdefaultsLastBreakEndTime = "kUserdefaultsLastBreakEndTime" // added on 24/7/25 v 1.26.394 //Mac app shows “Time since last break: 39m” but I actually had my laptop closed for 39m and just opened it now. It should show more like 2minutes
+// Wall-clock time the next break is due. Persisted so that plain stop/reschedule events (pause/resume,
+// settings reload, a deferred break) preserve how far the countdown has progressed instead of restarting
+// a full interval each time — otherwise the countdown can perpetually reset and breaks stop firing.
+var kUserdefaultsNextBreakDueTime = "kUserdefaultsNextBreakDueTime"
 
 
 var kUserDefaultsCustomGoals = "kUserDefaultsCustomGoals"
