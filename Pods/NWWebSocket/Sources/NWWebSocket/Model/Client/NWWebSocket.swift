@@ -86,19 +86,33 @@ open class NWWebSocket: WebSocketConnection {
         cancelConnectionSafely()
     }
 
-    // FOCUS BEAR VENDORED PATCH (#2125): clear the connection's update handlers before cancelling it.
-    // Without this, a cancelled NWConnection can still deliver a final state/path report on the network
-    // queue into a handler whose captured context has been freed during reconnect churn — the
-    // nw_connection_report_state → objc_retain use-after-free that crashed the app on sleep / network
-    // loss. This is exactly the fix upstream NWWebSocket shipped in 0.5.10; vendored into the pinned
-    // 0.5.4 because a full pod update to 0.5.10 regenerates the Pods project and breaks the Sentry pod
-    // build under Xcode 26 (tracked separately). Re-applied by the Podfile post_install hook so a future
-    // `pod install` can't silently drop it.
+    // FOCUS BEAR VENDORED PATCH (#2125 → Sentry FOCUS-BEAR-MACOS-19G / 1B / Q8): safe connection teardown.
+    // Cancelling an NWConnection is asynchronous — after cancel() the OS may still deliver a final state
+    // report on the connection's internal queue (nw_connection_report_state → objc_retain). If the app has
+    // by then released the connection (connection = nil in tearDownConnection, or reassigned in
+    // migrateConnection during reconnect / better-path churn on sleep / network loss), that report
+    // retains a FREED connection / handler block → EXC_BAD_ACCESS. The earlier attempt niled the
+    // [weak self] handlers before cancel(), which only raced harder with the nw_queue and suppressed the
+    // terminal `.cancelled` teardown. So instead of touching the handlers at all, we keep a strong
+    // reference to the cancelled connection for a grace period so it (and its copied handler block)
+    // outlives the report window, then drop it. Strictly additive: this only extends lifetime, and the
+    // held connections are static so the deinit path is covered too. Durable upstream fix is 0.5.10
+    // (blocked: it regenerates the Pods project and breaks the Sentry pod build under Xcode 26).
+    // Re-applied by the Podfile post_install hook so a future `pod install` can't silently drop it.
+    private static let fbCancelledConnectionsLock = NSLock()
+    private static var fbCancelledConnections: [NWConnection] = []
+
     private func cancelConnectionSafely() {
-        connection?.stateUpdateHandler = nil
-        connection?.betterPathUpdateHandler = nil
-        connection?.viabilityUpdateHandler = nil
-        connection?.cancel()
+        guard let conn = connection else { return }
+        conn.cancel()
+        NWWebSocket.fbCancelledConnectionsLock.lock()
+        NWWebSocket.fbCancelledConnections.append(conn)
+        NWWebSocket.fbCancelledConnectionsLock.unlock()
+        DispatchQueue.global().asyncAfter(deadline: .now() + 10) {
+            NWWebSocket.fbCancelledConnectionsLock.lock()
+            NWWebSocket.fbCancelledConnections.removeAll { $0 === conn }
+            NWWebSocket.fbCancelledConnectionsLock.unlock()
+        }
     }
 
     // MARK: - WebSocketConnection conformance
