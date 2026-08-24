@@ -431,3 +431,16 @@ Fixed left-menu tabs being clickable while logged out. On the login screen, the 
 
 Focus:
 "Report Bad AI decision" now unblocks the site. When you report the AI for wrongly blocking an app or website, that exact app/site is now allowed for the rest of your focus session — instead of being blocked again moments later. (#2302)
+
+
+# v3.35.529
+
+Onboarding:
+Distraction blocking now comes first — new users set up blocked websites and apps before building habits, and within that step you now review blocked sites and apps before your allowed sites. (#2304)
+Breaks are on by default for new users — an hourly (60-minute) break out of the box — and more categories are blocked by default (dating, news, real estate). (#2304)
+
+Breaks:
+When breaks are turned off, the Micro Break screen now lets you pick how often you'd like a break and turn them back on right there, instead of a plain "enable" button. (#2304)
+
+Reliability:
+Fixed an app freeze caused by the Day Plan re-reading your calendar every 30 seconds — it now only re-reads when your calendar actually changes, so the Day Plan stays responsive (meetings still update whenever the calendar changes). (#2305)
