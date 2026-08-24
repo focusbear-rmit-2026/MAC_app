@@ -28,9 +28,12 @@ concurrency:
 jobs:
   unit-tests:
     name: Logic unit tests (macOS)
-    # Xcode 26 is what the project is developed against. Bump the image if the
-    # team moves Xcode versions (e.g. macos-26 when it is GA on Actions).
-    runs-on: macos-15
+    # Runs on the self-hosted Apple Silicon runner (jeznag's Mac) instead of a
+    # paid GitHub-hosted macOS image — these are pure-logic tests, so no signing
+    # certs or permissioned desktop are needed. macOS-hosted minutes bill at 10x
+    # Linux; this job was ~2,400 min/month (~$145), now ~$0. To fall back to the
+    # cloud, set runs-on back to macos-15.
+    runs-on: [self-hosted, macOS, ARM64, focusbear-mac-local]
     permissions:
       contents: read
     timeout-minutes: 40
@@ -40,7 +43,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Select latest stable Xcode
-        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)" || true
+        # GitHub-hosted images keep versioned Xcodes at /Applications/Xcode_*.app;
+        # the self-hosted runner already has the default /Applications/Xcode.app
+        # selected, so only switch when a versioned bundle is actually present.
+        run: |
+          APP=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$APP" ]; then sudo xcode-select -s "$APP" || true; fi
 
       - name: Show toolchain
         run: |
