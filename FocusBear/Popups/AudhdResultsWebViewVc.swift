@@ -31,6 +31,12 @@ enum AudhdResults {
     /// (online-tests#57). Same marker the mobile app uses.
     static let userAgentAppMarker = "FocusBearApp"
 
+    /// Analytics event names for the AuDHD results popup. Centralised here (not inline) so every platform —
+    /// Mac / Windows / mobile — fires the SAME event strings. Do NOT rename the values; that breaks event
+    /// history. Add new audhd-test event names here too.
+    static let resultsShownEvent = "audhd-results-window-shown"
+    static let resultsClosedEvent = "audhd-results-window-closed"
+
     /// Builds the full results URL for a given test code, url-encoding the value.
     static func resultsURL(testCode: String) -> URL? {
         let encodedCode = testCode.addingPercentEncoding(withAllowedCharacters: .urlQueryValueAllowed) ?? testCode
@@ -66,7 +72,7 @@ private extension CharacterSet {
 /// Code-only view controller hosting a full-size WKWebView with no URL bar.
 /// Modelled on `surveyVc` but without the storyboard outlet / access-token handshake,
 /// since the results page is a plain external URL.
-final class AudhdResultsWebViewVc: NSViewController, WKNavigationDelegate {
+final class AudhdResultsWebViewVc: NSViewController, WKNavigationDelegate, NSWindowDelegate {
 
     private var testCode: String = ""
 
@@ -116,5 +122,15 @@ final class AudhdResultsWebViewVc: NSViewController, WKNavigationDelegate {
         }
         addLog(text: "AudhdResultsWebViewVc: loading advanced AuDHD results")
         webView.load(URLRequest(url: url))
+    }
+
+    // MARK: - NSWindowDelegate
+
+    /// Fired when the user closes the results popup (title-bar ✕). Mirrors `resultsShownEvent` fired when
+    /// it opens, so the two can be paired in analytics. The window sets this VC as its delegate in
+    /// `showAudhdResultsWindow`.
+    func windowWillClose(_ notification: Notification) {
+        addLog(text: "AudhdResultsWebViewVc: results window closed")
+        allApiObject.capturePosthog(event: AudhdResults.resultsClosedEvent, metadata: [:])
     }
 }

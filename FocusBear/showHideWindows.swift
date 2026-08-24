@@ -603,6 +603,9 @@ func showAudhdResultsWindow(testCode: String) {
     window.titleVisibility = .hidden
     window.title = appName
     window.contentViewController = vc
+    // The VC is the window's delegate so it can fire the "results closed" analytics event on ✕
+    // (see AudhdResultsWebViewVc.windowWillClose). NSWindow.delegate is weak; the globals hold the strong refs.
+    window.delegate = vc
     if let screen = NSScreen.main ?? NSScreen.screens.first {
         window.setFrame(screen.visibleFrame, display: true)
     }
@@ -610,7 +613,7 @@ func showAudhdResultsWindow(testCode: String) {
     vc.present(testCode: testCode)
     window.makeKeyAndOrderFront(nil)
     NSApplication.shared.activate(ignoringOtherApps: true)
-    allApiObject.capturePosthog(event: "audhd-results-window-shown", metadata: [:])
+    allApiObject.capturePosthog(event: AudhdResults.resultsShownEvent, metadata: [:])
 }
 //-------------------------------------------------//
 
