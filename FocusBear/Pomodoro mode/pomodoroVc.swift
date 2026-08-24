@@ -1405,7 +1405,21 @@ class pomodoroVc: NSViewController {
             SettingsManagerObject.isSkipBreakActivityDuringPomodoro = isSkipBreakActivityDuringPomodoro
             SettingsManagerObject.isSettingsChanged = true
         }
-        
+
+        // A focus session started FROM a postpone should honour the user's "show breaks while
+        // postponed" preference rather than silently suppress breaks for the whole block. Applied to
+        // the runtime flag only (AFTER the persist-sync above) so the user's saved skip-breaks-during-
+        // focus preference is left untouched.
+        // Note: adding an intention is optional when postponing a routine. isIntentionFromMorningPostpone
+        // is set true only when the user actually typed intention text on the postpone screen (see
+        // askPostponeIntentionVc, gated on !textView.string.isEmpty); leaving it empty keeps it false. So
+        // this override applies only to a postpone that included an intention — a postpone with no
+        // intention does not reach here and breaks follow the normal skip-during-focus setting.
+        if isIntentionFromMorningPostpone && SettingsManagerObject.IsShowBreaksInPostponeEnabled {
+            isSkipBreakActivityDuringPomodoro = false
+            addLog(text: "Focus session started from postpone with 'show breaks in postpone' on — keeping breaks enabled.")
+        }
+
         SettingsManagerObject.putUserLocalDeviceSettings()
         
         whatToAchieveInFocusBlock = textViewAchieve.string
