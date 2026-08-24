@@ -54,4 +54,7 @@ jobs:
           OPENAI_MODEL: gpt-5-mini
           REASONING_EFFORT: medium
           DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          # Comma-separated logins: if one authored an issue's LAST comment, the checker
+          # skips that issue (never nagged — the ball is in their court).
+          EXEMPT_LAST_COMMENTERS: catherineisonline
         run: python .github/scripts/check_qa_evidence.py

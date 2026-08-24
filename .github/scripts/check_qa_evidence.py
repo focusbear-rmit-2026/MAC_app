@@ -59,6 +59,19 @@ REASONING_EFFORT = os.environ.get("REASONING_EFFORT", "medium")
 DRY_RUN = os.environ.get("DRY_RUN", "false").lower() in ("true", "1", "yes")
 QA_APPROVED_LABEL = os.environ.get("QA_APPROVED_LABEL", "qa-evidence-approved")
 
+# Logins the checker must never nag. When the LAST comment on an issue is authored by
+# one of these users, the issue is skipped entirely (no AI review, no comment, no board
+# move) — the ball is in their court, not the checker's. Comma-separated env override.
+EXEMPT_LAST_COMMENTERS = {
+    login.strip().lower()
+    for login in os.environ.get("EXEMPT_LAST_COMMENTERS", "catherineisonline").split(",")
+    if login.strip()
+}
+
+# Result status for an issue skipped because its last commenter is exempt. Not a failure —
+# it must not be counted in the failure total or trigger a non-zero exit.
+STATUS_SKIPPED_EXEMPT = "skipped_exempt_last_commenter"
+
 GRAPHQL_URL = "https://api.github.com/graphql"
 GITHUB_REST_BASE = "https://api.github.com"
 
@@ -1246,6 +1259,16 @@ def check_issue(
     print(f"  [issue] Fetching comments for {repo}#{issue_number}")
     comments = get_all_comments(repo, issue_number)
     print(f"  [issue] Found {len(comments)} total comments")
+
+    # Skip issues whose last comment is from an exempt user — the ball is in their
+    # court, so the checker must not nag (no AI review, no comment, no board move).
+    last_commenter = (comments[-1].get("user", {}).get("login", "") if comments else "")
+    if last_commenter.lower() in EXEMPT_LAST_COMMENTERS:
+        print(f"  [skip] issue {repo}#{issue_number}: last comment by exempt user {last_commenter}")
+        result["status"] = STATUS_SKIPPED_EXEMPT
+        result["action"] = "skipped (exempt last commenter)"
+        return result
+
     mention = _get_mention_str(assignees, comments, issue_author)
 
     if not comments:
@@ -1575,7 +1598,7 @@ def main() -> None:
             for p in result["problems"]:
                 print(f"  - {p}")
 
-        if result["status"] != "passed":
+        if result["status"] not in ("passed", STATUS_SKIPPED_EXEMPT):
             failures.append(result)
 
     dry_run_note = " (DRY RUN — no actions taken)" if DRY_RUN else ""
@@ -1602,7 +1625,12 @@ def main() -> None:
             f.write("|-------|-------|--------|---------|----------------|\n")
             for r in results:
                 score_col = f"{r['score']}/10" if r["score"] is not None else "—"
-                status_col = "✅ Passed" if r["status"] == "passed" else "❌ Failed"
+                if r["status"] == "passed":
+                    status_col = "✅ Passed"
+                elif r["status"] == STATUS_SKIPPED_EXEMPT:
+                    status_col = "⏭️ Skipped (exempt)"
+                else:
+                    status_col = "❌ Failed"
                 summary_col = (r.get("ai_summary") or "").replace("|", "\\|")[:80]
                 media_col = (r.get("media_description") or "No media").replace("|", "\\|")[:120]
                 f.write(f"| [{r['repo']}#{r['issue_number']}](https://github.com/{r['repo']}/issues/{r['issue_number']}) | {score_col} | {status_col} | {summary_col} | {media_col} |\n")
