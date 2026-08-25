@@ -78,7 +78,11 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
         }
         
         //remember email address #1308   15/3/25
-        if UserDefaults.standard.object(forKey: kUserDefaultsLastUserLoginWithGoogle) != nil{
+        // Only auto-retrigger Google sign-in for the Old user logout case — NOT
+        // during onboarding. A fresh Google sign-up sets kUserDefaultsLastUserLoginWithGoogle, and
+        // completeRemainingOnboarding re-attaches askLogInVc, so this viewWillAppear fires again and
+        // would pop the Auth0 prompt a second time. Guard it out while onboarding is active.
+        if currentState != ._ONBOARDING_, UserDefaults.standard.object(forKey: kUserDefaultsLastUserLoginWithGoogle) != nil{
             addLog(text:"trySignInWithGoogle:- because last user was logged in with google and it was a automatic logged out")
             trySignInWithGoogle()
             UserDefaults.standard.removeObject(forKey: kUserDefaultsLastUserLoginWithGoogle)
