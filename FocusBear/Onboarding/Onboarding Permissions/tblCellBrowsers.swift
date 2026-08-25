@@ -10,6 +10,7 @@ import Cocoa
 
 class tblCellBrowsers: NSTableCellView {
 
+    @IBOutlet weak var btnSkipBrowser: underLineButton!
     @IBOutlet weak var imgViewTick: NSImageView!
     @IBOutlet weak var btnInfo: hoverInfoButton!
     @IBOutlet weak var lineBottom: NSBox!

@@ -1250,7 +1250,8 @@
         "buttonCreateAccount": "Crea tu cuenta",
         "orText": "O",
         "continueInBrowser": "Continuar en tu navegador",
-        "bubbleText": "Una cuenta, todos tus dispositivos: ¡vamos a configurarla!"
+        "bubbleText": "Una cuenta, todos tus dispositivos: ¡vamos a configurarla!",
+        "subTitleText": "Usamos Auth0, nuestro socio de inicio de sesión seguro, para iniciar tu sesión."
     },
     "upgradeNowVcInfo": {
         "pointFirstText": "Rutinas de hábitos personalizadas",
@@ -1816,6 +1817,8 @@
         "descriptionText": "Configura el bloqueo en todos tus navegadores para evitar distracciones por completo",
         "buttonPermissionGrantedText": "Continuar",
         "buttonRequestPermissionText": "Solicitar Permiso",
+        "buttonIDontUseThisText": "No uso este",
+        "buttonIUseThisText": "Sí uso este",
         "enabledText": "✅  ¡Activado!",
         "buttonDidNotWorkText": "No funcionó",
         "accessibilityPermissionText": "(Permiso de accesibilidad concedido)",

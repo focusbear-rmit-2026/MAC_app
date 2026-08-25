@@ -12,6 +12,7 @@ import AuthenticationServices
 
 class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
     
+    @IBOutlet weak var lblSubTitle: NSTextField!
     @IBOutlet weak var customViewMessageBox: NSView!
     @IBOutlet weak var imgViewBear: NSImageView!
     @IBOutlet weak var lblOr: NSTextField!
@@ -38,6 +39,7 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
         var buttonSignInOldAccountText = "¿Ya tienes una cuenta de Focus Bear? Inicia sesión"
         var buttonCreateAccount = "Crea tu cuenta"
         
+        lblSubTitle.stringValue = "We use Auth0, our secure login partner, to sign you in."
         
         if let askLogInVcInfo = configjson.value(forKey: "askLogInVcInfo") as? NSDictionary{
             buttonSignUpWithGoogle = askLogInVcInfo.value(forKey: "buttonSignUpWithGoogle") as? String ?? buttonSignUpWithGoogle
@@ -46,6 +48,7 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
             buttonSignInOldAccountText = askLogInVcInfo.value(forKey: "buttonSignInOldAccountText") as? String ?? buttonSignInOldAccountText
             buttonCreateAccount = askLogInVcInfo.value(forKey: "buttonCreateAccount") as? String ?? buttonCreateAccount
             lblOr.stringValue = askLogInVcInfo.value(forKey: "orText") as? String ?? lblOr.stringValue
+            lblSubTitle.stringValue = askLogInVcInfo.value(forKey: "subTitleText") as? String ?? lblSubTitle.stringValue
         }
         allApiObject.capturePosthog(event: "pre-signin-view-shown", metadata: [:])
         boxButtonSignUpWithGoogle.setTitle(buttonSignUpWithGoogle)
