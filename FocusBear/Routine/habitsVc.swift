@@ -1603,6 +1603,14 @@ class habitsVc: NSViewController {
         if Date().compare(startDate) == .orderedAscending {// current date < start date(current date is 1 am and start date is 10 am )
             startDate = Calendar.current.date(byAdding: .day, value: -1, to: startDate) ?? startDate
         }
+        // Re-validate the index right before subscripting. The entry guard only proved `index` was
+        // in range on entry, but the setup calls above (focus-mode refresh, UI teardown, etc.) can
+        // re-filter arrFilteredMorningHabits and shrink it, leaving `index` stale — which traps in
+        // Array._checkSubscript below (Sentry EXC_BREAKPOINT, issue 7671202979). Bail safely instead.
+        guard index >= 0, index < arrFilteredMorningHabits.count else {
+            addLog(text:"startDirectIncompleteMorningHabitAtIndex: index \(index) out of range after setup (count \(arrFilteredMorningHabits.count)) — skipping")
+            return
+        }
         if isLastActivityStoppedInRunningState && lastActivityRunningId == arrFilteredMorningHabits[index].id{
             isLastActivityStoppedInRunningState = false
             addLog(text:"func startDirectIncompleteMorningHabitAtIndex:- Activity Postpone In Running State:- start direct \(arrFilteredMorningHabits[index].name ?? "") in running state")
