@@ -808,7 +808,9 @@ class ViewController: NSViewController {
         
         mainWindowControllerObj?.window?.close()
         hideBlankWindowInSecondaryMonitor()
-        
+        mainViewControllerObj?.expandLeftPanel()
+        leftMenuVcObj?.enableAllItems()
+     
         UserDefaults.standard.removeObject(forKey: kUserdefaultsPasswordSetInOnboarding)
         SettingsManagerObject.isFullScreenEnabled = false
         SettingsManagerObject.storedCuddlyModeEnabled = true
@@ -839,6 +841,13 @@ class ViewController: NSViewController {
         addLog(text: "Onboarding completed: Forcefully writing user local device settings for first-time setup")
         SettingsManagerObject.isSettingsChanged = true
         SettingsManagerObject.putUserLocalDeviceSettings()
+        
+        
+        // Land the user on the simple Pomodoro (focus) view instead of just closing the window —
+        // "Start using Focus Bear" hiding the window to nothing was confusing. Mirrors the
+        // web-onboarding completion path in AppDelegate (userHasDoneOnboardingOnWeb).
+        appdelegate?.menuShowSimplePomodoroModeView()
+        mainWindowControllerObj?.window?.center()
     }
 }
 
