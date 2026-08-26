@@ -485,5 +485,6 @@ struct TimeRangeSlider: View {
             }
     }
 
-    private func snap(_ minutes: Int) -> Int { Int((Double(minutes) / 15).rounded()) * 15 }
+    // Coarse snapping for slider drags; use the ±1-min steppers above for an exact minute.
+    private func snap(_ minutes: Int) -> Int { Int((Double(minutes) / 5).rounded()) * 5 }
 }

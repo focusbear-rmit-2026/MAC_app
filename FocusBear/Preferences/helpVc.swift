@@ -501,8 +501,21 @@ struct ReportProblemForm: View {
                 }
 
                 HStack(spacing: 10) {
-                    SwiftUI.Button(isSending ? "Sending…" : "Send") { send() }
-                        .keyboardShortcut(.defaultAction).disabled(isSending)
+                    SwiftUI.Button(action: { send() }) {
+                        Text(isSending ? "Sending…" : "Send")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 24)
+                            .frame(minWidth: 130, minHeight: 35, maxHeight: 35)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(Color("dark_OrangeColor")))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(isSending)
+                    .opacity(isSending ? 0.6 : 1)
+                    .onHover { inside in
+                        if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                    }
                     if let s = status { Text(s).foregroundColor(.secondary) }
                     Spacer()
                 }
