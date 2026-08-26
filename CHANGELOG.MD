@@ -444,3 +444,28 @@ When breaks are turned off, the Micro Break screen now lets you pick how often y
 
 Reliability:
 Fixed an app freeze caused by the Day Plan re-reading your calendar every 30 seconds — it now only re-reads when your calendar actually changes, so the Day Plan stays responsive (meetings still update whenever the calendar changes). (#2305)
+
+
+# v3.35.530
+
+Onboarding:
+The account screen now explains that Focus Bear signs you in through Auth0 (our secure login partner), so the system "…wants to use auth0.com to Sign In" prompt no longer comes as a surprise. (#2321)
+Browser permissions are now set up one browser at a time, with an "I don't use this" option to skip browsers you don't have — instead of being prompted for every browser at once. (#2321)
+Signing up with Google no longer shows the sign-in prompt twice. (#2323)
+After finishing onboarding you now land on the focus screen, instead of the window just closing to nothing. (#2322)
+The "create a blocking schedule" step now uses the same editor as the in-app settings, so it looks and behaves consistently. (#2316)
+
+Breaks:
+Fixed breaks silently stopping during long focus or work sessions — your next break now keeps its place across pauses, screen locks and app switches, so it always arrives on time. (#2309)
+Postponing your routine no longer turns your breaks off — if you've chosen to keep breaks while postponed, they stay on. (#2312)
+
+Habits:
+You can now open Settings and Edit Habits during an active routine, without having to end it first. (#2313)
+
+Reliability:
+Fixed website blocking not working on Apple-Silicon Macs without Rosetta installed, where the block page could get stuck in a crash loop. (#2320)
+Fixed a crash when starting your morning habits. (#2324)
+Fixed a crash that could happen during a live session when the network connection dropped and reconnected. (#2308)
+
+Behind the scenes:
+Added analytics for when the AuDHD results popup is closed, to better understand how the feature is used. (#2314)
