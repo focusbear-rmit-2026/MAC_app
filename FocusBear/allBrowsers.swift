@@ -209,10 +209,17 @@ func getBrowserAllTabUrlAndTitle(browser:BROWSER)->[(title: String, url: String)
 
 
 func getActiveTabUrlForBlocking(browser:BROWSER)->String?{
-    addLog(text:"func call:- getActiveTabUrl")
-    
+    addLog(text:"func call:- getActiveTabUrlForBlocking")
+
     if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
         addLog(text:"Browsers Permissions is not Set By User return;")
+        return nil
+    }
+    // This is the variant the always-on suggest/block timers use (getURLSafeInBackground). Don't
+    // script an ungranted browser (its consent dialog would loop); instead raise the consent prompt
+    // exactly once (blocking, so it waits for the answer rather than re-firing).
+    if shouldSkipBrowserAppleEvent(browser) {
+        requestBrowserAutomationOnceIfNeeded(browser)
         return nil
     }
     var url:String?
@@ -278,11 +285,104 @@ func getActiveTabUrlForBlocking(browser:BROWSER)->String?{
 }
 
 
+/// True while an explicit "Request Permission" flow is showing the blocking OS Automation consent
+/// dialog for a browser. While set, passive URL probes below are skipped so they can't tear down the
+/// pending dialog (AEDetermine/AppleScript against the same target would). See permissionsVc /
+/// onboardingControllingBrowserVc, which request permission via AEDeterminePermissionToAutomateTarget.
+var isBrowserAutomationRequestInFlight = false
+
+/// Whether the user has granted automation for `browser`, per the app's OWN permission store
+/// (kUserdefaultsAllBrowsersPermissionInfo, isEnabled per browser — set when the user grants via the
+/// Request-Permission flow). This is a plain UserDefaults read: NO Apple Event, so it can't itself
+/// trigger the OS Automation consent dialog (AEDeterminePermissionToAutomateTarget can, even with
+/// askUserIfNeeded:false — which is exactly what we must avoid in the always-on probes).
+func isBrowserPermissionGranted(_ browser: BROWSER) -> Bool {
+    guard let arr = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String: Any]] else {
+        return false
+    }
+    for info in arr {
+        if (info["browser"] as? Int) == browser.rawValue {
+            return info["isEnabled"] as? Bool ?? false
+        }
+    }
+    return false
+}
+
+/// Whether we should NOT directly send a scripting Apple Event (get URL / get title) to `browser`
+/// right now: either a consent request is already showing its dialog, or the user hasn't granted this
+/// browser yet. Firefox is exempt (extension-based, no Apple Events). When this returns true the
+/// caller should also give requestBrowserAutomationOnceIfNeeded() a chance to raise the one-time
+/// consent prompt.
+func shouldSkipBrowserAppleEvent(_ browser: BROWSER) -> Bool {
+    if isBrowserAutomationRequestInFlight { return true }
+    if browser == ._FIREFOX_ { return false }
+    return !isBrowserPermissionGranted(browser)
+}
+
+/// Browsers we've already raised the automation consent prompt for this session (so a denial isn't
+/// re-asked every tick). Reset on relaunch.
+var browsersAutoPromptAttempted = Set<Int>()
+
+/// Persist that `browser` is granted, in the app's own permission store.
+func markBrowserGrantedInStore(_ browser: BROWSER) {
+    var arr = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String: Any]] ?? []
+    var found = false
+    for i in 0..<arr.count {
+        if (arr[i]["browser"] as? Int) == browser.rawValue {
+            arr[i]["isEnabled"] = true
+            found = true
+            break
+        }
+    }
+    if !found { arr.append(["browser": browser.rawValue, "isEnabled": true]) }
+    UserDefaults.standard.set(arr, forKey: kUserdefaultsAllBrowsersPermissionInfo)
+    if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil {
+        UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
+    }
+}
+
+/// For an ungranted browser, raise the OS Automation consent dialog exactly ONCE (this session) using
+/// a BLOCKING AEDeterminePermissionToAutomateTarget(askUserIfNeeded:true): it shows the dialog and
+/// waits for the user's answer, so — unlike sending the AppleScript and letting runAppleScriptSafely
+/// time out — it never tears the dialog down and re-fires it in a loop. While it's up,
+/// isBrowserAutomationRequestInFlight makes every probe skip. On allow we mark the browser granted so
+/// blocking resumes; on deny we just don't ask again this session.
+func requestBrowserAutomationOnceIfNeeded(_ browser: BROWSER) {
+    if browser == ._FIREFOX_ { return }
+    if isBrowserAutomationRequestInFlight { return }
+    if isBrowserPermissionGranted(browser) { return }
+    if browsersAutoPromptAttempted.contains(browser.rawValue) { return }
+    let appName = getCurrentBrowserNameFrom(browser: browser) ?? ""
+    let bundleId = appName.isEmpty ? "" : (Bundle(path: "/Applications/\(appName).app")?.bundleIdentifier ?? "")
+    guard !bundleId.isEmpty else { return }
+    browsersAutoPromptAttempted.insert(browser.rawValue)
+    isBrowserAutomationRequestInFlight = true
+    DispatchQueue.global().async {
+        let target = NSAppleEventDescriptor(bundleIdentifier: bundleId)
+        let status = AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, true)
+        DispatchQueue.main.async {
+            isBrowserAutomationRequestInFlight = false
+            if status == noErr {
+                markBrowserGrantedInStore(browser)
+                addLog(text: "Automation granted for \(browser) via one-time prompt")
+            } else {
+                addLog(text: "Automation not granted for \(browser) (status \(status)) — won't re-prompt this session")
+            }
+        }
+    }
+}
+
 func getActiveTabUrlOf(browser:BROWSER)->String?{
     addLog(text:"func call:- getActiveTabUrl")
-    
+
     if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
         addLog(text:"Browsers Permissions is not Set By User return;")
+        return nil
+    }
+    // Don't script an ungranted browser (its consent dialog would loop); raise the consent prompt
+    // exactly once instead — see requestBrowserAutomationOnceIfNeeded.
+    if shouldSkipBrowserAppleEvent(browser) {
+        requestBrowserAutomationOnceIfNeeded(browser)
         return nil
     }
     var url:String?
@@ -338,6 +438,12 @@ func getActiveTabUrlOf(browser:BROWSER)->String?{
 
 func getActiveTabTitleOf(browser:BROWSER)->String?{
     if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+        return nil
+    }
+    // Same gate as getActiveTabUrlOf — the always-on suggest-focus / focus timers call this every
+    // second, so an unauthorized browser would otherwise loop the OS Automation consent dialog.
+    if shouldSkipBrowserAppleEvent(browser) {
+        addLog(text:"getActiveTabTitle: skipping Apple Event for \(browser) (unauthorized or request in flight)")
         return nil
     }
     if browser == ._SAFARI_{

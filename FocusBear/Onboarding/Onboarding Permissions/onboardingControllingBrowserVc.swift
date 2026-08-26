@@ -640,11 +640,14 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
                 // the script times out and the next timer tick re-runs it, re-triggering the
                 // prompt. This blocking-request path sidesteps AppleScript entirely for the grant.
                 self.isRequestInFlight = true
+                browsersAutoPromptAttempted.insert(browser.rawValue) // this explicit request counts; don't auto-prompt again
+                isBrowserAutomationRequestInFlight = true // pause passive URL probes (getActiveTabUrlOf) while the dialog is up
                 DispatchQueue.global().async {
                     let target = NSAppleEventDescriptor(bundleIdentifier: bundleId)
                     let status = AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, true)
                     DispatchQueue.main.async {
                         self.isRequestInFlight = false
+                        isBrowserAutomationRequestInFlight = false
                         if status == noErr {
                             self.arrBrowsers[row]["isEnabled"] = true
                             self.arrBrowsers[row]["isSkipped"] = false
@@ -698,7 +701,13 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
                         alert.addButton(withTitle: buttonPreferencesText)
                         alert.addButton(withTitle: buttonCancelText)
 
-                        alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                        // The blocking request can resolve after the user left this screen, so
+                        // self.view.window may be nil — bail instead of force-unwrapping (crash).
+                        guard let window = self.view.window else {
+                            addLog(text: "onboardingControllingBrowserVc: view no longer in a window — skipping the preferences alert")
+                            return
+                        }
+                        alert.beginSheetModal(for: window, completionHandler: { (modalResponse) in
                             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                                 let urlstring = "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation";
                                 NSWorkspace.shared.open(URL(string: urlstring)!)
