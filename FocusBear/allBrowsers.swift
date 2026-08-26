@@ -612,8 +612,14 @@ func getAllBrowsersTabCount()->Int{
 
 
 func getBrowserAllWindowStruct(browser:BROWSER)->[String:[String]]?{
+    // Don't script a browser the user hasn't granted (would pop/loop the OS Automation consent
+    // dialog). shouldSkipBrowserAppleEvent checks the per-browser grant store, so a browser granted
+    // via Settings still works even if onboarding permissions were skipped.
+    if shouldSkipBrowserAppleEvent(browser) {
+        return nil
+    }
     var browserName = ""
-    
+
     if browser == ._SAFARI_{
         browserName = "Safari"
     }else if browser == ._GOOGLE_CHROME_{
@@ -634,6 +640,13 @@ func getBrowserAllWindowStruct(browser:BROWSER)->[String:[String]]?{
         browserName = "Arc"
     }else if browser == ._COMET_{
         browserName = "Comet"
+    }
+
+    // Firefox (extension-based) and SigmaOS (accessibility-based) have no scriptable window struct and
+    // leave browserName empty. Running `tell application ""` pops the macOS "Choose Application /
+    // Where is ?" app-locator panel — so bail here instead. (Arc uses its own hardcoded script below.)
+    if browserName.isEmpty && browser != ._ARC_ {
+        return nil
     }
 
     var script: String = ""
