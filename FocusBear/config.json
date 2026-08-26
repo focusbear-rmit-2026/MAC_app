@@ -3369,7 +3369,8 @@
     "allSetVcInfo": {
         "title": "Fantastic! We are all set.",
         "subTitle": "You are now ready to become a creature of habit.",
-        "buttonContinue": "Start using Focus Bear"
+        "buttonContinue": "Start using Focus Bear",
+        "loaderMessage": "Getting things ready…"
     },
     "accessibilityPermissionVcInfoNew": {
         "title": "Grant Accessibility Permissions",

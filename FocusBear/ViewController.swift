@@ -801,16 +801,15 @@ class ViewController: NSViewController {
         })
     }
 
-    func onboardingFinishedUnlockMachine(){
-        addLog(text: "Onboarding finished")
-        removeSubViews()
-        currentState = ._NOTHING_
-        
-        mainWindowControllerObj?.window?.close()
-        hideBlankWindowInSecondaryMonitor()
-        mainViewControllerObj?.expandLeftPanel()
-        leftMenuVcObj?.enableAllItems()
-     
+    /// First half of finishing onboarding, run the moment the user taps "Start using Focus Bear".
+    /// Applies the new-user device-setting defaults (simple mode, cuddly/easy-skip, dock icon, etc.)
+    /// and kicks off getUserSubscriptionInfo up-front, so the app can settle into the right state
+    /// (and checkWindowState/loadAllWindows can run with correct flags) while the loader is shown.
+    /// The actual window hand-off — closing onboarding and landing on the Pomodoro view — happens
+    /// afterwards in onboardingFinishedUnlockMachine(), once checkWindowState has completed.
+    /// Keeping these two apart is why getUserSubscriptionInfo() guards its onboarding-teardown block
+    /// against currentOnboardingState == ._ALL_SET_ (it must not tear the window down when invoked here).
+    func onboardingFinishedGoAhedForSettings(){
         UserDefaults.standard.removeObject(forKey: kUserdefaultsPasswordSetInOnboarding)
         SettingsManagerObject.isFullScreenEnabled = false
         SettingsManagerObject.storedCuddlyModeEnabled = true
@@ -830,7 +829,18 @@ class ViewController: NSViewController {
         appdelegate!.getUserSubscriptionInfo()
         appdelegate!.statusbutton?.action = nil
         UserDefaults.standard.set(true, forKey: kUserdefaultsVideoShown)
+    }
+    
+    func onboardingFinishedUnlockMachine(){
+        addLog(text: "Onboarding finished")
+        removeSubViews()
+        currentState = ._NOTHING_
         
+        mainWindowControllerObj?.window?.close()
+        hideBlankWindowInSecondaryMonitor()
+        mainViewControllerObj?.expandLeftPanel()
+        leftMenuVcObj?.enableAllItems()
+
         DispatchQueue.global().async {
             DispatchQueue.main.async {
                 stageManagerObject.isStageManagerEnabled = stageManagerObject.checkIsStageManagerEnabled()
@@ -841,8 +851,6 @@ class ViewController: NSViewController {
         addLog(text: "Onboarding completed: Forcefully writing user local device settings for first-time setup")
         SettingsManagerObject.isSettingsChanged = true
         SettingsManagerObject.putUserLocalDeviceSettings()
-        
-        
         // Land the user on the simple Pomodoro (focus) view instead of just closing the window —
         // "Start using Focus Bear" hiding the window to nothing was confusing. Mirrors the
         // web-onboarding completion path in AppDelegate (userHasDoneOnboardingOnWeb).

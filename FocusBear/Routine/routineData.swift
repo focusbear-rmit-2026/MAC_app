@@ -1009,6 +1009,14 @@ func getNextRoutineInfo()->(Date, String, Bool){
     if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
         nextRoutineName = habitsStateVcInfo.value(forKey: "titleEveningRoutine") as? String ?? nextRoutineName
     }
+    // Settings may not be loaded yet (e.g. right after onboarding, before readSettingsJsonDictionary
+    // populates startTime/shutOffTime), or the user may simply have no routine times set. Bail with a
+    // safe placeholder instead of force-unwrapping shutOffTime, which traps (Sentry EXC_BREAKPOINT in
+    // getNextRoutineInfo, hit by jumping to the Day Plan before settings finish loading).
+    guard startTime != nil, shutOffTime != nil else {
+        addLog(text: "getNextRoutineInfo: startTime/shutOffTime nil (settings not loaded) — returning placeholder")
+        return (nextRoutineTime, nextRoutineName, nextRoutineIsEveningRoutine)
+    }
     var shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
     let calendar = Calendar.current
     // Get today's 11:59 PM

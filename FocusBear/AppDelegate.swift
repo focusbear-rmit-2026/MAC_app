@@ -901,11 +901,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
         //if user clicked i already have a account from onboarding
         if currentState == ._ONBOARDING_{
-            leftMenuVcObj?.enableAllItems()
-            mainViewControllerObj?.expandLeftPanel()
-            mainViewControllerObj?.removeSubViews()
-            mainWindowControllerObj?.window?.close()
-            currentState = ._NOTHING_
+            let currentOnboardingState = getOnboardingVcObject().currentOnboardingState
+            // getUserSubscriptionInfo is now also called up-front from allSetVc (via
+            // onboardingFinishedGoAhedForSettings) while still on the All-Set screen. In that case
+            // skip the onboarding teardown/window-close — the loader/gating flow closes the window
+            // later in onboardingFinishedUnlockMachine(). Only tear down for the older non-_ALL_SET_ paths.
+            if currentOnboardingState != ._ALL_SET_{
+                leftMenuVcObj?.enableAllItems()
+                mainViewControllerObj?.expandLeftPanel()
+                mainViewControllerObj?.removeSubViews()
+                mainWindowControllerObj?.window?.close()
+                currentState = ._NOTHING_
+            }
         }
         allApiObject.getUserSubscriptionInfo(completionHandler: {dic,statusCode  in
             UserDefaults.standard.set(Date(), forKey: kUserdefaultsUserSubscriptionCheckDate)
@@ -2545,6 +2552,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     var isSettingsLoddedInAppdelegate = false
+    /// Set once checkWindowState() has run loadAllWindows(), i.e. the main VCs/windows are set up
+    /// and settings (startTime/shutOffTime) are populated. The onboarding "Start using Focus Bear"
+    /// hand-off waits on this before showing the main window, so the Day Plan can't be opened before
+    /// the app is fully initialised (which crashed getNextRoutineInfo on a nil shutOffTime).
+    var isCheckWindowStateDone = false
     func initialWork(){
         addLog(text: "initialWork")
         isAppInitialLodded = true
@@ -3515,6 +3527,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
     @objc func checkWindowState(){
         loadAllWindows()
+        isCheckWindowStateDone = true
         isFirstRun = false
         
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{

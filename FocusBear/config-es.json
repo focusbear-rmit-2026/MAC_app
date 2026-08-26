@@ -3365,7 +3365,8 @@
     "allSetVcInfo": {
         "title": "¡Fantástico! Ya está todo listo.",
         "subTitle": "Ahora estás listo para convertirte en una persona de hábitos.",
-        "buttonContinue": "Empieza a usar Focus Bear"
+        "buttonContinue": "Empieza a usar Focus Bear",
+        "loaderMessage": "Preparando todo…"
     },
     "accessibilityPermissionVcInfoNew": {
         "title": "Concede permisos de Accesibilidad",
