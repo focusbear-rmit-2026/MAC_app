@@ -36,6 +36,12 @@ func getBrowserAllTabUrl(browser:BROWSER)->[String]?{
     if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
         return nil
     }
+    // Don't script an ungranted browser (the meeting-detection timer calls this every few seconds,
+    // so it would loop the OS consent dialog); raise the one-time consent prompt instead.
+    if shouldSkipBrowserAppleEvent(browser) {
+        requestBrowserAutomationOnceIfNeeded(browser)
+        return nil
+    }
     var browserName = ""
     
     if browser == ._SAFARI_{
@@ -108,6 +114,11 @@ func getBrowserAllTabUrl(browser:BROWSER)->[String]?{
 
 func getBrowserAllTabUrlAndTitle(browser:BROWSER)->[(title: String, url: String)]?{
     if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+        return nil
+    }
+    // Same gate as getBrowserAllTabUrl — don't loop the consent dialog for an ungranted browser.
+    if shouldSkipBrowserAppleEvent(browser) {
+        requestBrowserAutomationOnceIfNeeded(browser)
         return nil
     }
     var browserName = ""
@@ -613,9 +624,11 @@ func getAllBrowsersTabCount()->Int{
 
 func getBrowserAllWindowStruct(browser:BROWSER)->[String:[String]]?{
     // Don't script a browser the user hasn't granted (would pop/loop the OS Automation consent
-    // dialog). shouldSkipBrowserAppleEvent checks the per-browser grant store, so a browser granted
-    // via Settings still works even if onboarding permissions were skipped.
+    // dialog); raise the one-time consent prompt instead. shouldSkipBrowserAppleEvent checks the
+    // per-browser grant store, so a browser granted via Settings still works even if onboarding
+    // permissions were skipped.
     if shouldSkipBrowserAppleEvent(browser) {
+        requestBrowserAutomationOnceIfNeeded(browser)
         return nil
     }
     var browserName = ""
