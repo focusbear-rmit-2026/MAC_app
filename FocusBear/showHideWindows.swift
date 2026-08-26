@@ -161,20 +161,30 @@ func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningAppl
     if let runningApp = NSWorkspace.shared.frontmostApplication{
         let pid = runningApp.processIdentifier
         currentPid = pid
-        
+        // For Chrome, place the blur/popup over the REAL browsing window (the one whose active tab
+        // was blocked), not the front "about:blank" window a Meet call opens — see
+        // getGoogleChromeBlockingWindowBounds. nil (other browsers / read failed) keeps the old
+        // "first sizeable frontmost window" behaviour.
+        let chromeTargetBounds = (browser == ._GOOGLE_CHROME_) ? getGoogleChromeBlockingWindowBounds() : nil
+
         let options = CGWindowListOption(arrayLiteral: CGWindowListOption.excludeDesktopElements, CGWindowListOption.optionOnScreenOnly)
         let windowListInfo = CGWindowListCopyWindowInfo(options, CGWindowID(0))
         let windowInfoList = windowListInfo as NSArray? as? [[String: AnyObject]]
-        
+
         for info in windowInfoList! {
             let windowPID = info["kCGWindowOwnerPID"] as! UInt32
             if  windowPID == pid {
                 if let windowFrame = info["kCGWindowBounds"] as? NSDictionary{
                     let height = windowFrame.value(forKey: "Height") as? Int ?? 0
+                    let width = windowFrame.value(forKey: "Width") as? Int ?? 0
+                    let x = windowFrame.value(forKey: "X") as? Int ?? 0
+                    let y = windowFrame.value(forKey: "Y") as? Int ?? 0
+                    // Skip any window that isn't the blocked Chrome browsing window (e.g. the front
+                    // about:blank call window).
+                    if let t = chromeTargetBounds, (abs(x - t.x) > 30 || abs(y - t.y) > 30) {
+                        continue
+                    }
                     if height > 250{
-                        let width = windowFrame.value(forKey: "Width") as? Int ?? 0
-                        let x = windowFrame.value(forKey: "X") as? Int ?? 0
-                        let y = windowFrame.value(forKey: "Y") as? Int ?? 0
                         var frame = NSRect(x: x, y: y, width: width, height: height)
                         if browser != nil{
                             frame = getBlurFrameForBrowser(x: x, y: y, width: width, height: height, browser: browser!)
@@ -182,7 +192,7 @@ func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningAppl
                         showBlurWindow(frame: frame, browser: browser)
                         break;
                     }
-                    
+
                 }
             }
         }
@@ -233,21 +243,27 @@ func showSetIntentionBlockedUrlsWindow(script: String, url:String, browser:BROWS
 
         let pid = runningApp.processIdentifier
         currentPid = pid
-        
+        // See showBlockConfirmWindow: for Chrome, place the blur/popup over the real blocked browsing
+        // window, not the front about:blank Meet call window.
+        let chromeTargetBounds = (browser == ._GOOGLE_CHROME_) ? getGoogleChromeBlockingWindowBounds() : nil
+
         let options = CGWindowListOption(arrayLiteral: CGWindowListOption.excludeDesktopElements, CGWindowListOption.optionOnScreenOnly)
         let windowListInfo = CGWindowListCopyWindowInfo(options, CGWindowID(0))
         let windowInfoList = windowListInfo as NSArray? as? [[String: AnyObject]]
-        
+
         for info in windowInfoList! {
             let windowPID = info["kCGWindowOwnerPID"] as! UInt32
             if  windowPID == pid {
 
                 if let windowFrame = info["kCGWindowBounds"] as? NSDictionary{
                     let height = windowFrame.value(forKey: "Height") as? Int ?? 0
+                    let width = windowFrame.value(forKey: "Width") as? Int ?? 0
+                    let x = windowFrame.value(forKey: "X") as? Int ?? 0
+                    let y = windowFrame.value(forKey: "Y") as? Int ?? 0
+                    if let t = chromeTargetBounds, (abs(x - t.x) > 30 || abs(y - t.y) > 30) {
+                        continue
+                    }
                     if height > 250{
-                        let width = windowFrame.value(forKey: "Width") as? Int ?? 0
-                        let x = windowFrame.value(forKey: "X") as? Int ?? 0
-                        let y = windowFrame.value(forKey: "Y") as? Int ?? 0
                         var frame = NSRect(x: x, y: y, width: width, height: height)
                         if browser != nil{
                             frame = getBlurFrameForBrowser(x: x, y: y, width: width, height: height, browser: browser!)

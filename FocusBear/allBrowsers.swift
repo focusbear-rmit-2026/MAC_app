@@ -1048,18 +1048,50 @@ func getFirefoxActiveTabTitle()->String?{//
 
 
 func getGoogleChromeActiveTabUrl()->String?{
-    var script: String = ""
-    
-    script =
+    // A browser call (e.g. Google Meet) opens a SEPARATE Chrome window whose active tab is
+    // "about:blank" and which becomes the FRONT window — so "active tab of front window" returned
+    // about:blank and missed the user's real (distracting) tab in another window. Return the active
+    // tab URL of the first window whose active tab isn't about:blank instead (windows are front→back,
+    // so the call window is checked and skipped first, then the real browsing window is used).
+    let script =
     """
     tell application "Google Chrome"
-    set the_wnd to front window
-    set active_tab to active tab in the_wnd
-    set taburl to URL of active_tab
+    repeat with w in windows
+    try
+    set taburl to URL of active tab of w
+    if taburl is not "about:blank" then return taburl
+    end try
+    end repeat
+    return "about:blank"
     end tell
     """
-    
+
     return executeScriptAndReturnString(script: script)
+}
+
+/// Top-left global bounds (x, y, width, height) of the first Chrome window whose active tab isn't the
+/// call's "about:blank" window — i.e. the same real browsing window getGoogleChromeActiveTabUrl reads.
+/// Used to place the block popup/blur over THAT window instead of the front Meet call window. Same
+/// coordinate space as CGWindowList's kCGWindowBounds, so callers can match on it directly.
+func getGoogleChromeBlockingWindowBounds() -> (x: Int, y: Int, width: Int, height: Int)? {
+    let script =
+    """
+    tell application "Google Chrome"
+    repeat with w in windows
+    try
+    if URL of active tab of w is not "about:blank" then
+    set b to bounds of w
+    return ((item 1 of b) as text) & "," & ((item 2 of b) as text) & "," & ((item 3 of b) as text) & "," & ((item 4 of b) as text)
+    end if
+    end try
+    end repeat
+    end tell
+    """
+    guard let s = executeScriptAndReturnString(script: script), !s.isEmpty else { return nil }
+    let parts = s.split(separator: ",").compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }
+    guard parts.count == 4 else { return nil }
+    let left = parts[0], top = parts[1], right = parts[2], bottom = parts[3]
+    return (x: left, y: top, width: right - left, height: bottom - top)
 }
 
 func getGoogleChromeActiveTabTitle()->String?{
@@ -1381,11 +1413,21 @@ func getSafariBlockScript(url:String)->String{//"&confirm_ai_distracting_url=tru
 func getGoogleChromeBlockScript(url:String)->String{
     let params = "<PARAMS>"
     let newPageParam = "<NEWPAGE>"
+    // Redirect the same window the URL was read from (see getGoogleChromeActiveTabUrl): the first
+    // window whose active tab isn't the call's "about:blank" window — not blindly the front window,
+    // which during a Meet call is the blank call window (redirecting it would break the call and
+    // leave the real distracting tab unblocked).
     return """
     tell application "Google Chrome"
-    set the_wnd to front window
-    set active_tab to active tab in the_wnd
+    repeat with w in windows
+    try
+    set active_tab to active tab of w
+    if URL of active_tab is not "about:blank" then
     set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "\(params)" & "&encouraging_info=\(getGoalsAndFocusdJsonForBlockedScript())" & "&version=\(appVersion)" & "\(newPageParam)"
+    exit repeat
+    end if
+    end try
+    end repeat
     end tell
     """
 }
