@@ -13,51 +13,54 @@ class onboardingVc: NSViewController {
     @IBOutlet weak var btnBack: Button!
     @IBOutlet weak var containerView: NSView!
 
+    // Cases are listed in the REAL onboarding order the user walks through, so this enum
+    // doubles as the flow map. Skip-branches jump forward within this same order (e.g.
+    // _ASK_SET_DISTRACTIONS_ can jump straight to _BLOCKED_URLS_), never backward.
     enum ONBOARDINGSTATE: Int {
-        
+
         case _NOTHING_ = 111
-        
-        // Welcome Flow
+
+        // 1. Welcome Flow
         case _WELCOME_
         case _WELCOME_ADHD_
         case _WELCOME_LETS_DO_IT_
-        
-        // Account Setup
+
+        // 2. Account Setup
         case _SET_UP_ACCOUNT_
         case _PRIVACY_POLICY_
         case _CREATE_ACCOUNT_
         case _LOGIN_
-        
-        // Initial Setup
-        case _HOLD_ON_
-        case _SET_UP_HABITS_
-        case _START_SET_UP_HABITS_
-        case _INSTALL_HABIT_PACKS_
-        
-        // Blocking Setup
+
+        // 3. Distraction Blocking Setup
         case _SET_DISTRACTION_BLOCKING_
         case _ENABLE_AI_BLOCKING_
         case _ASK_SET_DISTRACTIONS_
-        
-        // User Info
+
+        // 4. User Info
         case _ASK_OCCUPATION_
-        
-        // Blocking Configuration
-        case _ALLOWED_URLS_
+
+        // 5. Blocking Configuration (blocked URLs + apps first, allowed URLs last)
         case _BLOCKED_URLS_
         case _BLOCKED_APPS_
-        
-        // Schedule
+        case _ALLOWED_URLS_
+
+        // 6. Blocking Schedule
         case _ASK_CREATE_BLOCKING_SCHEDULE_
         case _CREATE_BLOCKING_SCHEDULE_
-        
-        // Permissions
+
+        // 7. Permissions
         case _ASK_PERMISSIONS_
         case _SYSTEM_EVENT_PERMISSION_
         case _ACCESSIBILITY_PERMISSION_
         case _BROWSERS_PERMISSION_
-        
-        // Completion
+
+        // 8. Habits Setup
+        case _HOLD_ON_
+        case _SET_UP_HABITS_
+        case _START_SET_UP_HABITS_
+        case _INSTALL_HABIT_PACKS_
+
+        // 9. Completion
         case _ALL_SET_
     }
     
@@ -88,12 +91,13 @@ class onboardingVc: NSViewController {
     
     func blockingScheduleSkipped(){
         if SettingsManagerObject.arrBlockedUrls.count == 0 && SettingsManagerObject.arrBlockedApps.count == 0{
-            navigate(to: ._ALL_SET_)
+            // No blocked URLs/apps → no permissions needed; go straight to the habits section.
+            navigate(to: ._HOLD_ON_)
         }else{
             navigate(to: ._ASK_PERMISSIONS_)
             getAskPermissionsVcObj().blockingScheduleSkipped()
         }
-        
+
     }
     
     func navigateToAllowedUrlsVc(){

@@ -364,7 +364,8 @@ class onboardingControllingBrowserVc: NSViewController {
         addLog(text: "closeView")
         saveBrowsersPermissionInfo()
         if currentState == ._ONBOARDING_{
-            getOnboardingVcObject().navigate(to: ._ALL_SET_)
+            // Browser permission is the last permissions step → continue to the habits section.
+            getOnboardingVcObject().navigate(to: ._HOLD_ON_)
         }else{
             self.view.window?.close()
             

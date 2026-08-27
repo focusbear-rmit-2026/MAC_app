@@ -77,6 +77,7 @@ class askPermissionsVc: NSViewController {
     @IBAction func btnSkipClicked(_ sender: Any) {
         addLog(text: "[user-action] askPermissionsVc:- btnSkipClicked")
         allApiObject.capturePosthog(event: "ask-permissions-skipped", metadata: [:])
-        getOnboardingVcObject().navigate(to: ._ALL_SET_)
+        // Habits come after permissions now → skipping permissions continues to the habits section.
+        getOnboardingVcObject().navigate(to: ._HOLD_ON_)
     }
 }

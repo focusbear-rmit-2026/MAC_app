@@ -166,8 +166,8 @@ class onboardingAllowedUrlsVc: NSViewController {
     @IBAction func btnSkipClicked(_ sender: Any) {
         addLog(text: "[user-action] onboardingAllowedUrlsVc:- Button skip clicked")
         allApiObject.capturePosthog(event: "onboarding-allowed-urls-skipped", metadata: [:])
-        // Allowed URLs is now the last blocking step (blocked URLs + apps came first) → hand off to habits.
-        getOnboardingVcObject().navigate(to: ._HOLD_ON_)
+        // Allowed URLs is the last blocking-config step → continue to the blocking schedule step.
+        getOnboardingVcObject().navigate(to: ._ASK_CREATE_BLOCKING_SCHEDULE_)
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
@@ -187,8 +187,8 @@ class onboardingAllowedUrlsVc: NSViewController {
             occupationSpecificRelevantSitesForFocusMode?["user_relevant_sites"] = arrAllowedUrls
         }
 
-        // Allowed URLs is now the last blocking step (blocked URLs + apps came first) → hand off to habits.
-        getOnboardingVcObject().navigate(to: ._HOLD_ON_)
+        // Allowed URLs is the last blocking-config step → continue to the blocking schedule step.
+        getOnboardingVcObject().navigate(to: ._ASK_CREATE_BLOCKING_SCHEDULE_)
     }
     
     @IBAction func btnCheckBoxSelectAllClicked(_ sender: NSButton) {

@@ -298,8 +298,8 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
         addLog(text: "[user-action] installHabitPacksVc:- showNextView")
         hasSkippedHabits = false
         enableBreaksFromOnboarding()
-        // Habits is the last setup section now (blocking already happened): go to the schedule step.
-        getOnboardingVcObject().navigate(to: ._ASK_CREATE_BLOCKING_SCHEDULE_)
+        // Habits is the last section now (after permissions): finish onboarding.
+        getOnboardingVcObject().navigate(to: ._ALL_SET_)
     }
 
     /// Turn breaks on by default coming out of onboarding, and seed a sensible 60-minute default frequency
@@ -324,7 +324,7 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
         allApiObject.capturePosthog(event: "set-up-habits-webview-skipped", metadata: [:])
         hasSkippedHabits = true
         enableBreaksFromOnboarding()
-        // Habits is the last setup section now (blocking already happened): go to the schedule step.
-        getOnboardingVcObject().navigate(to: ._ASK_CREATE_BLOCKING_SCHEDULE_)
+        // Habits is the last section now (after permissions): finish onboarding.
+        getOnboardingVcObject().navigate(to: ._ALL_SET_)
     }
 }

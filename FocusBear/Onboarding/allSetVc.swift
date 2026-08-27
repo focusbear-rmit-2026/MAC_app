@@ -35,10 +35,10 @@ class allSetVc: NSViewController {
             loaderMessage = allSetVcInfo["loaderMessage"] as? String ?? loaderMessage
         }
         
-        //progress
-        self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
-        self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
-        getDistractionBlockingProgressVcObj().setCompletedAll()
+        // Progress indicator removed — no longer shown on the all-set screen.
+        // If we ever need the progress back, re-add it here by embedding
+        // getDistractionBlockingProgressVcObj().view into customViewProgress and
+        // calling getDistractionBlockingProgressVcObj().setCompletedAll().
     }
     
     override func viewWillAppear() {
