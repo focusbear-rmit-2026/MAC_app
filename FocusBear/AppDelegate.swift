@@ -7373,6 +7373,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         isFocusModeStartedFromPomodoroMode = true
         isSkipBreakActivityDuringPomodoro = true
         whatToAchieveInFocusBlock = intention
+        // #2163: load the task saved for this focus mode into the Todo Player, matching the pomodoro
+        // start path (pomodoroVc/simplePomodoroVc). The Todo Player payload uses focusModeTaskString for
+        // its "tasks"; the menu path never set it, so a menu-started session showed no task attached to
+        // the mode (while the pomodoro screen did).
+        focusModeTaskString = arrFocusType[i]["lastTaskUsed"] as? String ?? ""
         focusModeStartted(isStartedByPusher: false)
 
         // Remember this duration so the menu defaults to it next time.
@@ -7383,6 +7388,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         UserDefaults.standard.set(arrFocusType[i]["id"] as? String ?? "", forKey: kUserdefaultsLastPomodoroFocusModeId)
 
         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled {
+            // #2163: starting a focus session straight from the menu overlay on a fresh launch (main
+            // window never opened) showed a BLANK Todo Player — the webview had never loaded its URL,
+            // and this path only showed the window without loading it. Load the view (guarded so we
+            // don't rebuild an already-loaded webview) and its request, and flag a reload so reloadData
+            // injects the token/duration once shown — mirroring the resume and pusher-event paths.
+            if !getTaskPlayerVcObject().isViewLoaded {
+                getTaskPlayerVcObject().loadView()
+            }
+            getTaskPlayerVcObject().loadRequest()
+            shouldReloadTaskPlayer = true
             showTaskPlayerWindow(totalDuration: minute, intention: intention, automatically: true)
         }
     }
