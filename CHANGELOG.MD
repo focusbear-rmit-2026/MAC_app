@@ -469,3 +469,18 @@ Fixed a crash that could happen during a live session when the network connectio
 
 Behind the scenes:
 Added analytics for when the AuDHD results popup is closed, to better understand how the feature is used. (#2314)
+
+
+# v3.35.531
+
+Website & app blocking:
+Fixed blocking not working in Google Chrome while you're on a browser video call (e.g. Google Meet). Chrome opens a separate window for the call, and Focus Bear was reading that window instead of your real tab — it now blocks the correct tab (and shows the block popup over the right window). (#2331)
+Fixed the macOS "…wants to control [browser]" permission prompt popping up and disappearing in a loop when you switched to a browser you hadn't granted yet — it now appears once and stays until you respond, then remembers your choice. (#2330, #2334)
+Fixed a "Choose Application" window that could appear on startup for some users (most often with Firefox in front). (#2333)
+
+Onboarding:
+Fixed a crash that could happen if you opened the Day Plan right after finishing onboarding. "Start using Focus Bear" now shows a brief loader while the app finishes setting up, then lands you on the focus screen. (#2329)
+
+Other:
+The "Send" button on the Report a Problem screen is now a clearer, larger orange button. (#2332)
+Blocking-schedule start and end times can now be set in finer 5-minute steps. (#2332)
