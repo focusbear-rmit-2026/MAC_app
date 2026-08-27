@@ -2819,11 +2819,11 @@ extension menuViewController {
                 ?? model.focusBlockLists.first?.id ?? ""
             // Default the duration to that mode's last-used value (per-mode → global last → 20).
             model.focusMinutes = min(180, max(5, menuDefaultDurationMinutes(forFocusModeId: model.selectedBlockListId)))
-        } else {
-            // #777: the focus starter is already open when the menu re-shows — refresh the duration to the
-            // currently-selected mode's last-used value (it may have changed since the menu was last shown).
-            model.focusMinutes = min(180, max(5, menuDefaultDurationMinutes(forFocusModeId: model.selectedBlockListId)))
         }
+        // While the starter is expanded, DON'T touch the selection or duration here — this runs every
+        // tick (tickMenu), so re-defaulting focusMinutes would instantly wipe the user's in-progress
+        // +/- adjustment. The duration is (re)defaulted only when the starter first expands and when the
+        // selected mode changes — both via onFocusStarterExpanded() (see the selectedBlockListId onChange).
         // The focus-alignment score exists whenever AI blocking is on — including during a
         // super-distracting session (no special-case for it; it's shown just like the nudge does). The
         // storyboard label is a cache the gated reloadData() paths refresh; it's never cleared when AI
