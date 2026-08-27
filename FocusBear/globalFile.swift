@@ -2432,7 +2432,14 @@ func runAppleScriptSafely(_ source: String, timeoutSeconds: Int = 5, errors: ino
     var capturedErrors: NSDictionary?
     var result: NSAppleEventDescriptor?
     let done = DispatchSemaphore(value: 0)
-    appleScriptSerialQueue.async {
+    // The caller blocks on `done.wait` below. If the caller runs at a higher QoS than this queue's
+    // default (e.g. the main thread at user-interactive), that's a priority inversion — a high-QoS
+    // thread waiting on lower-QoS work — which Xcode's Thread Performance Checker flags (the purple
+    // "priority inversion" runtime warning). Donate the caller's QoS to the dispatched block so the
+    // AppleScript runs at (at least) the waiting thread's priority and the inversion goes away.
+    let callerQoS = DispatchQoS(qosClass: DispatchQoS.QoSClass(rawValue: qos_class_self()) ?? .default,
+                                relativePriority: 0)
+    appleScriptSerialQueue.async(qos: callerQoS, flags: .enforceQoS) {
         if let appleScript = NSAppleScript(source: bounded) {
             result = appleScript.executeAndReturnError(&capturedErrors)
         }
