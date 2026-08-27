@@ -265,7 +265,13 @@ class onboardingControllingBrowserVc: NSViewController {
                             // dialog) once Automation is authorized — checked here WITHOUT prompting.
                             // Otherwise the 1s timer would re-trigger the consent dialog every tick,
                             // looping the popup. The first prompt comes from the explicit request.
-                            if !state && requested && isAutomationAuthorized(bundleId: runningApp.bundleIdentifier ?? "") {
+                            // Firefox is extension-based (no Apple Events) so it can never be
+                            // "Automation authorized"; gate it only on the extension having reported a
+                            // URL (getActiveTabUrlOf is a pure read for Firefox and can't loop the OS
+                            // consent dialog). Without this exemption, Firefox is never detected as
+                            // granted after the user installs the extension.
+                            let firefoxOrAuthorized = (browser == ._FIREFOX_) || isAutomationAuthorized(bundleId: runningApp.bundleIdentifier ?? "")
+                            if !state && requested && firefoxOrAuthorized {
                                 if getActiveTabUrlOf(browser: browser) != nil{
                                     DispatchQueue.main.async {
                                         self.arrBrowsers[i]["isEnabled"] = true
