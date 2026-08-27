@@ -829,44 +829,16 @@ class simplePomodoroVc: NSViewController {
         if UserDefaults.standard.object(forKey: kUserdefaultsManageTaskFirstTime) == nil{
             UserDefaults.standard.set(true, forKey: kUserdefaultsManageTaskFirstTime)
        
-            addLog(text:"show alert UseToDoList first time from simple pomodoro view")
-            
-            var titleUseToDoList = "Do you want to use Focus Bear for your to do list for this focus session?"
-            var buttonTryItText = "Try it out"
-            var buttonNoThanksText = "No thanks"
-            var titleEnableToDoListFuture = "If you want to try it out in the future, enable the To Do player setting under Preferences - Settings - To Do List"
-            
-            if let toDoPlayerVcInfo = configjson.value(forKey: "toDoPlayerVcInfo") as? NSDictionary{
-                titleUseToDoList = toDoPlayerVcInfo.value(forKey: "titleUseToDoList") as? String ?? titleUseToDoList
-                buttonTryItText = toDoPlayerVcInfo.value(forKey: "buttonTryItText") as? String ?? buttonTryItText
-                buttonNoThanksText = toDoPlayerVcInfo.value(forKey: "buttonNoThanksText") as? String ?? buttonNoThanksText
-                titleEnableToDoListFuture = toDoPlayerVcInfo.value(forKey: "titleEnableToDoListFuture") as? String ?? titleEnableToDoListFuture
+            // Previously prompted "Do you want to use Focus Bear for your to do list?". The prompt is
+            // removed — default to the "Try it out" (alertFirstButtonReturn) path directly: enable the
+            // To Do player, then fall through to start the session. (No re-call/return needed now that
+            // this is synchronous — we're already inside btnLetsDoItClicked.)
+            addLog(text:"UseToDoList first time from simple pomodoro view: defaulting to Try it out (no prompt)")
+            if !SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
+                SettingsManagerObject.showToDoPlayerAutomaticallyEnabled = true
+                SettingsManagerObject.isSettingsChanged = true
+                SettingsManagerObject.putUserLocalDeviceSettings()
             }
-
-            
-            let alertUseToDoList = NSAlert()
-            alertUseToDoList.setSharingType()
-            alertUseToDoList.messageText = titleUseToDoList
-            alertUseToDoList.informativeText = titleEnableToDoListFuture
-            alertUseToDoList.addButton(withTitle: buttonTryItText)
-            alertUseToDoList.addButton(withTitle: buttonNoThanksText)
-            
-            alertUseToDoList.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-                if modalResponse == .alertFirstButtonReturn{
-                    if !SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-                        SettingsManagerObject.showToDoPlayerAutomaticallyEnabled = true
-                        SettingsManagerObject.isSettingsChanged = true
-                        SettingsManagerObject.putUserLocalDeviceSettings()
-                    }
-                    self.btnLetsDoItClicked(self)
-                }else{
-                    SettingsManagerObject.isSettingsChanged = true
-                    SettingsManagerObject.showToDoPlayerAutomaticallyEnabled = false
-                    SettingsManagerObject.putUserLocalDeviceSettings()
-                    self.btnLetsDoItClicked(self)
-                }
-            })
-            return;
         }
 
         if textFieldWorkDuration.isEnabled{
