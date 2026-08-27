@@ -170,7 +170,7 @@ class onboardingVc: NSViewController {
         case ._HOLD_ON_:
             addLog(text: "Showing HoldOn view.")
             containerView.addSubview(getHoldOnVcObject().view)
-            btnBack.isHidden = false
+            btnBack.isHidden = true
             
         case ._SET_UP_HABITS_:
             addLog(text: "Showing setup habits view.")
@@ -190,7 +190,7 @@ class onboardingVc: NSViewController {
         case ._SET_DISTRACTION_BLOCKING_:
             addLog(text: "Showing set scheduled distraction blocking view.")
             containerView.addSubview(getSetScheduledDistractionBlockingVcObj().view)
-            btnBack.isHidden = false
+            btnBack.isHidden = true
             
         case ._ENABLE_AI_BLOCKING_:
             addLog(text: "Showing Enable AI Blocking view.")
