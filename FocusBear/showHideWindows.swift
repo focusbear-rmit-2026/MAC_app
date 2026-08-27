@@ -625,7 +625,7 @@ func showAudhdResultsWindow(testCode: String) {
     if let screen = NSScreen.main ?? NSScreen.screens.first {
         window.setFrame(screen.visibleFrame, display: true)
     }
-
+    window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.maximumWindow)))
     vc.present(testCode: testCode)
     window.makeKeyAndOrderFront(nil)
     NSApplication.shared.activate(ignoringOtherApps: true)

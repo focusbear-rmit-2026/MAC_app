@@ -3544,7 +3544,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if !lastOpenUrlString.isEmpty{
             filterUrl(url: lastOpenUrlString)
         }
-        
+
+        // Deferred deep link: a fresh install coming from the web AuDHD test carries
+        // the retest code on the clipboard (the deep link is lost across the install),
+        // so read it ONCE on the first launch and open the results — otherwise a new
+        // downloader lands on the home screen and never sees their results. Gated on
+        // a UserDefaults flag so a returning user's clipboard is never re-scanned.
+        if !UserDefaults.standard.bool(forKey: AudhdResults.clipboardCheckedDefaultsKey) {
+            UserDefaults.standard.set(true, forKey: AudhdResults.clipboardCheckedDefaultsKey)
+            if let clip = NSPasteboard.general.string(forType: .string),
+               let testCode = AudhdResults.testCode(fromClipboard: clip) {
+                showAudhdResultsWindow(testCode: testCode)
+            }
+        }
+
         if let lastHabitShowDate = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitShowDate) as? Date{
             checkLastHabitShowDate(lastHabitShowDate: lastHabitShowDate)
         }else{

@@ -57,6 +57,23 @@ enum AudhdResults {
         }
         return nil
     }
+
+    /// UserDefaults flag so the deferred-deep-link clipboard is read exactly once,
+    /// on the first launch after install — never re-scanned on later launches.
+    static let clipboardCheckedDefaultsKey = "audhd_clipboard_checked"
+
+    /// Extracts a Focus Bear retest code from a clipboard string. A fresh install
+    /// coming from the web AuDHD test carries the code on the clipboard (the deep
+    /// link itself is lost across the install — see online-tests deferred-link
+    /// work), so this recovers it. Matches the `BEAR-XXXXX-XXXXX` code format
+    /// (also the shorter v1 `BEAR-XXXX`). Returns nil if the clipboard holds no code.
+    static func testCode(fromClipboard clip: String) -> String? {
+        guard let range = clip.range(
+            of: "BEAR-[A-Z0-9]+(-[A-Z0-9]+)?",
+            options: [.regularExpression, .caseInsensitive]
+        ) else { return nil }
+        return String(clip[range])
+    }
 }
 
 private extension CharacterSet {
