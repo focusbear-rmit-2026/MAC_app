@@ -1820,8 +1820,6 @@
         "descriptionText": "Set up blocking for all your browsers to make yourself distraction proof",
         "buttonPermissionGrantedText": "Continue",
         "buttonRequestPermissionText": "Request Permission",
-        "buttonIDontUseThisText": "I don't use this",
-        "buttonIUseThisText": "I use this",
         "enabledText": "✅  Enabled!",
         "buttonDidNotWorkText": "It didn't work",
         "accessibilityPermissionText": "(Accessibility permission given)",

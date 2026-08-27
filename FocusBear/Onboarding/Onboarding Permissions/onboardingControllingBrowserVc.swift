@@ -32,8 +32,6 @@ class onboardingControllingBrowserVc: NSViewController {
     var isRequestInFlight = false
     
     var buttonRequestPermissionText = "Request Permission"
-    var buttonIDontUseThisText = "I don't use this"
-    var buttonIUseThisText = "I use this"
     var enabledText = "✅  Enabled!"
     var accessibilityPermissionText = "(Accessibility permission given)"
     var allPermissionText = "(All needed permissions given)"
@@ -63,8 +61,6 @@ class onboardingControllingBrowserVc: NSViewController {
             btnContinue.title = dic.value(forKey: "buttonProceed") as? String ?? btnContinue.title
             btnDidNotWork.title = dic.value(forKey: "buttonDidNotWorkText") as? String ?? btnDidNotWork.title
             buttonRequestPermissionText = dic.value(forKey: "buttonRequestPermissionText") as? String ?? buttonRequestPermissionText
-            buttonIDontUseThisText = dic.value(forKey: "buttonIDontUseThisText") as? String ?? buttonIDontUseThisText
-            buttonIUseThisText = dic.value(forKey: "buttonIUseThisText") as? String ?? buttonIUseThisText
             enabledText = dic.value(forKey: "enabledText") as? String ?? enabledText
             accessibilityPermissionText = dic.value(forKey: "accessibilityPermissionText") as? String ?? accessibilityPermissionText
             allPermissionText = dic.value(forKey: "allPermissionText") as? String ?? allPermissionText
@@ -88,10 +84,10 @@ class onboardingControllingBrowserVc: NSViewController {
         self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
         getDistractionBlockingProgressVcObj().setProgress(level: 3, progress: 0.75)
 
-        // Screenshot is the entry point (its click requests the next un-handled browser);
-        // the tick + Proceed only appear once every browser is handled (enabled or skipped).
+        // Every non-granted browser shows its own Request button. Proceed is always available;
+        // the VC-level tick only appears once every browser is granted.
         imgViewTick.isHidden = true
-        btnContinue.isHidden = true
+        btnContinue.isHidden = false
         btnImgView.isHidden = false
     }
     
@@ -397,24 +393,10 @@ class onboardingControllingBrowserVc: NSViewController {
     
     @IBAction func btnImgViewClicked(_ sender: Any) {
         addLog(text: "[user-action] btnImgViewClicked")
-        // The screenshot drives the flow: each click requests permission for the next
-        // browser that hasn't been handled yet. Once all are handled the button is hidden.
-        if let row = nextPendingBrowserIndex() {
+        // Clicking the screenshot requests permission for the first browser that isn't granted yet.
+        if let row = firstUngrantedBrowserIndex() {
             requestPermission(row: row)
         }
-    }
-
-    @objc func btnSkipBrowserClicked(sender: NSButton) {
-        let row = sender.tag
-        guard row >= 0, row < arrBrowsers.count else { return }
-        // Toggle "I don't use this" ⇄ "I use this". Marking a browser as not-used advances the
-        // sequence to the next browser (it counts as handled); toggling back to "I use this"
-        // re-enables its Request button and makes it the current browser again.
-        let currentlySkipped = arrBrowsers[row]["isSkipped"] as? Bool ?? false
-        arrBrowsers[row]["isSkipped"] = !currentlySkipped
-        addLog(text: "[user-action] btnSkipBrowserClicked row:\(row) dontUse:\(!currentlySkipped)")
-        tblView.reloadData()
-        updateScreenshotAndProceedState()
     }
 
     /// Whether Focus Bear already has Automation (Apple Events) permission for `bundleId`,
@@ -431,34 +413,28 @@ class onboardingControllingBrowserVc: NSViewController {
         return automationStatus(bundleId: bundleId) == noErr
     }
 
-    /// First browser still pending — neither enabled nor skipped — or nil if all handled.
-    func nextPendingBrowserIndex() -> Int? {
+    /// Index of the first browser that hasn't been granted permission yet, or nil if all granted.
+    func firstUngrantedBrowserIndex() -> Int? {
         for i in 0..<arrBrowsers.count {
-            let enabled = arrBrowsers[i]["isEnabled"] as? Bool ?? false
-            let skipped = arrBrowsers[i]["isSkipped"] as? Bool ?? false
-            if !enabled && !skipped { return i }
+            if !(arrBrowsers[i]["isEnabled"] as? Bool ?? false) { return i }
         }
         return nil
     }
 
-    /// True once every installed browser has been enabled or skipped.
-    func allBrowsersHandled() -> Bool {
-        return nextPendingBrowserIndex() == nil
+    /// True once every installed browser has been granted permission.
+    func allBrowsersGranted() -> Bool {
+        return firstUngrantedBrowserIndex() == nil
     }
 
-    /// Drives the screenshot button, the VC-level tick, and Proceed off the handled state.
-    /// While any browser is pending the screenshot stays visible (its click requests the
-    /// next one) and both the tick and Proceed stay hidden. Once every browser is handled
-    /// the screenshot is hidden, the tick shows, and Proceed is revealed — mirroring
-    /// systemEventsPermissionVc's done-state.
+    /// Shows the VC-level tick and dims the screenshot once every browser is granted.
+    /// Proceed is always visible (the user can proceed at any time); each non-granted
+    /// browser exposes its own Request button.
     func updateScreenshotAndProceedState() {
-        let done = allBrowsersHandled()
-        btnImgView.isHidden = done
-        imgViewTick.isHidden = !done
-        btnContinue.isHidden = !done
-        // Dim the screenshot once the user is through all browsers and Proceed is shown —
-        // mirrors systemEventsPermissionVc's done-state.
-        imgViewScreenshot.alphaValue = done ? 0.5 : 1.0
+        let allGranted = allBrowsersGranted()
+        btnImgView.isHidden = allGranted
+        imgViewTick.isHidden = !allGranted
+        // Dim the screenshot once every browser is granted — mirrors systemEventsPermissionVc's done-state.
+        imgViewScreenshot.alphaValue = allGranted ? 0.5 : 1.0
     }
 }
 
@@ -475,32 +451,15 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
             cell.imgView.image = arrBrowsers[row]["image"] as? NSImage
             cell.lblFirefoxPermission.isHidden = true
             let state = arrBrowsers[row]["isEnabled"] as? Bool ?? false
-            let skipped = arrBrowsers[row]["isSkipped"] as? Bool ?? false
-            // Sequential reveal: a row is interactive only once every browser before it is handled
-            // (granted or marked "I don't use this"). currentIndex is the first browser still
-            // pending (neither granted nor skipped); rows at or before it are revealed, later rows
-            // wait their turn. A skipped row stays revealed (so it can be toggled back); only a
-            // GRANTED row collapses to just its tick.
-            let currentIndex = nextPendingBrowserIndex()
-            let revealed = (currentIndex == nil) || (row <= currentIndex!)
+            // Every non-granted browser shows its own Request button (no sequential reveal and
+            // no "I don't use this" skip). A granted browser collapses to just its tick.
             if state{
-                // Granted: show the tick, hide the request + toggle.
                 cell.imgViewTick.isHidden = false
                 cell.btnRequest.isHidden = true
-                cell.btnSkipBrowser.isHidden = true
-            }else if revealed{
-                // Revealed & not granted: Request + the use / don't-use toggle.
-                // "I don't use this" (skipped) disables Request and flips the label to "I use this".
+            }else{
                 cell.imgViewTick.isHidden = true
                 cell.btnRequest.isHidden = false
-                cell.btnSkipBrowser.isHidden = false
-                cell.btnRequest.isEnabled = !skipped
-                cell.btnSkipBrowser.title = skipped ? buttonIUseThisText : buttonIDontUseThisText
-            }else{
-                // Not yet its turn: no actions until the browsers above are handled.
-                cell.imgViewTick.isHidden = true
-                cell.btnRequest.isHidden = true
-                cell.btnSkipBrowser.isHidden = true
+                cell.btnRequest.isEnabled = true
             }
             
             
@@ -517,7 +476,7 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
             }
 
             if arrBrowsers[row]["browser"] as? BROWSER == ._FIREFOX_{
-                if !state && !skipped && revealed{
+                if !state{
                     cell.lblFirefoxPermission.isHidden = false
                     cell.btnInfo.isHidden = false
                     cell.lblFirefoxPermission.stringValue = descriptionFirefoxExtensiont
@@ -534,11 +493,6 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
             cell.btnRequest.target = self
             cell.btnRequest.tag = row
             cell.btnRequest.action = #selector(btnRequestClicked(sender:))
-
-            // Title is set in the visibility block above (I don't use this / I use this).
-            cell.btnSkipBrowser.target = self
-            cell.btnSkipBrowser.tag = row
-            cell.btnSkipBrowser.action = #selector(btnSkipBrowserClicked(sender:))
 
             cell.btnInfo.target = self
             cell.btnInfo.tag = row
@@ -650,7 +604,6 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
                         isBrowserAutomationRequestInFlight = false
                         if status == noErr {
                             self.arrBrowsers[row]["isEnabled"] = true
-                            self.arrBrowsers[row]["isSkipped"] = false
                             self.tblView.reloadData()
                             allApiObject.capturePosthog(event: "onboarding-granted-permission-\(browserNameForPosthog)", metadata: [:])
                             addLog(text: "Permission granted for browser:- \(browserNameForPosthog)")
