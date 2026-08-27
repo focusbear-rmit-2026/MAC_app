@@ -1906,8 +1906,14 @@ func setDocBarTo(isHide:Bool){
 }
 
 func checkDocBarState()->String?{
+    // Don't run a System Events script while the grant is missing (it would loop the OS consent dialog);
+    // raise the one-time prompt instead — see the runtime System Events gate.
+    if shouldSkipSystemEventsAppleEvent() {
+        requestSystemEventsAutomationOnceIfNeeded()
+        return nil
+    }
     var script: String = ""
-    
+
     script =
     """
     tell application "System Events"
@@ -3329,6 +3335,12 @@ func getGoalsAndFocusdJsonForBlockedScript()-> String{
 // the AX window list; the sweep of any enumerable windows then catches the fullscreen one. Must be called
 // after a warm-up read (see exitFullScreen) — the first cold AX query returns empty.
 func isAppInFullScreen(runningApp:NSRunningApplication) -> Bool {
+    // Skip the System Events AX query while the grant is missing (else it loops the consent dialog);
+    // raise the one-time prompt instead — see the runtime System Events gate.
+    if shouldSkipSystemEventsAppleEvent() {
+        requestSystemEventsAutomationOnceIfNeeded()
+        return false
+    }
     let appName = runningApp.localizedName ?? ""
     let script =
     """
@@ -3359,6 +3371,12 @@ func isAppInFullScreen(runningApp:NSRunningApplication) -> Bool {
 // them. We only send the toggle when the app is ACTUALLY fullscreen (else ⌃⌘F would send it INTO
 // fullscreen), and activate it first so the keystroke lands on the right app.
 func exitFullScreen(runningApp:NSRunningApplication){
+    // Skip the System Events AX warm-up + keystroke while the grant is missing (else it loops the
+    // consent dialog); raise the one-time prompt instead — see the runtime System Events gate.
+    if shouldSkipSystemEventsAppleEvent() {
+        requestSystemEventsAutomationOnceIfNeeded()
+        return
+    }
     let appName = runningApp.localizedName ?? ""
     // Warm up Accessibility first. The FIRST AX query to an app whose fullscreen window is on its own
     // Space comes back "cold" — `count of windows` = 0 and `window 1` throws -1719 — and only the NEXT
@@ -3462,6 +3480,76 @@ func checkAutomationPermissionWithAppleScript() -> Bool {
         return false
     }else{
         return true
+    }
+}
+
+// MARK: - Runtime System Events automation gate (stops the consent-prompt loop)
+//
+// Same failure mode as the browser Apple Events (see shouldSkipBrowserAppleEvent): when the app runs a
+// `tell application "System Events"` script (dock state, full-screen detect/exit) WITHOUT the System
+// Events Automation grant, macOS shows the consent dialog and runAppleScriptSafely's ~5s timeout tears
+// it down and the next tick re-fires it — the dialog flashes on a ~5s loop (e.g. a fresh user who
+// skipped System Events during onboarding, then switches to a browser). Fix: before running any System
+// Events script, check the grant WITHOUT prompting; if it's missing, raise the consent prompt exactly
+// ONCE this session (a single blocking AEDeterminePermissionToAutomateTarget(askUserIfNeeded:true), no
+// AppleScript) and SKIP the script. On allow the scripts run normally next time; on deny we don't re-ask.
+
+/// True while the one-time blocking System-Events consent prompt is on screen — pauses the gated scripts.
+var isSystemEventsAutomationRequestInFlight = false
+/// Set once we've raised the System-Events consent prompt this session, so a denial isn't re-asked.
+private var systemEventsAutoPromptAttempted = false
+
+/// Whether Focus Bear has System Events Automation, checked WITHOUT prompting (askUserIfNeeded:false).
+func isSystemEventsAutomationAuthorized() -> Bool {
+    let target = NSAppleEventDescriptor(bundleIdentifier: "com.apple.systemevents")
+    return AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, false) == noErr
+}
+
+/// Whether we should NOT run a System Events script right now: a consent prompt is already showing, or
+/// the grant is missing. When true, the caller should also give requestSystemEventsAutomationOnceIfNeeded()
+/// a chance to raise the one-time prompt.
+func shouldSkipSystemEventsAppleEvent() -> Bool {
+    if isSystemEventsAutomationRequestInFlight { return true }
+    return !isSystemEventsAutomationAuthorized()
+}
+
+/// Raise the System Events Automation consent dialog exactly ONCE this session (blocking), instead of
+/// letting an ungranted `tell application "System Events"` script trigger it and loop on the timeout.
+func requestSystemEventsAutomationOnceIfNeeded() {
+    if isSystemEventsAutomationRequestInFlight { return }
+    if systemEventsAutoPromptAttempted { return }
+    if isSystemEventsAutomationAuthorized() { return }
+    systemEventsAutoPromptAttempted = true
+    isSystemEventsAutomationRequestInFlight = true
+    DispatchQueue.global().async {
+        ensureSystemEventsRunningForAutomation() // else AEDetermine returns procNotFound (-600)
+        let target = NSAppleEventDescriptor(bundleIdentifier: "com.apple.systemevents")
+        let status = AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, true)
+        DispatchQueue.main.async {
+            isSystemEventsAutomationRequestInFlight = false
+            if status == noErr {
+                menuViewControllerObj?.systemEventsPermissionGiven = true
+            }
+        }
+    }
+}
+
+/// Launch System Events (an LSUIElement background app) if it isn't running, so AEDetermine can target it
+/// instead of returning procNotFound (-600). Mirrors systemEventsPermissionVc.ensureSystemEventsRunning().
+func ensureSystemEventsRunningForAutomation() {
+    let bundleId = "com.apple.systemevents"
+    if !NSRunningApplication.runningApplications(withBundleIdentifier: bundleId).isEmpty { return }
+    if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) {
+        let config = NSWorkspace.OpenConfiguration()
+        config.activates = false
+        let sem = DispatchSemaphore(value: 0)
+        NSWorkspace.shared.openApplication(at: url, configuration: config) { _, _ in sem.signal() }
+        _ = sem.wait(timeout: .now() + 5)
+    }
+    var tries = 0
+    while NSRunningApplication.runningApplications(withBundleIdentifier: bundleId).isEmpty && tries < 30 {
+        usleep(100_000) // 0.1s
+        tries += 1
     }
 }
 
