@@ -7550,6 +7550,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 savedSitesForLaterWcObj!.close()
             }
         }
+        // Ending the focus session must always dismiss the block overlays. They were previously only
+        // closed inside specific browser/URL branches later in this function, so stopping while the
+        // "set intention" (blocked-URL) window was up left it stranded on screen — and since the focus
+        // timer that watches for tab/window changes is invalidated above, nothing would close it
+        // afterwards either (it kept showing even when the user switched tab/window). Close both
+        // block windows unconditionally here.
+        closeSetIntentionBlockedUrlsWinddowIfVisible()
+        closeIntentionBlockedUrlsWinddowIfVisible()
         if isFocusModeOn(){// is paused then already calculated
             let totalSeconds = Int(Date().timeIntervalSince(startFocusModeTimeForPauseAndResume ?? Date()))
             focusModeActualDurationPerformed += totalSeconds
