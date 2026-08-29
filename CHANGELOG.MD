@@ -484,3 +484,27 @@ Fixed a crash that could happen if you opened the Day Plan right after finishing
 Other:
 The "Send" button on the Report a Problem screen is now a clearer, larger orange button. (#2332)
 Blocking-schedule start and end times can now be set in finer 5-minute steps. (#2332)
+
+
+# v3.35.532
+
+Onboarding:
+Reordered the onboarding flow so setting up your habits now comes after granting permissions, giving a more natural order. (#2337)
+Simplified the browser-permissions step: every browser you haven't granted shows its own "Request Permission" button and you can proceed at any time (the per-browser "I don't use this" toggle has been removed). (#2339)
+Hid the Back button on a couple of onboarding screens where going back no longer made sense. (#2347)
+
+Permissions:
+Fixed Firefox permission not being detected during onboarding after you install the Focus Bear extension — it's now recognised as granted. (#2340)
+Fixed the macOS "System Events" permission prompt popping up and disappearing in a loop after onboarding when you switched to a browser — it now appears once and stays until you respond. (#2346)
+
+Focus sessions:
+Fixed the +/- buttons on the menu's focus-duration picker snapping back to the saved duration instead of keeping your adjustment. (#2341)
+Fixed the blocked-site "set intention" screen staying on screen after you stop a focus session (and lingering when you switched tabs). (#2343)
+Fixed the Todo Player opening blank — and not showing the focus mode's saved task — when starting a focus session from the menu. (#2344)
+Removed the "Do you want to use Focus Bear for your to do list?" prompt when starting a focus session; the To Do player is now simply enabled. (#2345)
+
+AuDHD test:
+If you come from the web AuDHD test, your results now open automatically on first launch (recovered from a code on your clipboard), so a fresh install no longer loses them. (#2336)
+
+Behind the scenes:
+Fixed a developer-only "priority inversion" warning in the AppleScript layer (no change to how the app behaves). (#2342)
