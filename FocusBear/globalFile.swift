@@ -2419,6 +2419,27 @@ var shouldEndPomodoroBreakAtTime:Date?
 /// this background queue and never block the UI).
 private let appleScriptSerialQueue = DispatchQueue(label: "com.focusbear.applescript")
 
+/// Cumulative main-thread AppleScript wait budget per runloop turn (#2315). runAppleScriptSafely caps
+/// each INDIVIDUAL main-thread wait at 1.2s, but callers that chain 2–3 scripts back-to-back (e.g.
+/// `exitFullScreen`'s warm-up + `isAppInFullScreen` + keystroke) stack those caps to ~3s and trip the 2s
+/// App Hang threshold. This bounds the TOTAL main-thread AppleScript wait within a single runloop turn:
+/// once ~1.5s has been spent this turn, further main-thread scripts are skipped (return nil) rather than
+/// adding more wait — the callers already tolerate a dropped script (they poll). A CFRunLoopObserver
+/// resets the counter each time the main runloop goes idle (`.beforeWaiting`), i.e. once per turn.
+/// All access is main-thread-only (background callers never touch it), so no locking is needed.
+private let mainThreadAppleScriptBudget: TimeInterval = 1.5
+private var mainThreadAppleScriptSpentThisTurn: TimeInterval = 0
+private var mainThreadAppleScriptBudgetObserverInstalled = false
+
+private func installMainThreadAppleScriptBudgetResetIfNeeded() {
+    guard Thread.isMainThread, !mainThreadAppleScriptBudgetObserverInstalled else { return }
+    mainThreadAppleScriptBudgetObserverInstalled = true
+    let observer = CFRunLoopObserverCreateWithHandler(nil, CFRunLoopActivity.beforeWaiting.rawValue, true, 0) { _, _ in
+        mainThreadAppleScriptSpentThisTurn = 0
+    }
+    CFRunLoopAddObserver(CFRunLoopGetMain(), observer, .commonModes)
+}
+
 /// Single safe entry point for running AppleScript. Serialised on `appleScriptSerialQueue` (see above)
 /// so it can't run concurrently from multiple threads. The source is wrapped in `with timeout of N
 /// seconds`, and we additionally guard with a wall-clock timeout so an unresponsive target app can't
@@ -2432,8 +2453,23 @@ func runAppleScriptSafely(_ source: String, timeoutSeconds: Int = 5, errors: ino
     // the 1 s URL-block timer) than lock the UI. The dropped script keeps running on the queue; we just
     // don't read its result. Background callers keep the full, generous timeout.
     let onMain = Thread.isMainThread
+    // #2315: bound the cumulative main-thread AppleScript wait per runloop turn so chained callers can't
+    // stack the per-call caps into a multi-second UI freeze. Once this turn's budget is spent, skip the
+    // script entirely (the callers poll, so a dropped detection cycle is fine). Only ever touch the
+    // budget counter on the main thread.
+    var mainWaitSeconds = 1.2
+    if onMain {
+        installMainThreadAppleScriptBudgetResetIfNeeded()
+        let remaining = mainThreadAppleScriptBudget - mainThreadAppleScriptSpentThisTurn
+        if remaining <= 0 {
+            addLog(text: "runAppleScriptSafely: main-thread AppleScript budget spent this runloop turn — skipping to protect the UI")
+            errors = nil
+            return nil
+        }
+        mainWaitSeconds = min(1.2, remaining)
+    }
     let scriptTimeout = onMain ? min(timeoutSeconds, 1) : timeoutSeconds
-    let waitCap: DispatchTimeInterval = onMain ? .milliseconds(1200) : .seconds(timeoutSeconds + 2)
+    let waitCap: DispatchTimeInterval = onMain ? .milliseconds(Int(mainWaitSeconds * 1000)) : .seconds(timeoutSeconds + 2)
     let bounded = "with timeout of \(scriptTimeout) seconds\n" + source + "\nend timeout\n"
     var capturedErrors: NSDictionary?
     var result: NSAppleEventDescriptor?
@@ -2453,7 +2489,15 @@ func runAppleScriptSafely(_ source: String, timeoutSeconds: Int = 5, errors: ino
     }
     // Wall-clock guard a little longer than the AppleScript `with timeout`, so the script normally
     // finishes first. On timeout we return without reading the still-running block's outputs.
-    if done.wait(timeout: .now() + waitCap) == .timedOut {
+    let waitStart = Date()
+    let timedOut = done.wait(timeout: .now() + waitCap) == .timedOut
+    if onMain {
+        // #2315: charge the actual time this call blocked the main thread against the runloop-turn budget
+        // (fast successes cost ~nothing; a slow/hung call costs up to its cap), so a later chained call
+        // sees the reduced remaining budget — or is skipped once the turn's budget is exhausted.
+        mainThreadAppleScriptSpentThisTurn += Date().timeIntervalSince(waitStart)
+    }
+    if timedOut {
         errors = nil
         return nil
     }
