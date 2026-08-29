@@ -508,3 +508,16 @@ If you come from the web AuDHD test, your results now open automatically on firs
 
 Behind the scenes:
 Fixed a developer-only "priority inversion" warning in the AppleScript layer (no change to how the app behaves). (#2342)
+
+
+# v3.35.533
+
+Account:
+You can now edit your leaderboard username right from the Accounts screen — tap the edit icon, change it, and Update (or Undo to cancel). Previously it was read-only and could only be changed in the web app. (#2360)
+
+Reliability:
+Reduced UI freezes ("app not responding") by capping how long the app will wait on browser/AppleScript checks in a single pass, so slow or unresponsive browsers can no longer lock up the interface. (#2361)
+
+Behind the scenes:
+The AI Blocking Logs debug panel now keeps its history across app restarts (last 50 entries), instead of being wiped every time — and each account's logs are kept separate. (#2319)
+AuDHD web-quiz results now link the quiz identity into analytics when opened from the results deep link, for better funnel tracking. (#2326)
