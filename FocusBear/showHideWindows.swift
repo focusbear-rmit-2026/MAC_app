@@ -630,6 +630,14 @@ func showAudhdResultsWindow(testCode: String) {
     window.makeKeyAndOrderFront(nil)
     NSApplication.shared.activate(ignoringOtherApps: true)
     allApiObject.capturePosthog(event: AudhdResults.resultsShownEvent, metadata: [:])
+
+    // Stitch the web-quiz PostHog identity onto this app's person. The public
+    // AuDHD test identifies its PostHog person by the retest code, so aliasing the
+    // same test-code here merges the two — otherwise the quiz -> download -> sign-up
+    // journey shows up as two disjoint people and looks like nobody converts.
+    // capturePosthogIdentify sends $create_alias(alias = testCode, distinct_id =
+    // current app user), matching the mobile and Windows stitches.
+    allApiObject.capturePosthogIdentify(sAliasID: testCode, completionHandler: { _ in })
 }
 //-------------------------------------------------//
 
