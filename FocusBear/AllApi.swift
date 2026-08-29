@@ -225,6 +225,71 @@ class AllApi:NSObject {
         }
     }
 
+    /// #1133: PUT /user/username (UpdateUsernameDto) — updates the user's leaderboard username (the
+    /// `username` field also returned by GET /user/details/summary). Mirrors upsertBrainDumpNote:
+    /// refresh the credential, PUT with the Bearer token makeRequest attaches, and on a non-2xx log the
+    /// response body via writeJsonInLog so validation/duplicate errors are visible. completionHandler
+    /// gets (body, statusCode) on the main thread; caller updates currentLeaderboardUsername on 200.
+    /// The backend caps `username` at 30 chars.
+    func updateLeaderboardUsername(username: String, completionHandler: @escaping (_ result: NSDictionary?, _ statusCode: Int) -> ()) {
+        addLog(text: "func call:- api updateLeaderboardUsername")
+
+        appdelegate!.credentialsManager.credentials { credentialsInfo in
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+
+            func finish(_ result: NSDictionary?, _ statusCode: Int) {
+                DispatchQueue.main.async { completionHandler(result, statusCode) }
+            }
+
+            if appdelegate!.credential != nil {
+                let responsePath = "\(baseUrl)/user/username"
+                if let responsePathUrl = NSURL(string: responsePath) {
+                    addLog(text: "api call updateLeaderboardUsername \(responsePathUrl)")
+
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "PUT"
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+                    let payload: [String: Any] = ["username": username]
+                    request.httpBody = try? JSONSerialization.data(withJSONObject: payload)
+
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
+                        if let httpResponse = response as? HTTPURLResponse {
+                            if httpResponse.statusCode == 200 {
+                                addLog(text: "api call updateLeaderboardUsername return success")
+                                var jsonResult: NSDictionary? = nil
+                                if let data = data {
+                                    jsonResult = (try? JSONSerialization.jsonObject(with: data, options: .mutableContainers)) as? NSDictionary
+                                }
+                                finish(jsonResult, httpResponse.statusCode)
+                                return
+                            } else {
+                                addLog(text: "api call updateLeaderboardUsername Api error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                finish(nil, httpResponse.statusCode)
+                                return
+                            }
+                        }
+
+                        if error != nil {
+                            addLog(text: "api call updateLeaderboardUsername return error:- \(error!.localizedDescription)")
+                            finish(nil, 0)
+                            return
+                        }
+                        finish(nil, 0)
+                        return
+                    }
+
+                    task.resume()
+                } else {
+                    finish(nil, 0)
+                }
+            } else {
+                finish(nil, 0)
+            }
+        }
+    }
+
     func writeJsonInLog(data: Data?){
         if data != nil{
             do {
