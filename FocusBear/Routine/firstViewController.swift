@@ -158,7 +158,6 @@ class firstViewController: NSViewController {
     }
     
     override func viewWillAppear() {
-        print("firstViewController :- viewWillAppear")
         boxSegmentControlOfficeMode.isHidden = true
         boxSelectActivities.isHidden = true
         lbltimer.isHidden = true

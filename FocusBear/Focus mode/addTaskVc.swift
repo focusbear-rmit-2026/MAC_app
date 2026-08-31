@@ -420,7 +420,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         if !isAddingTask{
             allApiObject.capturePosthog(event: "mark-tasks-on-focus-session-end-screen-closed", metadata: [:])
         }
-        self.dismiss(self)
+        if presentingViewController != nil { self.dismiss(self) }   // guard: dismissing a non-presented VC throws NSInternalInconsistencyException (crash 1A8, when a sheet is force-ended during quit)
     }
     
     @IBAction func btnExtendSessionClicked(_ sender: Any) {
@@ -511,7 +511,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
 
     func extendFocusMode(){
         allApiObject.capturePosthog(event: "extend-focus-session-from-popup", metadata: [:])
-        self.dismiss(self)
+        if presentingViewController != nil { self.dismiss(self) }   // guard: dismissing a non-presented VC throws NSInternalInconsistencyException (crash 1A8, when a sheet is force-ended during quit)
         if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             customBlockingScheduleManagerObj.customBlockingScheduleFinished()
         }
@@ -589,11 +589,11 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
     }
     
     @IBAction func btnEndFocusSessionClicked(_ sender: Any) {
-        self.dismiss(self)
+        if presentingViewController != nil { self.dismiss(self) }   // guard: dismissing a non-presented VC throws NSInternalInconsistencyException (crash 1A8, when a sheet is force-ended during quit)
     }
     
     @IBAction func btnContinueHabitClicked(_ sender: Any) {
-        self.dismiss(self)
+        if presentingViewController != nil { self.dismiss(self) }   // guard: dismissing a non-presented VC throws NSInternalInconsistencyException (crash 1A8, when a sheet is force-ended during quit)
     }
     
     @IBAction func btnEnableAdvancedAnalyticsClicked(_ sender: Any){ // not in use

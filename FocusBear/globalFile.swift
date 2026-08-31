@@ -3810,17 +3810,20 @@ func quitApplicationSmoothly() {
 
 func disableAllAlertsBeforeQuit(){
     addLog(text: "func :-disableAllAlertsBeforeQuit")
-    for window in NSApp.windows {
+    // Snapshot the windows — ending a sheet can mutate NSApp.windows mid-iteration.
+    for window in Array(NSApp.windows) {
         // End any sheet attached to the window
         if let sheet = window.attachedSheet {
             window.endSheet(sheet)
         }
+    }
 
-        // Abort any modal session running on this window
-        if window == NSApp.modalWindow {
-            NSApp.abortModal()
-            NSApp.stopModal()
-        }
+    // End the modal session ONCE, only if one is actually running. Calling abortModal() AND
+    // stopModal() (the second with no live session) makes AppKit throw NSWindowEndWindowModalSession —
+    // an uncatchable Obj-C exception in Swift → SIGABRT. Crashed here when a Pusher-initiated
+    // quitAndRestartApp fired while a modal was up (see AppDelegate.quitAndRestartApp / pusherEvents).
+    if NSApp.modalWindow != nil {
+        NSApp.abortModal()
     }
 }
 
