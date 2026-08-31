@@ -1789,14 +1789,19 @@ func getWebViewLoadFailedVcObject()->webViewLoadFailedVc{
 }
 
 
-var menuWcObj:commonWindowController?
-func getMenuWindowObject()->commonWindowController{
+var menuWcObj:MenuWc?
+func getMenuWindowObject()->MenuWc{
     if menuWcObj == nil{
-        menuWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+        menuWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("MenuWc")) as? MenuWc
         menuWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
         menuWcObj?.window?.standardWindowButton(.zoomButton)?.isHidden = true
         menuWcObj?.window?.standardWindowButton(.miniaturizeButton)?.isHidden = true
-        menuWcObj?.window?.collectionBehavior = .stationary // make it visible even if stage manager is on // 19/6/25
+        // The window is a non-activating NSPanel (class set in the storyboard MenuWc scene) so opening the
+        // menu never activates Focus Bear or switches Spaces. The .nonactivatingPanel style bit only takes
+        // effect because the window's class is NSPanel. It is deliberately NOT canJoinAllSpaces /
+        // fullScreenAuxiliary — that would float it over every app's full-screen and leave it stuck on top;
+        // instead it's brought over another app's full-screen space on demand (see togglePopover).
+        menuWcObj?.window?.styleMask.insert(.nonactivatingPanel)
     }
     return menuWcObj!
 }

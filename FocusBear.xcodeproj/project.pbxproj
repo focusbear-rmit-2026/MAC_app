@@ -17,6 +17,7 @@
 		130FE95D2FA4C88E00E9C386 /* HotkeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130FE95C2FA4C88E00E9C386 /* HotkeyService.swift */; };
 		130FFDBB2E4C663800694795 /* blankController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130FFDBA2E4C663800694795 /* blankController.swift */; };
 		130FFDBD2E4C666300694795 /* logsUploadingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130FFDBC2E4C666300694795 /* logsUploadingVc.swift */; };
+		13113975302F2F6700800CC8 /* MenuWc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13113974302F2F6700800CC8 /* MenuWc.swift */; };
 		13130A772F769929005842C6 /* askSetDistractionsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13130A762F769929005842C6 /* askSetDistractionsVc.swift */; };
 		13188D722DEED55900E67A44 /* server in Resources */ = {isa = PBXBuildFile; fileRef = 13188D712DEED55800E67A44 /* server */; };
 		13188D742DEEE30300E67A44 /* flaskServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13188D732DEEE30300E67A44 /* flaskServer.swift */; };
@@ -461,6 +462,7 @@
 		130FE95C2FA4C88E00E9C386 /* HotkeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyService.swift; sourceTree = "<group>"; };
 		130FFDBA2E4C663800694795 /* blankController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = blankController.swift; sourceTree = "<group>"; };
 		130FFDBC2E4C666300694795 /* logsUploadingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = logsUploadingVc.swift; sourceTree = "<group>"; };
+		13113974302F2F6700800CC8 /* MenuWc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuWc.swift; sourceTree = "<group>"; };
 		13130A762F769929005842C6 /* askSetDistractionsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = askSetDistractionsVc.swift; sourceTree = "<group>"; };
 		13188D712DEED55800E67A44 /* server */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = server; sourceTree = "<group>"; };
 		13188D732DEEE30300E67A44 /* flaskServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = flaskServer.swift; sourceTree = "<group>"; };
@@ -1614,6 +1616,7 @@
 			children = (
 				8F6C10F327BD37F00013972F /* menuViewController.swift */,
 				1A2B3C4D5E6F000000000A02 /* MenuView.swift */,
+				13113974302F2F6700800CC8 /* MenuWc.swift */,
 				BEARF001 /* blocking_bear.png */,
 				8F8869CD2AE3AD4E0089E109 /* todoListToolVc.swift */,
 			);
@@ -2280,6 +2283,7 @@
 				8F8C3FE32A8D0158005CAF96 /* settingPopUpButtonItemVc.swift in Sources */,
 				8FBE37A52A8F5B640018402A /* aiSettingNewVc.swift in Sources */,
 				8FCE07AB2931F2A300DF4530 /* popUpOfflineVc.swift in Sources */,
+				13113975302F2F6700800CC8 /* MenuWc.swift in Sources */,
 				274E671628951DDD0030163F /* AllApi.swift in Sources */,
 				E0AA4E363AFEF2F7180E9848 /* TalkingClockManager.swift in Sources */,
 				8F6465CE2A612C58009A3341 /* tblCellUrlRelaxMode.swift in Sources */,

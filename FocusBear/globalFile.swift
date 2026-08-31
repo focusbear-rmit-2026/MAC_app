@@ -3709,6 +3709,61 @@ func runCommandAsRoot(command: String, arguments: [String]) {
 
 
 
+/// True when the frontmost OTHER app occupies a native (green-button) full-screen Space on the
+/// main (menu-bar) display. A native full-screen window covers the entire display INCLUDING the
+/// menu-bar strip, whereas a merely-maximised window stops below the menu bar — so a full-height,
+/// full-width layer-0 window owned by the frontmost app means we're on its full-screen Space.
+/// Used to fall back from the popover (which renders on Focus Bear's own Space and stays hidden
+/// there) to the detached window menu, which shows correctly over another app's full-screen Space.
+func isFrontmostAppInNativeFullScreen() -> Bool {
+    guard let frontApp = NSWorkspace.shared.frontmostApplication,
+          frontApp.bundleIdentifier != Bundle.main.bundleIdentifier else { return false }
+    let pid = frontApp.processIdentifier
+    guard let mainScreen = NSScreen.main,
+          let infoList = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]]
+    else { return false }
+    let screenH = mainScreen.frame.height
+    let screenW = mainScreen.frame.width
+    for info in infoList {
+        guard let ownerPID = info[kCGWindowOwnerPID as String] as? Int, pid_t(ownerPID) == pid,
+              let layer = info[kCGWindowLayer as String] as? Int, layer == 0,
+              let boundsDict = info[kCGWindowBounds as String] as? [String: Any],
+              let bounds = CGRect(dictionaryRepresentation: boundsDict as CFDictionary)
+        else { continue }
+        if bounds.height >= screenH - 1 && bounds.width >= screenW - 1 { return true }
+    }
+    return false
+}
+
+/// True when the frontmost OTHER app is covering the whole main screen — EITHER native full-screen (window
+/// at y=0 over the menu bar) OR non-native full-screen / a maximised window that fills everything BELOW the
+/// menu bar (y≈menuBarHeight, e.g. iTerm's non-native full-screen). In both cases the popover/menu window
+/// must float above the app. Broader than `isFrontmostAppInNativeFullScreen`, which only matches the y=0
+/// native case and so MISSES non-native full-screen (where the menu still can't render normally).
+func isFrontmostAppCoveringScreen() -> Bool {
+    guard let frontApp = NSWorkspace.shared.frontmostApplication,
+          frontApp.bundleIdentifier != Bundle.main.bundleIdentifier else { return false }
+    let pid = frontApp.processIdentifier
+    guard let mainScreen = NSScreen.main,
+          let infoList = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]]
+    else { return false }
+    let screenH = mainScreen.frame.height
+    let screenW = mainScreen.frame.width
+    let menuBarHeight = max(0, mainScreen.frame.maxY - mainScreen.visibleFrame.maxY)
+    for info in infoList {
+        guard let ownerPID = info[kCGWindowOwnerPID as String] as? Int, pid_t(ownerPID) == pid,
+              let layer = info[kCGWindowLayer as String] as? Int, layer == 0,
+              let boundsDict = info[kCGWindowBounds as String] as? [String: Any],
+              let bounds = CGRect(dictionaryRepresentation: boundsDict as CFDictionary)
+        else { continue }
+        let coversWidth = bounds.width >= screenW - 1
+        let coversHeightBelowMenuBar = bounds.height >= screenH - menuBarHeight - 1
+        let flushToTop = bounds.minY <= menuBarHeight + 1
+        if coversWidth && coversHeightBelowMenuBar && flushToTop { return true }
+    }
+    return false
+}
+
 func isFocusBearMenuVisible()->Bool{
     if SettingsManagerObject.isMenuPopoverEnabled{
         return appdelegate?.popover.isShown ?? false

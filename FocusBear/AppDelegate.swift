@@ -3001,7 +3001,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         addLog(text: "[user-action] Top bar focus bear button clicked")
         if isFocusBearMenuVisible(){
-            closePopover()
+            // In window mode, if another app is covering the screen (full-screen) the menu may be stuck
+            // behind it — re-show it (close + open) so it comes back to the front over the full-screen app,
+            // instead of toggling it closed. Otherwise (popover mode, or nothing covering) a click just
+            // closes the menu, as normal.
+            if !SettingsManagerObject.isMenuPopoverEnabled{
+                if isFrontmostAppCoveringScreen(){
+                    closePopover()
+                    showPopover(isDefaultButton: isDefaultButton)
+                }else{
+                    closePopover()
+                }
+            }else{
+                closePopover()
+            }
         } else{
             addLog(text: "popover is not visible")
             if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._CUSTOM_ROUTINE_{
@@ -3032,16 +3045,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         if isDefaultButton{
             if let button = statusItem.button{
+                // Popover mode floats over another app's native full-screen Space by raising its window and
+                // joining all spaces (below). Window mode uses a plain non-activating NSPanel that does NOT
+                // join all spaces — it's brought over a full-screen app on demand instead (see togglePopover).
                 if SettingsManagerObject.isMenuPopoverEnabled{
                     popover.show(relativeTo: button.bounds, of: button, preferredEdge: NSRectEdge.minY)
-                    // Make the POPOVER'S own window key (not the status button's). The old
-                    // `button.window?.becomeKey()` left the status-item window key and the popover
-                    // non-key, so the .transient popover never armed its outside-click auto-dismiss —
-                    // clicking away didn't close the menu. This matches the floating-bar path below.
+                    // Make the POPOVER'S own window key (not the status button's) so the .transient popover
+                    // arms its outside-click auto-dismiss.
                     menuViewControllerObj?.view.window?.makeKey()
+
+                    // Raise the popover to .popUpMenu and let it join all spaces so it appears over another
+                    // app's full-screen space (and stays visible under Stage Manager). popUpMenu (vs the old
+                    // .statusBar) sits ABOVE an app's traditional full-screen window, which occludes lower
+                    // levels.
+                    if let window = popover.contentViewController?.view.window {
+                        window.level = .popUpMenu
+                        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+                    }
                 }else{
-                    getMenuWindowObject().showWindow(self)
-                    NSApplication.shared.activate(ignoringOtherApps: true)
+                    // Window mode: getMenuWindowObject() is a non-activating NSPanel (MenuWc), so opening it
+                    // never activates Focus Bear or switches Spaces. Just order it front; bringing it over
+                    // another app's full-screen space is handled on demand in togglePopover.
+                    let wc = getMenuWindowObject()
+                    wc.window?.orderFrontRegardless()
                 }
                 addLog(text: "showPopover End")
             }
