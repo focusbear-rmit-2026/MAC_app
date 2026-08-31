@@ -1193,7 +1193,16 @@ class GeekModeSegmentedControl: NSSegmentedControl {
                 break;
             }
         }
-        
+
+        // #2352: the Blocking tab (boxBlocks path) also hosts strictnessVc and shows the Geek/Simple
+        // toggle, but the boxSettings branch above doesn't cover it — so switching mode while on the
+        // Blocking tab never reloaded row visibility (Always Allowed Apps stayed hidden until you left
+        // the tab and came back). Reload it live here too, and keep its own toggle in sync.
+        if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+            strictnessVcObj?.reloadDataForAppMode()
+            tabStrictnessContainerVcObj?.segmentControlGeekMode?.setSelected(true, forSegment: geekMode ? geekModeIndex : simpleModeIndex)
+        }
+
         if SettingsManagerObject.isGeekModeEnabled{
             allApiObject.capturePosthog(event: "switch-to-geek-mode", metadata: [:])
         }else{

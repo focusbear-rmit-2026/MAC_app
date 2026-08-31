@@ -48,7 +48,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     var disableReasonCustomRoutine = "Disabled because your custom routine is in progress. Go to the Custom Routine tab to continue."
     
     var lastSelectedBox:mainWindowListBox?
-    private var isToolsSectionExpanded = true
+    // #2352 (Bala feedback): TOOLS starts COLLAPSED on every launch (not persisted). It auto-expands
+    // only when a tool inside it becomes selected — see selectableListBoxSelectionDidChange.
+    private var isToolsSectionExpanded = false
     private var hiddenToolsPopover: NSPopover?
 
     override func viewDidLoad() {
@@ -180,13 +182,13 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         ensureMenuScrolls()
 
         // Custom Routine is removed from the menu (now lives in the Day Plan's Custom Routines
-        // panel). setExpanded(true) above runs before the accordion's onStateChanged is assigned,
-        // so the closure doesn't hide it on first load — hide it explicitly here. Tab Audit is
-        // restored (visible by default, user-hideable) — its initial visibility is set below by
-        // refreshToolsVisibility(), via the hideableTools list above.
+        // panel); hide it explicitly here.
         boxCustomRoutine.isHidden = true
 
-        boxToolsItems.setExpanded(true)
+        // #2352: start the TOOLS section COLLAPSED on every launch. setExpanded runs before
+        // onStateChanged is assigned, so it doesn't apply row visibility itself — refreshToolsVisibility()
+        // below does that (and hides every tool row, since isToolsSectionExpanded defaults to false).
+        boxToolsItems.setExpanded(false)
         boxToolsItems.onStateChanged = { [weak self] isExpanded in
             print("Tools is now \(isExpanded ? "expanded" : "collapsed")")
             self?.isToolsSectionExpanded = isExpanded
@@ -195,8 +197,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxToolsItems.onGearClicked = { [weak self] in
             self?.showHiddenToolsPopover()
         }
-        // setExpanded(true) above ran before onStateChanged was assigned, so it didn't apply
-        // hidden-row state on first load — apply it explicitly now.
+        // setExpanded(false) above ran before onStateChanged was assigned, so it didn't apply
+        // hidden-row state on first load — apply it explicitly now (collapses all tool rows).
         refreshToolsVisibility()
 
         boxPreferences.setExpanded(true)
@@ -346,6 +348,17 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         for (box, id) in addOnHideableTools {
             box?.isHidden = !isToolsSectionExpanded || ToolVisibilityStore.isHidden(id)
         }
+    }
+
+    /// True if `box` is one of the rows living under the collapsible TOOLS section (storyboard tools +
+    /// the programmatic Focus Button / Time Tracker / Late No More add-ons). Used to auto-expand TOOLS
+    /// when a tool is selected (#2352).
+    private func isToolBox(_ box: mainWindowListBox) -> Bool {
+        let toolBoxes: [mainWindowListBox?] = [
+            boxFocusMusic, boxBrainDump, boxTodoPlayer, boxMotivation, boxBrowsersTabAudit,
+            boxFocusButtonTool, boxTimeTrackerTool, boxLateNoMoreTool
+        ]
+        return toolBoxes.contains { $0 === box }
     }
 
     private func showHiddenToolsPopover() {
@@ -620,6 +633,12 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     
     func selectableListBoxSelectionDidChange(_ box: mainWindowListBox) {
         lastSelectedBox = box
+        // #2352: TOOLS is collapsed by default; auto-expand it when a tool inside it becomes the
+        // selection (e.g. the app restores onto a tool view, or a tool is opened from the menu) so the
+        // highlighted tool stays visible.
+        if !isToolsSectionExpanded, isToolBox(box) {
+            boxToolsItems.setExpanded(true)   // fires onStateChanged → sets the flag + refreshToolsVisibility()
+        }
         switch box{
 
         case boxHabits:
