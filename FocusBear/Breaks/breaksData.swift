@@ -137,10 +137,7 @@ func detectNatualBreaks(){
     if !SettingsManagerObject.isDetectNatualBreaksEnabled{
         return;
     }
-    var lastEvent:CFTimeInterval = 0
-    lastEvent = CGEventSource.secondsSinceLastEventType(CGEventSourceStateID.hidSystemState, eventType: CGEventType(rawValue: ~0)!)
-    
-    let idleTimeValue = Int(lastEvent)
+    let idleTimeValue = Int(secondsSinceLastUserInput())
 //    if currentState != ._MORNING_HABIT_ && currentState != ._MICRO_BREAK_ && (isHabitAlreadyShowed || currentState == ._POSTPONE_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !appdelegate!.isUserOnMeeting{
 //        checkIsNaturalBreakStarted(idleTimeValue: idleTimeValue)
 //    }else{

@@ -6890,10 +6890,7 @@ class AllApi:NSObject {
 
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-                    let json: [String: Any] = [
-                        "in_focus": inFocus,
-                        "device_id": currentDeviceId
-                    ]
+                    let json = classSessionHeartbeatBody(inFocus: inFocus)
 
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)
                     request.httpBody = jsonData

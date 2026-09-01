@@ -638,10 +638,7 @@ class teacherSessionManager: NSObject {
             let request = makeRequest(responsePathUrl: responsePathUrl)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            let json: [String: Any] = [
-                "in_focus": false,
-                "device_id": currentDeviceId
-            ]
+            let json = classSessionHeartbeatBody(inFocus: false)
             let jsonData = try? JSONSerialization.data(withJSONObject: json)
             request.httpBody = jsonData
             let semaphore = DispatchSemaphore(value: 0)

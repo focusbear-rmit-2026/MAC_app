@@ -2370,9 +2370,7 @@ func addEntryInProductivityStatsCsv(){
     
     let isoString = isoFormatter.string(from: date)
     
-    var lastEvent:CFTimeInterval = 0
-    lastEvent = CGEventSource.secondsSinceLastEventType(CGEventSourceStateID.hidSystemState, eventType: CGEventType(rawValue: ~0)!)
-    let idleTimeValue = Int(lastEvent)
+    let idleTimeValue = Int(secondsSinceLastUserInput())
     var averageTabCount = 0
     var averageTabDuration = 0
 

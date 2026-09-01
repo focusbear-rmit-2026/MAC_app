@@ -365,6 +365,30 @@ var arrFocusAlignmentScore = ["30", "40", "50", "60", "70", "80", "90", "95", "9
 func secondsToHoursMinutesSeconds (seconds : Int) -> (Int, Int, Int) {
     return (seconds / 3600, (seconds % 3600) / 60, (seconds % 3600) % 60)
 }
+
+// Seconds since the last user HID input (mouse/keyboard) system-wide.
+func secondsSinceLastUserInput() -> TimeInterval {
+    return CGEventSource.secondsSinceLastEventType(CGEventSourceStateID.hidSystemState, eventType: CGEventType(rawValue: ~0)!)
+}
+
+// Body for POST /class-session/:id/heartbeat. `in_focus`/`device_id` stay as-is;
+// `idle_seconds` (engagement) is always sent so the backend can score per student.
+// `alignment_score` (site-relevance) is sent only when AI relevance-checking is actually
+// active — gated on isAIBlockingEnabled() rather than the student's raw isAiCheckUrlEnabled,
+// so during a class it follows the TEACHER's allow-list AI setting (which takes precedence).
+// That keeps the score present exactly when it's being computed: no omitted score when the
+// teacher enabled AI but the student's own toggle is off, and no stale score in the reverse case.
+func classSessionHeartbeatBody(inFocus: Bool) -> [String: Any] {
+    var body: [String: Any] = [
+        "in_focus": inFocus,
+        "device_id": currentDeviceId,
+        "idle_seconds": Int(secondsSinceLastUserInput())
+    ]
+    if SettingsManagerObject.isAIBlockingEnabled() {
+        body["alignment_score"] = currentFocusAlignmentScore
+    }
+    return body
+}
 func getStringTimeFromSeconds(seconds : Int)->String{
     let (h,m,s) = secondsToHoursMinutesSeconds(seconds: seconds)
     var stringTime: String = ""
