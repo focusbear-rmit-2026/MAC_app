@@ -8348,12 +8348,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         focusModeOpenCurrentAppForAlignmentScore(appNameLowercased: nameLowercased)
                         return;
                     }else if !isAppAllowed{
-                        
-                        
+
+
                         focusModeOpenCurrentAppForAlignmentScore(appNameLowercased: nameLowercased)
                         focusTryToBlockUnwantedApp(runningApp: runningApp, appName: name, appNameLowercased: nameLowercased)
-                        focusModeHelper.stopUrlTimer()
-                        
+                        // focusTryToBlockUnwantedApp may SYNCHRONOUSLY allow a browser: tryCheckAppFromAi
+                        // appends it to arrAllowedAppsInCuddlyModeCurrentFocus (strictness != normal, or
+                        // data-collection mode) — in both cuddly and teacher/AI mode. When that happens the
+                        // browser IS now allowed, so its URLs must be checked: (re)start the URL timer
+                        // instead of stopping it. Previously this branch ALWAYS stopped the timer and
+                        // returned before reaching setTimeCheckUrlsForFocusMode below, so on the FIRST visit
+                        // to a browser no sites were blocked — only the SECOND visit (browser already in the
+                        // allowed list, so it takes the allowed branch) started URL checking.
+                        if arrBrowsersLowerCasedNames.contains(nameLowercased), arrAllowedAppsInCuddlyModeCurrentFocus.contains(runningApp){
+                            setTimeCheckUrlsForFocusMode(nameLowercased: nameLowercased)
+                        }else{
+                            focusModeHelper.stopUrlTimer()
+                        }
+
                         return;
                     }else{
                         if isSelfApp{
