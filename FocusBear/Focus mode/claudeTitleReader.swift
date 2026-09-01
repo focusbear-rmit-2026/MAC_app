@@ -16,8 +16,16 @@ final class claudeTitleReader {
 
     private init() {}
 
+    /// Cap for AX messages to a target app. Without it, `AXUIElementCopyAttributeValue` blocks in
+    /// `mach_msg` on the CALLING (main) thread waiting on a slow/unresponsive app's AX server — causing
+    /// multi-second App Hangs / beachballs (Sentry FOCUS-BEAR-MACOS-1AD). Set on the application element,
+    /// it applies to all AX messages to that app (incl. child window/text elements). A missed title just
+    /// returns nil (today's "blank" behaviour), which is fine — the AI check works without it.
+    private static let axMessagingTimeoutSeconds: Float = 0.5
+
     func chatTitle(for runningApp: NSRunningApplication) -> String? {
         let appElement = AXUIElementCreateApplication(runningApp.processIdentifier)
+        AXUIElementSetMessagingTimeout(appElement, Self.axMessagingTimeoutSeconds)
 
         var windowRef: CFTypeRef?
 
