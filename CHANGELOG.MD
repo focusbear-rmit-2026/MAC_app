@@ -521,3 +521,16 @@ Reduced UI freezes ("app not responding") by capping how long the app will wait 
 Behind the scenes:
 The AI Blocking Logs debug panel now keeps its history across app restarts (last 50 entries), instead of being wiped every time — and each account's logs are kept separate. (#2319)
 AuDHD web-quiz results now link the quiz identity into analytics when opened from the results deep link, for better funnel tracking. (#2326)
+
+
+# v3.35.534
+
+Menu:
+The Tools section in the sidebar now starts collapsed for a tidier menu — expand it when you need a tool, and it opens automatically if you're already using one. (#2352)
+Fixed the menu-bar popover not appearing when another app was in full-screen — it now shows on top of the full-screen space. (#2287)
+
+Blocking:
+Simplified the Blocking screen: "Super Distracting Sites" and "Super Distracting Apps" are no longer listed there, and "Always Allowed Apps" now appears only in Geek Mode. (#2352)
+
+Reliability:
+Fixed a rare crash when quitting the app. (#2318)
