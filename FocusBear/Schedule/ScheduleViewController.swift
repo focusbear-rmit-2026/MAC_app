@@ -155,6 +155,9 @@ enum ScheduleText {
     static var tasksSnoozeHelp: String { t("tasksSnoozeHelp", "2d = in 2 days · 2w = in 2 weeks · tue = next Tuesday · tom = tomorrow · -1d / yesterday = a past day · 1 Jul = a date") }
     static var tasksSnoozeConfirm: String { t("tasksSnoozeConfirm", "Move") }
     static var tasksSnoozeCancel: String { t("tasksSnoozeCancel", "Cancel") }
+    static var tasksSnoozeSmart: String { t("tasksSnoozeSmart", "Choose a good time for me") }
+    static var tasksSnoozeSmartInfo: String { t("tasksSnoozeSmartInfo", "Finds the next day which has sufficient free time for the task") }
+    static func tasksSnoozeNextSlot(_ day: String) -> String { String(format: t("tasksSnoozeNextSlot", "Next free slot: %@"), day) }
     static var tasksNoProject: String { t("tasksNoProject", "No project") }
     static var tasksProjectHint: String { t("tasksProjectHint", "Type #project to group this task") }
     static var customRoutinesTitle: String { t("customRoutinesTitle", "Custom routines") }
@@ -691,6 +694,9 @@ class scheduleViewController: NSViewController {
         tasksPanel.translatesAutoresizingMaskIntoConstraints = false
         tasksPanel.onChange = { [weak self] in self?.refreshTasksHighlights() }
         tasksPanel.onAddFromList = { [weak self] in self?.showTodoPicker() }
+        // Smart snooze asks the host (which owns the routine/calendar → schedule build) how much free
+        // time a future day has, so it can move a task to the next day it actually fits.
+        tasksPanel.scheduleFreeMinutesForDate = { [weak self] date in self?.scheduleFreeMinutes(on: date) ?? 0 }
         let separator = NSView()
         separator.wantsLayer = true
         separator.layer?.backgroundColor = NSColor.separatorColor.cgColor
@@ -1892,6 +1898,65 @@ class scheduleViewController: NSViewController {
         }
         let busy = merged.reduce(0) { $0 + Int($1.1.timeIntervalSince($1.0)) }
         return max(0, Int(windowEnd.timeIntervalSince(windowStart)) - busy)
+    }
+
+    /// Total busy seconds (meetings, breaks and habits — deep-work is FREE, task-able time) inside
+    /// `[windowStart, windowEnd]`, with overlapping busy blocks merged so nothing is double-counted.
+    /// Used by `scheduleFreeMinutes(on:)` (fixed productive-day window) for smart snooze.
+    private func busySeconds(in blocks: [ScheduleBlock], windowStart: Date, windowEnd: Date) -> Int {
+        guard windowEnd > windowStart else { return 0 }
+        let busyKinds: Set<ScheduleBlockKind> = [.meeting, .breakSprint, .habit]
+        var merged: [(Date, Date)] = []
+        for iv in blocks.filter({ busyKinds.contains($0.kind) && $0.end > $0.start })
+            .map({ (max($0.start, windowStart), min($0.end, windowEnd)) })   // clip to the window
+            .filter({ $0.1 > $0.0 })
+            .sorted(by: { $0.0 < $1.0 }) {
+            if let m = merged.last, iv.0 <= m.1 {
+                merged[merged.count - 1].1 = max(m.1, iv.1)
+            } else {
+                merged.append(iv)
+            }
+        }
+        return merged.reduce(0) { $0 + Int($1.1.timeIntervalSince($1.0)) }
+    }
+
+    /// Raw schedule-free minutes on `date`: the productive window [morning-routine start, evening-routine
+    /// start] minus meetings/breaks/habits — WITHOUT subtracting that day's tasks. Smart snooze needs the
+    /// schedule-free and the task load separately so it can apply its cumulative-rollover model. Builds the
+    /// day's timetable exactly as the Day Plan does (routine segments + meetings → `ScheduleBuilder`).
+    /// Intended for FUTURE days (no "now" clamp): the window is fixed to the productive day, so a
+    /// completely empty day correctly reports its whole span as free. Synchronous (EventKit's
+    /// `meetings(for:)` is a synchronous query), so the caller runs it inline.
+    func scheduleFreeMinutes(on date: Date) -> Int {
+        let cal = Calendar.current
+        let dayStart = cal.startOfDay(for: date)
+        let anchor = ScheduleTab.timeOnDate(startTime, date: date) ?? dayStart
+        let dayEnd = cal.date(bySettingHour: 23, minute: 59, second: 0, of: date) ?? anchor
+        let eveningStart = ScheduleTab.timeOnDate(shutOffTime, date: date)
+        let segments = ScheduleTab.segmentsForDate(date)
+        let meetings = CalendarManager.shared.meetings(for: date)
+        // Same deep-work split cadence the live reload uses (a 0 break still splits at 5-min).
+        let storedBreakDur = (UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes) as? Int) ?? 5
+        let dwBreakMinutes = storedBreakDur > 0 ? storedBreakDur : 5
+        let blocks = ScheduleBuilder.build(
+            segments: segments,
+            meetings: meetings,
+            now: anchor,
+            dayEnd: dayEnd,
+            leaveBufferSeconds: 2 * 60,
+            outOfOrderAllowed: SettingsManagerObject.isOutOfOrderHabitsAllowed,
+            eveningRoutineStart: eveningStart,
+            morningRoutineStart: anchor,
+            meetingsFrom: dayStart,   // count every meeting that day as busy, not just after the morning start
+            deepWorkCutoff: ScheduleTab.timeOnDate(cutOffTime, date: date),
+            sprintWorkSeconds: breakAfterMinutes * 60,
+            sprintBreakSeconds: dwBreakMinutes * 60,
+            labels: ScheduleText.engineLabels)
+        let windowStart = anchor
+        let windowEnd = eveningStart ?? dayEnd
+        guard windowEnd > windowStart else { return 0 }
+        let busy = busySeconds(in: blocks, windowStart: windowStart, windowEnd: windowEnd)
+        return max(0, Int(windowEnd.timeIntervalSince(windowStart)) - busy) / 60
     }
 
     /// Run `body` with this view's appearance current, so any `NSColor.cgColor` resolved inside
