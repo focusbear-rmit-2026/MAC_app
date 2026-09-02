@@ -2883,6 +2883,8 @@
         "dismissRepeatingJustThisOne": "Solo este",
         "dismissRepeatingAllSeries": "Todos los eventos de la serie",
         "dismissRepeatingCancel": "Cancelar",
+        "editRepeatingTitle": "Este es un evento repetido",
+        "editRepeatingInfo": "¿Quieres cambiar solo este evento o todos los eventos de la serie?",
         "pastHabitComplete": "Completado",
         "pastHabitCompleteHint": "Lo hice pero olvidé registrarlo 😅",
         "tasksDetailsLabel": "Detalles",

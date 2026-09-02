@@ -222,6 +222,18 @@ final class CalendarManager {
         return store.event(withIdentifier: id)
     }
 
+    /// The specific occurrence of a recurring series (all occurrences share one `eventIdentifier`) whose
+    /// start is at/near `date`. `store.event(withIdentifier:)` only ever returns the FIRST occurrence, so a
+    /// per-occurrence edit must fetch the occurrence via a date-bounded predicate and pick the closest match.
+    private func occurrence(ofEventID id: String, at date: Date) -> EKEvent? {
+        guard access == .authorized else { return nil }
+        let predicate = store.predicateForEvents(withStart: date.addingTimeInterval(-3600),
+                                                 end: date.addingTimeInterval(3600), calendars: nil)
+        return store.events(matching: predicate)
+            .filter { $0.eventIdentifier == id }
+            .min(by: { abs($0.startDate.timeIntervalSince(date)) < abs($1.startDate.timeIntervalSince(date)) })
+    }
+
     /// The current recurrence of an event (first rule's frequency), for pre-filling the edit form.
     func recurrence(of event: EKEvent) -> Recurrence {
         switch event.recurrenceRules?.first?.frequency {
@@ -232,21 +244,39 @@ final class CalendarManager {
         }
     }
 
-    /// Update an existing event's title/time/calendar/recurrence and save. For a recurring event
-    /// the change spans this and future occurrences; otherwise just the event. Returns true on success.
+    /// Update an existing event's title/time/calendar/recurrence and save. The caller passes the
+    /// `span`: `.thisEvent` edits a single occurrence, `.futureEvents` the whole series. Editing a
+    /// single occurrence of a recurring event must NOT rewrite the series recurrence rule, so the
+    /// recurrence change is only applied when the edit spans the series (or the event wasn't recurring).
+    /// Returns true on success.
     @discardableResult
     func updateEvent(id: String, title: String, start: Date, end: Date,
-                     calendarID: String?, recurrence: Recurrence, notes: String? = nil) -> Bool {
-        guard access == .authorized, let event = store.event(withIdentifier: id) else { return false }
+                     calendarID: String?, recurrence: Recurrence, notes: String? = nil,
+                     span: EKSpan = .futureEvents, occurrenceStart: Date? = nil) -> Bool {
+        guard access == .authorized else { return false }
+        // store.event(withIdentifier:) returns the FIRST occurrence of a recurring series, so ANY edit of
+        // a LATER occurrence must target THAT specific occurrence (fetched by date) — for BOTH spans:
+        //  • .thisEvent   → editing the first occurrence left the picked one (e.g. tomorrow's) unchanged.
+        //  • .futureEvents → editing the first occurrence with the picked occurrence's date rebased the
+        //    WHOLE series to that future date, spoiling every event. Anchoring .futureEvents on the picked
+        //    occurrence instead changes that occurrence and all future ones (standard "this and future").
+        let event: EKEvent
+        if let occStart = occurrenceStart, let occ = occurrence(ofEventID: id, at: occStart) {
+            event = occ
+        } else if let e = store.event(withIdentifier: id) {
+            event = e
+        } else {
+            return false
+        }
+        let wasRecurring = event.hasRecurrenceRules
         event.title = title
         event.startDate = start
         event.endDate = end
         if let notes = notes { event.notes = notes.isEmpty ? nil : notes }
         if let cal = calendarID.flatMap({ store.calendar(withIdentifier: $0) }) { event.calendar = cal }
-        applyRecurrence(recurrence, to: event)
-        let recurring = recurrence != .none || (event.recurrenceRules?.isEmpty == false)
+        if span == .futureEvents || !wasRecurring { applyRecurrence(recurrence, to: event) }
         do {
-            try store.save(event, span: recurring ? .futureEvents : .thisEvent)
+            try store.save(event, span: span)
             invalidateMeetingsCache()
             return true
         } catch {

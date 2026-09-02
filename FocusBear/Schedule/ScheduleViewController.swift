@@ -88,6 +88,9 @@ enum ScheduleText {
     static var dismissRepeatingJustThisOne: String { t("dismissRepeatingJustThisOne", "Just this one") }
     static var dismissRepeatingAllSeries: String { t("dismissRepeatingAllSeries", "All events in series") }
     static var dismissRepeatingCancel: String { t("dismissRepeatingCancel", "Cancel") }
+    // Prompt shown when editing (not dismissing) a recurring event — choose one occurrence vs the series.
+    static var editRepeatingTitle: String { t("editRepeatingTitle", "This is a repeating event") }
+    static var editRepeatingInfo: String { t("editRepeatingInfo", "Do you want to change only this event, or all events in the series?") }
     static var showHabits: String { t("showHabits", "Show habits") }
     static var hideHabits: String { t("hideHabits", "Hide habits") }
     static var deepWorkSession: String { t("deepWorkSession", "Deep work") }
@@ -533,6 +536,9 @@ class scheduleViewController: NSViewController {
     private var addCalendarIDs: [String] = []
     /// Event id being edited (nil = creating a new event).
     private var editingEventID: String?
+    // For a recurring event, the start of the SPECIFIC occurrence being edited, so a "just this one" edit
+    // targets that occurrence rather than the series' first instance. nil for new/non-recurring events.
+    private var editingOccurrenceStart: Date?
     private var addSelectedColor: NSColor?
     private var addColorButtons: [NSButton] = []
 
@@ -1093,9 +1099,9 @@ class scheduleViewController: NSViewController {
     }
 
     /// Open the edit form for an existing calendar event, anchored to its card.
-    func openEventEditor(eventID: String, from view: NSView) {
+    func openEventEditor(eventID: String, occurrenceStart: Date?, from view: NSView) {
         DayPlanAnalytics.capture(DayPlanAnalytics.eventSettingsOpened)
-        requestCalendarThen { [weak self] in self?.presentEventForm(editingID: eventID, relativeTo: view) }
+        requestCalendarThen { [weak self] in self?.presentEventForm(editingID: eventID, occurrenceStart: occurrenceStart, relativeTo: view) }
     }
 
     /// Run `action` once we have calendar access (requesting it first if undetermined).
@@ -1135,11 +1141,16 @@ class scheduleViewController: NSViewController {
     }
 
     /// Shared create/edit event form. `editingID` nil = create; otherwise pre-fills from the event.
-    private func presentEventForm(editingID: String?, relativeTo anchor: NSView) {
+    private func presentEventForm(editingID: String?, occurrenceStart: Date? = nil, relativeTo anchor: NSView) {
         editingEventID = editingID
+        editingOccurrenceStart = occurrenceStart
         let existing = editingID.flatMap { CalendarManager.shared.event(withID: $0) }
-        let start = existing?.startDate ?? defaultEventStart()
-        let end = existing?.endDate ?? start.addingTimeInterval(30 * 60)
+        // `existing` is the series' FIRST occurrence for a repeat, so prefer the clicked occurrence's start
+        // (keeping the event's duration) — otherwise the editor would show the first instance's date/time.
+        let duration = existing.map { $0.endDate.timeIntervalSince($0.startDate) } ?? (30 * 60)
+        let start = occurrenceStart ?? existing?.startDate ?? defaultEventStart()
+        let end = occurrenceStart != nil ? start.addingTimeInterval(duration)
+                                         : (existing?.endDate ?? start.addingTimeInterval(30 * 60))
 
         let header = makeLabel(editingID == nil ? ScheduleText.addEvent : ScheduleText.editEventTitle, size: 14, bold: true)
 
@@ -1365,6 +1376,7 @@ class scheduleViewController: NSViewController {
         addEventPopover?.close()
         addEventPopover = nil
         editingEventID = nil
+        editingOccurrenceStart = nil
     }
 
     @objc private func saveEventForm() {
@@ -1383,8 +1395,19 @@ class scheduleViewController: NSViewController {
         let wasEditing = editingEventID != nil
         let eventID: String?
         if let editID = editingEventID {
+            let span: EKSpan
+            if CalendarManager.shared.event(withID: editID)?.hasRecurrenceRules == true {
+                switch promptRecurringEditScope() {
+                case .thisEvent: span = .thisEvent
+                case .series:    span = .futureEvents
+                case .cancel:    return   // user backed out; leave the editor as-is
+                }
+            } else {
+                span = .thisEvent
+            }
             guard CalendarManager.shared.updateEvent(id: editID, title: finalTitle, start: start, end: end,
-                                                     calendarID: calendarID, recurrence: recurrence, notes: notes) else {
+                                                     calendarID: calendarID, recurrence: recurrence, notes: notes,
+                                                     span: span, occurrenceStart: editingOccurrenceStart) else {
                 showAddEventError(); NSSound.beep(); return
             }
             eventID = editID
@@ -1410,6 +1433,7 @@ class scheduleViewController: NSViewController {
         addEventPopover?.close()
         addEventPopover = nil
         editingEventID = nil
+        editingOccurrenceStart = nil
         // For a brand-new event, jump to its day so the user sees it land. For an edit, stay on the
         // day the user was viewing — a repeating event's `start` is its first instance, so jumping
         // would yank the view back weeks/months (e.g. editing today's task sent the user to May).
@@ -1424,6 +1448,24 @@ class scheduleViewController: NSViewController {
     private func showAddEventError() {
         addErrorLabel?.stringValue = ScheduleText.eventSaveError
         addErrorLabel?.isHidden = false
+    }
+
+    private enum RecurringEditScope { case thisEvent, series, cancel }
+
+    /// Asks whether an edit to a recurring event should apply to just this occurrence or the whole
+    /// series, so a single-occurrence move doesn't rewrite the series (see CalendarManager.updateEvent).
+    private func promptRecurringEditScope() -> RecurringEditScope {
+        let alert = NSAlert()
+        alert.messageText = ScheduleText.editRepeatingTitle
+        alert.informativeText = ScheduleText.editRepeatingInfo
+        alert.addButton(withTitle: ScheduleText.dismissRepeatingJustThisOne)   // "Just this one"
+        alert.addButton(withTitle: ScheduleText.dismissRepeatingAllSeries)     // "All events in series"
+        alert.addButton(withTitle: ScheduleText.dismissRepeatingCancel)        // "Cancel"
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:  return .thisEvent
+        case .alertSecondButtonReturn: return .series
+        default:                       return .cancel
+        }
     }
 
     // MARK: - Lifecycle / refresh
@@ -2988,7 +3030,9 @@ class scheduleViewController: NSViewController {
         let card = styledCard(fill: fill, border: border, hasBorder: block.kind != .allDone, content: content)
         // Click a meeting card (anywhere but the ✕) to open its edit form.
         if block.kind == .meeting, let eid = block.eventID {
-            card.identifier = NSUserInterfaceItemIdentifier("edit:\(eid)")
+            // Carry the occurrence's start (epoch, first so it can't collide with "|" in an identifier) so
+            // a "just this one" edit targets THIS occurrence, not the series' first instance.
+            card.identifier = NSUserInterfaceItemIdentifier("edit:\(block.start.timeIntervalSince1970)|\(eid)")
             let click = NSClickGestureRecognizer(target: self, action: #selector(meetingCardClicked(_:)))
             click.delegate = self   // so it ignores clicks on the ✕ (dismiss) button
             card.addGestureRecognizer(click)
@@ -2998,7 +3042,14 @@ class scheduleViewController: NSViewController {
 
     @objc private func meetingCardClicked(_ g: NSClickGestureRecognizer) {
         guard let card = g.view, let raw = card.identifier?.rawValue, raw.hasPrefix("edit:") else { return }
-        openEventEditor(eventID: String(raw.dropFirst("edit:".count)), from: card)
+        // Identifier is "edit:<occurrenceStartEpoch>|<eventID>" (epoch first; the id can contain "|").
+        let payload = String(raw.dropFirst("edit:".count))
+        let parts = payload.split(separator: "|", maxSplits: 1, omittingEmptySubsequences: false)
+        if parts.count == 2, let epoch = TimeInterval(parts[0]) {
+            openEventEditor(eventID: String(parts[1]), occurrenceStart: Date(timeIntervalSince1970: epoch), from: card)
+        } else {
+            openEventEditor(eventID: payload, occurrenceStart: nil, from: card)   // legacy/no-occurrence form
+        }
     }
 
     /// Finds the meeting card's ✕ (dismiss) button, if any, anywhere in its subtree.
