@@ -2442,6 +2442,11 @@ var shouldEndPomodoroBreakAtTime:Date?
 /// pinning the work to the main thread (the frequent focus-timer / browser detection scripts run on
 /// this background queue and never block the UI).
 private let appleScriptSerialQueue = DispatchQueue(label: "com.focusbear.applescript")
+// exitFullScreen runs its AppleScript here when called on the main thread, so the app-switch path
+// never blocks the UI (see the App-Hang note on exitFullScreen). MUST be separate from
+// appleScriptSerialQueue — runAppleScriptSafely dispatches onto that queue and waits, so running
+// exitFullScreen there too would deadlock.
+private let fullScreenExitQueue = DispatchQueue(label: "com.focusbear.fullscreenexit", qos: .userInitiated)
 
 /// Cumulative main-thread AppleScript wait budget per runloop turn (#2315). runAppleScriptSafely caps
 /// each INDIVIDUAL main-thread wait at 1.2s, but callers that chain 2–3 scripts back-to-back (e.g.
@@ -3445,6 +3450,17 @@ func exitFullScreen(runningApp:NSRunningApplication){
         requestSystemEventsAutomationOnceIfNeeded()
         return
     }
+    // The AX warm-up + isAppInFullScreen (+ the ⌃⌘F keystroke) are 2–3 blocking AppleScript reads,
+    // each capped at ~1.2s on the main thread by runAppleScriptSafely. exitFullScreen runs on EVERY
+    // app switch (frontApplicationChanged → block checks), so on the main thread those reads stack into
+    // a >2s UI freeze — the "App Hanging: App hanging for at least 2000 ms" reported in Sentry. The exit
+    // is fire-and-forget (no caller reads a result — it just sends ⌃⌘F), so run the AppleScript off the
+    // main thread. See fullScreenExitQueue for why it can't be appleScriptSerialQueue.
+    guard Thread.isMainThread else { performExitFullScreen(runningApp: runningApp); return }
+    fullScreenExitQueue.async { performExitFullScreen(runningApp: runningApp) }
+}
+
+private func performExitFullScreen(runningApp:NSRunningApplication){
     let appName = runningApp.localizedName ?? ""
     // Warm up Accessibility first. The FIRST AX query to an app whose fullscreen window is on its own
     // Space comes back "cold" — `count of windows` = 0 and `window 1` throws -1719 — and only the NEXT
