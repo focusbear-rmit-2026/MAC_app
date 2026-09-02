@@ -6703,7 +6703,11 @@ class AllApi:NSObject {
         }
     }
 
-    func declineClassSession(sessionId:String, completionHandler: @escaping(_ result: Bool) -> ()){
+    // `reason` is the student's typed "why are you declining?" note from the friction decline flow. The
+    // decline endpoint accepts it as an optional `reason` field (backend task filed); when it's empty we
+    // fall back to the empty-JSON body the server already required, so this stays back-compatible with the
+    // old no-reason callers.
+    func declineClassSession(sessionId:String, reason:String = "", completionHandler: @escaping(_ result: Bool) -> ()){
         addLog(text: "func call:- declineClassSession")
 
         appdelegate!.credentialsManager.credentials {credentialsInfo in
@@ -6723,8 +6727,14 @@ class AllApi:NSObject {
 
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                     // The server rejects an empty body when Content-Type is application/json
-                    // ("Body cannot be empty…"), so send an empty JSON object.
-                    request.httpBody = "{}".data(using: .utf8)
+                    // ("Body cannot be empty…"), so send an empty JSON object when there's no reason;
+                    // otherwise send the trimmed reason as `reason`.
+                    let trimmedReason = reason.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if trimmedReason.isEmpty{
+                        request.httpBody = "{}".data(using: .utf8)
+                    }else{
+                        request.httpBody = try? JSONSerialization.data(withJSONObject: ["reason": trimmedReason])
+                    }
                     let task = URLSession.shared.dataTask(with: request as URLRequest) {
                         data, response, error in
 
@@ -6754,7 +6764,7 @@ class AllApi:NSObject {
                                 }else{
                                     self.isApiDeclineClassSessionErrorFound = true
                                     addLog(text: "error declineClassSession:- try second time")
-                                    self.declineClassSession(sessionId: sessionId, completionHandler: { bool in
+                                    self.declineClassSession(sessionId: sessionId, reason: reason, completionHandler: { bool in
                                         completionHandler(bool)
                                         return;
                                     })
