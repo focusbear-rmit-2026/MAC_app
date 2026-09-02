@@ -534,3 +534,18 @@ Simplified the Blocking screen: "Super Distracting Sites" and "Super Distracting
 
 Reliability:
 Fixed a rare crash when quitting the app. (#2318)
+
+
+# v3.35.535
+
+Day Plan:
+Snoozing a task now offers "Choose a good time for me" — Focus Bear reschedules it to the next weekday that has enough free time, spreading tasks out instead of piling them onto an already-busy day. (#2368)
+
+Teacher mode:
+Asking your teacher to unlock an app or website now requires a reason, so the teacher has context to decide. (#2372)
+
+Website & app blocking:
+Fixed distracting sites not being blocked the first time you open a browser after a focus session or class session starts — blocking used to only kick in after you left the browser and came back. (#2373)
+
+Reliability:
+Reduced freezes/beachballs by capping how long the app waits while reading a browser or app window title, so a slow or unresponsive app can no longer stall the interface. (#2366)
