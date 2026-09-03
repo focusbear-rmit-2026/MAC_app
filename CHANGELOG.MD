@@ -549,3 +549,15 @@ Fixed distracting sites not being blocked the first time you open a browser afte
 
 Reliability:
 Reduced freezes/beachballs by capping how long the app waits while reading a browser or app window title, so a slow or unresponsive app can no longer stall the interface. (#2366)
+
+
+# v3.35.536
+
+Day Plan:
+Editing a repeating calendar event now asks whether to change just that event or the whole series — and applies the change to the exact occurrence you picked (previously a later occurrence could be missed or the whole series accidentally shifted). (#2375)
+
+Teacher mode:
+New class-session (PACT) invite screen — see what you're allowed to use and when the session ends, then "Activate the PACT", or decline with a reason via a deliberate press-and-hold. (#2377)
+
+Reliability:
+Fixed UI freezes when switching apps during a focus or class session, by moving the full-screen-exit check off the main thread. (#2379)
