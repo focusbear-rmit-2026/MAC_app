@@ -2508,8 +2508,24 @@ func focusModeStarttedResetAllData(){
 
 // MARK: - Focus New device button
 
-func startFocusModeFromFocusDeviceButton(diffMinutes:Int, shouldUpdateFocusButton:Bool, goal:String?, initiatedByRecording:Bool){
-    
+/// Outcome of a programmatic focus-session start, so callers (notably AppleScript scripting) can
+/// surface a precise reason instead of a silent no-op.
+enum FocusStartResult {
+    case started
+    case alreadyRunning
+    case paused
+    case hardcore
+    case activityRunning
+    case invalidDuration
+    case modeNotFound
+}
+
+/// Start a focus session outside the normal UI flow (focus button, audio recording, and — via the
+/// `focusModeIndex` override — AppleScript scripting). When `focusModeIndex` is nil the last-used
+/// focus mode is started (device-button behaviour); when supplied, that specific mode is started.
+@discardableResult
+func startFocusModeFromFocusDeviceButton(diffMinutes:Int, shouldUpdateFocusButton:Bool, goal:String?, initiatedByRecording:Bool, focusModeIndex:Int? = nil) -> FocusStartResult{
+
     if initiatedByRecording {
         addLog(text: "Focus session triggered by recording activity ")
     } else {
@@ -2527,16 +2543,16 @@ func startFocusModeFromFocusDeviceButton(diffMinutes:Int, shouldUpdateFocusButto
     
     if isFocusModeOn{
         addLog(text: "Ignoring focus device button: focus mode already running")
-        return;
+        return .alreadyRunning
     }else if isFocusModePaused{
         addLog(text: "Ignoring focus device button: focus mode is paused")
-        return;
+        return .paused
     }else if isHardCorePomodoroModeOn{
         addLog(text: "Ignoring focus device button: hardcore pomodoro mode is active")
-        return;
+        return .hardcore
     }else if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_ || currentState == ._SHUTOFFMAC_{
         addLog(text: "Ignoring focus device button: reason :- current state is \(currentState)")
-        return;
+        return .activityRunning
     }
     
     
@@ -2548,14 +2564,22 @@ func startFocusModeFromFocusDeviceButton(diffMinutes:Int, shouldUpdateFocusButto
         getTaskPlayerVcObject().loadRequest()
         
         var currentFocusModeIndex = 0
-        
-        for i in 0..<arrFocusType.count{
-            if arrFocusType[i]["id"] as? String  == lastRunningFocusModeId{
-                currentFocusModeIndex = i
-                break;
+
+        if let overrideIndex = focusModeIndex{
+            guard overrideIndex >= 0 && overrideIndex < arrFocusType.count else {
+                addLog(text: "Ignoring focus start: focus mode index \(overrideIndex) out of range")
+                return .modeNotFound
+            }
+            currentFocusModeIndex = overrideIndex
+        }else{
+            for i in 0..<arrFocusType.count{
+                if arrFocusType[i]["id"] as? String  == lastRunningFocusModeId{
+                    currentFocusModeIndex = i
+                    break;
+                }
             }
         }
-        
+
         let calendar = Calendar.current
         startFocusModeTime = Date()
         endFocusModeTime = calendar.date(byAdding: .minute, value: diffMinutes, to: startFocusModeTime!)
@@ -2608,7 +2632,13 @@ func startFocusModeFromFocusDeviceButton(diffMinutes:Int, shouldUpdateFocusButto
         appdelegate!.setStatusBarButtonTitleForFocusMode(title: intention)
         
         whatToAchieveInFocusBlock = intention
-        
+
+        // #2163: load this focus mode's saved task into the Todo Player, matching the menu/pomodoro start
+        // paths (startFocusFromMenu / pomodoroVc). The Todo Player payload reads focusModeTaskString; this
+        // path never set it, so sessions started from the focus button, audio recording or AppleScript
+        // attached no task to the mode while a menu-started one did.
+        focusModeTaskString = arrFocusType[currentFocusModeIndex]["lastTaskUsed"] as? String ?? ""
+
         DispatchQueue.global().async {
             sleep(1)
             DispatchQueue.main.async {
@@ -2644,8 +2674,10 @@ func startFocusModeFromFocusDeviceButton(diffMinutes:Int, shouldUpdateFocusButto
         //
         
         appdelegate!.focusModeStartted(isStartedByPusher: false)
+        return .started
     }else{
         addLog(text: "Ignoring focus device button: invalid diffMinutes \(diffMinutes)")
+        return .invalidDuration
     }
 }
 

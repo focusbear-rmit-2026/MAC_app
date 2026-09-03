@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dictionary SYSTEM "file://localhost/System/Library/DTDs/sdef.dtd">
+<dictionary title="Focus Bear Terminology" xmlns:xi="http://www.w3.org/2003/XInclude">
+
+    <!-- Pull in the standard Cocoa suite so `make`, `set`, `get`, `count`, `delete`, `exists` and the
+         base `application` class are available to scripts. -->
+    <xi:include href="file:///System/Library/ScriptingDefinitions/CocoaStandard.sdef" xpointer="xpointer(/dictionary/suite)"/>
+
+    <suite name="Focus Bear Suite" code="FBar"
+        description="Automate Focus Bear: start focus sessions and manage Day Plan tasks.">
+
+        <!-- ==================== Classes ==================== -->
+        <!-- Declared BEFORE the commands so the `task` class is known where commands reference it
+             (result type / responds-to); otherwise sdef warns "Expected class name … task". -->
+
+        <class name="application" code="capp" description="The Focus Bear application.">
+            <cocoa class="NSApplication"/>
+            <element type="task">
+                <cocoa key="tasks"/>
+            </element>
+        </class>
+
+        <class name="task" code="FBtk" plural="tasks"
+            description="A Focus Bear Day Plan task for today.">
+            <cocoa class="FBScriptTask"/>
+            <property name="id" code="ID  " type="text" access="r"
+                description="The unique identifier of the task.">
+                <cocoa key="uniqueID"/>
+            </property>
+            <property name="name" code="pnam" type="text"
+                description="The task title.">
+                <cocoa key="name"/>
+            </property>
+            <property name="completed" code="Cmpd" type="boolean"
+                description="Whether the task is done.">
+                <cocoa key="completed"/>
+            </property>
+            <property name="duration" code="Durn" type="integer"
+                description="Estimated duration in minutes.">
+                <cocoa key="duration"/>
+            </property>
+            <property name="project" code="Proj" type="text"
+                description="Project / tag name (empty if none).">
+                <cocoa key="project"/>
+            </property>
+            <property name="modification date" code="Mdat" type="date" access="r"
+                description="When the USER last modified this task; missing if never edited or only edited via AppleScript.">
+                <cocoa key="modificationDate"/>
+            </property>
+            <property name="modified by user" code="MdBu" type="boolean" access="r"
+                description="True if the user has modified this task (as opposed to only AppleScript).">
+                <cocoa key="modifiedByUser"/>
+            </property>
+            <responds-to command="complete">
+                <cocoa method="handleCompleteScriptCommand:"/>
+            </responds-to>
+        </class>
+
+        <!-- ==================== Commands ==================== -->
+
+        <command name="start focus session" code="FBarStFs"
+            description="Start a focus session for a given block list / focus mode.">
+            <cocoa class="FBStartFocusSessionCommand"/>
+            <direct-parameter type="text"
+                description="Name or id of the block list / focus mode to start."/>
+            <parameter name="with intention" code="Intn" type="text" optional="yes"
+                description="What you intend to achieve this session.">
+                <cocoa key="intention"/>
+            </parameter>
+            <parameter name="for duration" code="Durt" type="integer" optional="yes"
+                description="Session length in minutes (default 25).">
+                <cocoa key="duration"/>
+            </parameter>
+            <result type="text" description="A human-readable confirmation of what was started."/>
+        </command>
+
+        <command name="recently modified tasks" code="FBarRcnt"
+            description="Today's tasks the USER modified (never AppleScript-driven changes), so an external system can poll for real user changes without looping on its own writes.">
+            <cocoa class="FBRecentlyModifiedTasksCommand"/>
+            <parameter name="since" code="Sinc" type="date" optional="yes"
+                description="Only return tasks the user modified at or after this date.">
+                <cocoa key="since"/>
+            </parameter>
+            <result description="The matching tasks.">
+                <type type="task" list="yes"/>
+            </result>
+        </command>
+
+        <!-- An object-targeting verb: the task itself handles it (see the task class's <responds-to>).
+             A "complete task" name would also collide with the `task` class in the direct-object slot. -->
+        <command name="complete" code="FBarCmTk"
+            description="Mark a task as completed (or not).">
+            <direct-parameter type="specifier" description="The task to change."/>
+            <parameter name="completed" code="Cmpl" type="boolean" optional="yes"
+                description="Completion state to set (default true).">
+                <cocoa key="completed"/>
+            </parameter>
+        </command>
+    </suite>
+</dictionary>

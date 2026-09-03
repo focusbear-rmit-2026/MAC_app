@@ -199,6 +199,32 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
+    /// Called whenever an AppleScript command touches the app (custom verbs via runWhenAppReady, and the
+    /// standard get/set/make verbs via the `tasks` element accessors). Records that a script drove us and,
+    /// if we already finished launching in the background, brings the app to the foreground right away;
+    /// otherwise checkWindowState() will once loading completes.
+    @objc func fbNoteScriptingCommand() {
+        didHandleScriptingCommand = true
+        if isCheckWindowStateDone { fbActivateFromBackgroundLaunch() }
+    }
+
+    /// Foreground the app and clear the (late-rendering) splash after a background scripting launch. No-op
+    /// unless a script actually drove us and we're still inactive — so login/startup launches and normal
+    /// user launches (already frontmost) are left alone. Runs at most once per launch.
+    @objc func fbActivateFromBackgroundLaunch() {
+        guard didHandleScriptingCommand, !NSApplication.shared.isActive, !didForegroundFromScriptLaunch else { return }
+        didForegroundFromScriptLaunch = true
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        func dismissSplash() {
+            splashWcObj?.window?.orderOut(nil)
+            splashWcObj?.window?.close()
+        }
+        dismissSplash()
+        for delay in [0.3, 0.8, 1.5] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: dismissSplash)
+        }
+    }
+
     func applicationWillFinishLaunching(_ notification: Notification) {
         SentrySDK.start { options in
             options.dsn = "https://85574080eb088006a0f2b0f5d326d6ff@o4509122919006208.ingest.us.sentry.io/4509122992275456"
@@ -1371,6 +1397,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Insert code here to initialize your application
+
 
         // Start Wi-Fi profile auto-switching (#1000)
         WiFiMonitorService.shared.startMonitoring()
@@ -2557,6 +2584,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     /// hand-off waits on this before showing the main window, so the Day Plan can't be opened before
     /// the app is fully initialised (which crashed getNextRoutineInfo on a nil shutOffTime).
     var isCheckWindowStateDone = false
+    /// Set the first time an AppleScript command touches us (see fbNoteScriptingCommand). `tell application
+    /// … to <cmd>` LAUNCHES the closed app in the background first and only THEN sends the command, so the
+    /// launch itself looks like a normal launch (NSApplicationLaunchIsDefaultLaunchKey is true) — the only
+    /// reliable "a script drove us" signal is a command actually arriving. Combined with `!isActive` this
+    /// distinguishes a scripting launch (activate the app) from a login/startup launch (leave it backgrounded).
+    var didHandleScriptingCommand = false
+    /// Guards fbActivateFromBackgroundLaunch so we foreground/clear-splash only once per launch.
+    private var didForegroundFromScriptLaunch = false
     func initialWork(){
         addLog(text: "initialWork")
         isAppInitialLodded = true
@@ -3555,6 +3590,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         loadAllWindows()
         isCheckWindowStateDone = true
         isFirstRun = false
+
+        // Cold Apple-event launch: the app is up but still in the background (never activated). Bring it to
+        // the foreground now that it's ready, so it doesn't sit invisible/unresponsive until a Dock click.
+        // Also force out the splash, whose showWindow (applicationWillFinishLaunching) renders late under a
+        // background launch. Guarded by !isActive so a normal user launch that's already frontmost is left
+        // alone. Retried over ~1.5s to catch the late splash render.
+        // A script command that cold-launched us may have arrived before we finished loading — foreground now.
+        fbActivateFromBackgroundLaunch()
         
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{

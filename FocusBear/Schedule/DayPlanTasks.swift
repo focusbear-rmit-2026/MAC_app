@@ -551,18 +551,26 @@ struct DayPlanTask: Codable, Equatable {
     /// past). Optional so tasks stored before this field existed decode fine.
     var manuallyPlanned: Bool?
 
+    /// Timestamp of the last edit the USER made to this task (add / rename / complete / re-plan / …),
+    /// stamped by `DayPlanTaskStore` on `.user`-sourced writes only. Deliberately NOT set when the
+    /// change arrives through the AppleScript scripting commands (`.appleScript` source), so an
+    /// external automation polling `recently modified tasks` never loops on its own writes. nil for
+    /// tasks stored before this field existed and for AppleScript-created tasks never touched by the user.
+    var lastUserModifiedAt: Date?
+
     /// Sub-tasks as a non-optional list, for convenient counting/rendering.
     var subtaskList: [DayPlanSubtask] { subtasks ?? [] }
 
     init(id: String = UUID().uuidString, title: String, durationMinutes: Int = 15,
          done: Bool = false, sourceTaskId: String? = nil, blockKey: String? = nil,
          project: String? = nil, notes: String? = nil, subtasks: [DayPlanSubtask]? = nil,
-         outcome: Int? = nil, eisenhowerQuadrant: Int? = nil, manuallyPlanned: Bool? = nil) {
+         outcome: Int? = nil, eisenhowerQuadrant: Int? = nil, manuallyPlanned: Bool? = nil,
+         lastUserModifiedAt: Date? = nil) {
         self.id = id; self.title = title; self.durationMinutes = durationMinutes
         self.done = done; self.sourceTaskId = sourceTaskId; self.blockKey = blockKey
         self.project = project; self.notes = notes; self.subtasks = subtasks
         self.outcome = outcome; self.eisenhowerQuadrant = eisenhowerQuadrant
-        self.manuallyPlanned = manuallyPlanned
+        self.manuallyPlanned = manuallyPlanned; self.lastUserModifiedAt = lastUserModifiedAt
     }
 
     /// Colour for an importance value, banded into 4 (higher = hotter). nil when unset.
@@ -657,6 +665,14 @@ func prepopulateDayPlanTasks(for habit: habit?) {
 }
 
 /// Per-day local store for Day Plan tasks, persisted in UserDefaults as `{ "yyyy-MM-dd": [task] }`.
+/// Who triggered a task write. `.user` stamps `lastUserModifiedAt` (so `recently modified tasks`
+/// picks it up); `.appleScript` deliberately does not, so a third-party automation polling for user
+/// changes never sees — and never loops on — its own AppleScript-driven writes.
+enum TaskEditSource {
+    case user
+    case appleScript
+}
+
 final class DayPlanTaskStore {
     static let shared = DayPlanTaskStore()
     private init() { load() }
@@ -687,6 +703,20 @@ final class DayPlanTaskStore {
     func tasks(for date: Date) -> [DayPlanTask] {
         rollOverIfNeeded()
         return byDay[dayKey(date)] ?? []
+    }
+
+    /// Look up a single task by id on a given day (used by the AppleScript scripting layer to resolve
+    /// `task id "…"` specifiers back to live data).
+    func task(withID id: String, on date: Date) -> DayPlanTask? {
+        tasks(for: date).first { $0.id == id }
+    }
+
+    /// Tasks the USER modified on `date` at or after `since` (nil = any time the user ever touched it).
+    /// Backs the `recently modified tasks` scripting command: AppleScript-driven edits are excluded by
+    /// construction because they never set `lastUserModifiedAt` (see `TaskEditSource`).
+    func userModifiedTasks(since: Date?, on date: Date) -> [DayPlanTask] {
+        let cutoff = since ?? .distantPast
+        return tasks(for: date).filter { ($0.lastUserModifiedAt ?? .distantPast) >= cutoff }
     }
 
     /// Carry incomplete tasks forward from past days to today, once per day. Completed tasks stay in
@@ -722,9 +752,11 @@ final class DayPlanTaskStore {
         if changed { save() }
     }
 
-    func add(_ task: DayPlanTask, for date: Date) {
+    func add(_ task: DayPlanTask, for date: Date, source: TaskEditSource = .user) {
         // Never add the same imported to-do twice on a day.
         if let sid = task.sourceTaskId, contains(sourceTaskId: sid, for: date) { return }
+        var task = task
+        if source == .user { task.lastUserModifiedAt = Date() }
         byDay[dayKey(date), default: []].append(task); save()
         // #2148: a Day Plan task backed by a to-do is planned via `planned_date` (the pointer model);
         // this makes it show on GET /day-plan/day and hydrate on other devices. From-scratch tasks (no
@@ -735,11 +767,15 @@ final class DayPlanTaskStore {
         }
     }
 
-    func update(_ task: DayPlanTask, for date: Date) {
+    func update(_ task: DayPlanTask, for date: Date, source: TaskEditSource = .user) {
         let k = dayKey(date)
         guard let i = byDay[k]?.firstIndex(where: { $0.id == task.id }) else { return }
         let wasDone = byDay[k]![i].done
         let oldSubtasks = byDay[k]![i].subtasks
+        var task = task
+        // Stamp the user-modified timestamp only for real user edits — AppleScript-driven writes must
+        // stay invisible to `recently modified tasks` so an external poller never loops on its own writes.
+        if source == .user { task.lastUserModifiedAt = Date() }
         byDay[k]?[i] = task; save()
         // #2148: reflect a completion flip onto the underlying to-do's status so web/mobile update.
         // Only on an actual done transition, and only when we can echo the to-do's title + quadrant
