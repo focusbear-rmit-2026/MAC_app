@@ -2752,6 +2752,54 @@ func createTask(with name:String, dateString:String, shouldShowNotification:Bool
     })
 }
 
+/// Zoho's meeting product lives on `meeting.zoho.<region tld>` (`meeting.zoho.com`, `.eu`, `.in`,
+/// `.com.au`, …). The default Meetings allow-list used to say `meet.zoho.com`, which never matches a
+/// live Zoho call (#2388): the URL check is a substring wildcard, and "meet.zoho.com" is not a
+/// substring of "meeting.zoho.com".
+let zohoMeetingDomain = "meeting.zoho.com"
+/// Prefix shared by every regional Zoho Meeting host; used by the browser-meeting detector.
+let zohoMeetingHostPrefix = "meeting.zoho."
+private let legacyZohoMeetingDomain = "meet.zoho.com"
+private let zohoMeetingAppPath = "/Applications/Zoho Meeting.app"
+
+/// One-time, idempotent repair of a user's existing Meetings focus mode (created once, then stored
+/// locally and on the backend, so fixing the default alone leaves every existing user on the wrong
+/// domain): swap the legacy `meet.zoho.com` allow-list entry for `meeting.zoho.com` and add the Zoho
+/// Meeting desktop app. Returns true when something changed (the caller syncs it to the backend).
+///
+/// NOTE: `checkAllFocusModes()` calls this on EVERY app startup, and it re-adds any missing entry — so if
+/// a user manually removes `meeting.zoho.com` from the allow-list, or the Zoho Meeting app from the
+/// allowed apps, of their Meetings focus mode, both are added back on the next launch (and re-synced to
+/// the backend). These entries are enforced on purpose (a Meetings focus must allow Zoho meetings); there
+/// is currently no way for a user to permanently remove them.
+private func repairMeetingsFocusModeZohoEntries(at index: Int) -> Bool {
+    var changed = false
+    var allowedUrls = arrFocusType[index]["allowed_urls"] as? [String] ?? []
+    func stripped(_ url: String) -> String {
+        url.lowercased().replacingOccurrences(of: "https://", with: "").replacingOccurrences(of: "http://", with: "")
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/ "))
+    }
+    if let legacyIndex = allowedUrls.firstIndex(where: { stripped($0) == legacyZohoMeetingDomain }) {
+        allowedUrls[legacyIndex] = "http://\(zohoMeetingDomain)"
+        changed = true
+    }
+    if !allowedUrls.contains(where: { stripped($0) == zohoMeetingDomain }) {
+        allowedUrls.append("http://\(zohoMeetingDomain)")
+        changed = true
+    }
+    var allowedApps = arrFocusType[index]["allowed_apps"] as? [String] ?? []
+    if !allowedApps.contains(zohoMeetingAppPath) {
+        allowedApps.append(zohoMeetingAppPath)
+        changed = true
+    }
+    guard changed else { return false }
+    arrFocusType[index]["allowed_urls"] = allowedUrls
+    arrFocusType[index]["allowed_apps"] = allowedApps
+    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+    addLog(text: "checkAllFocusModes: repaired Meetings focus mode Zoho entries (#2388)")
+    return true
+}
+
 func checkAllFocusModes(){
     var isDefaultContain = false
     var defaultContainLocation = -1
@@ -2778,6 +2826,9 @@ func checkAllFocusModes(){
             if let isMeetings = arrFocusType[i]["isMeetings"] as? Bool{//this key will only be awailable in default focus type
                 if  isMeetings{
                     isMeetingsContain = isMeetings
+                    if repairMeetingsFocusModeZohoEntries(at: i) {
+                        allApiObject.editFocusMode(focusType: arrFocusType[i], completionHandler: { _ in })
+                    }
                 }
             }
             if let isLockedFocus = arrFocusType[i]["isLockedFocus"] as? Bool{//this key will only be awailable in default focus type
@@ -2857,7 +2908,7 @@ func checkAllFocusModes(){
     
     if !isMeetingsContain{
         let id = getUuid()
-        let dic:[String:Any] = ["id":id, "name":"Meetings", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Teams.app", "/Applications/Microsoft Teams classic.app", "/Applications/zoom.us.app", "/Applications/Jitsi.app", "/Applications/Safari.app", "/Applications/Google Chrome.app", "/Applications/Firefox.app", "/Applications/Slack.app", "/Applications/Sidekick.app", "/Applications/Brave Browser.app"], "allowed_urls": ["http://meet.google.com", "http://meet.zoho.com", "focusmate.com", "shimmer.care", "webex.com", "gotomeeting.com", "goto.com/meeting",  "skype.com", "adobeconnect", "join.me", "joinme.com", "slack.com", "whereby.com", "chime.aws", "aws.amazon.com/chime/", "dialpad.com"], "isOn": false, "isAllowedAllApps":false, "isMeetings":true, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp, "isAutoDoNotDisturbEnabled": true]//#453 , "isBlockedAllUrls":false , "isAllowedAllUrls":false
+        let dic:[String:Any] = ["id":id, "name":"Meetings", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Teams.app", "/Applications/Microsoft Teams classic.app", "/Applications/zoom.us.app", "/Applications/Jitsi.app", "/Applications/Safari.app", "/Applications/Google Chrome.app", "/Applications/Firefox.app", "/Applications/Slack.app", "/Applications/Sidekick.app", "/Applications/Brave Browser.app", "/Applications/Zoho Meeting.app"], "allowed_urls": ["http://meet.google.com", "http://\(zohoMeetingDomain)", "focusmate.com", "shimmer.care", "webex.com", "gotomeeting.com", "goto.com/meeting",  "skype.com", "adobeconnect", "join.me", "joinme.com", "slack.com", "whereby.com", "chime.aws", "aws.amazon.com/chime/", "dialpad.com"], "isOn": false, "isAllowedAllApps":false, "isMeetings":true, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp, "isAutoDoNotDisturbEnabled": true]//#453 , "isBlockedAllUrls":false , "isAllowedAllUrls":false
         
         if arrFocusType.count == 0{
             arrFocusType.append(dic)

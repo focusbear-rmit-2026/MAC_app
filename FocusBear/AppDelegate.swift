@@ -4107,6 +4107,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         return true
                     }
                 }
+                // Zoho Meeting is regional (meeting.zoho.com / .eu / .in / .com.au …); a room URL on
+                // any of them is a live call regardless of which one the allow-list names (#2388).
+                // This host-prefix + non-empty-path check (urlElements.last != domain, i.e. there's a
+                // room path after the host) is what actually detects a Zoho call — the allowed_urls loop
+                // below can't. A user would add the bare host "meeting.zoho.com" to the meetings allow
+                // list, but isUrlValid never matches it against a real room URL (e.g.
+                // https://meeting.zoho.in/olvy-zbl-eyk): the room URL carries a path and often a
+                // different region, so it's never equal to the host. Hence we detect the call here.
+                if domain.hasPrefix(zohoMeetingHostPrefix){
+                    let urlElements = activeTabUrl.components(separatedBy: "/")
+                    if urlElements.last != domain{
+                        return true
+                    }
+                }
                 
                 let arrAllowedUrlsMeetingsFocus = focus["allowed_urls"] as? [String] ?? []
                 for turl in arrAllowedUrlsMeetingsFocus{
