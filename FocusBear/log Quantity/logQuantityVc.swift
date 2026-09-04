@@ -64,6 +64,12 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         btnOk.title = "OK"
         btnCancel.title = "Cancel"
         btnCancel.isSecondaryButton = true
+        // Return commits the value via OK, Escape cancels. keyEquivalent gives default-button
+        // semantics for a normal-window presentation; in the borderless full-screen window a
+        // key equivalent isn't reliably delivered, so the AppDelegate keyDown monitor also routes
+        // Return to btnOkClicked whenever this dialog is visible (see the keyDown monitor in AppDelegate).
+        btnOk.keyEquivalent = "\r"
+        btnCancel.keyEquivalent = "\u{1b}"
         if let logQuantityInfo = configjson.value(forKey: "logQuantityInfo") as? NSDictionary{
             if let buttonCancelText = logQuantityInfo.value(forKey: "buttonCancelText") as? String{
                 btnCancel.title = buttonCancelText

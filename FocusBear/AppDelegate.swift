@@ -2853,6 +2853,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                    || fid.hasPrefix("taskModal") || fid == "projectFilter" {
                                 return event
                             }
+                            // Log Quantity dialog: Return always commits the entered value via OK,
+                            // regardless of the current routine state/action. The state-nested handlers
+                            // below reach btnOkClicked only on some paths (they miss e.g. the action-bar /
+                            // past-habit and _SPECIAL_ACTIVITY_ entries), so Return did nothing there.
+                            // Resign first responder first to commit an in-progress textFieldCount edit
+                            // (its value is stored on controlTextDidEndEditing). Returning nil stops the
+                            // event so it can't also start/skip a habit — in the borderless full-screen
+                            // window a plain default button doesn't receive Return and the habit "Start"
+                            // button would otherwise steal it.
+                            if let logQ = logQuantityVcObj,
+                               getHabitsVcObject().view.subviews.contains(logQ.view) {
+                                logQ.view.window?.makeFirstResponder(nil)
+                                logQ.btnOkClicked(self)
+                                return nil
+                            }
                             if mainWindowControllerObj?.window?.isVisible ?? false && (leftMenuVcObj?.boxHabits.isSelected ?? false || leftMenuVcObj?.boxCustomRoutine.isSelected ?? false || leftMenuVcObj?.boxMicroBreaks.isSelected ?? false){
                                 if currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                                     if askPostponeVcObj != nil{
