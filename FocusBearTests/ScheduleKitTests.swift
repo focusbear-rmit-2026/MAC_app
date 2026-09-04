@@ -63,8 +63,39 @@ final class ScheduleKitTests: XCTestCase {
                          habit(1, "B", minutes: 30),
                          habit(2, "C", minutes: 5)], start: now, end: t(9, 20))]
         let blocks = habitBlocks(build(segs, now: now, dayEnd: t(18, 0)))
-        XCTAssertEqual(blocks.map { $0.title }, ["A"],
+        XCTAssertEqual(blocks.filter { !$0.didOverflow }.map { $0.title }, ["A"],
                        "Once a habit can't fit, later (shorter) habits must not leap-frog it")
+        // The habits that didn't fit aren't dropped: they form the "not enough time today" group, in
+        // routine order, anchored after the last habit that did fit so they sort below it.
+        let overflow = blocks.filter { $0.didOverflow }
+        XCTAssertEqual(overflow.map { $0.title }, ["B", "C"])
+        XCTAssertTrue(overflow.allSatisfy { $0.start >= blocks[0].end })
+        XCTAssertTrue(overflow.allSatisfy { $0.isActionable })
+    }
+
+    // MARK: - Not enough time today (overflow group)
+
+    func testWholeDayEventPutsEntireRoutineInOverflowGroup() {
+        let now = t(9, 0)
+        // A meeting spanning the whole routine window: no habit can be placed at all. The routine must
+        // still be visible (and doable) as one collapsed "not enough time today" group — not vanish.
+        let allDay = ScheduleMeetingInput(id: "m1", title: "Offsite", start: t(8, 0), end: t(18, 0))
+        let segs = [seg([habit(0, "A", minutes: 10),
+                         habit(1, "B", minutes: 15)], start: now, end: t(12, 0))]
+        let blocks = habitBlocks(build(segs, meetings: [allDay], now: now, dayEnd: t(18, 0)))
+        XCTAssertEqual(blocks.map { $0.title }, ["A", "B"])
+        XCTAssertTrue(blocks.allSatisfy { $0.didOverflow }, "nothing fit, so the whole routine overflows")
+        XCTAssertTrue(blocks.allSatisfy { $0.isActionable })
+        // With no timed habit, the first overflow habit is the routine's next-up selection.
+        XCTAssertEqual(blocks.filter { $0.isCurrent }.map { $0.title }, ["A"])
+    }
+
+    func testOverflowGroupNotProducedForPreviewSegment() {
+        let now = t(9, 0)
+        let allDay = ScheduleMeetingInput(id: "m1", title: "Offsite", start: t(8, 0), end: t(18, 0))
+        let segs = [seg([habit(0, "A", minutes: 10)], start: now, end: t(12, 0), actionable: false)]
+        let blocks = habitBlocks(build(segs, meetings: [allDay], now: now, dayEnd: t(18, 0)))
+        XCTAssertTrue(blocks.isEmpty, "a non-actionable (preview) routine drops what doesn't fit")
     }
 
     // MARK: - Meetings

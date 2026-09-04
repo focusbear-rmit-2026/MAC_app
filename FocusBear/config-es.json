@@ -3016,7 +3016,8 @@
         "meetingRestore": "Mostrar esta reunión de nuevo",
         "meetingsShowDismissedCount": "Mostrar reuniones ocultas (%d)",
         "meetingColour": "Color de la reunión",
-        "meetingColourDefault": "Predeterminado"
+        "meetingColourDefault": "Predeterminado",
+        "notEnoughTimeToday": "No hay tiempo suficiente hoy"
     },
     "timeTrackerViewInfo":{
         "menuTimeTracker": "Seguimiento de tiempo",

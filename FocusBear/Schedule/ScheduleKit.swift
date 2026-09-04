@@ -38,6 +38,9 @@ struct ScheduleBlock {
     var habitId: String?       // the habit's server id — used to complete/skip a PAST habit by id
     var isEarlier: Bool = false // from an "earlier today" section (past routine); actioned by id, not index
     var isDismissed: Bool = false // a meeting the user hid with ✕, shown only when "Show dismissed events" is on
+    var overflowDurationSeconds: Int? = nil // overflow habits are zero-duration at the cursor (so they group
+    // and don't skew free time); this carries each habit's own length so the UI can lay the "not enough time
+    // today" rows out back-to-back as an illustrative sequential range instead of a bogus 8:29–8:29 slot.
 
     init(kind: ScheduleBlockKind, title: String, start: Date, end: Date,
          habitIndex: Int? = nil, isActionable: Bool = false, isCurrent: Bool = false,
@@ -160,26 +163,39 @@ enum ScheduleBuilder {
             // to now (which would drop a window that already ended).
             let segStart = seg.isEarlier ? seg.windowStart : max(seg.windowStart, now)
             guard seg.windowEnd > segStart, !seg.habits.isEmpty else { continue }
+            // An "earlier today"/past routine is read-only history: render EVERY habit (struck if done,
+            // tap-to-complete if not), never truncated to what fit in its window. That window (e.g. a ~3h
+            // morning block) is far shorter than the routine's full duration, so the normal overflow path
+            // would DROP the later habits — which are typically the still-undone ones — leaving only the
+            // early, already-completed habits visible. The card then looks (and, via routineComplete,
+            // reports itself) "Completed" when the routine is only partly done. For a non-actionable
+            // struck-through list the placement times past the window are cosmetic, so lift the fit
+            // constraint for earlier sections and place them all.
+            let placementWindowEnd = seg.isEarlier ? Date.distantFuture : seg.windowEnd
 
             // Place habits strictly in their list order (no reordering). Each starts at the
             // running cursor, pushed past any meeting it would overlap, and everything after it
             // follows — so a long first habit stays first instead of being leap-frogged.
             var cursor = segStart
             var placed = [Int]()
+            var overflow = [ScheduleHabitInput]()   // habits that don't fit before the window ends
+            var hitOverflow = false
             for h in seg.habits {
                 // A habit with a cutoff stays visible until that cutoff time has actually passed —
                 // not merely because its *projected* slot would land after it. The user can still do
                 // it (possibly out of order) right up to the cutoff, so don't hide it early. (An
                 // "earlier today" section is past history: show every habit regardless of cutoff.)
                 if !seg.isEarlier, let cutoff = h.cutoff, now > cutoff { continue }
+                // Habits run in sequence, so once one doesn't fit, none after it fits either — collect
+                // the rest as overflow instead of leap-frogging to a shorter later habit.
+                if hitOverflow { overflow.append(h); continue }
                 let remaining = max(0, h.durationSeconds - (h.isPlaying ? h.elapsedSeconds : 0))
                 let dur = Double(remaining)
                 guard let start = nextFreeStart(from: cursor, duration: dur,
-                                                busy: habitBusy, windowEnd: seg.windowEnd) else {
-                    // Can't fit before the window ends. Habits run in sequence, so everything after this
-                    // one can't fit either — stop here rather than leap-frogging to a shorter later habit
-                    // (which made a long habit like "Go for run" vanish while the next one still showed).
-                    break
+                                                busy: habitBusy, windowEnd: placementWindowEnd) else {
+                    hitOverflow = true
+                    overflow.append(h)
+                    continue
                 }
                 let end = start.addingTimeInterval(dur)
                 cursor = end
@@ -194,11 +210,42 @@ enum ScheduleBuilder {
                 occupied.append((start, end))
             }
 
-            // The whole active routine is tappable (tap a habit to move the action bar to it);
-            // its next-up habit is the default selection. Preview routines aren't actionable.
-            if seg.actionable, let nextIdx = placed.min(by: { blocks[$0].start < blocks[$1].start }) {
+            // Overflow: for the ACTIVE routine (e.g. a packed morning where the habits don't fit before
+            // the first meeting), surface the habits that couldn't be placed as a SEPARATE collapsed
+            // "not enough time today" group instead of dropping them — the user can still see and do their
+            // routine. Anchor them ALL at `cursor` (the end of the last habit that fit) so the sort keeps
+            // them below the placed habits — NOT at the top of a group that did have time (reported:
+            // "habits I don't have time for appear at the top of an accordion where I do"). They share the
+            // same start deliberately: the deep-work filler that occupies the freed time ALSO starts at
+            // `cursor`, and the final sort's kind tie-break (habit before deepWork) plus the habitIndex
+            // tie-break keep the whole overflow group CONTIGUOUS and in routine order. (A previous per-item
+            // offset gave them distinct starts, so a deep-work block sorted BETWEEN two overflow anchors and
+            // split them into two "not enough time today" cards.) When no habit fit at all, cursor ==
+            // segStart and this whole segment is one overflow group. Preview/earlier routines drop them.
+            if seg.actionable {
+                for h in overflow {
+                    var b = ScheduleBlock(kind: .habit, title: h.title, start: cursor, end: cursor,
+                                          habitIndex: h.index, routineName: seg.name)
+                    b.isActionable = true
+                    b.isDone = h.isDone
+                    b.habitId = h.id
+                    b.didOverflow = true
+                    // Keep the block zero-duration (start == end == cursor) so it groups and doesn't count
+                    // as busy time, but remember the habit's own length so the UI can show a sequential range.
+                    b.overflowDurationSeconds = max(0, h.durationSeconds - (h.isPlaying ? h.elapsedSeconds : 0))
+                    blocks.append(b)
+                    placed.append(blocks.count - 1)
+                }
+            }
+
+            // The whole active routine is tappable (tap a habit to move the action bar to it); its
+            // next-up habit is the default selection — the earliest TIMED habit, or (if the whole
+            // routine overflowed) the first overflow habit. Preview routines aren't actionable.
+            if seg.actionable {
                 for i in placed { blocks[i].isActionable = true }
-                blocks[nextIdx].isCurrent = true
+                let nextIdx = placed.filter { !blocks[$0].didOverflow }.min(by: { blocks[$0].start < blocks[$1].start })
+                    ?? placed.min(by: { blocks[$0].start < blocks[$1].start })
+                if let nextIdx = nextIdx { blocks[nextIdx].isCurrent = true }
             } else {
                 for i in placed { blocks[i].isActionable = false }
             }
@@ -252,7 +299,11 @@ enum ScheduleBuilder {
 
         return blocks.sorted { a, b in
             if a.start != b.start { return a.start < b.start }
-            return kindOrder(a.kind) < kindOrder(b.kind)
+            if kindOrder(a.kind) != kindOrder(b.kind) { return kindOrder(a.kind) < kindOrder(b.kind) }
+            // Same start & kind: order habits by their routine index so the overflow "not enough time
+            // today" habits (all anchored at the same cursor) stay contiguous and in routine order — a
+            // deep-work block at the same start still sorts after them (habit kindOrder < deepWork).
+            return (a.habitIndex ?? Int.max) < (b.habitIndex ?? Int.max)
         }
     }
 

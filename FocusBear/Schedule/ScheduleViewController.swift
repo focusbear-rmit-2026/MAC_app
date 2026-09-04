@@ -32,6 +32,8 @@ enum ScheduleText {
     static var habitsDone: String { t("habitsDone", "Habits done") }
     static var meeting: String { t("meeting", "meeting") }
     static var noHabitsLeft: String { t("noHabitsLeft", "No habits left for now — enjoy your free time! 🎉") }
+    /// Header suffix of the collapsed group holding the habits that didn't fit before the day's meetings.
+    static var notEnoughTimeToday: String { t("notEnoughTimeToday", "Not enough time today") }
     static var nothingScheduled: String { t("nothingScheduled", "Nothing scheduled for this day.") }
     static var calendarBanner: String { t("calendarBanner", "Connect your calendar to see meetings and free time for deep work.") }
     static var grantAccess: String { t("grantAccess", "Grant access") }
@@ -614,19 +616,24 @@ class scheduleViewController: NSViewController {
     /// unlike the active routine. Rebuilt each reload(); a user click still overrides (see below).
     private var earlierRoutineNames: Set<String> = []
 
-    private func routineCollapseKey(_ name: String, sectionId: String, date: Date) -> String {
-        "\(name)|\(Int(date.timeIntervalSince1970 / 86400))|\(sectionId)"
+    /// `overflow` keys the "not enough time today" group separately from the routine's timed group (the
+    /// same routine can produce both on one day), so each expands/collapses independently.
+    private func routineCollapseKey(_ name: String, sectionId: String, date: Date, overflow: Bool = false) -> String {
+        "\(name)|\(Int(date.timeIntervalSince1970 / 86400))|\(sectionId)\(overflow ? "|overflow" : "")"
     }
-    private func isRoutineCollapsed(name: String, sectionId: String, date: Date) -> Bool {
-        if let explicit = routineCollapseOverrides[routineCollapseKey(name, sectionId: sectionId, date: date)] { return explicit }
+    private func isRoutineCollapsed(name: String, sectionId: String, date: Date, overflow: Bool = false) -> Bool {
+        if let explicit = routineCollapseOverrides[routineCollapseKey(name, sectionId: sectionId, date: date, overflow: overflow)] { return explicit }
+        // The overflow group (the routine didn't fit in the day) starts collapsed so it doesn't dominate
+        // a packed plan — the user can still expand it and do the habits.
+        if overflow { return true }
         // Past routines shown under the "earlier today" toggle start collapsed even on today.
         if earlierRoutineNames.contains(name) { return true }
         // Default: future days start collapsed; today (and past) stay expanded.
         return Calendar.current.compare(date, to: Date(), toGranularity: .day) == .orderedDescending
     }
-    private func toggleRoutineCollapsed(name: String, sectionId: String, date: Date) {
-        let key = routineCollapseKey(name, sectionId: sectionId, date: date)
-        routineCollapseOverrides[key] = !isRoutineCollapsed(name: name, sectionId: sectionId, date: date)
+    private func toggleRoutineCollapsed(name: String, sectionId: String, date: Date, overflow: Bool = false) {
+        let key = routineCollapseKey(name, sectionId: sectionId, date: date, overflow: overflow)
+        routineCollapseOverrides[key] = !isRoutineCollapsed(name: name, sectionId: sectionId, date: date, overflow: overflow)
         lastRenderSignature = nil
         reload()
     }
@@ -2143,8 +2150,12 @@ class scheduleViewController: NSViewController {
         while i < blocks.count {
             if blocks[i].kind == .habit {
                 let name = blocks[i].routineName
+                // Split on didOverflow too: the "not enough time today" habits form their OWN collapsed
+                // card, so they never sit at the top of the group that DID have time for its habits.
+                let overflowFlag = blocks[i].didOverflow
                 var group = [ScheduleBlock]()
-                while i < blocks.count, blocks[i].kind == .habit, blocks[i].routineName == name {
+                while i < blocks.count, blocks[i].kind == .habit, blocks[i].routineName == name,
+                      blocks[i].didOverflow == overflowFlag {
                     group.append(blocks[i]); i += 1
                 }
                 // Hide-habits setting: drop the whole routine group so the plan shows just calendar
@@ -2481,7 +2492,10 @@ class scheduleViewController: NSViewController {
             ?? habits.first.flatMap { $0.habitIndex.map { "idx\($0)" } }
             ?? "start\(Int((habits.first?.start ?? selectedDate).timeIntervalSince1970))" // i18n-ignore — internal accordion key, never shown
         let dateForToggle = selectedDate
-        let collapsed = isRoutineCollapsed(name: routineName, sectionId: sectionId, date: dateForToggle)
+        // An overflow group holds the habits the engine couldn't fit before the day's meetings (a whole-day
+        // event ⇒ the entire routine); it has its own accordion key and starts collapsed.
+        let isOverflow = habits.first?.didOverflow == true
+        let collapsed = isRoutineCollapsed(name: routineName, sectionId: sectionId, date: dateForToggle, overflow: isOverflow)
         // #2010: is THIS routine's section force-cancelled? Drives the uncancel message and hides the
         // "Skip routine for today" action (there's nothing to skip once it's cancelled).
         let cancel = host?.cancelledRoutine()
@@ -2490,7 +2504,10 @@ class scheduleViewController: NSViewController {
             // A proper disclosure chevron (SF Symbol) instead of a tiny ▸/▾ glyph buried in the label —
             // it was too small to read as a tap target for collapse/expand.
             let chevron = makeDisclosureChevron(collapsed: collapsed)
-            let header = makeLabel("🧩 \(routineName)  ·  \(timeString(first.start))–\(timeString(last.end))", size: 15, bold: false)
+            // Overflow groups have no meaningful time range (they're anchored after the last habit that
+            // fit) — say "not enough time today" instead of a "4:51pm–4:51pm" range.
+            let headerSuffix = isOverflow ? ScheduleText.notEnoughTimeToday : "\(timeString(first.start))–\(timeString(last.end))"
+            let header = makeLabel("🧩 \(routineName)  ·  \(headerSuffix)", size: 15, bold: false)
             header.textColor = .labelColor
             // Title stretches to fill and TRUNCATES in a narrow window; the skip button keeps its
             // intrinsic width pinned to the trailing edge.
@@ -2512,7 +2529,7 @@ class scheduleViewController: NSViewController {
                 skipBtn.setContentCompressionResistancePriority(.required, for: .horizontal)
                 headerRow.addArrangedSubview(skipBtn)
             }
-            headerRow.onClick = { [weak self] in self?.toggleRoutineCollapsed(name: routineName, sectionId: sectionId, date: dateForToggle) }
+            headerRow.onClick = { [weak self] in self?.toggleRoutineCollapsed(name: routineName, sectionId: sectionId, date: dateForToggle, overflow: isOverflow) }
             headerRow.toolTip = collapsed ? ScheduleText.showHabits : ScheduleText.hideHabits
             inner.addArrangedSubview(headerRow)
             headerRow.widthAnchor.constraint(equalTo: inner.widthAnchor).isActive = true
@@ -2546,7 +2563,25 @@ class scheduleViewController: NSViewController {
         // A whole previous calendar day is in the past (so its habits are retroactively completable),
         // as is today's "earlier today" accordion (h.isEarlier). A future day is neither.
         let isPastDay = Calendar.current.startOfDay(for: selectedDate) < Calendar.current.startOfDay(for: Date())
-        for h in habits where !collapsed {
+        // Overflow habits are all anchored at the same cursor (so they stay one group and don't interleave
+        // with deep work). For DISPLAY only, lay them out back-to-back from that anchor using each habit's
+        // own length, so every row shows a valid sequential range (8:29–8:45, 8:45–9:00, …) — illustrative
+        // "dead time" under the Not-enough-time header, not a bogus 8:29–8:29 slot. Copies (value type) so
+        // the real zero-duration blocks used for sorting/free-time are untouched.
+        let rowHabits: [ScheduleBlock]
+        if isOverflow {
+            var running = habits.first?.start ?? selectedDate
+            rowHabits = habits.map { blk in
+                var copy = blk
+                copy.start = running
+                copy.end = running.addingTimeInterval(Double(blk.overflowDurationSeconds ?? 0))
+                running = copy.end
+                return copy
+            }
+        } else {
+            rowHabits = habits
+        }
+        for h in rowHabits where !collapsed {
             let isSel = canAct && h.isActionable && h.habitIndex == selected
             let isPastCompletable = (h.isEarlier || isPastDay) && !h.isDone && h.habitId != nil
             let rowView: NSView

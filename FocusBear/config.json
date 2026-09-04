@@ -3020,7 +3020,8 @@
         "meetingRestore": "Show this meeting again",
         "meetingsShowDismissedCount": "Show hidden meetings (%d)",
         "meetingColour": "Meeting colour",
-        "meetingColourDefault": "Default"
+        "meetingColourDefault": "Default",
+        "notEnoughTimeToday": "Not enough time today"
     },
     "timeTrackerViewInfo":{
         "menuTimeTracker": "Time Tracker",
