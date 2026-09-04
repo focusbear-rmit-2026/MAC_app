@@ -128,6 +128,14 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         self.take_notes = take_notes
         self.notes = notes
         self.logQuantityQuestions = logQuantityQuestions
+        if self.logQuantityQuestions.isEmpty {
+            // A log-quantity habit with no questions list (older settings only carried the single
+            // `logQuantityQuestion` string): show one free-entry field for it rather than an empty
+            // sheet whose OK had nothing to read.
+            addLog(text: "logQuantityVc.resetData: no questions for \(name) — using the single legacy question")
+            self.logQuantityQuestions = [quantityQuestion(id: "", minValue: 0, maxValue: 0, question: subTitle,
+                                                          logQuantityType: logQuantityType, minValueDescription: "", maxValueDescription: "")]
+        }
         var height = self.logQuantityQuestions.count * 74
         if height > 296{
             height = 296
@@ -285,6 +293,12 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
     }
 
     
+    /// The first question's answer — the value the stats CSV and the completed-activity API record as
+    /// "quantity logged". Never index the array directly: a prompt can open with NO questions (a habit
+    /// flagged log-quantity whose questions list is empty), and `[0]` on that crashed the app
+    /// (Sentry FOCUS-BEAR-MACOS-1C6).
+    private var loggedQuantity: Double { logQuantityQuestions.first?.quantity ?? 0 }
+
     @IBAction func btnOkClicked(_ sender: Any) {
         addLog(text:"[user-action] Log quantity-btnOkClicked")
         
@@ -310,9 +324,9 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         }
 
         if !isReviseQuantity{
-            addEntryInStatsCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "\(logQuantityQuestions[0].quantity)", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
+            addEntryInStatsCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "\(loggedQuantity)", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
         }else{
-            replaceLastEntryInStatsCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "\(logQuantityQuestions[0].quantity)", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+            replaceLastEntryInStatsCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "\(loggedQuantity)", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
         }
 
 
@@ -333,7 +347,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         if !isUsingActionBar{ // it means user has not used quick action bar
             activityCompletionVcObj?.currentGraphIndex = 0
             activityCompletionVcObj?.logQuantityQuestionsForGraph = logQuantityQuestions
-            activityCompletionVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId, activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "\(logQuantityQuestions[0].quantity)")
+            activityCompletionVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId, activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "\(loggedQuantity)")
         }
         
         var log_quantity_answers = [[String : Any]]()
@@ -345,7 +359,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             
             if take_notes == END_OF_ACTIVITY{
                 getHabitsVcObject().showTakeNotesView()
-                takeActivityNotesVcObj?.resetData(durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:logQuantityQuestions[0].quantity, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: log_quantity_answers)
+                takeActivityNotesVcObj?.resetData(durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:loggedQuantity, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: log_quantity_answers)
                 takeActivityNotesVcObj?.isPastHabit = isPastHabit   // #2012: carry the past-habit flag through
                 takeActivityNotesVcObj?.pastHabitId = pastHabitId
                 takeActivityNotesVcObj?.pastHabitDayKey = pastHabitDayKey
@@ -355,11 +369,11 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
 
                 getHabitsVcObject().showFocusCompletedView()
                 focusModeActualDurationPerformed = Int(durationInSeconds) ?? 0
-                focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:logQuantityQuestions[0].quantity, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: log_quantity_answers, notes: notes)
+                focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:loggedQuantity, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: log_quantity_answers, notes: notes)
             }else if isPastHabit{
                 // #2012: a PAST habit → offline-sync (/completed-activity/sync) so it lands on the right
                 // date's sequence log (with that day's stats) and never disturbs the live routine.
-                recordPastHabitCompletionViaOfflineSync(activity_id: activity_id, activity_sequence_id: activity_sequence_id, performedAt: lastActivityPerformedTime!, duration: Int(durationInSeconds) ?? 0, quantity: logQuantityQuestions[0].quantity, notes: notes, dayKey: pastHabitDayKey ?? "")
+                recordPastHabitCompletionViaOfflineSync(activity_id: activity_id, activity_sequence_id: activity_sequence_id, performedAt: lastActivityPerformedTime!, duration: Int(durationInSeconds) ?? 0, quantity: loggedQuantity, notes: notes, dayKey: pastHabitDayKey ?? "")
             }else{
                 if lCurrentState! == ._EVENING_HABIT_{
                     if activityCompletionVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
@@ -371,7 +385,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
                     should_not_update_current_activity = true
                 }
 
-                allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:logQuantityQuestions[0].quantity, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, is_skipped:is_skipped, notes: notes, should_not_update_current_activity: should_not_update_current_activity, log_quantity_answers: log_quantity_answers, completionHandler: {dic  in
+                allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:loggedQuantity, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, is_skipped:is_skipped, notes: notes, should_not_update_current_activity: should_not_update_current_activity, log_quantity_answers: log_quantity_answers, completionHandler: {dic  in
                     DispatchQueue.main.async {
 
                     }
@@ -390,10 +404,10 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
 
                 let finish_time_string = getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 
-                replaceLastEntryInActivitiesCsv(activity_id: activity_id, duration_logged: durationInSeconds, device_id: currentDeviceId, activity_sequence_id: activity_sequence_id, start_time: start_time_string, finish_time: finish_time_string, skipped_did_complete: "", choice_id: activityChoiceId ?? "", quantity_logged: "\(logQuantityQuestions[0].quantity)", skipped_did_not_complete: "")
+                replaceLastEntryInActivitiesCsv(activity_id: activity_id, duration_logged: durationInSeconds, device_id: currentDeviceId, activity_sequence_id: activity_sequence_id, start_time: start_time_string, finish_time: finish_time_string, skipped_did_complete: "", choice_id: activityChoiceId ?? "", quantity_logged: "\(loggedQuantity)", skipped_did_not_complete: "")
 
             }else{
-                allApiObject.activityCompletedReviseApi(activity_id: allApiObject.completedActivityLogId ?? "", quantity_logged:logQuantityQuestions[0].quantity, choice_id: allApiObject.completedChoiceLogId, log_quantity_answers: log_quantity_answers, completionHandler: {dic  in
+                allApiObject.activityCompletedReviseApi(activity_id: allApiObject.completedActivityLogId ?? "", quantity_logged:loggedQuantity, choice_id: allApiObject.completedChoiceLogId, log_quantity_answers: log_quantity_answers, completionHandler: {dic  in
                     DispatchQueue.main.async {
                         print(dic)
                     }
