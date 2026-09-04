@@ -19,6 +19,22 @@ let breakRetryWhenDueSeconds = 15
 /// than this many full `breakAfterMinutes` intervals starts a fresh interval instead of firing a break
 /// right away, so a yesterday break doesn't spam moments after launch.
 let breakStaleOverdueIntervalMultiple = 1.0
+
+/// Formats a break's length for display. Short breaks read fine as a raw seconds count ("16 sec"), but
+/// longer ones become awkward ("190 sec"), so anything over a minute is split into minutes + seconds
+/// ("3 min 10 sec"). A whole number of minutes drops the trailing "0 sec" ("3 min").
+func formatBreakDuration(_ seconds: Int) -> String {
+    let secondsInMinute = 60
+    let breakWarningVcInfo = configjson.value(forKey: "breakWarningVcInfo") as? NSDictionary
+    let minutesUnit = breakWarningVcInfo?.value(forKey: "durationMinutesUnit") as? String ?? "min"
+    let secondsUnit = breakWarningVcInfo?.value(forKey: "durationSecondsUnit") as? String ?? "sec"
+    if seconds <= secondsInMinute { return "\(seconds) \(secondsUnit)" }
+    let minutes = seconds / secondsInMinute
+    let remainderSeconds = seconds % secondsInMinute
+    if remainderSeconds == 0 { return "\(minutes) \(minutesUnit)" }
+    return "\(minutes) \(minutesUnit) \(remainderSeconds) \(secondsUnit)"
+}
+
 var arrAllbreakActivities = [breakActivity]()
 var arrFinalBreakActivities = [breakActivityFilter]()
 struct breakActivityFilter{

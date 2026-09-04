@@ -1382,6 +1382,7 @@
     },
     "breakWarningVcInfo": {
         "title": "Your <DURATION> second micro break starts in",
+        "titleV2": "Your <DURATION> micro break starts in",
         "titleWIN": "Your micro break starts in",
         "buttonPostponeText": "Postpone for 5 minutes",
         "postponeConfirmText": "You postponed the last micro break - are you sure you can't make time for the break now?",
@@ -1389,6 +1390,9 @@
         "descriptionText": "Micro breaks help keep your energy + alertness levels consistent throughout the day and have positive impacts on your posture (no more screen headaches).",
         "descriptionMeetingsText": "Micro breaks can help you stay focused in meetings.",
         "titleMeetings": "Your <DURATION> second mid meeting break starts in",
+        "titleMeetingsV2": "Your <DURATION> mid meeting break starts in",
+        "durationMinutesUnit": "min",
+        "durationSecondsUnit": "sec",
         "buttonStartBreakNowText": "Start micro break now",
         "arrayQuote": [
             {

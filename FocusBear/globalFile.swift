@@ -1458,9 +1458,17 @@ func isAnyPresentationOrVideoShowing()-> Bool{
                         if let name = itemDic.value(forKey: "Process Name") as?  String{
                             let processName = name.lowercased()
                             if processName != selfAppName.lowercased(){
+                                // Name the actual process (and its assertion reason, if it supplied one) so a
+                                // suppressed natural break is diagnosable — e.g. whether it's a genuine video /
+                                // presentation or a false positive like a call app or a media tab keeping the
+                                // display awake. Details keys vary by macOS, so try the common ones.
+                                let reason = (itemDic.value(forKey: "AssertionName") as? String)
+                                    ?? (itemDic.value(forKey: "Name") as? String)
+                                    ?? (itemDic.value(forKey: "Details") as? String) ?? ""
+                                addLog(text: "isAnyPresentationOrVideoShowing: '\(name)' holds a PreventUserIdleDisplaySleep assertion\(reason.isEmpty ? "" : " — \"\(reason)\"").")
                                 return true
                             }
-                            
+
                         }
                     }
                     

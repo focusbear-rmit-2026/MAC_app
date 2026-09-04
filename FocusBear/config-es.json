@@ -1382,6 +1382,7 @@
     },
     "breakWarningVcInfo": {
         "title": "Tu micro descanso de <DURATION> segundos comienza en",
+        "titleV2": "Tu micro descanso de <DURATION> comienza en",
         "titleWIN": "Tu micro descanso comienza en",
         "buttonPostponeText": "Posponer por 5 minutos",
         "postponeConfirmText": "Pospusiste el último descanso. ¿Estás seguro de que no puedes hacer tiempo para el descanso ahora?",
@@ -1389,6 +1390,9 @@
         "descriptionText": "Los micro descansos ayudan a mantener los niveles de energía y alerta constantes a lo largo del día y tienen efectos positivos en la postura (no más dolores de cabeza por la pantalla).",
         "descriptionMeetingsText": "Los microdescansos pueden ayudarte a mantenerte concentrado/a en las reuniones.",
         "titleMeetings": "Tu segundo descanso en mitad de la reunión de <DURATION> segundos comienza en",
+        "titleMeetingsV2": "Tu descanso en mitad de la reunión de <DURATION> comienza en",
+        "durationMinutesUnit": "min",
+        "durationSecondsUnit": "seg",
         "buttonStartBreakNowText": "Iniciar microdescanso ahora",
         "arrayQuote": [
             {
