@@ -204,7 +204,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         self.view.removeFromSuperview()
         if isReviseQuantity{
             addLog(text:"Log quantity-btnCancelClicked return - isReviseQuantity")
-            if lCurrentState! == ._EVENING_HABIT_{
+            if lCurrentState == ._EVENING_HABIT_{   // optional compare: lCurrentState can be nil (crashed on force-unwrap)
                 if activityCompletionVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
                     activityCompletionVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
                 }
@@ -269,7 +269,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             // date's sequence log (with that day's stats) and never disturbs the live routine.
             recordPastHabitCompletionViaOfflineSync(activity_id: activity_id, activity_sequence_id: activity_sequence_id, performedAt: lastActivityPerformedTime!, duration: Int(durationInSeconds) ?? 0, quantity: 0.0, notes: notes, dayKey: pastHabitDayKey ?? "")
         }else{
-            if lCurrentState! == ._EVENING_HABIT_{
+            if lCurrentState == ._EVENING_HABIT_{   // optional compare: lCurrentState can be nil (crashed on force-unwrap)
                 if activityCompletionVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
                     activityCompletionVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
                 }
@@ -375,7 +375,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
                 // date's sequence log (with that day's stats) and never disturbs the live routine.
                 recordPastHabitCompletionViaOfflineSync(activity_id: activity_id, activity_sequence_id: activity_sequence_id, performedAt: lastActivityPerformedTime!, duration: Int(durationInSeconds) ?? 0, quantity: loggedQuantity, notes: notes, dayKey: pastHabitDayKey ?? "")
             }else{
-                if lCurrentState! == ._EVENING_HABIT_{
+                if lCurrentState == ._EVENING_HABIT_{   // optional compare: lCurrentState can be nil (crashed on force-unwrap)
                     if activityCompletionVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
                         activityCompletionVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
                     }
@@ -414,7 +414,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
 
                 })
             }
-            if lCurrentState! == ._EVENING_HABIT_{
+            if lCurrentState == ._EVENING_HABIT_{   // optional compare: lCurrentState can be nil (crashed on force-unwrap)
                 if activityCompletionVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
                     activityCompletionVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
                 }
