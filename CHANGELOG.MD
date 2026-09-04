@@ -561,3 +561,9 @@ New class-session (PACT) invite screen — see what you're allowed to use and wh
 
 Reliability:
 Fixed UI freezes when switching apps during a focus or class session, by moving the full-screen-exit check off the main thread. (#2379)
+
+
+# v3.35.537
+
+Automation:
+Focus Bear now supports AppleScript, so you can automate it from the Script Editor, Shortcuts, or other Mac tools. You can start a focus session by name (with an optional intention and length), and view or manage today's Day Plan tasks — create tasks, read and edit their details, mark them complete, and check which tasks you've changed yourself. (#2382)
