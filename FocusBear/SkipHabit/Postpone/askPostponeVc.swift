@@ -74,6 +74,13 @@ class askPostponeVc: NSViewController {
         }else{
             self.view.removeFromSuperview()
             getHabitsVcObject().abortCancel()
+            // abortCancel() re-shows the Postpone (abort) button for its covered states (micro-break /
+            // morning / evening / shutoff / custom), but has NO branch for a special activity, so cancelling
+            // postpone there left the button hidden (lost). Restore it here for the uncovered states —
+            // except focus summary, where abortCancel() deliberately hides it.
+            if lastCurrentState != ._FOCUS_SUMMARY_ {
+                getHabitsVcObject().showCloseButtons()
+            }
             self.timer?.invalidate()
             self.timer = nil
         }

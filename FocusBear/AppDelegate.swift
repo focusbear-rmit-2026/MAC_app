@@ -5733,6 +5733,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     getHabitsVcObject().setActivityTimer()
                                     return;
                                 }
+                                // The morning routine is due but a focus session is still running — finish it
+                                // and let the routine render. This is also the path a postpone → start focus →
+                                // Stop uses: stopFocusModeAndResumeRoutine() (menuViewController) only flips the
+                                // routine's postpone state back and calls backgroundThread(); it relies on THIS
+                                // block to actually finish the running session. Don't gate it on time-only
+                                // conditions or that Stop-resume flow leaves the session running.
                                 if isFocusModeOnOrPaused(){
                                     addLog(text: "isFocusModeOnOrPaused True: focusModeFinished.")
                                     self.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: true, allowExtend:false, isCustomRoutineTime:false, shouldUpdateFocusButton: true)
@@ -7841,6 +7847,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
     @objc func focusModeStartted(isStartedByPusher:Bool){
         addLog(text: "focus Mode Started called")
+        // Reset the postpone-origin flag at every session start; the postpone-pomodoro path re-sets it to
+        // true right after calling this (see pomodoroVc), so non-postpone sessions start clean.
+        isFocusSessionStartedFromPostponeIntention = false
         addLog(text: "getBlockedAppsToBlock:- \(getBlockedAppsToBlock())")
         if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             customBlockingScheduleManagerObj.customBlockingScheduleFinished()

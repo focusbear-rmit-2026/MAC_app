@@ -1174,6 +1174,32 @@ func isCutOffTimeAboutToReach() -> Bool {
 
 
 
+/// The routine-postpone state a running focus session is covering, or nil if none.
+/// Returns the live `currentState` while habits are still postponed. It also covers the race where a
+/// focus session that was running *under* a postpone completes on its own: the postpone timer resumes
+/// the routine and flips `currentState` back to `._NOTHING_` a moment before the user acts — so the
+/// live guard misses it. In that window the persisted last-postpone state is still present (it's
+/// cleared only when the routine actually shows), so fall back to it, as long as the saved postpone
+/// hasn't already ended well in the past (don't resurrect a stale save).
+func routinePostponeStateToReCoverOnExtend() -> CURRENTSTATE? {
+    if currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_ {
+        return currentState
+    }
+    guard currentState == ._NOTHING_,
+          let raw = UserDefaults.standard.object(forKey: kUserDefaultsLastRoutinePostponeState) as? Int,
+          let state = CURRENTSTATE(rawValue: raw),
+          state == ._POSTPONE_MORNING_HABIT_ || state == ._POSTPONE_EVENING_HABIT_ || state == ._POSTPONE_FOCUS_SUMMARY_
+    else { return nil }
+    if let endDate = UserDefaults.standard.object(forKey: kUserDefaultsLastRoutinePostponeEndDate) as? Date,
+       endDate.timeIntervalSinceNow < -stalePostponeResurrectionSeconds {
+        return nil
+    }
+    return state
+}
+
+/// A persisted postpone that ended more than this long ago is stale — don't resurrect it.
+private let stalePostponeResurrectionSeconds: TimeInterval = 5 * 60
+
 func restorePostponeStateIfNeeded() {
     guard
         let endDate = UserDefaults.standard.object(

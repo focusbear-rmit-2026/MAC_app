@@ -1424,6 +1424,11 @@ class pomodoroVc: NSViewController {
         
         whatToAchieveInFocusBlock = textViewAchieve.string
         appdelegate!.focusModeStartted(isStartedByPusher: false)
+        // Capture "this session was started from postpone-with-intention" into a session-lifetime flag NOW,
+        // while isIntentionFromMorningPostpone is still valid — it's cleared in viewWillDisappear when this
+        // window closes, so it can't be read at Stop time. focusModeStartted() just reset the flag, so set
+        // it here (after) for the postpone case; the Stop handler reads isFocusSessionStartedFromPostponeIntention.
+        isFocusSessionStartedFromPostponeIntention = isIntentionFromMorningPostpone
         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled && currentState != ._MICRO_BREAK_{ // added is micro break is running :- v 2.28.438
             if isHardCorePomodoroModeOn{
                 //I did this because when isHardCorePomodoroModeOn is enabled, showTaskPlayerWindow prevents viewDidAppear from being called properly. So when coming back the next time, viewWillAppear doesn’t get called, and the previous state is shown.v 2.28.440

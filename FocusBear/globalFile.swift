@@ -149,6 +149,12 @@ var isActivitiesReducedInExpiredApp = false
 
 var isHardCorePomodoroModeOn = false
 var hardcodePmodoroFocusModeName:String = ""
+/// True for the LIFE of a focus session that was started from the "postpone routine → set intention →
+/// start focus" flow (captured at session start from pomodoroVc.isIntentionFromMorningPostpone, which is
+/// itself cleared in the pomodoro's viewWillDisappear and so can't be read later). Used by the Stop
+/// handler to skip the password gate and hand the user back to the routine they postponed. Reset at every
+/// focus-session start (focusModeStartted) and when the session is stopped/resumed.
+var isFocusSessionStartedFromPostponeIntention = false
 var totalMinutesRemainingForHardcodePomodoro = 0
 var currentPomodoroWorkDuration = 25
 var currentPomodoroBreakDuration = 5

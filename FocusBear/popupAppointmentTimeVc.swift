@@ -63,33 +63,8 @@ class popupAppointmentTimeVc: NSViewController {
         message = message.replacingOccurrences(of: "<EVENT_TITLE>", with: title)
         lblTitle.stringValue = message
         
-        // This popup always POSTPONES the running routine (startAppointment() below calls
-        // postponeMorningHabitFor/postponeEveningHabitFor, never a skip), so it must honour the
-        // postpone-specific password settings — not the skip ones. It used to check
-        // isPasswordRequireInSkip{Morning,Evening,EveningAfterCutOff}, so a user with only the
-        // postpone rules enabled (and skip rules off) got no password prompt at all when a Late No
-        // More appointment postponed their routine, including after cutoff (bug report 2026-07-17).
-        shouldAskPassword = false
-        if Focus_Bear.shouldAskPassword(forPostpone: true){
-            if currentState == ._MORNING_HABIT_ && SettingsManagerObject.isPasswordRequireInPostponeMorning{
-                shouldAskPassword = true
-            }else if currentState == ._EVENING_HABIT_ && SettingsManagerObject.isPasswordRequireInPostponeEvening && !isHighPrioritySequenceGoing && !isCutOffTimeGoing(){
-                // This is the BEFORE-cutoff evening branch. Exclude cutoff time here so it doesn't
-                // short-circuit the else-if and prevent the after-cutoff branch below from running.
-                shouldAskPassword = true
-            }else if currentState == ._EVENING_HABIT_ && SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff && (isHighPrioritySequenceGoing || isCutOffTimeGoing()){
-                // isPasswordRequireInPostponeEveningAfterCutOff is an Evening-Habit-specific setting, so
-                // this branch only governs postponing the evening habit — when a meeting/high-priority
-                // sequence is running or it's past the cutoff time.
-                // NOTE (tradeoff): this intentionally no longer requires the password past cutoff in
-                // NON-evening states (shutoff / custom routine / break). An earlier version kept this
-                // branch state-independent so a meeting popup appearing past cutoff in those states
-                // couldn't be dismissed without a password. If that cross-state protection is still
-                // wanted, gate each state on its own postpone-password setting rather than the evening one.
-                shouldAskPassword = true
-            }
-        }
-        
+        shouldAskPassword = computeShouldAskPassword()
+
         if !shouldAskPassword{
             if let popupAppointmentTimeVcInfo = configjson.value(forKey: "popupAppointmentTimeVcInfo") as? NSDictionary{
                 btnOk.title = popupAppointmentTimeVcInfo.value(forKey: "buttonThanksText") as? String ?? btnOk.title
@@ -104,7 +79,9 @@ class popupAppointmentTimeVc: NSViewController {
             let fireInterval = max(endTime.timeIntervalSinceNow, 1)
             autoCloseTimer = Timer.scheduledTimer(withTimeInterval: fireInterval, repeats: false) { [weak self] _ in
                 addLog(text: "popupAppointmentTimeVc:- auto-closing at meeting end time, no user action taken")
-                self?.startAppointment()
+                // Re-evaluate the gate here too: the popup may have opened before the cutoff but be
+                // auto-closing after it, in which case the postpone must now demand the password.
+                self?.confirmPostpone()
             }
             RunLoop.main.add(autoCloseTimer!, forMode: .common)
         }else{
@@ -116,6 +93,45 @@ class popupAppointmentTimeVc: NSViewController {
     
     @IBAction func btnOkClicked(_ sender: Any) {
         addLog(text: "[user-action] smallCountDownVc:- button Ok clicked")
+        confirmPostpone()
+    }
+
+    // This popup always POSTPONES the running routine (startAppointment() below calls
+    // postponeMorningHabitFor/postponeEveningHabitFor, never a skip), so it must honour the
+    // postpone-specific password settings — not the skip ones. It used to check
+    // isPasswordRequireInSkip{Morning,Evening,EveningAfterCutOff}, so a user with only the
+    // postpone rules enabled (and skip rules off) got no password prompt at all when a Late No
+    // More appointment postponed their routine, including after cutoff (bug report 2026-07-17).
+    func computeShouldAskPassword() -> Bool {
+        guard Focus_Bear.shouldAskPassword(forPostpone: true) else { return false }
+        if currentState == ._MORNING_HABIT_ && SettingsManagerObject.isPasswordRequireInPostponeMorning{
+            return true
+        }else if currentState == ._EVENING_HABIT_ && SettingsManagerObject.isPasswordRequireInPostponeEvening && !isHighPrioritySequenceGoing && !isCutOffTimeGoing(){
+            // This is the BEFORE-cutoff evening branch. Exclude cutoff time here so it doesn't
+            // short-circuit the else-if and prevent the after-cutoff branch below from running.
+            return true
+        }else if currentState == ._EVENING_HABIT_ && SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff && (isHighPrioritySequenceGoing || isCutOffTimeGoing()){
+            // isPasswordRequireInPostponeEveningAfterCutOff is an Evening-Habit-specific setting, so
+            // this branch only governs postponing the evening habit — when a meeting/high-priority
+            // sequence is running or it's past the cutoff time.
+            // NOTE (tradeoff): this intentionally no longer requires the password past cutoff in
+            // NON-evening states (shutoff / custom routine / break). An earlier version kept this
+            // branch state-independent so a meeting popup appearing past cutoff in those states
+            // couldn't be dismissed without a password. If that cross-state protection is still
+            // wanted, gate each state on its own postpone-password setting rather than the evening one.
+            return true
+        }
+        return false
+    }
+
+    // Confirm (or auto-close) the appointment postpone. The gate is RECOMPUTED here rather than trusting
+    // the value cached in resetView: a Late No More meeting popup can open BEFORE the cutoff and only be
+    // confirmed AFTER it (the meeting starts near the cutoff and the window sits open in between). With the
+    // stale value, isCutOffTimeGoing() was false at open time so the after-cutoff branch never armed, and
+    // the routine got postponed past cutoff with no password (bug report 2026-08-24). Recomputing at
+    // action time re-arms isCutOffTimeGoing() / isHighPrioritySequenceGoing.
+    func confirmPostpone() {
+        shouldAskPassword = computeShouldAskPassword()
         if !shouldAskPassword{
             startAppointment()
         }else{
@@ -126,7 +142,7 @@ class popupAppointmentTimeVc: NSViewController {
             self.presentAsSheet(enterPasswordVcObj!)
         }
     }
-    
+
     func startAppointment(){
         addLog(text: "smallCountDownVc:- startAppointment")
         focusButtonServiceObject.dismissNotification()

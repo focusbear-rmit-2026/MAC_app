@@ -1834,6 +1834,13 @@ class menuViewController: NSViewController {
             closeMenuWindowIsVisible()
             return;
         }
+        if wasFocusSessionStartedFromPostpone(){
+            // A focus session started by postponing the routine isn't a "real" strict session to gate
+            // behind a password — stopping it should just hand the user back to the habits they postponed.
+            addLog(text: "[user-action] Stop focus session started from postpone:- skip password + resume routine")
+            stopFocusModeAndResumeRoutine()
+            return;
+        }
         var needToShowPassword = false
         if currentFocusModeStrictness == ._SUPER_STRICT_{
             needToShowPassword = true// show without checking . if password not there then show enter random characters view
@@ -1869,6 +1876,46 @@ class menuViewController: NSViewController {
         }
     }
     
+    /// True when the currently running/paused focus session was started from the "postpone my routine →
+    /// set intention → start a focus mode" flow. `isFocusSessionStartedFromPostponeIntention` is captured
+    /// at session start from `pomodoroVc.isIntentionFromMorningPostpone` (which is set only when the user
+    /// postponed a routine, chose to start a focus session, and typed a reason). We read the captured flag,
+    /// NOT isIntentionFromMorningPostpone directly — that one is cleared in the pomodoro's viewWillDisappear
+    /// when the window closes, so it's already false by Stop time. Used to drop the password gate on Stop
+    /// and return the user to the routine they postponed.
+    func wasFocusSessionStartedFromPostpone() -> Bool {
+        guard isFocusModeRunning || isFocusModePaused() else { return false }
+        return isFocusSessionStartedFromPostponeIntention
+    }
+
+    /// Hands the user back to the routine they postponed. It does NOT finish the focus session itself:
+    /// it just flips the routine's postpone state back (resumeMorningHabit/resumeEveningHabit/
+    /// resumeFocusSummary only set currentState → ._NOTHING_), then lets backgroundThread do the rest —
+    /// backgroundThread sees a routine is due while a focus session is still running and finishes it via
+    /// tryFocusModeFinished (isMorningRoutineTime path) before rendering the routine. This is the same
+    /// path the natural postpone-timer resume takes, so a manual Stop behaves identically.
+    func stopFocusModeAndResumeRoutine(){
+        // Capture the postpone state first — the resume functions below guard on currentState.
+        let postponeState = routinePostponeStateToReCoverOnExtend()
+        // We're resuming right now, so cancel the pending timed resume.
+        getHabitsVcObject().stopPostponeEndTimer()
+        switch postponeState {
+        case ._POSTPONE_EVENING_HABIT_:
+            getHabitsVcObject().resumeEveningHabit()
+        case ._POSTPONE_FOCUS_SUMMARY_:
+            getHabitsVcObject().resumeFocusSummary()
+        default:
+            getHabitsVcObject().resumeMorningHabit()
+        }
+        // We've consumed the postpone-intention session; clear the flag so it can't make a later,
+        // unrelated focus session look like a postpone-started one on Stop.
+        isFocusSessionStartedFromPostponeIntention = false
+        // resume* only flips currentState back to ._NOTHING_; backgroundThread renders the routine and
+        // finishes the still-running focus session.
+        appdelegate?.backgroundThread()
+        closeMenuWindowIsVisible()
+    }
+
     @objc func resumeFocusMode(){
         for index in 0..<arrFocusType.count{
             if arrFocusType[index]["isPaused"] as? Bool == true{
