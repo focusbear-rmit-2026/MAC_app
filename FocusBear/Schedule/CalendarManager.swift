@@ -619,6 +619,74 @@ final class DayPlanSync {
         send(req, label: "setTodoPlanned")
     }
 
+    // MARK: Projects (native Focus Bear projects: `POST /projects`, `to-do.project_id`)
+    /// Points `todoID` at the backend project named `projectName` — creating the project first when
+    /// the name is new — so a `#project` typed in the Day Plan shows up on web and mobile (they read
+    /// `project_id`; a project that only lives in this Mac's UserDefaults is invisible to them). `nil`
+    /// clears the project. `title` + `quadrant` are echoed back like every other upsert here.
+    func setTodoProject(todoID: String, title: String, quadrant: Int, projectName: String?) {
+        let name = (projectName ?? "").trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else {
+            upsertTodoProject(todoID: todoID, title: title, quadrant: quadrant, projectID: nil)
+            return
+        }
+        if let id = DayPlanTaskStore.shared.remoteProjectID(named: name) {
+            upsertTodoProject(todoID: todoID, title: title, quadrant: quadrant, projectID: id)
+            return
+        }
+        createProject(named: name) { [weak self] id in
+            guard let id = id else { return }
+            self?.upsertTodoProject(todoID: todoID, title: title, quadrant: quadrant, projectID: id)
+        }
+    }
+
+    private func upsertTodoProject(todoID: String, title: String, quadrant: Int, projectID: String?) {
+        let body: [String: Any] = [
+            "id": todoID,
+            "title": title,
+            "eisenhower_quadrant": quadrant,
+            "project_id": projectID ?? NSNull(),
+        ]
+        guard let req = request("/to-do", method: "PUT", body: body) else { return }
+        send(req, label: "setTodoProject")
+    }
+
+    /// Completions waiting on an in-flight `POST /projects`, keyed by lowercased name, so two tasks
+    /// given the same new project before the first create returns share one project.
+    private var pendingProjectCreations: [String: [(String?) -> Void]] = [:]
+
+    /// `POST /projects { name }` → the new project's id (nil on failure), registered with the task
+    /// store so later assignments resolve it locally. `completion` runs on the main thread.
+    func createProject(named name: String, completion: @escaping (String?) -> Void) {
+        let key = name.lowercased()
+        if pendingProjectCreations[key] != nil {
+            pendingProjectCreations[key]?.append(completion)
+            return
+        }
+        pendingProjectCreations[key] = [completion]
+        guard isAuthed, let req = request("/projects", method: "POST", body: ["name": name]) else {
+            finishProjectCreation(key: key, id: nil); return
+        }
+        URLSession.shared.dataTask(with: req as URLRequest) { [weak self] data, response, error in
+            let code = (response as? HTTPURLResponse)?.statusCode ?? -1
+            var id: String?
+            if (200..<300).contains(code), let data = data,
+               let json = (try? JSONSerialization.jsonObject(with: data)) as? NSDictionary {
+                id = json["id"] as? String
+            }
+            if id == nil { addLog(text: "DayPlanSync createProject http \(code) \(error?.localizedDescription ?? "")") }
+            DispatchQueue.main.async {
+                if let id = id { DayPlanTaskStore.shared.registerRemoteProject(id: id, name: name) }
+                self?.finishProjectCreation(key: key, id: id)
+            }
+        }.resume()
+    }
+
+    private func finishProjectCreation(key: String, id: String?) {
+        let waiting = pendingProjectCreations.removeValue(forKey: key) ?? []
+        waiting.forEach { $0(id) }
+    }
+
     /// Push a renamed Day Plan task's title onto its backend to-do so the new name syncs to other
     /// devices. Uses the `PUT /to-do` upsert (like `setTodoStatus`); the create DTO requires the
     /// quadrant, so it is echoed back to avoid clobbering it.

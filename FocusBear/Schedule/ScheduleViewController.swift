@@ -861,8 +861,11 @@ class scheduleViewController: NSViewController {
         allApiObject.getProjectsList { dicts in
             DispatchQueue.main.async {
                 guard let dicts = dicts else { return }
-                let names = dicts.compactMap { $0.value(forKey: "name") as? String }
-                DayPlanTaskStore.shared.remoteProjectNames = names
+                let projects = dicts.compactMap { dict -> (id: String, name: String)? in
+                    guard let id = dict.value(forKey: "id") as? String, let name = dict.value(forKey: "name") as? String else { return nil }
+                    return (id: id, name: name)
+                }
+                DayPlanTaskStore.shared.setRemoteProjects(projects)
             }
         }
     }

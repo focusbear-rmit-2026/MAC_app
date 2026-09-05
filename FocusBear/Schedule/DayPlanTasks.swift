@@ -772,6 +772,7 @@ final class DayPlanTaskStore {
         guard let i = byDay[k]?.firstIndex(where: { $0.id == task.id }) else { return }
         let wasDone = byDay[k]![i].done
         let oldSubtasks = byDay[k]![i].subtasks
+        let oldProject = byDay[k]![i].project
         var task = task
         // Stamp the user-modified timestamp only for real user edits — AppleScript-driven writes must
         // stay invisible to `recently modified tasks` so an external poller never loops on its own writes.
@@ -789,6 +790,12 @@ final class DayPlanTaskStore {
         if task.subtasks != oldSubtasks, let sid = task.sourceTaskId, let q = task.eisenhowerQuadrant {
             DayPlanSync.shared.setTodoSubtasks(todoID: sid, title: task.title, quadrant: q,
                                                subtasks: task.subtaskList)
+        }
+        // A `#project` picked or created here used to stay in local UserDefaults only — the to-do's
+        // `project_id` never changed, so web/mobile never saw the project. Push it (creating the
+        // backend project when the name is new); from-scratch tasks get it at mint time instead.
+        if task.project != oldProject, let sid = task.sourceTaskId, let q = task.eisenhowerQuadrant {
+            DayPlanSync.shared.setTodoProject(todoID: sid, title: task.title, quadrant: q, projectName: task.project)
         }
     }
 
@@ -826,6 +833,9 @@ final class DayPlanTaskStore {
                 guard let self = self else { return }
                 self.mintingTaskIds.remove(localId)
                 guard ok, let newId = json?["id"] as? String else { return }
+                if let project = task.project, !project.isEmpty {
+                    DayPlanSync.shared.setTodoProject(todoID: newId, title: task.title, quadrant: quadrant, projectName: project)
+                }
                 let k = self.dayKey(date)
                 // The row may have moved/been deleted, or been imported over, while we waited.
                 guard let idx = self.byDay[k]?.firstIndex(where: { $0.id == localId }),
@@ -940,7 +950,7 @@ final class DayPlanTaskStore {
                 let quadrant = obj["eisenhower_quadrant"] as? Int
                 let blockKey = obj["planned_block_key"] as? String
                 let tags = (obj["tags"] as? [[String: Any]]) ?? []
-                let project = tags.first?["text"] as? String
+                let project = projectName(forTodoProjectID: obj["project_id"] as? String, tags: tags)
                 list.append(DayPlanTask(title: title, durationMinutes: minutes, done: done,
                                         sourceTaskId: id, blockKey: blockKey, project: project,
                                         subtasks: mapSubtasks(from: obj),
@@ -993,7 +1003,7 @@ final class DayPlanTaskStore {
             let minutes = secs > 0 ? max(1, secs / 60) : 15
             let quadrant = todo.value(forKey: "eisenhower_quadrant") as? Int
             let tags = (todo.value(forKey: "tags") as? [[String: Any]]) ?? []
-            let project = tags.first?["text"] as? String
+            let project = projectName(forTodoProjectID: todo.value(forKey: "project_id") as? String, tags: tags)
             list.append(DayPlanTask(title: title, durationMinutes: minutes, done: false,
                                     sourceTaskId: id, project: project, eisenhowerQuadrant: quadrant))
             placed.insert(id)
@@ -1026,9 +1036,32 @@ final class DayPlanTaskStore {
         byDay[k]?[i].blockKey = key; save()
     }
 
-    /// Project names fetched from the backend (`/projects`). Merged into autocomplete suggestions so
-    /// the user can pick a real project before any task on the day uses it. Set by the host on load.
-    var remoteProjectNames: [String] = []
+    /// Backend projects (`/projects`), id → name. Merged into autocomplete suggestions so the user can
+    /// pick a real project before any task on the day uses it, and used to resolve a task's
+    /// `project_id` to its name (and a typed name back to an id when syncing). Set by the host on load.
+    private(set) var remoteProjectsByID: [String: String] = [:]
+
+    var remoteProjectNames: [String] { Array(remoteProjectsByID.values).sorted() }
+
+    func setRemoteProjects(_ projects: [(id: String, name: String)]) {
+        remoteProjectsByID = Dictionary(projects.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    func registerRemoteProject(id: String, name: String) {
+        remoteProjectsByID[id] = name
+    }
+
+    func remoteProjectID(named name: String) -> String? {
+        remoteProjectsByID.first { $0.value.caseInsensitiveCompare(name) == .orderedSame }?.key
+    }
+
+    /// The project name a backend to-do belongs to: its `project_id` resolved against the fetched
+    /// projects, else the first tag's text (the backend mirrors a native project as a tag, and
+    /// ClickUp-synced to-dos only carry the tag).
+    func projectName(forTodoProjectID projectID: String?, tags: [[String: Any]]) -> String? {
+        if let id = projectID, let name = remoteProjectsByID[id] { return name }
+        return tags.first?["text"] as? String
+    }
 
     // MARK: Project ordering (user-draggable order of project groups in the panel)
 
