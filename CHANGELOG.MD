@@ -567,3 +567,22 @@ Fixed UI freezes when switching apps during a focus or class session, by moving 
 
 Automation:
 Focus Bear now supports AppleScript, so you can automate it from the Script Editor, Shortcuts, or other Mac tools. You can start a focus session by name (with an optional intention and length), and view or manage today's Day Plan tasks — create tasks, read and edit their details, mark them complete, and check which tasks you've changed yourself. (#2382)
+
+
+# v3.35.538
+
+Day Plan:
+Habits that don't fit before a whole-day calendar event are now grouped under "Not enough time today" (with a realistic time range) instead of quietly overflowing your schedule. (#2396)
+
+Meetings:
+Zoho meetings are now detected — and the default Zoho link in the Meetings block list was corrected — so a Zoho call is recognised and micro-breaks stay paused during it. (#2394)
+
+Breaks:
+Longer break lengths now read as "3 min 10 sec" instead of a large raw seconds count. (#2400)
+
+Log quantity:
+Pressing Return/Enter in a log-quantity prompt now always saves it, via the OK button. (#2404)
+
+Reliability:
+Fixed a crash when tapping OK on a log-quantity prompt that had no questions. (#2395)
+Fixed a crash when cancelling or submitting a log-quantity prompt. (#2407)
