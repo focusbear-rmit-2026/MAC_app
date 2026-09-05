@@ -586,3 +586,16 @@ Pressing Return/Enter in a log-quantity prompt now always saves it, via the OK b
 Reliability:
 Fixed a crash when tapping OK on a log-quantity prompt that had no questions. (#2395)
 Fixed a crash when cancelling or submitting a log-quantity prompt. (#2407)
+
+
+# v3.35.539
+
+Day Plan:
+Assigning a #project to a task now syncs to the backend (creating the project if it's new), so the project shows up on web and mobile too. (#2392)
+You can now edit a calendar event you don't own from within the Day Plan — the change (e.g. a renamed title) shows only on your Day Plan and never touches the shared calendar. (#2403)
+
+Postpone:
+Cancelling a postpone now keeps the Postpone button instead of losing it, the password gate is re-checked at confirm time (Late No More), and stopping a focus session you started by postponing your routine now returns you to that routine. (#2398)
+
+Reliability:
+Fixed the time-of-day clock on the full-screen habit player freezing — it now keeps ticking. (#2410)
