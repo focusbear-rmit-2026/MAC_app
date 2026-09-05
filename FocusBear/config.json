@@ -2937,6 +2937,7 @@
         "eventSave": "Save",
         "eventCancel": "Cancel",
         "eventSaveError": "Couldn't save the event. Check calendar access and try again.",
+        "eventNotOwnedWarning": "Warning: You don't own this event. Changes will only be reflected on your day plan.",
         "showDismissedEvents": "Show dismissed events",
         "showEventAgain": "Show this event again",
         "hideEvent": "Hide this event",

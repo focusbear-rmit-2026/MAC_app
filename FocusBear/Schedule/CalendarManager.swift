@@ -134,8 +134,19 @@ final class CalendarManager {
             // Normally dismissed events are hidden; with "Show dismissed events" on, keep them and tag
             // them so the row can render struck-through with an un-dismiss (👀) control.
             .filter { includeDismissed || !isDismissed($0, in: dismissed, on: day) }
-            .map { ScheduleMeetingInput(id: eventKey($0), title: title(for: $0), start: $0.startDate,
-                                        end: $0.endDate, isDismissed: isDismissed($0, in: dismissed, on: day)) }
+            // Overlay any local, day-plan-only edit the user made to a meeting they don't own — TITLE ONLY.
+            // We deliberately keep the event's own per-occurrence start/end for positioning: a recurring
+            // event's stored override time is the series' first-occurrence start, and overlaying that onto
+            // today's occurrence shifted the meeting off the viewed day so it vanished from the Day Plan.
+            // The real calendar time is authoritative (the user can't move an event they don't own anyway).
+            .map { ev -> ScheduleMeetingInput in
+                let override = localOverride(forEventID: eventKey(ev))
+                return ScheduleMeetingInput(id: eventKey(ev),
+                                            title: override.map { displayTitle($0.title) } ?? title(for: ev),
+                                            start: ev.startDate,
+                                            end: ev.endDate,
+                                            isDismissed: isDismissed(ev, in: dismissed, on: day))
+            }
             .sorted { $0.start < $1.start }
     }
 
@@ -151,8 +162,12 @@ final class CalendarManager {
         event.eventIdentifier ?? "\(event.title ?? "")|\(event.startDate.timeIntervalSince1970)"
     }
 
-    private func title(for event: EKEvent) -> String {
-        let name = (event.title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    private func title(for event: EKEvent) -> String { displayTitle(event.title) }
+
+    /// The schedule row label for a meeting title — the 📅 prefix plus a default when the title is blank.
+    /// Shared by real events and locally-overridden non-owned events so both render identically.
+    private func displayTitle(_ raw: String?) -> String {
+        let name = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         return "📅 " + (name.isEmpty ? ScheduleText.meetingDefaultTitle : name)
     }
 
@@ -322,6 +337,48 @@ final class CalendarManager {
         var map = (UserDefaults.standard.dictionary(forKey: privateNotesKey) as? [String: String]) ?? [:]
         if let note = note, !note.isEmpty { map[id] = note } else { map[id] = nil }
         UserDefaults.standard.set(map, forKey: privateNotesKey)
+    }
+
+    // MARK: - Local, day-plan-only overrides (events the user doesn't own)
+
+    /// A locally-stored edit of an event the current user doesn't own (a meeting someone else organised).
+    /// EventKit won't let us write changes back to such an event, so the user's tweaks (title / time /
+    /// notes) live only in Focus Bear and are overlaid onto their schedule — never sent to the shared
+    /// calendar the other attendees see. Only the title is overlaid on the Day Plan (see `fetchMeetings`);
+    /// the time is kept for the record but the calendar's own occurrence time stays authoritative.
+    struct LocalEventOverride: Codable {
+        var title: String
+        var start: Date
+        var end: Date
+        var notes: String?
+    }
+
+    private let localOverridesKey = "scheduleEventLocalOverrides"
+
+    private func localOverridesMap() -> [String: LocalEventOverride] {
+        guard let data = UserDefaults.standard.data(forKey: localOverridesKey),
+              let map = try? JSONDecoder().decode([String: LocalEventOverride].self, from: data) else { return [:] }
+        return map
+    }
+
+    /// The user's local-only edit of a non-owned event, if they've made one.
+    func localOverride(forEventID id: String) -> LocalEventOverride? {
+        localOverridesMap()[id]
+    }
+
+    func setLocalOverride(_ override: LocalEventOverride?, forEventID id: String) {
+        var map = localOverridesMap()
+        map[id] = override
+        if let data = try? JSONEncoder().encode(map) { UserDefaults.standard.set(data, forKey: localOverridesKey) }
+        invalidateMeetingsCache()   // the overlaid title is baked into the cached meetings
+    }
+
+    /// Whether the current user owns `event`: a self-created event (no organiser) or one they organise.
+    /// A meeting organised by someone else is NOT owned — EventKit refuses to save edits to it — so such
+    /// edits can only be stored locally (see `LocalEventOverride`).
+    func isEventOwnedByCurrentUser(_ event: EKEvent) -> Bool {
+        if let organizer = event.organizer { return organizer.isCurrentUser }
+        return event.calendar?.allowsContentModifications ?? true
     }
 
     // MARK: - User-dismissed events

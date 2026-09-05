@@ -76,6 +76,7 @@ enum ScheduleText {
     static var eventSave: String { t("eventSave", "Save") }
     static var eventCancel: String { t("eventCancel", "Cancel") }
     static var eventSaveError: String { t("eventSaveError", "Couldn't save the event. Check calendar access and try again.") }
+    static var eventNotOwnedWarning: String { t("eventNotOwnedWarning", "Warning: You don't own this event. Changes will only be reflected on your day plan.") }
     static var showEarlierEvents: String { t("showEarlierEvents", "Show events from earlier today") }
     static var hideDeepWork: String { t("hideDeepWork", "Hide deep work blocks") }
     static var hideHabitBlocks: String { t("hideHabitBlocks", "Hide habits") }
@@ -541,6 +542,10 @@ class scheduleViewController: NSViewController {
     // For a recurring event, the start of the SPECIFIC occurrence being edited, so a "just this one" edit
     // targets that occurrence rather than the series' first instance. nil for new/non-recurring events.
     private var editingOccurrenceStart: Date?
+    /// True when the event being edited is NOT owned by the current user (a meeting someone else
+    /// organised). The save then can't touch the shared calendar, so we store a local, day-plan-only
+    /// override instead and warn the user in the form.
+    private var editingEventIsNotOwned = false
     private var addSelectedColor: NSColor?
     private var addColorButtons: [NSButton] = []
 
@@ -1152,6 +1157,11 @@ class scheduleViewController: NSViewController {
         editingEventID = editingID
         editingOccurrenceStart = occurrenceStart
         let existing = editingID.flatMap { CalendarManager.shared.event(withID: $0) }
+        editingEventIsNotOwned = existing.map { !CalendarManager.shared.isEventOwnedByCurrentUser($0) } ?? false
+        // For a non-owned event the user may have a prior local-only edit — prefill the title/notes from it
+        // so re-opening shows their tweaks rather than the untouched calendar values. (Time stays the
+        // calendar's own occurrence time: the override never moves the meeting on the Day Plan.)
+        let localOverride = editingID.flatMap { CalendarManager.shared.localOverride(forEventID: $0) }
         // `existing` is the series' FIRST occurrence for a repeat, so prefer the clicked occurrence's start
         // (keeping the event's duration) — otherwise the editor would show the first instance's date/time.
         let duration = existing.map { $0.endDate.timeIntervalSince($0.startDate) } ?? (30 * 60)
@@ -1161,9 +1171,17 @@ class scheduleViewController: NSViewController {
 
         let header = makeLabel(editingID == nil ? ScheduleText.addEvent : ScheduleText.editEventTitle, size: 14, bold: true)
 
+        // Warns that edits to an event the user doesn't own can't reach the shared calendar — they're
+        // kept locally on the user's own day plan only.
+        let ownershipWarningLabel = makeLabel(ScheduleText.eventNotOwnedWarning, size: 12, bold: false)
+        ownershipWarningLabel.textColor = .systemOrange
+        ownershipWarningLabel.preferredMaxLayoutWidth = 300
+        ownershipWarningLabel.lineBreakMode = .byWordWrapping
+        ownershipWarningLabel.usesSingleLineMode = false
+
         let titleField = NSTextField()
         titleField.placeholderString = ScheduleText.eventTitlePlaceholder
-        titleField.stringValue = existing?.title ?? ""
+        titleField.stringValue = localOverride?.title ?? existing?.title ?? ""
         titleField.translatesAutoresizingMaskIntoConstraints = false
         titleField.widthAnchor.constraint(equalToConstant: 300).isActive = true
         addTitleField = titleField
@@ -1191,6 +1209,14 @@ class scheduleViewController: NSViewController {
         let endPicker = picker(end, action: nil)
         addStartPicker = startPicker
         addEndPicker = endPicker
+        // A meeting you don't own can only be renamed locally — the Day Plan always keeps its real calendar
+        // time (see CalendarManager.fetchMeetings, which overlays TITLE ONLY). Disable the time pickers so
+        // it's clear the time is locked, instead of letting the user change a value that's silently ignored
+        // on save. The "you don't own this event" warning above explains why.
+        if editingEventIsNotOwned {
+            startPicker.isEnabled = false
+            endPicker.isEnabled = false
+        }
 
         let recurrencePopup = NSPopUpButton()
         recurrencePopup.addItems(withTitles: [ScheduleText.repeatNone, ScheduleText.repeatDaily,
@@ -1198,6 +1224,9 @@ class scheduleViewController: NSViewController {
         if let ev = existing { recurrencePopup.selectItem(at: CalendarManager.shared.recurrence(of: ev).rawValue) }
         recurrencePopup.translatesAutoresizingMaskIntoConstraints = false
         addRecurrencePopup = recurrencePopup
+        // Same as the time pickers: you can't change the repeat rule of an event you don't own — the change
+        // can't reach the shared calendar and isn't overlaid locally, so disable it rather than mislead.
+        if editingEventIsNotOwned { recurrencePopup.isEnabled = false }
 
         // Colour swatches — pre-select the event's saved colour (matched by hex) or the default.
         let savedColor = editingID.flatMap { CalendarManager.shared.color(forEventID: $0) }
@@ -1252,8 +1281,9 @@ class scheduleViewController: NSViewController {
             return (tv, sc)
         }
 
-        // Description — written to the calendar event, so it's shared with the other attendees.
-        let (notesView, notesScroll) = notesBox(existing?.notes ?? "")
+        // Description — written to the calendar event, so it's shared with the other attendees. (For a
+        // non-owned event this can't reach the shared calendar; it's kept in the local override instead.)
+        let (notesView, notesScroll) = notesBox(localOverride?.notes ?? existing?.notes ?? "")
         addNotesView = notesView
 
         // Private notes — stored only in Focus Bear (never written to the calendar), so attendees of a
@@ -1297,8 +1327,9 @@ class scheduleViewController: NSViewController {
             attendeeViews = [makeLabel(ScheduleText.eventParticipantsLabel, size: 12, bold: false), peopleStack]
         }
 
-        var formViews: [NSView] = [
-            header,
+        var formViews: [NSView] = [header]
+        if editingEventIsNotOwned { formViews.append(ownershipWarningLabel) }
+        formViews += [
             titleField,
             row(ScheduleText.eventCalendarLabel, calendarPopup),
             row(ScheduleText.eventStartsLabel, startPicker),
@@ -1384,6 +1415,7 @@ class scheduleViewController: NSViewController {
         addEventPopover = nil
         editingEventID = nil
         editingOccurrenceStart = nil
+        editingEventIsNotOwned = false
     }
 
     @objc private func saveEventForm() {
@@ -1402,20 +1434,29 @@ class scheduleViewController: NSViewController {
         let wasEditing = editingEventID != nil
         let eventID: String?
         if let editID = editingEventID {
-            let span: EKSpan
-            if CalendarManager.shared.event(withID: editID)?.hasRecurrenceRules == true {
-                switch promptRecurringEditScope() {
-                case .thisEvent: span = .thisEvent
-                case .series:    span = .futureEvents
-                case .cancel:    return   // user backed out; leave the editor as-is
-                }
+            if editingEventIsNotOwned {
+                // Can't write to a calendar event we don't own — persist the edit locally so it shows on
+                // the user's own day plan only, never on the shared calendar the other attendees see.
+                CalendarManager.shared.setLocalOverride(
+                    CalendarManager.LocalEventOverride(title: finalTitle, start: start, end: end,
+                                                       notes: notes.isEmpty ? nil : notes),
+                    forEventID: editID)
             } else {
-                span = .thisEvent
-            }
-            guard CalendarManager.shared.updateEvent(id: editID, title: finalTitle, start: start, end: end,
-                                                     calendarID: calendarID, recurrence: recurrence, notes: notes,
-                                                     span: span, occurrenceStart: editingOccurrenceStart) else {
-                showAddEventError(); NSSound.beep(); return
+                let span: EKSpan
+                if CalendarManager.shared.event(withID: editID)?.hasRecurrenceRules == true {
+                    switch promptRecurringEditScope() {
+                    case .thisEvent: span = .thisEvent
+                    case .series:    span = .futureEvents
+                    case .cancel:    return   // user backed out; leave the editor as-is
+                    }
+                } else {
+                    span = .thisEvent
+                }
+                guard CalendarManager.shared.updateEvent(id: editID, title: finalTitle, start: start, end: end,
+                                                         calendarID: calendarID, recurrence: recurrence, notes: notes,
+                                                         span: span, occurrenceStart: editingOccurrenceStart) else {
+                    showAddEventError(); NSSound.beep(); return
+                }
             }
             eventID = editID
         } else {
@@ -1441,6 +1482,7 @@ class scheduleViewController: NSViewController {
         addEventPopover = nil
         editingEventID = nil
         editingOccurrenceStart = nil
+        editingEventIsNotOwned = false
         // For a brand-new event, jump to its day so the user sees it land. For an edit, stay on the
         // day the user was viewing — a repeating event's `start` is its first instance, so jumping
         // would yank the view back weeks/months (e.g. editing today's task sent the user to May).
