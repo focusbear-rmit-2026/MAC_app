@@ -47,17 +47,24 @@ class habitsVc: NSViewController {
         // Entering full screen calls this, so don't force it visible — only show it when a habit player
         // is the front content. The player/Day-Plan transitions (setDateTimeClockHidden /
         // updateScheduleTabForState) keep it in sync afterwards.
+        dateTimeTimer?.invalidate()
+        dateTimeTimer = nil
+        ensureDateTimerRunning()
         refreshDateTimeClockVisibility()
-        if dateTimeTimer != nil{
-            dateTimeTimer?.invalidate()
-            dateTimeTimer = nil
-            setDateTime()
-        }
+    }
+
+    /// Start the 1-second clock timer if it isn't already running. Idempotent, so it's safe to call from
+    /// `refreshDateTimeClockVisibility` (which fires on every transition into a playing activity, and on
+    /// each tick) — that's what makes the clock self-heal if the timer was ever invalidated (e.g. by
+    /// `viewWillDisappear`) while an activity is still on screen, instead of freezing. The timer is stored
+    /// BEFORE the first `setDateTime()` so the visibility refresh it triggers sees a live timer and can't
+    /// recurse.
+    func ensureDateTimerRunning() {
+        guard dateTimeTimer == nil else { return }
+        let timer = Timer(timeInterval: 1, target: self, selector: #selector(setDateTime), userInfo: nil, repeats: true)
+        RunLoop.main.add(timer, forMode: .common)
+        dateTimeTimer = timer
         setDateTime()
-        DispatchQueue.main.async {
-            self.dateTimeTimer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.setDateTime), userInfo: nil, repeats: true)
-            RunLoop.main.add((self.dateTimeTimer!), forMode: RunLoop.Mode.common)
-        }
     }
 
     /// True when an activity player is the front content of the habits area: the habit / custom-
@@ -80,6 +87,10 @@ class habitsVc: NSViewController {
         let onDayPlanTab = timerViewcontrollerObj?.isAllowedActivityDayPlanFront ?? false
         let show = checkIsFullScreenEnabled() && isActivityPlayerFront && !onDayPlanTab
         lblCurrentDateTime?.isHidden = !show
+        // Whenever the clock is on screen it must be ticking — restart the timer if something invalidated
+        // it (viewWillDisappear / a small-window transition) while an activity is still playing, so it
+        // never shows a frozen time.
+        if show { ensureDateTimerRunning() }
     }
 
     /// Hide/show the time-of-day clock. Hidden while a Day Plan is the visible content (its tasks panel
@@ -102,7 +113,13 @@ class habitsVc: NSViewController {
     }
     
     override func viewWillDisappear() {
-        dateTimeTimer?.invalidate()
+        // Keep the clock ticking while a full-screen activity is still on screen (it's shown and must
+        // keep updating) — a spurious viewWillDisappear here is what froze the clock mid-habit. It's
+        // restarted on full-screen enter / by refreshDateTimeClockVisibility in every other case.
+        if !(checkIsFullScreenEnabled() && isActivityPlayerFront) {
+            dateTimeTimer?.invalidate()
+            dateTimeTimer = nil
+        }
     }
     
     override func viewWillAppear() {
