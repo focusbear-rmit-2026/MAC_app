@@ -877,6 +877,7 @@
             "focusModeFocusedTitles": ["¡Lo lograste!", "¡Estuviste en tu zona!", "¡Trabajo profundo logrado!"],
             "focusModeDecentTitles": ["Nada mal", "Sesión decente"],
             "focusModeDistractedTitles": ["Se colaron algunas distracciones", "Concéntrate al máximo en la próxima sesión"],
+            "focusModeCompleteTitles": ["¡Buena concentración!", "¿Tu segundo nombre es Concentración?", "¡Así se hace!", "Otro bloque en el bolsillo", "Nivel de concentración: legendario", "Tu yo del futuro te lo agradece"],
             "buttonContinueMicroBreak": "Continuar descanso",
             "subtitleNew": "Bloque de enfoque completado: ¡registra tu logro para hacer seguimiento de tu progreso!",
             "buttonAccordionAchievement": "✨ Registra tu logro",

@@ -944,6 +944,7 @@
             "focusModeFocusedTitles": ["You crushed it!", "You were in the zone!", "Deep work accomplished!"],
             "focusModeDecentTitles": ["Not bad", "Decent session"],
             "focusModeDistractedTitles": ["A few distractions crept in", "Lock in your focus for the next one"],
+            "focusModeCompleteTitles": ["Nice focus!", "Is your middle name Focus?", "That's how it's done!", "Another block in the bag", "Focus level: legendary", "Your future self says thanks"],
             "buttonContinueMicroBreak": "Continue Break",
             "subtitleNew": "Focus block complete – log your achievement to track progress!",
             "buttonAccordionAchievement": "✨ Log your Achievement"

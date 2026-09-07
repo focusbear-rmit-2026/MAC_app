@@ -55,7 +55,15 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
     var focusModeDecentTitles = [String]()
     var focusModeDistractedTitles = [String]()
     var titleExtendFocusMode = "You are doing well!"
+    /// Generic completion titles for sessions without an alignment score (or the default focus mode);
+    /// one is picked at random so the popup doesn't always read the same.
+    var focusModeCompleteTitles = [String]()
     
+    /// A random generic completion title; `titleExtendFocusMode` only if the list is empty.
+    func randomCompletionTitle() -> String {
+        focusModeCompleteTitles.randomElement() ?? titleExtendFocusMode
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -72,6 +80,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         focusModeFocusedTitles = ["You crushed it!", "You were in the zone!", "Deep work accomplished!"]
         focusModeDecentTitles = ["Not bad", "Decent session"]
         focusModeDistractedTitles = ["A few distractions crept in", "Lock in your focus for the next one"]
+        focusModeCompleteTitles = ["Nice focus!", "Is your middle name Focus?", "That's how it's done!", "Another block in the bag", "Focus level: legendary", "Your future self says thanks"]
         
         
         
@@ -96,7 +105,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         lblSelectMinutesToExtend.stringValue = "Select minutes to extend:"
         lblTitleExtendFocus.stringValue = "Still in the flow? Extend the session"
         lblIntention.stringValue = "Your intention for this focus mode was:- \"<INTENTION>\""
-        lblTitle.stringValue = titleExtendFocusMode
+        lblTitle.stringValue = randomCompletionTitle()
         
         
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
@@ -126,10 +135,11 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                 focusModeFocusedTitles = focusCompletedInfo.value(forKey: "focusModeFocusedTitles") as? [String] ?? focusModeFocusedTitles
                 focusModeDecentTitles = focusCompletedInfo.value(forKey: "focusModeDecentTitles") as? [String] ?? focusModeDecentTitles
                 focusModeDistractedTitles = focusCompletedInfo.value(forKey: "focusModeDistractedTitles") as? [String] ?? focusModeDistractedTitles
+                focusModeCompleteTitles = focusCompletedInfo.value(forKey: "focusModeCompleteTitles") as? [String] ?? focusModeCompleteTitles
                 
             }
         }
-        lblTitle.stringValue = titleExtendFocusMode
+        lblTitle.stringValue = randomCompletionTitle()
         btnContinueHabit.title = buttonContinueText
         
         popUpBtnSelectMinutes.removeAllItems()
@@ -204,7 +214,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                 if arrFocusType[i]["id"] as? String  == focusCompletedVcObj?.currentFocusModeId ?? ""{
                     if let isDefault = arrFocusType[i]["isDefault"] as? Bool{
                         if  isDefault{
-                            lblTitle.stringValue = titleExtendFocusMode
+                            lblTitle.stringValue = randomCompletionTitle()
                         }
                     }
                     break;
@@ -212,7 +222,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
             }
             
         }else{
-            lblTitle.stringValue = titleExtendFocusMode
+            lblTitle.stringValue = randomCompletionTitle()
             
             boxFocusAlignmentScore.isHidden = true
             lblDeepFocusTime.stringValue = getStringTimeFromSeconds(seconds: Int(duration))
