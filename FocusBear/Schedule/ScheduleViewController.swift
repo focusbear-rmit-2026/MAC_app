@@ -553,6 +553,7 @@ class scheduleViewController: NSViewController {
     private var todoAllTasks: [NSDictionary] = []
     private var todoSelectedIDs = Set<String>()
     private var todoSearch = ""
+    private var todoSearchWorkItem: DispatchWorkItem?   // debounces the backend to-do search
     private var todoProjectFilterID: String?
     private var todoProjectIDs: [String] = []
     private weak var todoListStack: NSStackView?
@@ -3576,7 +3577,35 @@ class scheduleViewController: NSViewController {
         }
     }
 
-    @objc private func todoSearchChanged(_ s: NSSearchField) { todoSearch = s.stringValue; rebuildTodoList() }
+    @objc private func todoSearchChanged(_ s: NSSearchField) {
+        todoSearch = s.stringValue
+        rebuildTodoList()            // instant: filter the cached SMART list
+        scheduleTodoApiSearch()      // fallback: search the full to-do list on the backend
+    }
+
+    /// The cached SMART list only holds ~50 tasks, so searching for one further down finds nothing
+    /// locally. Debounce a backend title search (GET /to-do/search) and merge its results into the list.
+    private func scheduleTodoApiSearch() {
+        todoSearchWorkItem?.cancel()
+        let query = todoSearch.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard query.count >= 2 else { return }
+        let work = DispatchWorkItem { [weak self] in
+            allApiObject.searchToDos(title: query) { results in
+                DispatchQueue.main.async {
+                    guard let self = self,
+                          self.todoSearch.trimmingCharacters(in: .whitespacesAndNewlines) == query,  // still the current query
+                          let results = results, !results.isEmpty else { return }
+                    let existingIDs = Set(self.todoAllTasks.compactMap { $0.value(forKey: "id") as? String })
+                    let fresh = results.filter { r in (r.value(forKey: "id") as? String).map { !existingIDs.contains($0) } ?? false }
+                    guard !fresh.isEmpty else { return }
+                    self.todoAllTasks.append(contentsOf: fresh)
+                    self.rebuildTodoList()
+                }
+            }
+        }
+        todoSearchWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: work)
+    }
     @objc private func todoProjectChanged(_ p: NSPopUpButton) {
         let idx = p.indexOfSelectedItem
         todoProjectFilterID = todoProjectIDs.indices.contains(idx) ? todoProjectIDs[idx] : nil

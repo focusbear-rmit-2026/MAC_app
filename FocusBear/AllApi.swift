@@ -5886,6 +5886,40 @@ class AllApi:NSObject {
         }
     }
 
+    /// Searches the user's to-dos by title on the backend (`GET /to-do/search?title=…`). The Day Plan
+    /// picker uses this as a fallback: the cached SMART list only holds ~50 tasks, so a task further down
+    /// the list isn't found locally. Returns up to `take` (10–20) ToDoResponse rows.
+    func searchToDos(title: String, take: Int = 20, completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { completionHandler(nil); return }
+        addLog(text: "func call:- searchToDos")
+        appdelegate!.credentialsManager.credentials { credentialsInfo in
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            guard appdelegate!.credential != nil else { completionHandler(nil); return }
+            let encoded = trimmed.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? trimmed
+            let responsePath = "\(baseUrl)/to-do/search?title=\(encoded)&take=\(max(10, min(20, take)))"
+            guard let responsePathUrl = NSURL(string: responsePath) else { completionHandler(nil); return }
+            let request = makeRequest(responsePathUrl: responsePathUrl)
+            request.httpMethod = "GET"
+            let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
+                guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200, let data = data else {
+                    addLog(text: "searchToDos statusCode \((response as? HTTPURLResponse)?.statusCode ?? -1)")
+                    completionHandler(nil); return
+                }
+                do {
+                    let json = try JSONSerialization.jsonObject(with: data, options: .mutableContainers)
+                    if let arr = json as? [NSDictionary] { completionHandler(arr); return }
+                    if let obj = json as? NSDictionary, let arr = obj.value(forKey: "data") as? [NSDictionary] { completionHandler(arr); return }
+                    addLog(text: "searchToDos: unexpected response shape")
+                } catch {
+                    addLog(text: "error searchToDos parse: \(error.localizedDescription)")
+                }
+                completionHandler(nil)
+            }
+            task.resume()
+        }
+    }
+
     /// Fetch ALL of the user's projects (used by the Day Plan `#project` autocomplete). The
     /// `/projects` response is `{ data: [page], projects: [...], total_count, meta }`; we take the
     /// larger of `data`/`projects` and, if that's still short of `total_count`, page with `?page=N`
