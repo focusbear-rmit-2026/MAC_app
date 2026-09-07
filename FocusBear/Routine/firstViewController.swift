@@ -256,10 +256,7 @@ class firstViewController: NSViewController {
                 scrollViewHabits.isHidden = false
                 tblViewHabits.reloadData()
                 lblSubTitle.isHidden = true
-                if !getvisualizeInstructionsObject().isViewLoaded{
-                    getvisualizeInstructionsObject().loadView()
-                }
-                getvisualizeInstructionsObject().tryPreLoadMotivationalMessage()
+                preloadVisualizeInstructionsOnNextTurn()
                 
             }else if currentState == ._EVENING_HABIT_{
                 if arrPreFilteredEveningHabits.count == 1{
@@ -287,10 +284,7 @@ class firstViewController: NSViewController {
                 scrollViewHabits.isHidden = false
                 tblViewHabits.reloadData()
                 lblSubTitle.isHidden = true
-                if !getvisualizeInstructionsObject().isViewLoaded{
-                    getvisualizeInstructionsObject().loadView()
-                }
-                getvisualizeInstructionsObject().tryPreLoadMotivationalMessage()
+                preloadVisualizeInstructionsOnNextTurn()
             }else if currentState == ._MICRO_BREAK_{
                 boxSegmentControlOfficeMode.isHidden = false
                 btnSelectHabitsToDo.isHidden = true
@@ -377,16 +371,29 @@ class firstViewController: NSViewController {
                 scrollViewHabits.isHidden = false
                 tblViewHabits.reloadData()
                 lblSubTitle.isHidden = true
-                if !getvisualizeInstructionsObject().isViewLoaded{
-                    getvisualizeInstructionsObject().loadView()
-                }
-                getvisualizeInstructionsObject().tryPreLoadMotivationalMessage()
+                preloadVisualizeInstructionsOnNextTurn()
                 
             }
         }
         resetFrame()
     }
     
+    /// Pre-warm the Visualize step (its storyboard scene, WKWebView included, plus the motivational-message
+    /// page load) on the NEXT main-queue turn instead of inline. viewWillAppear runs inside the routine-start
+    /// turn (startHabitsCall → showAllMorningHabits → addSubview), which already builds this screen and the
+    /// edit-routine scene; loading a third scene here too pushed that turn past the 2 s hang threshold
+    /// (FOCUS-BEAR-MACOS-1CC). Nothing touches the Visualize step before the user clicks Start, and that
+    /// click can't be processed before this block runs.
+    private func preloadVisualizeInstructionsOnNextTurn() {
+        DispatchQueue.main.async {
+            let visualizeInstructions = getvisualizeInstructionsObject()
+            if !visualizeInstructions.isViewLoaded {
+                visualizeInstructions.loadView()
+            }
+            visualizeInstructions.tryPreLoadMotivationalMessage()
+        }
+    }
+
     override func viewWillDisappear() {
         if lateMorningHabitPopupVcObj != nil{
             if lateMorningHabitPopupVcObj?.presentingViewController == self{
