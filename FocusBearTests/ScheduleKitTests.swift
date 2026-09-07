@@ -3,8 +3,8 @@
 //  Focus BearTests
 //
 //  Unit tests for the pure Day Plan scheduling engine (ScheduleBuilder). These lock in the
-//  placement rules that have been bug-prone: in-order packing, stopping when a habit can't fit,
-//  pushing past meetings, capping at the routine window, and dropping past-cutoff habits.
+//  placement rules that have been bug-prone: in-order packing, filling the gap before a meeting
+//  with a shorter later habit, capping at the routine window, and dropping past-cutoff habits.
 //
 
 @testable import Focus_Bear
@@ -54,23 +54,97 @@ final class ScheduleKitTests: XCTestCase {
         XCTAssertEqual(blocks[2].start, blocks[1].end)
     }
 
-    // MARK: - Stop when a habit doesn't fit (the continue→break fix)
+    // MARK: - Gap filling: a shorter later habit fills what's left of a gap
 
-    func testStopsAtFirstHabitThatDoesNotFit() {
+    func testShorterLaterHabitFillsRemainingWindow() {
         let now = t(9, 0)
-        // Window 9:00–9:20. A=10m fits; B=30m doesn't; C=5m WOULD fit but must not show out of order.
+        // Window 9:00–9:20. A=10m fits; B=30m doesn't fit anywhere; C=5m fits in the 10 min left, so
+        // it's pulled forward rather than leaving that time as deep work. B is the only overflow.
         let segs = [seg([habit(0, "A", minutes: 10),
                          habit(1, "B", minutes: 30),
                          habit(2, "C", minutes: 5)], start: now, end: t(9, 20))]
         let blocks = habitBlocks(build(segs, now: now, dayEnd: t(18, 0)))
-        XCTAssertEqual(blocks.filter { !$0.didOverflow }.map { $0.title }, ["A"],
-                       "Once a habit can't fit, later (shorter) habits must not leap-frog it")
-        // The habits that didn't fit aren't dropped: they form the "not enough time today" group, in
-        // routine order, anchored after the last habit that did fit so they sort below it.
+        let timed = blocks.filter { !$0.didOverflow }
+        XCTAssertEqual(timed.map { $0.title }, ["A", "C"])
+        XCTAssertEqual(timed[1].start, timed[0].end, "C is pulled forward into the time B couldn't use")
+        // The habit that fit nowhere isn't dropped: it forms the "not enough time today" group,
+        // anchored after the last habit that did fit so it sorts below it.
         let overflow = blocks.filter { $0.didOverflow }
-        XCTAssertEqual(overflow.map { $0.title }, ["B", "C"])
-        XCTAssertTrue(overflow.allSatisfy { $0.start >= blocks[0].end })
+        XCTAssertEqual(overflow.map { $0.title }, ["B"])
+        XCTAssertTrue(overflow.allSatisfy { $0.start >= timed[1].end })
         XCTAssertTrue(overflow.allSatisfy { $0.isActionable })
+    }
+
+    // MARK: - Gap before a meeting (the reported morning: 06:30 routine, meetings from 07:00)
+
+    private var screenshotHabits: [ScheduleHabitInput] {
+        [habit(0, "A", minutes: 5), habit(1, "B", minutes: 8), habit(2, "C", minutes: 45),
+         habit(3, "D", minutes: 10), habit(4, "E", minutes: 20)]
+    }
+
+    private var screenshotMeetings: [ScheduleMeetingInput] {
+        [ScheduleMeetingInput(id: "m1", title: "Help with Sean", start: t(7, 0), end: t(8, 0)),
+         ScheduleMeetingInput(id: "m2", title: "Standup", start: t(8, 15), end: t(9, 0))]
+    }
+
+    func testGapBeforeMeetingFilledByShorterHabitAndLongHabitMovesPastMeetings() {
+        let now = t(6, 30)
+        // Window runs well past the meetings (the morning window ends at the shutdown time).
+        let segs = [seg(screenshotHabits, start: now, end: t(12, 0))]
+        let blocks = build(segs, meetings: screenshotMeetings, now: now, dayEnd: t(18, 0))
+        let habits = habitBlocks(blocks)
+        XCTAssertTrue(habits.allSatisfy { !$0.didOverflow }, "everything fits somewhere in the window")
+        // A and B fill 06:30–06:43; C (45m) can't finish before 07:00, so D (10m) is pulled forward
+        // into 06:43–06:53. E (20m) doesn't fit in the 7 min left, nor in the 15 min between meetings.
+        // C then lands in the first gap after the meetings that fits it, and E follows in order.
+        XCTAssertEqual(habits.map { $0.title }, ["A", "B", "D", "C", "E"])
+        XCTAssertEqual(habits[2].start, t(6, 43))
+        XCTAssertEqual(habits[2].end, t(6, 53))
+        XCTAssertEqual(habits[3].start, t(9, 0))
+        XCTAssertEqual(habits[4].start, t(9, 45))
+        // The gap before the meeting is filled with habits, not deep work.
+        let deepWorkBeforeMeeting = blocks.filter { $0.kind == .deepWork && $0.start < t(7, 0) }
+        XCTAssertTrue(deepWorkBeforeMeeting.isEmpty, "no deep-work block before the meeting while a habit still fits")
+        // The 15 min between the meetings fits no remaining habit, so that gap IS deep work.
+        XCTAssertTrue(blocks.contains { $0.kind == .deepWork && $0.start == t(8, 0) && $0.end == t(8, 15) })
+        XCTAssertEqual(habits.filter { $0.isCurrent }.map { $0.title }, ["A"])
+    }
+
+    func testHabitThatFitsNowhereInWindowOverflows() {
+        let now = t(6, 30)
+        // Window ends at 09:30: after the meetings only 30 min remain, so C (45m) fits nowhere and
+        // must surface in the "not enough time today" group; E (20m) still takes the 09:00 slot.
+        let segs = [seg(screenshotHabits, start: now, end: t(9, 30))]
+        let habits = habitBlocks(build(segs, meetings: screenshotMeetings, now: now, dayEnd: t(18, 0)))
+        let timed = habits.filter { !$0.didOverflow }
+        XCTAssertEqual(timed.map { $0.title }, ["A", "B", "D", "E"])
+        XCTAssertEqual(timed[3].start, t(9, 0))
+        let overflow = habits.filter { $0.didOverflow }
+        XCTAssertEqual(overflow.map { $0.title }, ["C"])
+        XCTAssertTrue(overflow.allSatisfy { $0.start >= t(9, 20) }, "overflow sorts below the last placed habit")
+        XCTAssertTrue(overflow.allSatisfy { $0.isActionable })
+    }
+
+    func testLeaveBufferShrinksGapBeforeMeeting() {
+        let now = t(6, 30)
+        // 5 min buffer: the gap is 06:30–06:43 (not 06:48), so A (15m) can't be squeezed in and moves
+        // past the meeting while B (10m) fills the gap.
+        let meeting = ScheduleMeetingInput(id: "m1", title: "Standup", start: t(6, 48), end: t(7, 0))
+        let segs = [seg([habit(0, "A", minutes: 15), habit(1, "B", minutes: 10)], start: now, end: t(12, 0))]
+        let habits = habitBlocks(build(segs, meetings: [meeting], now: now, dayEnd: t(18, 0), buffer: 5 * 60))
+        XCTAssertEqual(habits.map { $0.title }, ["B", "A"])
+        XCTAssertEqual(habits[0].start, now)
+        XCTAssertEqual(habits[1].start, t(7, 0))
+    }
+
+    func testPlayingHabitUsesRemainingDurationToFit() {
+        let now = t(6, 30)
+        // A is 30m but has 20m elapsed: its remaining 10m fits before the 06:45 meeting.
+        let meeting = ScheduleMeetingInput(id: "m1", title: "Standup", start: t(6, 45), end: t(7, 0))
+        let segs = [seg([habit(0, "A", minutes: 30, playing: true, elapsed: 20 * 60)], start: now, end: t(12, 0))]
+        let habits = habitBlocks(build(segs, meetings: [meeting], now: now, dayEnd: t(18, 0)))
+        XCTAssertEqual(habits.map { $0.start }, [now])
+        XCTAssertEqual(habits[0].end, t(6, 40))
     }
 
     // MARK: - Not enough time today (overflow group)

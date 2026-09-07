@@ -60,7 +60,6 @@ enum ScheduleText {
     static var engineLabels: ScheduleBuilder.Labels {
         ScheduleBuilder.Labels(
             deepWork: "🧠 " + t("deepWork", "Deep work"),
-            deepWorkNoRoom: "🧠 " + t("deepWorkNoRoom", "Deep work (no room for next habit)"),
             breakSprint: "☕️ " + t("breakSprint", "Break"),
             sleep: "😴 " + t("sleep", "Sleep"),
             eveningRoutine: "🌙 " + t("eveningRoutine", "Evening routine"),

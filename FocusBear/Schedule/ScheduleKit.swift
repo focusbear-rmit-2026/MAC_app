@@ -118,7 +118,6 @@ enum ScheduleBuilder {
     /// engine stays free of any config/localization dependency.
     struct Labels {
         var deepWork = "🧠 Deep work"
-        var deepWorkNoRoom = "🧠 Deep work (no room for next habit)"
         var breakSprint = "☕️ Break"
         var sleep = "😴 Sleep"
         var eveningRoutine = "🌙 Evening routine"
@@ -173,66 +172,53 @@ enum ScheduleBuilder {
             // constraint for earlier sections and place them all.
             let placementWindowEnd = seg.isEarlier ? Date.distantFuture : seg.windowEnd
 
-            // Place habits strictly in their list order (no reordering). Each starts at the
-            // running cursor, pushed past any meeting it would overlap, and everything after it
-            // follows — so a long first habit stays first instead of being leap-frogged.
-            var cursor = segStart
+            // Habits that still count today: a habit with a cutoff stays visible until that cutoff has
+            // actually passed — not merely because its *projected* slot would land after it. The user
+            // can still do it (possibly out of order) right up to the cutoff, so don't hide it early.
+            // (An "earlier today" section is past history: show every habit regardless of cutoff.)
+            let dueHabits = seg.habits.filter { h in
+                seg.isEarlier || h.cutoff.map { now <= $0 } ?? true
+            }
+            let placement = placeHabitsInGaps(dueHabits, from: segStart, to: placementWindowEnd, busy: habitBusy)
             var placed = [Int]()
-            var overflow = [ScheduleHabitInput]()   // habits that don't fit before the window ends
-            var hitOverflow = false
-            for h in seg.habits {
-                // A habit with a cutoff stays visible until that cutoff time has actually passed —
-                // not merely because its *projected* slot would land after it. The user can still do
-                // it (possibly out of order) right up to the cutoff, so don't hide it early. (An
-                // "earlier today" section is past history: show every habit regardless of cutoff.)
-                if !seg.isEarlier, let cutoff = h.cutoff, now > cutoff { continue }
-                // Habits run in sequence, so once one doesn't fit, none after it fits either — collect
-                // the rest as overflow instead of leap-frogging to a shorter later habit.
-                if hitOverflow { overflow.append(h); continue }
-                let remaining = max(0, h.durationSeconds - (h.isPlaying ? h.elapsedSeconds : 0))
-                let dur = Double(remaining)
-                guard let start = nextFreeStart(from: cursor, duration: dur,
-                                                busy: habitBusy, windowEnd: placementWindowEnd) else {
-                    hitOverflow = true
-                    overflow.append(h)
-                    continue
-                }
-                let end = start.addingTimeInterval(dur)
-                cursor = end
-                var b = ScheduleBlock(kind: .habit, title: h.title, start: start, end: end,
-                                      habitIndex: h.index, routineName: seg.name)
+            for p in placement.placed {
+                var b = ScheduleBlock(kind: .habit, title: p.habit.title, start: p.start, end: p.end,
+                                      habitIndex: p.habit.index, routineName: seg.name)
                 b.isActionable = seg.actionable
-                b.isDone = h.isDone
-                b.habitId = h.id
+                b.isDone = p.habit.isDone
+                b.habitId = p.habit.id
                 b.isEarlier = seg.isEarlier
                 blocks.append(b)
                 placed.append(blocks.count - 1)
-                occupied.append((start, end))
+                occupied.append((p.start, p.end))
             }
+            // Where the overflow group is anchored: the end of the last habit that fit (segStart when
+            // nothing fit), so it sorts below every placed habit of this routine.
+            let overflowAnchor = placement.placed.map { $0.end }.max() ?? segStart
 
             // Overflow: for the ACTIVE routine (e.g. a packed morning where the habits don't fit before
             // the first meeting), surface the habits that couldn't be placed as a SEPARATE collapsed
             // "not enough time today" group instead of dropping them — the user can still see and do their
-            // routine. Anchor them ALL at `cursor` (the end of the last habit that fit) so the sort keeps
-            // them below the placed habits — NOT at the top of a group that did have time (reported:
+            // routine. Anchor them ALL at `overflowAnchor` (the end of the last habit that fit) so the sort
+            // keeps them below the placed habits — NOT at the top of a group that did have time (reported:
             // "habits I don't have time for appear at the top of an accordion where I do"). They share the
-            // same start deliberately: the deep-work filler that occupies the freed time ALSO starts at
-            // `cursor`, and the final sort's kind tie-break (habit before deepWork) plus the habitIndex
-            // tie-break keep the whole overflow group CONTIGUOUS and in routine order. (A previous per-item
-            // offset gave them distinct starts, so a deep-work block sorted BETWEEN two overflow anchors and
-            // split them into two "not enough time today" cards.) When no habit fit at all, cursor ==
-            // segStart and this whole segment is one overflow group. Preview/earlier routines drop them.
+            // same start deliberately: a deep-work filler occupying the freed time ALSO starts there, and the
+            // final sort's kind tie-break (habit before deepWork) plus the habitIndex tie-break keep the whole
+            // overflow group CONTIGUOUS and in routine order. (A previous per-item offset gave them distinct
+            // starts, so a deep-work block sorted BETWEEN two overflow anchors and split them into two "not
+            // enough time today" cards.) When no habit fit at all, the anchor is segStart and this whole
+            // segment is one overflow group. Preview/earlier routines drop them.
             if seg.actionable {
-                for h in overflow {
-                    var b = ScheduleBlock(kind: .habit, title: h.title, start: cursor, end: cursor,
+                for h in placement.unplaced {
+                    var b = ScheduleBlock(kind: .habit, title: h.title, start: overflowAnchor, end: overflowAnchor,
                                           habitIndex: h.index, routineName: seg.name)
                     b.isActionable = true
                     b.isDone = h.isDone
                     b.habitId = h.id
                     b.didOverflow = true
-                    // Keep the block zero-duration (start == end == cursor) so it groups and doesn't count
-                    // as busy time, but remember the habit's own length so the UI can show a sequential range.
-                    b.overflowDurationSeconds = max(0, h.durationSeconds - (h.isPlaying ? h.elapsedSeconds : 0))
+                    // Keep the block zero-duration (start == end) so it groups and doesn't count as busy
+                    // time, but remember the habit's own length so the UI can show a sequential range.
+                    b.overflowDurationSeconds = remainingSeconds(of: h)
                     blocks.append(b)
                     placed.append(blocks.count - 1)
                 }
@@ -268,26 +254,9 @@ enum ScheduleBuilder {
         // cutoff time: we don't suggest deep work once they've called it a day. The timetable still
         // runs to 23:59 (meetings, etc. can sit later); there's just no deep-work filler after cutoff.
         let deepWorkEnd = [deepWorkCutoff, dayEnd].compactMap { $0 }.min() ?? dayEnd
-        let habitStarts = blocks.filter { $0.kind == .habit }.map { $0.start }
         for iv in freeIntervals(from: now, to: deepWorkEnd, busy: occupied) {
             if iv.1.timeIntervalSince(iv.0) >= Double(minDeepWorkSeconds) {
-                // A gap is "no room for the next habit" only when it ends because a meeting
-                // begins (the gap closes at the meeting's leave buffer) *and* a habit was pushed
-                // to start right after that meeting ends — i.e. the habit couldn't finish before
-                // the meeting, so it got bumped past it. Plain free time before a later routine
-                // (whose habits sit hours away) isn't flagged.
-                let closingMeeting = upcomingMeetings.first {
-                    $0.start >= iv.1.addingTimeInterval(-1) &&
-                    $0.start <= iv.1.addingTimeInterval(Double(leaveBufferSeconds) + 60)
-                }
-                let pushedHabitAfter = closingMeeting.map { m in
-                    habitStarts.contains {
-                        $0 >= m.end.addingTimeInterval(-60) &&
-                        $0 <= m.end.addingTimeInterval(Double(minDeepWorkSeconds))
-                    }
-                } ?? false
-                let title = pushedHabitAfter ? labels.deepWorkNoRoom : labels.deepWork
-                blocks.append(contentsOf: deepWorkSprints(from: iv.0, to: iv.1, workTitle: title,
+                blocks.append(contentsOf: deepWorkSprints(from: iv.0, to: iv.1, workTitle: labels.deepWork,
                                                           workSeconds: sprintWorkSeconds,
                                                           breakSeconds: sprintBreakSeconds, labels: labels))
             }
@@ -309,24 +278,50 @@ enum ScheduleBuilder {
 
     // MARK: - Helpers
 
-    /// Earliest start ≥ `from` where [start, start+duration] fits before `windowEnd` without
-    /// overlapping any busy interval — it pushes past a conflicting meeting rather than
-    /// reordering habits around it. Returns nil if it can't fit before the window ends.
-    static func nextFreeStart(from: Date, duration: TimeInterval,
-                              busy: [(Date, Date)], windowEnd: Date) -> Date? {
-        let sorted = busy.sorted { $0.0 < $1.0 }
-        var start = from
-        var advanced = true
-        while advanced {
-            advanced = false
-            if start.addingTimeInterval(duration) > windowEnd.addingTimeInterval(0.5) { return nil }
-            for b in sorted where start < b.1 && start.addingTimeInterval(duration) > b.0 {
-                start = b.1            // push to the end of the conflicting meeting
-                advanced = true
-                break
+    /// A habit the gap filler found a concrete slot for.
+    struct PlacedHabit {
+        let habit: ScheduleHabitInput
+        let start: Date
+        let end: Date
+    }
+
+    /// Slack allowed past a gap's end so a habit that ends a fraction of a second late (because `now`
+    /// carries sub-second time while window/meeting bounds are whole minutes) still counts as fitting.
+    private static let fitToleranceSeconds: TimeInterval = 0.5
+
+    /// Packs `habits` into the free gaps of [from, to] (everything not covered by `busy`, i.e. meetings
+    /// plus their leave buffer), gap by gap in time order. Within a gap, the earliest habit in routine
+    /// order that still fits is placed next — so when the next habit in order can't finish before a
+    /// meeting, a shorter later habit is pulled forward into that gap instead of leaving it to deep
+    /// work, and the long habit takes the first later gap that fits it. Only what's needed to fill a
+    /// gap is pulled forward, so the list order stays as stable as possible.
+    ///
+    /// "Fits nowhere" is judged against the routine's whole window: a habit is `unplaced` only when no
+    /// gap between `from` and `to` is long enough for it. The active morning routine's window runs to
+    /// the user's shutdown time, so a habit that can't fit before the morning's meetings but does fit
+    /// after them is placed there (later today), not reported as "not enough time today"; the overflow
+    /// group appears only when the window is genuinely full.
+    static func placeHabitsInGaps(_ habits: [ScheduleHabitInput], from: Date, to: Date,
+                                  busy: [(Date, Date)]) -> (placed: [PlacedHabit], unplaced: [ScheduleHabitInput]) {
+        var remaining = habits
+        var placed = [PlacedHabit]()
+        for gap in freeIntervals(from: from, to: to, busy: busy) {
+            var cursor = gap.0
+            let gapEnd = gap.1.addingTimeInterval(fitToleranceSeconds)
+            while let i = remaining.firstIndex(where: { cursor.addingTimeInterval(Double(remainingSeconds(of: $0))) <= gapEnd }) {
+                let habit = remaining.remove(at: i)
+                let end = cursor.addingTimeInterval(Double(remainingSeconds(of: habit)))
+                placed.append(PlacedHabit(habit: habit, start: cursor, end: end))
+                cursor = end
             }
+            if remaining.isEmpty { break }
         }
-        return start
+        return (placed, remaining)
+    }
+
+    /// Seconds a habit still needs: its full duration, less what has already elapsed if it's playing.
+    static func remainingSeconds(of h: ScheduleHabitInput) -> Int {
+        max(0, h.durationSeconds - (h.isPlaying ? h.elapsedSeconds : 0))
     }
 
     /// Splits a deep-work interval into work/break sprints based on the user's break cadence.

@@ -356,8 +356,11 @@ The newest major feature (PR #1935 lineage) and the only subsystem built with a 
 
 - **`ScheduleKit.swift`** — pure, AppKit-free timeline engine. `ScheduleBuilder.build(...)` takes
   routine segments (with time windows), calendar meetings, `now`, day end, leave-buffer, and pomodoro
-  sprint config; packs habits strictly in-order per window (pushing past meetings, stopping at the
-  first habit that won't fit), inserts meeting blocks, and turns free gaps ≥ 10 min into deep-work
+  sprint config; packs habits into the free gaps of their routine window gap by gap
+  (`placeHabitsInGaps`: within a gap the earliest habit in routine order that still fits goes next, so
+  a shorter later habit fills the time before a meeting and the long one takes the first later gap;
+  a habit that fits in no gap of the window becomes a "not enough time today" overflow row), inserts
+  meeting blocks, and turns the free gaps left after habit placement (≥ 10 min) into deep-work
   blocks, optionally split into work/break sprints (`sprintWorkSeconds = breakAfterMinutes * 60`;
   `breakAfterMinutes` is a runtime global from server settings, default 0 — a ≤ 0 value yields
   un-split blocks). This is the **unit-tested** part (`ScheduleKitTests`).
