@@ -285,7 +285,7 @@ class menuViewController: NSViewController {
         var menuItemFocusMusicTitle = "Focus Music"
         
         var titleStartBreak = "Start Break"
-        lblTitleBrainDump.stringValue = "Brain Dump"
+        lblTitleBrainDump.stringValue = "Notes"   // i18n-ignore: last-resort default; the real string comes from config (menuItemNotesTitle)
         
         lblMeetingDetection.stringValue = "Meeting active - breaks off"
         btnFalseDetection.title = "False positive: I'm not in a meeting"
@@ -321,7 +321,7 @@ class menuViewController: NSViewController {
             menuItemUpgradeNowTitle = menuInfo.value(forKey: "menuItemUpgradeNowTitle") as? String ?? menuItemUpgradeNowTitle
             subscriptionExpiredText = menuInfo.value(forKey: "subscriptionExpiredText") as? String ?? subscriptionExpiredText
             titleStartBreak = menuInfo.value(forKey: "menuItemStartBreakTitle") as? String ?? titleStartBreak
-            lblTitleBrainDump.stringValue = menuInfo.value(forKey: "menuItemBrainDumpTitle") as? String ?? lblTitleBrainDump.stringValue
+            lblTitleBrainDump.stringValue = menuInfo.value(forKey: "menuItemNotesTitle") as? String ?? lblTitleBrainDump.stringValue
             toolTipOfficeMode = menuInfo.value(forKey: "toolTipOfficeMode") as? String ?? toolTipOfficeMode
             toolTipWfhMode = menuInfo.value(forKey: "toolTipWfhMode") as? String ?? toolTipWfhMode
             lblTitleTools.stringValue = menuInfo.value(forKey: "menuItemToolsTitle") as? String ?? lblTitleTools.stringValue

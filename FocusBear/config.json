@@ -599,7 +599,8 @@
         "buttonSetLaterBlockingSchedule": "I'll do this later",
         "blockingOff": "🚫 No blocking",
         "buttonEnableBlockingSchedule": "ENABLE",
-        "habitPostponedState": "✋Postponed"
+        "habitPostponedState": "✋Postponed",
+        "menuItemNotesTitle": "Notes"
     },
     "preferencesInfo": {
         "checkBoxFocusMusicText": "Automatically play focus music when a session starts",
@@ -1239,6 +1240,45 @@
         "buttonOpenUrlText": "Go",
         "buttonStartBasicBrainDumpText": "← Back to basic brain dump",
         "buttonOwnUrlBrainDumpText": "Use your own system for brain dump"
+    },
+    "notesViewInfo": {
+        "brainDumpTitle": "Brain Dump",
+        "brainDumpInfoText": "Use Brain Dump to capture ideas fast. Saved notes you've added or edited appear in the list below.",
+        "brainDumpPlaceholder": "Start typing your thoughts...",
+        "showBrainDumpText": "Show brain dump",
+        "hideBrainDumpText": "Hide brain dump",
+        "savingText": "Saving…",
+        "saveText": "Save",
+        "cancelText": "Cancel",
+        "searchPlaceholder": "Search notes...",
+        "newNoteText": "New note",
+        "createNoteTitle": "Create Note",
+        "editNoteTitle": "Edit Note",
+        "noteTitlePlaceholder": "Title",
+        "noteBodyPlaceholder": "Write your note here...",
+        "tagsLabel": "Tags",
+        "addTagPlaceholder": "Add a tag...",
+        "addTagText": "Add",
+        "existingTagsText": "Existing tags",
+        "linkedToHabitText": "Linked to habit",
+        "noNotesFoundText": "No notes found",
+        "noNotesMatchSearchText": "No notes found matching your search",
+        "deleteNoteTitle": "Delete Note",
+        "deleteConfirmationText": "Are you sure you want to delete this note?",
+        "deleteText": "Delete",
+        "noteCreatedText": "Note created successfully",
+        "noteUpdatedText": "Note updated successfully",
+        "noteDeletedText": "Note deleted successfully",
+        "couldNotCreateNoteText": "Could not create note",
+        "couldNotUpdateNoteText": "Could not update note",
+        "requestFailedText": "Could not process the request",
+        "boldText": "Bold",
+        "italicText": "Italic",
+        "underlineText": "Underline",
+        "bulletListText": "Bulleted list",
+        "numberedListText": "Numbered list",
+        "allTagsText": "All tags",
+        "filterByTagText": "Filter by tag"
     },
     "askLogInVcInfo": {
         "title": "Create an account to sync your settings to all your devices.",
@@ -3116,7 +3156,9 @@
         "menuBreakDueNowBody": "It's time for a break.",
         "menuTakeBreakSubtitle": "Take a break",
         "menuTakeBreakBody": "Take a break whenever you need one.",
-        "menuOpenFocusScreen": "Open the full focus screen"
+        "menuOpenFocusScreen": "Open the full focus screen",
+        "menuNotes": "Notes",
+        "menuFocusToolsSubtitleNotes": "Music, notes & to-dos"
     },
     "leftMenuVcInfo":{
         "menuStats": "Stats",
@@ -3164,7 +3206,8 @@
         "disableReasonShutoffTime": "Disabled because it’s your shutoff time. Go to the Habits tab to continue.",
         "disableReasonMircoBreaks": "Disabled because your micro break is in progress. Go to the Micro Break tab to continue.",
         "disableReasonCustomRoutine": "Disabled because your custom routine is in progress. Go to the Custom Routine tab to continue.",
-        "superStrictNeedPasswordText": "You're running in Super Strict mode and no password is set. You will need to set a password to pause this custom schedule."
+        "superStrictNeedPasswordText": "You're running in Super Strict mode and no password is set. You will need to set a password to pause this custom schedule.",
+        "menuNotes": "Notes"
     },
     "browsersTabAuditVcInfo":{
         "title": "Tab Audit",

@@ -416,6 +416,12 @@
 		TCS00001 /* TalkingClockSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TCS00002 /* TalkingClockSettingsView.swift */; };
 		TCV00001 /* talkingClockSettingsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = TCV00002 /* talkingClockSettingsVc.swift */; };
 		UBT00001 /* URLBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = UBT00002 /* URLBlockingTests.swift */; };
+		NOTE00001 /* NoteModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTE00002 /* NoteModels.swift */; };
+		NOTE00003 /* NotesApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTE00004 /* NotesApi.swift */; };
+		NOTE00005 /* NoteHTML.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTE00006 /* NoteHTML.swift */; };
+		NOTE00007 /* NoteRichTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTE00008 /* NoteRichTextEditor.swift */; };
+		NOTE00009 /* NotesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTE00010 /* NotesStore.swift */; };
+		NOTE00011 /* NotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTE00012 /* NotesView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -884,6 +890,12 @@
 		TCS00002 /* TalkingClockSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkingClockSettingsView.swift; sourceTree = "<group>"; };
 		TCV00002 /* talkingClockSettingsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = talkingClockSettingsVc.swift; sourceTree = "<group>"; };
 		UBT00002 /* URLBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLBlockingTests.swift; sourceTree = "<group>"; };
+		NOTE00002 /* NoteModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteModels.swift; sourceTree = "<group>"; };
+		NOTE00004 /* NotesApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesApi.swift; sourceTree = "<group>"; };
+		NOTE00006 /* NoteHTML.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteHTML.swift; sourceTree = "<group>"; };
+		NOTE00008 /* NoteRichTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteRichTextEditor.swift; sourceTree = "<group>"; };
+		NOTE00010 /* NotesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesStore.swift; sourceTree = "<group>"; };
+		NOTE00012 /* NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1129,6 +1141,7 @@
 				8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */,
 				13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */,
 				ESD00002 /* EveningShutdownScreen.swift */,
+				NOTEGRP01 /* Notes */,
 				8F3F1F28299BB96400E67F42 /* breaksBrainDumpVc.swift */,
 				8F1FBAE529F2A46000AA1979 /* naturalBreaksDetectionVc.swift */,
 				8F3A28982C22A46F002AD2E3 /* deactivateBreaksVc.swift */,
@@ -1779,6 +1792,20 @@
 			path = Schedule;
 			sourceTree = "<group>";
 		};
+		NOTEGRP01 /* Notes */ = {
+			isa = PBXGroup;
+			children = (
+				NOTE00002 /* NoteModels.swift */,
+				NOTE00004 /* NotesApi.swift */,
+				NOTE00006 /* NoteHTML.swift */,
+				NOTE00008 /* NoteRichTextEditor.swift */,
+				NOTE00010 /* NotesStore.swift */,
+				NOTE00012 /* NotesView.swift */,
+			);
+			name = Notes;
+			path = FocusBear/Notes;
+			sourceTree = SOURCE_ROOT;
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -2298,6 +2325,12 @@
 				274C9A91289A8C910066F883 /* accountVc.swift in Sources */,
 				13C6C2A22FE2615E00B1F278 /* BreakWarningView.swift in Sources */,
 				ESD00001 /* EveningShutdownScreen.swift in Sources */,
+				NOTE00001 /* NoteModels.swift in Sources */,
+				NOTE00003 /* NotesApi.swift in Sources */,
+				NOTE00005 /* NoteHTML.swift in Sources */,
+				NOTE00007 /* NoteRichTextEditor.swift in Sources */,
+				NOTE00009 /* NotesStore.swift in Sources */,
+				NOTE00011 /* NotesView.swift in Sources */,
 				8FA692FD2B90B31600FF4862 /* confirmRunScriptVc.swift in Sources */,
 				8F6DAD842B32A84400CB210B /* lateNoMorePopUpVc.swift in Sources */,
 				8FC31BFE28C757B400E2DD4C /* brainDumpVc.swift in Sources */,

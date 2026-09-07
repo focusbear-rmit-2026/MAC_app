@@ -186,7 +186,8 @@ func getInitialQuitFeedbackVcObject()->initialQuitFeedbackVc{
 var brainDumpVcObj:brainDumpVc?
 func getBrainDumpVcObject()->brainDumpVc{
     if brainDumpVcObj == nil{
-        brainDumpVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("brainDumpVc")) as? brainDumpVc
+        // Built in code (SwiftUI-hosted), not from the storyboard.
+        brainDumpVcObj = brainDumpVc()
     }
     return brainDumpVcObj!
 }

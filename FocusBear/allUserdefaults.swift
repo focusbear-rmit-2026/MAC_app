@@ -139,8 +139,8 @@ let kUserdefaultsFocusAddedFromFirstHabit = "kUserdefaultsFocusAddedFromFirstHab
 
 var kUserdefaultsFocusModeNotes = "kUserdefaultsFocusModeNotes"
 
-// #2142: set once the saved brain dump has been seeded into the notes webview via initAppMetaData.
-// After that, the webview loads the brain dump from the API (token-only), so we never re-seed it.
+// #2142: set once the saved local brain dump has been migrated to the backend (PUT /note). After that
+// the native Notes view (FocusBear/Notes) loads the brain dump from the API, so we never re-seed it.
 var kUserdefaultsBrainDumpSentToWebView = "kUserdefaultsBrainDumpSentToWebView"
 
 let kUserdefaultsFocusCompletedTourShown = "kUserdefaultsFocusCompletedTourShown"

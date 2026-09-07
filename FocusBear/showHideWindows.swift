@@ -122,20 +122,7 @@ func showConfirmRunScriptWindow(focusMode:String, scriptPath:String?, shellComma
 func showBrainDumpWindow(){
     addLog(text: "func:- showBrainDumpWindow")
     mainWindowControllerObj?.showWindow(nil)
-    // #2190: on the FIRST open the VC isn't loaded yet, so showBrainDump()'s viewWillAppear → resetData
-    // (webView.isHidden = false) ran BEFORE viewDidLoad (webView.isHidden = true) re-hid it → blank page.
-    // Touch .view to run viewDidLoad first, then defer showBrainDump so resetData runs after it.
-    if brainDumpVcObj == nil{
-        // Accessing .view forces the VC to load first (loadView + viewDidLoad run now).
-        let _ = getBrainDumpVcObject().view
-        DispatchQueue.global().async {
-            DispatchQueue.main.async {
-                leftMenuVcObj?.showBrainDump()
-            }
-        }
-    }else{
-        leftMenuVcObj?.showBrainDump()
-    }
+    leftMenuVcObj?.showBrainDump()
 }
 //-------------------------------------------------//
 

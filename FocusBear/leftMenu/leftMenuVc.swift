@@ -99,7 +99,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         }
         
         boxBrainDump.imageIcon = NSImage(named: "brainDump")
-        boxBrainDump.title = "Brain Dump"
+        boxBrainDump.title = "Notes"   // i18n-ignore: last-resort default; the real string comes from config (menuNotes)
 
         // TOOLS rows the user can hover-hide via ✕ and restore via the TOOLS gear icon.
         let hideableTools: [(mainWindowListBox, ToolID)] = [
@@ -250,7 +250,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             }else{
                 boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoList") as? String ?? boxTodoPlayer.title
             }
-            boxBrainDump.title = leftMenuVcInfo.value(forKey: "menuBrainDump") as? String ?? boxBrainDump.title
+            boxBrainDump.title = leftMenuVcInfo.value(forKey: "menuNotes") as? String ?? boxBrainDump.title
             boxBrowsersTabAudit.title = leftMenuVcInfo.value(forKey: "menuTabAudit") as? String ?? boxBrowsersTabAudit.title
             boxFocusMusic.title = leftMenuVcInfo.value(forKey: "menuFocusMusic") as? String ?? boxFocusMusic.title
             

@@ -535,7 +535,7 @@ struct FocusBearMenuView: View {
                          // When a focus-music track is loaded, surface it (and a pause control) at the
                          // top level so it's identifiable/pausable without opening the accordion.
                          subtitle: model.musicTrackName.isEmpty
-                            ? menuLocalized("menuFocusToolsSubtitle", "Music, brain dump & to-dos")
+                            ? menuLocalized("menuFocusToolsSubtitleNotes", "Music, notes & to-dos")
                             : "♪ " + model.musicTrackName,
                          solid: highlightedSection == .tools,
                          accessory: model.musicTrackName.isEmpty ? nil : AnyView(
@@ -550,7 +550,7 @@ struct FocusBearMenuView: View {
                         ToolButton(icon: model.musicPlaying ? "pause.fill" : "play.fill",
                                    title: model.musicTrackName, scheme: scheme, action: model.onToggleMusic)
                     }
-                    ToolButton(icon: "brain", title: menuLocalized("menuBrainDump", "Brain Dump"), scheme: scheme, action: model.onOpenBrainDump)
+                    ToolButton(icon: "note.text", title: menuLocalized("menuNotes", "Notes"), scheme: scheme, action: model.onOpenBrainDump)
                     ToolButton(icon: "checklist", title: menuLocalized("menuToDoPlayer", "To-Do Player"), scheme: scheme, action: model.onOpenToDoPlayer)
                 }
             }
@@ -1806,7 +1806,7 @@ enum ShortcutTeachableAction {
     var featureName: String {
         switch self {
         case .focusMusic: return menuLocalized("menuFocusMusic", "Focus Music")
-        case .brainDump:  return menuLocalized("menuBrainDump", "Brain Dump")
+        case .brainDump:  return menuLocalized("menuNotes", "Notes")
         case .taskList:   return menuLocalized("menuToDoPlayer", "To-Do Player")
         case .startFocus: return menuLocalized("menuStartFocusSession", "Start Focus Session")
         }

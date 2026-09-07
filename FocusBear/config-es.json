@@ -599,7 +599,8 @@
 		"buttonSetLaterBlockingSchedule": "Lo haré más tarde",
 		"blockingOff": "🚫 Sin bloqueo",
 		"buttonEnableBlockingSchedule": "ACTIVAR",
-        "habitPostponedState": "✋Pospuesto"
+        "habitPostponedState": "✋Pospuesto",
+        "menuItemNotesTitle": "Notas"
     },
     "preferencesInfo": {
         "checkBoxFocusMusicText": "Reproducir música de enfoque automáticamente al iniciar una sesión",
@@ -1239,6 +1240,45 @@
         "buttonOpenUrlText": "Ir",
         "buttonStartBasicBrainDumpText": "← Volver al volcado de cerebro básico",
         "buttonOwnUrlBrainDumpText": "Usa tu propio sistema de volcado de cerebro"
+    },
+    "notesViewInfo": {
+        "brainDumpTitle": "Volcado de ideas",
+        "brainDumpInfoText": "Usa el volcado de ideas para captar ideas al momento. Las notas que guardes al crearlas o editarlas aparecen en la lista de abajo.",
+        "brainDumpPlaceholder": "Empieza a escribir tus ideas...",
+        "showBrainDumpText": "Mostrar volcado de ideas",
+        "hideBrainDumpText": "Ocultar volcado de ideas",
+        "savingText": "Guardando…",
+        "saveText": "Guardar",
+        "cancelText": "Cancelar",
+        "searchPlaceholder": "Buscar notas...",
+        "newNoteText": "Nueva nota",
+        "createNoteTitle": "Crear Nota",
+        "editNoteTitle": "Editar Nota",
+        "noteTitlePlaceholder": "Título",
+        "noteBodyPlaceholder": "Escribe tu nota aquí...",
+        "tagsLabel": "Etiquetas",
+        "addTagPlaceholder": "Agregar una etiqueta...",
+        "addTagText": "Agregar",
+        "existingTagsText": "Etiquetas existentes",
+        "linkedToHabitText": "Vinculado al hábito",
+        "noNotesFoundText": "No se encontraron notas",
+        "noNotesMatchSearchText": "No se encontraron notas que coincidan con tu búsqueda",
+        "deleteNoteTitle": "Eliminar Nota",
+        "deleteConfirmationText": "¿Estás seguro de que deseas eliminar esta nota?",
+        "deleteText": "Eliminar",
+        "noteCreatedText": "Nota creada correctamente",
+        "noteUpdatedText": "Nota actualizada correctamente",
+        "noteDeletedText": "Nota eliminada correctamente",
+        "couldNotCreateNoteText": "No se pudo crear la nota",
+        "couldNotUpdateNoteText": "No se pudo actualizar la nota",
+        "requestFailedText": "No se pudo procesar la solicitud",
+        "boldText": "Negrita",
+        "italicText": "Cursiva",
+        "underlineText": "Subrayado",
+        "bulletListText": "Lista con viñetas",
+        "numberedListText": "Lista numerada",
+        "allTagsText": "Todas las etiquetas",
+        "filterByTagText": "Filtrar por etiqueta"
     },
     "askLogInVcInfo": {
         "title": "Crea una cuenta para sincronizar tus ajustes en todos tus dispositivos.",
@@ -3111,7 +3151,9 @@
         "menuBreakDueNowBody": "Es hora de un descanso.",
         "menuTakeBreakSubtitle": "Tómate un descanso",
         "menuTakeBreakBody": "Tómate un descanso cuando lo necesites.",
-        "menuOpenFocusScreen": "Abre la pantalla de enfoque completa"
+        "menuOpenFocusScreen": "Abre la pantalla de enfoque completa",
+        "menuNotes": "Notas",
+        "menuFocusToolsSubtitleNotes": "Música, notas y tareas"
     },
     "leftMenuVcInfo":{
         "menuStats": "Estadísticas",
@@ -3159,7 +3201,8 @@
         "disableReasonShutoffTime": "Desactivado porque es tu hora de desconexión. Ve a la pestaña Hábitos para continuar.",
         "disableReasonMircoBreaks": "Desactivado porque tu microdescanso está en curso. Ve a la pestaña Microdescanso para continuar.",
         "disableReasonCustomRoutine": "Desactivado porque tu rutina personalizada está en curso. Ve a la pestaña Rutina personalizada para continuar.",
-        "superStrictNeedPasswordText": "Estás en modo Super Estricto y no tienes contraseña configurada. Necesitarás establecer una contraseña para pausar este horario personalizado."
+        "superStrictNeedPasswordText": "Estás en modo Super Estricto y no tienes contraseña configurada. Necesitarás establecer una contraseña para pausar este horario personalizado.",
+        "menuNotes": "Notas"
     },
     "browsersTabAuditVcInfo":{
         "title": "Auditoría de pestañas",
