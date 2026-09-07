@@ -392,6 +392,7 @@
 		ABH00001 /* AppBlockingHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00002 /* AppBlockingHelper.swift */; };
 		ABH00003 /* AppBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00004 /* AppBlockingTests.swift */; };
 		ABH00010 /* ScheduleKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00011 /* ScheduleKitTests.swift */; };
+		ABH00030 /* FocusMusicMediaKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00031 /* FocusMusicMediaKeyTests.swift */; };
 		ABH00020 /* DaysOfWeekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00021 /* DaysOfWeekTests.swift */; };
 		BEAR0001 /* blocking_bear.png in Resources */ = {isa = PBXBuildFile; fileRef = BEARF001 /* blocking_bear.png */; };
 		BEED37F6C1373AFCB67BCF04 /* Pods_Focus_Bear.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E339C651791746EA3D066A6A /* Pods_Focus_Bear.framework */; };
@@ -854,6 +855,7 @@
 		ABH00002 /* AppBlockingHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingHelper.swift; sourceTree = "<group>"; };
 		ABH00004 /* AppBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingTests.swift; sourceTree = "<group>"; };
 		ABH00011 /* ScheduleKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleKitTests.swift; sourceTree = "<group>"; };
+		ABH00031 /* FocusMusicMediaKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusMusicMediaKeyTests.swift; sourceTree = "<group>"; };
 		ABH00021 /* DaysOfWeekTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaysOfWeekTests.swift; sourceTree = "<group>"; };
 		B215C30047E6A2A37A923150 /* ScheduleViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScheduleViewController.swift; sourceTree = "<group>"; };
 		B6917674BE2A776D2F47EDE3 /* CalendarManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarManager.swift; sourceTree = "<group>"; };
@@ -1688,6 +1690,7 @@
 				8FD1054A27EF221800B7728E /* validationTest.swift */,
 				ABH00004 /* AppBlockingTests.swift */,
 				ABH00011 /* ScheduleKitTests.swift */,
+				ABH00031 /* FocusMusicMediaKeyTests.swift */,
 				ABH00021 /* DaysOfWeekTests.swift */,
 				UBT00002 /* URLBlockingTests.swift */,
 				CBS00002 /* CustomBlockingScheduleTests.swift */,
@@ -2450,6 +2453,7 @@
 				8FD1053F27EEE44100B7728E /* Focus_BearTests.swift in Sources */,
 				ABH00003 /* AppBlockingTests.swift in Sources */,
 				ABH00010 /* ScheduleKitTests.swift in Sources */,
+				ABH00030 /* FocusMusicMediaKeyTests.swift in Sources */,
 				ABH00020 /* DaysOfWeekTests.swift in Sources */,
 				UBT00001 /* URLBlockingTests.swift in Sources */,
 				CBS00001 /* CustomBlockingScheduleTests.swift in Sources */,
