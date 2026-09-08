@@ -743,7 +743,8 @@ func getFocusStartHelpImgVcObject()->focusStartHelpImgVc{
 var todoListToolVcObj:todoListToolVc?
 func getTodoListToolVcObject()->todoListToolVc{
     if todoListToolVcObj == nil{
-        todoListToolVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("todoListToolVc")) as? todoListToolVc
+        // Built in code (SwiftUI-hosted), not from the storyboard.
+        todoListToolVcObj = todoListToolVc()
     }
     return todoListToolVcObj!
 }

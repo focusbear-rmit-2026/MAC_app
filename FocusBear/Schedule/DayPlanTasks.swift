@@ -10,61 +10,6 @@
 
 import Cocoa
 
-/// Pure, unit-tested maths for the "Choose a good time for me" smart snooze. Kept free of AppKit / store
-/// dependencies so the calculations can be tested in isolation (see SmartSnoozeMathTests).
-enum SmartSnoozeMath {
-    /// Effective free minutes per day under the CUMULATIVE ROLLOVER model: people rarely finish
-    /// everything, so `rolloverFraction` of each day's TOTAL task load (its own load plus what it carried
-    /// from earlier days) is assumed to spill into the next day. So the load carried into day i is
-    /// `rolloverFraction × (load[i-1] + carry[i-1])`, and effective free = schedule gaps − (own load +
-    /// carried load). Near days look busier, so snooze targets a genuinely empty day. Can go negative.
-    /// `scheduleFree` and `load` are parallel arrays (one entry per day, in chronological order).
-    /// `initialCarry` seeds the rollover BEFORE the first horizon day — used to spill the SOURCE day's
-    /// (e.g. today's) load into tomorrow, so a day still packed with today's work doesn't make tomorrow
-    /// look free (the horizon itself starts at tomorrow).
-    static func effectiveFree(scheduleFree: [Int], load: [Int], rolloverFraction: Double, initialCarry: Double = 0) -> [Int] {
-        precondition(scheduleFree.count == load.count, "scheduleFree and load must be parallel")
-        var carry = initialCarry
-        var out: [Int] = []
-        for i in scheduleFree.indices {
-            let total = Double(load[i]) + carry
-            out.append(scheduleFree[i] - Int(total.rounded()))
-            carry = total * rolloverFraction
-        }
-        return out
-    }
-
-    /// Distribute `taskDurations` (in order) across the days: each task lands on the FIRST day whose
-    /// effective free (with rollover, and this task added to that day's load) stays ≥ 0; if no day in
-    /// range can fit it, the emptiest effective day. Returns the chosen day INDEX per task (parallel to
-    /// `taskDurations`). `startLoad` is each day's existing task load. Assigning a task raises that day's
-    /// load, which — via the rollover — makes later days busier too, so tasks spread out to empty days.
-    static func distribute(taskDurations: [Int], scheduleFree: [Int], startLoad: [Int],
-                           rolloverFraction: Double, initialCarry: Double = 0) -> [Int] {
-        var load = startLoad
-        var result: [Int] = []
-        for dur in taskDurations {
-            var placedIndex: Int?
-            for i in load.indices {
-                load[i] += dur
-                if effectiveFree(scheduleFree: scheduleFree, load: load, rolloverFraction: rolloverFraction, initialCarry: initialCarry)[i] >= 0 {
-                    placedIndex = i; break
-                }
-                load[i] -= dur
-            }
-            if let i = placedIndex {
-                result.append(i)
-            } else {
-                let eff = effectiveFree(scheduleFree: scheduleFree, load: load, rolloverFraction: rolloverFraction, initialCarry: initialCarry)
-                let idx = load.indices.max(by: { eff[$0] < eff[$1] }) ?? 0
-                load[idx] += dur
-                result.append(idx)
-            }
-        }
-        return result
-    }
-}
-
 /// Drag-and-drop plumbing for dropping a task onto a schedule block to nest it there.
 enum DayPlanDrag {
     static let type = NSPasteboard.PasteboardType("io.focusbear.dayplantask")
@@ -675,7 +620,33 @@ enum TaskEditSource {
 
 final class DayPlanTaskStore {
     static let shared = DayPlanTaskStore()
-    private init() { load() }
+
+    /// Posted after a change made on ANOTHER screen (the To-do list) lands in this store, so a Day
+    /// Plan that happens to be open redraws instead of waiting for its next reload.
+    static let tasksDidChangeExternally = Notification.Name("io.focusbear.dayPlanTasksDidChangeExternally")
+
+    private var completionObserver: NSObjectProtocol?
+
+    private init() {
+        load()
+        // A to-do ticked in the native To-do list is the same task the Day Plan shows; mirror it here.
+        completionObserver = TodoCompletionBus.observe { [weak self] change in
+            self?.applyExternalCompletion(todoID: change.todoID, completed: change.completed)
+        }
+    }
+
+    /// A completion announced by another screen: tick every local copy of that to-do and tell an open
+    /// Day Plan to redraw. Writes storage directly rather than going through `update(_:for:)` because
+    /// the originating screen has already sent the status to the backend — routing it through the
+    /// normal path would fire a second, redundant `PUT /to-do`. No-ops when the copies already carry
+    /// the new state, so the Day Plan's OWN completions (which post too) don't come back around.
+    private func applyExternalCompletion(todoID: String, completed: Bool) {
+        guard !Self.mockMode,
+              let updated = TodoCompletionMapping.applying(completed: completed, toSourceTaskId: todoID, in: byDay) else { return }
+        byDay = updated
+        save()
+        NotificationCenter.default.post(name: DayPlanTaskStore.tasksDidChangeExternally, object: nil)
+    }
 
     /// Mockup mode: in-memory only — never persists to UserDefaults and never rolls tasks over, so a
     /// mock render can't pollute or move the user's real data. Only ever set true by the DEBUG-only
@@ -783,6 +754,12 @@ final class DayPlanTaskStore {
         // back (else we'd risk clobbering them on the upsert).
         if task.done != wasDone, let sid = task.sourceTaskId, let q = task.eisenhowerQuadrant {
             DayPlanSync.shared.setTodoStatus(todoID: sid, title: task.title, quadrant: q, completed: task.done)
+        }
+        // …and tell the rest of the app, so the same to-do ticks in the native To-do list right away.
+        // Announced even without a quadrant (when the status push above is skipped): the in-app views
+        // must still agree, whatever the backend ends up knowing.
+        if task.done != wasDone, let sid = task.sourceTaskId {
+            TodoCompletionBus.post(todoID: sid, completed: task.done)
         }
         // Reflect an edited checklist onto the backing to-do's `subtasks` so web/mobile see them
         // (they were previously kept only in local UserDefaults, invisible to other devices). Only
@@ -1016,6 +993,18 @@ final class DayPlanTaskStore {
     /// True if the to-do item is already on the given day (so the picker can avoid duplicates).
     func contains(sourceTaskId: String, for date: Date) -> Bool {
         tasks(for: date).contains { $0.sourceTaskId == sourceTaskId }
+    }
+
+    /// The Day Plan copy of a backend to-do and the day it sits on, if it is planned at all — so a snooze
+    /// from the To-do list can move it the way the Day Plan does. A to-do lives on at most one day.
+    func plannedCopy(ofSourceTask sourceTaskId: String) -> (day: Date, task: DayPlanTask)? {
+        rollOverIfNeeded()
+        for (dayKey, tasks) in byDay {
+            guard let task = tasks.first(where: { $0.sourceTaskId == sourceTaskId }),
+                  let day = Self.dayFormatter.date(from: dayKey) else { continue }
+            return (day, task)
+        }
+        return nil
     }
 
     /// Tasks not nested under any schedule block (shown in the side panel).
@@ -1270,13 +1259,12 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
     /// Extra top padding added in full screen so the header clears the menu-bar reveal overlay.
     var extraTopInset: CGFloat = 0 { didSet { headTopConstraint?.constant = 14 + extraTopInset } }
 
-    // Snooze popover state.
-    private var snoozePopover: NSPopover?
+    // Snooze popover state (the popover itself is the shared `SmartSnoozePopover`).
+    private var snoozePopover: SmartSnoozePopover?
     private var snoozeTaskID: String?
-    private weak var snoozeField: NSTextField?
+    /// The main window's default button, detached while the task-detail modal is open so Return inside
+    /// it can't start a habit; restored when the modal closes.
     private var snoozeSavedDefaultButton: NSButtonCell?
-
-    private weak var snoozeParsedLabel: NSTextField?
 
     // Click-revealed per-task action row (Expand / Snooze / Remove) shown beneath the focused task.
     private weak var actionRow: NSView?
@@ -1289,15 +1277,6 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
     /// RAW schedule-free minutes on a future day (routine/meeting gaps, NOT net of tasks) — supplied by
     /// the host. Smart snooze needs schedule-free and task load separately to apply its rollover model.
     var scheduleFreeMinutesForDate: ((Date) -> Int)?
-    /// How many days ahead smart snooze scans for a day with enough free time (the cheap near-term pass).
-    private static let smartSnoozeHorizonDays = 14
-    /// Extended horizon used ONLY when the near-term fortnight can't fit the task — a booked-solid two weeks
-    /// should roll out to a genuinely free week later rather than pile onto a cramped day. ~13 weeks.
-    private static let smartSnoozeExtendedHorizonDays = 90
-    /// Fraction of a day's task load assumed to spill into the next day (people rarely finish everything),
-    /// applied cumulatively across the horizon so smart snooze targets a day that's genuinely empty even
-    /// after the pile-up — not just the first day with nominal room.
-    private static let smartSnoozeRolloverFraction = 0.5
 
     // Task detail modal state.
     private var taskModalPopover: NSPopover?
@@ -1452,6 +1431,9 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         clip.postsBoundsChangedNotifications = true
         NotificationCenter.default.addObserver(self, selector: #selector(tasksDidScroll),
                                                name: NSView.boundsDidChangeNotification, object: clip)
+        // The To-do list ticked a task that is planned here — redraw so the row shows it at once.
+        NotificationCenter.default.addObserver(self, selector: #selector(storeChangedExternally),
+                                               name: DayPlanTaskStore.tasksDidChangeExternally, object: nil)
         // NB: room to scroll past the last task is reserved via a trailing spacer arranged subview in
         // reload(), NOT scroll.contentInsets — verified (offscreen AppKit harness) that contentInsets.bottom
         // does not extend NSClipView's constrainBoundsRect/documentRect, so it never actually created any
@@ -1975,14 +1957,12 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
                 if createProjectField != nil { saveNewProject(); return true }
             }
             dismissProjectSuggestions()
-            if id == "snoozeInput" { confirmSnooze(); return true }
             if id.hasPrefix("name:") { commitName(field) } else if id.hasPrefix("dur:") { commitDuration(field) }
             window?.makeFirstResponder(nil)
             return true
         }
-        // Escape in the snooze field closes the popover; Escape in the new-project prompt dismisses it.
+        // Escape in the new-project prompt dismisses it.
         if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
-            if id == "snoozeInput" { cancelSnooze(); return true }
             if id == "newProjectName" { dismissProjectSuggestions(); window?.makeFirstResponder(nil); return true }
             // Escape while the #project suggestion list is open just closes the list (keeps editing the name).
             if id.hasPrefix("name:"), suggestOverlay != nil { dismissProjectSuggestions(); return true }
@@ -2487,93 +2467,25 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         presentSnoozePopover(from: sender)
     }
 
+    /// The shared smart-snooze planner for the viewed day, or nil until the host wires the free-time provider.
+    private func smartSnoozePlanner() -> SmartSnoozePlanner? {
+        guard let scheduleFreeFor = scheduleFreeMinutesForDate else { return nil }
+        return SmartSnoozePlanner.dayPlan(from: date, scheduleFreeMinutes: scheduleFreeFor)
+    }
+
     private func presentSnoozePopover(from sender: NSView) {
-        let header = label(ScheduleText.tasksSnoozeTitle, size: 13, bold: true)
-
-        let field = NSTextField()
-        field.placeholderString = ScheduleText.tasksSnoozePlaceholder
-        field.identifier = NSUserInterfaceItemIdentifier("snoozeInput")
-        field.delegate = self
-        field.translatesAutoresizingMaskIntoConstraints = false
-        field.widthAnchor.constraint(equalToConstant: 230).isActive = true
-        snoozeField = field
-
-        let parsed = label("", size: 12, bold: true)
-        parsed.textColor = .controlAccentColor
-        snoozeParsedLabel = parsed
-
-        let hint = label(ScheduleText.tasksSnoozeHelp, size: 11, bold: false)
-        hint.textColor = .secondaryLabelColor
-        hint.lineBreakMode = .byWordWrapping
-        hint.maximumNumberOfLines = 0
-        hint.preferredMaxLayoutWidth = 230
-
-        // Smart snooze: let the app pick the next day with enough free time, instead of typing one.
-        let smart = cursorButton(title: ScheduleText.tasksSnoozeSmart, target: self, action: #selector(smartSnooze))
-        smart.bezelStyle = .rounded
-        // Eagerly find the slot now (the scan is a cheap bounded EventKit + schedule build per day) so the
-        // button names the actual day — "Next free slot: Fri 15 Aug" — and one click confirms it. Name the
-        // suggested day whether or not it perfectly "fits" — the emptiest upcoming weekday is a better,
-        // actionable suggestion than the generic label. (One click still distributes via rollover.)
-        if let slot = scanSmartSnoozeSlot(requiredMinutes: snoozeRequiredMinutes(snoozeTargetIds())) {
-            let f = DateFormatter(); f.dateFormat = "EEE d MMM"
-            smart.title = ScheduleText.tasksSnoozeNextSlot(f.string(from: slot.target))
-        }
-        let info = NSImageView()
-        info.image = NSImage(systemSymbolName: "info.circle", accessibilityDescription: ScheduleText.tasksSnoozeSmartInfo)
-        info.contentTintColor = .secondaryLabelColor
-        info.toolTip = ScheduleText.tasksSnoozeSmartInfo
-        info.translatesAutoresizingMaskIntoConstraints = false
-        info.widthAnchor.constraint(equalToConstant: 15).isActive = true
-        info.heightAnchor.constraint(equalToConstant: 15).isActive = true
-        let smartRow = NSStackView(views: [smart, info, NSView()])
-        smartRow.orientation = .horizontal; smartRow.spacing = 6; smartRow.alignment = .centerY
-
-        let move = cursorButton(title: ScheduleText.tasksSnoozeConfirm, target: self, action: #selector(confirmSnooze))
-        move.bezelStyle = .rounded; move.keyEquivalent = "\r"
-        let cancel = cursorButton(title: ScheduleText.tasksSnoozeCancel, target: self, action: #selector(cancelSnooze))
-        cancel.bezelStyle = .rounded; cancel.keyEquivalent = "\u{1b}"
-        let buttons = NSStackView(views: [NSView(), cancel, move])
-        buttons.orientation = .horizontal; buttons.spacing = 8
-
-        let form = NSStackView(views: [header, smartRow, field, parsed, hint, buttons])
-        form.orientation = .vertical; form.alignment = .leading; form.spacing = 8
-        form.translatesAutoresizingMaskIntoConstraints = false
-        buttons.widthAnchor.constraint(equalTo: field.widthAnchor).isActive = true
-
-        let container = NSView()
-        container.addSubview(form)
-        NSLayoutConstraint.activate([
-            form.topAnchor.constraint(equalTo: container.topAnchor, constant: 14),
-            form.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 14),
-            form.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -14),
-            form.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -14),
-        ])
-        let vc = NSViewController(); vc.view = container
-        let pop = NSPopover(); pop.contentViewController = vc; pop.behavior = .transient
-        // While the snooze popover is open, neutralise the main window's default button (the habit
-        // "Start" button responds to Return via performKeyEquivalent before the snooze field sees it,
-        // which is why Return was starting a habit instead of confirming the snooze).
-        snoozeSavedDefaultButton = window?.defaultButtonCell
-        window?.defaultButtonCell = nil
-        pop.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
-        snoozePopover = pop
-        vc.view.window?.makeFirstResponder(field)
+        // Eagerly find the slot now so the button names the actual day — "Next free slot: Fri 15 Aug" —
+        // and one click confirms it. (One click still distributes via rollover.)
+        let suggestion = smartSnoozePlanner()?.slot(requiredMinutes: snoozeRequiredMinutes(snoozeTargetIds()))
+        let popover = SmartSnoozePopover(baseDate: date, suggestion: suggestion,
+                                         onSmart: { [weak self] in self?.smartSnooze() },
+                                         onMove: { [weak self] target in self?.confirmSnooze(to: target) },
+                                         onDismiss: { [weak self] in self?.snoozePopover = nil; self?.snoozeTaskID = nil })
+        snoozePopover = popover
+        popover.show(relativeTo: sender.bounds, of: sender)
     }
 
-    private func updateSnoozeParsed() {
-        let input = snoozeField?.stringValue ?? ""
-        if let d = parseSnoozeDate(input, from: date) {
-            let f = DateFormatter(); f.dateFormat = "EEE d MMM yyyy"
-            snoozeParsedLabel?.stringValue = "→ " + f.string(from: d)
-        } else {
-            snoozeParsedLabel?.stringValue = input.isEmpty ? "" : "— ?"
-        }
-    }
-
-    @objc private func confirmSnooze() {
-        guard let input = snoozeField?.stringValue,
-              let target = parseSnoozeDate(input, from: date) else { NSSound.beep(); return }
+    private func confirmSnooze(to target: Date) {
         if snoozeBulk {
             for id in selectedTaskIDs { DayPlanTaskStore.shared.snooze(id: id, from: date, to: target) }
             selectedTaskIDs.removeAll()
@@ -2588,10 +2500,6 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         reload(); onChange?()
     }
 
-    /// A smart-snooze slot: the day to move to and whether it genuinely fits the required minutes (vs the
-    /// emptiest-day fallback used when nothing in the horizon fits).
-    private struct SmartSnoozeSlot { let target: Date; let fits: Bool; let bestFree: Int }
-
     /// The task ids the snooze popover currently targets (all selected for a bulk snooze, else the one).
     private func snoozeTargetIds() -> [String] {
         snoozeBulk ? Array(selectedTaskIDs) : (snoozeTaskID.map { [$0] } ?? [])
@@ -2602,105 +2510,17 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         DayPlanTaskStore.shared.tasks(for: date).filter { ids.contains($0.id) }.reduce(0) { $0 + $1.durationMinutes }
     }
 
-    /// One horizon day: raw schedule-free minutes and its current open-task load (mutated as snooze
-    /// tentatively assigns tasks).
-    private struct SmartSnoozeDay { let day: Date; let scheduleFree: Int; var load: Int }
-
-    /// Gather the horizon (tomorrow … +`smartSnoozeHorizonDays`), each with its RAW schedule-free minutes
-    /// and existing open-task load. Weekends (Sat/Sun) are skipped so the auto-suggested "Next free slot"
-    /// lands on a weekday — the app has no per-user work-week setting, so Sat/Sun are treated as non-working
-    /// by default (a user can still type an explicit weekend date into the field). nil when the
-    /// schedule-free provider isn't wired.
-    private func smartSnoozeHorizon(days: Int = smartSnoozeHorizonDays) -> [SmartSnoozeDay]? {
-        guard let scheduleFreeFor = scheduleFreeMinutesForDate else { return nil }
-        let cal = Calendar.current
-        let today = cal.startOfDay(for: date)
-        var out: [SmartSnoozeDay] = []
-        for offset in 1...days {
-            guard let day = cal.date(byAdding: .day, value: offset, to: today) else { continue }
-            // Skip Sat/Sun by explicit Gregorian weekday number (1 = Sun, 7 = Sat). NOT
-            // `isDateInWeekend`, which is locale-dependent — some regions define the weekend as
-            // Sunday-only (or Fri/Sat), which let Saturday slip into the horizon and be suggested as the
-            // "Next free slot" (e.g. Sat 5 Sep on a Sunday-only-weekend Mac).
-            let weekday = cal.component(.weekday, from: day)
-            if weekday == 1 || weekday == 7 { continue }
-            let load = DayPlanTaskStore.shared.tasks(for: day).filter { !$0.done }.reduce(0) { $0 + $1.durationMinutes }
-            out.append(SmartSnoozeDay(day: day, scheduleFree: scheduleFreeFor(day), load: load))
-        }
-        return out.isEmpty ? nil : out
-    }
-
-    /// The horizon to snooze into: the cheap near-term fortnight, extended into future weeks ONLY when the
-    /// fortnight can't fit `requiredMinutes` (so a fully-booked two weeks rolls out to a genuinely free week
-    /// instead of suggesting a cramped day). Avoids the extra per-day EventKit/schedule builds in the common
-    /// case. Shared by the button-label preview and the actual move so they agree.
-    private func smartSnoozeHorizonForRequirement(_ requiredMinutes: Int) -> [SmartSnoozeDay]? {
-        guard let near = smartSnoozeHorizon(days: Self.smartSnoozeHorizonDays) else { return nil }
-        if smartSnoozeEffectiveFree(near).contains(where: { $0 >= requiredMinutes }) { return near }
-        return smartSnoozeHorizon(days: Self.smartSnoozeExtendedHorizonDays) ?? near
-    }
-
-    /// Effective free minutes per horizon day under the cumulative-rollover model (pure math in
-    /// `SmartSnoozeMath.effectiveFree`, unit-tested).
-    private func smartSnoozeEffectiveFree(_ horizon: [SmartSnoozeDay]) -> [Int] {
-        SmartSnoozeMath.effectiveFree(scheduleFree: horizon.map { $0.scheduleFree },
-                                      load: horizon.map { $0.load },
-                                      rolloverFraction: Self.smartSnoozeRolloverFraction,
-                                      initialCarry: smartSnoozeSourceDayCarry())
-    }
-
-    /// Rollover seeded from the SOURCE day (the day being snoozed FROM): `rolloverFraction` of its remaining
-    /// undone task minutes is assumed to spill into tomorrow — so a today that's still packed with tasks
-    /// doesn't make TOMORROW look free (the horizon starts at tomorrow, so without this today is ignored).
-    private func smartSnoozeSourceDayCarry() -> Double {
-        let sourceLoad = DayPlanTaskStore.shared.tasks(for: date).filter { !$0.done }.reduce(0) { $0 + $1.durationMinutes }
-        return Double(sourceLoad) * Self.smartSnoozeRolloverFraction
-    }
-
-    /// Scan the horizon (with the rollover model) for the first day whose EFFECTIVE free time is at least
-    /// `requiredMinutes`; returns that day (`fits: true`), else the emptiest effective day (`fits: false`),
-    /// or nil when the schedule-free provider isn't wired / nothing to place. Cheap enough to run eagerly.
-    private func scanSmartSnoozeSlot(requiredMinutes: Int) -> SmartSnoozeSlot? {
-        // Allow requiredMinutes == 0 (a task with no duration set) — it fits any non-overloaded day, so it
-        // should still get a suggested date, not the generic "Choose a good time for me" fallback. Extends
-        // past the fortnight when it's fully booked so an overloaded near-term still yields a free day.
-        guard requiredMinutes >= 0, let horizon = smartSnoozeHorizonForRequirement(requiredMinutes) else { return nil }
-        let eff = smartSnoozeEffectiveFree(horizon)
-        var bestFree = Int.min
-        var bestDay: Date?
-        for i in horizon.indices {
-            if eff[i] > bestFree { bestFree = eff[i]; bestDay = horizon[i].day }
-            if eff[i] >= requiredMinutes { return SmartSnoozeSlot(target: horizon[i].day, fits: true, bestFree: eff[i]) }
-        }
-        guard let target = bestDay else { return nil }
-        return SmartSnoozeSlot(target: target, fits: false, bestFree: bestFree)
-    }
-
-    @objc private func smartSnooze() {
+    private func smartSnooze() {
         let ids = snoozeTargetIds()
         guard !ids.isEmpty else { NSSound.beep(); return }
         // Look up the targeted tasks (preserve order) so we distribute by real durations.
         let byId = Dictionary(uniqueKeysWithValues:
             DayPlanTaskStore.shared.tasks(for: date).filter { ids.contains($0.id) }.map { ($0.id, $0) })
         let orderedIds = ids.filter { byId[$0] != nil }
-        guard !orderedIds.isEmpty else { NSSound.beep(); return }
-        // Use the same requirement-aware horizon as the label preview (extends past the fortnight when it's
-        // full) so the move lands where the button promised — including a genuinely free future week.
-        let requiredMinutes = orderedIds.reduce(0) { $0 + byId[$1]!.durationMinutes }
-        guard let horizon = smartSnoozeHorizonForRequirement(requiredMinutes) else { NSSound.beep(); return }
-
-        // DISTRIBUTE each snoozed task across the horizon under the cumulative-rollover model (pure,
-        // unit-tested SmartSnoozeMath.distribute): each lands on the first day that still has effective
-        // room, and assigning it makes later days busier via the rollover — pushing tasks out to genuinely
-        // empty days rather than piling onto an already-full tomorrow.
-        let chosen = SmartSnoozeMath.distribute(
-            taskDurations: orderedIds.map { byId[$0]!.durationMinutes },
-            scheduleFree: horizon.map { $0.scheduleFree },
-            startLoad: horizon.map { $0.load },
-            rolloverFraction: Self.smartSnoozeRolloverFraction,
-            initialCarry: smartSnoozeSourceDayCarry())
+        guard !orderedIds.isEmpty, let planner = smartSnoozePlanner(),
+              let days = planner.distribute(durations: orderedIds.map { byId[$0]!.durationMinutes }) else { NSSound.beep(); return }
         var assigned: [String: Date] = [:]
-        for (n, id) in orderedIds.enumerated() { assigned[id] = horizon[chosen[n]].day }
+        for (n, id) in orderedIds.enumerated() { assigned[id] = days[n] }
         for (id, day) in assigned { DayPlanTaskStore.shared.snooze(id: id, from: date, to: day) }
         if snoozeBulk { selectedTaskIDs.removeAll() }
         let distinctDays = Set(assigned.values).count
@@ -2711,15 +2531,15 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
         reload(); onChange?()
     }
 
-    @objc private func cancelSnooze() {
-        snoozePopover?.close(); snoozePopover = nil; snoozeTaskID = nil
-        // Restore the habit "Start" default button we suppressed while the popover was open.
-        if let cell = snoozeSavedDefaultButton { window?.defaultButtonCell = cell; snoozeSavedDefaultButton = nil }
+    /// Close the popover and let ITS dismissal clear our state: the popover is the only object that can
+    /// restore the window's default button, and `NSPopover.delegate` is weak — dropping our strong
+    /// reference here would deallocate it mid-close and leave the habit "Start" button detached from Return.
+    private func cancelSnooze() {
+        snoozePopover?.close()
     }
 
     func controlTextDidChange(_ obj: Notification) {
         guard let field = obj.object as? NSTextField else { return }
-        if field.identifier?.rawValue == "snoozeInput" { updateSnoozeParsed(); return }
         if field.identifier?.rawValue == "projectFilter", let combo = field as? NSComboBox {
             filterProjectCombo(combo); return
         }
@@ -2880,6 +2700,12 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate {
     /// the field's on-screen position and can't follow the scrolling rows).
     @objc private func tasksDidScroll() {
         if suggestOverlay != nil { dismissProjectSuggestions() }
+    }
+
+    /// A completion made on another screen has landed in the store: redraw the rows and let the host
+    /// rebuild the schedule around them.
+    @objc private func storeChangedExternally() {
+        reload(); onChange?()
     }
 
     private func dismissProjectSuggestions() {

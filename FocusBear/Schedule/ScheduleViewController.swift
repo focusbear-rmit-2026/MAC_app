@@ -714,7 +714,7 @@ class scheduleViewController: NSViewController {
         tasksPanel.onAddFromList = { [weak self] in self?.showTodoPicker() }
         // Smart snooze asks the host (which owns the routine/calendar → schedule build) how much free
         // time a future day has, so it can move a task to the next day it actually fits.
-        tasksPanel.scheduleFreeMinutesForDate = { [weak self] date in self?.scheduleFreeMinutes(on: date) ?? 0 }
+        tasksPanel.scheduleFreeMinutesForDate = { scheduleViewController.scheduleFreeMinutes(on: $0) }
         let separator = NSView()
         separator.wantsLayer = true
         separator.layer?.backgroundColor = NSColor.separatorColor.cgColor
@@ -1997,7 +1997,7 @@ class scheduleViewController: NSViewController {
     /// Total busy seconds (meetings, breaks and habits — deep-work is FREE, task-able time) inside
     /// `[windowStart, windowEnd]`, with overlapping busy blocks merged so nothing is double-counted.
     /// Used by `scheduleFreeMinutes(on:)` (fixed productive-day window) for smart snooze.
-    private func busySeconds(in blocks: [ScheduleBlock], windowStart: Date, windowEnd: Date) -> Int {
+    private static func busySeconds(in blocks: [ScheduleBlock], windowStart: Date, windowEnd: Date) -> Int {
         guard windowEnd > windowStart else { return 0 }
         let busyKinds: Set<ScheduleBlockKind> = [.meeting, .breakSprint, .habit]
         var merged: [(Date, Date)] = []
@@ -2020,8 +2020,9 @@ class scheduleViewController: NSViewController {
     /// day's timetable exactly as the Day Plan does (routine segments + meetings → `ScheduleBuilder`).
     /// Intended for FUTURE days (no "now" clamp): the window is fixed to the productive day, so a
     /// completely empty day correctly reports its whole span as free. Synchronous (EventKit's
-    /// `meetings(for:)` is a synchronous query), so the caller runs it inline.
-    func scheduleFreeMinutes(on date: Date) -> Int {
+    /// `meetings(for:)` is a synchronous query), so the caller runs it inline. Reads only the app's
+    /// schedule globals, so the To-do list's snooze can call it without a live Day Plan.
+    static func scheduleFreeMinutes(on date: Date) -> Int {
         let cal = Calendar.current
         let dayStart = cal.startOfDay(for: date)
         let anchor = ScheduleTab.timeOnDate(startTime, date: date) ?? dayStart

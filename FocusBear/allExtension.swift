@@ -807,8 +807,6 @@ final class AccessTokenRequestHandler: NSObject, WKScriptMessageHandler {
             // initial load, carrying the requestId so web can match the reply.
             if requestWebView === taskPlayerVcObj?.webView {
                 taskPlayerVcObj?.setAccessTokenToWebView(requestId: requestId)
-            } else if requestWebView === todoListToolVcObj?.webView {
-                todoListToolVcObj?.setAccessTokenToWebView(requestId: requestId)
             } else if requestWebView === selectJsonVcObj?.webview {
                 selectJsonVcObj?.setSettingsToWebView(requestId: requestId)
             } else if requestWebView === editHabitRoutineVcObj?.webView {

@@ -125,6 +125,7 @@
 		64206D6037E4BA7EA7DD14DA /* CalendarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6917674BE2A776D2F47EDE3 /* CalendarManager.swift */; };
 		64A623D93155CBE05F5C8FAE /* ToolVisibilityStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 804A3787372D3AE68B541AEF /* ToolVisibilityStore.swift */; };
 		7476A99B06ABC3EB040F5633 /* DayPlanTasks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 060DBE94CCB418D4071A43CB /* DayPlanTasks.swift */; };
+		SNZ00001 /* SmartSnooze.swift in Sources */ = {isa = PBXBuildFile; fileRef = SNZ00002 /* SmartSnooze.swift */; };
 		7D9EE7D2F809B0E3AEECD72F /* FocusGlowBorderManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F29AACE7F6D8CF44F9B3C22 /* FocusGlowBorderManager.swift */; };
 		7DC90FC77F5432F8C21012C0 /* firstViewController+Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DEF19BEE8458F980B62C5C3 /* firstViewController+Schedule.swift */; };
 		7DC9C1133BB9459EBD6AE8FB /* FocusMusicViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F482F6107468499198DC3FB2 /* FocusMusicViewModel.swift */; };
@@ -417,6 +418,22 @@
 		TCS00001 /* TalkingClockSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TCS00002 /* TalkingClockSettingsView.swift */; };
 		TCV00001 /* talkingClockSettingsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = TCV00002 /* talkingClockSettingsVc.swift */; };
 		UBT00001 /* URLBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = UBT00002 /* URLBlockingTests.swift */; };
+		TODO00001 /* ToDoModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00002 /* ToDoModels.swift */; };
+		TODO00003 /* ToDoApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00004 /* ToDoApi.swift */; };
+		TODO00005 /* ToDoLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00006 /* ToDoLogic.swift */; };
+		TODO00007 /* ToDoStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00008 /* ToDoStrings.swift */; };
+		TODO00009 /* ToDoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00010 /* ToDoStore.swift */; };
+		TODO00011 /* ProjectsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00012 /* ProjectsStore.swift */; };
+		TODO00013 /* ToDoListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00014 /* ToDoListView.swift */; };
+		TODO00015 /* ToDoEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00016 /* ToDoEditorView.swift */; };
+		TODO00017 /* ToDoToolsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00018 /* ToDoToolsViews.swift */; };
+		TODO00025 /* ToDoDueDateField.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00026 /* ToDoDueDateField.swift */; };
+		TODO00019 /* ProjectsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00020 /* ProjectsView.swift */; };
+		TODOT0001 /* ToDoLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODOT0002 /* ToDoLogicTests.swift */; };
+		SNZT0001 /* SmartSnoozeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SNZT0002 /* SmartSnoozeTests.swift */; };
+		TODO00021 /* ProjectDetailStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00022 /* ProjectDetailStore.swift */; };
+		TODO00023 /* ProjectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00024 /* ProjectDetailView.swift */; };
+		TDCS0001 /* TodoCompletionSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = TDCS0002 /* TodoCompletionSync.swift */; };
 		NOTE00001 /* NoteModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTE00002 /* NoteModels.swift */; };
 		NOTE00003 /* NotesApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTE00004 /* NotesApi.swift */; };
 		NOTE00005 /* NoteHTML.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTE00006 /* NoteHTML.swift */; };
@@ -461,6 +478,7 @@
 
 /* Begin PBXFileReference section */
 		060DBE94CCB418D4071A43CB /* DayPlanTasks.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DayPlanTasks.swift; sourceTree = "<group>"; };
+		SNZ00002 /* SmartSnooze.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SmartSnooze.swift; sourceTree = "<group>"; };
 		0EDB8FEB66F6AAB9C4A6C924 /* FBHelper-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "FBHelper-Release.xcconfig"; sourceTree = "<group>"; };
 		0F1256F7E7236265310238AB /* Signing-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Signing-Debug.xcconfig"; sourceTree = "<group>"; };
 		1302BA832F90AA7C0006F9B2 /* debugLogsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = debugLogsVc.swift; sourceTree = "<group>"; };
@@ -892,6 +910,22 @@
 		TCS00002 /* TalkingClockSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkingClockSettingsView.swift; sourceTree = "<group>"; };
 		TCV00002 /* talkingClockSettingsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = talkingClockSettingsVc.swift; sourceTree = "<group>"; };
 		UBT00002 /* URLBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLBlockingTests.swift; sourceTree = "<group>"; };
+		TODO00002 /* ToDoModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToDoModels.swift; sourceTree = "<group>"; };
+		TODO00004 /* ToDoApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToDoApi.swift; sourceTree = "<group>"; };
+		TODO00006 /* ToDoLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToDoLogic.swift; sourceTree = "<group>"; };
+		TODO00008 /* ToDoStrings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToDoStrings.swift; sourceTree = "<group>"; };
+		TODO00010 /* ToDoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToDoStore.swift; sourceTree = "<group>"; };
+		TODO00012 /* ProjectsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsStore.swift; sourceTree = "<group>"; };
+		TODO00014 /* ToDoListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToDoListView.swift; sourceTree = "<group>"; };
+		TODO00016 /* ToDoEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToDoEditorView.swift; sourceTree = "<group>"; };
+		TODO00018 /* ToDoToolsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToDoToolsViews.swift; sourceTree = "<group>"; };
+		TODO00026 /* ToDoDueDateField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToDoDueDateField.swift; sourceTree = "<group>"; };
+		TODO00020 /* ProjectsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsView.swift; sourceTree = "<group>"; };
+		TODOT0002 /* ToDoLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToDoLogicTests.swift; sourceTree = "<group>"; };
+		SNZT0002 /* SmartSnoozeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartSnoozeTests.swift; sourceTree = "<group>"; };
+		TODO00022 /* ProjectDetailStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailStore.swift; sourceTree = "<group>"; };
+		TODO00024 /* ProjectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailView.swift; sourceTree = "<group>"; };
+		TDCS0002 /* TodoCompletionSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoCompletionSync.swift; sourceTree = "<group>"; };
 		NOTE00002 /* NoteModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteModels.swift; sourceTree = "<group>"; };
 		NOTE00004 /* NotesApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesApi.swift; sourceTree = "<group>"; };
 		NOTE00006 /* NoteHTML.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteHTML.swift; sourceTree = "<group>"; };
@@ -1143,6 +1177,7 @@
 				8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */,
 				13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */,
 				ESD00002 /* EveningShutdownScreen.swift */,
+				TODOGRP01 /* ToDo */,
 				NOTEGRP01 /* Notes */,
 				8F3F1F28299BB96400E67F42 /* breaksBrainDumpVc.swift */,
 				8F1FBAE529F2A46000AA1979 /* naturalBreaksDetectionVc.swift */,
@@ -1693,6 +1728,8 @@
 				ABH00031 /* FocusMusicMediaKeyTests.swift */,
 				ABH00021 /* DaysOfWeekTests.swift */,
 				UBT00002 /* URLBlockingTests.swift */,
+				TODOT0002 /* ToDoLogicTests.swift */,
+				SNZT0002 /* SmartSnoozeTests.swift */,
 				CBS00002 /* CustomBlockingScheduleTests.swift */,
 				8FD1054027EEE44100B7728E /* Info.plist */,
 				94DF69464D5A8BE205353BD5 /* TaskDeduplicationHelperTests.swift */,
@@ -1784,6 +1821,7 @@
 			children = (
 				9989E00FEA15521B6C3FE5FE /* ScheduleKit.swift */,
 				060DBE94CCB418D4071A43CB /* DayPlanTasks.swift */,
+				SNZ00002 /* SmartSnooze.swift */,
 				B6917674BE2A776D2F47EDE3 /* CalendarManager.swift */,
 				B215C30047E6A2A37A923150 /* ScheduleViewController.swift */,
 				2DEF19BEE8458F980B62C5C3 /* firstViewController+Schedule.swift */,
@@ -1794,6 +1832,28 @@
 			name = Schedule;
 			path = Schedule;
 			sourceTree = "<group>";
+		};
+		TODOGRP01 /* ToDo */ = {
+			isa = PBXGroup;
+			children = (
+				TODO00002 /* ToDoModels.swift */,
+				TODO00004 /* ToDoApi.swift */,
+				TODO00006 /* ToDoLogic.swift */,
+				TODO00008 /* ToDoStrings.swift */,
+				TODO00010 /* ToDoStore.swift */,
+				TODO00012 /* ProjectsStore.swift */,
+				TODO00014 /* ToDoListView.swift */,
+				TODO00016 /* ToDoEditorView.swift */,
+				TODO00018 /* ToDoToolsViews.swift */,
+				TODO00026 /* ToDoDueDateField.swift */,
+				TODO00020 /* ProjectsView.swift */,
+				TODO00024 /* ProjectDetailView.swift */,
+				TDCS0002 /* TodoCompletionSync.swift */,
+				TODO00022 /* ProjectDetailStore.swift */,
+			);
+			name = ToDo;
+			path = FocusBear/ToDo;
+			sourceTree = SOURCE_ROOT;
 		};
 		NOTEGRP01 /* Notes */ = {
 			isa = PBXGroup;
@@ -2328,6 +2388,20 @@
 				274C9A91289A8C910066F883 /* accountVc.swift in Sources */,
 				13C6C2A22FE2615E00B1F278 /* BreakWarningView.swift in Sources */,
 				ESD00001 /* EveningShutdownScreen.swift in Sources */,
+				TODO00001 /* ToDoModels.swift in Sources */,
+				TODO00003 /* ToDoApi.swift in Sources */,
+				TODO00005 /* ToDoLogic.swift in Sources */,
+				TODO00007 /* ToDoStrings.swift in Sources */,
+				TODO00009 /* ToDoStore.swift in Sources */,
+				TODO00011 /* ProjectsStore.swift in Sources */,
+				TODO00013 /* ToDoListView.swift in Sources */,
+				TODO00015 /* ToDoEditorView.swift in Sources */,
+				TODO00017 /* ToDoToolsViews.swift in Sources */,
+				TODO00025 /* ToDoDueDateField.swift in Sources */,
+				TODO00019 /* ProjectsView.swift in Sources */,
+				TODO00023 /* ProjectDetailView.swift in Sources */,
+				TDCS0001 /* TodoCompletionSync.swift in Sources */,
+				TODO00021 /* ProjectDetailStore.swift in Sources */,
 				NOTE00001 /* NoteModels.swift in Sources */,
 				NOTE00003 /* NotesApi.swift in Sources */,
 				NOTE00005 /* NoteHTML.swift in Sources */,
@@ -2433,6 +2507,7 @@
 				52E1363556E99AFB2A80EAD6 /* FBTTTodayView.swift in Sources */,
 				44893728E4D2BE20B7672984 /* ScheduleKit.swift in Sources */,
 				7476A99B06ABC3EB040F5633 /* DayPlanTasks.swift in Sources */,
+				SNZ00001 /* SmartSnooze.swift in Sources */,
 				SDEF0004 /* AppleScriptScripting.swift in Sources */,
 				64206D6037E4BA7EA7DD14DA /* CalendarManager.swift in Sources */,
 				57ED7D19F5DC0C0735C2F34B /* ScheduleViewController.swift in Sources */,
@@ -2456,6 +2531,8 @@
 				ABH00030 /* FocusMusicMediaKeyTests.swift in Sources */,
 				ABH00020 /* DaysOfWeekTests.swift in Sources */,
 				UBT00001 /* URLBlockingTests.swift in Sources */,
+				TODOT0001 /* ToDoLogicTests.swift in Sources */,
+				SNZT0001 /* SmartSnoozeTests.swift in Sources */,
 				CBS00001 /* CustomBlockingScheduleTests.swift in Sources */,
 				3F4020B2A99A7285EA411042 /* TaskDeduplicationHelperTests.swift in Sources */,
 			);

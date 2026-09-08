@@ -527,9 +527,9 @@ class ViewController: NSViewController {
                 taskPlayerVcObj?.reloadData(totalDuration: focusModeMinutesToPerform, intention:whatToAchieveInFocusBlock)
             }
         }else{
+            // The native screen reloads itself in viewWillAppear (like brainDumpVc).
             containerView.addSubview(getTodoListToolVcObject().view)
             containerView.addConstraints(subView: getTodoListToolVcObject().view)
-            todoListToolVcObj?.reloadData()
         }
     }
     
