@@ -599,3 +599,22 @@ Cancelling a postpone now keeps the Postpone button instead of losing it, the pa
 
 Reliability:
 Fixed the time-of-day clock on the full-screen habit player freezing — it now keeps ticking. (#2410)
+
+
+# v3.35.540
+
+Notes:
+The Notes screen (formerly Brain Dump) is now a fast native view instead of an embedded web page, with search, tags, and a rich-text editor for bold/italic/underline and lists. (#2390)
+
+Day Plan:
+When a habit won't fit before an upcoming meeting, a shorter later habit is now slotted into that gap instead of leaving it as empty deep-work time. (#2417)
+The task picker now searches the backend when your cached task list has no match, so you can find any to-do. (#2413)
+
+Focus Music:
+Play/pause from the keyboard media key or Control Center now behaves correctly — a system pause (sleep, headphones unplugged) no longer resumes your music — and no longer stalls or crashes. (#2422)
+
+Focus mode:
+The focus-complete screen now shows a varied congratulatory message instead of always saying "You are doing well!". (#2420)
+
+Reliability:
+Fixed a freeze when starting a routine — the Visualize step now loads without blocking the routine screen. (#2421)
