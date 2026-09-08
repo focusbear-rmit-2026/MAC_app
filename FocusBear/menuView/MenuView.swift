@@ -202,6 +202,15 @@ final class MenuModel: ObservableObject {
     @Published var habitsPostponedUntil = ""  // "Habits postponed until 10:07 PM" while a routine is postponed; empty otherwise
     @Published var dayPlanTasks: [DayPlanMenuTask] = []
 
+    // Inline quick-add for today's Day Plan: "+ Add task" expands into a one-line composer that
+    // understands the Day Plan's own `#project` / `*priority` tokens plus a duration (see
+    // `QuickAddTaskParser`). Enter adds and keeps the field open so several can be typed in a row.
+    @Published var quickAddExpanded = false
+    @Published var quickAddText = ""
+    /// Existing project names, so a typed `#project` reuses their canonical casing in the preview.
+    @Published var quickAddProjectNames: [String] = []
+    var onQuickAddTask: (String) -> Void = { _ in }
+
     // Focus music
     @Published var musicTrackName = ""      // non-empty when a track is loaded (playing or paused)
     @Published var musicPlaying = false
@@ -391,6 +400,70 @@ struct BlockListComboBox: NSViewRepresentable {
             guard let box = obj.object as? NSComboBox else { return }
             if let match = parent.items.first(where: { $0.name.caseInsensitiveCompare(box.stringValue) == .orderedSame }) {
                 parent.selectedId = match.id
+            }
+        }
+    }
+}
+
+/// The menu's inline quick-add task field. AppKit-backed because it needs three things SwiftUI on
+/// macOS 11 can't give: programmatic first-responder focus (no `@FocusState` before macOS 12),
+/// a Return that commits WITHOUT dismissing the popover, and an Escape that collapses the row
+/// instead of closing the popover (the field consumes `cancelOperation` before the popover sees it).
+@available(macOS 11.0, *)
+struct QuickAddTaskField: NSViewRepresentable {
+    @Binding var text: String
+    let placeholder: String
+    let onCommit: () -> Void
+    let onCancel: () -> Void
+
+    func makeNSView(context: Context) -> NSTextField {
+        let field = NSTextField()
+        field.placeholderString = placeholder
+        field.isBordered = false
+        field.drawsBackground = false
+        field.focusRingType = .none
+        field.font = .systemFont(ofSize: 13)
+        field.lineBreakMode = .byTruncatingTail
+        field.cell?.usesSingleLineMode = true
+        field.cell?.wraps = false
+        field.delegate = context.coordinator
+        field.stringValue = text
+        return field
+    }
+
+    func updateNSView(_ field: NSTextField, context: Context) {
+        context.coordinator.parent = self
+        if field.stringValue != text { field.stringValue = text }
+        if field.placeholderString != placeholder { field.placeholderString = placeholder }
+        // The field is only ever mounted while the row is expanded, so taking focus once on mount is
+        // exactly "focus when the user opens the composer".
+        guard !context.coordinator.didTakeFocus, let window = field.window else { return }
+        context.coordinator.didTakeFocus = true
+        DispatchQueue.main.async { window.makeFirstResponder(field) }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    final class Coordinator: NSObject, NSTextFieldDelegate {
+        var parent: QuickAddTaskField
+        var didTakeFocus = false
+        init(_ parent: QuickAddTaskField) { self.parent = parent }
+
+        func controlTextDidChange(_ obj: Notification) {
+            guard let field = obj.object as? NSTextField else { return }
+            parent.text = field.stringValue
+        }
+
+        func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
+            switch selector {
+            case #selector(NSResponder.insertNewline(_:)):
+                parent.onCommit()
+                return true
+            case #selector(NSResponder.cancelOperation(_:)):
+                parent.onCancel()
+                return true
+            default:
+                return false
             }
         }
     }
@@ -1162,6 +1235,10 @@ struct FocusBearMenuView: View {
                 }
             }
 
+            // "+ Add task" — always offered (also when the list is empty, so the first task of the
+            // day can be typed here) and always directly above "View full day plan".
+            quickAddSection
+
             if model.dayPlanNextEventTitle.isEmpty && model.dayPlanNextHabit.isEmpty && model.dayPlanTasks.isEmpty {
                 Text(menuLocalized("menuNothingScheduled", "Nothing scheduled right now"))
                     .font(MenuTheme.font(12, .regular))
@@ -1169,6 +1246,108 @@ struct FocusBearMenuView: View {
             }
             LinkButton(title: menuLocalized("menuViewFullDayPlan", "View full day plan"), scheme: scheme, action: model.onOpenDayPlan)
         }
+    }
+
+    // MARK: Inline quick-add task
+
+    /// What the typed line currently means. Recomputed per keystroke (the parser is pure and cheap)
+    /// so the chips below the field always describe what would actually be added.
+    private var quickAddParsed: ParsedQuickAddTask {
+        QuickAddTaskParser.parse(model.quickAddText, knownProjects: model.quickAddProjectNames)
+    }
+
+    private var quickAddSection: some View {
+        Group {
+            if model.quickAddExpanded {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(MenuTheme.orange)
+                        QuickAddTaskField(text: $model.quickAddText,
+                                          placeholder: menuLocalized("menuAddTaskPlaceholder",
+                                                                     "Task name #project 30m"),
+                                          onCommit: commitQuickAdd,
+                                          onCancel: collapseQuickAdd)
+                            .frame(height: 18)
+                        SwiftUI.Button(action: commitQuickAdd) {
+                            Image(systemName: "return")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(quickAddParsed.isEmpty ? MenuTheme.subtitle(scheme) : MenuTheme.orange)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .pointingHandCursor()
+                        .disabled(quickAddParsed.isEmpty)
+                        .help(menuLocalized("menuAddTask", "Add task"))
+                    }
+                    .padding(.horizontal, 10).padding(.vertical, 8)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(MenuTheme.orange.opacity(0.10)))
+                    quickAddPreview
+                }
+            } else {
+                SwiftUI.Button(action: { model.quickAddExpanded = true }) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "plus.circle")
+                            .font(.system(size: 15))
+                            .foregroundColor(MenuTheme.orange)
+                        Text(menuLocalized("menuAddTask", "Add task"))
+                            .font(MenuTheme.font(13, .medium))
+                            .foregroundColor(MenuTheme.orange)
+                        Spacer(minLength: 0)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(PlainButtonStyle())
+                .pointingHandCursor()
+            }
+        }
+    }
+
+    /// Chips echoing back what the typed tokens were understood as; falls back to the key hint so the
+    /// row always explains itself.
+    private var quickAddPreview: some View {
+        HStack(spacing: 6) {
+            if let project = quickAddParsed.project, !project.isEmpty {
+                quickAddChip(text: "#\(project)", icon: "folder")   // i18n-ignore: the user's own project name
+            }
+            if let minutes = quickAddParsed.durationMinutes {
+                quickAddChip(text: QuickAddTaskParser.durationLabel(minutes), icon: "clock")
+            }
+            if let outcome = quickAddParsed.outcome {
+                quickAddChip(text: "\(outcome)", icon: "star")
+            }
+            if quickAddParsed.project == nil && quickAddParsed.durationMinutes == nil && quickAddParsed.outcome == nil {
+                Text(menuLocalized("menuAddTaskHint", "Enter to add, Esc to cancel"))
+                    .font(MenuTheme.font(10, .regular))
+                    .foregroundColor(MenuTheme.subtitle(scheme))
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func quickAddChip(text: String, icon: String) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: icon).font(.system(size: 9))
+            Text(text).font(MenuTheme.font(10, .medium)).lineLimit(1)
+        }
+        .foregroundColor(MenuTheme.orange)
+        .padding(.horizontal, 6).padding(.vertical, 2)
+        .background(Capsule().fill(MenuTheme.chipBg(scheme)))
+    }
+
+    /// Enter: add the task to TODAY's Day Plan and clear the field, leaving it open and focused so a
+    /// run of tasks can be typed without re-opening the menu.
+    private func commitQuickAdd() {
+        guard !quickAddParsed.isEmpty else { return }
+        let raw = model.quickAddText
+        model.quickAddText = ""
+        model.onQuickAddTask(raw)
+    }
+
+    private func collapseQuickAdd() {
+        model.quickAddText = ""
+        model.quickAddExpanded = false
     }
 }
 

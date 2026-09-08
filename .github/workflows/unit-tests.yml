@@ -76,6 +76,7 @@ jobs:
             -only-testing:"Focus BearTests/FocusMusicMediaKeyTests" \
             -only-testing:"Focus BearTests/DaysOfWeekTests" \
             -only-testing:"Focus BearTests/CustomBlockingScheduleTests" \
+            -only-testing:"Focus BearTests/QuickAddTaskParserTests" \
             -only-testing:"Focus BearTests/ToDoLogicTests" \
             -only-testing:"Focus BearTests/SmartSnoozeTests" \
             CODE_SIGN_IDENTITY="-" \

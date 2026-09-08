@@ -679,6 +679,12 @@ class menuViewController: NSViewController {
         super.viewDidDisappear()
         menuRefreshTimer?.invalidate()
         menuRefreshTimer = nil
+        // Don't leave an uncommitted quick-add draft (or the open composer) waiting in the popover —
+        // the next open should start from the plain "+ Add task" row.
+        if #available(macOS 11.0, *) {
+            menuModel?.quickAddExpanded = false
+            menuModel?.quickAddText = ""
+        }
     }
     
     func checkPurchaseState(){
@@ -2597,6 +2603,7 @@ extension menuViewController {
             DayPlanTaskStore.shared.update(t, for: Date())
             self?.refreshSwiftUIMenu()
         }
+        model.onQuickAddTask   = { [weak self] raw in self?.quickAddDayPlanTask(raw) }
         model.onStartNextHabit = { [weak self] in self?.startNextDayPlanHabit() }
         model.onSetUpBlocking  = { [weak self] in self?.btnSetBlockingScheduleFirstTimeClicked(self as Any) }
         model.onDismissBlocking = { UserDefaults.standard.set(true, forKey: kUserDefaultsBlockingScheduleAddedFirstTime) }
@@ -3085,6 +3092,28 @@ extension menuViewController {
 
         // Today's tasks, shown with tickable checkboxes (matches the Day Plan panel's order).
         model.dayPlanTasks = topDayPlanTasks(limit: 4)
+        // Feeds the quick-add field's `#project` preview so an existing project keeps its casing.
+        model.quickAddProjectNames = DayPlanTaskStore.shared.allProjectNames()
+    }
+
+    /// Add a task typed in the menu's inline quick-add row to TODAY's Day Plan. Deliberately routed
+    /// through the SAME store calls the Day Plan's own composer uses (`add` + `syncNameOnCommit`), so
+    /// a from-scratch task gets its backend to-do minted, planned for today, and its `#project`
+    /// created/attached server-side — no second code path to keep in sync.
+    private func quickAddDayPlanTask(_ raw: String) {
+        let today = Date()
+        let parsed = QuickAddTaskParser.parse(raw, knownProjects: DayPlanTaskStore.shared.allProjectNames())
+        guard !parsed.isEmpty else { return }
+        DayPlanAnalytics.capture(DayPlanAnalytics.taskAdded,
+                                 ["source": "menu_quick_add", "has_project": parsed.project != nil])
+        let task = DayPlanTask(title: parsed.title,
+                               durationMinutes: parsed.durationMinutes ?? QuickAddTaskParser.defaultDurationMinutes,
+                               project: parsed.project,
+                               outcome: parsed.outcome)
+        DayPlanTaskStore.shared.add(task, for: today)
+        DayPlanTaskStore.shared.syncNameOnCommit(task, on: today)
+        requestDayPlanRefresh()     // the Day Plan window, if open, picks the new task up
+        refreshSwiftUIMenu()        // and it appears in TASKS FOR TODAY without closing the menu
     }
 
     /// The first N "Tasks for today" in the same order the Day Plan side-panel shows them:

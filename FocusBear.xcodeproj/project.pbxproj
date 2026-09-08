@@ -109,6 +109,7 @@
 		2BC962788650BE9B5AF7744A /* RestoreHiddenToolsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 923E7D62446EEA6F34FEF7D1 /* RestoreHiddenToolsView.swift */; };
 		2D64BA07FDD9863D4274B076 /* SpotifyTrackStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6F1F3A7517EFCBB53BA0EC6 /* SpotifyTrackStore.swift */; };
 		3CA46A649FBC8560EF565A9F /* DayPlanAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857B70E324DC67D18F73EA70 /* DayPlanAnalytics.swift */; };
+		QAT00001 /* QuickAddTaskParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = QAT00002 /* QuickAddTaskParser.swift */; };
 		3F4020B2A99A7285EA411042 /* TaskDeduplicationHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94DF69464D5A8BE205353BD5 /* TaskDeduplicationHelperTests.swift */; };
 		44893728E4D2BE20B7672984 /* ScheduleKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9989E00FEA15521B6C3FE5FE /* ScheduleKit.swift */; };
 		4E6B03630E634FEDE6CC03F4 /* FocusMusicPromptManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14B38BBF7930DF9BE6761295 /* FocusMusicPromptManager.swift */; };
@@ -393,6 +394,7 @@
 		ABH00001 /* AppBlockingHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00002 /* AppBlockingHelper.swift */; };
 		ABH00003 /* AppBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00004 /* AppBlockingTests.swift */; };
 		ABH00010 /* ScheduleKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00011 /* ScheduleKitTests.swift */; };
+		QAT00003 /* QuickAddTaskParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = QAT00004 /* QuickAddTaskParserTests.swift */; };
 		ABH00030 /* FocusMusicMediaKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00031 /* FocusMusicMediaKeyTests.swift */; };
 		ABH00020 /* DaysOfWeekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00021 /* DaysOfWeekTests.swift */; };
 		BEAR0001 /* blocking_bear.png in Resources */ = {isa = PBXBuildFile; fileRef = BEARF001 /* blocking_bear.png */; };
@@ -587,6 +589,7 @@
 		7F29AACE7F6D8CF44F9B3C22 /* FocusGlowBorderManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusGlowBorderManager.swift; sourceTree = "<group>"; };
 		804A3787372D3AE68B541AEF /* ToolVisibilityStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolVisibilityStore.swift; sourceTree = "<group>"; };
 		857B70E324DC67D18F73EA70 /* DayPlanAnalytics.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DayPlanAnalytics.swift; sourceTree = "<group>"; };
+		QAT00002 /* QuickAddTaskParser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuickAddTaskParser.swift; sourceTree = "<group>"; };
 		889FCE3E1080DC22C97AB6D8 /* Pods-Focus Bear.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Focus Bear.debug.xcconfig"; path = "Target Support Files/Pods-Focus Bear/Pods-Focus Bear.debug.xcconfig"; sourceTree = "<group>"; };
 		8E5DEAA96AD3FCA949FF525B /* Local.xcconfig.example */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = Local.xcconfig.example; sourceTree = "<group>"; };
 		8F02AF412A751A5200BA6536 /* blockedAppsVc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = blockedAppsVc.swift; sourceTree = "<group>"; };
@@ -873,6 +876,7 @@
 		ABH00002 /* AppBlockingHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingHelper.swift; sourceTree = "<group>"; };
 		ABH00004 /* AppBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingTests.swift; sourceTree = "<group>"; };
 		ABH00011 /* ScheduleKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleKitTests.swift; sourceTree = "<group>"; };
+		QAT00004 /* QuickAddTaskParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickAddTaskParserTests.swift; sourceTree = "<group>"; };
 		ABH00031 /* FocusMusicMediaKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusMusicMediaKeyTests.swift; sourceTree = "<group>"; };
 		ABH00021 /* DaysOfWeekTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaysOfWeekTests.swift; sourceTree = "<group>"; };
 		B215C30047E6A2A37A923150 /* ScheduleViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScheduleViewController.swift; sourceTree = "<group>"; };
@@ -1725,6 +1729,7 @@
 				8FD1054A27EF221800B7728E /* validationTest.swift */,
 				ABH00004 /* AppBlockingTests.swift */,
 				ABH00011 /* ScheduleKitTests.swift */,
+				QAT00004 /* QuickAddTaskParserTests.swift */,
 				ABH00031 /* FocusMusicMediaKeyTests.swift */,
 				ABH00021 /* DaysOfWeekTests.swift */,
 				UBT00002 /* URLBlockingTests.swift */,
@@ -1828,6 +1833,7 @@
 				FE3FA8163BBB36B02EF947DD /* routinePostponedInfoVc+Schedule.swift */,
 				HSS00002 /* habitsStateVc+Schedule.swift */,
 				857B70E324DC67D18F73EA70 /* DayPlanAnalytics.swift */,
+				QAT00002 /* QuickAddTaskParser.swift */,
 			);
 			name = Schedule;
 			path = Schedule;
@@ -2517,6 +2523,7 @@
 				E8F2E77638719E0C61AFC6A9 /* TaskDeduplicationHelper.swift in Sources */,
 				7F9BA16602335B11CA55F1DA /* AudhdResultsWebViewVc.swift in Sources */,
 				3CA46A649FBC8560EF565A9F /* DayPlanAnalytics.swift in Sources */,
+				QAT00001 /* QuickAddTaskParser.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2528,6 +2535,7 @@
 				8FD1053F27EEE44100B7728E /* Focus_BearTests.swift in Sources */,
 				ABH00003 /* AppBlockingTests.swift in Sources */,
 				ABH00010 /* ScheduleKitTests.swift in Sources */,
+				QAT00003 /* QuickAddTaskParserTests.swift in Sources */,
 				ABH00030 /* FocusMusicMediaKeyTests.swift in Sources */,
 				ABH00020 /* DaysOfWeekTests.swift in Sources */,
 				UBT00001 /* URLBlockingTests.swift in Sources */,
