@@ -618,3 +618,15 @@ The focus-complete screen now shows a varied congratulatory message instead of a
 
 Reliability:
 Fixed a freeze when starting a routine — the Visualize step now loads without blocking the routine screen. (#2421)
+
+
+# v3.35.541
+
+To-Do List:
+The To-Do List and Projects are now a fast native screen instead of an embedded web page — with a task editor (TOP score, due date, duration, tags, assignee, subtasks, comments and reactions), a projects portfolio with per-project boards, members and notes, natural-language due dates, and an Eisenhower matrix view. (#2416)
+
+Stats:
+The Stats screen is now native too, with Streak, Progress, Your Goals, Pep Talk, Leaderboard, Habit Stats, Productivity and Focus Log tabs — plus a native pep talk on the routine-start screen. (#2415)
+
+Menu:
+You can now add a task straight to today's Day Plan from the menu bar — a compact "+ Add task" row expands into a one-line composer (type "#project", "*priority" and a duration like "30m" inline). (#2428)
