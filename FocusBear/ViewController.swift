@@ -560,9 +560,6 @@ class ViewController: NSViewController {
         self.removeSubViews()
         containerView.addSubview(getSetUpVcObject().view)
         containerView.addConstraints(subView: getSetUpVcObject().view)
-        if getSetUpVcObject().widthConstraint != nil{
-            getSetUpVcObject().widthConstraint.isActive = false
-        }
     }
     
     func showFocusModeState(){

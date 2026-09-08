@@ -400,6 +400,8 @@
 		BEAR0001 /* blocking_bear.png in Resources */ = {isa = PBXBuildFile; fileRef = BEARF001 /* blocking_bear.png */; };
 		BEED37F6C1373AFCB67BCF04 /* Pods_Focus_Bear.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E339C651791746EA3D066A6A /* Pods_Focus_Bear.framework */; };
 		CBS00001 /* CustomBlockingScheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBS00002 /* CustomBlockingScheduleTests.swift */; };
+		STT00001 /* MarkdownTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = STT00002 /* MarkdownTextTests.swift */; };
+		STT00003 /* StatsLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = STT00004 /* StatsLogicTests.swift */; };
 		E0AA4E363AFEF2F7180E9848 /* TalkingClockManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2AFF50781FF64A00B0C9A64 /* TalkingClockManager.swift */; };
 		E8F2E77638719E0C61AFC6A9 /* TaskDeduplicationHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD4B08AEBA86C6C7E5F11357 /* TaskDeduplicationHelper.swift */; };
 		ESD00001 /* EveningShutdownScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = ESD00002 /* EveningShutdownScreen.swift */; };
@@ -420,6 +422,20 @@
 		TCS00001 /* TalkingClockSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TCS00002 /* TalkingClockSettingsView.swift */; };
 		TCV00001 /* talkingClockSettingsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = TCV00002 /* talkingClockSettingsVc.swift */; };
 		UBT00001 /* URLBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = UBT00002 /* URLBlockingTests.swift */; };
+		STAT00001 /* StatsStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = STAT00002 /* StatsStrings.swift */; };
+		STAT00003 /* StatsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = STAT00004 /* StatsModels.swift */; };
+		STAT00005 /* StatsApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = STAT00006 /* StatsApi.swift */; };
+		STAT00007 /* StatsMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = STAT00008 /* StatsMath.swift */; };
+		STAT00009 /* StatsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = STAT00010 /* StatsStore.swift */; };
+		STAT00011 /* HabitStatsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = STAT00012 /* HabitStatsStore.swift */; };
+		STAT00013 /* FocusStatsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = STAT00014 /* FocusStatsStore.swift */; };
+		STAT00015 /* StatsCharts.swift in Sources */ = {isa = PBXBuildFile; fileRef = STAT00016 /* StatsCharts.swift */; };
+		STAT00017 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = STAT00018 /* StatsView.swift */; };
+		STAT00019 /* LeaderboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = STAT00020 /* LeaderboardView.swift */; };
+		STAT00021 /* HabitStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = STAT00022 /* HabitStatsView.swift */; };
+		STAT00023 /* ProductivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = STAT00024 /* ProductivityView.swift */; };
+		STAT00025 /* FocusLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = STAT00026 /* FocusLogView.swift */; };
+		STAT00029 /* MarkdownText.swift in Sources */ = {isa = PBXBuildFile; fileRef = STAT00030 /* MarkdownText.swift */; };
 		TODO00001 /* ToDoModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00002 /* ToDoModels.swift */; };
 		TODO00003 /* ToDoApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00004 /* ToDoApi.swift */; };
 		TODO00005 /* ToDoLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00006 /* ToDoLogic.swift */; };
@@ -883,6 +899,8 @@
 		B6917674BE2A776D2F47EDE3 /* CalendarManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarManager.swift; sourceTree = "<group>"; };
 		BEARF001 /* blocking_bear.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = blocking_bear.png; sourceTree = "<group>"; };
 		CBS00002 /* CustomBlockingScheduleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomBlockingScheduleTests.swift; sourceTree = "<group>"; };
+		STT00002 /* MarkdownTextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTextTests.swift; sourceTree = "<group>"; };
+		STT00004 /* StatsLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsLogicTests.swift; sourceTree = "<group>"; };
 		CD4B08AEBA86C6C7E5F11357 /* TaskDeduplicationHelper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TaskDeduplicationHelper.swift; sourceTree = "<group>"; };
 		D0C7037C21AF4BA7BFAD7BC0 /* YouTubeMusicPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeMusicPlayerView.swift; sourceTree = "<group>"; };
 		D37822C4312A41568B0E8AE0 /* YouTubeMusicTrackStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeMusicTrackStore.swift; sourceTree = "<group>"; };
@@ -914,6 +932,20 @@
 		TCS00002 /* TalkingClockSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkingClockSettingsView.swift; sourceTree = "<group>"; };
 		TCV00002 /* talkingClockSettingsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = talkingClockSettingsVc.swift; sourceTree = "<group>"; };
 		UBT00002 /* URLBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLBlockingTests.swift; sourceTree = "<group>"; };
+		STAT00002 /* StatsStrings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsStrings.swift; sourceTree = "<group>"; };
+		STAT00004 /* StatsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsModels.swift; sourceTree = "<group>"; };
+		STAT00006 /* StatsApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsApi.swift; sourceTree = "<group>"; };
+		STAT00008 /* StatsMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsMath.swift; sourceTree = "<group>"; };
+		STAT00010 /* StatsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsStore.swift; sourceTree = "<group>"; };
+		STAT00012 /* HabitStatsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitStatsStore.swift; sourceTree = "<group>"; };
+		STAT00014 /* FocusStatsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusStatsStore.swift; sourceTree = "<group>"; };
+		STAT00016 /* StatsCharts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsCharts.swift; sourceTree = "<group>"; };
+		STAT00018 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
+		STAT00020 /* LeaderboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardView.swift; sourceTree = "<group>"; };
+		STAT00022 /* HabitStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitStatsView.swift; sourceTree = "<group>"; };
+		STAT00024 /* ProductivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductivityView.swift; sourceTree = "<group>"; };
+		STAT00026 /* FocusLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusLogView.swift; sourceTree = "<group>"; };
+		STAT00030 /* MarkdownText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownText.swift; sourceTree = "<group>"; };
 		TODO00002 /* ToDoModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToDoModels.swift; sourceTree = "<group>"; };
 		TODO00004 /* ToDoApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToDoApi.swift; sourceTree = "<group>"; };
 		TODO00006 /* ToDoLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToDoLogic.swift; sourceTree = "<group>"; };
@@ -1181,6 +1213,7 @@
 				8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */,
 				13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */,
 				ESD00002 /* EveningShutdownScreen.swift */,
+				STATGRP01 /* Stats */,
 				TODOGRP01 /* ToDo */,
 				NOTEGRP01 /* Notes */,
 				8F3F1F28299BB96400E67F42 /* breaksBrainDumpVc.swift */,
@@ -1736,6 +1769,8 @@
 				TODOT0002 /* ToDoLogicTests.swift */,
 				SNZT0002 /* SmartSnoozeTests.swift */,
 				CBS00002 /* CustomBlockingScheduleTests.swift */,
+				STT00002 /* MarkdownTextTests.swift */,
+				STT00004 /* StatsLogicTests.swift */,
 				8FD1054027EEE44100B7728E /* Info.plist */,
 				94DF69464D5A8BE205353BD5 /* TaskDeduplicationHelperTests.swift */,
 			);
@@ -1838,6 +1873,28 @@
 			name = Schedule;
 			path = Schedule;
 			sourceTree = "<group>";
+		};
+		STATGRP01 /* Stats */ = {
+			isa = PBXGroup;
+			children = (
+				STAT00002 /* StatsStrings.swift */,
+				STAT00004 /* StatsModels.swift */,
+				STAT00006 /* StatsApi.swift */,
+				STAT00008 /* StatsMath.swift */,
+				STAT00010 /* StatsStore.swift */,
+				STAT00012 /* HabitStatsStore.swift */,
+				STAT00014 /* FocusStatsStore.swift */,
+				STAT00016 /* StatsCharts.swift */,
+				STAT00018 /* StatsView.swift */,
+				STAT00020 /* LeaderboardView.swift */,
+				STAT00022 /* HabitStatsView.swift */,
+				STAT00024 /* ProductivityView.swift */,
+				STAT00026 /* FocusLogView.swift */,
+				STAT00030 /* MarkdownText.swift */,
+			);
+			name = Stats;
+			path = FocusBear/Stats;
+			sourceTree = SOURCE_ROOT;
 		};
 		TODOGRP01 /* ToDo */ = {
 			isa = PBXGroup;
@@ -2394,6 +2451,20 @@
 				274C9A91289A8C910066F883 /* accountVc.swift in Sources */,
 				13C6C2A22FE2615E00B1F278 /* BreakWarningView.swift in Sources */,
 				ESD00001 /* EveningShutdownScreen.swift in Sources */,
+				STAT00001 /* StatsStrings.swift in Sources */,
+				STAT00003 /* StatsModels.swift in Sources */,
+				STAT00005 /* StatsApi.swift in Sources */,
+				STAT00007 /* StatsMath.swift in Sources */,
+				STAT00009 /* StatsStore.swift in Sources */,
+				STAT00011 /* HabitStatsStore.swift in Sources */,
+				STAT00013 /* FocusStatsStore.swift in Sources */,
+				STAT00015 /* StatsCharts.swift in Sources */,
+				STAT00017 /* StatsView.swift in Sources */,
+				STAT00019 /* LeaderboardView.swift in Sources */,
+				STAT00021 /* HabitStatsView.swift in Sources */,
+				STAT00023 /* ProductivityView.swift in Sources */,
+				STAT00025 /* FocusLogView.swift in Sources */,
+				STAT00029 /* MarkdownText.swift in Sources */,
 				TODO00001 /* ToDoModels.swift in Sources */,
 				TODO00003 /* ToDoApi.swift in Sources */,
 				TODO00005 /* ToDoLogic.swift in Sources */,
@@ -2542,6 +2613,8 @@
 				TODOT0001 /* ToDoLogicTests.swift in Sources */,
 				SNZT0001 /* SmartSnoozeTests.swift in Sources */,
 				CBS00001 /* CustomBlockingScheduleTests.swift in Sources */,
+				STT00001 /* MarkdownTextTests.swift in Sources */,
+				STT00003 /* StatsLogicTests.swift in Sources */,
 				3F4020B2A99A7285EA411042 /* TaskDeduplicationHelperTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

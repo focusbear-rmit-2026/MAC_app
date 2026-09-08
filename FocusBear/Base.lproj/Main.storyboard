@@ -13298,13 +13298,9 @@ Gw
                                                                 </constraints>
                                                                 <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="crosshair_transparent" id="WDy-Jv-sTX"/>
                                                             </imageView>
-                                                            <wkWebView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ieJ-dv-Kgf">
+                                                            <customView translatesAutoresizingMaskIntoConstraints="NO" id="ieJ-dv-Kgf">
                                                                 <rect key="frame" x="0.0" y="0.0" width="1071" height="571"/>
-                                                                <wkWebViewConfiguration key="configuration">
-                                                                    <audiovisualMediaTypes key="mediaTypesRequiringUserActionForPlayback" none="YES"/>
-                                                                    <wkPreferences key="preferences"/>
-                                                                </wkWebViewConfiguration>
-                                                            </wkWebView>
+                                                            </customView>
                                                             <progressIndicator maxValue="100" displayedWhenStopped="NO" indeterminate="YES" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="NUr-Uc-8fe">
                                                                 <rect key="frame" x="520" y="270" width="32" height="32"/>
                                                             </progressIndicator>
@@ -13552,7 +13548,7 @@ f
                         <outlet property="loader" destination="NUr-Uc-8fe" id="VbM-j3-bjt"/>
                         <outlet property="stackViewStarRating" destination="VVJ-vL-nYm" id="mUK-eD-VXV"/>
                         <outlet property="textFieldRating" destination="6Sd-Nt-pLo" id="O9f-nl-bRH"/>
-                        <outlet property="webView" destination="ieJ-dv-Kgf" id="VgL-XJ-zoS"/>
+                        <outlet property="pepTalkContainer" destination="ieJ-dv-Kgf" id="VgL-XJ-zoS"/>
                     </connections>
                 </viewController>
                 <customObject id="Ydu-tY-FZy" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>

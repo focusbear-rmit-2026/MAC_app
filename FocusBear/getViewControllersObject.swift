@@ -1987,7 +1987,8 @@ func getHabitsVcObject()->habitsVc{
 var setUpVcObj:setUpVc?
 func getSetUpVcObject()->setUpVc{
     if setUpVcObj == nil{
-        setUpVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("setUpVc")) as? setUpVc
+        // Built in code (SwiftUI-hosted Stats screen), not from the storyboard.
+        setUpVcObj = setUpVc()
     }
     return setUpVcObj!
 }

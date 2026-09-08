@@ -24,23 +24,49 @@ extension Font {
 
 // MARK: - Buttons (shared rules)
 
-/// Shows the macOS pointing-hand cursor while the pointer is over the view, so
-/// the whole area reads as clickable. Push/pop keeps the cursor stable during
-/// hover; the disappear guard avoids leaving a pushed cursor on the stack if the
-/// view goes away mid-hover.
+/// Shows the macOS pointing-hand cursor while the pointer is over the view, so the whole area reads
+/// as clickable. Uses an AppKit NSTrackingArea with `.cursorUpdate` rather than SwiftUI's onHover +
+/// NSCursor.push/pop: onHover doesn't reliably deliver the exit event (especially for many controls
+/// inside a ScrollView / hosting view), so the pushed cursor was left on the stack and the hand
+/// cursor stayed after the pointer left. A tracking area's enter/exit + cursorUpdate fire reliably
+/// and AppKit reverts the cursor on exit on its own — no stack to leak.
 @available(macOS 11.0, *)
 private struct PointingHandCursorModifier: ViewModifier {
-    @SwiftUI.State private var hovering = false
     func body(content: Content) -> some View {
-        content
-            .onHover { inside in
-                guard inside != hovering else { return }
-                hovering = inside
-                if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
-            }
-            .onDisappear {
-                if hovering { NSCursor.pop(); hovering = false }
-            }
+        content.overlay(CursorTrackingRepresentable(cursor: .pointingHand))
+    }
+}
+
+/// A transparent, click-through NSView that tracks the pointer and sets a cursor while inside.
+@available(macOS 11.0, *)
+private struct CursorTrackingRepresentable: NSViewRepresentable {
+    let cursor: NSCursor
+
+    func makeNSView(context: Context) -> NSView { CursorTrackingView(cursor: cursor) }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        (nsView as? CursorTrackingView)?.cursor = cursor
+    }
+
+    private final class CursorTrackingView: NSView {
+        var cursor: NSCursor
+        init(cursor: NSCursor) { self.cursor = cursor; super.init(frame: .zero) }
+        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+        override func updateTrackingAreas() {
+            super.updateTrackingAreas()
+            for area in trackingAreas { removeTrackingArea(area) }
+            addTrackingArea(NSTrackingArea(rect: .zero,
+                                           options: [.mouseEnteredAndExited, .cursorUpdate, .activeInActiveApp, .inVisibleRect],
+                                           owner: self))
+        }
+
+        override func mouseEntered(with event: NSEvent) { cursor.set() }
+        override func cursorUpdate(with event: NSEvent) { cursor.set() }
+        override func mouseExited(with event: NSEvent) { NSCursor.arrow.set() }
+        // Let clicks fall through to the SwiftUI control underneath; tracking-area events (enter/exit/
+        // cursorUpdate) are delivered to the owner independently of mouse-event hit-testing.
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
     }
 }
 
