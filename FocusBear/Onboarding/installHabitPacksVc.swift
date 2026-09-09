@@ -177,43 +177,11 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
             print(error)
             print(html)
         })
-        //load installed apps
-        var arrInstalledApps = [String]()
-        let urls = FileManager.default.urls(for: .applicationDirectory, in: [.systemDomainMask, .localDomainMask])
-        let properties = [URLResourceKey.localizedNameKey, URLResourceKey.creationDateKey, URLResourceKey.contentModificationDateKey, URLResourceKey.localizedTypeDescriptionKey,URLResourceKey.nameKey]
-       
-        for url in urls{
-            let array = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: properties, options: .skipsHiddenFiles)
-            if array != nil{
-                for appUrl in array!{
-                    
-                    if appUrl.pathExtension == "app"{
-                        let appName = appUrl.deletingPathExtension().lastPathComponent
-                        print(appName)
-                        arrInstalledApps.append(appName)
-                    }else{
-                        if appUrl.isDirectory{
-                            let arrAppInFolder = try? FileManager.default.contentsOfDirectory(at: appUrl, includingPropertiesForKeys: properties, options: .skipsHiddenFiles)
-                            if arrAppInFolder != nil{
-                                for appUrl in arrAppInFolder!{
-                                    if appUrl.pathExtension == "app"{
-                                        let appName = appUrl.deletingPathExtension().lastPathComponent
-                                        print(appName)
-                                        arrInstalledApps.append(appName)
-                                    }
-                                }
-                            }
-                            
-                        }
-                    }
-                }
-            }
-        }
-        
-        
-        addLog(text: "Load Installed Apps to web settings:- \(arrInstalledApps)")
+        // Installed apps are the web's allowed-app suggestions (one enumerator for every loader: InstalledApps).
+        let installedApps = InstalledApps.shared.names()
+        addLog(text: "Load Installed Apps to web settings:- \(installedApps.count) apps")
         let mutableDic = NSMutableDictionary()
-        mutableDic["installedApps"] = arrInstalledApps
+        mutableDic["installedApps"] = installedApps
         
         do {
             let data = try (JSONSerialization.data(withJSONObject: mutableDic, options: .prettyPrinted))

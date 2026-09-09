@@ -12,6 +12,26 @@
 
 import Foundation
 
+/// Compact habit-duration labels for the Day Plan rows and the habit editor: "45s", "1m 30s", "5m",
+/// "1h 5m". Seconds matter — a 1-second "log it" habit used to read as "0m".
+enum HabitDurationText {
+    static let secondsPerMinute = 60
+    static let secondsPerHour = 3600
+    private static let hourUnit = "h"
+    private static let minuteUnit = "m"
+    private static let secondUnit = "s"
+
+    static func short(seconds: Int) -> String {
+        let hours = seconds / secondsPerHour
+        let minutes = (seconds % secondsPerHour) / secondsPerMinute
+        let remainder = seconds % secondsPerMinute
+        if hours > 0 { return "\(hours)\(hourUnit) \(minutes)\(minuteUnit)" }
+        if minutes > 0 && remainder > 0 { return "\(minutes)\(minuteUnit) \(remainder)\(secondUnit)" }
+        if minutes > 0 { return "\(minutes)\(minuteUnit)" }
+        return "\(remainder)\(secondUnit)"
+    }
+}
+
 enum ScheduleBlockKind {
     case habit
     case meeting
@@ -29,6 +49,9 @@ struct ScheduleBlock {
     var end: Date
     var habitIndex: Int?       // index into the current routine's remaining-habits array
     var isActionable: Bool     // show Play/Done/Skip on this card
+    /// The habit's settings can be edited from this card (Edit-only bar when it isn't actionable).
+    /// Separate from `isActionable`: a preview/future routine can be edited but not started.
+    var isEditable: Bool = false
     var isCurrent: Bool        // the next habit up (highlighted)
     var subtitle: String?      // e.g. "meeting", or a duration label
     var didOverflow: Bool      // habit couldn't be placed before day end
@@ -185,6 +208,11 @@ enum ScheduleBuilder {
                 var b = ScheduleBlock(kind: .habit, title: p.habit.title, start: p.start, end: p.end,
                                       habitIndex: p.habit.index, routineName: seg.name)
                 b.isActionable = seg.actionable
+                // Every habit row is editable, "earlier today" history and completed habits included: the
+                // editor changes the habit's SETTINGS, not the day's record, so a routine that has already
+                // run is as editable as one that hasn't. Only what you can *do* to today's row
+                // (Play/Done/Skip) is gated on `actionable`.
+                b.isEditable = true
                 b.isDone = p.habit.isDone
                 b.habitId = p.habit.id
                 b.isEarlier = seg.isEarlier
@@ -213,6 +241,7 @@ enum ScheduleBuilder {
                     var b = ScheduleBlock(kind: .habit, title: h.title, start: overflowAnchor, end: overflowAnchor,
                                           habitIndex: h.index, routineName: seg.name)
                     b.isActionable = true
+                    b.isEditable = true
                     b.isDone = h.isDone
                     b.habitId = h.id
                     b.didOverflow = true

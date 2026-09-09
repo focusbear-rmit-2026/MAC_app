@@ -230,4 +230,24 @@ final class ScheduleKitTests: XCTestCase {
         let blocks = habitBlocks(build(segs, now: now, dayEnd: t(18, 0)))
         XCTAssertTrue(blocks.allSatisfy { !$0.isActionable && !$0.isCurrent })
     }
+
+    /// Every habit is editable from the Day Plan — a preview (future) routine's, and "earlier today"
+    /// history's too, since the editor changes the habit's settings rather than the day's record. Only
+    /// `isActionable` (Play/Done/Skip on today's row) distinguishes the active routine.
+    func testEverySegmentIsEditableIncludingEarlierAndPreview() {
+        let now = t(9, 0)
+        let active = seg([habit(0, "A", minutes: 10)], start: now, end: t(12, 0), actionable: true, name: "Morning")
+        let preview = seg([habit(1, "B", minutes: 10)], start: t(17, 0), end: t(18, 0), actionable: false, name: "Evening")
+        var earlier = seg([habit(2, "C", minutes: 10)], start: t(7, 0), end: t(8, 0), actionable: false, name: "Earlier")
+        earlier.isEarlier = true
+        let blocks = habitBlocks(build([earlier, active, preview], now: now, dayEnd: t(23, 0)))
+
+        let byName = Dictionary(uniqueKeysWithValues: blocks.map { ($0.routineName ?? "", $0) })
+        XCTAssertEqual(byName["Morning"]?.isActionable, true)
+        XCTAssertEqual(byName["Morning"]?.isEditable, true)
+        XCTAssertEqual(byName["Evening"]?.isActionable, false)
+        XCTAssertEqual(byName["Evening"]?.isEditable, true)
+        XCTAssertEqual(byName["Earlier"]?.isActionable, false)
+        XCTAssertEqual(byName["Earlier"]?.isEditable, true, "completed/past habits are edited, not re-run")
+    }
 }

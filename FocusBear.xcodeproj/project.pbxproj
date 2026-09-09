@@ -116,6 +116,10 @@
 		52E1363556E99AFB2A80EAD6 /* FBTTTodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC187A9D44C75F344A462A1 /* FBTTTodayView.swift */; };
 		5790A2029EF7B5F4A5EF47B8 /* routinePostponedInfoVc+Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE3FA8163BBB36B02EF947DD /* routinePostponedInfoVc+Schedule.swift */; };
 		57ED7D19F5DC0C0735C2F34B /* ScheduleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B215C30047E6A2A37A923150 /* ScheduleViewController.swift */; };
+		DPHE0001 /* DayPlanHabitEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DPHE0002 /* DayPlanHabitEditor.swift */; };
+		DPRD0001 /* DayPlanRoutineDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = DPRD0002 /* DayPlanRoutineDraft.swift */; };
+		DPRT0001 /* DayPlanRoutineDraftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DPRT0002 /* DayPlanRoutineDraftTests.swift */; };
+		INAP0001 /* InstalledApps.swift in Sources */ = {isa = PBXBuildFile; fileRef = INAP0002 /* InstalledApps.swift */; };
 		5A3E0C8D2FA42A4700301BE2 /* HiddenFocusModeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3E0C8C2FA42A4700301BE2 /* HiddenFocusModeManager.swift */; };
 		5A6A3D7A2FAEB776007ED01F /* BreakFrequencyPromptVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6A3D792FAEB776007ED01F /* BreakFrequencyPromptVc.swift */; };
 		5A6A3D7C2FAEB7D8007ED01F /* BreakFrequencyStreakTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6A3D7B2FAEB7D8007ED01F /* BreakFrequencyStreakTracker.swift */; };
@@ -896,6 +900,10 @@
 		ABH00031 /* FocusMusicMediaKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusMusicMediaKeyTests.swift; sourceTree = "<group>"; };
 		ABH00021 /* DaysOfWeekTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaysOfWeekTests.swift; sourceTree = "<group>"; };
 		B215C30047E6A2A37A923150 /* ScheduleViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScheduleViewController.swift; sourceTree = "<group>"; };
+		DPHE0002 /* DayPlanHabitEditor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DayPlanHabitEditor.swift; sourceTree = "<group>"; };
+		DPRD0002 /* DayPlanRoutineDraft.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DayPlanRoutineDraft.swift; sourceTree = "<group>"; };
+		DPRT0002 /* DayPlanRoutineDraftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayPlanRoutineDraftTests.swift; sourceTree = "<group>"; };
+		INAP0002 /* InstalledApps.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InstalledApps.swift; sourceTree = "<group>"; };
 		B6917674BE2A776D2F47EDE3 /* CalendarManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarManager.swift; sourceTree = "<group>"; };
 		BEARF001 /* blocking_bear.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = blocking_bear.png; sourceTree = "<group>"; };
 		CBS00002 /* CustomBlockingScheduleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomBlockingScheduleTests.swift; sourceTree = "<group>"; };
@@ -1607,6 +1615,7 @@
 				8F050A0B278467B000F3CE17 /* FocusBear-Bridging-Header.h */,
 				8F8869CB2AE38CBB0089E109 /* searchableComboBox.swift */,
 				8FAC6C982780671E008A4180 /* globalFile.swift */,
+				INAP0002 /* InstalledApps.swift */,
 				134C1D382E8263CC0032AF65 /* log.swift */,
 				134C1D322E8260C10032AF65 /* allSubclasses.swift */,
 				134C1D342E82615B0032AF65 /* allExtension.swift */,
@@ -1769,6 +1778,7 @@
 				TODOT0002 /* ToDoLogicTests.swift */,
 				SNZT0002 /* SmartSnoozeTests.swift */,
 				CBS00002 /* CustomBlockingScheduleTests.swift */,
+				DPRT0002 /* DayPlanRoutineDraftTests.swift */,
 				STT00002 /* MarkdownTextTests.swift */,
 				STT00004 /* StatsLogicTests.swift */,
 				8FD1054027EEE44100B7728E /* Info.plist */,
@@ -1864,6 +1874,8 @@
 				SNZ00002 /* SmartSnooze.swift */,
 				B6917674BE2A776D2F47EDE3 /* CalendarManager.swift */,
 				B215C30047E6A2A37A923150 /* ScheduleViewController.swift */,
+				DPHE0002 /* DayPlanHabitEditor.swift */,
+				DPRD0002 /* DayPlanRoutineDraft.swift */,
 				2DEF19BEE8458F980B62C5C3 /* firstViewController+Schedule.swift */,
 				FE3FA8163BBB36B02EF947DD /* routinePostponedInfoVc+Schedule.swift */,
 				HSS00002 /* habitsStateVc+Schedule.swift */,
@@ -2588,6 +2600,9 @@
 				SDEF0004 /* AppleScriptScripting.swift in Sources */,
 				64206D6037E4BA7EA7DD14DA /* CalendarManager.swift in Sources */,
 				57ED7D19F5DC0C0735C2F34B /* ScheduleViewController.swift in Sources */,
+				DPHE0001 /* DayPlanHabitEditor.swift in Sources */,
+				DPRD0001 /* DayPlanRoutineDraft.swift in Sources */,
+				INAP0001 /* InstalledApps.swift in Sources */,
 				7DC90FC77F5432F8C21012C0 /* firstViewController+Schedule.swift in Sources */,
 				5790A2029EF7B5F4A5EF47B8 /* routinePostponedInfoVc+Schedule.swift in Sources */,
 				HSS00001 /* habitsStateVc+Schedule.swift in Sources */,
@@ -2613,6 +2628,7 @@
 				TODOT0001 /* ToDoLogicTests.swift in Sources */,
 				SNZT0001 /* SmartSnoozeTests.swift in Sources */,
 				CBS00001 /* CustomBlockingScheduleTests.swift in Sources */,
+				DPRT0001 /* DayPlanRoutineDraftTests.swift in Sources */,
 				STT00001 /* MarkdownTextTests.swift in Sources */,
 				STT00003 /* StatsLogicTests.swift in Sources */,
 				3F4020B2A99A7285EA411042 /* TaskDeduplicationHelperTests.swift in Sources */,

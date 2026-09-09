@@ -25,6 +25,15 @@ enum DayPlanAnalytics {
     // Navigation
     static let dayChanged = "day-plan-day-changed"
 
+    // Editing habits / routine timing from the Day Plan (DayPlanRoutineDraft)
+    static let habitEditOpened = "day-plan-habit-edit-opened"
+    static let habitEdited = "day-plan-habit-edited"
+    static let habitDeleted = "day-plan-habit-deleted"
+    static let habitAddOpened = "day-plan-habit-add-opened"
+    static let habitAdded = "day-plan-habit-added"
+    static let routineTimingEdited = "day-plan-routine-timing-edited"
+    static let routineDraftSaved = "day-plan-routine-draft-saved"
+
     // Calendar connection (permission grant flow)
     static let calendarConnectStarted = "day-plan-calendar-connect-started"
     static let calendarConnectSucceeded = "day-plan-calendar-connect-succeeded"

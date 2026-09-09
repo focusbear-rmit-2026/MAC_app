@@ -170,6 +170,92 @@ enum ScheduleText {
     static var customRoutinesAfterCutoff: String { t("customRoutinesAfterCutoff", "On demand custom routines deactivated until tomorrow morning - time to wind down now") }
     static var tabCustomRoutine: String { t("tabCustomRoutine", "Custom routine") }
     static var tabDayPlan: String { t("tabDayPlan", "Day Plan") }
+
+    // Editing a habit from the Day Plan (the action bar's Edit button → DayPlanHabitEditor sheet).
+    static var editHabit: String { t("editHabit", "Edit") }
+    static var editHabitTitle: String { t("editHabitTitle", "Edit habit") }
+    static var habitFieldName: String { t("habitFieldName", "Habit name") }
+    static var habitFieldUseTimer: String { t("habitFieldUseTimer", "Use timer") }
+    static var habitFieldDurationLabel: String { t("habitFieldDurationLabel", "Duration") }
+    static var habitDurationMinutesUnit: String { t("habitDurationMinutesUnit", "min") }
+    static var habitDurationSecondsUnit: String { t("habitDurationSecondsUnit", "sec") }
+    static var habitFieldCompletion: String { t("habitFieldCompletion", "Habit finishes when…") }
+    static var habitTabTiming: String { t("habitTabTiming", "Timing") }
+    static var habitFieldPriority: String { t("habitFieldPriority", "Priority") }
+    static var habitPriorityHigh: String { t("habitPriorityHigh", "Must do") }
+    static var habitPriorityStandard: String { t("habitPriorityStandard", "Optional") }
+    static var habitFieldDays: String { t("habitFieldDays", "Weekly schedule") }
+    static var habitDaysWeekdays: String { t("habitDaysWeekdays", "Weekdays") }
+    static var habitDaysWeekend: String { t("habitDaysWeekend", "Weekend") }
+    static var habitDaysAll: String { t("habitDaysAll", "Every day") }
+    static var habitFieldCutoff: String { t("habitFieldCutoff", "Late cutoff — skip this habit after") }
+    static var habitTabVideos: String { t("habitTabVideos", "Add Videos") }
+    static var habitFieldVideoUrls: String { t("habitFieldVideoUrls", "YouTube or Vimeo video links (one is played at random)") }
+    static var habitTabAllowApps: String { t("habitTabAllowApps", "Allow Apps") }
+    static var habitFieldAllowedApps: String { t("habitFieldAllowedApps", "Allowed apps") }
+    static var habitFieldAllowedUrls: String { t("habitFieldAllowedUrls", "Allowed websites") }
+    static var habitFieldRunMicroBreaks: String { t("habitFieldRunMicroBreaks", "Run micro-breaks during this habit") }
+    static var habitFieldUseFocusMode: String { t("habitFieldUseFocusMode", "Use a focus mode (block list) instead of specific apps") }
+    static var habitFieldFocusMode: String { t("habitFieldFocusMode", "Focus mode") }
+    static var habitFieldShowSavedSites: String { t("habitFieldShowSavedSites", "Show the guilt-free play popup") }
+    static var habitTabLogData: String { t("habitTabLogData", "Log Data") }
+    static var habitFieldLogQuantity: String { t("habitFieldLogQuantity", "Ask me to log data after this habit") }
+    static var habitFieldQuestion: String { t("habitFieldQuestion", "Question") }
+    static var habitFieldMin: String { t("habitFieldMin", "Min") }
+    static var habitFieldMax: String { t("habitFieldMax", "Max") }
+    static var habitAddQuestion: String { t("habitAddQuestion", "Add question") }
+    static var habitFieldLogType: String { t("habitFieldLogType", "Report as") }
+    static var habitLogTypeSum: String { t("habitLogTypeSum", "Total") }
+    static var habitLogTypeAverage: String { t("habitLogTypeAverage", "Average") }
+    static var habitFieldTakeNotes: String { t("habitFieldTakeNotes", "Take notes") }
+    static var habitNotesNone: String { t("habitNotesNone", "No notes") }
+    static var habitNotesDuring: String { t("habitNotesDuring", "During the habit") }
+    static var habitNotesEnd: String { t("habitNotesEnd", "At the end of the habit") }
+    static var habitTabSubHabits: String { t("habitTabSubHabits", "Sub habits") }
+    static var habitFieldChecklist: String { t("habitFieldChecklist", "Steps to tick off") }
+    static var habitRandomChoicesNote: String { t("habitRandomChoicesNote", "This habit has %d random sub-habits. They're kept as they are — edit them on the web.") }
+    static var habitTabInstructions: String { t("habitTabInstructions", "Instructions") }
+    static var habitFieldInstructions: String { t("habitFieldInstructions", "Text instructions") }
+    static var habitFieldImages: String { t("habitFieldImages", "Image links") }
+    static var habitTabAdvanced: String { t("habitTabAdvanced", "Advanced") }
+    static var habitFieldTags: String { t("habitFieldTags", "Tags") }
+    static var habitAddItem: String { t("habitAddItem", "Add") }
+    static var habitRemoveItem: String { t("habitRemoveItem", "Remove") }
+    static var habitAllowedAppsPlaceholder: String { t("habitAllowedAppsPlaceholder", "Type an app name…") }
+    static var habitAllowedAppsAddCustom: String { t("habitAllowedAppsAddCustom", "Add “%@”") }
+    static var habitDelete: String { t("habitDelete", "Delete habit") }
+    static var habitDeleteConfirm: String { t("habitDeleteConfirm", "Remove “%@” from this routine? It's gone once you save and restart.") }
+    static var habitDeleteConfirmButton: String { t("habitDeleteConfirmButton", "Delete") }
+    static var habitSave: String { t("habitSave", "Save") }
+    static var habitCancel: String { t("habitCancel", "Cancel") }
+    static var habitInvalidName: String { t("habitInvalidName", "Give the habit a name.") }
+    static var habitInvalidDurationRange: String { t("habitInvalidDurationRange", "Duration must be between 1 second and 999 minutes.") }
+    static var habitInvalidCompletion: String { t("habitInvalidCompletion", "Say what has to happen for the habit to count as done.") }
+    static var habitInvalidDays: String { t("habitInvalidDays", "Pick at least one day.") }
+    static var habitInvalidVideo: String { t("habitInvalidVideo", "Video links must be YouTube or Vimeo URLs.") }
+    static var habitInvalidQuestions: String { t("habitInvalidQuestions", "Every question needs text, and min must be less than max.") }
+    static var habitInvalidTags: String { t("habitInvalidTags", "Tags can only contain letters, spaces, underscores, brackets, commas, & and -.") }
+    static var habitInvalidCutoff: String { t("habitInvalidCutoff", "The cutoff must fall between the evening routine start and the morning routine start.") }
+    static var habitEditUnavailable: String { t("habitEditUnavailable", "This habit couldn't be found in your settings. Edit it from Settings › Edit habits instead.") }
+    // Routine header "…" menu + the "Edit routine timing" sheet.
+    static var routineMoreActions: String { t("routineMoreActions", "Routine options") }
+    static var editRoutineTiming: String { t("editRoutineTiming", "Edit routine timing") }
+    static var addNewHabit: String { t("addNewHabit", "Add new habit") }
+    static var newHabitTitle: String { t("newHabitTitle", "New habit") }
+    static var habitPickEmoji: String { t("habitPickEmoji", "Pick an emoji") }
+    static var routineTimingQuestion: String { t("routineTimingQuestion", "When do you want %@ to start?") }
+    static var routineTimingHint: String { t("routineTimingHint", "This moves the routine on every day it's scheduled.") }
+    static var routineNameMorning: String { t("routineNameMorning", "your morning routine") }
+    static var routineNameEvening: String { t("routineNameEvening", "your evening routine") }
+    static var routineNameCustom: String { t("routineNameCustom", "this routine") }
+    // Drafted-changes banner at the top of the Day Plan.
+    static var draftBanner: String { t("draftBanner", "Routine changes drafted: ready to save?") }
+    static var draftSaveRestart: String { t("draftSaveRestart", "Save and restart app") }
+    static var draftSaving: String { t("draftSaving", "Saving…") }
+    static var draftSaveFailedTitle: String { t("draftSaveFailedTitle", "Couldn't save your routine changes") }
+    static var draftSaveFailedMessage: String { t("draftSaveFailedMessage", "The server didn't accept the changes (status %d). Your draft is still here — check your connection and try again.") }
+    static var draftSaveFailedServerSaid: String { t("draftSaveFailedServerSaid", "The server said:") }
+    static var draftSaveFailedOk: String { t("draftSaveFailedOk", "OK") }
 }
 
 /// Implemented by each habit-list screen that can present the Schedule tab
@@ -478,6 +564,9 @@ class scheduleViewController: NSViewController {
     final class FlippedClipView: NSClipView { override var isFlipped: Bool { true } }
 
     private let scrollView = NSScrollView()
+    /// Pinned between the date bar and the schedule scroll view (so it never scrolls away) — holds the
+    /// "Routine changes drafted" banner while DayPlanRoutineDraft has changes, otherwise it's empty (0pt).
+    private let draftBannerContainer = NSStackView()
     private let stackView = NSStackView()
     private let tasksPanel = DayPlanTasksPanel()
     private let customRoutinesPanel = CustomRoutinesPanel()
@@ -570,6 +659,8 @@ class scheduleViewController: NSViewController {
     /// Habit id of the PAST habit whose Done action bar is shown (click-to-reveal, like the live view).
     /// Kept separate from selectedHabitIndex because past habits are keyed by id, not live-array index.
     private var selectedPastHabitId: String?
+    /// The selected habit of a preview/future routine (editable, not actionable) — shows an Edit-only bar.
+    private var selectedEditableHabitId: String?
 
     // Temporary full-screen exit while granting calendar permission.
     private var grantCountdownWindow: NSWindow?
@@ -740,6 +831,11 @@ class scheduleViewController: NSViewController {
         scheduleCog.target = self; scheduleCog.action = #selector(openScheduleSettings(_:))
         scheduleCog.translatesAutoresizingMaskIntoConstraints = false
         root.addSubview(scheduleCog)
+        draftBannerContainer.orientation = .vertical
+        draftBannerContainer.alignment = .width
+        draftBannerContainer.spacing = 0
+        draftBannerContainer.translatesAutoresizingMaskIntoConstraints = false
+        root.addSubview(draftBannerContainer)
         root.addSubview(scrollView)
         root.addSubview(separator)
         root.addSubview(tasksPanel)
@@ -838,7 +934,11 @@ class scheduleViewController: NSViewController {
             addEventButton.trailingAnchor.constraint(equalTo: separator.leadingAnchor, constant: -16),
 
             // Schedule scroll fills the left column (up to the panel separator).
-            scrollView.topAnchor.constraint(equalTo: dateBar.bottomAnchor, constant: 6),
+            // Sticky draft banner sits between the date bar and the scroll view (0pt tall when empty).
+            draftBannerContainer.topAnchor.constraint(equalTo: dateBar.bottomAnchor, constant: 6),
+            draftBannerContainer.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 16),
+            draftBannerContainer.trailingAnchor.constraint(equalTo: separator.leadingAnchor, constant: -16),
+            scrollView.topAnchor.constraint(equalTo: draftBannerContainer.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: root.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: separator.leadingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: root.bottomAnchor),
@@ -2139,7 +2239,7 @@ class scheduleViewController: NSViewController {
         // Round to the minute — matching what's actually shown — so a reload that only advanced the
         // clock without changing anything visible correctly no-ops instead of rebuilding.
         func minuteEpoch(_ date: Date) -> Int { Int(date.timeIntervalSince1970 / 60) }
-        let signature = "\(appearanceName)|\(bannerOn)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(selectedPastHabitId ?? "-")|\(completedSig)|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(hideHabitBlocks)|\(collapseSig)|\(dwCollapseSig)|\(cancelledSig)|\(shouldShowEveningShutdownPrompt())|\(taskSig)|"
+        let signature = "\(appearanceName)|\(bannerOn)|\(DayPlanRoutineDraft.shared.hasChanges)|\(Int(selectedDate.timeIntervalSince1970/86400))|\(selectedHabitIndex.map(String.init) ?? "-")|\(selectedPastHabitId ?? "-")|\(selectedEditableHabitId ?? "-")|\(completedSig)|\(canShowEarlierToggle)\(showEarlierEvents)|\(hideDeepWorkBlocks)|\(hideHabitBlocks)|\(collapseSig)|\(dwCollapseSig)|\(cancelledSig)|\(shouldShowEveningShutdownPrompt())|\(taskSig)|"
             + blocks.map { "\($0.kind)\($0.title)\(minuteEpoch($0.start))\(minuteEpoch($0.end))\($0.isCurrent)\($0.isActionable)" }.joined(separator: ";")
         if signature == lastRenderSignature, !stackView.arrangedSubviews.isEmpty { return }
         lastRenderSignature = signature
@@ -2159,6 +2259,7 @@ class scheduleViewController: NSViewController {
         if CalendarManager.shared.shouldShowPermissionBanner() && !bannerDismissed {
             addCard(makeCalendarBanner())
         }
+        updateDraftBanner()
 
         // The "show events from earlier today" option now lives in the schedule settings cog popover.
         // Keep it hidden during a custom routine — the [Custom routine | Day Plan] toggle sits in the
@@ -2569,11 +2670,14 @@ class scheduleViewController: NSViewController {
             headerRow.translatesAutoresizingMaskIntoConstraints = false
             headerRow.addArrangedSubview(chevron)
             headerRow.addArrangedSubview(header)
-            if isActiveRoutine && !isCancelled {
-                let skipBtn = makeSkipRoutineButton()
-                skipBtn.setContentHuggingPriority(.required, for: .horizontal)
-                skipBtn.setContentCompressionResistancePriority(.required, for: .horizontal)
-                headerRow.addArrangedSubview(skipBtn)
+            // The header's "…" menu: "Skip routine for today" (active routine only) and "Edit routine
+            // timing" (any routine we can trace back to the settings JSON via one of its habit ids).
+            let section = habits.first?.habitId.flatMap { DayPlanRoutineDraft.shared.routineSection(forHabitId: $0) }
+            if !isCancelled && (isActiveRoutine || section != nil) {
+                let menuBtn = makeRoutineMenuButton(section: section, showsSkip: isActiveRoutine)
+                menuBtn.setContentHuggingPriority(.required, for: .horizontal)
+                menuBtn.setContentCompressionResistancePriority(.required, for: .horizontal)
+                headerRow.addArrangedSubview(menuBtn)
             }
             headerRow.onClick = { [weak self] in self?.toggleRoutineCollapsed(name: routineName, sectionId: sectionId, date: dateForToggle, overflow: isOverflow) }
             headerRow.toolTip = collapsed ? ScheduleText.showHabits : ScheduleText.hideHabits
@@ -2633,14 +2737,16 @@ class scheduleViewController: NSViewController {
             let rowView: NSView
             if isPastCompletable, let id = h.habitId {
                 // #2012: a PAST habit that wasn't logged. Click-to-reveal, exactly like the live view —
-                // a plain row until selected, then an orange unit with a Done-only bar (no wall of Done
-                // buttons). Completed by id with a backdated `performedAt` (its slot on the viewed day),
-                // never the index-based live-routine path. Done habits fall through → struck-through row.
+                // a plain row until selected, then an orange unit with a Complete + Edit bar (no wall of
+                // Done buttons). Completed by id with a backdated `performedAt` (its slot on the viewed
+                // day), never the index-based live-routine path. An already-DONE past habit falls through
+                // to the editable branch below: struck through, and selectable for an Edit-only bar.
                 if selectedPastHabitId == id {
                     rowView = makeSelectedPastHabitUnit(h, id: id, performedAt: h.start)
                 } else {
                     rowView = makeHabitRow(h, isSelected: false, onSelect: { [weak self] in
                         self?.selectedHabitIndex = nil
+                        self?.selectedEditableHabitId = nil
                         self?.selectedPastHabitId = id
                         self?.lastRenderSignature = nil
                         self?.reload()
@@ -2650,6 +2756,11 @@ class scheduleViewController: NSViewController {
                 // Selected: render as one connected orange unit (header + action bar, no gap),
                 // matching the habit view.
                 rowView = makeSelectedHabitUnit(h, idx: idx)
+            } else if h.isEditable, let id = h.habitId, selectedEditableHabitId == id {
+                // A preview/future routine's habit, a COMPLETED past habit, or any habit when the host
+                // can't act: the same orange unit with an Edit-only bar — it can't be started (or is
+                // already done), but its settings can still change.
+                rowView = makeSelectedEditableHabitUnit(h, id: id)
             } else {
                 rowView = makeHabitRow(h, isSelected: false)
             }
@@ -2700,29 +2811,58 @@ class scheduleViewController: NSViewController {
         return iv
     }
 
-    /// A compact red "skip routine for today" ICON button (an ✕) for the active routine header — the
-    /// text link was replaced with an icon. Tooltip spells out the action so the ✕ isn't ambiguous.
-    private func makeSkipRoutineButton() -> NSButton {
-        let btn = cursorButton(title: "", target: self, action: #selector(skipRoutineForTodayClicked))
+    /// The routine header's "…" button. Opens a menu with "Skip routine for today" (replaces the old ✕,
+    /// active routine only) and "Edit routine timing" (when the routine is known to the settings JSON).
+    private func makeRoutineMenuButton(section: RoutineSettingsSection?, showsSkip: Bool) -> NSButton {
+        let btn = RoutineMenuButton(title: "", target: self, action: #selector(routineMenuClicked(_:)))
+        btn.section = section
+        btn.showsSkip = showsSkip
         btn.isBordered = false
         btn.bezelStyle = .inline
         btn.imagePosition = .imageOnly
-        btn.contentTintColor = .systemRed
-        if #available(macOS 11.0, *), let base = NSImage(systemSymbolName: "xmark.circle", accessibilityDescription: ScheduleText.skipRoutineForToday) {
+        btn.contentTintColor = .secondaryLabelColor
+        if #available(macOS 11.0, *), let base = NSImage(systemSymbolName: "ellipsis.circle", accessibilityDescription: ScheduleText.routineMoreActions) {
             let cfg = NSImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
             btn.image = base.withSymbolConfiguration(cfg) ?? base
         } else {
-            // Pre-11 fallback: keep the (red) text so the action stays reachable.
-            btn.attributedTitle = NSAttributedString(
-                string: ScheduleText.skipRoutineForToday,
-                attributes: [.foregroundColor: NSColor.systemRed,
-                             .font: NSFont.systemFont(ofSize: 12, weight: .semibold),
-                             .underlineStyle: NSUnderlineStyle.single.rawValue])
+            btn.title = "…"   // i18n-ignore — glyph only
         }
-        btn.toolTip = ScheduleText.skipRoutineForToday
+        btn.toolTip = ScheduleText.routineMoreActions
         btn.setContentHuggingPriority(.required, for: .horizontal)
         btn.setContentCompressionResistancePriority(.required, for: .horizontal)
         return btn
+    }
+
+    /// Header "…" carries the routine it belongs to so the menu can act on it without a lookup table.
+    private final class RoutineMenuButton: cursorButton {
+        var section: RoutineSettingsSection?
+        var showsSkip = false
+    }
+
+    @objc private func routineMenuClicked(_ sender: RoutineMenuButton) {
+        let menu = NSMenu()
+        if sender.showsSkip {
+            menu.addItem(withTitle: ScheduleText.skipRoutineForToday, action: #selector(skipRoutineForTodayClicked), keyEquivalent: "").target = self
+        }
+        if sender.section != nil {
+            for (title, action) in [(ScheduleText.editRoutineTiming, #selector(editRoutineTimingClicked(_:))),
+                                    (ScheduleText.addNewHabit, #selector(addNewHabitClicked(_:)))] {
+                let item = menu.addItem(withTitle: title, action: action, keyEquivalent: "")
+                item.target = self
+                item.representedObject = sender
+            }
+        }
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 4), in: sender)
+    }
+
+    @objc private func editRoutineTimingClicked(_ item: NSMenuItem) {
+        guard let section = (item.representedObject as? RoutineMenuButton)?.section else { return }
+        openRoutineTimingEditor(section: section)
+    }
+
+    @objc private func addNewHabitClicked(_ item: NSMenuItem) {
+        guard let section = (item.representedObject as? RoutineMenuButton)?.section else { return }
+        openNewHabitEditor(section: section)
     }
 
     @objc private func skipRoutineForTodayClicked() {
@@ -2789,6 +2929,17 @@ class scheduleViewController: NSViewController {
             // in the read-only between-routines state selecting would just show a dead bar.
             container.onClick = { [weak self] in
                 self?.selectedHabitIndex = idx
+                self?.selectedEditableHabitId = nil
+                self?.reload()
+            }
+        } else if block.isEditable, let id = block.habitId {
+            // Not startable here (a preview/future routine, or a read-only host) but editable:
+            // selecting reveals an Edit-only bar.
+            container.onClick = { [weak self] in
+                self?.selectedHabitIndex = nil
+                self?.selectedPastHabitId = nil
+                self?.selectedEditableHabitId = id
+                self?.lastRenderSignature = nil
                 self?.reload()
             }
         }
@@ -2798,34 +2949,51 @@ class scheduleViewController: NSViewController {
                                             title: block.title, leadingInset: 6, vPad: 6,
                                             timeColor: .secondaryLabelColor, titleColor: .labelColor)
         if block.isDone {
-            // Completed earlier today: strike it through (same style as a done nested task). Use the
-            // label's own text — layoutColumns splits the emoji into a separate leading label, so
-            // block.title (emoji + name) would render the emoji twice.
-            titleLabel.attributedStringValue = NSAttributedString(string: titleLabel.stringValue, attributes: [
-                .strikethroughStyle: NSUnderlineStyle.single.rawValue,
-                .foregroundColor: NSColor.secondaryLabelColor,
-                .font: titleLabel.font ?? NSFont.systemFont(ofSize: 13)])
+            strikeThrough(titleLabel, color: .secondaryLabelColor)
         } else if block.didOverflow {
             titleLabel.textColor = .systemRed
         }
         return container
     }
 
+    /// Strikes a completed habit's title through (same style as a done nested task). Uses the label's own
+    /// text — layoutColumns splits the emoji into a separate leading label, so re-using `block.title`
+    /// (emoji + name) here would render the emoji twice.
+    private func strikeThrough(_ label: NSTextField, color: NSColor) {
+        label.attributedStringValue = NSAttributedString(string: label.stringValue, attributes: [
+            .strikethroughStyle: NSUnderlineStyle.single.rawValue,
+            .strikethroughColor: color,
+            .foregroundColor: color,
+            .font: label.font ?? NSFont.systemFont(ofSize: 13)])
+    }
+
     /// The selected habit as the habit-view's connected unit: a solid-orange header (white
     /// time · emoji · name) with the Play/Done/Skip bar joined directly beneath, all inside
     /// one orange rounded border with no gap between them.
     private func makeSelectedHabitUnit(_ block: ScheduleBlock, idx: Int) -> NSView {
-        // Orange header — white text, same column x-positions as the plain rows so it lines up.
+        makeSelectedUnit(block, bar: makeActionBar(idx: idx, habitId: block.habitId, liveActions: true))
+    }
+
+    /// The selected habit of a routine that can't be acted on here — a preview/future routine, or a habit
+    /// already completed earlier today: Edit is the only action.
+    private func makeSelectedEditableHabitUnit(_ block: ScheduleBlock, id: String) -> NSView {
+        makeSelectedUnit(block, bar: makeActionBar(idx: block.habitIndex ?? 0, habitId: id, liveActions: false))
+    }
+
+    /// One connected orange unit — header (white text, same column x-positions as the plain rows so it
+    /// lines up) with `bar` joined directly beneath on the control background, inside a single orange
+    /// rounded border (clipped so the header fills the top). Shared by the live, editable and past units.
+    private func makeSelectedUnit(_ block: ScheduleBlock, bar: NSView) -> NSView {
         let header = NSView()
         header.wantsLayer = true
         header.layer?.backgroundColor = NSColor.systemOrange.cgColor
         header.translatesAutoresizingMaskIntoConstraints = false
-        layoutColumns(in: header, time: "\(timeString(block.start))–\(timeString(block.end))",
-                      title: block.title, leadingInset: 6, vPad: 8,
-                      timeColor: .white, titleColor: .white)
-
-        // Action bar joined directly beneath, on the control background.
-        let bar = makeActionBar(idx: idx)
+        let (headerTitle, _) = layoutColumns(in: header, time: "\(timeString(block.start))–\(timeString(block.end))",
+                                            title: block.title, leadingInset: 6, vPad: 8,
+                                            timeColor: .white, titleColor: .white)
+        // A completed habit stays struck through while it's selected, so the Edit bar doesn't make it
+        // read as un-done (white strike on the orange header, matching the plain row's grey one).
+        if block.isDone { strikeThrough(headerTitle, color: .white) }
 
         let unit = NSStackView(views: [header, bar])
         unit.orientation = .vertical
@@ -2835,7 +3003,6 @@ class scheduleViewController: NSViewController {
         header.widthAnchor.constraint(equalTo: unit.widthAnchor).isActive = true
         bar.widthAnchor.constraint(equalTo: unit.widthAnchor).isActive = true
 
-        // One orange rounded border around the whole unit; clip so the header fills the top.
         let card = NSView()
         card.wantsLayer = true
         card.layer?.cornerRadius = 8
@@ -2854,25 +3021,73 @@ class scheduleViewController: NSViewController {
         return card
     }
 
-    /// The Play / Done / Skip bar shown beneath the selected habit (icon + label columns).
-    private func makeActionBar(idx: Int) -> NSView {
-        func column(_ symbol: String, _ fallback: String, _ label: String, _ kind: ActionKind, fill: NSColor) -> NSView {
-            let btn = makeActionButton(symbol: symbol, fallback: fallback, idx: idx, kind: kind, diameter: 40, fill: fill)
-            let lbl = makeLabel(label, size: 12, bold: false)
-            lbl.textColor = .secondaryLabelColor
-            let col = NSStackView(views: [btn, lbl])
-            col.orientation = .vertical; col.alignment = .centerX; col.spacing = 3
-            col.translatesAutoresizingMaskIntoConstraints = false
-            return col
-        }
-        let bar = NSStackView(views: [
-            column("play.fill", "▶", ScheduleText.play, .play, fill: .systemOrange),
-            column("checkmark", "✓", ScheduleText.done, .done, fill: NSColor.systemGray.withAlphaComponent(0.3)),
-            column("forward.fill", "≫", ScheduleText.skip, .skip, fill: NSColor.systemGray.withAlphaComponent(0.3)),
+    private static let actionBarSpacing: CGFloat = 28
+    private static let actionButtonDiameter: CGFloat = 40
+
+    /// A 1pt vertical rule in the separator colour, the height of an action button (it sits in the
+    /// top-aligned bar, so it spans the button row and stops above the labels).
+    private func makeActionBarDivider() -> NSView {
+        let divider = NSView()
+        divider.wantsLayer = true
+        divider.layer?.backgroundColor = NSColor.separatorColor.cgColor
+        divider.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            divider.widthAnchor.constraint(equalToConstant: 1),
+            divider.heightAnchor.constraint(equalToConstant: Self.actionButtonDiameter),
         ])
+        return divider
+    }
+
+    /// The Play / Done / Skip / Edit bar shown beneath the selected habit (icon + label columns). Edit
+    /// needs the habit's server id (it edits the settings entry, not the row), so it's omitted for a
+    /// habit without one. `liveActions` is false for a routine that isn't running (preview/future):
+    /// only Edit is offered.
+    private func makeActionBar(idx: Int, habitId: String?, liveActions: Bool) -> NSView {
+        let secondaryFill = NSColor.systemGray.withAlphaComponent(0.3)
+        var columns = liveActions ? [
+            makeActionColumn("play.fill", "▶", ScheduleText.play, .play, idx: idx, habitId: habitId, fill: .systemOrange),
+            makeActionColumn("checkmark", "✓", ScheduleText.done, .done, idx: idx, habitId: habitId, fill: secondaryFill),
+            makeActionColumn("forward.fill", "≫", ScheduleText.skip, .skip, idx: idx, habitId: habitId, fill: secondaryFill),
+        ] : []
+        if let habitId = habitId {
+            // Edit changes the habit's settings rather than acting on today's row, so a hairline sets it
+            // apart from Play/Done/Skip. The Edit-only bar (preview routines) has nothing to separate.
+            if !columns.isEmpty { columns.append(makeActionBarDivider()) }
+            columns.append(makeEditColumn(idx: idx, habitId: habitId))
+        }
+        return makeActionBarContainer(columns: columns)
+    }
+
+    /// One action of the bar: the round icon button with its caption underneath.
+    private func makeActionColumn(_ symbol: String, _ fallback: String, _ label: String, _ kind: ActionKind,
+                                  idx: Int, habitId: String?, fill: NSColor) -> NSView {
+        let btn = makeActionButton(symbol: symbol, fallback: fallback, idx: idx, kind: kind, habitId: habitId,
+                                   diameter: Self.actionButtonDiameter, fill: fill)
+        return makeActionColumn(button: btn, label: label)
+    }
+
+    private func makeActionColumn(button: NSView, label: String) -> NSView {
+        let lbl = makeLabel(label, size: 12, bold: false)
+        lbl.textColor = .secondaryLabelColor
+        let col = NSStackView(views: [button, lbl])
+        col.orientation = .vertical; col.alignment = .centerX; col.spacing = 3
+        col.translatesAutoresizingMaskIntoConstraints = false
+        return col
+    }
+
+    /// The Edit action, shared by the live, preview and past bars (it edits the settings entry, so the
+    /// row index doesn't matter — only the habit id, which the button carries in its identifier).
+    private func makeEditColumn(idx: Int, habitId: String) -> NSView {
+        makeActionColumn("pencil", "✎", ScheduleText.editHabit, .edit,
+                         idx: idx, habitId: habitId, fill: NSColor.systemGray.withAlphaComponent(0.3))
+    }
+
+    /// The bar's chrome: columns laid out left-to-right, inset from the orange header above them.
+    private func makeActionBarContainer(columns: [NSView]) -> NSView {
+        let bar = NSStackView(views: columns)
         bar.orientation = .horizontal
         bar.alignment = .top
-        bar.spacing = 28
+        bar.spacing = Self.actionBarSpacing
         bar.translatesAutoresizingMaskIntoConstraints = false
 
         let container = NSView()
@@ -2890,50 +3105,18 @@ class scheduleViewController: NSViewController {
     }
 
     /// #2012: the SELECTED past habit — same connected orange unit as the live selected habit
-    /// (makeSelectedHabitUnit), but with a Done-ONLY action bar (no Play/Skip: you can't start a past
-    /// habit, and an un-struck one is already evidently un-done). Shown only when the user has clicked
-    /// the row; other past rows are plain (click-to-reveal), so there's no wall of Done buttons.
+    /// (makeSelectedHabitUnit), but with a Complete + Edit action bar (no Play/Skip: you can't start a
+    /// past habit, and an un-struck one is already evidently un-done). Shown only when the user has
+    /// clicked the row; other past rows are plain (click-to-reveal), so there's no wall of Done buttons.
     /// Completion is by id with the backdated `performedAt`.
     private func makeSelectedPastHabitUnit(_ block: ScheduleBlock, id: String, performedAt: Date) -> NSView {
-        let header = NSView()
-        header.wantsLayer = true
-        header.layer?.backgroundColor = NSColor.systemOrange.cgColor
-        header.translatesAutoresizingMaskIntoConstraints = false
-        layoutColumns(in: header, time: "\(timeString(block.start))–\(timeString(block.end))",
-                      title: block.title, leadingInset: 6, vPad: 8,
-                      timeColor: .white, titleColor: .white)
-
-        let bar = makePastActionBar(habitId: id, performedAt: performedAt)
-
-        let unit = NSStackView(views: [header, bar])
-        unit.orientation = .vertical
-        unit.alignment = .leading
-        unit.spacing = 0
-        unit.translatesAutoresizingMaskIntoConstraints = false
-        header.widthAnchor.constraint(equalTo: unit.widthAnchor).isActive = true
-        bar.widthAnchor.constraint(equalTo: unit.widthAnchor).isActive = true
-
-        let card = NSView()
-        card.wantsLayer = true
-        card.layer?.cornerRadius = 8
-        card.layer?.masksToBounds = true
-        card.layer?.borderWidth = 2
-        card.layer?.borderColor = NSColor.systemOrange.cgColor
-        card.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
-        card.translatesAutoresizingMaskIntoConstraints = false
-        card.addSubview(unit)
-        NSLayoutConstraint.activate([
-            unit.leadingAnchor.constraint(equalTo: card.leadingAnchor),
-            unit.trailingAnchor.constraint(equalTo: card.trailingAnchor),
-            unit.topAnchor.constraint(equalTo: card.topAnchor),
-            unit.bottomAnchor.constraint(equalTo: card.bottomAnchor),
-        ])
-        return card
+        makeSelectedUnit(block, bar: makePastActionBar(habitId: id, performedAt: performedAt))
     }
 
-    /// A Done-only bar for retroactively logging a past morning habit — there's no Skip because an
-    /// un-struck earlier-today habit is already evidently un-done. The button carries the habit id in
-    /// its identifier so the tap dispatches host.schedulePastHabitDone(id:).
+    /// A Complete + Edit bar for a past habit — there's no Skip because an un-struck earlier-today habit
+    /// is already evidently un-done, and no Play because you can't start it. The Complete button carries
+    /// the habit id in its identifier so the tap dispatches host.schedulePastHabitDone(id:); Edit sits
+    /// after the same hairline the live bar uses, since it changes the settings rather than the record.
     private func makePastActionBar(habitId: String, performedAt: Date) -> NSView {
         // Orange (primary) tick — it's the ONLY action here, so it gets the same emphasis Play gets in
         // the live bar (grey read as disabled). Label "Complete" + a reassuring micro-copy line.
@@ -2950,8 +3133,12 @@ class scheduleViewController: NSViewController {
         textStack.orientation = .vertical; textStack.alignment = .leading; textStack.spacing = 1
         textStack.translatesAutoresizingMaskIntoConstraints = false
 
-        let row = NSStackView(views: [btn, textStack])
-        row.orientation = .horizontal; row.alignment = .centerY; row.spacing = 10
+        let complete = NSStackView(views: [btn, textStack])
+        complete.orientation = .horizontal; complete.alignment = .centerY; complete.spacing = 10
+        complete.translatesAutoresizingMaskIntoConstraints = false
+
+        let row = NSStackView(views: [complete, makeActionBarDivider(), makeEditColumn(idx: 0, habitId: habitId)])
+        row.orientation = .horizontal; row.alignment = .centerY; row.spacing = Self.actionBarSpacing
         row.translatesAutoresizingMaskIntoConstraints = false
 
         let container = NSView()
@@ -3163,9 +3350,11 @@ class scheduleViewController: NSViewController {
         return card   // width is constrained by addCard(), once the card is in the stack
     }
 
-    private enum ActionKind { case play, done, skip }
+    private enum ActionKind { case play, done, skip, edit }
+    /// Edit buttons carry the habit id after this prefix in their identifier (Play/Done/Skip are index-based).
+    private static let editActionPrefix = "edit:"
 
-    private func makeActionButton(symbol: String, fallback: String, idx: Int, kind: ActionKind,
+    private func makeActionButton(symbol: String, fallback: String, idx: Int, kind: ActionKind, habitId: String? = nil,
                                   diameter: CGFloat = 30, fill: NSColor? = nil) -> NSView {
         // The colored circle is drawn on a dedicated disc view (not the NSButton's own managed
         // layer, which AppKit can redraw as a rounded rect) so it's always a clean circle.
@@ -3189,7 +3378,7 @@ class scheduleViewController: NSViewController {
         btn.contentTintColor = (kind == .play) ? .white : .labelColor
         btn.tag = idx
         btn.translatesAutoresizingMaskIntoConstraints = false
-        btn.identifier = NSUserInterfaceItemIdentifier("\(kind)")
+        btn.identifier = NSUserInterfaceItemIdentifier(kind == .edit ? Self.editActionPrefix + (habitId ?? "") : "\(kind)")
 
         disc.addSubview(btn)
         NSLayoutConstraint.activate([
@@ -3225,8 +3414,144 @@ class scheduleViewController: NSViewController {
             removeHabitFromCache(index: idx)
             host?.scheduleSkip(index: idx)
             scheduleReload(after: 0.25)
+        case _ where id.hasPrefix(Self.editActionPrefix):
+            openHabitEditor(habitId: String(id.dropFirst(Self.editActionPrefix.count)))
         default: break
         }
+    }
+
+    // MARK: - Editing habits / routine timing (DayPlanRoutineDraft)
+
+    /// Opens the SwiftUI habit editor as a sheet. Saving applies the edit live (the arrays' didSet
+    /// re-renders every Day Plan host) and parks it in the draft until "Save and restart app".
+    private func openHabitEditor(habitId: String) {
+        guard #available(macOS 11.0, *) else { return }
+        let draft = DayPlanRoutineDraft.shared
+        guard let values = draft.habitEditValues(id: habitId), let section = draft.routineSection(forHabitId: habitId) else {
+            showDraftAlert(title: ScheduleText.habitEditUnavailable, message: "")
+            return
+        }
+        DayPlanAnalytics.capture(DayPlanAnalytics.habitEditOpened)
+        let model = HabitEditModel(values: values, section: section, canDelete: currentHabitPlaying?.id != habitId)
+        var sheet: DayPlanSheetController!
+        let editor = HabitEditView(model: model, onSave: { [weak self] in
+            draft.applyHabitEdit(id: habitId, values: model.values)
+            DayPlanAnalytics.capture(DayPlanAnalytics.habitEdited)
+            self?.dismissDraftSheet(sheet)
+        }, onCancel: { [weak self] in
+            self?.dismissDraftSheet(sheet)
+        }, onDelete: { [weak self] in
+            draft.applyHabitDelete(id: habitId)
+            DayPlanAnalytics.capture(DayPlanAnalytics.habitDeleted)
+            self?.selectedHabitIndex = nil   // the selected row no longer exists
+            self?.selectedEditableHabitId = nil
+            self?.dismissDraftSheet(sheet)
+        })
+        sheet = DayPlanSheetController(size: Self.habitEditorSheetSize, content: editor)
+        presentAsSheet(sheet)
+    }
+
+    private static let habitEditorSheetSize = NSSize(width: 700, height: 600)
+
+    /// The same editor in "new habit" mode (the routine menu's "Add new habit"): web defaults, no delete.
+    /// Saving appends the habit to the routine in the draft — it shows in the Day Plan straight away.
+    private func openNewHabitEditor(section: RoutineSettingsSection) {
+        guard #available(macOS 11.0, *) else { return }
+        let draft = DayPlanRoutineDraft.shared
+        DayPlanAnalytics.capture(DayPlanAnalytics.habitAddOpened)
+        let model = HabitEditModel(values: HabitEditValues.newHabit(in: section), section: section, canDelete: false, isNew: true)
+        var sheet: DayPlanSheetController!
+        let editor = HabitEditView(model: model, onSave: { [weak self] in
+            if draft.applyHabitAdd(routine: section, values: model.values) != nil {
+                DayPlanAnalytics.capture(DayPlanAnalytics.habitAdded)
+            } else {
+                self?.showDraftAlert(title: ScheduleText.habitEditUnavailable, message: "")
+            }
+            self?.dismissDraftSheet(sheet)
+        }, onCancel: { [weak self] in
+            self?.dismissDraftSheet(sheet)
+        })
+        sheet = DayPlanSheetController(size: Self.habitEditorSheetSize, content: editor)
+        presentAsSheet(sheet)
+    }
+
+    /// "When do you want <routine> to start?" — a time picker sheet for the routine's start time.
+    private func openRoutineTimingEditor(section: RoutineSettingsSection) {
+        guard #available(macOS 11.0, *) else { return }
+        let draft = DayPlanRoutineDraft.shared
+        var sheet: DayPlanSheetController!
+        let picker = RoutineTimingView(routineName: draft.routineDisplayName(section),
+                                       minutes: draft.routineStartMinutes(section) ?? 7 * 60,
+                                       onSave: { [weak self] minutes in
+            draft.applyRoutineStart(section, minutes: minutes)
+            DayPlanAnalytics.capture(DayPlanAnalytics.routineTimingEdited)
+            self?.dismissDraftSheet(sheet)
+        }, onCancel: { [weak self] in
+            self?.dismissDraftSheet(sheet)
+        })
+        sheet = DayPlanSheetController(size: NSSize(width: 420, height: 210), content: picker)
+        presentAsSheet(sheet)
+    }
+
+    private func dismissDraftSheet(_ sheet: NSViewController?) {
+        if let sheet = sheet { dismiss(sheet) }
+        // Force a re-render: a timing-only edit doesn't change the arrays, and the banner keys off the draft.
+        lastRenderSignature = nil
+        reload()
+    }
+
+    /// Show/clear the sticky banner to match the draft state. Called from every render (the draft flag is
+    /// part of the render signature) and directly after a save attempt.
+    private func updateDraftBanner() {
+        draftBannerContainer.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        guard DayPlanRoutineDraft.shared.hasChanges else { return }
+        let banner = makeDraftBanner()
+        draftBannerContainer.addArrangedSubview(banner)
+        draftBannerContainer.setCustomSpacing(6, after: banner)
+    }
+
+    /// "Routine changes drafted: ready to save?" + the Save-and-restart button (see updateDraftBanner).
+    private func makeDraftBanner() -> NSView {
+        let label = makeLabel("✏️ " + ScheduleText.draftBanner, size: 12, bold: true)
+        label.lineBreakMode = .byWordWrapping
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        let save = cursorButton(title: DayPlanRoutineDraft.shared.isSaving ? ScheduleText.draftSaving : ScheduleText.draftSaveRestart,
+                                target: self, action: #selector(saveDraftAndRestartClicked(_:)))
+        save.bezelStyle = .rounded
+        save.isEnabled = !DayPlanRoutineDraft.shared.isSaving
+        save.translatesAutoresizingMaskIntoConstraints = false
+
+        let row = NSStackView(views: [label, save])
+        row.orientation = .horizontal
+        row.alignment = .centerY
+        row.spacing = 10
+        row.translatesAutoresizingMaskIntoConstraints = false
+        return styledCard(fill: NSColor.systemOrange.withAlphaComponent(0.12),
+                          border: NSColor.systemOrange.withAlphaComponent(0.6),
+                          hasBorder: true, content: row)
+    }
+
+    @objc private func saveDraftAndRestartClicked(_ sender: NSButton) {
+        sender.isEnabled = false
+        sender.title = ScheduleText.draftSaving
+        DayPlanRoutineDraft.shared.saveAndRestart { [weak self] statusCode, serverMessage in
+            guard let self = self else { return }
+            self.updateDraftBanner()   // re-enable the button; the draft is still pending
+            var message = String(format: ScheduleText.draftSaveFailedMessage, statusCode)
+            if let serverMessage = serverMessage, !serverMessage.isEmpty {
+                message += "\n\n\(ScheduleText.draftSaveFailedServerSaid)\n\(serverMessage)"
+            }
+            self.showDraftAlert(title: ScheduleText.draftSaveFailedTitle, message: message)
+        }
+    }
+
+    private func showDraftAlert(title: String, message: String) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.addButton(withTitle: ScheduleText.draftSaveFailedOk)
+        if let window = view.window { alert.beginSheetModal(for: window) } else { alert.runModal() }
     }
 
     private func scheduleReload(after delay: TimeInterval) {
@@ -3912,11 +4237,7 @@ class scheduleViewController: NSViewController {
         return f.string(from: date)
     }
 
-    private func durationString(_ seconds: Int) -> String {
-        let m = seconds / 60
-        if m >= 60 { return "\(m / 60)h \(m % 60)m" }
-        return "\(m)m"
-    }
+    private func durationString(_ seconds: Int) -> String { HabitDurationText.short(seconds: seconds) }
 }
 
 extension scheduleViewController: NSGestureRecognizerDelegate {

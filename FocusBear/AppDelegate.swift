@@ -3332,9 +3332,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
-    func quitAndRestartApp(){
+    /// `coverWithSplash` keeps the splash screen up across the restart: shown now, before this process
+    /// quits, and again by the relaunched app (the "restarted normally" flag is what suppresses it on
+    /// relaunch, so it is deliberately NOT set). Used after routine edits so the user isn't left with an
+    /// unguarded desktop while the app comes back — a silent restart is fine for enable/disable toggles.
+    func quitAndRestartApp(coverWithSplash: Bool = false){
         print("quitAndRestartApp")
-        addLog(text: "quitAndRestartApp")
+        addLog(text: "quitAndRestartApp coverWithSplash=\(coverWithSplash)")
+        if coverWithSplash {
+            showSplashWindow()
+        }
         let task = Process()
         var args: [AnyHashable] = []
         args.append("-c")
@@ -3342,7 +3349,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         task.launchPath = "/bin/sh"
         task.arguments = args as? [String]
         task.launch()
-        UserDefaults.standard.set(true, forKey: kUserDefaultsAppRestartedNormally)
+        if !coverWithSplash {
+            UserDefaults.standard.set(true, forKey: kUserDefaultsAppRestartedNormally)
+        }
         terminateFromSelf = true
         quitApplicationSmoothly()
     }

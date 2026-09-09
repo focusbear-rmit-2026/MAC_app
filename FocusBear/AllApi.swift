@@ -88,6 +88,14 @@ class AllApi:NSObject {
     }
     
     func isSettingsValid(settings:NSDictionary, isOnboarding:Bool, completionHandler: @escaping(_ result: NSDictionary?, _ statusCode:Int) -> ()){
+        putUserSettings(settings: settings, isOnboarding: isOnboarding) { result, statusCode, _ in completionHandler(result, statusCode) }
+    }
+
+    /// PUT /user-settings — validates AND saves the whole settings blob (isSettingsValid is a thin wrapper).
+    /// On a non-2xx the third argument carries the API's validation text (e.g. "morning_activities.3.
+    /// allowed_focus_mode_id: allowed_focus_mode_id must be a UUID") so the caller can show something the
+    /// user can act on instead of a bare status code.
+    func putUserSettings(settings:NSDictionary, isOnboarding:Bool, completionHandler: @escaping(_ result: NSDictionary?, _ statusCode:Int, _ errorMessage: String?) -> ()){
         addLog(text: "func call:- api isSettingsValid user-settings")
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
@@ -122,13 +130,13 @@ class AllApi:NSObject {
                                         if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
                                             applastSettingsGetTime = Date()
                                             addLog(text: "api call isSettingsValid return success")
-                                            completionHandler(jsonResult, httpResponse.statusCode)
+                                            completionHandler(jsonResult, httpResponse.statusCode, nil)
                                             return
                                         }
                                         
                                     }catch{
                                         addLog(text: "api call isSettingsValid return error:- \(error.localizedDescription)")
-                                        completionHandler(nil, httpResponse.statusCode)
+                                        completionHandler(nil, httpResponse.statusCode, error.localizedDescription)
                                         print(error)
                                         return;
                                     }
@@ -136,30 +144,52 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call isSettingsValid Api error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                completionHandler(nil, httpResponse.statusCode)
+                                completionHandler(nil, httpResponse.statusCode, Self.settingsErrorMessage(from: data))
                                 return
                             }
                         }
                         
                         if error != nil {
                             addLog(text: "api call isSettingsValid return error:- \(error!.localizedDescription)")
-                            completionHandler(nil, 0)
+                            completionHandler(nil, 0, error!.localizedDescription)
                             return
                         }
-                        completionHandler(nil, 0)
+                        completionHandler(nil, 0, nil)
                         return
                     }
                     
                     task.resume()
                 }else{
-                    completionHandler(nil, 0)
+                    completionHandler(nil, 0, nil)
                 }
                 
             }else{
-                completionHandler(nil, 0)
+                completionHandler(nil, 0, nil)
                 return
             }
         }
+    }
+
+    /// Human-readable text from a NestJS error body: `message` (string or [string]), or the
+    /// `validationErrors` tree (class-validator) flattened to "path: constraint" lines.
+    static func settingsErrorMessage(from data: Data?) -> String? {
+        guard let data = data, let body = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        if let message = body["message"] as? String { return message }
+        if let messages = body["message"] as? [String] { return messages.joined(separator: "\n") }
+        func flatten(_ errors: [[String: Any]], path: String) -> [String] {
+            errors.flatMap { error -> [String] in
+                let property = error["property"].map { "\($0)" } ?? ""
+                let fullPath = path.isEmpty ? property : "\(path).\(property)"
+                let own = (error["constraints"] as? [String: Any] ?? [:]).values.map { "\(fullPath): \($0)" }
+                let nested = flatten(error["children"] as? [[String: Any]] ?? [], path: fullPath)
+                return own + nested
+            }
+        }
+        if let errors = body["validationErrors"] as? [[String: Any]] {
+            let lines = flatten(errors, path: "")
+            if !lines.isEmpty { return lines.joined(separator: "\n") }
+        }
+        return body["error"] as? String
     }
 
     /// #2142: PUT /note (NoteController_upsertNote) — upserts the saved brain dump as the user's

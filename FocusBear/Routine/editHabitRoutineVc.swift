@@ -146,37 +146,11 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
         })
         
         
-        //load installed apps
-        var arrInstalledApps = [String]()
-        let urls = FileManager.default.urls(for: .applicationDirectory, in: .localDomainMask)
-        let properties = [URLResourceKey.localizedNameKey, URLResourceKey.creationDateKey, URLResourceKey.contentModificationDateKey, URLResourceKey.localizedTypeDescriptionKey,URLResourceKey.nameKey]
-        let array = try? FileManager.default.contentsOfDirectory(at: urls[0], includingPropertiesForKeys: properties, options: .skipsHiddenFiles)
-        if array != nil{
-            for appUrl in array!{
-                
-                if appUrl.pathExtension == "app"{
-                    let appName = appUrl.deletingPathExtension().lastPathComponent
-                    print(appName)
-                    arrInstalledApps.append(appName)
-                }else{
-                    if appUrl.lastPathComponent == "Utilities"{
-                        let arrUtilitiesApp = try? FileManager.default.contentsOfDirectory(at: appUrl, includingPropertiesForKeys: properties, options: .skipsHiddenFiles)
-                        if arrUtilitiesApp != nil{
-                            for appUrl in arrUtilitiesApp!{
-                                if appUrl.pathExtension == "app"{
-                                    let appName = appUrl.deletingPathExtension().lastPathComponent
-                                    print(appName)
-                                    arrInstalledApps.append(appName)
-                                }
-                            }
-                        }
-                        
-                    }
-                }
-            }
-        }
+        // Installed apps are the web's allowed-app suggestions (one enumerator for every loader: InstalledApps).
+        let installedApps = InstalledApps.shared.names()
+        addLog(text: "Load Installed Apps to web settings:- \(installedApps.count) apps")
         let mutableDic = NSMutableDictionary()
-        mutableDic["installedApps"] = arrInstalledApps
+        mutableDic["installedApps"] = installedApps
         
         do {
             let data = try (JSONSerialization.data(withJSONObject: mutableDic, options: .prettyPrinted))
