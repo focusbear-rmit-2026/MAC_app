@@ -3601,6 +3601,51 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
 
+    /// Re-pull the user's focus modes (block lists) from the server into arrFocusType. Mirrors the
+    /// fetch/transform/store the startup path does, exposed so the blocking-schedule realtime sync can
+    /// refresh block lists too: a schedule changed on another device may reference a focus mode this
+    /// Mac hasn't fetched, and without it the schedule shows the wrong / "Update block list" name.
+    func refreshFocusModesFromServer(completion: (() -> Void)? = nil) {
+        allApiObject.getAllFocusModes(completionHandler: { dic in
+            if let arrFocusModes = dic as? [[String:Any]]{
+                var newArr = [[String:Any]]()
+                for i in 0..<arrFocusModes.count{
+                    var focusDic = arrFocusModes[i]
+                    focusDic.removeValue(forKey: "created_at")
+                    focusDic.removeValue(forKey: "updated_at")
+                    focusDic.removeValue(forKey: "user_id")
+                    focusDic.removeValue(forKey: "deleted_at")
+                    focusDic.removeValue(forKey: "doNotSuggestAnyMore")
+                    var newDic = [String:Any]()
+                    for key in focusDic.keys{
+                        if key == "metadata"{
+                            if let metaDataDic = focusDic["metadata"] as? [String:Any]{
+                                for key in metaDataDic.keys{
+                                    newDic[key] = metaDataDic[key]
+                                }
+                            }
+                        }else if key == "tags"{
+                            if let arrTags = focusDic["tags"] as? [NSDictionary]{
+                                var arrtags = [String]()
+                                for tagInfo in arrTags{
+                                    arrtags.append(tagInfo["text"] as? String ?? "")
+                                }
+                                newDic["tags"] = arrtags
+                            }
+                        }else{
+                            newDic[key] = focusDic[key]
+                        }
+                    }
+                    newDic.removeValue(forKey: "doNotSuggestAnyMore")
+                    newArr.append(newDic)
+                }
+                UserDefaults.standard.set(plistSafeFocusModes(newArr), forKey: kUserdefaultsArrFocusTypes)
+            }
+            checkAllFocusModes()
+            completion?()
+        })
+    }
+
     @objc func checkWindowState(){
         loadAllWindows()
         isCheckWindowStateDone = true

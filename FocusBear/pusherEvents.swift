@@ -511,6 +511,31 @@ class pusherEvents:NSObject, PusherDelegate {
                 }
             }
         })
+        // A blocking schedule was added / edited / deleted on another device (mobile or Windows). The
+        // schedules live in a separate REST resource (/blocking-schedules), not in settings, so they
+        // don't come through settings-updated — re-pull them here and, if the Blocking Schedules screen
+        // is open, refresh it live. Ignore the echo of a change this Mac itself made.
+        _ = channel.bind(eventName: "blocking-schedule-updated", eventCallback: { (event: PusherEvent) in
+            if let data = event.data, let bytes = data.data(using: .utf8),
+               let dictionary = try? JSONSerialization.jsonObject(with: bytes) as? [String: Any],
+               dictionary["device_id"] as? String == currentDeviceId {
+                return
+            }
+            DispatchQueue.main.async {
+                // Refresh focus modes (block lists) first: the changed schedule may point at a block list
+                // created on the other device that this Mac hasn't fetched, otherwise the schedule row
+                // shows the wrong / "Update block list" name. Then re-pull the schedules and refresh the UI.
+                appdelegate?.refreshFocusModesFromServer {
+                    allApiObject.getAllBlockingSchedules(completionHandler: { data in
+                        DispatchQueue.main.async {
+                            guard let data = data else { return }
+                            customBlockingScheduleManagerObj.readCustomBlockingScheduleData(jsonData: data)
+                            if #available(macOS 11.0, *) { customBlockingSchedulesVcObj?.refreshData() }
+                        }
+                    })
+                }
+            }
+        })
         pusher.connect()
     }
 
