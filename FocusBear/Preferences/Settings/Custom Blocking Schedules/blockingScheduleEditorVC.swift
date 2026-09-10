@@ -97,7 +97,11 @@ class blockingScheduleEditorVC: NSViewController {
         btnEditBlockList.title = "Edit block list"
         checkBoxSkipMicroBreaks.title = "Skip microbreaks"
         checkBoxAiEnabled.title = "Use Al to decide if websites should be allowed"
-        
+        // "Use AI" is a per-block-list setting now (owned by the block list, synced to the server — see
+        // CLAUDE.md), NOT a per-schedule option. Hide it here so schedules no longer expose it; a schedule
+        // just runs its block list, and that block list's is_ai_enabled governs AI relevance.
+        checkBoxAiEnabled.isHidden = true
+
         btnSave.title = "Save changes"
         btnDelete.title = "Delete"
         

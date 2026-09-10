@@ -381,4 +381,54 @@ class CustomBlockingScheduleTests: XCTestCase {
             excludingId: schedule.id
         ))
     }
+
+    // MARK: - isAIBlockingEnabled() — reads the BLOCK LIST's AI flag, not the schedule's
+
+    private let blockListId = "block-list-under-test"
+
+    /// Point a manager at one running schedule whose block list is `focusMode` (nil ⇒ unresolvable).
+    private func makeManager(runningBlockList focusMode: [String: Any]?, scheduleAiFlag: Bool) -> customBlockingScheduleManager {
+        var schedule = makeSchedule(startOffsetSeconds: -600, endOffsetSeconds: 600)
+        schedule.focusModeID = blockListId
+        schedule.isAIBlockingEnabled = scheduleAiFlag
+        schedule.state = .on
+        let manager = customBlockingScheduleManager()
+        manager.arrBlockingSchedule = [schedule]
+        manager.isAnyCustomScheduleOn = true
+        arrFocusType = focusMode.map { [$0] } ?? []
+        return manager
+    }
+
+    override func tearDown() {
+        arrFocusType = []
+        super.tearDown()
+    }
+
+    func test_ai_on_for_allow_list_block_list_when_flag_absent() {
+        let manager = makeManager(runningBlockList: ["id": blockListId, "isAllowedListApproach": true], scheduleAiFlag: false)
+        XCTAssertTrue(manager.isAIBlockingEnabled())
+    }
+
+    func test_ai_off_when_allow_list_block_list_opts_out() {
+        let manager = makeManager(runningBlockList: ["id": blockListId, "isAllowedListApproach": true, "is_ai_enabled": false], scheduleAiFlag: true)
+        XCTAssertFalse(manager.isAIBlockingEnabled())
+    }
+
+    func test_ai_off_for_blacklist_block_list_even_when_flag_on() {
+        // A blacklist never consults the AI (only un-allowed URLs of an allow-list do), so starting an
+        // "AI session" for it would block nothing.
+        let manager = makeManager(runningBlockList: ["id": blockListId, "isAllowedListApproach": false, "is_ai_enabled": true], scheduleAiFlag: true)
+        XCTAssertFalse(manager.isAIBlockingEnabled())
+    }
+
+    func test_ai_falls_back_to_schedule_flag_when_block_list_is_missing() {
+        XCTAssertTrue(makeManager(runningBlockList: nil, scheduleAiFlag: true).isAIBlockingEnabled())
+        XCTAssertFalse(makeManager(runningBlockList: nil, scheduleAiFlag: false).isAIBlockingEnabled())
+    }
+
+    func test_ai_off_when_no_schedule_is_running() {
+        let manager = makeManager(runningBlockList: ["id": blockListId, "isAllowedListApproach": true], scheduleAiFlag: true)
+        manager.isAnyCustomScheduleOn = false
+        XCTAssertFalse(manager.isAIBlockingEnabled())
+    }
 }

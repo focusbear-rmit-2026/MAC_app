@@ -146,6 +146,7 @@
         "endFocusSessionText": "Terminar Sesión"
     },
     "common": {
+        "appBlockNotificationAllowButton": "Ups, sí que lo necesito",
         "emailId": "support@focusbear.io",
         "unlockMachineButtonText": "Desbloquear la computadora",
         "wrapupButtonText": "Terminemos el día",
@@ -788,6 +789,7 @@
         "checkBoxSuggestWorkFocusMode": "Sugerir automáticamente iniciar este modo de enfoque al abrir cualquier URL o aplicación permitida"
     },
     "focusPreferencesAdvancedInfo": {
+        "checkBoxUseAiForBlockListText": "Usar IA para esta lista de bloqueo",
         "runScriptBeforeText": "Ejecuta el script de Apple antes de iniciar el modo de enfoque.",
         "runScriptAfterText": "Ejecuta el script de Apple después de iniciar el modo de enfoque.",
         "titleCurrentAppleScript": "Script actual de Apple:",

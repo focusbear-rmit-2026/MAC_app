@@ -156,3 +156,14 @@ Multiple Claude agents (mac/mobile/backend/windows) share a board via the `/coor
 
 `GET https://api.focusbear.io/to-do?page=1&take=50&status=NOT_STARTED&order=DESC&sort_mode=SMART`
 (SMART = TOP-score order). Response items have `duration`, `eisenhower_quadrant`, `tags`.
+
+## AI blocking ownership: it's a per-block-list setting, NOT per-schedule
+
+"Use AI for this block list" belongs to the **block list (focus mode)**, not to blocking
+schedules. Custom blocking schedules must NOT expose their own "Use AI" option — a schedule
+just activates a block list, and the block list's `is_ai_enabled` governs AI relevance
+checking. When adding/moving AI-related toggles, keep them on the focus-mode settings screen
+(`focusPreferencesAdvancedVc`), read/write `arrFocusType[row]["is_ai_enabled"]`, and **sync to
+the server** via `editFocusMode` — per-mode fields round-trip through the focus mode's
+`metadata` (write: `editFocusMode` nests the dict under `metadata`; read: AppDelegate flattens
+`metadata` back onto the focus dict, so `focusType["is_ai_enabled"]` is available).

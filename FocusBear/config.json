@@ -169,6 +169,7 @@
         "buttonUninstallText": "Uninstall Focus Bear",
         "shutdownNotificationTitle": "It's time to wrap up for the day. Your shutdown time is in 5 minutes.",
         "appBlockNotificationTitle": "<APP_NAME> isn't allowed in the <FOCUS_NAME> focus mode.",
+        "appBlockNotificationAllowButton": "Oops I actually need it",
         "superDistractingAppBlockedText": "<APP_NAME> is a Super distracting app.",
         "focusBreakNotificationTitle": "Your break ends in",
         "tabGeneralText": "General",
@@ -807,7 +808,8 @@
         "titleBlockedUrlsAndApps": "Blocked URLs and Apps",
         "titleBlockedApps": "Blocked Apps",
         "instructionBlockedApps": "The Apps here will be blocked during this focus mode. Useful if you want to allow some apps but block others. For example, you could have Safari as an allowed app but block Google Chrome",
-        "focusAlignmentScoreTitle": "Show distracting site popup only when focus alignment score is less than"
+        "focusAlignmentScoreTitle": "Show distracting site popup only when focus alignment score is less than",
+        "checkBoxUseAiForBlockListText": "Use AI for this block list"
     },
     "focusModesInfo": {
         "normalText": "Normal",

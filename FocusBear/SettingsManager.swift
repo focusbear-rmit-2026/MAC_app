@@ -1839,8 +1839,20 @@ class SettingsManager:NSObject{
             addLog(text: "isAIBlockingEnabled: teacher session → \(teacherAi)")
             return teacherAi
         }
-        // Fix #1584: log which code path is taken to diagnose the ~50% activation rate.
         let customScheduleOn = customBlockingScheduleManagerObj.isAnyCustomScheduleOn
+        // Per-focus-mode AI switch: the server sends `is_ai_enabled` on every focus mode. When a focus mode
+        // / allowed-app activity is the running context (and no custom schedule is active), the block list's
+        // own `is_ai_enabled` is AUTHORITATIVE — `true` → AI on, `false` → AI off — regardless of the global
+        // toggle. This matches the "Use AI for this block list" checkbox: ticking it must actually enable AI
+        // even if the user turned AI off globally, and mirrors the custom-schedule path, which already reads
+        // its block list's flag directly (handled below). An ABSENT key defaults to `true` (AI on), the same
+        // default the checkbox and the schedule path use everywhere else in the app.
+        if (isFocusModeRunning || isAnyAllowedFocusModeActivityRunning) && !customScheduleOn {
+            let modeAiEnabled = currentRunningFocusType["is_ai_enabled"] as? Bool ?? true
+            addLog(text: "isAIBlockingEnabled: running focus mode is_ai_enabled=\(modeAiEnabled) → \(modeAiEnabled)")
+            return modeAiEnabled
+        }
+        // Fix #1584: log which code path is taken to diagnose the ~50% activation rate.
         let result = customScheduleOn ? customBlockingScheduleManagerObj.isAIBlockingEnabled() : isAiCheckUrlEnabled
         addLog(text: "isAIBlockingEnabled: customScheduleOn=\(customScheduleOn) globalAI=\(isAiCheckUrlEnabled) → \(result)")
         return result

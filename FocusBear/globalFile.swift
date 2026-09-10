@@ -2595,7 +2595,7 @@ func executeScriptAndReturnString(script:String)->String?{
     return desc.stringValue ?? ""
 }
 
-func showFocusAppBlockNotification(appName: String){
+func showFocusAppBlockNotification(appName: String, runningApp: NSRunningApplication? = nil){
     addLog(text: "show Focus App Block Notification called")
     let arrAppsAvoidNotification = ["loginwindow", "screensaverengine"]//lowercased
     if arrAppsAvoidNotification.contains(appName.lowercased()){
@@ -2633,7 +2633,7 @@ func showFocusAppBlockNotification(appName: String){
     // Show a custom top-right notification every time the app is blocked. Unlike the old
     // NSUserNotification path there is NO one-time-per-session limit; the manager only suppresses a
     // duplicate while this app's card is still on screen (see FocusBlockNotificationManager).
-    FocusBlockNotificationManager.shared.show(appName: appName, message: msg, isTeacherSession: isTeacherSession)
+    FocusBlockNotificationManager.shared.show(appName: appName, message: msg, isTeacherSession: isTeacherSession, runningApp: runningApp)
 }
 
 /// Shows the custom "app blocked by Focus Mode" notification in the top-right corner of the main
@@ -2653,10 +2653,10 @@ final class FocusBlockNotificationManager {
     // The single on-screen notification, if any.
     private var currentCard: FocusBlockNotificationCard?
 
-    func show(appName: String, message: String, isTeacherSession: Bool) {
+    func show(appName: String, message: String, isTeacherSession: Bool, runningApp: NSRunningApplication? = nil) {
         // UI work — hop to the main thread (the app-blocking monitor runs off-main).
         if !Thread.isMainThread {
-            DispatchQueue.main.async { self.show(appName: appName, message: message, isTeacherSession: isTeacherSession) }
+            DispatchQueue.main.async { self.show(appName: appName, message: message, isTeacherSession: isTeacherSession, runningApp: runningApp) }
             return
         }
         // Same app already showing → leave it be (don't restart its countdown).
@@ -2671,22 +2671,51 @@ final class FocusBlockNotificationManager {
         if let common = configjson.value(forKey: "common") as? NSDictionary {
             brandTitle = common.value(forKey: "appName") as? String ?? brandTitle
         }
-        // Teacher session → a "Request unlock" button that opens the unlock-request window pre-filled
-        // with this app. Normal focus session → no button.
-        var requestUnlockTitle: String? = nil
+        // The card carries one optional action button:
+        //   • Teacher session → "Request unlock" opens the unlock-request window pre-filled with this app.
+        //   • Normal focus session → "Oops I actually need it" re-presents the app block-confirm popup (the
+        //     same allow/set-intention flow the URL block page offers via its cuddly "unblock it" button),
+        //     letting the user through the app.
+        var actionTitle: String? = nil
         if isTeacherSession {
             var title = "Request unlock"
             if let teacherInfo = configjson.value(forKey: "teacherSessionInfo") as? NSDictionary {
                 title = teacherInfo.value(forKey: "buttonRequestUnlock") as? String ?? title
             }
-            requestUnlockTitle = title
+            actionTitle = title
+        } else if runningApp != nil && SettingsManagerObject.isCuddlyModeEnabled {
+            // "Oops I actually need it" re-presents the app block-confirm popup (allow / set intention).
+            // That popup is only the block flow in cuddly mode — in strict (non-cuddly) mode an unwanted
+            // app is hard-blocked with just this notification and NO confirm popup, so offering the button
+            // there would hand the user an escape hatch strict mode deliberately withholds. Gate it on
+            // cuddly mode: show the button only where the confirm popup is actually part of the flow.
+            var title = "Oops I actually need it"
+            if let common = configjson.value(forKey: "common") as? NSDictionary {
+                title = common.value(forKey: "appBlockNotificationAllowButton") as? String ?? title
+            }
+            actionTitle = title
         }
 
         let card = FocusBlockNotificationCard(appName: appName, brandTitle: brandTitle, message: message,
-                                              requestUnlockTitle: requestUnlockTitle,
+                                              actionTitle: actionTitle,
                                               seconds: Int(visibleDuration), width: cardWidth)
-        card.onRequestUnlock = { [weak self, weak card] in
-            teacherSessionManagerObject.showTeacherUnlockRequestWindow(prefillAppOrUrl: appName)
+        card.onAction = { [weak self, weak card] in
+            if isTeacherSession {
+                teacherSessionManagerObject.showTeacherUnlockRequestWindow(prefillAppOrUrl: appName)
+            } else if let runningApp = runningApp {
+                // "Oops I actually need it" — mirror the URL block's "unblock it for me" (checkUrlIsUnlock):
+                // drop the app from the per-session blocked list so it's treated as fresh, then bring it
+                // back to the front. When it becomes the running context again, the app-blocking monitor
+                // re-runs focusTryToBlockUnwantedApp — which, no longer finding it in
+                // arrBlockedAppsInCuddlyModeCurrentFocus, presents popUpBlockConfirmVc (allow / set
+                // intention) through the normal flow. We don't force-show that popup ourselves here.
+                if let idx = arrBlockedAppsInCuddlyModeCurrentFocus.firstIndex(of: runningApp) {
+                    arrBlockedAppsInCuddlyModeCurrentFocus.remove(at: idx)
+                }
+                allApiObject.capturePosthog(event: "unblock-it-for-me-worked", metadata: [:])
+                runningApp.unhide()
+                runningApp.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+            }
             guard let self = self, let card = card else { return }
             self.dismiss(card)
         }
@@ -2738,14 +2767,14 @@ final class FocusBlockNotificationManager {
 private final class FocusBlockNotificationCard: NSObject {
     let appName: String
     let window: NSWindow
-    private let requestUnlockButton: NSButton?
+    private let actionButton: NSButton?
     private let secondsLabel: NSTextField
     private var secondsRemaining: Int
     private var countdownTimer: Timer?
-    var onRequestUnlock: (() -> Void)?
+    var onAction: (() -> Void)?
     var onExpire: (() -> Void)?
 
-    init(appName: String, brandTitle: String, message: String, requestUnlockTitle: String?,
+    init(appName: String, brandTitle: String, message: String, actionTitle: String?,
          seconds: Int, width: CGFloat) {
         self.appName = appName
         self.secondsRemaining = seconds
@@ -2770,12 +2799,13 @@ private final class FocusBlockNotificationCard: NSObject {
             options: [.usesLineFragmentOrigin, .usesFontLeading],
             attributes: [.font: messageFont]).height)
 
-        // Optional "Request unlock" button (teacher session only). Reuses the app's `Button` for the
-        // brand-orange fill + pointing-hand cursor on hover. Created in code, so its awakeFromNib visual
-        // setup (layer, tracking area for the cursor) is replicated here.
+        // Optional action button ("Request unlock" in a teacher session, "Oops I actually need it" in a
+        // normal session). Reuses the app's `Button` for the brand-orange fill + pointing-hand cursor on
+        // hover. Created in code, so its awakeFromNib visual setup (layer, tracking area for the cursor) is
+        // replicated here.
         var button: FocusBlockUnlockButton? = nil
         var buttonSize = NSSize.zero
-        if let unlockTitle = requestUnlockTitle {
+        if let unlockTitle = actionTitle {
             let buttonFont = NSFont.systemFont(ofSize: 12, weight: .semibold)
             let b = FocusBlockUnlockButton(title: "", target: nil, action: nil)
             b.font = buttonFont
@@ -2794,7 +2824,7 @@ private final class FocusBlockNotificationCard: NSObject {
             buttonSize = NSSize(width: ceil(titleWidth) + 34, height: 28)
             button = b
         }
-        self.requestUnlockButton = button
+        self.actionButton = button
 
         // Countdown (hourglass + "Ns"), bottom-right.
         let countdownHeight: CGFloat = 18
@@ -2884,10 +2914,10 @@ private final class FocusBlockNotificationCard: NSObject {
 
         super.init()
         button?.target = self
-        button?.action = #selector(requestUnlockClicked)
+        button?.action = #selector(actionClicked)
     }
 
-    @objc private func requestUnlockClicked() { onRequestUnlock?() }
+    @objc private func actionClicked() { onAction?() }
 
     /// Start the 1-second countdown that updates the "Ns" label and fires `onExpire` at zero.
     func startCountdown() {

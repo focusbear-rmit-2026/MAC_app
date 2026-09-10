@@ -148,6 +148,13 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
             }
         }
         let id = getUuid()
+        // Note: we intentionally do NOT set "is_ai_enabled" here. Every read site treats an absent
+        // key as true (AI on) — the Advanced checkbox shows checked, and the runtime veto in
+        // SettingsManager.isAIBlockingEnabled() only turns AI off when the key is explicitly false.
+        // So an absent key behaves identically to is_ai_enabled = true. Consequence (by design, not a
+        // bug): a new mode always defaults to AI-on until the user unchecks it — you can't create a
+        // mode that defaults to AI-off. The key is written on the first toggle (and synced via
+        // editFocusMode under metadata); the server also sends it back on every focus mode after sync.
         let dic:[String:Any] = ["id":id, "name":textFieldFocusType.stringValue, "color": getColorString(color: colorWell.color), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedListApproach":false, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp, "autoSuggestFocusModeOnAllowedURL": true, "isAutoDoNotDisturbEnabled": true]//, "isAllowedAllUrls":true , "isBlockedAllUrls":false#453
         
         let row = focusPreferencesVcObj?.tblViewFocusType.numberOfRows ?? 0

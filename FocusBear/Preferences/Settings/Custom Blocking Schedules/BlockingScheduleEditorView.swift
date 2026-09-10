@@ -303,9 +303,10 @@ struct BlockingScheduleEditorView: View {
             .buttonStyle(FBButtonStyle())
 
             if showMoreOptions {
-                Toggle(isOn: $model.useAI) {
-                    Text("Use AI to decide if websites should be allowed").font(.fbRegular(13))
-                }
+                // No "Use AI" toggle here: AI is a per-block-list setting, not per-schedule — a schedule
+                // just runs its block list, whose is_ai_enabled governs AI (the runtime reads it from the
+                // block list). model.useAI stays defaulted so the saved schedule's flag is harmless/ignored,
+                // matching the hidden AppKit checkbox in blockingScheduleEditorVC.
                 Toggle(isOn: $model.skipMicroBreaks) {
                     Text("Skip microbreaks during this block").font(.fbRegular(13))
                 }

@@ -65,7 +65,13 @@ class focusPreferencesAdvancedVc: NSViewController {
     @IBOutlet weak var tokenField: NSTokenField!
     @IBOutlet weak var btnDndInfo: hoverInfoButton!
     @IBOutlet weak var checkBoxAutoDoNotDisturb: NSButton!
-    
+
+    // "Use AI for this block list" — the per-block-list AI relevance toggle (is_ai_enabled). Owned by the
+    // block list, NOT by blocking schedules (see CLAUDE.md). Laid out in the storyboard; the title
+    // (config-driven) and target/action are set in setupUseAiCheckbox().
+    @IBOutlet weak var checkBoxUseAi: NSButton!
+    private var useAiTitle = "Use AI for this block list"
+
     var isShellScriptBeforeFocusEdited = false
     var isShellScriptAfterFocusEdited = false
     var toolTipDndMode = "Turn on Do Not Disturb automatically when starting a focus mode."
@@ -171,6 +177,34 @@ class focusPreferencesAdvancedVc: NSViewController {
 
         popUpBtnFocusAlignmentScore.removeAllItems()
         popUpBtnFocusAlignmentScore.addItems(withTitles: arrFocusAlignmentScore)
+
+        setupUseAiCheckbox()
+    }
+
+    /// Add the "Use AI for this block list" checkbox below the focus-alignment-score row (they're related:
+    /// AI relevance vs. the alignment-score popup). Placed in code so it doesn't disturb the fixed
+    /// storyboard layout above it.
+    private func setupUseAiCheckbox() {
+        if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary {
+            useAiTitle = focusPreferencesAdvancedInfo.value(forKey: "checkBoxUseAiForBlockListText") as? String ?? useAiTitle
+        }
+        checkBoxUseAi?.title = useAiTitle
+        checkBoxUseAi?.target = self
+        checkBoxUseAi?.action = #selector(checkBoxUseAiClicked(_:))
+    }
+
+    @objc private func checkBoxUseAiClicked(_ sender: Any) {
+        let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
+        guard row >= 0, row < arrFocusType.count else { return }
+        let enabled = checkBoxUseAi.state == .on
+        arrFocusType[row]["is_ai_enabled"] = enabled
+        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        allApiObject.capturePosthog(
+            event: enabled ? "settings-changed-enable-ai-for-block-list" : "settings-changed-disable-ai-for-block-list",
+            metadata: [:])
+        // Persist to the server so the choice follows the user across devices (per-mode fields round-trip
+        // through the focus mode's metadata — see CLAUDE.md).
+        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: { _ in })
     }
     
     override func viewWillAppear() {
@@ -328,6 +362,15 @@ class focusPreferencesAdvancedVc: NSViewController {
             
             let autoSuggestFocusModeOnAllowedURL = arrFocusType[row]["autoSuggestFocusModeOnAllowedURL"] as? Bool ?? false
             btnCheckBoxSuggestWorkFocusMode.state = autoSuggestFocusModeOnAllowedURL ? .on : .off
+
+            // Absent means AI on (matches isAIBlockingEnabled()'s veto-only reading of is_ai_enabled).
+            let isAiEnabled = arrFocusType[row]["is_ai_enabled"] as? Bool ?? true
+            checkBoxUseAi?.state = isAiEnabled ? .on : .off
+            // "Use AI for this block list" only applies to real block lists. The Default and Relax
+            // focus modes don't block a list, so hide the toggle for them.
+            let isDefaultMode = arrFocusType[row]["isDefault"] as? Bool == true
+            let isRelaxMode = arrFocusType[row]["isRelaxFocus"] as? Bool == true
+            checkBoxUseAi?.isHidden = isDefaultMode || isRelaxMode
         }
 
         btnShowScripts.image = NSImage(named: "NSTouchBarGoForwardTemplate")

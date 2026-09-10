@@ -2146,7 +2146,7 @@ func focusBlockUnwantedApp(runningApp: NSRunningApplication, appName:String, sho
     runningApp.hide()
     allApiObject.capturePosthog(event: "block-distracting-app", metadata: [:])
     if showNotification{
-        showFocusAppBlockNotification(appName: appName)
+        showFocusAppBlockNotification(appName: appName, runningApp: runningApp)
     }
     if !arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){
         arrBlockedAppsInCuddlyModeCurrentFocus.append(runningApp)

@@ -1022,7 +1022,19 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         // Reads go through the serialized `isAnyCustomScheduleOn` /
         // `arrBlockingSchedule` accessors below.
         guard isAnyCustomScheduleOn else { return false }
-        return arrBlockingSchedule.first(where: { $0.state == .on })?.isAIBlockingEnabled ?? false
+        guard let active = arrBlockingSchedule.first(where: { $0.state == .on }) else { return false }
+        // AI is a property of the BLOCK LIST (focus mode) the schedule runs, NOT of the schedule itself
+        // (see CLAUDE.md). Read the associated block list's is_ai_enabled (absent ⇒ on). Fall back to the
+        // schedule's own now-hidden flag only if the block list can't be resolved.
+        if let focusMode = arrFocusType.first(where: { $0["id"] as? String == active.focusModeID }) {
+            // Report the block list's AI intent (absent ⇒ on). Where AI actually applies — allow-list
+            // URLs only; a blacklist short-circuits every non-listed URL to allowed and never consults
+            // the AI — is handled downstream by the shared focus-session enforcement path
+            // (focusTimerManager.checkInBackground → checkUrlFromAi), exactly as for a normally-started
+            // focus session running this same block list, so there's no need to gate on the approach here.
+            return focusMode["is_ai_enabled"] as? Bool ?? true
+        }
+        return active.isAIBlockingEnabled
     }
     func isMicroBreaksEnabled()->Bool{
         if isAnyCustomScheduleOn{
