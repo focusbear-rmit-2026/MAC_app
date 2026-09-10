@@ -463,7 +463,10 @@ func showBlurWindow(frame:NSRect, browser:BROWSER?){
         
         blurWcObj?.window?.backgroundColor = NSColor.clear
         blurWcObj?.window?.isOpaque = false
-        blurWcObj?.window?.alphaValue = 0.98
+        // MUST stay 1. NSVisualEffectView's `behindWindow` blur is disabled whenever the window's
+        // alphaValue < 1, so at 0.98 the frosted panel wasn't actually blurring and the blocked site
+        // stayed readable through it ("it doesn't blur enough"). Full opacity re-enables the real blur.
+        blurWcObj?.window?.alphaValue = 1
     }
     guard let screen = NSScreen.main else{
         return;
@@ -483,7 +486,7 @@ func showBlurWindow(frame:NSRect, browser:BROWSER?){
         }else{
             blockBlurVcObj?.visualEffectView.layer?.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
         }
-        
+
     }else{
         blockBlurVcObj?.visualEffectView.layer?.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
     }
