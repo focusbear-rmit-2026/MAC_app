@@ -639,3 +639,17 @@ You can now edit your habits and routine start time straight from the Day Plan �
 
 Blocking Schedules:
 A blocking schedule you add, edit, or delete on mobile or Windows now updates on your Mac in real time, and the Blocking Schedules screen refreshes live while it's open. (#2454)
+
+
+# v3.35.543
+
+Blocking:
+"Use AI to decide what to block" is now a per-block-list setting — turn it on or off for each block list under Focus Preferences → Advanced, instead of on individual schedules. When an app is blocked, the notification now also offers an "Oops, I actually need it" button to let yourself through. (#2402)
+The frosted overlay over a blocked app or site now properly hides what's behind it, instead of leaving the content readable. (#2441)
+
+Day Plan:
+Fixed the event editor showing — and, on Save, moving the event to — the wrong calendar for events in a read-only calendar (e.g. a subscribed timetable or holiday calendar). It now shows the event's real calendar and won't move it. (#2436)
+Fixed pressing Play on a different habit doing nothing while another habit was paused — it now switches to the habit you tapped and keeps the paused one ready to resume. (#2453)
+
+Reliability:
+Fixed a crash on launch that could occur when a routine's start or shut-off time was missing. (#2457)
