@@ -80,6 +80,7 @@ jobs:
             -only-testing:"Focus BearTests/QuickAddTaskParserTests" \
             -only-testing:"Focus BearTests/ToDoLogicTests" \
             -only-testing:"Focus BearTests/SmartSnoozeTests" \
+            -only-testing:"Focus BearTests/EventCalendarPickerTests" \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGN_STYLE=Manual \
             PROVISIONING_PROFILE_SPECIFIER="" \

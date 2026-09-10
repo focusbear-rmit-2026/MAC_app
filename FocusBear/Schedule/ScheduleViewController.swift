@@ -625,6 +625,10 @@ class scheduleViewController: NSViewController {
     private var addPrivateNotesView: NSTextView?
     private var addErrorLabel: NSTextField?
     private var addCalendarIDs: [String] = []
+    /// True when the calendar popup's selection actually reflects a choice (the event's real calendar, or
+    /// the default for a new event). False when the event's calendar couldn't be resolved — the popup is
+    /// then showing an unrelated calendar and saving must leave the event's calendar alone.
+    private var addCalendarIsUserChoice = false
     /// Event id being edited (nil = creating a new event).
     private var editingEventID: String?
     // For a recurring event, the start of the SPECIFIC occurrence being edited, so a "just this one" edit
@@ -1290,12 +1294,25 @@ class scheduleViewController: NSViewController {
         addTitleField = titleField
 
         let calendarPopup = NSPopUpButton()
-        let cals = CalendarManager.shared.writableCalendars()
+        // The event's own calendar is listed even when it's read-only (a subscribed feed, or one shared
+        // read-only), so the popup shows where the event really lives instead of falling back to the
+        // first calendar in the list and mislabelling it.
+        let owningCalendar = existing.flatMap { CalendarManager.shared.calendar(of: $0) }
+        let cals = EventCalendarPicker.choices(writable: CalendarManager.shared.writableCalendars(),
+                                               owning: owningCalendar)
         addCalendarIDs = cals.map { $0.id }
-        for c in cals { calendarPopup.addItem(withTitle: c.title) }
-        if let calID = existing?.calendar?.calendarIdentifier, let idx = addCalendarIDs.firstIndex(of: calID) {
+        for title in EventCalendarPicker.menuTitles(for: cals) { calendarPopup.addItem(withTitle: title) }
+        if let idx = EventCalendarPicker.selectedIndex(in: cals, owningID: owningCalendar?.id) {
             calendarPopup.selectItem(at: idx)
+            addCalendarIsUserChoice = true
+        } else {
+            // A new event legitimately starts on the default calendar; for an edit we couldn't resolve,
+            // the popup's selection means nothing and must never be written back (see saveEventForm).
+            addCalendarIsUserChoice = (editingID == nil)
         }
+        // An event in a read-only calendar can't be moved out of it, and an event someone else organises
+        // can't be rewritten at all — show the true calendar, but don't offer to change it.
+        calendarPopup.isEnabled = (owningCalendar?.isWritable ?? true) && !editingEventIsNotOwned
         calendarPopup.translatesAutoresizingMaskIntoConstraints = false
         addCalendarPopup = calendarPopup
 
@@ -1519,6 +1536,7 @@ class scheduleViewController: NSViewController {
         editingEventID = nil
         editingOccurrenceStart = nil
         editingEventIsNotOwned = false
+        addCalendarIsUserChoice = false
     }
 
     @objc private func saveEventForm() {
@@ -1530,7 +1548,10 @@ class scheduleViewController: NSViewController {
 
         guard end > start else { showAddEventError(); NSSound.beep(); return }
         let idx = addCalendarPopup?.indexOfSelectedItem ?? -1
-        let calendarID = addCalendarIDs.indices.contains(idx) ? addCalendarIDs[idx] : nil
+        // Never write back a selection the user didn't make: when the event's own calendar couldn't be
+        // resolved the popup sits on an unrelated calendar, and passing it would MOVE the event there.
+        let calendarID = (addCalendarIsUserChoice && addCalendarIDs.indices.contains(idx))
+            ? addCalendarIDs[idx] : nil
         let recurrence = CalendarManager.Recurrence(rawValue: addRecurrencePopup?.indexOfSelectedItem ?? 0) ?? .none
 
         let notes = addNotesView?.string ?? ""
@@ -1586,6 +1607,7 @@ class scheduleViewController: NSViewController {
         editingEventID = nil
         editingOccurrenceStart = nil
         editingEventIsNotOwned = false
+        addCalendarIsUserChoice = false
         // For a brand-new event, jump to its day so the user sees it land. For an edit, stay on the
         // day the user was viewing — a repeating event's `start` is its first instance, so jumping
         // would yank the view back weeks/months (e.g. editing today's task sent the user to May).

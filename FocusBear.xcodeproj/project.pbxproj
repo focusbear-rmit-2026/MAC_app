@@ -453,6 +453,7 @@
 		TODO00019 /* ProjectsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00020 /* ProjectsView.swift */; };
 		TODOT0001 /* ToDoLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODOT0002 /* ToDoLogicTests.swift */; };
 		SNZT0001 /* SmartSnoozeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SNZT0002 /* SmartSnoozeTests.swift */; };
+		ECPT0001 /* EventCalendarPickerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECPT0002 /* EventCalendarPickerTests.swift */; };
 		TODO00021 /* ProjectDetailStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00022 /* ProjectDetailStore.swift */; };
 		TODO00023 /* ProjectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TODO00024 /* ProjectDetailView.swift */; };
 		TDCS0001 /* TodoCompletionSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = TDCS0002 /* TodoCompletionSync.swift */; };
@@ -967,6 +968,7 @@
 		TODO00020 /* ProjectsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsView.swift; sourceTree = "<group>"; };
 		TODOT0002 /* ToDoLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToDoLogicTests.swift; sourceTree = "<group>"; };
 		SNZT0002 /* SmartSnoozeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartSnoozeTests.swift; sourceTree = "<group>"; };
+		ECPT0002 /* EventCalendarPickerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventCalendarPickerTests.swift; sourceTree = "<group>"; };
 		TODO00022 /* ProjectDetailStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailStore.swift; sourceTree = "<group>"; };
 		TODO00024 /* ProjectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailView.swift; sourceTree = "<group>"; };
 		TDCS0002 /* TodoCompletionSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoCompletionSync.swift; sourceTree = "<group>"; };
@@ -1777,6 +1779,7 @@
 				UBT00002 /* URLBlockingTests.swift */,
 				TODOT0002 /* ToDoLogicTests.swift */,
 				SNZT0002 /* SmartSnoozeTests.swift */,
+				ECPT0002 /* EventCalendarPickerTests.swift */,
 				CBS00002 /* CustomBlockingScheduleTests.swift */,
 				DPRT0002 /* DayPlanRoutineDraftTests.swift */,
 				STT00002 /* MarkdownTextTests.swift */,
@@ -2627,6 +2630,7 @@
 				UBT00001 /* URLBlockingTests.swift in Sources */,
 				TODOT0001 /* ToDoLogicTests.swift in Sources */,
 				SNZT0001 /* SmartSnoozeTests.swift in Sources */,
+				ECPT0001 /* EventCalendarPickerTests.swift in Sources */,
 				CBS00001 /* CustomBlockingScheduleTests.swift in Sources */,
 				DPRT0001 /* DayPlanRoutineDraftTests.swift in Sources */,
 				STT00001 /* MarkdownTextTests.swift in Sources */,

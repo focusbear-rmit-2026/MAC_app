@@ -173,22 +173,46 @@ final class CalendarManager {
 
     // MARK: - Creating events
 
-    /// A calendar the user can write new events into.
-    struct WritableCalendar { let id: String; let title: String }
+    /// A calendar offered in the event editor's calendar popup.
+    struct EventCalendar: Equatable {
+        let id: String
+        let title: String
+        /// The account the calendar lives in (`EKSource.title`) — used to tell apart two accounts that
+        /// each have a calendar of the same name (e.g. a personal and a university Google account).
+        let source: String
+        /// False for a calendar that can't take events: a subscribed ICS feed, a holiday calendar, or a
+        /// calendar someone else shared read-only. Such a calendar is only ever offered as the calendar
+        /// an event *already* lives in, never as a destination.
+        let isWritable: Bool
+    }
 
     /// Calendars that accept new events (excludes read-only subscribed/holiday calendars),
     /// with the user's default-for-new-events calendar floated to the front.
-    func writableCalendars() -> [WritableCalendar] {
+    func writableCalendars() -> [EventCalendar] {
         guard access == .authorized else { return [] }
         let defaultID = store.defaultCalendarForNewEvents?.calendarIdentifier
         let cals = store.calendars(for: .event)
             .filter { $0.allowsContentModifications }
-            .map { WritableCalendar(id: $0.calendarIdentifier, title: $0.title) }
+            .map { descriptor(for: $0) }
         return cals.sorted { a, b in
             if a.id == defaultID { return true }
             if b.id == defaultID { return false }
             return a.title.localizedCaseInsensitiveCompare(b.title) == .orderedAscending
         }
+    }
+
+    /// The calendar an event actually lives in — including a read-only one, which `writableCalendars()`
+    /// deliberately omits. The editor needs this to show where the event really is instead of falling
+    /// back to an unrelated calendar.
+    func calendar(of event: EKEvent) -> EventCalendar? {
+        event.calendar.map { descriptor(for: $0) }
+    }
+
+    private func descriptor(for calendar: EKCalendar) -> EventCalendar {
+        EventCalendar(id: calendar.calendarIdentifier,
+                      title: calendar.title,
+                      source: calendar.source?.title ?? "",
+                      isWritable: calendar.allowsContentModifications)
     }
 
     /// How often an event repeats. Maps to an EKRecurrenceRule.
@@ -288,7 +312,11 @@ final class CalendarManager {
         event.startDate = start
         event.endDate = end
         if let notes = notes { event.notes = notes.isEmpty ? nil : notes }
-        if let cal = calendarID.flatMap({ store.calendar(withIdentifier: $0) }) { event.calendar = cal }
+        // Only ever move the event into a calendar that can actually take it — assigning a read-only
+        // calendar (a subscribed feed, or one shared read-only) makes the save throw and lose the edit.
+        if let cal = calendarID.flatMap({ store.calendar(withIdentifier: $0) }), cal.allowsContentModifications {
+            event.calendar = cal
+        }
         if span == .futureEvents || !wasRecurring { applyRecurrence(recurrence, to: event) }
         do {
             try store.save(event, span: span)
@@ -712,5 +740,45 @@ final class DayPlanSync {
         ]
         guard let req = request("/to-do", method: "PUT", body: body) else { return }
         send(req, label: "setTodoSubtasks")
+    }
+}
+
+// MARK: - Event editor calendar picker
+
+/// Pure rules behind the event editor's "Calendar" popup: which calendars to list, what to label them
+/// and which one to preselect.
+///
+/// The popup used to list only *writable* calendars and preselect by looking the event's calendar up in
+/// that list. For an event living in a read-only calendar — a subscribed ICS feed (how a university
+/// timetable is usually delivered), a holiday calendar, or a calendar shared read-only — the lookup found
+/// nothing, so the popup silently sat on whichever calendar happened to be first and claimed the event
+/// belonged to it. Saving then moved the event into that unrelated calendar.
+enum EventCalendarPicker {
+
+    /// The calendars to list: everything the user can write to, plus the calendar the event being edited
+    /// already lives in when that one isn't writable (so the editor tells the truth about where it is).
+    static func choices(writable: [CalendarManager.EventCalendar],
+                        owning: CalendarManager.EventCalendar?) -> [CalendarManager.EventCalendar] {
+        guard let owning = owning, !writable.contains(where: { $0.id == owning.id }) else { return writable }
+        return writable + [owning]
+    }
+
+    /// Menu labels for `choices`. A title shared by calendars in different accounts is qualified with the
+    /// account name, so two Google accounts that both have a "Work" calendar stay distinguishable.
+    static func menuTitles(for choices: [CalendarManager.EventCalendar]) -> [String] {
+        var countsByTitle: [String: Int] = [:]
+        for choice in choices { countsByTitle[choice.title, default: 0] += 1 }
+        return choices.map { choice in
+            guard countsByTitle[choice.title, default: 0] > 1, !choice.source.isEmpty else { return choice.title }
+            return "\(choice.title) (\(choice.source))"
+        }
+    }
+
+    /// The index to preselect: the calendar the event actually lives in. nil when that calendar is unknown
+    /// (a brand-new event, or an event the store can no longer resolve) — the caller must then treat the
+    /// popup's selection as "not chosen by the user" rather than as the event's calendar.
+    static func selectedIndex(in choices: [CalendarManager.EventCalendar], owningID: String?) -> Int? {
+        guard let owningID = owningID else { return nil }
+        return choices.firstIndex { $0.id == owningID }
     }
 }
