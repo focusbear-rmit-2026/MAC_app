@@ -2576,6 +2576,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 sharedDefaults?.synchronize()
             }
         }
+        // The app is designed to always have a routine start and shut-off time. If the settings payload
+        // was missing `startup_time` / `shutdown_time` (absent key or unparseable), these stay nil — and
+        // routine-window code force-unwraps them (startTime!/shutOffTime! appears ~87×), which crashed the
+        // app on launch (checkLastHabitShowDate, #2457). Fall back to sensible defaults so they are never
+        // nil: routine start 05:15, shut-off 20:00.
+        if startTime == nil {
+            startTime = Time(hour: 5, minute: 15, second: 0)
+            startTimeString = "05:15:00"
+            addLog(text: "startup_time missing → defaulting startTime to 05:15")
+        }
+        if shutOffTime == nil {
+            shutOffTime = Time(hour: 20, minute: 0, second: 0)
+            shutOffTimeString = "20:00:00"
+            addLog(text: "shutdown_time missing → defaulting shutOffTime to 20:00")
+        }
     }
     
     var isSettingsLoddedInAppdelegate = false
@@ -3800,34 +3815,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 
     func checkLastHabitShowDate(lastHabitShowDate:Date){
-        isHabitAlreadyShowed = true
-        var currentDate = Date()
-        // currentDate is 1 am and startdate is 10 am
-        let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: currentDate)!
-        if currentDate.compare(startDate) == .orderedAscending {//currentDate < startDate
-            currentDate = Calendar.current.date(byAdding: .day, value: -1, to: currentDate) ?? currentDate
-        }
-        let year1 = Calendar.current.component(.year, from: lastHabitShowDate)
-        let year2 = Calendar.current.component(.year, from: currentDate)
-        if year2>year1{
-            isHabitAlreadyShowed = false
-        }else{
-            if year1 == year2{
-                let month1 = Calendar.current.component(.month, from: lastHabitShowDate)
-                let month2 = Calendar.current.component(.month, from: currentDate)
-                if month2>month1{
-                    isHabitAlreadyShowed = false
-                }else{
-                    if month1 == month2{
-                        let day1 = Calendar.current.component(.day, from: lastHabitShowDate)
-                        let day2 = Calendar.current.component(.day, from: currentDate)
-                        if day2>day1{
-                            isHabitAlreadyShowed = false
-                        }
-                    }
-                }
-            }
-        }
+        isHabitAlreadyShowed = isHabitAlreadyShown(lastShown: lastHabitShowDate, now: Date(), routineStart: startTime)
     }
     
     

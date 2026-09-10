@@ -345,6 +345,29 @@ struct Time{
     var second = 0
 }
 
+/// Whether the routine has already been shown for the current routine-day.
+///
+/// A routine-day does not start at midnight: before the routine's start time the user is still in
+/// *yesterday's* day, so "now" rolls back a day before the two dates are compared. With no start
+/// time known — settings not loaded yet, or a profile whose startup time is missing or unparseable
+/// — there is nothing to roll back to, so the plain calendar day is used.
+///
+/// Pulled out of `AppDelegate.checkLastHabitShowDate` because that force-unwrapped `startTime` and
+/// crashed the app on launch whenever it was nil (EXC_BREAKPOINT in `readSettingsAndLoadApp`).
+func isHabitAlreadyShown(lastShown: Date, now: Date, routineStart: Time?, calendar: Calendar = .current) -> Bool {
+    var today = now
+    if let routineStart,
+       let startOfRoutineDay = calendar.date(bySettingHour: routineStart.hour,
+                                             minute: routineStart.minute,
+                                             second: routineStart.second,
+                                             of: now),
+       now < startOfRoutineDay {
+        today = calendar.date(byAdding: .day, value: -1, to: now) ?? now
+    }
+    // Shown already unless the routine-day has moved past the day it was last shown on.
+    return calendar.compare(today, to: lastShown, toGranularity: .day) != .orderedDescending
+}
+
 
 var occupationStudentIndex = 0
 var occupationBusinessOwnerIndex = 1
