@@ -420,3 +420,26 @@ enum ScheduleBuilder {
         return merged
     }
 }
+
+/// Pure ordering rule for switching the live routine to another habit mid-flight.
+///
+/// The Habit Player's "Select another habit" sheet (startAnotherHabitVc) moves the chosen habit to
+/// the position of the habit that's currently playing, which leaves that habit directly behind it —
+/// so it isn't skipped or completed, it just comes up next. The Day Plan's Play button does the same
+/// thing, but it can offer any habit in the routine, including one *before* the current position.
+enum RoutineReorder {
+
+    /// `habits` with the item at `from` moved to `anchor` (the currently-playing position).
+    /// Returns nil when there's nothing to do — the index is out of range, or the item already sits
+    /// where it would land.
+    static func moving<T>(_ habits: [T], at from: Int, toAnchor anchor: Int) -> [T]? {
+        guard habits.indices.contains(from) else { return nil }
+        let target = min(max(anchor, 0), habits.count - 1)
+        guard from != target else { return nil }
+        var out = habits
+        let moved = out.remove(at: from)
+        // Removing an item that sat *before* the anchor shifts the anchor down one place.
+        out.insert(moved, at: min(from < target ? target - 1 : target, out.count))
+        return out
+    }
+}

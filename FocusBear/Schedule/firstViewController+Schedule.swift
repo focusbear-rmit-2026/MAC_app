@@ -168,17 +168,27 @@ extension firstViewController: ScheduleHost {
                                             isMorningActive: isMorning, now: now)
     }
 
-    /// Whether `index` is still a valid row in the live habit table. The Day Plan can hand back a stale
-    /// index (e.g. the habit list shrank from a skip/refresh between render and tap); acting on it would
-    /// index past the habit array and crash (sortMorningHabitsBySelectedFirst etc.), so callers re-sync
-    /// the Day Plan instead of starting/finishing the wrong habit.
+    /// Whether `index` is still a live habit in the routine the Day Plan rendered. The Day Plan can
+    /// hand back a stale index (e.g. the habit list shrank from a skip/refresh between render and
+    /// tap); acting on it would index past the habit array and crash (sortMorningHabitsBySelectedFirst
+    /// etc.), so callers re-sync the Day Plan instead of starting/finishing the wrong habit.
+    ///
+    /// The **live routine array** is the authority, not `tblViewHabits.numberOfRows`. The Day Plan
+    /// renders from `scheduleSourceHabits`, so an index it hands back is valid exactly when that array
+    /// still holds it. Asking the table instead made every Day Plan action depend on this screen's
+    /// (hidden, sometimes never-loaded) habit table: with the Habit Player fronting the routine,
+    /// `tblViewHabits` can be nil and the guard then swallowed every Play/Done/Skip tap silently.
+    /// `reloadData()` still runs so the table's cached row count can't hand `viewFor:row:` an index
+    /// past the array (the crash this guard was added for).
     private func isLiveScheduleIndex(_ index: Int) -> Bool {
-        guard let tbl = tblViewHabits else { return false }
-        // NSTableView caches its row count, so a Day Plan index can pass an index >= the live habit
-        // array even when numberOfRows looks fine — then viewFor:row: / the start handlers index past
-        // the array and crash. reloadData() re-syncs the cached count to the live array first.
-        tbl.reloadData()
-        return index >= 0 && index < tbl.numberOfRows
+        tblViewHabits?.reloadData()
+        return scheduleSourceHabits.indices.contains(index)
+    }
+
+    /// A habit is playing (or paused) in the Habit Player — i.e. the routine is mid-flight rather than
+    /// waiting to be started.
+    private var isRoutineUnderway: Bool {
+        currentAction == ._INPROGRESS_ && currentHabitPlaying != nil
     }
 
     func scheduleStart(index: Int) {
@@ -189,19 +199,76 @@ extension firstViewController: ScheduleHost {
             return
         }
         guard isLiveScheduleIndex(index) else { refreshScheduleIfVisible(); return }
-        // If the tapped habit is the one currently RUNNING as an allowed-activity habit, don't restart
-        // it — just switch back to its Habit Player tab. But when it's PAUSED, fall through so tapping
-        // Play resumes it (previously this early-return showed the player without resuming, so pausing
-        // an allowed-app habit and tapping Play did nothing).
         let source = scheduleSourceHabits
-        if index < source.count, let playing = currentHabitPlaying,
-           playing.isAllowedActivityHabit, let pid = playing.id, source[index].id == pid,
-           !(timerViewcontrollerObj?.isActivityPaused ?? false) {
+        let target = source[index]
+        // Tapping Play on the habit that's ALREADY in the player: resume it if it's paused (keeping
+        // its elapsed time — never restart from zero), otherwise just switch back to its tab.
+        if let playing = currentHabitPlaying, let pid = playing.id, target.id == pid {
             timerViewcontrollerObj?.showAllowedActivityPlayerTab()
+            if timerViewcontrollerObj?.isActivityPaused == true {
+                timerViewcontrollerObj?.btnPauseClicked(self)   // toggles: paused → resumed
+            }
             return
         }
-        tblViewHabits?.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
+        // A routine is already underway and the user tapped Play on a DIFFERENT habit: that means
+        // "switch to this one now", which is exactly what the player's own "Select another habit"
+        // menu does (startAnotherHabitVc.btnStartClicked) — so route it there rather than through
+        // btnStartFirstHabitClicked, which is the START-THE-ROUTINE path (it re-sorts the list, runs
+        // the visualise-instructions flow, and with the high-priority sequence on ignores the tapped
+        // habit entirely). Nothing is marked done or skipped, so no skip-password gate is bypassed.
+        if isRoutineUnderway {
+            startHabitMidRoutine(target)
+            return
+        }
+        // Routine not started yet: the habit list is on screen, so drive its Start button as before.
+        // btnStartFirstHabitClicked reads tblViewHabits.selectedRow unconditionally, so it needs a
+        // real table.
+        guard let tbl = tblViewHabits, index < tbl.numberOfRows else {
+            addLog(text: "dayplan: scheduleStart(\(index)) skipped — habit table unavailable")
+            refreshScheduleIfVisible()
+            return
+        }
+        tbl.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
         btnStartFirstHabitClicked(self)
+    }
+
+    /// Switch the live routine to `target` mid-flight, mirroring startAnotherHabitVc.btnStartClicked:
+    /// move it to the current position in the routine array — so the habit that was playing/paused
+    /// keeps its place directly behind it and comes up again afterwards, rather than being abandoned
+    /// or completed — then start it in the player.
+    private func startHabitMidRoutine(_ target: habit) {
+        addLog(text: "[user-action] dayplan: start habit mid-routine \(target.name ?? "")")
+        moveRoutineHabitToCurrentPosition(id: target.id)
+        timerViewcontrollerObj?.showAllowedActivityPlayerTab()
+        timerViewcontrollerObj?.tryStartTimerHabit(durationSeconds: target.durationSeconds,
+                                                   name: target.name ?? "",
+                                                   currentHabit: target,
+                                                   currentTimerValue: 0)
+        DispatchQueue.main.async { [weak self] in self?.refreshScheduleIfVisible() }
+    }
+
+    /// Re-orders the live routine array so the habit with `id` sits at the currently-playing position
+    /// (`currentHabitIndex`), pushing the habit that was playing one place back. Same move the
+    /// "Select another habit" sheet makes, but it also handles a habit that sits *before* the current
+    /// one (the Day Plan can offer any habit in the routine, that sheet only later ones).
+    private func moveRoutineHabitToCurrentPosition(id: String?) {
+        guard let id = id else { return }
+        let anchor = max(currentHabitIndex, 0)
+        func reordered(_ habits: [habit]) -> [habit]? {
+            guard let from = habits.firstIndex(where: { $0.id == id }) else { return nil }
+            return RoutineReorder.moving(habits, at: from, toAnchor: anchor)
+        }
+        switch currentState {
+        case ._EVENING_HABIT_, ._POSTPONE_EVENING_HABIT_:
+            if let r = reordered(arrFilteredEveningHabits) { arrFilteredEveningHabits = r }
+        case ._CUSTOM_ROUTINE_:
+            guard currentRoutineIndex < arrAllCustomRoutine.count else { return }
+            if let r = reordered(arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits) {
+                arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits = r
+            }
+        default:
+            if let r = reordered(arrFilteredMorningHabits) { arrFilteredMorningHabits = r }
+        }
     }
 
     func scheduleDone(index: Int) {

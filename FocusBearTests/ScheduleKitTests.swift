@@ -231,6 +231,37 @@ final class ScheduleKitTests: XCTestCase {
         XCTAssertTrue(blocks.allSatisfy { !$0.isActionable && !$0.isCurrent })
     }
 
+    // MARK: - Mid-routine habit switch (Day Plan Play while a habit is playing/paused)
+    //
+    // Regression: with a habit paused, tapping Play on a *different* habit in the Day Plan did
+    // nothing. The switch now mirrors the player's "Select another habit" sheet — the chosen habit
+    // takes the currently-playing slot and the habit that was paused stays directly behind it, so
+    // it's neither skipped nor completed.
+
+    func testMovingLaterHabitToAnchorPutsPausedHabitDirectlyBehindIt() {
+        let order = RoutineReorder.moving(["A", "B", "C", "D"], at: 3, toAnchor: 1)
+        XCTAssertEqual(order, ["A", "D", "B", "C"])   // B (playing/paused) still next after D
+    }
+
+    func testMovingEarlierHabitToAnchorKeepsItJustBeforeThePausedHabit() {
+        let order = RoutineReorder.moving(["A", "B", "C", "D"], at: 0, toAnchor: 2)
+        XCTAssertEqual(order, ["B", "A", "C", "D"])   // C (playing/paused) still follows A
+    }
+
+    func testMovingHabitAlreadyAtAnchorIsANoOp() {
+        XCTAssertNil(RoutineReorder.moving(["A", "B", "C"], at: 1, toAnchor: 1))
+    }
+
+    func testMovingOutOfRangeIndexIsANoOp() {
+        XCTAssertNil(RoutineReorder.moving(["A", "B"], at: 5, toAnchor: 0))
+        XCTAssertNil(RoutineReorder.moving([String](), at: 0, toAnchor: 0))
+    }
+
+    func testAnchorPastTheEndClampsToTheLastPosition() {
+        let order = RoutineReorder.moving(["A", "B", "C"], at: 0, toAnchor: 99)
+        XCTAssertEqual(order, ["B", "A", "C"])   // anchor clamps to C, so A lands just before it
+    }
+
     /// Every habit is editable from the Day Plan — a preview (future) routine's, and "earlier today"
     /// history's too, since the editor changes the habit's settings rather than the day's record. Only
     /// `isActionable` (Play/Done/Skip on today's row) distinguishes the active routine.
