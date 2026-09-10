@@ -630,3 +630,12 @@ The Stats screen is now native too, with Streak, Progress, Your Goals, Pep Talk,
 
 Menu:
 You can now add a task straight to today's Day Plan from the menu bar — a compact "+ Add task" row expands into a one-line composer (type "#project", "*priority" and a duration like "30m" inline). (#2428)
+
+
+# v3.35.542
+
+Day Plan:
+You can now edit your habits and routine start time straight from the Day Plan — an Edit (pencil) button on a habit opens the full habit editor, and the routine's "…" menu lets you change when it starts. Changes preview instantly; a banner then lets you save and restart to sync them. (#2412)
+
+Blocking Schedules:
+A blocking schedule you add, edit, or delete on mobile or Windows now updates on your Mac in real time, and the Blocking Schedules screen refreshes live while it's open. (#2454)
