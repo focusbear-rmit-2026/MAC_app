@@ -82,6 +82,9 @@ enum ScheduleText {
     static var showDismissedEvents: String { t("showDismissedEvents", "Show dismissed events") }
     static var showEventAgain: String { t("showEventAgain", "Show this event again") }
     static var hideEvent: String { t("hideEvent", "Hide this event") }
+    /// Short labels for the button itself — the tooltips above stay as the fuller explanation.
+    static var hideEventButton: String { t("hideEventButton", "🙈 Hide") }
+    static var showEventButton: String { t("showEventButton", "👀 Show") }
     // Matches the strings already authored in the assets repo (config/config.json, commit 6c87745,
     // "i18n: add repeating event dismissal strings (EN/ES)") — reusing those key names/wording rather
     // than inventing new ones, so this picks up the config-driven (and Spanish) copy once that lands.
@@ -3279,9 +3282,9 @@ class scheduleViewController: NSViewController {
             content.addSubview(sub)
             sub.leadingAnchor.constraint(equalTo: lastTrailing, constant: 8).isActive = true
             sub.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor).isActive = true
-            // Never let the subtitle push past the card edge (a meeting's ✕ sits ~34pt in).
+            // Never let the subtitle push past the card edge (a meeting's Hide button sits ~72pt in).
             sub.trailingAnchor.constraint(lessThanOrEqualTo: content.trailingAnchor,
-                                          constant: block.kind == .meeting ? -42 : -8).isActive = true
+                                          constant: block.kind == .meeting ? -80 : -8).isActive = true
             lastTrailing = sub.trailingAnchor
         }
         if block.kind == .deepWork || block.kind == .sleep || block.kind == .breakSprint {
@@ -3295,25 +3298,24 @@ class scheduleViewController: NSViewController {
         }
         // ✕ to hide a calendar meeting (or 👀 to bring back a dismissed one), pinned to the trailing edge.
         if block.kind == .meeting, let eid = block.eventID {
-            // cursorButton gives the pointing-hand cursor on hover for both the ✕ and the 👀.
-            let x = cursorButton(title: block.isDismissed ? "👀" : "✕", target: self, action: #selector(dismissMeetingClicked(_:)))
-            // The wide 👀 double-eye emoji gets clipped by the circular bezel, so render the un-dismiss control
-            // borderless (no button background) — the full emoji shows cleanly at the default font. The narrow
-            // ✕ fits its circle fine, so keep the circular bezel for the dismiss control.
-            if block.isDismissed {
-                x.isBordered = false
-            } else {
-                x.bezelStyle = .circular
-            }
+            // A bare ✕ read as "delete this event" — a user assumed clicking it would remove the meeting
+            // from their calendar. It only hides the row, so say so: a labelled button, not a glyph.
+            let x = cursorButton(title: block.isDismissed ? ScheduleText.showEventButton : ScheduleText.hideEventButton,
+                                 target: self, action: #selector(dismissMeetingClicked(_:)))
+            x.bezelStyle = .rounded
+            x.font = NSFont.systemFont(ofSize: 11)
             x.translatesAutoresizingMaskIntoConstraints = false
             x.identifier = NSUserInterfaceItemIdentifier((block.isDismissed ? "undismiss:" : "dismiss:") + eid)
             x.toolTip = block.isDismissed ? ScheduleText.showEventAgain : ScheduleText.hideEvent
             content.addSubview(x)
             NSLayoutConstraint.activate([
-                x.widthAnchor.constraint(equalToConstant: 26),
-                x.heightAnchor.constraint(equalToConstant: 26),
+                // Sized to its label rather than a fixed square, so "🙈 Hide" and "👀 Show" both fit.
+                x.heightAnchor.constraint(equalToConstant: 22),
                 x.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -8),
                 x.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+                // Keep the title clear of the Hide/Show button. A meeting has no subtitle, so nothing else
+                // caps the title's trailing edge — without this a long title runs under the button.
+                titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: x.leadingAnchor, constant: -8),
             ])
         }
 

@@ -3061,6 +3061,8 @@
         "showDismissedEvents": "Mostrar eventos descartados",
         "showEventAgain": "Mostrar este evento de nuevo",
         "hideEvent": "Ocultar este evento",
+        "hideEventButton": "🙈 Ocultar",
+        "showEventButton": "👀 Mostrar",
         "dismissRepeatingTitle": "Este es un evento recurrente.",
         "dismissRepeatingInfo": "¿Quieres ocultar todos los eventos de la serie o solo el de hoy?",
         "dismissRepeatingJustThisOne": "Solo este",

@@ -3073,6 +3073,8 @@
         "showDismissedEvents": "Show dismissed events",
         "showEventAgain": "Show this event again",
         "hideEvent": "Hide this event",
+        "hideEventButton": "🙈 Hide",
+        "showEventButton": "👀 Show",
         "dismissRepeatingTitle": "This is a repeating event.",
         "dismissRepeatingInfo": "Would you like to hide all events in the series or just the one for today?",
         "dismissRepeatingJustThisOne": "Just this one",

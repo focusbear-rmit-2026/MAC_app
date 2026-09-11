@@ -268,7 +268,7 @@ enum ScheduleBuilder {
 
         for m in upcomingMeetings {
             var meetingBlock = ScheduleBlock(kind: .meeting, title: m.title, start: m.start, end: m.end,
-                                             subtitle: labels.meeting, eventID: m.id)
+                                             subtitle: nil, eventID: m.id)
             meetingBlock.isDismissed = m.isDismissed
             blocks.append(meetingBlock)
         }
