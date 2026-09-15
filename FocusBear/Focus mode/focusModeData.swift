@@ -2866,6 +2866,9 @@ func checkAllFocusModes(){
         
     }
     else{//defalt focus mode will always be first in list so rearranging it
+        // The default focus mode already exists (e.g. a returning / multi-device user). Capture its id
+        // BEFORE any rearranging so the pending onboarding blocking schedule can still be linked to it.
+        let existingDefaultFocusModeId = arrFocusType[defaultContainLocation]["id"] as? String ?? ""
         if defaultContainLocation == 0{
             if arrFocusType[defaultContainLocation]["isAllowedAllApps"] as? Bool == true{
                 arrFocusType[defaultContainLocation]["isAllowedAllApps"] = false
@@ -2874,15 +2877,15 @@ func checkAllFocusModes(){
                 arrFocusType[defaultContainLocation]["allowed_urls"] = []
                 arrFocusType[defaultContainLocation]["blockUrlsArray"] = []
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                
+
                 allApiObject.editFocusMode(focusType: arrFocusType[defaultContainLocation], completionHandler: {newDic in
                     DispatchQueue.main.async {
                         print("*************************api called*****************")
-                        
+
                     }
                 })
             }
-            
+
         }else{
             var focusMode = arrFocusType[defaultContainLocation]
             if focusMode["isAllowedAllApps"] as? Bool == true{
@@ -2891,11 +2894,11 @@ func checkAllFocusModes(){
                 focusMode["isAllowedListApproach"] = false
                 focusMode["allowed_urls"] = []
                 focusMode["blockUrlsArray"] = []
-                
+
                 allApiObject.editFocusMode(focusType: focusMode, completionHandler: {newDic in
                     DispatchQueue.main.async {
                         print("*************************api called*****************")
-                        
+
                     }
                 })
             }
@@ -2903,7 +2906,15 @@ func checkAllFocusModes(){
             arrFocusType.insert(focusMode, at: 0)
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         }
-        
+        // Persist the onboarding "first blocking schedule" against the EXISTING default focus mode.
+        // Previously createFirstBlockingSchedule was only called in the `if !isDefaultContain` branch
+        // (when the default mode was freshly created), so a user who ALREADY had the default mode
+        // (returning / multi-device) had their onboarding-created schedule silently dropped — it stayed
+        // in the in-memory pendingFirstBlockingSchedule and was never saved or POSTed. Guarded on the
+        // pending schedule so this only fires right after onboarding, not on every launch.
+        if customBlockingScheduleManagerObj.pendingFirstBlockingSchedule != nil {
+            customBlockingScheduleManagerObj.createFirstBlockingSchedule(focusModeId: existingDefaultFocusModeId)
+        }
     }// if any new default focus mode created then count should be changed in kUserdefaultsFocusTipsShown
     
     if !isMeetingsContain{
