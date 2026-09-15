@@ -92,6 +92,10 @@ private extension CharacterSet {
 final class AudhdResultsWebViewVc: NSViewController, WKNavigationDelegate, NSWindowDelegate {
 
     private var testCode: String = ""
+    /// Fired once, right after `resultsClosedEvent`, when the user closes this window. Used to defer
+    /// showing onboarding (or anything else) on a fresh install until after the user has seen their
+    /// gated results — see `showAudhdResultsWindow(testCode:onClose:)`.
+    var onClose: (() -> Void)?
 
     private lazy var webView: WKWebView = {
         // applicationNameForUserAgent APPENDS the marker to the default WebKit User-Agent (keeping a
@@ -149,5 +153,8 @@ final class AudhdResultsWebViewVc: NSViewController, WKNavigationDelegate, NSWin
     func windowWillClose(_ notification: Notification) {
         addLog(text: "AudhdResultsWebViewVc: results window closed")
         allApiObject.capturePosthog(event: AudhdResults.resultsClosedEvent, metadata: [:])
+        let callback = onClose
+        onClose = nil // one-shot: this VC/window are reused across calls (isReleasedWhenClosed = false)
+        callback?()
     }
 }

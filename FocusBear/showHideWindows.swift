@@ -269,7 +269,7 @@ func showSetIntentionBlockedUrlsWindow(script: String, url:String, browser:BROWS
         setIntentionBlockedUrlsWcObj?.window?.styleMask.remove(.closable)
         setIntentionBlockedUrlsWcObj?.window?.title = appName
         setIntentionBlockedUrlsWcObj?.window?.backgroundColor = NSColor.clear
-        
+
         setIntentionBlockedUrlsWcObj?.window?.isMovable = false
     }
     if !(setIntentionBlockedUrlsVcObj?.isViewLoaded ?? false){
@@ -588,11 +588,12 @@ private var audhdResultsWindow: NSWindow?
 
 // Opens the gated "advanced AuDHD results" in a full-screen WKWebView with no URL bar.
 // Reached from the `focusbear://view-audhd-results?test-code=<CODE>` deep link.
-func showAudhdResultsWindow(testCode: String) {
+func showAudhdResultsWindow(testCode: String, onClose: (() -> Void)? = nil) {
     addLog(text: "showAudhdResultsWindow")
 
     let vc = audhdResultsVcObj ?? AudhdResultsWebViewVc()
     audhdResultsVcObj = vc
+    vc.onClose = onClose
 
     let window = audhdResultsWindow ?? NSWindow(
         contentRect: (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1200, height: 800),
@@ -979,6 +980,24 @@ func showUpgradeToProNagWindow(titleText:String, reason:String){
 
 //***********SHOW Welcome window ***************//
 
+
+/// Fresh-install entry point used in place of a direct `showWelcomeWindow()` call. If a Focus Bear AuDHD
+/// retest code is sitting on the clipboard (checked exactly once — see
+/// `AudhdResults.clipboardCheckedDefaultsKey`), show the gated results window first and only proceed to
+/// the welcome window (and everything downstream: signup, onboarding) once the user closes it. With no
+/// code on the clipboard — the common case — this is identical to calling `showWelcomeWindow()` directly.
+func showWelcomeWindowOrAudhdResultsFirst(){
+    if !UserDefaults.standard.bool(forKey: AudhdResults.clipboardCheckedDefaultsKey) {
+        UserDefaults.standard.set(true, forKey: AudhdResults.clipboardCheckedDefaultsKey)
+        if let clip = NSPasteboard.general.string(forType: .string),
+           let testCode = AudhdResults.testCode(fromClipboard: clip) {
+            showAudhdResultsWindow(testCode: testCode, onClose: { showWelcomeWindow() })
+            return
+        }
+    }
+    showWelcomeWindow()
+}
+//-------------------------------------------------//
 
 func showWelcomeWindow(){
     addLog(text:"showWelcomeOnboardingWindow")

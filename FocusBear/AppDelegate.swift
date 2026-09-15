@@ -573,7 +573,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if UserDefaults.standard.object(forKey: kUserdefaultsIsUserLoggedIn) as? Bool == nil{
                     if UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) == nil{
                         closeSplashWindow()
-                        showWelcomeWindow()
+                        showWelcomeWindowOrAudhdResultsFirst()
                     }else{
                         closeSplashWindow()
                         
@@ -595,7 +595,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         // Present login screen
                         if UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) == nil{
                             closeSplashWindow()
-                            showWelcomeWindow()
+                            showWelcomeWindowOrAudhdResultsFirst()
                         }else{
                             closeSplashWindow()
                             showAskLoginWindow()
