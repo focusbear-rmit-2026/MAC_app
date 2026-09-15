@@ -57,15 +57,19 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     
     func showFullSizeWindow(){
         isFullScreenVisible = true
-        window!.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces          // we want these
-        window!.canHide = false
-        window!.isExcludedFromWindowsMenu = true
-        window!.hidesOnDeactivate = false
-        window!.isRestorable = false
-        window!.animationBehavior = .none
+        // Guard against `window` being nil (rather than force-unwrapping): it can legitimately be nil in
+        // a race between a window-state change and this call landing. The codebase already treats
+        // mainWindowControllerObj.window as nilable elsewhere (customBlockingScheduleData.swift,
+        // habitsVc.swift), just not here.
+        window?.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces          // we want these
+        window?.canHide = false
+        window?.isExcludedFromWindowsMenu = true
+        window?.hidesOnDeactivate = false
+        window?.isRestorable = false
+        window?.animationBehavior = .none
 //        window!.styleMask = .borderless
-        window!.styleMask = [.borderless, .resizable]// The window needs to be resizable because when a new screen is added at runtime, the window reframe does not work properly.// resizable added on 1/9/25 on version 2.27.408
-        window!.backingType = .buffered
+        window?.styleMask = [.borderless, .resizable]// The window needs to be resizable because when a new screen is added at runtime, the window reframe does not work properly.// resizable added on 1/9/25 on version 2.27.408
+        window?.backingType = .buffered
         self.window?.minSize = NSSize(width: 900, height: 450)// unused
         self.window?.title = ""
         
@@ -84,20 +88,21 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     
     func showSmallSizeWindow(){
         isFullScreenVisible = false
-        window!.isRestorable = true
-        window!.collectionBehavior = [.fullScreenAllowsTiling, .fullScreenPrimary]
+        // Guard against `window` being nil here too (see showFullSizeWindow above).
+        window?.isRestorable = true
+        window?.collectionBehavior = [.fullScreenAllowsTiling, .fullScreenPrimary]
         self.window?.minSize = NSSize(width: smallWindowMinWidth, height: smallWindowMinHeight)
         if !(self.window?.styleMask.contains(.fullScreen) ?? false){// It means the user was on a small screen and clicked full screen, so no change is needed. If we change the styleMask at this stage, it may cause a crash.
-            window!.styleMask = []
-            window!.styleMask.insert([.titled, .closable, .resizable])// works good
+            window?.styleMask = []
+            window?.styleMask.insert([.titled, .closable, .resizable])// works good
         }
-        
+
 //        self.window?.styleMask = [.resizable, .titled, .closable]// don't use this
-        window!.isExcludedFromWindowsMenu = false
+        window?.isExcludedFromWindowsMenu = false
         self.window?.title = appName
-        window!.animationBehavior = .default
-        window!.hasShadow = true
-        window!.canHide = true
+        window?.animationBehavior = .default
+        window?.hasShadow = true
+        window?.canHide = true
        
         if isMainWindowLoaded{
             mainViewControllerObj!.boxTopButtons.isHidden = true
