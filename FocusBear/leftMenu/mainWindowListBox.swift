@@ -232,11 +232,12 @@ class mainWindowListBox: NSBox {
     // MARK: - Mouse Events
     override func mouseEntered(with event: NSEvent) {
         super.mouseEntered(with: event)
+        // Use showTooltipWithOsTahoe here, not showTooltip: its .transient popover ate the row's first click to dismiss itself, so collapsed-sidebar icons needed multiple clicks (#2484).
         if isEnabled{
             // Collapsed sidebar hides the row labels, so surface the item's title on hover. Only enabled
             // items reach here (they never carry a disableReason), so the disabled tooltip below is untouched.
             if (mainViewControllerObj?.isLeftPanelCollapsed ?? false), !title.isEmpty{
-                showTooltip(sender: self, msg: title, preferredEdge: .maxX, maxWidthVal: 250, autoCloseOnMouseExit: true)
+                showTooltipWithOsTahoe(sender: self, msg: title, preferredEdge: .maxX, maxWidthVal: 250, autoCloseOnMouseExit: true)
             }
             hovered = true
             updateAppearance()   // reveals the hover ✕ (see updateAppearance)
@@ -259,7 +260,7 @@ class mainWindowListBox: NSBox {
         }else{
             // Disabled item: keep showing its disableReason (unchanged behavior).
             if !disableReason.isEmpty{
-                showTooltip(sender: self, msg: disableReason, preferredEdge: .maxX, maxWidthVal: 250, autoCloseOnMouseExit: true)
+                showTooltipWithOsTahoe(sender: self, msg: disableReason, preferredEdge: .maxX, maxWidthVal: 250, autoCloseOnMouseExit: true)
             }
         }
     }
