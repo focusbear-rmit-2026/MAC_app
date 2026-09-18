@@ -9,7 +9,9 @@
 
 #import "ORTBridge.h"
 
+#include <array>
 #include "onnxruntime_cxx_api.h"
+
 #include <memory>
 #include <string>
 #include <vector>

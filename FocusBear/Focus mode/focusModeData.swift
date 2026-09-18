@@ -758,7 +758,14 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                         let currentTaskName = currentTaskInToDoPlayer ?? ""
                         let suggested_task = dic?.value(forKey: "suggested_task") as? String
                         let suggested_task_id = dic?.value(forKey: "suggested_task_id") as? String
-                        
+                        logRelevanceShadowCheck(
+                            focusIntention: whatToAchieveInFocusBlock,
+                            tabTitle: tab_title,
+                            currentTask: currentTaskName,
+                            url: url,
+                            existingProbability: dProbability,
+                            backendReason: reason
+                        )
                         addEntryInFocusAIDecisionsCsv(url: url, domain: domain, tabTitle: tab_title, score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: "")
                         
                         addAIBlockingLogEntry(
@@ -1169,6 +1176,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                         let suggested_task_id = dic?.value(forKey: "suggested_task_id") as? String
                         
                         let currentTaskName = currentTaskInToDoPlayer ?? ""
+                        
                         addEntryInFocusAIDecisionsCsv(url: appName, domain: "", tabTitle: "", score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: "")
                         
                         addAIBlockingLogEntry(

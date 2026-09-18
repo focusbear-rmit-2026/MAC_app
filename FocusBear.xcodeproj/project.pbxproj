@@ -57,7 +57,6 @@
 		137A3D822E0A6C97008E3CF0 /* popUpAddNewFocusGoalVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 137A3D812E0A6C97008E3CF0 /* popUpAddNewFocusGoalVc.swift */; };
 		137A3D842E0ABBC5008E3CF0 /* popUpSaveThisTaskForLaterVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 137A3D832E0ABBC5008E3CF0 /* popUpSaveThisTaskForLaterVc.swift */; };
 		137CD6032D9D4ACC00A8385A /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 137CD6022D9D4ACC00A8385A /* Sparkle.framework */; };
-		137CD6042D9D4ACC00A8385A /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 137CD6022D9D4ACC00A8385A /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		138F0D8E2EBDE5180046CDB0 /* itemActionBarVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138F0D8D2EBDE5180046CDB0 /* itemActionBarVc.swift */; };
 		138FE1262E5701B0002A2C4C /* floatingTopBarVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138FE1252E5701B0002A2C4C /* floatingTopBarVc.swift */; };
 		139D87A62FCF18B000BA7598 /* claudeTitleReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 139D87A52FCF18B000BA7598 /* claudeTitleReader.swift */; };
@@ -397,6 +396,9 @@
 		C6BCFBBCBB91AA0D2788FEF4 /* KerasTextTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F28FFF50530C3773A8BC944 /* KerasTextTokenizer.swift */; };
 		CBS00001 /* CustomBlockingScheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBS00002 /* CustomBlockingScheduleTests.swift */; };
 		E0AA4E363AFEF2F7180E9848 /* TalkingClockManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2AFF50781FF64A00B0C9A64 /* TalkingClockManager.swift */; };
+		E1407DC4305CCCB80028FBFD /* MAC_RELEVANCE_INTEGRATION.md in Resources */ = {isa = PBXBuildFile; fileRef = E1407DC3305CCCB80028FBFD /* MAC_RELEVANCE_INTEGRATION.md */; };
+		E1E76DC73044BFAD007A4893 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = E1E76DC63044BFAD007A4893 /* Sparkle */; };
+		E1F0194230491C47004D0511 /* RelevanceShadowLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F0194130491C47004D0511 /* RelevanceShadowLogger.swift */; };
 		E8856235EAE1570EE7E26EF1 /* ORTBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = 276F8B5EEE7EC9C4B2DA2895 /* ORTBridge.mm */; };
 		E8F2E77638719E0C61AFC6A9 /* TaskDeduplicationHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD4B08AEBA86C6C7E5F11357 /* TaskDeduplicationHelper.swift */; };
 		ESD00001 /* EveningShutdownScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = ESD00002 /* EveningShutdownScreen.swift */; };
@@ -437,7 +439,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				137CD6042D9D4ACC00A8385A /* Sparkle.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -561,7 +562,7 @@
 		274E0F4828902CF1000234A3 /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		274E0F4B28902E28000234A3 /* Auth0.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Auth0.plist; sourceTree = "<group>"; };
 		274E671528951DDC0030163F /* AllApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllApi.swift; sourceTree = "<group>"; };
-		276F8B5EEE7EC9C4B2DA2895 /* ORTBridge.mm */ = {isa = PBXFileReference; includeInIndex = 1; name = ORTBridge.mm; path = FocusBear/RelevanceModel/ORTBridge.mm; sourceTree = "<group>"; };
+		276F8B5EEE7EC9C4B2DA2895 /* ORTBridge.mm */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.cpp.objcpp; name = ORTBridge.mm; path = FocusBear/RelevanceModel/ORTBridge.mm; sourceTree = "<group>"; };
 		2DEF19BEE8458F980B62C5C3 /* firstViewController+Schedule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "firstViewController+Schedule.swift"; sourceTree = "<group>"; };
 		5A3E0C8C2FA42A4700301BE2 /* HiddenFocusModeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiddenFocusModeManager.swift; sourceTree = "<group>"; };
 		5A6A3D792FAEB776007ED01F /* BreakFrequencyPromptVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakFrequencyPromptVc.swift; sourceTree = "<group>"; };
@@ -871,6 +872,8 @@
 		CD4B08AEBA86C6C7E5F11357 /* TaskDeduplicationHelper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TaskDeduplicationHelper.swift; sourceTree = "<group>"; };
 		D0C7037C21AF4BA7BFAD7BC0 /* YouTubeMusicPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeMusicPlayerView.swift; sourceTree = "<group>"; };
 		D37822C4312A41568B0E8AE0 /* YouTubeMusicTrackStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeMusicTrackStore.swift; sourceTree = "<group>"; };
+		E1407DC3305CCCB80028FBFD /* MAC_RELEVANCE_INTEGRATION.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = MAC_RELEVANCE_INTEGRATION.md; sourceTree = "<group>"; };
+		E1F0194130491C47004D0511 /* RelevanceShadowLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelevanceShadowLogger.swift; sourceTree = "<group>"; };
 		E2AFF50781FF64A00B0C9A64 /* TalkingClockManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkingClockManager.swift; sourceTree = "<group>"; };
 		E339C651791746EA3D066A6A /* Pods_Focus_Bear.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Focus_Bear.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E6F1F3A7517EFCBB53BA0EC6 /* SpotifyTrackStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyTrackStore.swift; sourceTree = "<group>"; };
@@ -913,6 +916,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1E76DC73044BFAD007A4893 /* Sparkle in Frameworks */,
 				8FB66A322B3FD7FF00951B09 /* AVKit.framework in Frameworks */,
 				274E0F472890291D000234A3 /* Auth0 in Frameworks */,
 				137CD6032D9D4ACC00A8385A /* Sparkle.framework in Frameworks */,
@@ -1325,6 +1329,8 @@
 		8F93BE5E27CCA168004FA0BE /* Focus mode */ = {
 			isa = PBXGroup;
 			children = (
+				E1407DC3305CCCB80028FBFD /* MAC_RELEVANCE_INTEGRATION.md */,
+				E1F0194130491C47004D0511 /* RelevanceShadowLogger.swift */,
 				5A3E0C8C2FA42A4700301BE2 /* HiddenFocusModeManager.swift */,
 				8F93BE5F27CCA196004FA0BE /* abortingFocusMode.swift */,
 				8FAD22D627CA2F1000CDC866 /* focusCompletedVc.swift */,
@@ -1801,7 +1807,6 @@
 				FE3FA8163BBB36B02EF947DD /* routinePostponedInfoVc+Schedule.swift */,
 				HSS00002 /* habitsStateVc+Schedule.swift */,
 			);
-			name = Schedule;
 			path = Schedule;
 			sourceTree = "<group>";
 		};
@@ -1849,6 +1854,7 @@
 				274E0F462890291D000234A3 /* Auth0 */,
 				13F8278D2ED5ED75006C0BEF /* Swifter */,
 				13C6BF0A2FB19D750074DD63 /* ORSSerial */,
+				E1E76DC63044BFAD007A4893 /* Sparkle */,
 			);
 			productName = EarnYourScreentime;
 			productReference = 8FAC6C8327805F6D008A4180 /* Focus Bear.app */;
@@ -1906,9 +1912,10 @@
 			);
 			mainGroup = 8FAC6C7A27805F6D008A4180;
 			packageReferences = (
-				274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0.swift" */,
+				274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0" */,
 				13F8278C2ED5EC8B006C0BEF /* XCRemoteSwiftPackageReference "swifter" */,
 				13C6BF092FB19C210074DD63 /* XCRemoteSwiftPackageReference "ORSSerialPort" */,
+				E1E76DC53044BE1A007A4893 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			productRefGroup = 8FAC6C8427805F6D008A4180 /* Products */;
 			projectDirPath = "";
@@ -1942,6 +1949,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8F3F894728BA00A0003E5EA4 /* SUUpdateAlert.strings in Resources */,
+				E1407DC4305CCCB80028FBFD /* MAC_RELEVANCE_INTEGRATION.md in Resources */,
 				8FB84AEE284B82AA0075180B /* GraphTime.html in Resources */,
 				8FB84AED284B82AA0075180B /* GraphDays.html in Resources */,
 				8F461B2B28C0EE490082B0A2 /* Starting the MorningEvening Routine_4.wav in Resources */,
@@ -2022,9 +2030,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Focus Bear/Pods-Focus Bear-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Focus Bear/Pods-Focus Bear-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -2306,6 +2318,7 @@
 				8F6AC5E029E1540F002EBC99 /* welcomeVc.swift in Sources */,
 				8F93BE5D27CC92CE004FA0BE /* focusSummaryVc.swift in Sources */,
 				8F3567212D3A71B200F62403 /* showHideWindows.swift in Sources */,
+				E1F0194230491C47004D0511 /* RelevanceShadowLogger.swift in Sources */,
 				8F6B1E2B2B07769900552211 /* timeTrackerVc.swift in Sources */,
 				1372A9172F347DFD00A5B5BC /* messageBoxVc.swift in Sources */,
 				8F92E88427BF65AF0085AF8C /* addWebUrlVc.swift in Sources */,
@@ -2878,12 +2891,20 @@
 				minimumVersion = 1.5.0;
 			};
 		};
-		274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0.swift" */ = {
+		274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/auth0/Auth0.swift";
 			requirement = {
 				branch = master;
 				kind = branch;
+			};
+		};
+		E1E76DC53044BE1A007A4893 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.9.6;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -2901,8 +2922,13 @@
 		};
 		274E0F462890291D000234A3 /* Auth0 */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0.swift" */;
+			package = 274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0" */;
 			productName = Auth0;
+		};
+		E1E76DC63044BFAD007A4893 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1E76DC53044BE1A007A4893 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
