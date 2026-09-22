@@ -653,3 +653,21 @@ Fixed pressing Play on a different habit doing nothing while another habit was p
 
 Reliability:
 Fixed a crash on launch that could occur when a routine's start or shut-off time was missing. (#2457)
+
+
+# v3.35.544
+
+Day Plan:
+The ✕ on a calendar event is now a clear "🙈 Hide" button (and "👀 Show" to bring it back), so it no longer looks like it will delete the event from your calendar. (#2448)
+
+Blocking Schedules:
+Fixed a blocking schedule created during onboarding not being saved when you already had a block list set up (e.g. from mobile) — it now saves and shows up in your Blocking Schedules list. (#2514)
+
+Sidebar:
+Fixed sidebar icons being unresponsive while the sidebar is collapsed — the first click is no longer swallowed by the hover tooltip. (#2515)
+
+Onboarding:
+On a fresh install, your gated AuDHD quiz results now show first (when detected) before the welcome and onboarding flow. (#2526)
+
+Reliability:
+Fixed a potential crash when showing the main window. (#2522)
