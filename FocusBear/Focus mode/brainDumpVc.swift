@@ -52,9 +52,12 @@ class brainDumpVc: NSViewController {
         store.screenAppeared()
     }
 
-    /// Don't lose a brain-dump edit typed within the 2 s auto-save window before leaving the screen.
+    /// Don't lose a brain-dump edit typed within the 2 s auto-save window before leaving the screen,
+    /// and hand back an open project note's collaborative document. This controller and its hosting
+    /// view outlive the window, so SwiftUI's `onDisappear` never fires here — without this, a note's
+    /// realtime session would keep running behind a closed window.
     override func viewDidDisappear() {
         super.viewDidDisappear()
-        store.flushPendingSaves()
+        store.screenDisappeared()
     }
 }

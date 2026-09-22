@@ -138,6 +138,7 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
     }
     
     @IBAction func btnAddClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let newName = textFieldFocusType.stringValue.lowercased
         for dic in arrFocusType{
             if let name = dic["name"] as? String{
@@ -173,6 +174,9 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
         }
 
         focusPreferencesVcObj?.checkState()
+        // #2571 (15): the Block List screen is a SwiftUI view over `arrFocusType`; it only re-reads on
+        // reload(). Without this the newly added mode didn't appear until the user switched tabs and back.
+        focusPreferencesVcObj?.refreshBlockListRedesign()
 
         lblError.isHidden = true
         self.dismiss(self)

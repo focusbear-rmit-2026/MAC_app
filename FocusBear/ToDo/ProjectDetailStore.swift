@@ -5,7 +5,8 @@
 //  State for one open project — the native version of the web's `ProjectDetailPage`: its tasks
 //  (`GET /projects/:id/todos`, list or board by the project's columns), members (invite / role /
 //  remove / leave), settings (`PUT /projects/:id`), lifecycle and delete, and the shared project
-//  notes (`/projects/:id/notes`, read-only here).
+//  notes (`/projects/:id/notes` — metadata here; the collaborative Yjs body lives in
+//  ProjectNoteEditorSession).
 //
 
 import Foundation
@@ -15,18 +16,16 @@ final class ProjectDetailStore: ObservableObject {
     enum PageView: String, CaseIterable { case tasks, notes }
     enum TasksMode: String, CaseIterable { case list, board }
 
-    /// Confirmations the view shows as alerts.
+    /// Confirmations the view shows as alerts. Lifecycle changes are deliberately absent: they apply
+    /// on the click and are undone from the detail's banner instead of behind a modal.
     enum PendingConfirmation: Identifiable {
-        case leave, delete, markComplete, archive, restore
+        case leave, delete
         case deleteNote(ProjectNote)
 
         var id: String {
             switch self {
             case .leave: return "leave"
             case .delete: return "delete"
-            case .markComplete: return "markComplete"
-            case .archive: return "archive"
-            case .restore: return "restore"
             case .deleteNote(let note): return "deleteNote-\(note.id)"
             }
         }
@@ -35,11 +34,14 @@ final class ProjectDetailStore: ObservableObject {
     private static let tasksModeKey = "kUserdefaultsProjectDetailTasksMode"
     static let nameMaxLength = 80
     static let defaultStatusColor = "#6B7280"
+    /// The `PUT /projects/:id` field the icon is written to.
+    private static let iconField = "icon"
 
     let strings: ToDoStrings
     /// Fires when the project changed in a way the list / portfolio should reflect (settings, delete,
     /// leave, lifecycle) — the parent store re-fetches.
     var onProjectChanged: (() -> Void)?
+    var onProjectLoaded: ((Project) -> Void)?
     /// The parent pops the detail (delete / leave / not found).
     var onClose: (() -> Void)?
 
@@ -68,6 +70,10 @@ final class ProjectDetailStore: ObservableObject {
     // Members
     @Published private(set) var isInviting = false
     @Published private(set) var busyMemberIds: Set<String> = []
+    /// The member whose "Resend invitation" button is armed and waiting for a second click. Resending
+    /// emails a real person, so a single stray click must never send — see `ProjectInvitationResend`.
+    @Published private(set) var armedResendMemberId: String?
+    private var disarmResendWork: DispatchWorkItem?
 
     // Settings
     @Published private(set) var isSavingSettings = false
@@ -93,6 +99,7 @@ final class ProjectDetailStore: ObservableObject {
     var canLeave: Bool { ProjectPermissions.canLeave(viewerRole) }
     var canAddTask: Bool { ProjectPermissions.canAddTask(viewerRole) }
     var canEditName: Bool { ProjectPermissions.canEditName(viewerRole) }
+    var canMoveTask: Bool { ProjectPermissions.canMoveTask(viewerRole) }
     var canDeleteProject: Bool { ProjectPermissions.canDeleteProject(viewerRole) }
     var canManageLifecycle: Bool { ProjectPermissions.canManageMembers(viewerRole) }
     var members: [ProjectMember] { project.members ?? [] }
@@ -132,15 +139,18 @@ final class ProjectDetailStore: ObservableObject {
 
     func reloadProject() {
         isLoading = true
-        allApiObject.getProject(id: project.id) { [weak self] project in
+        let id = project.id, account = currentUserId
+        allApiObject.getProject(id: id) { [weak self] project in
             DispatchQueue.main.async {
-                guard let self = self else { return }
+                guard let self = self, self.currentUserId == account, self.project.id == id else { return }
                 self.isLoading = false
                 guard let project = project else {
                     self.notFound = true
                     return
                 }
-                self.project = project
+                guard project.id == id else { self.notFound = true; return }
+                self.project = ProjectListPresentation.preservingSync(project, from: self.project)
+                self.onProjectLoaded?(self.project)
             }
         }
     }
@@ -160,11 +170,11 @@ final class ProjectDetailStore: ObservableObject {
     // MARK: - Tasks
 
     /// Web `moveProjectDetailsKanbanTask`: optimistic column move, `PUT /to-do`, rollback + toast.
+    /// Every way of moving a card — drag, the card's "Move to" menu, its context menu — lands here,
+    /// so the permission check and the column/status rule are applied once (`ProjectTaskMove.plan`).
     func move(_ task: ToDoTask, toColumn columnId: String) {
-        guard ProjectKanban.columnId(for: task, columns: columns, usesCustomStatuses: project.usesCustomStatuses) != columnId else { return }
-        var moved = ProjectKanban.moved(task, toColumn: columnId, columns: columns, usesCustomStatuses: project.usesCustomStatuses)
-        moved.tags = ProjectKanban.tags(for: moved, project: project)
-        moved.project_id = project.isSynced ? moved.project_id : project.id
+        guard let moved = ProjectTaskMove.plan(task, toColumn: columnId, project: project,
+                                               columns: columns, canMove: canMoveTask) else { return }
         persist(moved, revertTo: task)
     }
 
@@ -177,18 +187,40 @@ final class ProjectDetailStore: ObservableObject {
     private func persist(_ task: ToDoTask, revertTo previous: ToDoTask) {
         replaceLocally(task)
         updatingTaskIds.insert(task.id)
-        allApiObject.upsertToDo(ToDoUpsertBody.make(from: task)) { [weak self] saved, statusCode, serverMessage in
+        // Resolve the assignee from whichever shape the server sent BEFORE building the write.
+        // `GET /to-do` carries the assignee only as a relation and no flat `assignee_id`
+        // (backend#2414), so a task straight off the board has the flat field nil — and the write
+        // sends `assignee_id` unconditionally, where nil means "unassign". Every kanban drag and
+        // every checkbox toggle comes through here, so each one silently unassigned the task.
+        // `ToDoDraft.editable` does the same resolution for the editor; the board never did.
+        var outgoing = task
+        outgoing.assignee_id = ToDoAssigneeChoices.assigneeId(flat: task.assignee_id,
+                                                              relation: task.assignee?.id)
+        allApiObject.upsertToDo(ToDoUpsertBody.make(from: outgoing)) { [weak self] saved, statusCode, serverMessage in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.updatingTaskIds.remove(task.id)
-                guard (200..<300).contains(statusCode) else {
-                    self.replaceLocally(previous)
+                let outcome = ProjectTaskMove.settled(statusCode: statusCode, saved: saved, attempted: task, previous: previous)
+                self.replaceLocally(outcome.task)
+                guard !outcome.failed else {
                     self.showStatus(ToDoStore.failureText(self.strings.format(.couldNotUpdateTask, ToDoStrings.titleToken, task.title), reason: serverMessage))
                     return
                 }
-                self.replaceLocally(saved ?? task)
+                self.announceCompletionChange(from: previous, to: outcome.task)
             }
         }
+    }
+
+    /// A kanban move or a checkbox here is the same completion everywhere else in the app, so the
+    /// To-do list, the Day Plan and the project forecast have to hear about it instead of waiting
+    /// for their own next reload — the forecast in particular reused a snapshot taken before the
+    /// tasks were finished and kept the project at risk (report 2026-09-15_17-41-45). Announced only
+    /// on a real change, and only once the server has taken the write, so a rollback never posts.
+    private func announceCompletionChange(from previous: ToDoTask, to saved: ToDoTask) {
+        let statuses = project.usesCustomStatuses ? project.customStatuses : []
+        let completed = ToDoCompletionState.isFinished(saved, customStatuses: statuses)
+        guard completed != ToDoCompletionState.isFinished(previous, customStatuses: statuses) else { return }
+        TodoCompletionBus.post(todoID: saved.id, completed: completed)
     }
 
     private func replaceLocally(_ task: ToDoTask) {
@@ -206,6 +238,53 @@ final class ProjectDetailStore: ObservableObject {
                 self.showStatus(self.strings[success ? .invitationSent : .couldNotSendInvitation])
                 if success { self.reloadProject() }
                 completion(success)
+            }
+        }
+    }
+
+    /// Whether this member's invitation may be re-sent right now: an outstanding invitation, a viewer
+    /// allowed to invite, and the server's own cooldown since the last send elapsed.
+    func canResendInvitation(_ member: ProjectMember, now: Date = Date()) -> Bool {
+        guard ProjectInvitationResend.canResend(viewer: viewerRole, status: member.invitationStatus) else { return false }
+        return ProjectInvitationResend.cooldownElapsed(sentAt: ProjectInvitationResend.lastSentAt(member), now: now)
+    }
+
+    func isResendArmed(_ member: ProjectMember) -> Bool { armedResendMemberId == member.id }
+
+    /// First click arms, second click sends. The armed state disarms itself so a button left armed
+    /// can't be triggered by a much later stray click.
+    func armResend(_ member: ProjectMember) {
+        armedResendMemberId = member.id
+        disarmResendWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard self?.armedResendMemberId == member.id else { return }
+            self?.armedResendMemberId = nil
+        }
+        disarmResendWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + ProjectInvitationResend.confirmWindowSeconds, execute: work)
+    }
+
+    func disarmResend() {
+        disarmResendWork?.cancel()
+        armedResendMemberId = nil
+    }
+
+    /// Re-sends an outstanding invitation. Permission and status are re-checked here as well as in the
+    /// view, so the only way to reach the network is through a state that genuinely allows it.
+    func resendInvitation(_ member: ProjectMember) {
+        disarmResend()
+        guard canResendInvitation(member), let email = member.email, !email.isEmpty else { return }
+        guard !busyMemberIds.contains(member.id) else { return }
+        // Never re-send as "owner": the server refuses that role on an invite.
+        let role = member.memberRole == .owner ? ProjectMemberRole.member : (member.memberRole ?? .member)
+        busyMemberIds.insert(member.id)
+        allApiObject.resendProjectInvitation(projectId: project.id, email: email, role: role.rawValue) { [weak self] success, serverMessage in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.busyMemberIds.remove(member.id)
+                self.showStatus(success ? self.strings[.invitationResent]
+                                        : ToDoStore.failureText(self.strings[.couldNotResendInvitation], reason: serverMessage))
+                if success { self.reloadProject() }
             }
         }
     }
@@ -242,11 +321,19 @@ final class ProjectDetailStore: ObservableObject {
         switch confirmation {
         case .leave: leave()
         case .delete: deleteProject()
-        case .markComplete: setLifecycle(.completed)
-        case .archive: setLifecycle(.archived)
-        case .restore: setLifecycle(.active)
         case .deleteNote(let note): deleteNote(note)
         }
+    }
+
+    /// A confirmation raised from inside the Settings sheet. macOS will not put an alert on top of a
+    /// presented sheet, so the sheet closes first — otherwise the click looks like it did nothing.
+    func requestConfirmation(_ confirmation: PendingConfirmation) {
+        guard isSettingsVisible else {
+            pendingConfirmation = confirmation
+            return
+        }
+        isSettingsVisible = false
+        DispatchQueue.main.async { [weak self] in self?.pendingConfirmation = confirmation }
     }
 
     private func leave() {
@@ -277,9 +364,38 @@ final class ProjectDetailStore: ObservableObject {
         }
     }
 
-    /// Lifecycle changes send `{ status }` alone (web danger zone).
-    private func setLifecycle(_ status: ProjectLifecycleStatus) {
-        update(body: ["status": status.rawValue])
+    // MARK: - Lifecycle (complete / archive / restore)
+
+    /// Lifecycle changes send `{ status }` alone (web danger zone). They apply straight away — the
+    /// banner and the Settings sheet flip before the request lands — and roll back with the server's
+    /// own reason if the `PUT` fails, so the button is never a silent no-op.
+    func setLifecycle(_ status: ProjectLifecycleStatus) {
+        let previous = project
+        let account = currentUserId
+        guard !account.isEmpty, canManageLifecycle, status != previous.lifecycleStatus else { return }
+        project.status = status.rawValue
+        isSettingsVisible = false
+        showStatus(strings[lifecycleToast(status)])
+        allApiObject.updateProject(id: previous.id, body: ["status": status.rawValue], expectedAccountID: account) { [weak self] updated, serverMessage in
+            DispatchQueue.main.async {
+                guard let self = self, self.currentUserId == account else { return }
+                guard let updated = updated else {
+                    self.project = previous
+                    self.showStatus(ToDoStore.failureText(self.strings[.couldNotUpdateProject], reason: serverMessage))
+                    return
+                }
+                self.project = updated
+                self.onProjectChanged?()
+            }
+        }
+    }
+
+    private func lifecycleToast(_ status: ProjectLifecycleStatus) -> ToDoStringKey {
+        switch status {
+        case .completed: return .projectMarkedComplete
+        case .archived: return .projectArchived
+        case .active: return .projectRestored
+        }
     }
 
     // MARK: - Settings
@@ -288,46 +404,135 @@ final class ProjectDetailStore: ObservableObject {
         var name: String
         var description: String
         var dueDate: Date?
-        var importance: PortfolioImportance
+        var outcome: Int?
         var statuses: [ProjectCustomStatus]
 
         init(project: Project) {
             name = project.name
             description = project.description ?? ""
             dueDate = ToDoDates.parse(project.due_date)
-            importance = project.importanceLevel
+            // Legacy `importance` is not part of the form: it is the server's own ranking input,
+            // not the user's rating, and the sheet must not write it (backend#2385).
+            outcome = project.outcome
             statuses = project.orderedStatuses
         }
     }
 
     /// Web `buildProjectSettingsUpdatePayload`: `PUT /projects/:id` with name / description /
-    /// custom_statuses / due_date (local `YYYY-MM-DD`, null clears) / importance.
+    /// custom_statuses / due_date (local `YYYY-MM-DD`, null clears) / outcome.
     func saveSettings(_ form: SettingsForm, completion: @escaping (Bool) -> Void) {
-        var body: [String: Any] = [
-            "name": canEditName ? form.name.trimmingCharacters(in: .whitespaces) : project.name,
-            "custom_statuses": form.statuses.enumerated().map { index, status -> [String: Any] in
-                ["id": status.id, "label": status.label, "color": status.color ?? ProjectDetailStore.defaultStatusColor,
-                 "order": index, "should_complete_task": status.should_complete_task ?? false]
-            },
-            "due_date": form.dueDate.map { ToDoDates.ymd($0) } ?? NSNull(),
-            "importance": form.importance.rawValue,
-        ]
-        let description = form.description.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !description.isEmpty { body["description"] = description }
         isSavingSettings = true
-        update(body: body) { [weak self] success in
+        update(body: ProjectDetailStore.settingsBody(form, name: canEditName ? nil : project.name)) { [weak self] success in
             self?.isSavingSettings = false
             if success { self?.isSettingsVisible = false }
             completion(success)
         }
     }
 
-    private func update(body: [String: Any], completion: ((Bool) -> Void)? = nil) {
-        allApiObject.updateProject(id: project.id, body: body) { [weak self] project in
+    /// The settings payload, as a pure function of the form so it can be asserted on directly.
+    /// `name` overrides the form's when the viewer may not rename the project.
+    static func settingsBody(_ form: SettingsForm, name: String?) -> [String: Any] {
+        var body: [String: Any] = [
+            "name": name ?? form.name.trimmingCharacters(in: .whitespaces),
+            "custom_statuses": form.statuses.enumerated().map { index, status -> [String: Any] in
+                ["id": status.id, "label": status.label, "color": status.color ?? ProjectDetailStore.defaultStatusColor,
+                 "order": index, "should_complete_task": status.should_complete_task ?? false]
+            },
+            "due_date": form.dueDate.map { ToDoDates.ymd($0) } ?? NSNull(),
+            // `outcome` is the rating, on the server's 1–10 wire scale; null clears it. `importance`
+            // is deliberately absent — it is the legacy 1–4 field the server's portfolio risk ranks
+            // by, not the user's rating, and deriving it here would quietly rewrite it (backend#2385).
+            "outcome": form.outcome ?? NSNull(),
+        ]
+        let description = form.description.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !description.isEmpty { body["description"] = description }
+        return body
+    }
+
+    /// Rename from the heading (`PUT /projects/:id { name }`) rather than through the Settings sheet.
+    /// An empty name, an unchanged one, or a viewer without the right is a silent no-op — the field
+    /// has already put the old name back by the time this is called.
+    func rename(to name: String) {
+        guard canEditName else { return }
+        let trimmed = String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(ProjectDetailStore.nameMaxLength))
+        guard !trimmed.isEmpty, trimmed != project.name else { return }
+        update(body: ["name": trimmed])
+    }
+
+    /// Set the project's icon, or clear it back to the automatic one.
+    ///
+    /// The wire format is the **literal emoji character**. An earlier pass guessed hex codepoints
+    /// ("1f3af") from `EmojiIcon.resolve`, which is a *display* function, and that changed nothing:
+    /// the value was never what failed. `icon` was undeclared on the server's `UpdateProjectDto`
+    /// and the global pipe strips undeclared fields, so the update had nothing to set and the
+    /// resulting `UpdateValuesMissingError` surfaced as a bare 500 (report 2026-09-14_20-07-42,
+    /// backend#2404). `normalizeSingleEmoji` — what the server's own icon generator writes through
+    /// — is the real contract. `habit_icon` is the odd one out that genuinely is hex.
+    func setIcon(_ emoji: String) {
+        guard canEditName else { return }
+        let chosen = ProjectIcon.normalise(emoji)
+        guard chosen != (project.icon ?? ProjectIcon.cleared) else { return }
+        update(body: [ProjectDetailStore.iconField: chosen], failureMessage: strings[.couldNotSaveIcon])
+    }
+
+    /// Set the due date from the heading rather than through the Settings sheet — the user asked to
+    /// see it and change it without opening settings (report 2026-09-15_10-27-17, follow-up).
+    /// `nil` clears it.
+    func setDueDate(_ day: Date?) {
+        guard canEditName else { return }
+        let ymd = day.map { ToDoDates.ymd($0) }
+        guard ymd != project.due_date else { return }
+        update(body: ["due_date": ymd ?? NSNull()])
+    }
+
+    /// Set the outcome from the heading, on the server's 1–10 wire scale. `nil` clears the rating.
+    func setOutcome(_ wire: Int?) {
+        guard canEditName else { return }
+        guard wire != project.outcome else { return }
+        update(body: ["outcome": wire ?? NSNull()])
+    }
+
+    // MARK: - Tags
+
+    /// The project's tags, in the stored (folded) form.
+    var tags: [String] { ProjectTags.normalize(project.tagList) }
+
+    /// Add a typed tag. A blank, duplicate or over-cap entry is a silent no-op rather than a request.
+    func addTag(_ raw: String) {
+        guard canEditName, let next = ProjectTags.adding(raw, to: project.tagList) else { return }
+        update(body: ProjectDetailStore.tagsBody(next), failureMessage: strings[.couldNotSaveTags])
+    }
+
+    func removeTag(_ tag: String) {
+        guard canEditName, let next = ProjectTags.removing(tag, from: project.tagList) else { return }
+        update(body: ProjectDetailStore.tagsBody(next), failureMessage: strings[.couldNotSaveTags])
+    }
+
+    /// `PUT /projects/:id { metadata: { tags } }` — the tags key and nothing else.
+    ///
+    /// Two things this must never do, both of them ways the server would take more than was meant:
+    ///
+    /// - **Never send the rest of the bag.** `metadata` is open and other clients own keys this app
+    ///   cannot read. The server shallow-merges (`jsonb ||`), so sending `tags` alone leaves those
+    ///   keys untouched; echoing back a bag decoded into a Swift struct would drop whatever did not
+    ///   round-trip. That is the mistake that nulled `assigned_mcp_token_id` on every task save.
+    /// - **Never send `metadata: null` to mean "no tags".** Null clears the *whole bag*. Clearing the
+    ///   last tag sends `{"tags": []}`, which empties the list and leaves every other key alone.
+    static func tagsBody(_ tags: [String]) -> [String: Any] {
+        ["metadata": ["tags": ProjectTags.normalize(tags)]]
+    }
+
+    /// `failureMessage` names the specific edit that failed — "Could not save the icon" rather than
+    /// the generic "Could not update project" — while keeping whatever reason the server gave.
+    private func update(body: [String: Any], failureMessage: String? = nil, completion: ((Bool) -> Void)? = nil) {
+        let account = currentUserId
+        guard !account.isEmpty else { completion?(false); return }
+        allApiObject.updateProject(id: project.id, body: body, expectedAccountID: account) { [weak self] project, serverMessage in
             DispatchQueue.main.async {
                 guard let self = self else { return }
+                guard self.currentUserId == account else { completion?(false); return }
                 guard let project = project else {
-                    self.showStatus(self.strings[.couldNotUpdateProject])
+                    self.showStatus(ToDoStore.failureText(failureMessage ?? self.strings[.couldNotUpdateProject], reason: serverMessage))
                     completion?(false)
                     return
                 }
@@ -343,7 +548,9 @@ final class ProjectDetailStore: ObservableObject {
 
     func loadNotes() {
         isNotesLoading = true
-        allApiObject.getProjectNotes(projectId: project.id) { [weak self] notes in
+        // One project, one request — nothing here can trip the rate limiter, so the status code the
+        // sweep needs is of no use to this screen.
+        allApiObject.getProjectNotes(projectId: project.id) { [weak self] notes, _ in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.isNotesLoading = false
@@ -364,7 +571,7 @@ final class ProjectDetailStore: ObservableObject {
         }
     }
 
-    /// `POST /projects/:id/notes { title: "Untitled note" }`, then open it (the body is edited on the web).
+    /// `POST /projects/:id/notes { title: "Untitled note" }`, then open the collaborative editor.
     func createNote() {
         allApiObject.createProjectNote(projectId: project.id, title: strings[.untitledNote]) { [weak self] note in
             DispatchQueue.main.async {
@@ -375,6 +582,29 @@ final class ProjectDetailStore: ObservableObject {
                 }
                 self.notes.insert(note, at: 0)
                 self.openNote = note
+            }
+        }
+    }
+
+    /// Step back from the open note to this project's note list.
+    func closeNote() { openNote = nil }
+
+    /// Rename the open note. The body is saved separately through the document endpoint.
+    /// An empty or unchanged title is a no-op.
+    func renameNote(_ note: ProjectNote, to title: String) {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != note.title else { return }
+        allApiObject.renameProjectNote(projectId: project.id, noteId: note.id, title: trimmed) { [weak self] saved in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                guard let saved = saved else {
+                    self.showStatus(self.strings[.couldNotRenameNote])
+                    return
+                }
+                // The list row carries no body, so patch its title in place rather than re-fetching.
+                if let index = self.notes.firstIndex(where: { $0.id == saved.id }) { self.notes[index].title = saved.title }
+                if self.openNote?.id == saved.id { self.openNote?.title = saved.title }
+                self.showStatus(self.strings[.noteRenamed])
             }
         }
     }
@@ -396,9 +626,7 @@ final class ProjectDetailStore: ObservableObject {
 
     /// Deep link the web uses for a note (`/projects/:id?tab=notes&note_id=`).
     func webURL(for note: ProjectNote?) -> URL? {
-        var path = "\(ToDoExternalLinks.dashboard)/projects/\(project.id)?tab=notes"
-        if let note = note { path += "&note_id=\(note.id)" }
-        return URL(string: path)
+        ProjectNoteLinks.webURL(projectId: project.id, noteId: note?.id)
     }
 
     // MARK: - Status toast

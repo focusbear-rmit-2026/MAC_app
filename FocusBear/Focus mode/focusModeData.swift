@@ -101,21 +101,30 @@ func focusModeCloseCurrentUrlForAlignmentScore(){
 func focusModeCloseCurrentAppForAlignmentScore(){
     let keys = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.keys
     for key in keys{
-        if var dictionary = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key]{
-            if dictionary["isVisibleApp"] as? Bool == true{
-                dictionary["isVisibleApp"] = false
-                let startTime = dictionary["startedTime"] as? Date ?? Date()
-                let endTime = Date()
-                let secondsBetween = endTime.timeIntervalSince(startTime)
-                var seconds = dictionary["totalSeconds"] as? Int ?? 0
-                seconds += Int(secondsBetween)
-                dictionary["totalSeconds"] = seconds
-                dictionary["endTime"] = endTime
-                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key] = dictionary
-                break;
-            }
+        if focusModeCloseAppForAlignmentScore(appNameLowercased: key){
+            break;
         }
     }
+}
+
+/// Stops the alignment-score clock on one app's entry. Returns false when there is no visible entry
+/// under that name (nothing to close).
+@discardableResult
+func focusModeCloseAppForAlignmentScore(appNameLowercased key: String) -> Bool{
+    guard var dictionary = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key],
+          dictionary["isVisibleApp"] as? Bool == true else{
+        return false
+    }
+    dictionary["isVisibleApp"] = false
+    let startTime = dictionary["startedTime"] as? Date ?? Date()
+    let endTime = Date()
+    let secondsBetween = endTime.timeIntervalSince(startTime)
+    var seconds = dictionary["totalSeconds"] as? Int ?? 0
+    seconds += Int(secondsBetween)
+    dictionary["totalSeconds"] = seconds
+    dictionary["endTime"] = endTime
+    dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key] = dictionary
+    return true
 }
 
 // v 2.28.449  13/1/26 // solution of Swift EXC_BAD_ACCESS crash Crash likely stems from dictionary subscripting within an asynchronous block in focusModeData.swif
@@ -464,6 +473,7 @@ func updateAllFocusModes(){
         dic.removeValue(forKey: "allowed_urls")
         dic.removeValue(forKey: "allowed_apps")
         dic.removeValue(forKey: "tags")
+        applyFocusModeCategories(from: focusType, to: &json, metadata: &dic)
         json["metadata"] = dic
         arrJson.append(json)
     }
@@ -582,6 +592,235 @@ func focusSetUseIntentionFromNewBlockPage(url:String, currentBrowser:BROWSER)->S
 }
 
 
+// Ordinary relevance results only. Managed safety checks and appeal re-verification retain their
+// own authorization paths and never consult this cache.
+private struct CachedAiRelevanceDecision {
+    let response: NSDictionary?
+    let payload: [String: Any]?
+}
+private let aiRelevanceDecisionCache = AiRelevanceDecisionCache<CachedAiRelevanceDecision>()
+private var currentUrlRelevanceKey: AiRelevanceDecisionKey?
+private var currentAppRelevanceKey: AiRelevanceDecisionKey?
+
+func currentAiRelevanceContext() -> Data {
+    let fields: [String: Any] = [
+        "generation": aiRelevanceDecisionCache.generation,
+        "account": appdelegate?.user?.userId ?? "",
+        "endpoint": baseUrl,
+        "modelContract": "is-safe-to-use-v1",
+        "modelVersion": RelevanceModelArtifacts.version,
+        "managedPolicyId": ManagedBlockingRuntime.shared.activePolicy?.id ?? "",
+        "managedPolicyRevision": ManagedBlockingRuntime.shared.activePolicy?.revision ?? 0,
+        "modeAiEnabled": currentRunningFocusType["is_ai_enabled"] as? Bool ?? true,
+        "dataCollection": SettingsManagerObject.isDataCollectionModeEnabled,
+        "focusId": currentRunningFocusType["id"] as? String ?? "",
+        "focusName": currentRunningFocusType["name"] as? String ?? "",
+        "aiEnabled": SettingsManagerObject.isAIBlockingEnabled(),
+        "strictness": String(describing: currentFocusModeStrictness),
+        "cuddly": SettingsManagerObject.isCuddlyModeEnabled,
+        "buddy": currentAccountabilityBuddySession != nil,
+        "session": startFocusModeTime?.timeIntervalSince1970 ?? 0,
+        "classSession": classSessionTodoSessionId,
+        "intention": whatToAchieveInFocusBlock,
+        "activeTask": AiRelevanceDecisionKey.activeTaskIdentity(in: focusModeTaskString, popupTask: taskCreatedByBlockPopup),
+        "tasks": arrCurrentFocusTasks,
+        "habitId": currentHabitPlaying?.id ?? "",
+        "habitName": currentHabitPlaying?.name ?? currentActivityPlaying?.name ?? "",
+        "habitActive": isAnyAllowedFocusModeActivityRunning,
+        "language": currentLanguageCode
+    ]
+    // Unserializable context must miss, never collapse into a reusable empty key.
+    return (try? JSONSerialization.data(withJSONObject: fields, options: .sortedKeys)) ?? Data(UUID().uuidString.utf8)
+}
+
+private func appRelevanceContent(appName: String, runningApp: NSRunningApplication) -> [String] {
+    var context = getArrayOfLast5AppJustifications()
+    // A preview is described by its file, never by a window title, so it needs no Accessibility read.
+    if isQuickLookService(runningApp) {
+        context.insert(quickLookPreviewMonitor.shared.aiContext(forFileNamed: appName), at: 0)
+        return context
+    }
+    // One cache read covers both titles, so an app that wants the conversation title does not pay for
+    // two separate Accessibility reads. This never blocks the caller — see claudeTitleReader.
+    let titles = claudeTitleReader.shared.titles(for: runningApp)
+    if let title = titles.focusedWindow {
+        context.insert("The \(appName) window is currently titled: \"\(title)\"", at: 0)
+    }
+    // Claude's chat title is also sent by the existing API adapter.
+    if let title = titles.chat {
+        context.append("Claude chat: " + title)
+    }
+    return context
+}
+
+private func urlRelevanceKey(url: String, fullUrl: String, title: String, runningApp: NSRunningApplication) -> AiRelevanceDecisionKey {
+    AiRelevanceDecisionKey(context: currentAiRelevanceContext(), kind: "url",
+                           target: fullUrl.isEmpty ? url : fullUrl,
+                           content: [url, title, runningApp.bundleIdentifier ?? ""] + getArrayOfLast5UrlJustifications())
+}
+
+private func appRelevanceKey(appName: String, runningApp: NSRunningApplication) -> AiRelevanceDecisionKey {
+    AiRelevanceDecisionKey(context: currentAiRelevanceContext(), kind: "app",
+                           target: runningApp.bundleIdentifier ?? appName,
+                           content: [appName] + appRelevanceContent(appName: appName, runningApp: runningApp))
+}
+
+/// Wraps a read so that repeated calls cost exactly one execution.
+///
+/// The reads this exists for are blocking AppleScript round-trips capped at 1.2s each, made on the
+/// main thread while the user waits for a relevance verdict. The freshness decision and the log line
+/// explaining a discarded verdict each asked the browser for the same URL and title, so a single
+/// discarded verdict could spend four of those in a row.
+///
+/// Not thread-safe, and deliberately so: one call site, one synchronous pass, no escaping.
+func memoisedRead<T>(_ read: @escaping () -> T?) -> () -> T? {
+    var hasRead = false
+    var value: T?
+    return {
+        if !hasRead {
+            value = read()
+            hasRead = true
+        }
+        return value
+    }
+}
+
+/// Why a relevance verdict was or wasn't applied. A discarded verdict has no visible effect, so
+/// without naming the reason an AI check that ran, succeeded and was thrown away looks identical in
+/// the logs to one that never happened at all.
+enum RelevanceFreshness: Equatable {
+    case current
+    /// A newer check superseded this one, or the page genuinely changed.
+    case superseded
+    /// Another app is frontmost — the user really did move on.
+    case userLeft(frontmost: String)
+    /// A browser read failed, so we cannot prove anything either way.
+    case unverifiable
+
+    var shouldApplyVerdict: Bool {
+        switch self {
+        // A failed browser read is not evidence the user moved on. The request key already pins the
+        // URL, title and app captured when the check started, and `currentUrlRelevanceKey == key`
+        // proves no newer check has begun — so applying the verdict is better than silently dropping
+        // it because one AppleScript call happened to time out.
+        case .current, .unverifiable: return true
+        case .superseded, .userLeft: return false
+        }
+    }
+}
+
+extension RelevanceFreshness {
+    /// Pure decision, deliberately free of globals and AppKit so it can be tested directly.
+    ///
+    /// - `keyIsLive`: no newer check has superseded this one and the request key still matches.
+    /// - `liveURL`/`liveTitle`: a fresh re-read of the tab, or nil when the browser read failed.
+    /// `liveURL`/`liveTitle` are closures, not values: each is an AppleScript round-trip capped at
+    /// 1.2s on the main thread, so they must only run once the cheap checks have already passed.
+    /// Evaluating them eagerly froze the UI — two blocking scripts per response, including for the
+    /// responses about to be discarded.
+    static func decide(keyIsLive: Bool, frontmostBundleID: String?, selfBundleID: String?,
+                       targetBundleID: String?, liveURL: () -> String?, liveTitle: () -> String?,
+                       observationMatches: (String, String, String?) -> Bool) -> RelevanceFreshness {
+        guard keyIsLive else { return .superseded }
+
+        // Focus Bear's own windows — the block popup, the AI buddy, the Day Plan — take focus while a
+        // check is in flight. That is us interrupting, not the user navigating away, so it must not
+        // invalidate the verdict we asked for.
+        let isSelf = selfBundleID != nil && frontmostBundleID == selfBundleID
+        let effectiveFrontmost = isSelf ? targetBundleID : frontmostBundleID
+        guard effectiveFrontmost == targetBundleID else {
+            return .userLeft(frontmost: frontmostBundleID ?? "unknown")
+        }
+
+        // Only now — after the frontmost check has passed — is it worth paying for two browser reads.
+        guard let liveURL = liveURL(), let liveTitle = liveTitle() else { return .unverifiable }
+        return observationMatches(liveURL, liveTitle, effectiveFrontmost) ? .current : .superseded
+    }
+}
+
+private func urlRelevanceTargetIsCurrent(_ key: AiRelevanceDecisionKey, url: String, fullUrl: String,
+                                         title: String, browser: BROWSER?, runningApp: NSRunningApplication) -> Bool {
+    let keyIsLive = currentUrlRelevanceKey == key
+        && key == urlRelevanceKey(url: url, fullUrl: fullUrl, title: title, runningApp: runningApp)
+        && browser != nil
+    // Memoised because these are blocking AppleScript round-trips on the main thread, capped at 1.2s
+    // EACH, and the diagnostics below used to re-read both — four scripts where two will do, on the
+    // path where the user is already waiting for a verdict. Laziness is still what keeps them from
+    // running at all until the cheap checks have passed; this is what stops them running twice.
+    let readLiveURL = memoisedRead { browser.flatMap { getActiveTabUrlOf(browser: $0) } }
+    let readLiveTitle = memoisedRead { browser.flatMap { getActiveTabTitleOf(browser: $0) } }
+    let freshness = RelevanceFreshness.decide(
+        keyIsLive: keyIsLive,
+        frontmostBundleID: NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
+        selfBundleID: Bundle.main.bundleIdentifier,
+        targetBundleID: runningApp.bundleIdentifier,
+        liveURL: readLiveURL,
+        liveTitle: readLiveTitle,
+        observationMatches: { liveURL, liveTitle, frontmost in
+            key.matchesURLObservation(url: liveURL, title: liveTitle, bundleIdentifier: frontmost)
+        })
+    if !freshness.shouldApplyVerdict {
+        // Name the field that failed. "superseded" alone collapses two very different causes — a
+        // newer check replacing this one, versus the tab genuinely reading differently — and the
+        // second is usually a comparison mismatch rather than the user moving on.
+        var detail = ""
+        if freshness == .superseded {
+            let liveURL = readLiveURL()
+            let liveTitle = readLiveTitle()
+            let keyStillLive = currentUrlRelevanceKey == key
+            detail = " keyLive=\(keyStillLive)"
+                + " urlMatch=\(liveURL == key.target) liveURL=\(liveURL ?? "nil") keyTarget=\(key.target)"
+                + " titleMatch=\(liveTitle == (key.content.count > 1 ? key.content[1] : nil))"
+                + " liveTitle=\(liveTitle ?? "nil") keyTitle=\(key.content.count > 1 ? key.content[1] : "nil")"
+        }
+        addLog(text: "relevance verdict discarded for \(url): \(freshness)\(detail)")
+    } else if freshness == .unverifiable {
+        addLog(text: "relevance verdict applied for \(url) without re-reading the tab (browser read failed)")
+    }
+    return freshness.shouldApplyVerdict
+}
+
+private func appRelevanceTargetIsCurrent(_ key: AiRelevanceDecisionKey, appName: String,
+                                         runningApp: NSRunningApplication) -> Bool {
+    guard currentAppRelevanceKey == key,
+          key == appRelevanceKey(appName: appName, runningApp: runningApp) else { return false }
+    if isQuickLookService(runningApp) {
+        return quickLookPreviewMonitor.shared.isPreviewOpen(fileName: appName, service: runningApp)
+    }
+    return NSWorkspace.shared.frontmostApplication?.bundleIdentifier == runningApp.bundleIdentifier
+}
+
+/// Reuses the full prior response through the normal decision handler, retaining probability, reason,
+/// suggestions and existing strictness behavior. A cache hit performs no credential refresh/API request.
+private func cachedAiRelevanceCheck(
+    key: AiRelevanceDecisionKey, checkedTarget: String,
+    isCurrent: @escaping () -> Bool,
+    load: (@escaping (NSDictionary?, String?, [String: Any]?) -> Void) -> Void,
+    completion: @escaping (NSDictionary?, String?, [String: Any]?) -> Void
+) {
+    let guardedCurrent = {
+        guard isCurrent() else {
+            // Permit a fresh check on returning after an in-flight request was abandoned.
+            if currentUrlRelevanceKey == key { currentUrlRelevanceKey = nil }
+            if currentAppRelevanceKey == key { currentAppRelevanceKey = nil }
+            return false
+        }
+        return true
+    }
+    aiRelevanceDecisionCache.resolve(for: key, isCurrent: guardedCurrent, shouldCache: { decision in
+        AiRelevanceDecisionKey.isCacheable(probability: decision.response?["allowed_probability"] as? Double,
+                                           reason: decision.response?["reason"] as? String ?? "")
+    }, load: { done in
+        load { response, _, payload in
+            DispatchQueue.main.async {
+                done(CachedAiRelevanceDecision(response: response?.copy() as? NSDictionary, payload: payload))
+            }
+        }
+    }, completion: { decision in
+        completion(decision.response, checkedTarget, decision.payload)
+    })
+}
+
 var currentBrowserUrlForAi = ""
 var currentRunningAppNameForAi = ""
 var currentBrowserUrlAiTimeoutCount = 0
@@ -591,7 +830,12 @@ var currentAppAiTimeoutCount = 0
 var isGettingResponseFromAi = false
 
 func tryCheckUrlFromAi(script: String, url:String, tabTitle:String?, browser:BROWSER?, fullUrl:String, domain:String, runningApp:NSRunningApplication){
-    //        if ai is anabled then this fuction will called again and again
+    guard Thread.isMainThread else {
+        DispatchQueue.main.async { tryCheckUrlFromAi(script: script, url: url, tabTitle: tabTitle, browser: browser, fullUrl: fullUrl, domain: domain, runningApp: runningApp) }
+        return
+    }
+    // Bind any eventual redirect to this exact resource inside the browser script as well.
+    let script = AiRelevanceRedirectGuard.script(script, expectedURL: fullUrl.isEmpty ? url : fullUrl)
     var domain = domain
     if domain.isEmpty{
         domain = getDomainFromUrl(url: fullUrl)
@@ -636,25 +880,28 @@ func tryCheckUrlFromAi(script: String, url:String, tabTitle:String?, browser:BRO
     }
     
     
-    // if user is clicked on cnvince ai once then code below will not be executed
-    if currentBrowserUrlForAi == url{
+    let observedTitle = tabTitle ?? browser.flatMap { getActiveTabTitleOf(browser: $0) } ?? ""
+    let observedKey = urlRelevanceKey(url: url, fullUrl: fullUrl, title: observedTitle, runningApp: runningApp)
+    // A same-URL navigation/title/task change is a new input, even before leaving this tab.
+    if currentBrowserUrlForAi == url, currentUrlRelevanceKey == observedKey {
         if SettingsManagerObject.isCuddlyModeEnabled{
-            if !isGettingResponseFromAi, let info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]{
+            if let cached = aiRelevanceDecisionCache.value(for: observedKey), let info = cached.response {
                 let reason = info["reason"] as? String ?? ""
                 boxForStatusBarForTooltip?.customToolTip = reason
-                let probability = info["probability"] as? Double ?? 0.0
-                let payload = info["payload"] as? [String:Any] ?? [:]
+                let probability = info["allowed_probability"] as? Double ?? 0.0
+                let payload = cached.payload ?? [:]
                 let suggestedTask = info["suggested_task"] as? String
                 let suggestedTaskId = info["suggested_task_id"] as? String
                 calculateFocusAlignmentScore()
                 if probability < 0.70{
                     if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
                         if reason.lowercased() != "unable to get a decision from ai. trusting you to decide whether the site is relevant 😅"{
+                            guard urlRelevanceTargetIsCurrent(observedKey, url: url, fullUrl: fullUrl, title: observedTitle, browser: browser, runningApp: runningApp) else { return }
                             if isRunningAppFullScreen(runningApp: runningApp, browser: browser) || stageManagerObject.isStageManagerEnabled{
                                 let script = script.replacingOccurrences(of: "<NEWPAGE>", with: "&ai-focus-block-verification-enabled=true&ai-focus-block-enabled=true&ai-relevance-explanation=\(reason)&ai-relevance-score=\(probability)")
                                 executeScript(script: script) // new
                             }else{
-                                showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tabTitle, fullUrl:fullUrl, aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: probability, payload: payload, isBrowser:false, suggestedTask: suggestedTask, suggestedTaskId: suggestedTaskId)
+                                showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tabTitle, fullUrl:fullUrl, aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: probability, payload: payload, isBrowser:false, suggestedTask: suggestedTask, suggestedTaskId: suggestedTaskId, isTaskMisalignedWithIntention: info["isTaskMisalignedWithIntention"] as? Bool)
                             }
                         }
                         
@@ -665,6 +912,7 @@ func tryCheckUrlFromAi(script: String, url:String, tabTitle:String?, browser:BRO
         return;
     }
     currentBrowserUrlForAi = url
+    currentUrlRelevanceKey = observedKey
     currentBrowserUrlAiTimeoutCount = 0
     var currentRunningFocusModeName = currentRunningFocusType["name"] as? String ?? ""
     var currentHabitName:String?
@@ -675,16 +923,7 @@ func tryCheckUrlFromAi(script: String, url:String, tabTitle:String?, browser:BRO
             currentHabitName = currentActivityPlaying?.name
         }
     }
-    var tab_title = ""
-    if tabTitle == nil{
-        if browser != nil{
-            if let title = getActiveTabTitleOf(browser: browser!){
-                tab_title = title
-            }
-        }
-    }else{
-        tab_title = tabTitle!
-    }
+    let tab_title = observedTitle
     isGettingResponseFromAi = true
     
     checkUrlFromAi(script: script, url: url, tab_title: tab_title, currentRunningFocusModeName: currentRunningFocusModeName, browser:browser, fullUrl:fullUrl, domain: domain, runningApp: runningApp, currentHabitName: currentHabitName)
@@ -739,10 +978,17 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
     let arrayOfLast5Domain = getArrayOfLast5UrlJustifications()
     
     
-    allApiObject.chatGPTIsURLSafe(url: url, tab_title: tab_title, focus_mode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock,currentTaskInToDoPlayer: currentTaskInToDoPlayer, currentHabitName: currentHabitName, other_explanations_including_domains: arrayOfLast5Domain, completionHandler: {dic, checkedUrl, payload  in
+    let requestKey = urlRelevanceKey(url: url, fullUrl: fullUrl, title: tab_title, runningApp: runningApp)
+    let isCurrent = {
+        urlRelevanceTargetIsCurrent(requestKey, url: url, fullUrl: fullUrl, title: tab_title,
+                                    browser: browser, runningApp: runningApp)
+    }
+    cachedAiRelevanceCheck(key: requestKey, checkedTarget: url, isCurrent: isCurrent, load: { done in
+        allApiObject.chatGPTIsURLSafe(url: url, tab_title: tab_title, focus_mode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, currentTaskInToDoPlayer: currentTaskInToDoPlayer, currentHabitName: currentHabitName, other_explanations_including_domains: arrayOfLast5Domain, completionHandler: done)
+    }, completion: {dic, checkedUrl, payload in
         if dic != nil{
             if currentBrowserUrlForAi == checkedUrl{
-                DispatchQueue.main.async{
+                do {
                     // Race guard: if the user switched their To-Do task while this AI request was in
                     // flight, the relevance score was computed for a now-stale task — ignore it so we
                     // don't show a wrong "have you changed focus?" prompt (mirrors the URL guard above).
@@ -758,7 +1004,12 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                         let currentTaskName = currentTaskInToDoPlayer ?? ""
                         let suggested_task = dic?.value(forKey: "suggested_task") as? String
                         let suggested_task_id = dic?.value(forKey: "suggested_task_id") as? String
-                        
+
+                        // Shadow mode (Focus-Bear-research/FocusBear-Distraction-Detection-Model#18):
+                        // observe-only, never affects the decision above.
+                        logRelevanceShadowCheck(focusIntention: whatToAchieveInFocusBlock, tabTitle: tab_title,
+                                                currentTask: currentTaskName, url: url, existingProbability: dProbability)
+
                         addEntryInFocusAIDecisionsCsv(url: url, domain: domain, tabTitle: tab_title, score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: "")
                         
                         addAIBlockingLogEntry(
@@ -818,8 +1069,7 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                                 allApiObject.capturePosthog(event: "block-popup-allow-automatically", metadata: [:])
                                 
                                 
-                                arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
-                                arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
+                                // Allowed for this exact request key; reused by the relevance cache.
                                 
                                 if popUpBlockConfirmWcObj != nil{
                                     if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
@@ -850,7 +1100,7 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                                         let script = script.replacingOccurrences(of: "<NEWPAGE>", with: "&ai-focus-block-verification-enabled=true&ai-focus-block-enabled=true&ai-relevance-explanation=\(reason)&ai-relevance-score=\(dProbability)")
                                         executeScript(script: script) // new
                                     }else{
-                                        showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tab_title, fullUrl:fullUrl, aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: dProbability, payload: payload, isBrowser:false,suggestedTask: suggested_task,suggestedTaskId: suggested_task_id)
+                                        showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tab_title, fullUrl:fullUrl, aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: dProbability, payload: payload, isBrowser:false,suggestedTask: suggested_task,suggestedTaskId: suggested_task_id, isTaskMisalignedWithIntention: dic?["isTaskMisalignedWithIntention"] as? Bool)
                                     }
                                 }
                             }
@@ -860,8 +1110,7 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                                 addLog(text: "url is safe according to chat gpt")
                                 allApiObject.capturePosthog(event: "block-popup-allow-automatically", metadata: [:])
                                 
-                                arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
-                                arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
+                                // Allowed for this exact request key; reused by the relevance cache.
                                 
                                 if popUpBlockConfirmWcObj != nil{
                                     if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
@@ -875,16 +1124,20 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                                 focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: reason, browser: browser, isUrlBlockByAi: true, blockReason:"")
                             }
                         }
-                        
+
                     }
                     isGettingResponseFromAi = false
-                    
+
                 }
             }else{
+                // The front tab moved on while the check was in flight, so the verdict is dropped.
+                // Log it: the check cost an API call, and a silently discarded decision is otherwise
+                // indistinguishable in the logs from one that never ran.
+                addLog(text: "relevance verdict dropped: checked \(checkedUrl ?? "nil") but current page is \(currentBrowserUrlForAi)")
                 isGettingResponseFromAi = false
             }
         }else{
-            DispatchQueue.main.async{
+            do {
                 if currentBrowserUrlForAi == checkedUrl{
                     if currentBrowserUrlAiTimeoutCount >= maxBrowserUrlAiTimeoutCount{
                         isGettingResponseFromAi = false
@@ -1035,11 +1288,47 @@ func checkUrlFromAiWithNewIntention(url:String, domain:String, tab_title:String,
             // do not touch cuddlyModeProgressCount here ... after 90 seconds if user use it by setting intention then we will set it
         }
     })
-    
+
+}
+
+
+/// Record an argue-chat justification from the AI-block buddy into the SAME session state the legacy
+/// convince-AI flow writes (`checkUrlFromAiWithNewIntention` / `checkAppFromAiWithNewIntention`), but
+/// WITHOUT re-calling the backend — the buddy has already decided to allow. This is what lets later
+/// backend URL/app safety checks see the reason the user gave:
+///  • it appends to `arrConvinceAiUrlsInCurrentFocus` / `arrConvinceAiAppsInCurrentFocus`, which feed
+///    `lastFiveJustificationsInThisFocusSession` (via `getArrayOfLast5UrlJustifications` /
+///    `getArrayOfLast5AppJustifications`) on every subsequent `chatGPTIsURLSafe`/`chatGPTIsAppSafe` — so a
+///    DIFFERENT URL on the same allowed domain is judged with the prior justification, not from scratch, and
+///  • it writes the `convinceAiIntention` into `dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus`
+///    (keyed by lowercased domain for URLs / lowercased app name for apps, matching `tryCheckUrlFromAi` /
+///    `tryCheckAppFromAi`), which becomes `extraJustificationForThisSite` / `justificationForThisSpecificApp`
+///    on a same-domain convince re-check.
+/// `allowedMinutes` sets how long the entry stays convince-allowed, matching the buddy's chosen time box.
+func recordAiBlockBuddyJustification(justification: String, isApp: Bool, appName: String, url: String, fullUrl: String, pageTitle: String, allowedMinutes: Int) {
+    let trimmed = justification.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return }
+    let allowedSeconds = max(0, allowedMinutes) * 60
+    let endTime = Calendar.current.date(byAdding: .second, value: allowedSeconds, to: Date()) ?? Date()
+    if isApp {
+        let appNameLowercased = appName.lowercased()
+        dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[appNameLowercased] = ["totalDurationSpent": allowedSeconds, "convinceAiIntention": trimmed, "isAllowedByConvinceAi": true, "endTime": endTime, "appName": appName]
+        arrConvinceAiAppsInCurrentFocus.append(["app": appName, "intentionForApp": trimmed])
+    } else {
+        let resolvedUrl = fullUrl.isEmpty ? url : fullUrl
+        let domain = getDomainFromUrl(url: resolvedUrl).lowercased()
+        dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain] = ["totalDurationSpent": allowedSeconds, "convinceAiIntention": trimmed, "isAllowedByConvinceAi": true, "endTime": endTime, "url": resolvedUrl]
+        arrConvinceAiUrlsInCurrentFocus.append(["url": resolvedUrl, "intentionForSite": trimmed, "pageTitle": pageTitle])
+    }
+    addLog(text: "recordAiBlockBuddyJustification: recorded argue justification for backend relevance checks (isApp:\(isApp))")
 }
 
 
 func refreshFocusModeData(){
+    aiRelevanceDecisionCache.removeAll()
+    aiBlockBuddyTaskIntentionCache.removeAll()
+    currentUrlRelevanceKey = nil
+    currentAppRelevanceKey = nil
     arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
     arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
     arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
@@ -1052,6 +1341,10 @@ func refreshFocusModeData(){
 
 
 func tryCheckAppFromAi(appName:String, runningApp:NSRunningApplication){
+    guard Thread.isMainThread else {
+        DispatchQueue.main.async { tryCheckAppFromAi(appName: appName, runningApp: runningApp) }
+        return
+    }
     //        if ai is anabled then this fuction will called again and again
     let appNameLowercased = appName.lowercased()
     
@@ -1097,21 +1390,29 @@ func tryCheckAppFromAi(appName:String, runningApp:NSRunningApplication){
     }
     
     
-    // if user is clicked on cnvince ai once then code below will not be executed
-    if currentRunningAppNameForAi == appName{
+    // The relevance key below includes the app's window title, which is now read off the main thread.
+    // On the first tick after switching to an app that title is not back yet; keying without it would
+    // fire one AI check on the bare app name and a second one a tick later when the title landed. Wait
+    // for that first read instead — the app stays blocked meanwhile, and the reader's own deadline
+    // guarantees this stops waiting (and the check still runs) if the title never arrives.
+    // A Quick Look preview is keyed on its file, not a window title, so it never waits for one.
+    guard isQuickLookService(runningApp) || claudeTitleReader.shared.hasSettledTitles(for: runningApp) else { return }
+    let observedKey = appRelevanceKey(appName: appName, runningApp: runningApp)
+    if currentRunningAppNameForAi == appName, currentAppRelevanceKey == observedKey {
         if SettingsManagerObject.isCuddlyModeEnabled{
-            if !isGettingResponseFromAi, let info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]{
+            if let cached = aiRelevanceDecisionCache.value(for: observedKey), let info = cached.response {
                 let reason = info["reason"] as? String ?? ""
                 boxForStatusBarForTooltip?.customToolTip = reason
-                let probability = info["probability"] as? Double ?? 0.0
-                let payload = info["payload"] as? [String:Any] ?? [:]
+                let probability = info["allowed_probability"] as? Double ?? 0.0
+                let payload = cached.payload ?? [:]
                 let suggestedTask = info["suggested_task"] as? String
                 let suggestedTaskId = info["suggested_task_id"] as? String
                 calculateFocusAlignmentScore()
                 if probability < 0.70{
                     if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
                         if reason.lowercased() != "unable to get a decision from ai. trusting you to decide whether the site is relevant 😅"{
-                            showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url:"", script:"", isBlockApp:true, browser: nil,tabTitle: nil, fullUrl:"", aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: probability, payload: payload, isBrowser:false, suggestedTask: suggestedTask, suggestedTaskId: suggestedTaskId)
+                            guard appRelevanceTargetIsCurrent(observedKey, appName: appName, runningApp: runningApp) else { return }
+                            showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url:"", script:"", isBlockApp:true, browser: nil,tabTitle: nil, fullUrl:"", aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: probability, payload: payload, isBrowser:false, suggestedTask: suggestedTask, suggestedTaskId: suggestedTaskId, isTaskMisalignedWithIntention: info["isTaskMisalignedWithIntention"] as? Bool)
                         }
                         
                     }
@@ -1121,6 +1422,7 @@ func tryCheckAppFromAi(appName:String, runningApp:NSRunningApplication){
         return;
     }
     currentRunningAppNameForAi = appName
+    currentAppRelevanceKey = observedKey
     currentAppAiTimeoutCount = 0
     let currentRunningFocusModeName = currentRunningFocusType["name"] as? String ?? ""
     var currentHabitName:String?
@@ -1145,14 +1447,32 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
     //if isCuddlyModeEnabled(){
     appdelegate?.statusbutton?.image = NSImage(named: NSImage.Name("thinking_icon"))
     //}
-    let arrayOfLast5Apps = getArrayOfLast5AppJustifications()
-    
+    var appJustifications = getArrayOfLast5AppJustifications()
+    if isQuickLookService(runningApp){
+        // A Quick Look preview is checked under the previewed file's name; is-app-safe has no file field, so
+        // surface the file type + the app it opens with as leading context in the justifications it already weighs.
+        appJustifications.insert(quickLookPreviewMonitor.shared.aiContext(forFileNamed: appName), at: 0)
+    } else if let windowTitle = claudeTitleReader.shared.focusedWindowTitle(for: runningApp) {
+        // The app name alone ("iTerm") is uninformative — give the AI the app's focused-window title (e.g.
+        // "literature-search") so its INITIAL block decision judges what's actually on screen, not just the
+        // bare app. is-app-safe has no dedicated title field yet (backend coord t86), so surface it as leading
+        // context in the justifications it already weighs.
+        appJustifications.insert("The \(appName) window is currently titled: \"\(windowTitle)\"", at: 0)
+        addLog(text: "checkAppFromAi: \(appName) window title '\(windowTitle)' added to AI context")
+    }
+
     let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
     addLog(text: "currentTask in is App Safe :\(currentTaskInToDoPlayer)")
-    allApiObject.chatGPTIsAppSafe(appName: appName, focus_mode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, other_explanations_including_apps: arrayOfLast5Apps,currentTaskInToDoPlayer: currentTaskInToDoPlayer, currentHabitName: currentHabitName, completionHandler: {dic, checkedApp, payload  in
+    let requestKey = appRelevanceKey(appName: appName, runningApp: runningApp)
+    let isCurrent = {
+        appRelevanceTargetIsCurrent(requestKey, appName: appName, runningApp: runningApp)
+    }
+    cachedAiRelevanceCheck(key: requestKey, checkedTarget: appName, isCurrent: isCurrent, load: { done in
+        allApiObject.chatGPTIsAppSafe(appName: appName, focus_mode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, other_explanations_including_apps: appJustifications, currentTaskInToDoPlayer: currentTaskInToDoPlayer, currentHabitName: currentHabitName, completionHandler: done)
+    }, completion: {dic, checkedApp, payload in
         if dic != nil{
             if currentRunningAppNameForAi == checkedApp{
-                DispatchQueue.main.async{
+                do {
                     // Race guard: ignore the result if the user switched their To-Do task while the
                     // request was in flight (the score is for a stale task).
                     if getCurrentTaskInFocusMode() != currentTaskInToDoPlayer {
@@ -1231,7 +1551,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                                 allApiObject.capturePosthog(event: "block-popup-allow-automatically", metadata: [:])
                                 
                                 
-                                arrAllowedAppsInCuddlyModeCurrentFocus.append(runningApp)
+                                // Allowed for this exact app/window/task key; no app-wide grant.
                                 //arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
                                 
                                 if popUpBlockConfirmWcObj != nil{
@@ -1266,7 +1586,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                                     }
                                 }
                                 if !popUpWindowVisible && shouldShowPopup{
-                                    showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url: "", script:"", isBlockApp:true, browser: nil,tabTitle: nil, fullUrl:"", aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: dProbability, payload: payload, isBrowser:false, suggestedTask: suggested_task, suggestedTaskId: suggested_task_id)
+                                    showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url: "", script:"", isBlockApp:true, browser: nil,tabTitle: nil, fullUrl:"", aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: dProbability, payload: payload, isBrowser:false, suggestedTask: suggested_task, suggestedTaskId: suggested_task_id, isTaskMisalignedWithIntention: dic?["isTaskMisalignedWithIntention"] as? Bool)
                                 }
                             }else{
                                 if arrBrowsersLowerCasedNames.contains(appNameLowercased){
@@ -1285,7 +1605,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                                 addLog(text: "app is safe according to chat gpt")
                                 allApiObject.capturePosthog(event: "block-popup-allow-automatically", metadata: [:])
                                 
-                                arrAllowedAppsInCuddlyModeCurrentFocus.append(runningApp)
+                                // Allowed for this exact app/window/task key; no app-wide grant.
                                 //                                arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
                                 
                                 if popUpBlockConfirmWcObj != nil{
@@ -1318,7 +1638,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                 isGettingResponseFromAi = false
             }
         }else{
-            DispatchQueue.main.async{
+            do {
                 if currentRunningAppNameForAi == checkedApp{
                     if currentAppAiTimeoutCount >= maxBrowserUrlAiTimeoutCount{
                         isGettingResponseFromAi = false
@@ -1587,7 +1907,7 @@ func checkIsAnyOldFoucsModeRemaining(){
                                             getTaskPlayerVcObject().loadView()
                                             getTaskPlayerVcObject().loadRequest()
                                             shouldReloadTaskPlayer = true
-                                            showTaskPlayerWindow(totalDuration: minute, intention: whatToAchieveInFocusBlock, automatically:true)
+                                            showRunningFocusSessionWindow()
                                         }else{
                                             let minute = diffSeconds / 60
                                             if !getTaskPlayerVcObject().isViewLoaded{
@@ -1622,7 +1942,7 @@ func checkIsAnyOldFoucsModeRemaining(){
                                             getTaskPlayerVcObject().loadView()
                                             getTaskPlayerVcObject().loadRequest()
                                             shouldReloadTaskPlayer = true
-                                            showTaskPlayerWindow(totalDuration: minute, intention: whatToAchieveInFocusBlock, automatically:true)
+                                            showRunningFocusSessionWindow()
                                         }else{
                                             let minute = diffSeconds / 60
                                             if !getTaskPlayerVcObject().isViewLoaded{
@@ -1654,7 +1974,7 @@ func checkIsAnyOldFoucsModeRemaining(){
                                             getTaskPlayerVcObject().loadRequest()
                                             shouldReloadTaskPlayer = true
                                             let minute = diffSeconds / 60
-                                            showTaskPlayerWindow(totalDuration: minute, intention: whatToAchieveInFocusBlock, automatically:true)
+                                            showRunningFocusSessionWindow()
                                         }else{
                                             let minute = diffSeconds / 60
                                             if !getTaskPlayerVcObject().isViewLoaded{
@@ -1699,7 +2019,13 @@ func resumeFocusModeAfterAppStartted(diffSeconds: Int, focusMode: [String : Any]
             addLog(text: "focus mode is super strict mode")
         }
     }
-    
+    // Restore WHO started this session beside the strictness just restored, and from the same durable
+    // store — otherwise a session the app auto-started (a Late No More meeting) comes back super-strict
+    // with no sign it wasn't the user's own, and Stop/Pause demand a password the user never agreed to.
+    // Deliberately independent of restoreAccountabilityBuddySessionIfNeeded(): that one can only attach
+    // once isFocusModeRunning is true, which this very function sets further down.
+    restoreFocusSessionAutoStartedFlag(resumedFocusModeId: focusMode["id"] as? String ?? "")
+
     focusModeMinutesToPerform = diffSeconds / 60
     isFocusModeStartedFromPomodoroMode = true
     
@@ -1735,9 +2061,32 @@ func resumeFocusModeAfterAppStartted(diffSeconds: Int, focusMode: [String : Any]
 func updateFocusModeIntention(intention:String){
     if whatToAchieveInFocusBlock != intention{
         whatToAchieveInFocusBlock = intention
-        arrConvinceAiUrlsInCurrentFocus.removeAll()//reset it if the intention changes
-        arrConvinceAiAppsInCurrentFocus.removeAll()
+        clearAiBlockingDecisionsForNewFocusTarget()// a new intention invalidates the old allow/deny decisions
     }
+}
+
+/// Wipe every AI-block decision cached for the CURRENT focus target (the intention + the playing To-Do
+/// task) so an app/site that was allowed — or the reasoning gathered — for the OLD target is re-judged
+/// against the NEW one. Called whenever the intention changes OR the current task changes: an allow that
+/// made sense for the previous task must never silently carry over to a different task. Also cancels the
+/// pending time-boxed re-prompts, which were scheduled for the now-stale target. The alignment-score
+/// history (`dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus`) is intentionally left intact — it's an
+/// observability/score record, not an allow decision, and clearing it would corrupt the session score.
+func clearAiBlockingDecisionsForNewFocusTarget() {
+    aiRelevanceDecisionCache.removeAll()
+    currentUrlRelevanceKey = nil
+    currentAppRelevanceKey = nil
+    currentBrowserUrlForAi = ""
+    currentRunningAppNameForAi = ""
+    isGettingResponseFromAi = false
+    arrConvinceAiUrlsInCurrentFocus.removeAll()
+    arrConvinceAiAppsInCurrentFocus.removeAll()
+    arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
+    arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
+    arrAllowedTabTitlesInCuddlyModeCurrentFocus.removeAll()
+    dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus.removeAll()
+    AiBlockRepromptScheduler.shared.cancelAll()
+    addLog(text: "cleared AI blocking decisions for new focus target (intention/task changed)")
 }
 
 func updateFocusModeTask(taskString:String){
@@ -1747,6 +2096,7 @@ func updateFocusModeTask(taskString:String){
         addLog(text: "#2216: skip player→personal task sync during class session \(classSessionTodoSessionId)")
         return
     }
+    let previousPlayingTask = AiRelevanceDecisionKey.activeTaskIdentity(in: focusModeTaskString, popupTask: taskCreatedByBlockPopup)
     focusModeTaskString = taskString
     taskCreatedByBlockPopup = ""
     getArrayOfTaskForApi()
@@ -1756,6 +2106,12 @@ func updateFocusModeTask(taskString:String){
         }
     }else{
         currentPlayingTaskString = ""
+    }
+    // Completing (or switching) the current task changes what counts as relevant — drop the AI decisions
+    // made for the previous task so the next site/app is judged against the new one. Only on an actual
+    // change of the playing task, so routine task-list refreshes that don't move the current task are cheap.
+    if AiRelevanceDecisionKey.activeTaskIdentity(in: focusModeTaskString, popupTask: taskCreatedByBlockPopup) != previousPlayingTask {
+        clearAiBlockingDecisionsForNewFocusTarget()
     }
 }
 
@@ -1867,6 +2223,40 @@ func getCurrentTaskInFocusMode()-> String?{
     return nil
 }
 
+/// The session's stated goal, set when the session starts.
+///
+/// This is NOT the same thing as the current task, and the two must not be conflated: the relevance
+/// endpoint takes them as separate fields (`intention` and `currentTaskInToDoPlayer`), and the
+/// intention is *locked* in a super-strict session — see `popUpAddNewFocusGoalVc` and
+/// `FocusSessionStore.isGoalLocked`.
+func currentFocusIntention() -> String {
+    whatToAchieveInFocusBlock.trimmingCharacters(in: .whitespacesAndNewlines)
+}
+
+/// What the user is working on right now: the task queue's active entry. Changeable from the session
+/// screen and from the AI-block buddy's picker; nil when the session has no task.
+func currentFocusTaskTitle() -> String? {
+    let title = getCurrentTaskInFocusMode()?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    return title.isEmpty ? nil : title
+}
+
+/// Sets the task the user is working on right now, from anywhere outside the session screen (the
+/// AI-block buddy's picker, the block popup).
+///
+/// It deliberately routes through the task queue and **never writes `whatToAchieveInFocusBlock`**.
+/// Writing the intention from here was a strictness bypass: a super-strict session forbids changing
+/// the focus goal, and a caller that "changed the current task" by assigning the intention silently
+/// edited a value the user is not allowed to edit — and made the AI judge against a goal that no
+/// longer matched the task on screen.
+func setCurrentFocusTask(title: String, id: String, durationSeconds: Int = 600) {
+    let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return }
+    addLog(text: "setCurrentFocusTask: \(trimmed)")
+    taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: trimmed, id: id,
+                                                 duration: durationSeconds,
+                                                 shouldCompleteCurrentTask: false)
+}
+
 var timerForFocusMode:Timer?
 var timerForFocusModeEndNotification:Timer?
 
@@ -1874,6 +2264,13 @@ var timerForFocusModeEndNotification:Timer?
 var endFocusModeTime:Date?// this is focusMode end time wich we calculate at the begning of focus mode
 var startFocusModeTime:Date?
 var startFocusModeTimeForPauseAndResume:Date?
+// For indefinite (no-countdown) focus sessions — e.g. a blocking-schedule-activated block list —
+// the timer-based pause/resume flow (`macSleepPauseFocusModeIfRunning`) never runs, so system-sleep
+// time would otherwise be counted as focus time and inflate the recorded block duration (a session
+// left running overnight logged ~14h and pushed the day's total focus time past 24h). When the Mac
+// sleeps mid-session we stamp this; on wake we push `startFocusModeTimeForPauseAndResume` forward by
+// the slept interval so the sleep gap is excluded from the block's duration. nil when not asleep.
+var indefiniteFocusSleepStartDate:Date?
 var focusModeActualDurationPerformed:Int = 0// this will be useful to save in csv and showing focus summary
 var focusModeMinutesToPerform = 0
 var focusModeSecondsToPerform = 0 //useful in pause resume focus mode
@@ -1989,6 +2386,74 @@ enum FOCUSMODESTRICTNESS:Int,Codable{
 }
 
 var currentFocusModeStrictness = FOCUSMODESTRICTNESS._NORMAL_
+
+/// Whether the session demands that what the user does align with the stated focus intention — the
+/// `task_must_align_to_focus_intention` flag the relevance requests send.
+///
+/// Two sessions ask for that judgement: the strictest focus mode, and an accountability-buddy session
+/// (which judges every app/site against the goal, so it forces the flag even if
+/// `currentFocusModeStrictness` was reset mid-session). One predicate, not four copies and a fifth
+/// derived one on the block screen: the wording the check-in shows must appear exactly when the server
+/// was asked to judge strictly, or the two drift apart.
+///
+/// Deliberately NOT `isStrictnessLevelNormal()`: that folds in a running custom blocking schedule's
+/// `blockLevel`, and a blocking schedule is not a focus session — it has no intention to diverge from,
+/// and the relevance request does not ask for strict alignment on its behalf.
+func isTaskRequiredToAlignToFocusIntention() -> Bool {
+    currentFocusModeStrictness == ._SUPER_STRICT_ || currentAccountabilityBuddySession != nil
+}
+
+/// Whether the running session's block list may be swapped for another.
+///
+/// Report 2026-09-11_10-15-13: "It should show the block list used and let me change it if it's not
+/// a super strict session." Super-strict is the whole point of super-strict — swapping to a laxer
+/// list mid-session would undo it — and during a class session the teacher owns the settings.
+enum FocusSessionBlockListSwitch {
+    static func isAllowed(isSessionRunning: Bool, strictness: FOCUSMODESTRICTNESS, isClassSession: Bool) -> Bool {
+        isSessionRunning && strictness != ._SUPER_STRICT_ && !isClassSession
+    }
+}
+
+/// Swap the block list a running focus session enforces, keeping the session itself — its clock, its
+/// goal and its task queue — exactly where it is.
+///
+/// Blocking is driven by `arrFocusType[i]["isOn"]` and `currentRunningFocusType`, which the focus
+/// timer re-reads on every tick, so setting those *is* the switch; there is no separate enforcement
+/// to restart. The session record on the server keeps the block list it was started with — this is a
+/// local change to what gets blocked, not a new session.
+@discardableResult
+func switchRunningFocusMode(toIndex index: Int) -> Bool {
+    guard FocusSessionBlockListSwitch.isAllowed(isSessionRunning: isFocusModeRunning,
+                                                strictness: currentFocusModeStrictness,
+                                                isClassSession: teacherSessionManagerObject.isTeacherSessionActive()),
+          arrFocusType.indices.contains(index) else { return false }
+    let newId = arrFocusType[index]["id"] as? String ?? ""
+    guard !newId.isEmpty, newId != (currentRunningFocusType["id"] as? String ?? "") else { return false }
+
+    for i in arrFocusType.indices where i != index && arrFocusType[i]["isOn"] as? Bool == true {
+        arrFocusType[i]["isOn"] = false
+    }
+    arrFocusType[index]["isOn"] = true
+    arrFocusType[index]["isPaused"] = false
+    arrFocusType[index]["lastStartedDate"] = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+    if let end = endFocusModeTime {
+        arrFocusType[index]["lastScheduledEndDate"] = getStringFromDate(date: end, dateFormat: "yyyy-MM-dd HH:mm:ss")
+    }
+    // The session's own goal and queue follow it onto the new list, so reopening either later shows
+    // what this session was actually doing.
+    arrFocusType[index]["lastIntentionUsed"] = whatToAchieveInFocusBlock
+    arrFocusType[index]["lastTaskUsed"] = focusModeTaskString
+    currentRunningFocusType = arrFocusType[index]
+    shouldReloadTaskPlayer = true
+    applyAutoDoNotDisturb(forFocusModeAt: index, includingDeepWorkAndDefault: true)
+    workBeforeFocusBegin(index: index)
+    appdelegate?.setStatusBarButtonColorForFocusMode(color: nil,
+                                                     colorString: arrFocusType[index]["color"] as? String ?? "")
+    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+    updateAllFocusModes()
+    addLog(text: "[user-action] focus session: block list switched to \(arrFocusType[index]["name"] as? String ?? "")")
+    return true
+}
 
 // 2.28.450   In Super strict mode, now the AI popups will be shown for the urls and user can try to convince AI but cannot change the intention 19/1/25
 func isStrictnessLevelNormal()->Bool{
@@ -2142,13 +2607,22 @@ func focusTryToBlockUnwantedUrl(script: String, url:String, browser: BROWSER?, t
 
 func focusBlockUnwantedApp(runningApp: NSRunningApplication, appName:String, showNotification:Bool, isAppBlockByAi:Bool){
     addLog(text: "focusBlockUnwantedApp:- \(appName)")
-    exitFullScreen(runningApp:runningApp)
-    runningApp.hide()
-    allApiObject.capturePosthog(event: "block-distracting-app", metadata: [:])
-    if showNotification{
-        showFocusAppBlockNotification(appName: appName, runningApp: runningApp)
+    // A Quick Look preview can't be hidden like an app (the XPC service that hosts it isn't activatable):
+    // close the preview window instead. `appName` is the previewed file's name there.
+    let isQuickLookPreview = isQuickLookService(runningApp)
+    if isQuickLookPreview{
+        quickLookPreviewMonitor.shared.closePreviews(hostedBy: runningApp)
+    }else{
+        exitFullScreen(runningApp:runningApp)
+        runningApp.hide()
     }
-    if !arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){
+    allApiObject.capturePosthog(event: "block-distracting-app", metadata: isQuickLookPreview ? ["quick_look_preview": true] : [:])
+    if showNotification{
+        showFocusAppBlockNotification(appName: appName, runningApp: runningApp, isQuickLookPreview: isQuickLookPreview)
+    }
+    // The service outlives the preview and hosts every later one, so it must never be remembered as a
+    // blocked "app" — each preview is judged on its own file.
+    if !isQuickLookPreview && !arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){
         arrBlockedAppsInCuddlyModeCurrentFocus.append(runningApp)
     }
 }
@@ -2288,13 +2762,7 @@ func startWorkFocusAutomaticallyClicked(id:String, minutes:Int, intention:String
                 addLog(text: "focus mode is normal mode")
                 arrFocusType[i]["isOn"] = true
                 shouldReloadTaskPlayer = true
-                if let isAutoDoNotDisturbEnabled = arrFocusType[i]["isAutoDoNotDisturbEnabled"] as? Bool{
-                    if isAutoDoNotDisturbEnabled{
-                        if isAccessibilityEnabled(isPrompt: true){
-                            DNDManager.shared.setDND(true)
-                        }
-                    }
-                }
+                applyAutoDoNotDisturb(forFocusModeAt: i, includingDeepWorkAndDefault: false)
                 workBeforeFocusBegin(index: i)
                 focusModeMinutesToPerform = 0
                 
@@ -2321,7 +2789,7 @@ func startWorkFocusAutomaticallyClicked(id:String, minutes:Int, intention:String
                     sleep(1)
                     DispatchQueue.main.async {
                         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-                            showTaskPlayerWindow(totalDuration: minutes, intention: whatToAchieveInFocusBlock, automatically:true)
+                            showRunningFocusSessionWindow()
                         }else{
                             if !getTaskPlayerVcObject().isViewLoaded{
                                 getTaskPlayerVcObject().loadView()
@@ -2478,6 +2946,8 @@ func focusModeFinishedCapturePosthog(){
 func focusModeFinishedResetAllData(){
     refreshFocusModeData()
     arrAllowedTabTitlesInCuddlyModeCurrentFocus.removeAll()
+    // The session is over — cancel any pending AI-block time-boxed re-prompts so none fires afterwards.
+    AiBlockRepromptScheduler.shared.cancelAll()
     // Stop focus music the "want to play some music?" prompt auto-started for this session — but leave
     // music the user started manually playing.
     if isFocusMusicStartedFromPrompt{
@@ -2498,6 +2968,7 @@ func focusModeStarttedResetAllData(){
     lastFocusAlignmentShownScore = minFocusAlignmentScoreToShowDistractingPopUp
     isMeetingsFocusStartedAutomatically = false
     focusModeActualDurationPerformed = 0
+    indefiniteFocusSleepStartDate = nil
     unfocusedTime = 0
     UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastFocusModeDoneDate)
     lastFocusModeTempInfo = nil
@@ -2603,28 +3074,7 @@ func startFocusModeFromFocusDeviceButton(diffMinutes:Int, shouldUpdateFocusButto
         
         shouldReloadTaskPlayer = true
         
-        if let isAutoDoNotDisturbEnabled = arrFocusType[currentFocusModeIndex]["isAutoDoNotDisturbEnabled"] as? Bool{
-            if isAutoDoNotDisturbEnabled{
-                if isAccessibilityEnabled(isPrompt: true){
-                    DNDManager.shared.setDND(true)
-                }
-            }
-        }
-        if !DNDManager.shared.isDndEnabled{
-            if let isDeepWorkFocus = arrFocusType[currentFocusModeIndex]["isDeepWorkFocus"] as? Bool{
-                if  isDeepWorkFocus{
-                    if isAccessibilityEnabled(isPrompt: true){
-                        DNDManager.shared.setDND(true)
-                    }
-                }
-            }else if let isDefault = arrFocusType[currentFocusModeIndex]["isDefault"] as? Bool{
-                if  isDefault{
-                    if isAccessibilityEnabled(isPrompt: true){
-                        DNDManager.shared.setDND(true)
-                    }
-                }
-            }
-        }
+        applyAutoDoNotDisturb(forFocusModeAt: currentFocusModeIndex, includingDeepWorkAndDefault: true)
         
         workBeforeFocusBegin(index: currentFocusModeIndex)
         isFocusModeRunning = true
@@ -2643,7 +3093,7 @@ func startFocusModeFromFocusDeviceButton(diffMinutes:Int, shouldUpdateFocusButto
             sleep(1)
             DispatchQueue.main.async {
                 if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-                    showTaskPlayerWindow(totalDuration: diffMinutes, intention: whatToAchieveInFocusBlock, automatically:true)
+                    showRunningFocusSessionWindow()
                 }else{
                     if !getTaskPlayerVcObject().isViewLoaded{
                         getTaskPlayerVcObject().loadView()

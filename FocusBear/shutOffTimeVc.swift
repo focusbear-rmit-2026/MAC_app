@@ -254,7 +254,7 @@ class shutOffTimeVc: NSViewController {
     /// honours that specific rule too — not only the abort-shutoff one. Without this, a user with only
     /// the postpone-after-cutoff password rule on could unlock past cutoff with no password. Shared by
     /// every shutoff-screen button that can unlock/postpone past the cutoff (Unlock computer, Work
-    /// emergency, Start morning routine early) so none of them can bypass the rule the other two honour.
+    /// emergency). Starting the morning routine early is allowed without unlocking the computer.
     private func shouldGateShutoffAction() -> Bool {
         let postponeAfterCutoff = isCutOffTimeGoing() && SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff
         return SettingsManagerObject.isPasswordRequireInAbortShutoff || postponeAfterCutoff
@@ -611,16 +611,9 @@ class shutOffTimeVc: NSViewController {
 
     @IBAction func btnStartMorningRoutineClicked(_ sender: Any) {
         addLog(text: "[user-action] btnStartMorningRoutineClicked")
-        if shouldAskPassword(){
-            if shouldGateShutoffAction(){
-                showPasswordReason = passwordReason._START_EVENING_ROUTINE_
-                mainViewControllerObj!.showPasswordView()
-            }else{
-                startMorningRoutineClicked()
-            }
-        }else{
-            startMorningRoutineClicked()
-        }
+        // Starting the morning routine is permitted even while shutoff is active.
+        // The unlock/postpone rules still protect Unlock computer and Work emergency.
+        startMorningRoutineClicked()
     }
     
     @IBAction func btnShutDownMacClicked(_ sender: Any) {

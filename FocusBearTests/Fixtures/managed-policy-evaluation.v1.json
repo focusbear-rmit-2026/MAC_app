@@ -1,0 +1,3644 @@
+{
+  "schema_version": 1,
+  "taxonomy_version": "2026-09-08",
+  "scope": "backend check-url policy selection and deterministic evaluation; no appeal reuse or lease recovery decision",
+  "cases": [
+    {
+      "id": "school-start-inclusive",
+      "description": "School activates at its exact start minute.",
+      "at": "2026-09-07T09:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T09:00:00.000Z",
+        "offline_valid_until": "2026-09-08T09:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "school-end-exclusive-home",
+      "description": "At exact school end, active home policy takes over.",
+      "at": "2026-09-07T15:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": {
+          "id": "20000000-0000-4000-8000-000000000002",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": "30000000-0000-4000-8000-000000000001",
+          "kind": "home",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "Home",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "SUN",
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI",
+                "SAT"
+              ],
+              "start_time": "00:00",
+              "end_time": "00:00",
+              "all_day": true
+            }
+          ],
+          "blocked_categories": [
+            "gambling"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T15:00:00.000Z",
+        "offline_valid_until": "2026-09-08T15:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "gambling"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000002",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "gambling"
+        ]
+      }
+    },
+    {
+      "id": "school-before-start-home",
+      "description": "Home applies before school starts.",
+      "at": "2026-09-07T08:59:59.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": {
+          "id": "20000000-0000-4000-8000-000000000002",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": "30000000-0000-4000-8000-000000000001",
+          "kind": "home",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "Home",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "SUN",
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI",
+                "SAT"
+              ],
+              "start_time": "00:00",
+              "end_time": "00:00",
+              "all_day": true
+            }
+          ],
+          "blocked_categories": [
+            "gambling"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T08:59:59.000Z",
+        "offline_valid_until": "2026-09-08T08:59:59.000Z"
+      },
+      "classification": {
+        "categories": [
+          "gambling"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000002",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "gambling"
+        ]
+      }
+    },
+    {
+      "id": "school-overlap-precedence",
+      "description": "Active school wins even when home would block another category.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": {
+          "id": "20000000-0000-4000-8000-000000000002",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": "30000000-0000-4000-8000-000000000001",
+          "kind": "home",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "Home",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "SUN",
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI",
+                "SAT"
+              ],
+              "start_time": "00:00",
+              "end_time": "00:00",
+              "all_day": true
+            }
+          ],
+          "blocked_categories": [
+            "gambling"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "gambling"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": true,
+        "reason": "categories_allowed",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "school-empty-selection-precedence",
+      "description": "Empty school category selection still suppresses overlapping home and skips fallback.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": {
+          "id": "20000000-0000-4000-8000-000000000002",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": "30000000-0000-4000-8000-000000000001",
+          "kind": "home",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "Home",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "SUN",
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI",
+                "SAT"
+              ],
+              "start_time": "00:00",
+              "end_time": "00:00",
+              "all_day": true
+            }
+          ],
+          "blocked_categories": [
+            "gambling"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "gambling"
+        ],
+        "classification_status": "unavailable"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": true,
+        "reason": "no_blocked_categories",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "school-disabled-home",
+      "description": "Disabled school allows home to become effective.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": false,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": {
+          "id": "20000000-0000-4000-8000-000000000002",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": "30000000-0000-4000-8000-000000000001",
+          "kind": "home",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "Home",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "SUN",
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI",
+                "SAT"
+              ],
+              "start_time": "00:00",
+              "end_time": "00:00",
+              "all_day": true
+            }
+          ],
+          "blocked_categories": [
+            "gambling"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "gambling"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000002",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "gambling"
+        ]
+      }
+    },
+    {
+      "id": "school-holiday-home",
+      "description": "Inclusive school holiday does not disable home coverage.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [
+            {
+              "start_date": "2026-09-07",
+              "end_date": "2026-09-08"
+            }
+          ],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": {
+          "id": "20000000-0000-4000-8000-000000000002",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": "30000000-0000-4000-8000-000000000001",
+          "kind": "home",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "Home",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "SUN",
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI",
+                "SAT"
+              ],
+              "start_time": "00:00",
+              "end_time": "00:00",
+              "all_day": true
+            }
+          ],
+          "blocked_categories": [
+            "gambling"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "gambling"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000002",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "gambling"
+        ]
+      }
+    },
+    {
+      "id": "holiday-final-day-inclusive",
+      "description": "The last excluded school date is included.",
+      "at": "2026-09-08T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [
+            {
+              "start_date": "2026-09-07",
+              "end_date": "2026-09-08"
+            }
+          ],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-08T10:00:00.000Z",
+        "offline_valid_until": "2026-09-09T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": null,
+        "active": false,
+        "allowed": true,
+        "reason": "no_active_policy",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "no-policy-gap",
+      "description": "A gap between all configured windows has no managed policy.",
+      "at": "2026-09-07T15:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T15:00:00.000Z",
+        "offline_valid_until": "2026-09-08T15:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": null,
+        "active": false,
+        "allowed": true,
+        "reason": "no_active_policy",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "weekend-inactive",
+      "description": "Weekday school windows do not run on Sunday.",
+      "at": "2026-09-06T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-06T10:00:00.000Z",
+        "offline_valid_until": "2026-09-07T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": null,
+        "active": false,
+        "allowed": true,
+        "reason": "no_active_policy",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "empty-snapshot",
+      "description": "An unenrolled snapshot has no policy.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": null,
+        "home": null,
+        "settings_locked": false,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": null,
+        "active": false,
+        "allowed": true,
+        "reason": "no_active_policy",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "all-day-weekday",
+      "description": "all_day uses the selected weekday and ignores nominal clock bounds.",
+      "at": "2026-09-06T23:59:59.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "SUN"
+              ],
+              "start_time": "09:00",
+              "end_time": "10:00",
+              "all_day": true
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-06T23:59:59.000Z",
+        "offline_valid_until": "2026-09-07T23:59:59.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "overnight-start",
+      "description": "Overnight start is inclusive on selected start day.",
+      "at": "2026-09-07T22:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON"
+              ],
+              "start_time": "22:00",
+              "end_time": "02:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T22:00:00.000Z",
+        "offline_valid_until": "2026-09-08T22:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "overnight-next-day",
+      "description": "Overnight tail applies on the following weekday.",
+      "at": "2026-09-08T01:59:59.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON"
+              ],
+              "start_time": "22:00",
+              "end_time": "02:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-08T01:59:59.000Z",
+        "offline_valid_until": "2026-09-09T01:59:59.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "overnight-end",
+      "description": "Overnight end is exclusive.",
+      "at": "2026-09-08T02:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON"
+              ],
+              "start_time": "22:00",
+              "end_time": "02:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-08T02:00:00.000Z",
+        "offline_valid_until": "2026-09-09T02:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": null,
+        "active": false,
+        "allowed": true,
+        "reason": "no_active_policy",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "overnight-holiday-start-day",
+      "description": "An excluded start-day suppresses an overnight tail.",
+      "at": "2026-09-08T01:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON"
+              ],
+              "start_time": "22:00",
+              "end_time": "02:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [
+            {
+              "start_date": "2026-09-07",
+              "end_date": "2026-09-07"
+            }
+          ],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-08T01:00:00.000Z",
+        "offline_valid_until": "2026-09-09T01:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": null,
+        "active": false,
+        "allowed": true,
+        "reason": "no_active_policy",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "overnight-holiday-current-day",
+      "description": "An excluded current-day suppresses an overnight tail.",
+      "at": "2026-09-08T01:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON"
+              ],
+              "start_time": "22:00",
+              "end_time": "02:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [
+            {
+              "start_date": "2026-09-08",
+              "end_date": "2026-09-08"
+            }
+          ],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-08T01:00:00.000Z",
+        "offline_valid_until": "2026-09-09T01:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": null,
+        "active": false,
+        "allowed": true,
+        "reason": "no_active_policy",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "melbourne-before-spring-jump",
+      "description": "01:45 local before the spring DST transition.",
+      "at": "2026-10-03T15:45:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "Australia/Melbourne",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "SUN"
+              ],
+              "start_time": "01:30",
+              "end_time": "03:30"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-10-03T15:45:00.000Z",
+        "offline_valid_until": "2026-10-04T15:45:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "melbourne-after-spring-jump",
+      "description": "03:00 local after nonexistent 02:xx remains inside the window.",
+      "at": "2026-10-03T16:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "Australia/Melbourne",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "SUN"
+              ],
+              "start_time": "01:30",
+              "end_time": "03:30"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-10-03T16:00:00.000Z",
+        "offline_valid_until": "2026-10-04T16:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "melbourne-spring-end",
+      "description": "03:30 local ends the window after DST jump.",
+      "at": "2026-10-03T16:30:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "Australia/Melbourne",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "SUN"
+              ],
+              "start_time": "01:30",
+              "end_time": "03:30"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-10-03T16:30:00.000Z",
+        "offline_valid_until": "2026-10-04T16:30:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": null,
+        "active": false,
+        "allowed": true,
+        "reason": "no_active_policy",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "new-york-first-repeated-hour",
+      "description": "First 01:45 local during autumn repeated hour.",
+      "at": "2026-11-01T05:45:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "America/New_York",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "SUN"
+              ],
+              "start_time": "01:30",
+              "end_time": "02:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-11-01T05:45:00.000Z",
+        "offline_valid_until": "2026-11-02T05:45:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "new-york-second-repeated-hour",
+      "description": "Second 01:45 local also remains active.",
+      "at": "2026-11-01T06:45:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "America/New_York",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "SUN"
+              ],
+              "start_time": "01:30",
+              "end_time": "02:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-11-01T06:45:00.000Z",
+        "offline_valid_until": "2026-11-02T06:45:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "new-york-autumn-end",
+      "description": "02:00 local after repeated hour ends the window.",
+      "at": "2026-11-01T07:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "America/New_York",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "SUN"
+              ],
+              "start_time": "01:30",
+              "end_time": "02:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-11-01T07:00:00.000Z",
+        "offline_valid_until": "2026-11-02T07:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": null,
+        "active": false,
+        "allowed": true,
+        "reason": "no_active_policy",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "new-york-before-gap",
+      "description": "01:45 local precedes the spring gap.",
+      "at": "2026-03-08T06:45:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "America/New_York",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "SUN"
+              ],
+              "start_time": "01:30",
+              "end_time": "02:30"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-03-08T06:45:00.000Z",
+        "offline_valid_until": "2026-03-09T06:45:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "new-york-skipped-end",
+      "description": "Spring jump to 03:00 is outside a 01:30\u201302:30 window.",
+      "at": "2026-03-08T07:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "America/New_York",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "SUN"
+              ],
+              "start_time": "01:30",
+              "end_time": "02:30"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-03-08T07:00:00.000Z",
+        "offline_valid_until": "2026-03-09T07:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": null,
+        "active": false,
+        "allowed": true,
+        "reason": "no_active_policy",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "allow-exact-path",
+      "description": "An exact authorized path allows even classified blocked content.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/lesson?topic=games",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "https://example.org/lesson",
+              "include_subdomains": false
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": true,
+        "reason": "policy_allowlist",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "allow-child-path",
+      "description": "Path descendants inherit the exception.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/lesson/unit",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "https://example.org/lesson",
+              "include_subdomains": false
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": true,
+        "reason": "policy_allowlist",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "allow-path-prefix-lookalike",
+      "description": "A path string prefix without slash boundary is not exempt.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/lesson-game",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "https://example.org/lesson",
+              "include_subdomains": false
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "allow-encoded-slash-not-boundary",
+      "description": "Encoded reserved slash cannot create an allowlist path boundary.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/lesson%2Fgame",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "https://example.org/lesson",
+              "include_subdomains": false
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "allow-unreserved-escape",
+      "description": "Unreserved percent escapes share canonical path identity.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/%6Cesson",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "https://example.org/lesson",
+              "include_subdomains": false
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": true,
+        "reason": "policy_allowlist",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "allow-dot-segment-normalized",
+      "description": "Dot segment navigation cannot retain an exempt apparent prefix.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/lesson/%2e%2e/game",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "https://example.org/lesson",
+              "include_subdomains": false
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "allow-subdomain-enabled",
+      "description": "Dot-delimited subdomain matching requires explicit opt-in.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://learn.example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "example.org",
+              "include_subdomains": true
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": true,
+        "reason": "policy_allowlist",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "allow-subdomain-disabled",
+      "description": "Exact-host exception does not include subdomains.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://learn.example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "example.org",
+              "include_subdomains": false
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "allow-host-suffix-lookalike",
+      "description": "An attacker host containing an allowed suffix without dot is not exempt.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://evilexample.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "example.org",
+              "include_subdomains": true
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "allow-host-followed-by-attacker",
+      "description": "Allowed host text before an attacker suffix is not exempt.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org.evil.test/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "example.org",
+              "include_subdomains": true
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "allow-http-and-https",
+      "description": "Host exceptions cover both default HTTP and HTTPS ports.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "http://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "https://example.org",
+              "include_subdomains": false
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": true,
+        "reason": "policy_allowlist",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "allow-nonstandard-port-denied",
+      "description": "Default-port exceptions do not authorize nonstandard ports.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org:8443/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "example.org",
+              "include_subdomains": false
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "allow-explicit-nonstandard-port",
+      "description": "The same explicit nonstandard port remains scoped.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org:8443/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "https://example.org:8443",
+              "include_subdomains": false
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": true,
+        "reason": "policy_allowlist",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "allow-expiry-exclusive",
+      "description": "An exception expires at its exact timestamp.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/lesson",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "https://example.org/lesson",
+              "include_subdomains": false,
+              "expires_at": "2026-09-07T10:00:00.000Z"
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "allow-before-expiry",
+      "description": "An exception remains valid strictly before expiry.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/lesson",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "https://example.org/lesson",
+              "include_subdomains": false,
+              "expires_at": "2026-09-07T10:00:01.000Z"
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": true,
+        "reason": "policy_allowlist",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "allow-idn-host",
+      "description": "International host names match their canonical ASCII host.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://xn--bcher-kva.example/lesson",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "https://b\u00fccher.example/lesson",
+              "include_subdomains": false
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": true,
+        "reason": "policy_allowlist",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "allow-ipv6-host",
+      "description": "IPv6 exception matches the exact address.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://[2001:db8::1]/lesson",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "https://[2001:db8::1]/lesson",
+              "include_subdomains": false
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": true,
+        "reason": "policy_allowlist",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "unknown-fallback-block",
+      "description": "No category evidence uses configured unknown fallback.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [],
+        "classification_status": "unknown"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "classification_unknown",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "unknown-fallback-allow",
+      "description": "Unknown fallback may explicitly allow.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "allow",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [],
+        "classification_status": "unknown"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": true,
+        "reason": "classification_unknown",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "selected-unknown-overrides-fallback",
+      "description": "Selecting Unknown blocks unknown outcomes even when fallback allows.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "unknown"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "allow",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [],
+        "classification_status": "unknown"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "unknown"
+        ]
+      }
+    },
+    {
+      "id": "unavailable-fallback-block",
+      "description": "Unavailable classification follows unavailable fallback.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [],
+        "classification_status": "unavailable"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "classification_unavailable",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "unavailable-fallback-allow",
+      "description": "An unavailable source may explicitly fall back to allow.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "allow"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [],
+        "classification_status": "unavailable"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": true,
+        "reason": "classification_unavailable",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "selected-not-resolved-unavailable",
+      "description": "Selecting Not-Resolved covers unavailable resolution outcomes.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "not_resolved"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "allow"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [],
+        "classification_status": "unavailable"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "not_resolved"
+        ]
+      }
+    },
+    {
+      "id": "unsupported-is-not-not-resolved",
+      "description": "Unsupported coverage uses fallback without manufacturing Not-Resolved evidence.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "not_resolved"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "allow"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [],
+        "classification_status": "unsupported"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": true,
+        "reason": "classification_unavailable",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "positive-evidence-precedes-unavailable",
+      "description": "Known selected evidence blocks despite another unavailable source and allow fallback.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "allow"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "unavailable"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "positive-evidence-precedes-unknown",
+      "description": "Known evidence remains decisive before unknown fallback.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "allow",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "unknown"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    },
+    {
+      "id": "matched-category-order-dedup",
+      "description": "Matched categories preserve evidence order, deduplicate, then append outcome status.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "unknown",
+            "games",
+            "adult"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games",
+          "adult",
+          "games"
+        ],
+        "classification_status": "unknown"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games",
+          "adult",
+          "unknown"
+        ]
+      }
+    },
+    {
+      "id": "classified-unselected-category",
+      "description": "Classified categories absent from selected set are allowed.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "adult"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": true,
+        "reason": "categories_allowed",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "classification-error-fallback",
+      "description": "Any unexpected status is treated as unavailable, never an implicit allow.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/play",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [],
+        "classification_status": "error"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "classification_unavailable",
+        "matched_categories": []
+      }
+    },
+    {
+      "id": "allow-multiple-trailing-slashes",
+      "description": "Only one trailing slash is removed from an allowlist entry; multiple slashes remain distinct path boundaries.",
+      "at": "2026-09-07T10:00:00.000Z",
+      "url": "https://example.org/lesson/file",
+      "snapshot": {
+        "school": {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "school_id": "40000000-0000-4000-8000-000000000001",
+          "student_id": null,
+          "kind": "school",
+          "revision": 3,
+          "status": "published",
+          "published_revision": 3,
+          "created_at": "2026-09-01T00:00:00.000Z",
+          "updated_at": "2026-09-01T00:00:00.000Z",
+          "name": "School day",
+          "time_zone": "UTC",
+          "is_enabled": true,
+          "windows": [
+            {
+              "days_of_week": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+              ],
+              "start_time": "09:00",
+              "end_time": "15:00"
+            }
+          ],
+          "blocked_categories": [
+            "games"
+          ],
+          "allowlist": [
+            {
+              "url": "https://example.org/lesson//",
+              "include_subdomains": false
+            }
+          ],
+          "excluded_dates": [],
+          "unknown_action": "block",
+          "unavailable_action": "block"
+        },
+        "home": null,
+        "settings_locked": true,
+        "schema_version": 1,
+        "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+        "server_time": "2026-09-07T10:00:00.000Z",
+        "offline_valid_until": "2026-09-08T10:00:00.000Z"
+      },
+      "classification": {
+        "categories": [
+          "games"
+        ],
+        "classification_status": "classified"
+      },
+      "expected": {
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "active": true,
+        "allowed": false,
+        "reason": "blocked_category",
+        "matched_categories": [
+          "games"
+        ]
+      }
+    }
+  ]
+}

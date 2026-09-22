@@ -43,11 +43,21 @@ enum PortfolioBucket: String, Codable, CaseIterable {
     case noDeadline = "no_deadline"
 }
 
-/// `PortfolioBadge`.
+/// `PortfolioBadge`. `unscheduled` / `pushed_back` come from the backend's Day Plan simulation
+/// (backend #2363); a badge this build doesn't know decodes to `.unknown` rather than failing the
+/// whole portfolio, so a newer backend can add badges without breaking older Macs.
 enum PortfolioBadge: String, Codable {
     case overcommitted
     case startNow = "start_now"
     case sacrifice
+    case unscheduled
+    case pushedBack = "pushed_back"
+    case unknown
+
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = PortfolioBadge(rawValue: raw) ?? .unknown
+    }
 }
 
 /// `PortfolioImportance`.
@@ -204,12 +214,85 @@ struct ToDoTask: Codable, Equatable, Identifiable {
     var effectiveOutcome: Int { min(10, max(1, outcome ?? 1)) }
     var effectivePerspiration: Int { min(10, max(1, perspiration_level ?? 1)) }
 
-    /// Web `resolveTaskIconEmoji`: `icon` is either an emoji glyph or a hex unified code
-    /// ("1f600", "1f1e6-1f1e8") that has to be turned back into scalars.
-    var iconEmoji: String? {
-        guard let icon = icon?.trimmingCharacters(in: .whitespaces), !icon.isEmpty else { return nil }
+    /// Web `resolveTaskIconEmoji`.
+    var iconEmoji: String? { EmojiIcon.resolve(icon) }
+}
+
+/// Web `resolveTaskIconEmoji`: a stored `icon` is either an emoji glyph already ("📝") or the hex
+/// unified code the web's emoji picker writes ("1f600", "1f1e6-1f1e8"), which has to be turned back
+/// into scalars before it can be rendered. Tasks and projects both store icons this way.
+/// One file attached to a task. The backend keeps the bytes in R2 and hands back a short-lived
+/// `download_url`; `file_key` is the server's own path and is never built on the client.
+struct ToDoAttachment: Codable, Identifiable, Equatable {
+    let id: String
+    var task_id: String?
+    var file_name: String
+    var file_key: String
+    var content_type: String
+    var file_size: Int
+    var download_url: String?
+    var created_at: String?
+
+    /// 20 MB, matching the server's `MAX_ATTACHMENT_SIZE_BYTES`; it rejects anything larger.
+    static let maximumBytes = 20 * 1024 * 1024
+    /// 20 per task, matching the server's `MAX_TASK_ATTACHMENTS`.
+    static let maximumPerTask = 20
+
+    var isImage: Bool { content_type.lowercased().hasPrefix("image/") }
+}
+
+/// MIME types for the files a user can attach. The server stores whatever it is told and signs the
+/// upload URL with it, so a wrong type would be baked into the object — worth naming explicitly
+/// rather than guessing per call site.
+enum ToDoAttachmentType {
+    static let fallback = "application/octet-stream"
+    private static let byExtension = [
+        "png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "gif": "image/gif",
+        "heic": "image/heic", "webp": "image/webp", "tiff": "image/tiff", "bmp": "image/bmp",
+        "pdf": "application/pdf", "txt": "text/plain",
+    ]
+    static let imageExtensions = ["png", "jpg", "jpeg", "gif", "heic", "webp", "tiff", "bmp"]
+    /// The non-image files the picker offers — the ones the in-app preview can actually render.
+    static let documentExtensions = ["pdf", "txt"]
+    static let pdf = "application/pdf"
+    private static let textPrefix = "text/"
+
+    static func contentType(forExtension ext: String) -> String {
+        byExtension[ext.lowercased()] ?? fallback
+    }
+
+    static func isPDF(_ contentType: String) -> Bool { contentType.lowercased().hasPrefix(pdf) }
+    static func isText(_ contentType: String) -> Bool { contentType.lowercased().hasPrefix(textPrefix) }
+}
+
+/// "1.2 MB" for an attachment row.
+enum ToDoAttachmentSize {
+    static func label(_ bytes: Int) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: Int64(max(0, bytes)))
+    }
+}
+
+struct ToDoAttachmentUploadTicket: Codable {
+    let uploadUrl: String
+    let fileKey: String
+}
+
+/// Reads an icon back for display. `habit_icon` is stored as hyphen-joined hex codepoints
+/// ("1f486-200d-2642-fe0f"); a project's `icon` is the literal character (see `ProjectIcon`). This
+/// takes either, so both render. Nothing writes hex — an earlier `encode` that did was written on a
+/// wrong reading of the server contract and is gone (report 2026-09-14_20-07-42, backend#2404).
+enum EmojiIcon {
+    private static let minHexDigits = 4
+    private static let maxHexDigits = 6
+
+    static func resolve(_ raw: String?) -> String? {
+        guard let icon = raw?.trimmingCharacters(in: .whitespaces), !icon.isEmpty else { return nil }
         let parts = icon.lowercased().split(separator: "-")
-        let looksLikeHex = parts.allSatisfy { part in part.count >= 4 && part.count <= 6 && part.allSatisfy { $0.isHexDigit } }
+        let looksLikeHex = parts.allSatisfy { part in
+            part.count >= minHexDigits && part.count <= maxHexDigits && part.allSatisfy { $0.isHexDigit }
+        }
         guard looksLikeHex else { return icon }
         var result = ""
         for part in parts {
@@ -229,9 +312,15 @@ struct ToDoPage: Decodable {
         var pageCount: Int?
         var hasNextPage: Bool?
         var hasPreviousPage: Bool?
+        /// Present only when the server applied effective unfinished-task filtering before paging.
+        var excludesCompleted: Bool?
     }
     var data: [ToDoTask]
     var meta: Meta?
+    /// How many rows the server actually sent, undecodable ones included. `meta.itemCount` counts
+    /// rows on the server and `data` counts rows we can render; this sits between them, so a caller
+    /// can tell "not fetched yet" apart from "fetched but unrenderable".
+    var receivedRowCount: Int
 
     private enum CodingKeys: String, CodingKey { case data, meta }
 
@@ -242,6 +331,7 @@ struct ToDoPage: Decodable {
         let rows = try container.decode([LenientRow<ToDoTask>].self, forKey: .data)
         data = rows.compactMap { $0.value }
         meta = try container.decodeIfPresent(Meta.self, forKey: .meta)
+        receivedRowCount = rows.count
         let dropped = rows.count - data.count
         if dropped > 0 { addLog(text: "api todo page dropped \(dropped) undecodable row(s)") }
     }
@@ -349,7 +439,10 @@ enum ProjectMemberRole: String, Codable, CaseIterable {
 }
 
 enum ProjectInvitationStatus: String, Codable {
-    case pending, accepted, declined
+    /// `failed` is the server's fourth state: the invitation row exists but the email send threw
+    /// (`ProjectMemberInvitationStatus.FAILED`). Without it such a row fell into the `.declined`
+    /// fallback below and read as "Declined" — exactly the case a resend is there to rescue.
+    case pending, accepted, declined, failed
 }
 
 /// `ProjectMember`.
@@ -376,8 +469,13 @@ struct ProjectNote: Decodable, Equatable, Identifiable {
     var content: JSONValue?
     var created_at: String?
     var updated_at: String?
+    /// When the note was filed away, or nil while it is active. Archived notes keep their content and
+    /// collaborative document but leave the default list. Absent on payloads from an older API.
+    var archived_at: String? = nil
 
-    /// The note body flattened to plain text (paragraph breaks kept) for the read-only preview.
+    var isArchived: Bool { archived_at != nil }
+
+    /// The note body flattened to plain text, paragraph breaks kept — for previews and search.
     var plainText: String { content.map { JSONValue.plainText($0) } ?? "" }
 }
 
@@ -424,7 +522,9 @@ indirect enum JSONValue: Decodable, Equatable {
     }
 }
 
-/// `PortfolioTopPriorityTask` — `top_score` is null for tasks the daily cron hasn't scored yet.
+/// The task a project card offers as its NEXT one. Deliberately NOT decoded from the payload's
+/// `top_priority_task` (which names completed tasks) — `PortfolioNextTask.pick` builds it from the
+/// project's open to-dos instead, so `top_score` is always the locally computed TOP score.
 struct ProjectTopPriorityTask: Codable, Equatable {
     var id: String
     var title: String
@@ -432,6 +532,17 @@ struct ProjectTopPriorityTask: Codable, Equatable {
 }
 
 /// `Project` (`GET /projects`).
+/// `projects.metadata` — the server's open jsonb bag (backend#2412). Only `tags` is modelled: it is
+/// the one key the server validates, normalizes and indexes, and the only one this client writes.
+///
+/// Unknown keys are deliberately **not** decoded, and that is safe because nothing here ever re-sends
+/// the whole bag: writes go through `ProjectDetailStore.tagsBody`, which sends `metadata.tags` alone,
+/// and the server shallow-merges it (`jsonb ||`). A key another client owns therefore survives a tag
+/// edit from the Mac — the failure mode that nulled `assigned_mcp_token_id` on every task save.
+struct ProjectMetadata: Codable, Equatable {
+    var tags: [String]?
+}
+
 struct Project: Codable, Equatable, Identifiable {
     var id: String
     var name: String
@@ -439,18 +550,24 @@ struct Project: Codable, Equatable, Identifiable {
     var owner_id: String?
     var custom_statuses: [ProjectCustomStatus]?
     var icon: String?
+    var metadata: ProjectMetadata?
     var members: [ProjectMember]?
     var task_count: Int?
     var uncompleted_task_count: Int?
     var synced_project_id: String?
+    var synced_platform: String?
     var due_date: String?
     var importance: Int?
+    var outcome: Int?
     var status: String?
-    var top_priority_task: ProjectTopPriorityTask?
     var created_at: String?
     var updated_at: String?
 
     var lifecycleStatus: ProjectLifecycleStatus { ProjectLifecycleStatus(rawValue: status ?? "") ?? .active }
+    /// The project's tags, as stored (already lower-cased by the server). Empty when it has none.
+    var tagList: [String] { metadata?.tags ?? [] }
+    /// The project's emoji, decoded from whichever form the picker stored (see `EmojiIcon`).
+    var iconEmoji: String? { EmojiIcon.resolve(icon) }
     var customStatuses: [ProjectCustomStatus] { custom_statuses ?? [] }
     var isSynced: Bool { !(synced_project_id ?? "").isEmpty }
     /// Web `projectUsesCustomStatuses`: native project with at least one custom column.
@@ -478,12 +595,13 @@ struct ProjectsPage: Decodable {
     var totalCount: Int { total_count ?? meta?.itemCount ?? items.count }
 }
 
-/// `PortfolioProjectRisk` + the `top_priority_task` the wire payload also carries.
+/// `PortfolioProjectRisk`. The payload's `top_priority_task` is ignored — see `PortfolioNextTask`.
 struct PortfolioProject: Codable, Equatable, Identifiable {
     var id: String
     var name: String
     var due_date: String?
     var importance: Int?
+    var outcome: Int?
     var required_hours: Double?
     var risk_score: Double?
     var bucket: String
@@ -491,15 +609,33 @@ struct PortfolioProject: Codable, Equatable, Identifiable {
     var days_until_due: Int?
     var latest_start: String?
     var badges: [String]?
-    var top_priority_task: ProjectTopPriorityTask?
+    // Day Plan simulation fields (backend #2363) — all optional so older backends still decode.
+    var scheduled_hours: Double?
+    var unscheduled_hours: Double?
+    var projected_completion_date: String?
+    var plan_feasible: Bool?
+    var pushed_task_ids: [String]?
 
     var portfolioBucket: PortfolioBucket { PortfolioBucket(rawValue: bucket) ?? .noDeadline }
-    var badgeList: [PortfolioBadge] { (badges ?? []).compactMap { PortfolioBadge(rawValue: $0) } }
+    var badgeList: [PortfolioBadge] { (badges ?? []).map { PortfolioBadge(rawValue: $0) ?? .unknown } }
     var importanceLevel: PortfolioImportance { PortfolioImportance(rawValue: importance ?? 2) ?? .medium }
     var riskScore: Double { risk_score ?? 0 }
     var requiredHours: Double { required_hours ?? 0 }
     var hasDueDate: Bool { !(due_date ?? "").isEmpty }
     var isOverdue: Bool { (days_until_due ?? 0) < 0 && days_until_due != nil }
+    /// The backend simulated the Day Plan for this project (the "Scheduled X of Y" line has data).
+    var hasScheduleBreakdown: Bool { scheduled_hours != nil && requiredHours > 0 }
+    /// Remaining work with no task planned in the horizon.
+    var isUnscheduled: Bool { badgeList.contains(.unscheduled) }
+}
+
+/// One entry of `PortfolioResponse.pushed_tasks`: a to-do the simulation could not fit on its
+/// planned day; `projected_date` is the day it would actually complete.
+struct PortfolioPushedTask: Codable, Equatable {
+    var id: String
+    var project_id: String?
+    var planned_date: String?
+    var projected_date: String?
 }
 
 /// `PortfolioResponse` (`GET /portfolio`).
@@ -510,8 +646,11 @@ struct PortfolioResponse: Codable, Equatable {
     var overcommitted: Bool?
     var total_required_hours: Double?
     var total_available_hours: Double?
+    var plan_feasible: Bool?
+    var pushed_tasks: [PortfolioPushedTask]?
 
     var isOvercommitted: Bool { overcommitted == true }
+    var pushedTasks: [PortfolioPushedTask] { pushed_tasks ?? [] }
 }
 
 /// `PortfolioSettings` (`GET/PUT /portfolio/settings`). Index 0 = Monday.
@@ -521,4 +660,16 @@ struct PortfolioSettings: Codable, Equatable {
 
     static let daysPerWeek = 7
     static let horizonOptions = [7, 14, 28, 60, 90]
+    /// Backend default when the user never saved capacity settings (also used when the fetch fails).
+    static let defaultHorizonDays = 14
+}
+
+/// Body of `PUT /portfolio/busy-hours`: hours already taken by calendar events the backend can't
+/// see (the Mac's EventKit calendars), per local day. The backend merges sources with `max`.
+struct BusyHoursReport: Codable, Equatable {
+    /// Identifies this device's calendars server-side; one row per (user, source).
+    static let macEventKitSource = "mac-eventkit"
+
+    var source: String
+    var days: [String: Double]
 }

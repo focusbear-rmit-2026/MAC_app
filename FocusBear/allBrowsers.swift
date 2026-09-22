@@ -7,6 +7,84 @@
 //
 
 import Foundation
+import Combine
+
+/// A missing AppleScript descriptor can still carry a real Automation denial. Interpret the
+/// error before the optional value so callers never mistake revoked access for an empty tab.
+enum BrowserScriptStringResult: Equatable {
+    case value(String)
+    case automationDenied(application: String)
+    case unavailable
+
+    static func interpret(value: String?, hasDescriptor: Bool, errors: NSDictionary?) -> Self {
+        let number = (errors?["NSAppleScriptErrorNumber"] as? NSNumber)?.intValue
+            ?? Int(errors?["NSAppleScriptErrorNumber"] as? String ?? "")
+        if number == -1743 {
+            return .automationDenied(application: errors?["NSAppleScriptErrorAppName"] as? String ?? "")
+        }
+        guard hasDescriptor else { return .unavailable }
+        // A browser profile picker can have a descriptor with no string. Preserve its existing
+        // empty-tab behavior; it is not evidence that Automation permission was denied.
+        return .value(value ?? "")
+    }
+}
+
+/// Shared by successful reads and explicit denials. Returns nil for an unchanged record so
+/// a one-second browser poll does not repeatedly write preferences or emit the same warning.
+enum BrowserPermissionRecords {
+    static func updating(_ rows: [[String: Any]], browser: BROWSER, enabled: Bool) -> [[String: Any]]? {
+        var updated = rows
+        if let index = updated.firstIndex(where: { ($0["browser"] as? Int) == browser.rawValue }) {
+            guard (updated[index]["isEnabled"] as? Bool) != enabled else { return nil }
+            updated[index]["isEnabled"] = enabled
+        } else {
+            updated.append(["browser": browser.rawValue, "isEnabled": enabled])
+        }
+        return updated
+    }
+}
+
+/// Only explicit denial evidence belongs here. An unconfigured browser or a timed-out read is
+/// unknown; neither should tell the user that macOS has denied access.
+struct BrowserAutomationDenials {
+    private(set) var browsers: Set<BROWSER> = []
+
+    @discardableResult
+    mutating func record(browser: BROWSER, enabled: Bool) -> Bool {
+        if enabled { return browsers.remove(browser) != nil }
+        return browsers.insert(browser).inserted
+    }
+}
+
+final class BrowserAutomationStatus: ObservableObject {
+    static let shared = BrowserAutomationStatus()
+    @Published private(set) var deniedBrowsers: Set<BROWSER> = []
+    private var evidence = BrowserAutomationDenials()
+
+    /// Called only on the main queue by the serialized preference update below.
+    fileprivate func record(browser: BROWSER, enabled: Bool) -> Bool {
+        guard evidence.record(browser: browser, enabled: enabled) else { return false }
+        deniedBrowsers = evidence.browsers
+        return true
+    }
+}
+
+func recordBrowserAutomationPermission(browser: BROWSER, enabled: Bool) {
+    // Browser reads run on different queues; update their shared preference snapshot serially.
+    let update = {
+        let changed = BrowserAutomationStatus.shared.record(browser: browser, enabled: enabled)
+        let rows = UserDefaults.standard.array(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String: Any]] ?? []
+        if let updated = BrowserPermissionRecords.updating(rows, browser: browser, enabled: enabled) {
+            UserDefaults.standard.set(updated, forKey: kUserdefaultsAllBrowsersPermissionInfo)
+        }
+        // Runtime evidence has its own deduplication: the first denial must still be reported if
+        // an earlier app launch already persisted isEnabled=false for this browser.
+        if changed {
+            addLog(text: "browser Automation permission: browser=\(browser.rawValue) available=\(enabled)\(enabled ? "" : " error=-1743; URL checks cannot run until Automation access is restored")")
+        }
+    }
+    if Thread.isMainThread { update() } else { DispatchQueue.main.async(execute: update) }
+}
 
 /// Run an AppleScript source and return its result descriptor, ALWAYS on the main thread.
 /// NSAppleScript is not thread-safe; executing it on a background queue (e.g. the URL/tab timer)
@@ -17,10 +95,18 @@ import Foundation
 /// scripts ran on the AppleScript serial queue segfaulted inside Apple's AppleScript compiler
 /// (EXC_BAD_ACCESS during compile). The `with timeout` guard (#1950) prevents hangs but not that
 /// crash — serialising every NSAppleScript execution onto one queue does.
-func runBrowserAppleScript(_ source: String, timeoutSeconds: Int = 5) -> NSAppleEventDescriptor? {
+func runBrowserAppleScript(_ source: String, timeoutSeconds: Int = 5, authorization: @escaping () -> Bool = { true }, logErrors: Bool = true) -> NSAppleEventDescriptor? {
     var errors: NSDictionary?
-    let desc = runAppleScriptSafely(source, timeoutSeconds: timeoutSeconds, errors: &errors)
-    if errors != nil { print(errors as Any) }
+    let desc = runAppleScriptSafely(source, timeoutSeconds: timeoutSeconds, errors: &errors, authorization: authorization)
+    if case .automationDenied(let application) = BrowserScriptStringResult.interpret(
+        value: desc?.stringValue, hasDescriptor: desc != nil, errors: errors),
+       let browser = getCurrentBrowserFrom(browserName: application.lowercased()) {
+        // Tab-count reads can precede the URL read. Surface their confirmed denials too, without
+        // printing the same AppleScript dictionary every timer tick.
+        recordBrowserAutomationPermission(browser: browser, enabled: false)
+    } else if logErrors && errors != nil {
+        print(errors as Any)
+    }
     return desc
 }
 
@@ -219,6 +305,61 @@ func getBrowserAllTabUrlAndTitle(browser:BROWSER)->[(title: String, url: String)
 
 
 
+/// Whether the per-second "what is the active tab?" AppleScript is actually answering.
+///
+/// Report 2026-09-11_16-56-33 ("it's not blocking anything"): the read started returning nil after
+/// the screen locked, and kept doing so for three hours. Nothing was logged — `getActiveTabUrl` was
+/// called every second, no URL ever came back, so `focusTryToBlockUnwantedUrl` was never reached and
+/// every site stayed open — while the menu's own self-check still reported no blocking issue.
+///
+/// A single nil is normal (a browser window closing, a slow tab, a script that timed out once), so
+/// only a run of failures counts, and the state is reported once per transition rather than per tick.
+struct BrowserUrlReadHealth: Equatable {
+    /// Consecutive failures before the reads are called broken — at one read per second, a handful
+    /// of ticks is long enough to rule out a single slow answer.
+    static let failureThreshold = 8
+    private(set) var consecutiveFailures = 0
+    private(set) var isFailing = false
+    private(set) var failingSince: Date?
+
+    /// Records one read. Returns true when this read changed the verdict, so the caller logs the
+    /// transition instead of every tick.
+    @discardableResult
+    mutating func record(succeeded: Bool, at now: Date = Date()) -> Bool {
+        if succeeded {
+            consecutiveFailures = 0
+            guard isFailing else { return false }
+            isFailing = false; failingSince = nil
+            return true
+        }
+        consecutiveFailures += 1
+        guard !isFailing, consecutiveFailures >= Self.failureThreshold else { return false }
+        isFailing = true; failingSince = now
+        return true
+    }
+}
+
+private let browserUrlReadHealthLock = NSLock()
+private var browserUrlReadHealthStorage = BrowserUrlReadHealth()
+
+/// True when the active-tab reads have been failing long enough to be a real fault, not a blip.
+var isBrowserUrlReadFailing: Bool {
+    browserUrlReadHealthLock.lock(); defer { browserUrlReadHealthLock.unlock() }
+    return browserUrlReadHealthStorage.isFailing
+}
+
+func recordBrowserUrlRead(succeeded: Bool, browser: BROWSER) {
+    browserUrlReadHealthLock.lock()
+    let changed = browserUrlReadHealthStorage.record(succeeded: succeeded)
+    let failing = browserUrlReadHealthStorage.isFailing
+    let failures = browserUrlReadHealthStorage.consecutiveFailures
+    browserUrlReadHealthLock.unlock()
+    guard changed else { return }
+    addLog(text: failing
+           ? "browser url read: FAILING after \(failures) consecutive empty reads (browser=\(browser)) — websites cannot be checked"
+           : "browser url read: recovered (browser=\(browser))")
+}
+
 func getActiveTabUrlForBlocking(browser:BROWSER)->String?{
     addLog(text:"func call:- getActiveTabUrlForBlocking")
 
@@ -262,17 +403,7 @@ func getActiveTabUrlForBlocking(browser:BROWSER)->String?{
 
     // check which browser is allowed in automation
     if url != nil{
-        if var arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
-            for i in 0..<arrBrowsersInfo.count{
-                let info = arrBrowsersInfo[i]
-                let browserRawValue = info["browser"] as? Int ?? 0
-                if browser.rawValue == browserRawValue{
-                    arrBrowsersInfo[i]["isEnabled"] = true
-                    break;
-                }
-            }
-            UserDefaults.standard.set(arrBrowsersInfo, forKey: kUserdefaultsAllBrowsersPermissionInfo)
-        }
+        recordBrowserAutomationPermission(browser: browser, enabled: true)
     }else if browser == ._FIREFOX_{// may be extension not installed. for old users because from now firefox blocking is based on extension v 2.27.435
         if var arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
             for i in 0..<arrBrowsersInfo.count{
@@ -289,9 +420,11 @@ func getActiveTabUrlForBlocking(browser:BROWSER)->String?{
     if let url = url{
         if url.isEmpty{
             addLog(text:"url is empty return;")
+            recordBrowserUrlRead(succeeded: false, browser: browser)
             return nil;  //is blank then return nil so we will not read this // 26/4/25
         }
     }
+    recordBrowserUrlRead(succeeded: url != nil, browser: browser)
     return url
 }
 
@@ -424,19 +557,9 @@ func getActiveTabUrlOf(browser:BROWSER)->String?{
     }
 
     //--------------------------------------------//
-    // check which browser is allowed in automation
-    if url != nil{
-        if var arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
-            for i in 0..<arrBrowsersInfo.count{
-                let info = arrBrowsersInfo[i]
-                let browserRawValue = info["browser"] as? Int ?? 0
-                if browser.rawValue == browserRawValue{
-                    arrBrowsersInfo[i]["isEnabled"] = true
-                    break;
-                }
-            }
-            UserDefaults.standard.set(arrBrowsersInfo, forKey: kUserdefaultsAllBrowsersPermissionInfo)
-        }
+    // A real URL read is the evidence that clears an earlier Automation denial.
+    if url != nil {
+        recordBrowserAutomationPermission(browser: browser, enabled: true)
     }
     if let url = url{
         if url.isEmpty{
@@ -490,6 +613,155 @@ func getActiveTabTitleOf(browser:BROWSER)->String?{
 
 
 
+/// Chrome can have several running instances (and cloned apps with its bundle ID).
+/// Address the process explicitly; LaunchServices name resolution can select a background copy.
+enum ChromeProcessTabs {
+    private static let diagnosticLock = NSLock()
+    private static var lastDiagnostic = ""
+    private static func diagnostic(_ message: String) {
+        diagnosticLock.lock()
+        let changed = lastDiagnostic != message
+        lastDiagnostic = message
+        diagnosticLock.unlock()
+        if changed { addLog(text: "Chrome tab snapshot: " + message) }
+    }
+
+    static func code(_ text: String) -> OSType {
+        text.utf8.reduce(0) { ($0 << 8) | OSType($1) }
+    }
+
+    static var allItems: NSAppleEventDescriptor {
+        // formAbsolutePosition requires typeAbsoluteOrdinal, not a generic enumerated value.
+        NSAppleEventDescriptor(descriptorType: code("abso"), data: NSAppleEventDescriptor(enumCode: code("all ")).data)!
+    }
+
+    static func object(_ kind: String, form: String, key: NSAppleEventDescriptor,
+                       container: NSAppleEventDescriptor = .null()) -> NSAppleEventDescriptor {
+        let record = NSAppleEventDescriptor.record()
+        record.setDescriptor(.init(typeCode: code(kind)), forKeyword: code("want"))
+        record.setDescriptor(.init(enumCode: code(form)), forKeyword: code("form"))
+        record.setDescriptor(key, forKeyword: code("seld"))
+        record.setDescriptor(container, forKeyword: code("from"))
+        return record.coerce(toDescriptorType: code("obj "))!
+    }
+
+    static func property(_ name: String, of object: NSAppleEventDescriptor) -> NSAppleEventDescriptor {
+        self.object("prop", form: "prop", key: .init(typeCode: code(name)), container: object)
+    }
+
+    static func send(pid: pid_t, object: NSAppleEventDescriptor, command: String = "getd", timeout: TimeInterval = 1) throws -> NSAppleEventDescriptor {
+        let event = NSAppleEventDescriptor(eventClass: code("core"), eventID: code(command),
+            targetDescriptor: .init(processIdentifier: pid), returnID: -1, transactionID: 0)
+        event.setParam(object, forKeyword: code("----"))
+        let reply = try event.sendEvent(options: [.waitForReply, .neverInteract], timeout: timeout)
+        if let error = reply.paramDescriptor(forKeyword: code("errn")), error.int32Value != 0 {
+            throw NSError(domain: NSOSStatusErrorDomain, code: Int(error.int32Value))
+        }
+        return reply.paramDescriptor(forKeyword: code("----")) ?? .null()
+    }
+
+    static func isUserBrowser(bundleIdentifier: String?, bundleName: String?,
+                              activationPolicy: NSApplication.ActivationPolicy, arguments: [String] = []) -> Bool {
+        // Headless Chrome registers the same bundle/path but cannot present a user interface.
+        // Its automation tabs must not consume the user's tab allowance.
+        bundleIdentifier == "com.google.Chrome" && bundleName == "Google Chrome.app" &&
+            activationPolicy != .prohibited && !arguments.contains { $0 == "--headless" || $0.hasPrefix("--headless=") }
+    }
+
+    /// Headless Chrome can become a regular NSRunningApplication after automation. Read argv,
+    /// not its UI policy alone. Never log the arguments (they can include private URLs).
+    static func processArguments(_ pid: pid_t) -> [String] {
+        var mib: [Int32] = [CTL_KERN, KERN_PROCARGS2, pid]
+        var size = 0
+        guard sysctl(&mib, 3, nil, &size, nil, 0) == 0, size > 4, size <= 1_048_576 else { return [] }
+        var data = Data(count: size)
+        let result = data.withUnsafeMutableBytes { sysctl(&mib, 3, $0.baseAddress, &size, nil, 0) }
+        guard result == 0 else { return [] }
+        return decodeProcessArguments(data.prefix(size))
+    }
+
+    static func decodeProcessArguments(_ data: Data) -> [String] {
+        guard data.count > 4 else { return [] }
+        let argc = data.withUnsafeBytes { $0.loadUnaligned(as: Int32.self) }
+        guard argc > 0, argc < 65536 else { return [] }
+        let bytes = Array(data.dropFirst(4))
+        guard let executableEnd = bytes.firstIndex(of: 0) else { return [] }
+        var cursor = executableEnd + 1
+        while cursor < bytes.count && bytes[cursor] == 0 { cursor += 1 }
+        var arguments: [String] = []
+        for _ in 0..<argc {
+            guard cursor < bytes.count, let end = bytes[cursor...].firstIndex(of: 0),
+                  let value = String(bytes: bytes[cursor..<end], encoding: .utf8) else { return [] }
+            arguments.append(value)
+            cursor = end + 1
+        }
+        return arguments
+    }
+
+    static func applications() -> [NSRunningApplication] {
+        NSWorkspace.shared.runningApplications.filter {
+            guard !$0.isTerminated,
+                  isUserBrowser(bundleIdentifier: $0.bundleIdentifier, bundleName: $0.bundleURL?.lastPathComponent,
+                                activationPolicy: $0.activationPolicy) else { return false }
+            return isUserBrowser(bundleIdentifier: $0.bundleIdentifier, bundleName: $0.bundleURL?.lastPathComponent,
+                activationPolicy: $0.activationPolicy, arguments: processArguments($0.processIdentifier))
+        }
+    }
+
+    static func windows() -> [String: [String]]? {
+        windows(processIDs: applications().map(\.processIdentifier)) { pid, object in
+            try send(pid: pid, object: object)
+        }
+    }
+
+    static func windows(processIDs: [pid_t], read: (pid_t, NSAppleEventDescriptor) throws -> NSAppleEventDescriptor) -> [String: [String]]? {
+        guard !processIDs.isEmpty else { return nil }
+        var result: [String: [String]] = [:]
+        var stage = "windows"
+        do {
+            for pid in Set(processIDs).sorted() {
+                stage = "pid=\(pid) window IDs"
+                let allWindows = object("cwin", form: "indx", key: allItems)
+                let ids = try read(pid, property("ID  ", of: allWindows))
+                guard ids.descriptorType == code("list") else { diagnostic("\(stage) unexpected type=\(ids.descriptorType)"); return nil }
+                for index in 0..<ids.numberOfItems {
+                    guard let id = ids.atIndex(index + 1), let value = id.stringValue else { diagnostic("\(stage) missing ID value"); return nil }
+                    let window = object("cwin", form: "ID  ", key: id)
+                    let tabs = object("CrTb", form: "indx", key: allItems, container: window)
+                    stage = "pid=\(pid) window=\(value) tab URLs"
+                    let urls = try read(pid, property("URL ", of: tabs))
+                    guard urls.descriptorType == code("list") else { diagnostic("\(stage) unexpected type=\(urls.descriptorType)"); return nil }
+                    result["\(pid):\(value)"] = (0..<urls.numberOfItems).map {
+                        urls.atIndex($0 + 1)?.stringValue ?? ""
+                    }
+                }
+            }
+            diagnostic("read \(result.count) windows across \(Set(processIDs).count) processes")
+            return result
+        } catch {
+            diagnostic("\(stage) error=\((error as NSError).code)")
+            if (error as NSError).code == -1743 {
+                recordBrowserAutomationPermission(browser: ._GOOGLE_CHROME_, enabled: false)
+            }
+            return nil
+        }
+    }
+
+    static func close(index: Int, windowKey: String) {
+        let components = windowKey.split(separator: ":")
+        guard components.count == 2, let pid = pid_t(components[0]),
+              applications().contains(where: { $0.processIdentifier == pid }) else { return }
+        let window = object("cwin", form: "ID  ", key: .init(string: String(components[1])))
+        let tab = object("CrTb", form: "indx", key: .init(int32: Int32(index + 1)), container: window)
+        do { _ = try send(pid: pid, object: tab, command: "clos") }
+        catch {
+            if (error as NSError).code == -1743 {
+                recordBrowserAutomationPermission(browser: ._GOOGLE_CHROME_, enabled: false)
+            }
+        }
+    }
+}
+
 func getAllBrowsersTabCount()->Int{
     var totalTabsCount = 0
     let runningApps = NSWorkspace.shared.runningApplications
@@ -504,9 +776,12 @@ func getAllBrowsersTabCount()->Int{
     var isOperaGxRunning = false
     var isCometRunning = false
 
+    var countedBrowserNames: Set<String> = []
     for app in runningApps{
+        guard app.activationPolicy != .prohibited else { continue }
         if let appUrl = app.bundleURL{
             let nameLowercased = appUrl.deletingPathExtension().lastPathComponent.lowercased()
+            guard countedBrowserNames.insert(nameLowercased).inserted else { continue }
             if nameLowercased == "safari"{
                 let keys = safariWindowsInfo.keys
                 for key in keys{
@@ -631,6 +906,7 @@ func getBrowserAllWindowStruct(browser:BROWSER)->[String:[String]]?{
         requestBrowserAutomationOnceIfNeeded(browser)
         return nil
     }
+    if browser == ._GOOGLE_CHROME_ { return ChromeProcessTabs.windows() }
     var browserName = ""
 
     if browser == ._SAFARI_{
@@ -709,7 +985,11 @@ func getBrowserAllWindowStruct(browser:BROWSER)->[String:[String]]?{
     return nil
 }
 
-func closeTabAt(index:Int, browser:BROWSER){
+func closeTabAt(index:Int, browser:BROWSER, windowID: String? = nil){
+    if browser == ._GOOGLE_CHROME_, let windowID = windowID, windowID.contains(":") {
+        ChromeProcessTabs.close(index: index, windowKey: windowID)
+        return
+    }
     let tab = index + 1// browser first tab index is 1 not 0
 
     var browserName = ""
@@ -735,6 +1015,8 @@ func closeTabAt(index:Int, browser:BROWSER){
         browserName = "Comet"
     }
 
+    // IDs originate in a browser snapshot, but only interpolate validated numeric identifiers.
+    let windowTarget = windowID.flatMap(Int.init).map { "window id \($0)" } ?? "front window" // i18n-ignore: AppleScript syntax, not display text.
     var script: String = ""
 
     if browser == ._ARC_{
@@ -748,7 +1030,7 @@ func closeTabAt(index:Int, browser:BROWSER){
         script =
         """
         tell application "\(browserName)"
-        set the_wnd to front window
+        set the_wnd to \(windowTarget)
         set allTabs to tabs in the_wnd
         set active_tab to item \(tab) of allTabs
         active_tab close
@@ -758,6 +1040,32 @@ func closeTabAt(index:Int, browser:BROWSER){
     executeScript(script: script)
 }
 
+
+/// Well-known bundle identifiers for the browsers Focus Bear can read tabs from. Used to recognise a
+/// browser even when its *app name* is NOT one of `arrBrowsersLowerCasedNames` — e.g. a Chrome
+/// site-specific-browser / PWA / `--app` shortcut window ("Safe FB Team Comms"), which runs under Chrome's
+/// bundle id (or a `com.google.Chrome.app.<id>` child) but shows a custom app name, so name-based
+/// detection misses it.
+let kBrowserBundleIds: [String: BROWSER] = [
+    "com.apple.Safari": ._SAFARI_,
+    "com.google.Chrome": ._GOOGLE_CHROME_,
+    "com.brave.Browser": ._BRAVE_BROWSER_,
+    "com.microsoft.edgemac": ._MICROSOFT_EDGE_,
+    "company.thebrowser.Browser": ._ARC_,
+    "org.mozilla.firefox": ._FIREFOX_,
+    "com.operasoftware.Opera": ._OPERA_,
+    "com.operasoftware.OperaGX": ._OPERA_GX_,
+    "com.vivaldi.Vivaldi": ._VIVALDI_,
+    "com.pushplaylabs.sidekick": ._SIDEKICK_,
+]
+
+/// Resolve a running app's bundle identifier to the browser Focus Bear can query — matching an exact known
+/// browser bundle id, or a child bundle id (e.g. `com.google.Chrome.app.<hash>` for an installed PWA). Nil
+/// when the bundle id isn't a recognised browser.
+func browserFromBundleId(_ bundleId: String) -> BROWSER? {
+    if let exact = kBrowserBundleIds[bundleId] { return exact }
+    return kBrowserBundleIds.first { bundleId.hasPrefix($0.key + ".") }?.value
+}
 
 func getCurrentBrowserFrom(browserName:String)->BROWSER?{
     if browserName == "safari"{
@@ -822,6 +1130,7 @@ func getCurrentBrowserNameFrom(browser:BROWSER)->String?{
 }
 
 func setUrlToBrowser(browser:BROWSER, url:String){
+    guard !ManagedBlockingRuntime.shared.shouldDeferLegacyURL(url) else { return }
     if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
         return;
     }
@@ -923,7 +1232,9 @@ func setUrlToBrowser(browser:BROWSER, url:String){
     end tell
     """
     }
-    executeScript(script: script)
+    _ = runBrowserAppleScript(script, authorization: {
+        !ManagedBlockingRuntime.shared.shouldDeferLegacyURL(url)
+    }, logErrors: false)
 }
 
 //--------------------------------------------//
@@ -1073,66 +1384,152 @@ func getFirefoxActiveTabTitle()->String?{//
 
 
 
-func getGoogleChromeActiveTabUrl()->String?{
-    // A browser call (e.g. Google Meet) opens a SEPARATE Chrome window whose active tab is
-    // "about:blank" and which becomes the FRONT window — so "active tab of front window" returned
-    // about:blank and missed the user's real (distracting) tab in another window. Return the active
-    // tab URL of the first window whose active tab isn't about:blank instead (windows are front→back,
-    // so the call window is checked and skipped first, then the real browsing window is used).
-    let script =
-    """
-    tell application "Google Chrome"
-    repeat with w in windows
-    try
-    set taburl to URL of active tab of w
-    if taburl is not "about:blank" then return taburl
-    end try
-    end repeat
-    return "about:blank"
-    end tell
-    """
+/// One browser observation keeps URL, title and bounds tied to the same window.
+struct ChromeActiveTabSnapshot: Equatable {
+    let windowID: Int32
+    let url: String
+    let title: String
+    let bounds: [Int]
 
-    return executeScriptAndReturnString(script: script)
+    static func select(frontWindowID: Int32, windows: [Self]) -> Self? {
+        // Window enumeration is not an authority for which window the user is looking at.
+        // A failed front-window read must not silently select an unrelated background page.
+        guard let front = windows.first(where: { $0.windowID == frontWindowID }), !front.url.isEmpty else { return nil }
+        guard front.url == "about:blank" else { return front }
+        // Preserve the existing Meet call-window exception, only for a confirmed blank front tab.
+        return windows.first(where: { !$0.url.isEmpty && $0.url != "about:blank" }) ?? front
+    }
 }
 
-/// Top-left global bounds (x, y, width, height) of the first Chrome window whose active tab isn't the
-/// call's "about:blank" window — i.e. the same real browsing window getGoogleChromeActiveTabUrl reads.
-/// Used to place the block popup/blur over THAT window instead of the front Meet call window. Same
-/// coordinate space as CGWindowList's kCGWindowBounds, so callers can match on it directly.
+/// Read a single, explicitly addressed user browser. Never resolve Chrome by application name:
+/// a headless automation process can have the same name, bundle ID and executable path.
+enum ChromeActiveTabReader {
+    private static let lock = NSLock()
+    private static var previousPID: pid_t?
+    private static var lastDiagnostic = ""
+
+    static func selectProcess(frontPID: pid_t?, previousPID: pid_t?, candidates: [pid_t]) -> pid_t? {
+        let candidates = Set(candidates)
+        if let frontPID = frontPID, candidates.contains(frontPID) { return frontPID }
+        if let previousPID = previousPID, candidates.contains(previousPID) { return previousPID }
+        return candidates.count == 1 ? candidates.first : nil
+    }
+
+    private static func diagnostic(_ message: String) {
+        lock.lock()
+        let changed = lastDiagnostic != message
+        lastDiagnostic = message
+        lock.unlock()
+        if changed { addLog(text: "Chrome active tab: " + message) }
+    }
+
+    static func bounds(_ descriptor: NSAppleEventDescriptor) -> [Int]? {
+        if descriptor.descriptorType == ChromeProcessTabs.code("list"), descriptor.numberOfItems == 4 {
+            return (1...4).compactMap { descriptor.atIndex($0).map { Int($0.int32Value) } }
+        }
+        // Cocoa scripting uses a native QuickDraw Rect: top, left, bottom, right (signed Int16).
+        if descriptor.descriptorType == ChromeProcessTabs.code("qdrt"), descriptor.data.count == 8 {
+            let values = descriptor.data.withUnsafeBytes { bytes in
+                (0..<4).map { Int(bytes.loadUnaligned(fromByteOffset: $0 * 2, as: Int16.self)) }
+            }
+            return [values[1], values[0], values[3], values[2]]
+        }
+        return nil
+    }
+
+    static func snapshot(read: (NSAppleEventDescriptor) throws -> NSAppleEventDescriptor) throws -> ChromeActiveTabSnapshot? {
+        typealias AE = ChromeProcessTabs
+        let frontWindow = AE.object("cwin", form: "indx", key: .init(int32: 1))
+        let frontID = try read(AE.property("ID  ", of: frontWindow))
+        guard let frontKey = frontID.stringValue else { return nil }
+        func window(_ id: NSAppleEventDescriptor) -> NSAppleEventDescriptor {
+            AE.object("cwin", form: "ID  ", key: id)
+        }
+        func activeTab(_ id: NSAppleEventDescriptor) -> NSAppleEventDescriptor {
+            AE.property("acTa", of: window(id))
+        }
+        func observation(_ id: NSAppleEventDescriptor) throws -> (ChromeActiveTabSnapshot, String)? {
+            let properties = try read(AE.property("pALL", of: activeTab(id)))
+            guard let tabID = properties.forKeyword(AE.code("ID  "))?.stringValue,
+                  let url = properties.forKeyword(AE.code("URL "))?.stringValue, !url.isEmpty,
+                  let title = properties.forKeyword(AE.code("pnam"))?.stringValue,
+                  let bounds = bounds(try read(AE.property("pbnd", of: window(id)))) else { return nil }
+            return (.init(windowID: id.int32Value, url: url, title: title, bounds: bounds), tabID)
+        }
+        guard let front = try observation(frontID) else { return nil }
+        var chosen = front
+        var chosenID = frontID
+        // Preserve the Meet call-window exception, within the SAME normal Chrome process only.
+        if front.0.url == "about:blank" {
+            let all = AE.object("cwin", form: "indx", key: AE.allItems)
+            let ids = try read(AE.property("ID  ", of: all))
+            for index in 0..<ids.numberOfItems {
+                guard let id = ids.atIndex(index + 1), id.stringValue != frontKey else { continue }
+                if let candidate = try observation(id), candidate.0.url != "about:blank" {
+                    chosen = candidate; chosenID = id
+                    break
+                }
+            }
+        }
+        // A tab/window switch during these events makes the whole observation obsolete.
+        guard try read(AE.property("ID  ", of: frontWindow)).stringValue == frontKey,
+              try read(AE.property("ID  ", of: activeTab(frontID))).stringValue == front.1 else { return nil }
+        if chosenID.stringValue != frontKey {
+            guard try read(AE.property("ID  ", of: activeTab(chosenID))).stringValue == chosen.1 else { return nil }
+        }
+        return chosen.0
+    }
+
+    static func current() -> ChromeActiveTabSnapshot? {
+        guard !shouldSkipBrowserAppleEvent(._GOOGLE_CHROME_) else { return nil }
+        let applications = ChromeProcessTabs.applications()
+        let frontPID = NSWorkspace.shared.frontmostApplication?.processIdentifier
+        lock.lock()
+        let pid = selectProcess(frontPID: frontPID, previousPID: previousPID,
+                                candidates: applications.map(\.processIdentifier))
+        if let pid = pid { previousPID = pid }
+        lock.unlock()
+        guard let pid = pid else { return nil }
+        // Keep a cumulative bound, including when called on the main thread for popup geometry.
+        let deadline = Date().addingTimeInterval(Thread.isMainThread ? 1.2 : 5)
+        do {
+            let result = try snapshot { object in
+                let remaining = deadline.timeIntervalSinceNow
+                guard remaining > 0 else { throw NSError(domain: NSOSStatusErrorDomain, code: -1712) }
+                return try ChromeProcessTabs.send(pid: pid, object: object, timeout: min(1, remaining))
+            }
+            if let result = result {
+                diagnostic("pid=\(pid) window=\(result.windowID)")
+            } else {
+                diagnostic("pid=\(pid) incomplete or changed observation")
+            }
+            return result
+        } catch {
+            diagnostic("pid=\(pid) error=\((error as NSError).code)")
+            if (error as NSError).code == -1743 {
+                recordBrowserAutomationPermission(browser: ._GOOGLE_CHROME_, enabled: false)
+            }
+            return nil
+        }
+    }
+}
+
+private func readGoogleChromeActiveTab() -> ChromeActiveTabSnapshot? {
+    ChromeActiveTabReader.current()
+}
+
+func getGoogleChromeActiveTabUrl() -> String? {
+    readGoogleChromeActiveTab()?.url
+}
+
+/// Bounds belong to the same selected window as the URL, including the blank call-window fallback.
 func getGoogleChromeBlockingWindowBounds() -> (x: Int, y: Int, width: Int, height: Int)? {
-    let script =
-    """
-    tell application "Google Chrome"
-    repeat with w in windows
-    try
-    if URL of active tab of w is not "about:blank" then
-    set b to bounds of w
-    return ((item 1 of b) as text) & "," & ((item 2 of b) as text) & "," & ((item 3 of b) as text) & "," & ((item 4 of b) as text)
-    end if
-    end try
-    end repeat
-    end tell
-    """
-    guard let s = executeScriptAndReturnString(script: script), !s.isEmpty else { return nil }
-    let parts = s.split(separator: ",").compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }
-    guard parts.count == 4 else { return nil }
-    let left = parts[0], top = parts[1], right = parts[2], bottom = parts[3]
-    return (x: left, y: top, width: right - left, height: bottom - top)
+    guard let bounds = readGoogleChromeActiveTab()?.bounds, bounds.count == 4 else { return nil }
+    return (bounds[0], bounds[1], bounds[2] - bounds[0], bounds[3] - bounds[1])
 }
 
-func getGoogleChromeActiveTabTitle()->String?{
-    var script: String = ""
-    
-    script =
-    """
-    tell application "Google Chrome"
-    set the_wnd to front window
-    set active_tab to active tab in the_wnd
-    set tabtitle to title of active_tab
-    end tell
-    """
-    
-    return executeScriptAndReturnString(script: script)
+func getGoogleChromeActiveTabTitle() -> String? {
+    readGoogleChromeActiveTab()?.title
 }
 
 func getOperaActiveTabUrl()->String?{

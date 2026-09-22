@@ -116,10 +116,10 @@ class routinePostponedInfoVc: NSViewController {
                     
                     arrFilteredMorningHabits.removeAll()
                     arrPreFilteredMorningHabits.removeAll()
-                    let currentWeekDay = Date().dayOfWeek()
-                    
+                    let today = Date()
+
                     for habit in arrAllDaysMorningHabits{
-                        if isScheduledForWeekday(habit.days_of_week, currentWeekDay: currentWeekDay) {
+                        if RoutineHabitSchedule.shouldPlay(habitId: habit.id, daysOfWeek: habit.days_of_week, on: today) {
                             arrFilteredMorningHabits.append(habit)
                         }
                     }
@@ -254,7 +254,7 @@ class routinePostponedInfoVc: NSViewController {
                     arrFilteredEveningHabits.removeAll()
                     arrPreFilteredEveningHabits.removeAll()
                     
-                    let currentWeekDay = Date().dayOfWeek()
+                    let today = Date()
                     let isCutOffTimeGoing = isCutOffTimeGoing()
                     for habit in arrAllDaysEveningHabits{
                         
@@ -274,10 +274,10 @@ class routinePostponedInfoVc: NSViewController {
                             }
                         }
                         
-                        if isScheduledForWeekday(habit.days_of_week, currentWeekDay: currentWeekDay) {
+                        if RoutineHabitSchedule.shouldPlay(habitId: habit.id, daysOfWeek: habit.days_of_week, on: today) {
                             arrFilteredEveningHabits.append(habit)
                         }else{
-                            addLog(text: "evening habit skipped:- current day is not from selected days \(habit.days_of_week):- \(habit.name)  \(habit.id)") // remove this
+                            addLog(text: "evening habit skipped:- not scheduled for today or skipped ahead \(habit.days_of_week):- \(habit.name)  \(habit.id)") // remove this
                         }
                     }
                     

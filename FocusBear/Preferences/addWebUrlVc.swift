@@ -179,6 +179,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
     }
     
     @IBAction func btnAddClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         var arrDomain = [String]()
         var domain = ""
         if isAdding{

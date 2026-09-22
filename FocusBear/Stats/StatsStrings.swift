@@ -74,6 +74,7 @@ struct StatsStrings {
         "cheerleader": "cheerleader", "upbeat": "upbeat", "factual": "factual",
     ]
     var pepTalkUnavailable = "We couldn't generate a personalized message today. Please try again later."
+    var pepTalkRateLimited = "Too many pep talks just now — the server is asking us to wait a moment. Retry will work again shortly."
     var motivationalStyle = "Motivational Style"
     var motivationalNotice = "Your routine streak and your routine activities will be sent to Open AI. No other details will be shared, but if anything in your habit titles would identify you, we recommend you remove it."
 
@@ -91,6 +92,7 @@ struct StatsStrings {
     var usernameRule = "Letters and underscores only"
     var streakValue = "Streak: {streak}"
     var daysCompletedOutOf = "{completed} days completed out of last {total} days"
+    var daysCompletedOutOfExpected = "Last {window} days: {completed} completed, {forgiven} weekend days forgiven"
     var ascending = "Ascending"
     var descending = "Descending"
 
@@ -115,6 +117,9 @@ struct StatsStrings {
     var quantityLogged = "Quantity Logged"
     var noDataAvailable = "No data available for this habit yet"
     var logQuantityHistory = "Log Quantity History"
+    /// Y-axis title for a log-quantity chart, picked by the question's SUM/AVG setting.
+    var dailyTotal = "Daily total"
+    var dailyAverage = "Daily average"
     var completion = "completion"
     var completions = "completions"
 
@@ -141,6 +146,8 @@ struct StatsStrings {
     var export = "Export"
     var duration = "Duration"
     var startTime = "Start Time"
+    /// Header of the merged start/finish column in the focus log.
+    var focusLogTime = "Time"
     var finishTime = "Finish Time"
     var intention = "Intention"
     var achievements = "Achievements"
@@ -214,6 +221,7 @@ struct StatsStrings {
             strings.toneNames.merge(tones) { _, translated in translated }
         }
         read("pepTalkUnavailableText", &strings.pepTalkUnavailable)
+        read("pepTalkRateLimitedText", &strings.pepTalkRateLimited)
         read("motivationalStyleText", &strings.motivationalStyle)
         read("motivationalNoticeText", &strings.motivationalNotice)
         read("sortByText", &strings.sortBy)
@@ -229,6 +237,7 @@ struct StatsStrings {
         read("usernameRuleText", &strings.usernameRule)
         read("streakValueText", &strings.streakValue)
         read("daysCompletedOutOfText", &strings.daysCompletedOutOf)
+        read("daysCompletedOutOfExpectedText", &strings.daysCompletedOutOfExpected)
         read("ascendingText", &strings.ascending)
         read("descendingText", &strings.descending)
         read("noHabitsTitle", &strings.noHabitsTitle)
@@ -251,6 +260,8 @@ struct StatsStrings {
         read("quantityLoggedText", &strings.quantityLogged)
         read("noDataAvailableText", &strings.noDataAvailable)
         read("logQuantityHistoryText", &strings.logQuantityHistory)
+        read("dailyTotalText", &strings.dailyTotal)
+        read("dailyAverageText", &strings.dailyAverage)
         read("completionText", &strings.completion)
         read("completionsText", &strings.completions)
         read("dailyText", &strings.daily)
@@ -273,6 +284,7 @@ struct StatsStrings {
         read("exportText", &strings.export)
         read("durationText", &strings.duration)
         read("startTimeText", &strings.startTime)
+        read("focusLogTimeText", &strings.focusLogTime)
         read("finishTimeText", &strings.finishTime)
         read("intentionText", &strings.intention)
         read("achievementsText", &strings.achievements)

@@ -21,7 +21,7 @@ import Cocoa
 // AEDeterminePermissionToAutomateTarget(com.apple.systemevents, askUserIfNeeded: true) — it shows
 // the dialog once and waits for the user's answer, no AppleScript involved. (Same fix as the
 // browser-permission screen; see onboardingControllingBrowserVc.) System Events must be launched
-// first or that call returns procNotFound (-600) — see ensureSystemEventsRunning().
+// first or that call returns procNotFound (-600) — see ensureSystemEventsRunningForAutomation().
 class systemEventsPermissionVc: NSViewController {
     
     @IBOutlet weak var btnImagePermission: cursorButton!
@@ -89,6 +89,9 @@ class systemEventsPermissionVc: NSViewController {
     }
     
     override func viewDidAppear() {
+        // A granted background agent may have exited idle before this screen opened. Detect its
+        // actual status without requiring another click or opening another consent dialog.
+        startGrantPolling()
         showOnboardingBellIcon(view: self.view, screen: "system-events-permission-screen")
         
         // Show bubble
@@ -174,21 +177,24 @@ class systemEventsPermissionVc: NSViewController {
     /// every tick (it runs AppleScript via runAppleScriptSafely, ~5s timeout), so the prompt kept
     /// showing then vanishing in a loop. isRequestInFlight guards against double-taps.
     func requestSystemEventsPermission() {
-        if isRequestInFlight { return }
+        guard !isRequestInFlight, beginSystemEventsAutomationRequest() else { return }
+        stopGrantPolling()
         isRequestInFlight = true
         let target = NSAppleEventDescriptor(bundleIdentifier: "com.apple.systemevents")
         DispatchQueue.global().async {
             // AEDeterminePermissionToAutomateTarget returns procNotFound (-600) if the target app
             // isn't running. System Events is a faceless agent, so launch it and wait first.
-            self.ensureSystemEventsRunning()
+            ensureSystemEventsRunningForAutomation()
             let status = AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, true)
             DispatchQueue.main.async {
                 self.isRequestInFlight = false
+                finishSystemEventsAutomationRequest(status: status)
+                guard self.isViewLoaded, self.view.window != nil else { return }
                 if status == noErr {
                     addLog(text: "System Events automation granted")
                     self.applyGrantedState()
                 } else {
-                    addLog(text: "System Events automation not granted (status \(status))")
+                    addLog(text: "System Events explicit request completed: status=\(status) result=\(SystemEventsAutomationResult(status: status).rawValue)")
                     // Surface the help text + the "I can't grant" escape button, and start polling
                     // so a manual grant in System Settings (after this denial) reflects here.
                     self.lblDescription.isHidden = false
@@ -208,14 +214,16 @@ class systemEventsPermissionVc: NSViewController {
         stopGrantPolling()
         grantPollTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            if self.isRequestInFlight || self.permissionSet { return }
+            if self.isRequestInFlight || isSystemEventsAutomationRequestInFlight || self.permissionSet { return }
             DispatchQueue.global().async {
-                self.ensureSystemEventsRunning()
+                ensureSystemEventsRunningForAutomation()
+                guard !isSystemEventsAutomationRequestInFlight else { return }
                 let target = NSAppleEventDescriptor(bundleIdentifier: "com.apple.systemevents")
                 let status = AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, false)
+                recordSystemEventsAutomationStatus(status)
                 if status == noErr {
                     DispatchQueue.main.async {
-                        guard !self.permissionSet else { return }
+                        guard !self.permissionSet, !self.isRequestInFlight, self.isViewLoaded, self.view.window != nil else { return }
                         addLog(text: "System Events automation granted (detected via polling after manual change)")
                         self.applyGrantedState()
                     }
@@ -227,27 +235,6 @@ class systemEventsPermissionVc: NSViewController {
     func stopGrantPolling() {
         grantPollTimer?.invalidate()
         grantPollTimer = nil
-    }
-
-    /// Launch System Events (a faceless background agent) and wait for it to register, so that
-    /// AEDeterminePermissionToAutomateTarget can target it instead of returning procNotFound (-600).
-    /// Runs on a background queue (blocks briefly).
-    private func ensureSystemEventsRunning() {
-        let bundleId = "com.apple.systemevents"
-        if !NSRunningApplication.runningApplications(withBundleIdentifier: bundleId).isEmpty { return }
-        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) {
-            let config = NSWorkspace.OpenConfiguration()
-            config.activates = false
-            let sem = DispatchSemaphore(value: 0)
-            NSWorkspace.shared.openApplication(at: url, configuration: config) { _, _ in sem.signal() }
-            _ = sem.wait(timeout: .now() + 5)
-        }
-        // Give it a moment to actually register as a running process.
-        var tries = 0
-        while NSRunningApplication.runningApplications(withBundleIdentifier: bundleId).isEmpty && tries < 30 {
-            usleep(100_000) // 0.1s
-            tries += 1
-        }
     }
 
     /// Apply the "granted" UI (tick over the screenshot, progress, Proceed). Shared by the

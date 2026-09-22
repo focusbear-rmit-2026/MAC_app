@@ -74,6 +74,96 @@ private struct CursorTrackingRepresentable: NSViewRepresentable {
 extension View {
     /// Pointing-hand cursor on hover — every clickable control should use it.
     func pointingHandCursor() -> some View { modifier(PointingHandCursorModifier()) }
+
+    /// A fast custom hover tooltip for SwiftUI controls — it appears quickly (~0.25s), unlike AppKit's
+    /// `.help(_:)` which has a long system delay. Reusable app-wide; prefer it over `.help()` on any
+    /// SwiftUI button/icon.
+    ///
+    /// The tip is NOT drawn inside the control (which would be clipped by any `.clipped()` ancestor,
+    /// e.g. a panel with no room above the button). Instead the control reports its frame + text up via
+    /// an anchor preference, and a single `.fastTooltipLayer()` installed at the view's root draws the
+    /// tip over everything. **Every screen that uses `.fastTooltip` must put `.fastTooltipLayer()` on
+    /// its root view.**
+    func fastTooltip(_ text: String) -> some View {
+        modifier(FastTooltipModifier(text: text))
+    }
+
+    /// Installs the tooltip render layer at a view's root. Draws whichever control is currently
+    /// hovered (reported through `FastTooltipKey`), floating above it and clear of any clipping.
+    func fastTooltipLayer(gap: CGFloat = 6) -> some View {
+        overlayPreferenceValue(FastTooltipKey.self) { data in
+            GeometryReader { proxy in
+                if let data = data {
+                    let rect = proxy[data.bounds]
+                    FastTooltipLabel(text: data.text)
+                        // `.position` centres the label; place its centre a little above the control's
+                        // top edge (half the label's ~22pt height + the gap) so its bottom clears it.
+                        .position(x: rect.midX, y: rect.minY - (11 + gap))
+                }
+            }
+            .allowsHitTesting(false)
+        }
+    }
+}
+
+/// What a hovered control reports up to the tooltip layer: its text and its frame anchor.
+@available(macOS 11.0, *)
+struct FastTooltipData: Equatable {
+    let text: String
+    let bounds: Anchor<CGRect>
+}
+
+@available(macOS 11.0, *)
+struct FastTooltipKey: PreferenceKey {
+    static let defaultValue: FastTooltipData? = nil
+    static func reduce(value: inout FastTooltipData?, nextValue: () -> FastTooltipData?) {
+        value = nextValue() ?? value   // last hovered control (only one is ever non-nil) wins
+    }
+}
+
+/// The styled tooltip bubble drawn by `.fastTooltipLayer()`.
+@available(macOS 11.0, *)
+struct FastTooltipLabel: View {
+    let text: String
+    var body: some View {
+        Text(text)
+            .font(.system(size: 11))
+            .foregroundColor(Color(NSColor.labelColor))
+            .fixedSize()
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(RoundedRectangle(cornerRadius: 6).fill(Color(NSColor.controlBackgroundColor)))
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(NSColor.separatorColor), lineWidth: 1))
+            .transition(.opacity)
+    }
+}
+
+/// Implementation of `.fastTooltip(_:)`. Reports this control's frame + text to `FastTooltipKey` while
+/// hovered (after a short delay), which the root `.fastTooltipLayer()` renders. See the methods above.
+@available(macOS 11.0, *)
+struct FastTooltipModifier: ViewModifier {
+    let text: String
+    @SwiftUI.State private var visible = false
+    @SwiftUI.State private var hoverID = UUID()
+
+    func body(content: Content) -> some View {
+        content
+            .onHover { hovering in
+                if hovering {
+                    let id = UUID()
+                    hoverID = id
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        if hoverID == id { withAnimation(.easeOut(duration: 0.1)) { visible = true } }
+                    }
+                } else {
+                    hoverID = UUID()   // cancel any pending show
+                    visible = false
+                }
+            }
+            .anchorPreference(key: FastTooltipKey.self, value: .bounds) { anchor in
+                visible ? FastTooltipData(text: text, bounds: anchor) : nil
+            }
+    }
 }
 
 /// Shared button style for the blocking-schedule redesign. Enforces the two

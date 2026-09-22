@@ -48,6 +48,7 @@ class habitBlockTimerManager {
 
     
     @objc func checkInBackgroundForActivity(){
+        ManagedBlockingRuntime.shared.checkCurrentBrowserNow()
         addLog(text:"func call:- checkInBackgroundForActivity")
         
         if !isRunning.testAndSet() {
@@ -81,6 +82,7 @@ class habitBlockTimerManager {
             var currentBrowser:BROWSER!
             let nameLowercased = name.lowercased()
             var tabTitle:String?
+            var chromeBlockDestination: String?
             if let browser = getCurrentBrowserFrom(browserName: nameLowercased){
                 currentBrowser = browser
             }else{
@@ -121,6 +123,7 @@ class habitBlockTimerManager {
                 return;
             }
             
+            if ManagedBlockingRuntime.shared.shouldDeferLegacyURL(url) { return }
             originalUrlStringFromBrowser = url
             if currentBrowser == ._OPERA_GX_{
                 if url.contains("gxcorner.games"){ //  alllow gxcorner (default url)
@@ -403,6 +406,15 @@ class habitBlockTimerManager {
                     }
                 }
             }
+            // Focus Bear's own pages, whichever loopback port this run or a previous one is
+            // serving them on. The list below pins a single current port, which a block page left
+            // over from an earlier run no longer matches (report 2026-09-21_10-04-40).
+            if isFocusBearLocalPage(url) {
+                DispatchQueue.main.async {
+                    self.urlInvalidCloseEveryThing()
+                }
+                return;
+            }
             for turl in defaultAllowedUrl{
                 if url.contains(turl){
                     DispatchQueue.main.async {
@@ -681,6 +693,7 @@ class habitBlockTimerManager {
                         
                     case ._GOOGLE_CHROME_:
                         script = getGoogleChromeBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "&block_type=\(blockType)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+                        chromeBlockDestination = "\(blockWebUrlString)?old_url=\(url)&block_type=\(blockType)&encouraging_info=\(getGoalsAndFocusdJsonForBlockedScript())&version=\(appVersion)"
                         
                     case ._OPERA_:
                         script = getOperaBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "&block_type=\(blockType)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
@@ -741,6 +754,24 @@ class habitBlockTimerManager {
             }else{
                 currentBrowserUrlForAi = ""
                 addLog(text:"blockActivityBlockedUrl:- \(tabUrl)")
+                if currentBrowser == ._GOOGLE_CHROME_ {
+                    // Name-addressed AppleScript can redirect an unrelated headless Chrome process.
+                    // Bind the redirect to the exact foreground tab and discard stale observations.
+                    guard let destination = chromeBlockDestination,
+                          let target = ManagedBrowserAccess.observe(._GOOGLE_CHROME_),
+                          target.url == fullUrl, target.processId == runningApp.processIdentifier else { return }
+                    let habitID = currentHabitPlaying?.id
+                    let activityID = currentActivityPlaying?.id
+                    let redirected = ManagedBrowserAccess.navigate(._GOOGLE_CHROME_, to: destination, expectedURL: fullUrl, target: target,
+                        authorization: { self.isTimerValid && currentHabitPlaying?.id == habitID &&
+                            currentActivityPlaying?.id == activityID && currentAction == ._INPROGRESS_ &&
+                            !ManagedBlockingRuntime.shared.shouldDeferLegacyURL(fullUrl) &&
+                            getFrontmostAppSafe()?.processIdentifier == target.processId })
+                    if redirected {
+                        allApiObject.capturePosthog(event: "block-distracting-url", metadata: ["block-reason": "block_in_habit"])
+                    }
+                    return
+                }
                 script = script.replacingOccurrences(of: "<NEWPAGE>", with: "")
                 DispatchQueue.main.async {
                     executeScript(script: script)
@@ -765,5 +796,4 @@ class habitBlockTimerManager {
         }
     }
 }
-
 

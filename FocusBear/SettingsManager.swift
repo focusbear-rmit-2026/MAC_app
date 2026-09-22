@@ -97,6 +97,21 @@ class SettingsManager:NSObject{
 
     var isMotivationalMessageEnabled = true
     var isAiCheckUrlEnabled = true
+    /// AI accountability buddy: on postpone, an LLM vets the user's stated goal and (if legit) starts a
+    /// super-strict AI session allowing only the apps/sites it needs. Off by default — the user opts in
+    /// via the toggle in the AI settings area. Synced through user-settings and stored under a per-user
+    /// key (see kUserdefaultsAccountabilityBuddyEnabled), exactly like isAiCheckUrlEnabled — so it follows
+    /// the account across devices and doesn't leak between accounts on a shared Mac (#2590).
+    var isAccountabilityBuddyEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: kUserdefaultsAccountabilityBuddyEnabled) }
+        set { UserDefaults.standard.set(newValue, forKey: kUserdefaultsAccountabilityBuddyEnabled) }
+    }
+
+    /// Connectivity failures use the buddy's deliberate held-confirmation fallback. Disconnecting
+    /// must not silently restore the ordinary postpone path when the user enabled accountability.
+    var isAccountabilityBuddyActive: Bool {
+        return isAccountabilityBuddyEnabled
+    }
 
     // **blocked urls**
     var arrBlockedUrls = [String]()
@@ -140,6 +155,9 @@ class SettingsManager:NSObject{
     var showToDoPlayerAutomaticallyEnabled = true
     var showBrainDumpAfterMorningRoutineEnabled = false
     var isMicroBreaksEnabled = true
+    /// Opt-in: when false (the default) a break activity screen appears and waits for the person to
+    /// press Start instead of running its countdown and video the moment it opens.
+    var isBreakAutoStartEnabled = false
     
     var isSkipBreakActivityDuringPomodoro = false
 
@@ -223,7 +241,8 @@ class SettingsManager:NSObject{
 
     var kUserdefaultsMotivationalMessageEnabled = "kUserdefaultsMotivationalMessageEnabled"
     var kUserdefaultsAiCheckUrlEnabled = "kUserdefaultsAiCheckUrlEnabled"
-    
+    var kUserdefaultsAccountabilityBuddyEnabled = "kUserdefaultsAccountabilityBuddyEnabled"
+
     var kUserdefaultsLocalDeviceSettings = "kUserdefaultsLocalDeviceSettings"
     
     //    var kUserdefaultsAiAllowUrlShowAlertEnabled = "kUserdefaultsAiAllowUrlShowAlertEnabled"
@@ -277,6 +296,16 @@ class SettingsManager:NSObject{
         }
     }
     
+    /// True once `resetAllKeys()` has appended the signed-in user's id to a settings key.
+    ///
+    /// Every per-user key here is built as `name + (userId ?? "")`, so before the account is
+    /// restored the key is the bare name — shared by every account that has ever used this Mac, and
+    /// belonging to none of them. A default written under it is not this user's preference.
+    func isUserScopedKey(_ key: String) -> Bool {
+        guard let userId = appdelegate?.user?.userId, !userId.isEmpty else { return false }
+        return key.hasSuffix(userId)
+    }
+
     func resetAllKeys() {
         kUserdefaultsLocalDeviceSettings = kUserdefaultsLocalDeviceSettings + (appdelegate?.user?.userId ?? "")
         // Per-user so the evening shutdown prompt doesn't leak across accounts on the same device.
@@ -339,6 +368,7 @@ class SettingsManager:NSObject{
         kUserdefaultsMotivationalMessageEnabled = kUserdefaultsMotivationalMessageEnabled + (appdelegate?.user?.userId ?? "")
         
         kUserdefaultsAiCheckUrlEnabled = kUserdefaultsAiCheckUrlEnabled + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsAccountabilityBuddyEnabled = kUserdefaultsAccountabilityBuddyEnabled + (appdelegate?.user?.userId ?? "")
         //        kUserdefaultsAiAllowUrlShowAlertEnabled = kUserdefaultsAiAllowUrlShowAlertEnabled + (appdelegate?.user?.userId ?? "")
         
         kUserdefaultsPomodoroDurationMinutes = kUserdefaultsPomodoroDurationMinutes + (appdelegate?.user?.userId ?? "")
@@ -502,7 +532,8 @@ class SettingsManager:NSObject{
                 
                 let kMotivationalMessageEnabled = "kMotivationalMessageEnabled"
                 let kAiCheckUrlEnabled = "kAiCheckUrlEnabled"
-                
+                let kAccountabilityBuddyEnabled = "kAccountabilityBuddyEnabled"
+
                 let kShowToDoPlayerAutomatically = "kShowToDoPlayerAutomatically"
                 let kIsMenuPopoverEnabled = "kIsMenuPopoverEnabled"
                 let kIsAdvancedAnalyticsInFocusModeEnabled = "kIsAdvancedAnalyticsInFocusModeEnabled"
@@ -514,6 +545,7 @@ class SettingsManager:NSObject{
                 let kFocusMusicAutoStartPreference = "kFocusMusicAutoStartPreference"
                 let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
                 let kMicroBreaksEnabled = "kMicroBreaksEnabled"
+                let kBreakAutoStartEnabled = "kBreakAutoStartEnabled"
                 
                 let kSkipBreakActivityDuringFocusSession = "kSkipBreakActivityDuringFocusSession"
 
@@ -780,7 +812,10 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kAiCheckUrlEnabled) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsAiCheckUrlEnabled)
                 }
-                
+                if let val = settings.value(forKey: kAccountabilityBuddyEnabled) as? Bool{
+                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsAccountabilityBuddyEnabled)
+                }
+
                 if let val = settings.value(forKey: kSkipBreakActivityDuringFocusSession) as? Bool{
                     isSkipBreakActivityDuringPomodoro = val
                 }
@@ -834,6 +869,10 @@ class SettingsManager:NSObject{
                     if let breaksEnabled = UserDefaults.standard.object(forKey: kUserdefaultsBreaksEnabledFromOnboarding) as? Bool{
                         isMicroBreaksEnabled = breaksEnabled
                     }
+                }
+
+                if let val = settings.value(forKey: kBreakAutoStartEnabled) as? Bool{
+                    isBreakAutoStartEnabled = val
                 }
             }
             
@@ -1119,10 +1158,16 @@ class SettingsManager:NSObject{
             //  ---------------------------SETTINGS Full Screen--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsisFullScreenEnabled) as? Bool{
                 isFullScreenEnabled = isEnabled
-            }else{
+            } else if isUserScopedKey(kUserdefaultsisFullScreenEnabled) {
                 isFullScreenEnabled = false
                 UserDefaults.standard.set(isFullScreenEnabled, forKey: kUserdefaultsisFullScreenEnabled)
             }
+            // No else: reaching here means `resetAllKeys()` has not appended the user id yet, so the
+            // key is the bare one and says nothing about this account. Writing a default here
+            // fabricates a decision — it turned a user's full screen off, because their real value
+            // sat under the suffixed key being ignored — and persists it, so the next launch reads
+            // the fabrication back as if they had chosen it. Leave the setting alone; the suffixed
+            // read will run once the account is known.
             
             //  ---------------------------SETTINGS Reload After Force Quit--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsShouldReloadAfterForceQuitEnabled) as? Bool{
@@ -1422,6 +1467,7 @@ class SettingsManager:NSObject{
         
         let kMotivationalMessageEnabled = "kMotivationalMessageEnabled"
         let kAiCheckUrlEnabled = "kAiCheckUrlEnabled"
+        let kAccountabilityBuddyEnabled = "kAccountabilityBuddyEnabled"
         let kShowToDoPlayerAutomatically = "kShowToDoPlayerAutomatically"
         let kIsMenuPopoverEnabled = "kIsMenuPopoverEnabled"
         let kIsAdvancedAnalyticsInFocusModeEnabled = "kIsAdvancedAnalyticsInFocusModeEnabled"
@@ -1432,6 +1478,7 @@ class SettingsManager:NSObject{
         let kFocusMusicAutoStartPreference = "kFocusMusicAutoStartPreference"
         let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
         let kMicroBreaksEnabled = "kMicroBreaksEnabled"
+        let kBreakAutoStartEnabled = "kBreakAutoStartEnabled"
         let kSkipBreakActivityDuringFocusSession = "kSkipBreakActivityDuringFocusSession"
 
         // Talking Clock — synced to the user's account (cross-device) like the other settings,
@@ -1507,6 +1554,7 @@ class SettingsManager:NSObject{
             kIsPasswordRequireInPreferencesAfterCutoff:isPasswordRequireInPreferencesAfterCutoff,
             kMotivationalMessageEnabled:isMotivationalMessageEnabled,
             kAiCheckUrlEnabled:isAiCheckUrlEnabled,
+            kAccountabilityBuddyEnabled:isAccountabilityBuddyEnabled,
             kShowToDoPlayerAutomatically:showToDoPlayerAutomaticallyEnabled,
             kIsMenuPopoverEnabled: isMenuPopoverEnabled,
             kIsAdvancedAnalyticsInFocusModeEnabled:isAdvancedAnalyticsInFocusModeEnabled,
@@ -1517,6 +1565,7 @@ class SettingsManager:NSObject{
             kFocusMusicAutoStartPreference:focusMusicAutoStart.rawValue,
             kShowBrainDumpAfterMorningRoutine:showBrainDumpAfterMorningRoutineEnabled,
             kMicroBreaksEnabled:isMicroBreaksEnabled,
+            kBreakAutoStartEnabled:isBreakAutoStartEnabled,
             kSkipBreakActivityDuringFocusSession:isSkipBreakActivityDuringPomodoro,
             kTalkingClockEnabled:isTalkingClockEnabled,
             kTalkingClockInterval:talkingClockIntervalMinutes,
@@ -1649,6 +1698,7 @@ class SettingsManager:NSObject{
     
     
     func writeLocalSettings(){
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         var dicContent = ["totalAppEnableTime":totalAppEnableTime, "totalAppDisableTime":totalAppDisableTime] as [String : Any]
         let isAppEnable = UserDefaults.standard.object(forKey: kUserdefaultsIsAppEnabled) as? Bool ?? true
         if isAppEnable{
@@ -1829,6 +1879,9 @@ class SettingsManager:NSObject{
     }
     
     func isAIBlockingEnabled()->Bool{
+        // Quit-popup pause: the user temporarily switched off blocking pop-ups. Treat as a hard veto so
+        // every AI/relevance/block path stays quiet until the pause window passes, then resumes on its own.
+        if FeatureSnooze.isSnoozed(.blockingPopups) { return false }
         // A teacher-controlled class session takes precedence over the custom schedule and the user's
         // global setting: AI relevance-checking is on only if the teacher enabled it for the
         // allow-list (`isAiBlockingEnabledForAllowList`). This keeps every AI/block/score path in
@@ -1839,18 +1892,26 @@ class SettingsManager:NSObject{
             addLog(text: "isAIBlockingEnabled: teacher session → \(teacherAi)")
             return teacherAi
         }
+        // An accountability-buddy session is AI-driven by design: every app/site is judged by the AI
+        // against the user's stated goal (whatToAchieveInFocusBlock), regardless of any custom schedule's
+        // own AI flag. This is what makes the session use AI rather than a fixed allow-list.
+        if currentAccountabilityBuddySession != nil {
+            return true
+        }
         let customScheduleOn = customBlockingScheduleManagerObj.isAnyCustomScheduleOn
-        // Per-focus-mode AI switch: the server sends `is_ai_enabled` on every focus mode. When a focus mode
-        // / allowed-app activity is the running context (and no custom schedule is active), the block list's
-        // own `is_ai_enabled` is AUTHORITATIVE — `true` → AI on, `false` → AI off — regardless of the global
-        // toggle. This matches the "Use AI for this block list" checkbox: ticking it must actually enable AI
-        // even if the user turned AI off globally, and mirrors the custom-schedule path, which already reads
-        // its block list's flag directly (handled below). An ABSENT key defaults to `true` (AI on), the same
-        // default the checkbox and the schedule path use everywhere else in the app.
+        // Per-focus-mode AI switch: the server sends `is_ai_enabled` on every focus mode, but the Mac app
+        // historically ignored it — so a mode the user turned AI OFF for (including an allowed-app routine
+        // habit) still ran AI relevance-checking off the GLOBAL toggle. Respect it: when a focus mode /
+        // allowed-app activity is the running context and its `is_ai_enabled` is explicitly false, AI
+        // blocking is off for that mode regardless of the global setting. Custom schedules carry their own
+        // AI flag (handled below), so this is scoped to a real focus-mode context with no schedule active.
+        // A veto only — `true`/absent falls through to the existing global/schedule logic (never forces AI
+        // on where the user globally turned it off).
         if (isFocusModeRunning || isAnyAllowedFocusModeActivityRunning) && !customScheduleOn {
-            let modeAiEnabled = currentRunningFocusType["is_ai_enabled"] as? Bool ?? true
-            addLog(text: "isAIBlockingEnabled: running focus mode is_ai_enabled=\(modeAiEnabled) → \(modeAiEnabled)")
-            return modeAiEnabled
+            if let modeAiEnabled = currentRunningFocusType["is_ai_enabled"] as? Bool, !modeAiEnabled {
+                addLog(text: "isAIBlockingEnabled: running focus mode is_ai_enabled=false → false")
+                return false
+            }
         }
         // Fix #1584: log which code path is taken to diagnose the ~50% activation rate.
         let result = customScheduleOn ? customBlockingScheduleManagerObj.isAIBlockingEnabled() : isAiCheckUrlEnabled
@@ -1859,7 +1920,6 @@ class SettingsManager:NSObject{
     }
     
 }
-
 
 
 

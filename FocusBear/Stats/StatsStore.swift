@@ -200,6 +200,58 @@ final class LongTermGoalsStore: ObservableObject {
 
 // MARK: - Pep Talk
 
+/// The last pep talk that arrived, kept so an automatic screen appearance can show it again
+/// instead of generating a new one.
+///
+/// Every pep talk is an LLM call against a per-user budget the backend caps at 60 a day
+/// (`@Throttle` on `GET /user/motivational-summary`). The routine screen builds a FRESH
+/// `StatsStore` each time it appears, so each appearance spent one — 57, 60, 49 and 48 on
+/// consecutive days from a single Mac, which is the entire budget. The user then met a 429 while
+/// doing nothing unusual, and the screen invited them to press Retry (report
+/// 2026-09-22_07-45-26).
+///
+/// Static because the store it serves is rebuilt on every appearance; instance state cannot outlive
+/// the thing that causes the problem.
+enum PepTalkCache {
+
+    /// How long a message stays worth showing again. Long enough that a routine with several steps
+    /// costs one call rather than several; short enough that coming back later still feels fresh.
+    /// This is a product judgement, not a derived constant — it is the number to change if pep talks
+    /// start feeling stale.
+    static let reuseWindow: TimeInterval = 30 * 60
+
+    private static var cachedText = ""
+    private static var cachedTone = ""
+    private static var cachedLanguage = ""
+    private static var cachedAt: Date?
+
+    /// Whether something cached at `cachedAt` may still be shown at `now`.
+    static func isFresh(cachedAt: Date?, now: Date, window: TimeInterval = reuseWindow) -> Bool {
+        guard let cachedAt else { return false }
+        let age = now.timeIntervalSince(cachedAt)
+        // A cache stamped in the FUTURE means the clock moved; treat it as stale rather than
+        // trusting it for the next half hour.
+        return age >= 0 && age < window
+    }
+
+    /// The message to reuse for `language`, or nil when there is nothing worth reusing.
+    static func reusable(language: String, now: Date = Date()) -> (text: String, tone: String)? {
+        guard isFresh(cachedAt: cachedAt, now: now), !cachedText.isEmpty,
+              cachedLanguage == language else { return nil }
+        return (cachedText, cachedTone)
+    }
+
+    static func store(text: String, tone: String, language: String, now: Date = Date()) {
+        guard !text.isEmpty else { return }
+        cachedText = text; cachedTone = tone; cachedLanguage = language; cachedAt = now
+    }
+
+    /// Used by tests, and when signing out — one account's pep talk is not another's.
+    static func clear() {
+        cachedText = ""; cachedTone = ""; cachedLanguage = ""; cachedAt = nil
+    }
+}
+
 final class PepTalkStore: ObservableObject {
     /// Web `AiToneOptions`, in the order the tone buttons appear.
     static let tones = ["humorous", "sassy", "court jester", "pirate", "future self in twenty years",
@@ -210,29 +262,79 @@ final class PepTalkStore: ObservableObject {
     @Published private(set) var isStreaming = false
     @Published private(set) var failed = false
     private var stream: MotivationalSummaryStream?
+    private var generation = 0
 
-    /// Web picks a random tone on mount.
+    /// Called when the screen appears — which, on the routine screen, is every appearance.
+    ///
+    /// Shows a recent pep talk when there is one rather than generating another. A DELIBERATE action
+    /// (tapping a tone, pressing Retry) still streams: the point is to stop spending the daily
+    /// budget on appearances the user did not ask for.
     func load() {
+        let language = currentLanguageCode.isEmpty ? "en" : currentLanguageCode
+        if let reusable = PepTalkCache.reusable(language: language) {
+            tone = reusable.tone
+            text = reusable.text
+            failed = false
+            failure = nil
+            isStreaming = false
+            return
+        }
         select(tone: PepTalkStore.tones.randomElement() ?? tone)
     }
 
+    /// A tone the user chose, or a retry. Always streams.
     func select(tone: String) {
         self.tone = tone
         cancel()
         text = ""
         failed = false
         isStreaming = true
+        let token = generation
         let stream = MotivationalSummaryStream(onChunk: { [weak self] chunk in
-            self?.text += chunk
-        }, onFinish: { [weak self] succeeded in
-            self?.isStreaming = false
-            self?.failed = !succeeded
+            guard let self = self, self.generation == token else { return }
+            self.text += chunk
+        }, onFinish: { [weak self] succeeded, failure in
+            guard let self = self, self.generation == token else { return }
+            self.isStreaming = false
+            if succeeded {
+                PepTalkCache.store(text: self.text, tone: self.tone,
+                                   language: currentLanguageCode.isEmpty ? "en" : currentLanguageCode)
+            }
+            self.failed = !succeeded
+            self.failure = failure
+            // Hold Retry for as long as the server asked. Pressing it during a rate limit cannot
+            // work, and offering the button anyway is what produced five 429s in two minutes
+            // (report 2026-09-22_07-45-26).
+            if let delay = failure?.retryDelay {
+                self.retryAvailableAt = Date().addingTimeInterval(delay)
+            } else {
+                self.retryAvailableAt = nil
+            }
         })
         self.stream = stream
         stream.start(tone: tone, language: currentLanguageCode.isEmpty ? "en" : currentLanguageCode)
     }
 
+    /// Why the last attempt failed, so the message can say something truer than "try again later".
+    @Published private(set) var failure: PepTalkFailure?
+
+    /// When Retry becomes useful again; nil when it is useful now.
+    @Published private(set) var retryAvailableAt: Date?
+
+    /// Whether the last failure was the server asking us to slow down.
+    var isRateLimited: Bool {
+        if case .rateLimited = failure { return true }
+        return false
+    }
+
+    /// A rate limit is the one failure where trying again immediately is guaranteed to fail.
+    var canRetryNow: Bool {
+        guard let retryAvailableAt else { return true }
+        return Date() >= retryAvailableAt
+    }
+
     func cancel() {
+        generation += 1
         stream?.cancel()
         stream = nil
         isStreaming = false
@@ -243,6 +345,8 @@ final class PepTalkStore: ObservableObject {
         cancel()
         text = ""
         failed = false
+        failure = nil
+        retryAvailableAt = nil
     }
 }
 

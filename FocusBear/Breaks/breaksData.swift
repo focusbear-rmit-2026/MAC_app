@@ -20,19 +20,15 @@ let breakRetryWhenDueSeconds = 15
 /// right away, so a yesterday break doesn't spam moments after launch.
 let breakStaleOverdueIntervalMultiple = 1.0
 
-/// Formats a break's length for display. Short breaks read fine as a raw seconds count ("16 sec"), but
-/// longer ones become awkward ("190 sec"), so anything over a minute is split into minutes + seconds
-/// ("3 min 10 sec"). A whole number of minutes drops the trailing "0 sec" ("3 min").
+/// Formats a break's length for display. Short breaks read fine as a raw seconds count ("45s"), but
+/// longer ones become awkward ("190s"), so anything over a minute is split into minutes + seconds
+/// ("3min10s"). A whole number of minutes drops the trailing "0s" ("3min").
 func formatBreakDuration(_ seconds: Int) -> String {
     let secondsInMinute = 60
-    let breakWarningVcInfo = configjson.value(forKey: "breakWarningVcInfo") as? NSDictionary
-    let minutesUnit = breakWarningVcInfo?.value(forKey: "durationMinutesUnit") as? String ?? "min"
-    let secondsUnit = breakWarningVcInfo?.value(forKey: "durationSecondsUnit") as? String ?? "sec"
-    if seconds <= secondsInMinute { return "\(seconds) \(secondsUnit)" }
+    if seconds <= secondsInMinute { return "\(seconds) sec" }
     let minutes = seconds / secondsInMinute
     let remainderSeconds = seconds % secondsInMinute
-    if remainderSeconds == 0 { return "\(minutes) \(minutesUnit)" }
-    return "\(minutes) \(minutesUnit) \(remainderSeconds) \(secondsUnit)"
+    return remainderSeconds == 0 ? "\(minutes) min" : "\(minutes) min \(remainderSeconds) sec"
 }
 
 var arrAllbreakActivities = [breakActivity]()
@@ -153,7 +149,10 @@ func detectNatualBreaks(){
     if !SettingsManagerObject.isDetectNatualBreaksEnabled{
         return;
     }
-    let idleTimeValue = Int(secondsSinceLastUserInput())
+    var lastEvent:CFTimeInterval = 0
+    lastEvent = CGEventSource.secondsSinceLastEventType(CGEventSourceStateID.hidSystemState, eventType: CGEventType(rawValue: ~0)!)
+    
+    let idleTimeValue = Int(lastEvent)
 //    if currentState != ._MORNING_HABIT_ && currentState != ._MICRO_BREAK_ && (isHabitAlreadyShowed || currentState == ._POSTPONE_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !appdelegate!.isUserOnMeeting{
 //        checkIsNaturalBreakStarted(idleTimeValue: idleTimeValue)
 //    }else{

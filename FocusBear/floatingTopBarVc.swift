@@ -57,7 +57,7 @@ class floatingTopBarVc: NSViewController {
         widthBoxMain.constant = normalWidth + 100
     }
     
-    func showTimerWindow(durationSeconds: Int, msg: String, isFocusBreak:Bool, currentTimerValue:Int){
+    func showTimerWindow(durationSeconds: Int, msg: String, isFocusBreak:Bool, currentTimerValue:Int, hideWindow: Bool = false){
         if !getsmallCountDownVcObject().isViewLoaded{
             getsmallCountDownVcObject().loadView()
         }
@@ -65,6 +65,11 @@ class floatingTopBarVc: NSViewController {
             boxTimerSmall.addSubview(getsmallCountDownVcObject().view)
             boxTimerSmall.addConstraints(subView: getsmallCountDownVcObject().view)
         }
+        smallCountDownVcObj?.suppressPopupForAllowedAppHabit = hideWindow
+        // Allowed-app habits show their progress + Skip/Postpone in the menu now, so keep the floating
+        // timer popup hidden DURING the habit. It's only made invisible (alpha 0, still on-screen) — not
+        // ordered out — so the 2-minutes-left reminder in performTimerCount can reveal it again. The
+        // timer keeps running the whole time (drives completion + return to routine).
         boxTimer.isHidden = false
         smallCountDownVcObj?.isFocusBreak = isFocusBreak
         smallCountDownVcObj?.startTimerHabit(durationSeconds: durationSeconds, msg: msg, currentTimerValue:currentTimerValue)

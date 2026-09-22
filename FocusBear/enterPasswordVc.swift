@@ -266,7 +266,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             
             if parentVc == pomodoroVcObj{
                 self.dismiss(self)
-                let totalMinutes = pomodoroVcObj!.textFieldWorkDuration.integerValue
+                let totalMinutes = pomodoroVcObj!.workDurationMinutes
                 if currentState == ._POSTPONE_MORNING_HABIT_ && !isShowingForRelaxFocusMode{
                     getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                     pomodoroVcObj!.checkStateAndStartPomodoroMode()
@@ -291,7 +291,8 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 return;
             }else if parentVc == focusEndWarningVcObj{
                 self.dismiss(self)
-                let totalMinutes = Int(focusEndWarningVcObj?.popUpBtn.title ?? "1") ?? 0
+                let totalMinutes = FocusSessionExtension.cutoffLimitedMinutes(Int(focusEndWarningVcObj?.popUpBtn.title ?? "1") ?? 0, from: endFocusModeTime)
+                guard totalMinutes > 0 else { return }
                 if currentState == ._POSTPONE_MORNING_HABIT_{
                     getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                 }else if currentState == ._POSTPONE_EVENING_HABIT_{
@@ -303,19 +304,24 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 return;
             }else if parentVc == addTaskVcObj{
                 self.dismiss(self)
-                let totalMinutes = Int(addTaskVcObj?.popUpBtnSelectMinutes.title ?? "1") ?? 0
-                if currentState == ._POSTPONE_MORNING_HABIT_{
+                let totalMinutes = FocusSessionExtension.cutoffLimitedMinutes(addTaskVcObj?.extensionMinutesForPostpone ?? 0, from: nil)
+                guard totalMinutes > 0 else { return }
+                // Fall back to the persisted last-postpone state: when extending from the completion
+                // popup the covering focus session has already finished, so currentState is ._NOTHING_
+                // and these live checks would all miss — leaving the habits un-covered (#2213).
+                let postponeState = routinePostponeStateToReCoverOnExtend() ?? currentState
+                if postponeState == ._POSTPONE_MORNING_HABIT_{
                     getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
-                }else if currentState == ._POSTPONE_EVENING_HABIT_{
+                }else if postponeState == ._POSTPONE_EVENING_HABIT_{
                     getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
-                }else if currentState == ._POSTPONE_FOCUS_SUMMARY_{
+                }else if postponeState == ._POSTPONE_FOCUS_SUMMARY_{
                     getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                 }
                 addTaskVcObj?.extendFocusMode()
                 return;
             }else if parentVc == simplePomodoroVcObj{
                 self.dismiss(self)
-                let totalMinutes = simplePomodoroVcObj!.textFieldWorkDuration.integerValue
+                let totalMinutes = simplePomodoroVcObj!.workDurationMinutes
                 getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                 simplePomodoroVcObj!.pomodoroModeStarted()
                 
@@ -351,11 +357,13 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                         return;
                     }else{
                         self.view.removeFromSuperview()
+                        // The password was the gate — don't also make them hold the countdown.
+                        getAskPostponeVcObject().hasSatisfiedPostponePassword = true
                         getHabitsVcObject().showAskPostponeView()
                         return;
                     }
-                    
-                    
+
+
                 }else if lastCurrentState == ._EVENING_HABIT_{
                     // Evening uses the hold-to-set control, so read the minutes it resolved
                     // rather than the (now hidden) dropdown title.
@@ -372,11 +380,13 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                         return;
                     }else{
                         self.view.removeFromSuperview()
+                        // The password was the gate — don't also make them hold the countdown.
+                        getAskPostponeVcObject().hasSatisfiedPostponePassword = true
                         getHabitsVcObject().showAskPostponeView()
                         return;
                     }
-                    
-                    
+
+
                 }else if lastCurrentState == ._FOCUS_SUMMARY_{
                     self.view.window?.close()
                     self.view.removeFromSuperview()

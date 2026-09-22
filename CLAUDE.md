@@ -6,6 +6,25 @@ Start with [`ARCHITECTURE.md`](ARCHITECTURE.md) for how the app is structured (s
 flow, the global-singleton/state-machine/view-swapping patterns) and [`TECH_DEBT.md`](TECH_DEBT.md)
 for the known-problems register before "fixing" anything that looks odd.
 
+## Where work goes: the integration branch, NOT a PR per change
+
+**All Mac-App work commits directly to `integration/mac-swiftui-rebuild`** (renamed 2026-09-17 from
+`test/mega-relevance-shadow-webview`). **Do not open a PR for a Mac-App change.** The single review
+PR is [#2569](https://github.com/Focus-Bear/Mac-App/pull/2569), and its head IS that branch, so every
+push updates it.
+
+This **overrides** the global "always open a PR when finishing a self-contained task" rule for code in
+this repo. It does not override it for other repos — assets, backend and TimeTracker-Mac changes still
+get their own PRs, and a new `config.json` string still needs its assets PR (see the i18n note below).
+
+**Why:** the per-change PRs were all extractions from this same branch, so each carried the whole
+mega/main divergence. That reached 102 open PRs, sixteen of which (#2528–#2560) were cumulative
+snapshots of one another — the largest +123,291 lines. 77 were closed on 2026-09-17 after verifying by
+content sampling that their added lines were already on the integration branch.
+
+Branch protection is on, so pushes report "Bypassed rule violations" — that is expected and is not an
+error. Never force-push it; other agents build on it concurrently.
+
 ## Building
 
 - **Workspace, not project:** always build via `FocusBear.xcworkspace` (it pulls in Pods + SPM).
@@ -18,7 +37,10 @@ for the known-problems register before "fixing" anything that looks odd.
     | grep -E "error:|BUILD SUCCEEDED|BUILD FAILED"
   ```
 - Built app lands at `build/Build/Products/Debug/Focus Bear.app`.
-- Relaunch: `killall "Focus Bear"; open "build/Build/Products/Debug/Focus Bear.app"`.
+- Local testing runs from `~/Applications/Focus Bear.app` through LaunchServices (`open -a`).
+  Stage and verify the signed build before replacing that installed copy. Follow the exact helper
+  job/process shutdown sequence in `HANDOVER-CODEX.md`; a stale helper job can relaunch the old
+  DerivedData copy. Do not run the user app from the build/test output directory.
 - SPM deps: ORSSerialPort, Auth0/JWTDecode/SimpleKeychain, Swifter, NWWebSocket, PusherSwift, Sentry, TrueTime, TweetNacl.
 - SourceKit live-diagnostics in the editor often show false "Cannot find type X in scope"
   across files in the same target (e.g. `ScheduleBuilder`, `ScheduleText`). These are NOT
@@ -31,6 +53,27 @@ for the known-problems register before "fixing" anything that looks odd.
 - `ENABLE_HARDENED_RUNTIME` MUST be `NO` for Debug configs in `project.pbxproj`. Hardened
   runtime blocks the TCC calendar prompt — symptom: "Grant access did nothing" / no prompt.
   (Ad-hoc signing also silently disables it.) Verify with `granted=true, status=3`.
+
+### Keychain prompts ("Focus Bear wants to use your confidential information…")
+
+- The Auth0 tokens are a **generic password** in the login keychain, service
+  `com.App.EarnYourScreentime`, account `credentials`
+  (`security find-generic-password -s com.App.EarnYourScreentime`).
+- macOS grants access by matching the calling binary against the item's ACL **designated
+  requirement**. For a properly signed build that is certificate-based and survives rebuilds
+  and updates; for an **ad-hoc** build (`CODE_SIGN_IDENTITY = -`, the Debug default) the
+  designated requirement is literally `cdhash H"…"`, so *every rebuild is a different app* and
+  macOS re-prompts. Verified with a signing probe: rebuilt ad-hoc binary → `errSecAuthFailed`,
+  rebuilt Apple-Development-signed binary → reads fine.
+- So: **a worktree without `Config/Local.xcconfig` builds ad-hoc and re-prompts on every
+  build** (and loses TCC grants). Copy `Config/Local.xcconfig` into every new worktree.
+- `security dump-keychain -a ~/Library/Keychains/login.keychain-db` prints each item's ACL
+  and partition list — accumulated `cdhash:` entries are the fingerprint of this problem.
+- Signed **Release** builds store the tokens in the **data-protection keychain** instead
+  (`CredentialsKeychainStorage`), which has no ACLs and never prompts. That needs the
+  restricted `keychain-access-groups` entitlement, which lives only in
+  `Focus Bear-Release.entitlements` — macOS **SIGKILLs** a process that claims it without a
+  provisioning profile granting it, and ad-hoc Debug/CI builds embed no profile.
 
 ## Signed / release build (Developer ID + notarized DMG)
 
@@ -101,6 +144,32 @@ and works them. Workflow rules (also in agent memory): after 8pm don't ask the u
 at ≥90% confidence else move the folder to `Needs Clarification/` with a `CLAUDE-NOTES.md`; finished
 reports go to `Ready for Human QA/` renamed `descriptive-hyphenated-<timestamp>` with notes. Don't
 reveal report folders in Finder (that pile-up was removed).
+
+**The queue is not "are there new folders?".** Five reports sat in *Rework needed* for days with
+nobody looking, and four were already fixed — the fixes landed 3–12 minutes after the user tested, so
+the feedback was about a build that did not contain them. Run
+**`scripts/check-report-rework.py`** before concluding there is nothing to do; it reproduces
+`LocalReportStatus.status(...)` from outside the app and lists both rework and still-open reports.
+
+**Feedback on a FILED report wakes nobody by default.** The queue monitor watches for new folders;
+feedback appended to an existing `TASK.md` creates none. On 2026-09-22 two reports sat in rework for
+five hours for exactly that reason — hours after `check-report-rework.py` existed. Detectable on
+demand is not the same as noticed, so run
+**`scripts/watch-report-rework.sh`** as a second monitor alongside the queue one; it prints a line
+the moment a report ENTERS rework.
+
+*Rework needed* is computed, never stored: the newest `- Added:` stamp in `TASK.md` versus
+`CLAUDE-NOTES.md`'s mtime. So **a fix that ships without its notes being stamped stays in rework
+forever**, however finished it is. Stamp the update at INSTALL time, not commit time — a commit is
+not an install, and filing before installing is what caused every one of those five.
+
+**Writing notes: one original note, then stamped updates.** The app parses a notes file
+(`LocalReportNoteParser`) into the first diagnosis plus every `## Update` section, and renders each
+as its own card — original first (collapsed when updates exist), updates below it newest-first. So:
+append a new `## Update` section rather than editing the diagnosis, and stamp the heading —
+`## Update — 2026-09-15 22:40 — what changed` — so the card can show when it was written. Unstamped
+headings (`## Update`, `## Update 2 — …`) still parse; they just render without a date. Anything
+written under an update (`### …`, `## How to test Update 2`) belongs to that update's card.
 
 ## Verifying UI without seeing the window
 

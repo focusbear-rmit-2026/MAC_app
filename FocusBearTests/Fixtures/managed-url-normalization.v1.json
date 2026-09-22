@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "host_format": "ASCII hostname or bare IPv6 (URL serialization keeps IPv6 brackets)",
+  "cases": [
+    {
+      "id": "bare-host",
+      "input": "EXAMPLE.org",
+      "valid": true,
+      "normalized_url": "https://example.org/",
+      "host": "example.org",
+      "resource_hash": "8198d1bac40a1033653a78e48800cefc9e6b974ff075c66e5548b5c1e145a2b0"
+    },
+    {
+      "id": "trailing-dot-fragment",
+      "input": "https://EXAMPLE.org./a#private",
+      "valid": true,
+      "normalized_url": "https://example.org/a",
+      "host": "example.org",
+      "resource_hash": "b5b10dd0429e69ac7cfaf0a20b6901c1265c50b55d1751bcb684ed96ef7b300a"
+    },
+    {
+      "id": "unreserved-percent",
+      "input": "https://example.org/%61/%7euser",
+      "valid": true,
+      "normalized_url": "https://example.org/a/~user",
+      "host": "example.org",
+      "resource_hash": "dd63e0fc31a8eeeb46441433b2126f2586d7e762687d299e71cac2ded9780ad3"
+    },
+    {
+      "id": "reserved-percent",
+      "input": "https://example.org/a%2fb",
+      "valid": true,
+      "normalized_url": "https://example.org/a%2Fb",
+      "host": "example.org",
+      "resource_hash": "d544ef85d17387d81ae021b97a9c8331363372747c8cd514d4d5f211ba7686b4"
+    },
+    {
+      "id": "dot-segments",
+      "input": "https://example.org/lesson/%2e%2e/game",
+      "valid": true,
+      "normalized_url": "https://example.org/game",
+      "host": "example.org",
+      "resource_hash": "608f2de99e0a403b2c2deb9bb960a2ba7d2cb1da85f0c5526a0b94454d1791ab"
+    },
+    {
+      "id": "query-preserved",
+      "input": "https://example.org/a?token=secret#discard",
+      "valid": true,
+      "normalized_url": "https://example.org/a?token=secret",
+      "host": "example.org",
+      "resource_hash": "928a683a812250fca2773c6c070e06988c1ecf25443252e7b591c6bc19d78046"
+    },
+    {
+      "id": "query-order-preserved",
+      "input": "https://example.org/?b=2&a=1",
+      "valid": true,
+      "normalized_url": "https://example.org/?b=2&a=1",
+      "host": "example.org",
+      "resource_hash": "b2afbf3fed2b387f73543de7d334d2417b569ec33a028ceb08c914781b9bb634"
+    },
+    {
+      "id": "empty-query",
+      "input": "https://example.org/?",
+      "valid": true,
+      "normalized_url": "https://example.org/",
+      "host": "example.org",
+      "resource_hash": "8198d1bac40a1033653a78e48800cefc9e6b974ff075c66e5548b5c1e145a2b0"
+    },
+    {
+      "id": "default-port",
+      "input": "https://example.org:443/a",
+      "valid": true,
+      "normalized_url": "https://example.org/a",
+      "host": "example.org",
+      "resource_hash": "b5b10dd0429e69ac7cfaf0a20b6901c1265c50b55d1751bcb684ed96ef7b300a"
+    },
+    {
+      "id": "explicit-port",
+      "input": "https://example.org:8443/a",
+      "valid": true,
+      "normalized_url": "https://example.org:8443/a",
+      "host": "example.org",
+      "resource_hash": "9b80290f5309859e46ab4ff5047b742d84c4851577ee5ca3f5b95bdf29d0cf4e"
+    },
+    {
+      "id": "idn",
+      "input": "https://b\u00fccher.example/",
+      "valid": true,
+      "normalized_url": "https://xn--bcher-kva.example/",
+      "host": "xn--bcher-kva.example",
+      "resource_hash": "7971a8be6267ce24bde810901c82e8c4ada53555d5b75e746486b392c1e9eede"
+    },
+    {
+      "id": "ipv6",
+      "input": "https://[2001:0db8::1]/",
+      "valid": true,
+      "normalized_url": "https://[2001:db8::1]/",
+      "host": "2001:db8::1",
+      "resource_hash": "a29c5e99701feded870a3e8098e7ec0e39fd2f374341502a33b1bc73704431f6"
+    },
+    {
+      "id": "ipv4-short",
+      "input": "https://127.1/",
+      "valid": true,
+      "normalized_url": "https://127.0.0.1/",
+      "host": "127.0.0.1",
+      "resource_hash": "ddd0780b683530a71ff3a08afee3330e5e1aea6328d8d09d227fddab53779482"
+    },
+    {
+      "id": "credentials",
+      "input": "https://user:secret@example.org/",
+      "valid": false
+    },
+    {
+      "id": "unsupported-scheme",
+      "input": "ftp://example.org/file",
+      "valid": false
+    },
+    {
+      "id": "backslash",
+      "input": "https://example.org\\evil",
+      "valid": false
+    },
+    {
+      "id": "whitespace",
+      "input": "https://example.org/a b",
+      "valid": false
+    },
+    {
+      "id": "bad-percent",
+      "input": "https://example.org/%ZZ",
+      "valid": false
+    },
+    {
+      "id": "missing-host",
+      "input": "https:///",
+      "valid": false
+    },
+    {
+      "id": "control",
+      "input": "https://example.org/\n",
+      "valid": false
+    },
+    {
+      "id": "too-long",
+      "input": "https://example.org/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "valid": false
+    }
+  ]
+}

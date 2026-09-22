@@ -26,6 +26,17 @@ struct ToDoStatusPaging: Equatable {
     var page = ToDoPaging.firstPage
     var hasNextPage = false
     var itemCount = 0
+    /// Rows the server has handed over for this bucket so far, undecodable ones included — what
+    /// `ToDoSectionCount` subtracts from `itemCount` to get the rows still behind paging.
+    var receivedCount = 0
+
+    /// A task moving in or out of the bucket locally changes both totals together: it is one more
+    /// (or one fewer) row on the server AND one more (or fewer) row already in hand. Moving only
+    /// `itemCount` would make the difference — the rows still behind paging — drift by one per move.
+    mutating func adjustForLocalChange(by delta: Int) {
+        itemCount = max(0, itemCount + delta)
+        receivedCount = max(0, receivedCount + delta)
+    }
 }
 
 final class ToDoStore: ObservableObject {
@@ -40,6 +51,7 @@ final class ToDoStore: ObservableObject {
     private static let sortModeKey = "kUserdefaultsToDoListSortMode"
     private static let brainDumpTimeouts: [(maxLength: Int, seconds: TimeInterval)] = [(300, 30), (700, 45), (Int.max, 60)]
 
+    let forecast = LocalForecastStore()
     let strings: ToDoStrings
     /// Fires after any task write succeeds (save, delete, complete) so other screens showing the
     /// same tasks (the project detail) can re-fetch.
@@ -111,6 +123,10 @@ final class ToDoStore: ObservableObject {
     @Published private(set) var isConvertingBrainDump = false
     @Published private(set) var showVaguePrompt = false
     @Published private(set) var isCreatingBrainDumpTasks = false
+    @Published private(set) var brainDumpError: String?
+    private var brainDumpGeneration = 0
+    private var brainDumpAccountID = ""
+    private var brainDumpWriter: BrainDumpTaskWriter?
 
     // Procrastinate
     @Published private(set) var savedWebsites: [SavedWebsite] = []
@@ -150,11 +166,14 @@ final class ToDoStore: ObservableObject {
         return ToDoSectioning.build(tasks: filtered, projects: projects, sortMode: sortMode, sectionTitles: strings.sectionTitles())
     }
 
-    /// Web `getTotalCountByStatus`: the server total while no client filter narrows the bucket.
+    /// Web `getTotalCountByStatus`, corrected so the heading can't promise a row the section never
+    /// shows — see `ToDoSectionCount`. A custom column, a search or an active filter has no server
+    /// total to reconcile with, so those count their own rows.
     func totalCount(for section: ToDoSection) -> Int {
         guard let status = section.status, !isSearchActive, !filters.isActive,
-              let serverCount = paging[status]?.itemCount else { return section.tasks.count }
-        return max(serverCount, section.tasks.count)
+              let paging = paging[status] else { return section.tasks.count }
+        return ToDoSectionCount.headerCount(rendered: section.tasks.count, serverItemCount: paging.itemCount,
+                                            rowsReceived: paging.receivedCount)
     }
 
     func hasMore(for section: ToDoSection) -> Bool {
@@ -268,12 +287,15 @@ final class ToDoStore: ObservableObject {
                     self.showStatus(self.strings[.requestFailed])
                     return
                 }
-                var bucket = page == ToDoPaging.firstPage ? [] : (self.tasksByStatus[status] ?? [])
+                let isFirstPage = page == ToDoPaging.firstPage
+                var bucket = isFirstPage ? [] : (self.tasksByStatus[status] ?? [])
                 let known = Set(bucket.map { $0.id })
                 bucket.append(contentsOf: result.data.filter { !known.contains($0.id) })
                 self.tasksByStatus[status] = bucket
+                let receivedBefore = isFirstPage ? 0 : (self.paging[status]?.receivedCount ?? 0)
                 self.paging[status] = ToDoStatusPaging(page: page, hasNextPage: result.meta?.hasNextPage ?? false,
-                                                       itemCount: result.meta?.itemCount ?? bucket.count)
+                                                       itemCount: result.meta?.itemCount ?? bucket.count,
+                                                       receivedCount: receivedBefore + result.receivedRowCount)
             }
         }
     }
@@ -393,10 +415,8 @@ final class ToDoStore: ObservableObject {
         // move, so the section headers don't read one-too-high / one-too-low until the next refresh.
         // A same-bucket update (e.g. a due-date edit, or re-applying the saved row) leaves counts alone.
         if removedFrom != newStatus {
-            if let old = removedFrom {
-                paging[old]?.itemCount = max(0, (paging[old]?.itemCount ?? 1) - 1)
-            }
-            paging[newStatus]?.itemCount = (paging[newStatus]?.itemCount ?? 0) + 1
+            if let old = removedFrom { paging[old]?.adjustForLocalChange(by: -1) }
+            paging[newStatus]?.adjustForLocalChange(by: 1)
         }
         if let index = searchResults?.firstIndex(where: { $0.id == task.id }) { searchResults?[index] = task }
     }
@@ -405,7 +425,7 @@ final class ToDoStore: ObservableObject {
         for status in ToDoSectioning.defaultOrder {
             if let index = tasksByStatus[status]?.firstIndex(where: { $0.id == id }) {
                 tasksByStatus[status]?.remove(at: index)
-                paging[status]?.itemCount = max(0, (paging[status]?.itemCount ?? 1) - 1)
+                paging[status]?.adjustForLocalChange(by: -1)
             }
         }
         searchResults?.removeAll { $0.id == id }
@@ -511,6 +531,9 @@ final class ToDoStore: ObservableObject {
                 // A 2xx whose body doesn't decode still saved; keep the optimistic row.
                 let result = saved ?? task
                 self.upsertLocally(result)
+                if previous.due_date != result.due_date {
+                    DayPlanTaskStore.shared.applyDueDate(todoID: result.id, dueDate: result.due_date)
+                }
                 self.onTaskChanged?()
                 completion(result)
             }
@@ -568,9 +591,9 @@ final class ToDoStore: ObservableObject {
     }
 
     /// Web `submitToDoFromFlow`: `PUT /to-do`, then refresh every bucket and close the editor.
-    func saveTask(_ task: ToDoTask, isNew: Bool, completion: @escaping (_ success: Bool) -> Void) {
+    func saveTask(_ task: ToDoTask, isNew: Bool, clearOutcome: Bool = false, completion: @escaping (_ success: Bool) -> Void) {
         isSavingTask = true
-        allApiObject.upsertToDo(ToDoUpsertBody.make(from: task)) { [weak self] saved, statusCode, serverMessage in
+        allApiObject.upsertToDo(ToDoUpsertBody.make(from: task, clearOutcome: clearOutcome)) { [weak self] saved, statusCode, serverMessage in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.isSavingTask = false
@@ -648,21 +671,34 @@ final class ToDoStore: ObservableObject {
 
     func convertBrainDump(force: Bool) {
         let contents = brainDumpText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !contents.isEmpty, !isConvertingBrainDump else { return }
-        if isBrainDumpVague && !force {
-            showVaguePrompt = true
+        guard !contents.isEmpty, !isConvertingBrainDump, !isCreatingBrainDumpTasks else { return }
+        brainDumpError = nil
+        guard contents.count <= Self.brainDumpCharLimit else {
+            brainDumpError = strings.format(.brainDumpLimit, ToDoStrings.countToken, String(Self.brainDumpCharLimit))
             return
         }
+        if isBrainDumpVague && !force { showVaguePrompt = true; return }
+        let account = appdelegate?.user?.userId ?? ""
+        guard !account.isEmpty else { brainDumpError = strings[.requestFailed]; return }
+        guard brainDumpAccountID.isEmpty || brainDumpAccountID == account else {
+            resetBrainDump(); brainDumpText = ""; brainDumpError = strings[.requestFailed]; return
+        }
+        brainDumpGeneration += 1
+        let generation = brainDumpGeneration
+        brainDumpAccountID = account
         showVaguePrompt = false
         isConvertingBrainDump = true
         let timeout = ToDoStore.brainDumpTimeouts.first { contents.count <= $0.maxLength }?.seconds ?? 60
-        allApiObject.convertBrainDumpToTasks(contents: contents, timeout: timeout) { [weak self] tasks in
+        allApiObject.convertBrainDumpToTasks(contents: contents, timeout: timeout, expectedAccountID: account) { [weak self] tasks in
             DispatchQueue.main.async {
-                guard let self = self else { return }
+                guard let self = self, generation == self.brainDumpGeneration else { return }
                 self.isConvertingBrainDump = false
+                guard (appdelegate?.user?.userId ?? "") == account else {
+                    self.resetBrainDump(); self.brainDumpText = ""; self.brainDumpError = self.strings[.requestFailed]; return
+                }
+                guard self.brainDumpText.trimmingCharacters(in: .whitespacesAndNewlines) == contents else { return }
                 guard let tasks = tasks, !tasks.isEmpty else {
-                    self.showStatus(self.strings[.brainDumpFailed])
-                    return
+                    self.brainDumpError = self.strings[.brainDumpFailed]; return
                 }
                 self.brainDumpTasks = tasks
             }
@@ -670,56 +706,73 @@ final class ToDoStore: ObservableObject {
     }
 
     func updateBrainDumpTask(_ task: BrainDumpTask) {
-        guard let index = brainDumpTasks.firstIndex(where: { $0.id == task.id }) else { return }
+        guard !isCreatingBrainDumpTasks, let index = brainDumpTasks.firstIndex(where: { $0.id == task.id }) else { return }
         brainDumpTasks[index] = task
     }
 
     func removeBrainDumpTask(_ task: BrainDumpTask) {
+        guard !isCreatingBrainDumpTasks else { return }
         brainDumpTasks.removeAll { $0.id == task.id }
     }
 
     var validBrainDumpTasks: [BrainDumpTask] {
-        brainDumpTasks.filter { !$0.task_name.trimmingCharacters(in: .whitespaces).isEmpty && $0.estimatedMinutes > 0 }
+        brainDumpTasks.filter { BrainDumpTaskPayload.body(for: $0, today: "") != nil }
     }
 
-    /// Web `submitAllBrainDumpTasks`: one `PUT /to-do` per task, then refresh and close.
+    /// Review creates one task at a time. A partial/unknown failure keeps the remaining draft and IDs.
     func createBrainDumpTasks() {
         let tasks = validBrainDumpTasks
-        guard !tasks.isEmpty, !isCreatingBrainDumpTasks else { return }
-        isCreatingBrainDumpTasks = true
+        guard !tasks.isEmpty, tasks.count == brainDumpTasks.count, !isCreatingBrainDumpTasks else { return }
+        let account = brainDumpAccountID
+        guard !account.isEmpty, (appdelegate?.user?.userId ?? "") == account else {
+            resetBrainDump(); brainDumpText = ""; brainDumpError = strings[.requestFailed]; return
+        }
+        let generation = brainDumpGeneration
         let today = ToDoDates.ymd(Date())
-        var remaining = tasks.count
-        for task in tasks {
-            let body: [String: Any] = [
-                "id": UUID().uuidString.lowercased(),
-                "title": task.task_name,
-                "details": "",
-                "objective": "",
-                "tags": [],
-                "due_date": task.due_date ?? today,
-                "duration": task.estimatedMinutes * 60,
-                "eisenhower_quadrant": EisenhowerQuadrant.doIt.rawValue,
-                "subtasks": task.subtasks.map { ["name": $0, "is_completed": false] as [String: Any] },
-                "status": ToDoStatus.notStarted.rawValue,
-                "outcome": task.outcome ?? ToDoScoring.defaultOutcome,
-                "perspiration_level": task.perspiration_level ?? ToDoScoring.defaultPerspiration,
-            ]
-            allApiObject.upsertToDo(body) { [weak self] _, _, _ in
+        brainDumpError = nil
+        isCreatingBrainDumpTasks = true
+        let writer = BrainDumpTaskWriter(tasks: tasks, isCurrent: { [weak self] in
+            self?.brainDumpGeneration == generation && (appdelegate?.user?.userId ?? "") == account
+        }, write: { task, done in
+            guard let body = BrainDumpTaskPayload.body(for: task, today: today) else { done(false); return }
+            allApiObject.upsertToDo(body, expectedAccountID: account) { saved, status, _ in
                 DispatchQueue.main.async {
-                    remaining -= 1
-                    guard remaining == 0, let self = self else { return }
-                    self.isCreatingBrainDumpTasks = false
-                    self.brainDumpTasks = []
-                    self.brainDumpText = ""
-                    self.isBrainDumpVisible = false
-                    self.refreshAll()
+                    done((200..<300).contains(status) && saved?.id.lowercased() == task.id.lowercased())
                 }
             }
-        }
+        }, didSave: { [weak self] id in
+            self?.brainDumpTasks.removeAll { $0.id == id }
+            self?.onTaskChanged?()
+        }, completion: { [weak self] result in
+            guard let self = self, generation == self.brainDumpGeneration else { return }
+            self.isCreatingBrainDumpTasks = false
+            self.brainDumpWriter = nil
+            switch result {
+            case .complete:
+                self.brainDumpText = ""
+                self.isBrainDumpVisible = false
+                self.refreshAll()
+            case .failed(let count):
+                self.brainDumpError = self.strings.format(.brainDumpPartialSave, ToDoStrings.countToken, String(count))
+            case .superseded:
+                self.resetBrainDump()
+                self.brainDumpText = ""
+                self.brainDumpError = self.strings[.requestFailed]
+            }
+        })
+        brainDumpWriter = writer
+        writer.start()
     }
 
     func resetBrainDump() {
+        brainDumpGeneration += 1
+        brainDumpWriter?.cancel()
+        brainDumpWriter = nil
+        isConvertingBrainDump = false
+        isCreatingBrainDumpTasks = false
         brainDumpTasks = []
+        brainDumpAccountID = ""
+        brainDumpError = nil
         showVaguePrompt = false
     }
 
@@ -763,11 +816,26 @@ final class ToDoStore: ObservableObject {
         }
     }
 
+    /// A sheet, not `runModal()` — the same trap the attachment picker fell into: a modal panel that
+    /// opens behind the window blocks the main run loop with nothing visible to dismiss, and the app
+    /// simply freezes (report 2026-09-14_22-12-31).
     private func saveExport(_ csv: String) {
         let panel = NSSavePanel()
         panel.nameFieldStringValue = "focus-bear-tasks.csv"
         panel.allowedFileTypes = ["csv"]
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+        let finish: (NSApplication.ModalResponse) -> Void = { [weak self] response in
+            guard let self = self, response == .OK, let url = panel.url else { return }
+            self.write(csv, to: url)
+        }
+        if let window = NSApp.keyWindow ?? NSApp.mainWindow {
+            panel.beginSheetModal(for: window, completionHandler: finish)
+        } else {
+            NSApp.activate(ignoringOtherApps: true)
+            panel.begin(completionHandler: finish)
+        }
+    }
+
+    private func write(_ csv: String, to url: URL) {
         do {
             try csv.write(to: url, atomically: true, encoding: .utf8)
             showStatus(strings[.exportSaved])

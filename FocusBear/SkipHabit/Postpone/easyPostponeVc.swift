@@ -93,6 +93,47 @@ class easyPostponeVc: NSViewController {
             self.view.window?.close()
         }
     }
+
+    /// Present the AI accountability buddy chat as a sheet (replacing the old intention dialog). The
+    /// buddy gates the postpone: only its approval postpones the habit and starts the scoped session.
+    private func presentAccountabilityBuddy(state: CURRENTSTATE){
+        AccountabilityBuddyChatViewController.present(
+            over: self,
+            initialGoal: "",
+            onApproved: { [weak self] goal, duration in self?.postponeAfterBuddyApproval(state: state, goal: goal, minutes: duration) },
+            onCancel: { [weak self] in self?.returnToRoutineAfterBuddyGiveUp() })
+    }
+
+    /// The AI approved — postpone the habit for the AI-approved `minutes` (this exits the routine's full
+    /// screen) and carry the goal into the focus start screen, mirroring the old intention-dialog Continue
+    /// path. Handles both the first postpone and re-postpones (_POSTPONE_* states); only the first shows
+    /// the focus-mode view.
+    private func postponeAfterBuddyApproval(state: CURRENTSTATE, goal: String, minutes: Int){
+        let isFirstPostpone = (state == ._MORNING_HABIT_ || state == ._EVENING_HABIT_)
+        switch state {
+        case ._MORNING_HABIT_, ._POSTPONE_MORNING_HABIT_:
+            getHabitsVcObject().postponeMorningHabitFor(minutes: minutes, secondsToPostpone: nil, showAskFocusModeView: isFirstPostpone, showAskIntention: false)
+        case ._EVENING_HABIT_, ._POSTPONE_EVENING_HABIT_:
+            getHabitsVcObject().postponeEveningHabitFor(minutes: minutes, secondsToPostpone: nil, showAskFocusModeView: isFirstPostpone, showAskIntention: false)
+        default:
+            break
+        }
+        closeView()
+        if isFirstPostpone && SettingsManagerObject.isGeekModeEnabled && !goal.isEmpty {
+            pomodoroVcObj?.isIntentionFromMorningPostpone = true
+            // The start screen is SwiftUI now — go through its shims rather than the removed outlets.
+            pomodoroVcObj?.goalText = goal
+            pomodoroVcObj?.showPostponeTitle()
+        }
+    }
+
+    /// The user gave up convincing the buddy — resume the routine (habit not postponed).
+    private func returnToRoutineAfterBuddyGiveUp(){
+        closeView()
+        if mainWindowControllerObj?.window?.isVisible ?? false {
+            getHabitsVcObject().abortCancel()
+        }
+    }
     
     @IBAction func btnCancelClicked(_ sender: Any) {// resume habit
         addLog(text: "[user-action] easyPostponeVc:- button Cancel clicked")// log added on 14/4/25
@@ -154,7 +195,18 @@ class easyPostponeVc: NSViewController {
                 closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
             }
         }
-        
+
+        // AI accountability buddy: gate EVERY habit postpone — the first postpone AND re-postpones of an
+        // already-postponed routine (the _POSTPONE_* states) — so the user always has to convince the AI.
+        // Skips super-gentle (frictionless) strictness and non-habit states (custom routine, micro-break).
+        if SettingsManagerObject.isAccountabilityBuddyActive,
+           !SettingsManagerObject.isStrictnessLevelSuperGentle(),
+           [._MORNING_HABIT_, ._EVENING_HABIT_, ._POSTPONE_MORNING_HABIT_, ._POSTPONE_EVENING_HABIT_].contains(lastCurrentState) {
+            addLog(text: "easyPostponeVc:- AI accountability buddy (state=\(lastCurrentState))")
+            presentAccountabilityBuddy(state: lastCurrentState)
+            return   // the buddy gates the postpone; keep the window until it resolves
+        }
+
         if lastCurrentState == ._MORNING_HABIT_{
             if SettingsManagerObject.isStrictnessLevelSuperGentle(){//Ultra low friction level #1357
                 addLog(text: "easyPostponeVc:- strictness level is super gentle so don't show postpone Intention view")
@@ -165,7 +217,7 @@ class easyPostponeVc: NSViewController {
                 askPostponeIntentionVcObj?.resetData(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView: true, lastCurrentState: ._MORNING_HABIT_)
                 return;// return here because we do not want to close the window
             }
-            
+
         }else if lastCurrentState == ._EVENING_HABIT_{
             if SettingsManagerObject.isStrictnessLevelSuperGentle(){//Ultra low friction level #1357
                 addLog(text: "easyPostponeVc:- strictness level is super gentle so don't show postpone Intention view")

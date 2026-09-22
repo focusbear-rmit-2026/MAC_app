@@ -146,6 +146,18 @@ func addEntryInofflineActivitiesCsv(activity_id:String, duration_logged:String, 
     
     let csvString = "\(activity_id),\(duration_logged),\(device_id),\(activity_sequence_id),\(start_time),\(finish_time),\(skipped_did_complete),\(choice_id),\(quantity_logged),\(skipped_did_not_complete),\(note_logged)\n"
     csvLoggerOfflineActivitiesCsv?.append(line: csvString)
+
+    // A habit queued here is one the routine player has already moved past — the send just failed. Record
+    // it locally as well, so everything that asks "what is left of today's routine" agrees with the player
+    // instead of waiting for a server round-trip that, offline, never comes. Until this, the ONLY thing
+    // that marked a habit done was the 201 handler, so an offline morning left the Day Plan's capacity
+    // still charging for habits the timeline had already turned into deep work: five habits finished
+    // offline and the panel read "54m of tasks planned · -5m buffer" beside 71 minutes of drawn deep work
+    // (report 2026-09-17_08-56-04). Every row means the habit is out of today's plan — a completion, an
+    // "I already did this", or a skip — which is exactly what `offlineCompletedHabitIds()` already reads
+    // this file for, and what the action bar's own optimistic skip does.
+    let dayKey = offlineActivityLocalDayKey(start_time)
+    DispatchQueue.main.async { markPastHabitDoneInDayPlan(id: activity_id, dayKey: dayKey) }
 }
 
 

@@ -16,7 +16,7 @@ class aiSettingNewVc: NSViewController {
     
     let enableMotivationalMessageItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
     let allowSitesByAiItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
-//    let aiShowAllowAlertItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
+    let accountabilityBuddyItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -29,24 +29,20 @@ class aiSettingNewVc: NSViewController {
         var checkBoxWebsiteAllowText = "Use AI to decide if websites should be allowed"
         var descriptionWebsiteAllowText = "We'll use Open AI to decide if the site is valid based on your current focus mode, intention, the URL, the website title and the first 100 characters of the content. This is anonymous - no identifying details are shared."
 
-//        var checkBoxShowAllowAlertText = "Show alert with reason when AI automatically allows a url"
         
         if let aISettingVcInfo = configjson.value(forKey: "aISettingVcInfo") as? NSDictionary{
             checkBoxMorningMotivationText = aISettingVcInfo.value(forKey: "checkBoxMorningMotivationText") as? String ?? checkBoxMorningMotivationText
             descriptionMorningMotivationText = aISettingVcInfo.value(forKey: "descriptionMorningMotivationText") as? String ?? descriptionMorningMotivationText
             checkBoxWebsiteAllowText = aISettingVcInfo.value(forKey: "checkBoxWebsiteAllowText") as? String ?? checkBoxWebsiteAllowText
             descriptionWebsiteAllowText = aISettingVcInfo.value(forKey: "descriptionWebsiteAllowText") as? String ?? descriptionWebsiteAllowText
-//            checkBoxShowAllowAlertText = aISettingVcInfo.value(forKey: "checkBoxShowAllowAlertText") as? String ?? checkBoxShowAllowAlertText
         }
 
         var ai_MotivationalMessage = "Start your day inspired! Enable this setting to receive a unique motivational message crafted just for you every morning. We use AI (in a privacy safe manner) to generate the message."
         var ai_AllowSites = "When you open a website that you haven’t explicitly allowed or blocked, we’ll use AI to check whether it seems relevant. For example, facebook.com would not be relevant if you’re working on writing a business case for earthmoving equipment but would be relevant if you’re doing social media marketing. Your personal details are not shared with AI, just the website URL and your focus intention."
-//        var ai_ShowAllowSitesAlert = "If you turn this setting on, you’ll see a little popup when you visit a new website telling you why AI allowed you access to it. Turn it off if you find the extra popup annoying."
-        
+
         if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary{
             ai_MotivationalMessage = tooltips.value(forKey: "ai_MotivationalMessage") as? String ?? ai_MotivationalMessage
             ai_AllowSites = tooltips.value(forKey: "ai_AllowSites") as? String ?? ai_AllowSites
-//            ai_ShowAllowSitesAlert = tooltips.value(forKey: "ai_ShowAllowSitesAlert") as? String ?? ai_ShowAllowSitesAlert
         }
        
         
@@ -61,22 +57,21 @@ class aiSettingNewVc: NSViewController {
         allowSitesByAiItemVcObj?.lblSubTitle.stringValue = descriptionWebsiteAllowText
         allowSitesByAiItemVcObj?.delegate = self
         allowSitesByAiItemVcObj?.toolTip = ai_AllowSites
-        allowSitesByAiItemVcObj?.lineBottom.isHidden = true
-        
-//        stackView.addView(aiShowAllowAlertItemVcObj!.view, in: .bottom)
-//        aiShowAllowAlertItemVcObj?.lblTitle.stringValue = checkBoxShowAllowAlertText
-//        aiShowAllowAlertItemVcObj?.lblSubTitle.isHidden = true
-//        aiShowAllowAlertItemVcObj?.delegate = self
-//        aiShowAllowAlertItemVcObj?.toolTip = ai_ShowAllowSitesAlert
-//        aiShowAllowAlertItemVcObj?.lineBottom.isHidden = true
+        allowSitesByAiItemVcObj?.lineBottom.isHidden = false
+
+        let accountabilityBuddyTitle = "AI accountability buddy when postponing habits"
+        stackView.addView(accountabilityBuddyItemVcObj!.view, in: .bottom)
+        accountabilityBuddyItemVcObj?.lblTitle.stringValue = accountabilityBuddyTitle
+        accountabilityBuddyItemVcObj?.lblSubTitle.stringValue = "When you postpone your habits, an AI buddy checks your reason against your long-term goals and, if it's genuinely urgent, starts a super-strict AI focus session that only unlocks what you need. Your goal and long-term goals are sent to AI; no other identifying details are shared."
+        accountabilityBuddyItemVcObj?.delegate = self
+        accountabilityBuddyItemVcObj?.lineBottom.isHidden = true
         
         arrForSearchFromSettings.append(["title": checkBoxMorningMotivationText, "tabId": idAi, "object": enableMotivationalMessageItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": checkBoxWebsiteAllowText, "tabId": idAi, "object": allowSitesByAiItemVcObj!.bgBox as Any])
-//        arrForSearchFromSettings.append(["title": checkBoxShowAllowAlertText, "tabId": idAi, "object": aiShowAllowAlertItemVcObj!.bgBox as Any])
+        arrForSearchFromSettings.append(["title": accountabilityBuddyTitle, "tabId": idAi, "object": accountabilityBuddyItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": checkBoxMorningMotivationText, "tabId": idAi, "object": enableMotivationalMessageItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": checkBoxWebsiteAllowText, "tabId": idAi, "object": allowSitesByAiItemVcObj!.bgBox as Any])
-        
-        
+        arrForSearchFromSimpleModeSettings.append(["title": accountabilityBuddyTitle, "tabId": idAi, "object": accountabilityBuddyItemVcObj!.bgBox as Any])
     }
     
     override func viewWillAppear() {
@@ -90,11 +85,8 @@ class aiSettingNewVc: NSViewController {
         }else{
             allowSitesByAiItemVcObj?.btnSwitch.state = .off
         }
-//        if SettingsManagerObject.isAiAllowUrlShowAlertEnabled{
-//            aiShowAllowAlertItemVcObj?.btnSwitch.state = .on
-//        }else{
-//            aiShowAllowAlertItemVcObj?.btnSwitch.state = .off
-//        }
+        accountabilityBuddyItemVcObj?.btnSwitch.state = SettingsManagerObject.isAccountabilityBuddyEnabled ? .on : .off
+
         if settingsSideBarVcObj != nil{
             if settingsSideBarVcObj!.tblView.selectedRow == -1{
                 lblTitle.stringValue = ""
@@ -108,12 +100,13 @@ class aiSettingNewVc: NSViewController {
     }
     
     func reloadDataForAppMode(){
+        // The accountability buddy applies to postponing habits in every mode, so its toggle stays
+        // visible even outside geek mode (unlike the website-AI toggle, which is a geek-mode feature).
+        accountabilityBuddyItemVcObj?.view.isHidden = false
         if SettingsManagerObject.isGeekModeEnabled{
             allowSitesByAiItemVcObj?.view.isHidden = false
-            enableMotivationalMessageItemVcObj?.lineBottom.isHidden = false
         }else{
             allowSitesByAiItemVcObj?.view.isHidden = true
-            enableMotivationalMessageItemVcObj?.lineBottom.isHidden = true
         }
     }
     
@@ -143,16 +136,10 @@ extension aiSettingNewVc: SettingToggleItemDelegate{
                 allApiObject.capturePosthog(event: "settings-changed-ai-check-website-disabled", metadata: [:])
             }
             SettingsManagerObject.isSettingsChanged = true
+        }else if object == accountabilityBuddyItemVcObj{
+            SettingsManagerObject.isAccountabilityBuddyEnabled = (state == .on)
+            allApiObject.capturePosthog(event: state == .on ? "settings-changed-accountability-buddy-enabled" : "settings-changed-accountability-buddy-disabled", metadata: [:])
+            SettingsManagerObject.isSettingsChanged = true
         }
-//        else if object == aiShowAllowAlertItemVcObj{
-//            if state == .on{
-//                SettingsManagerObject.isAiAllowUrlShowAlertEnabled = true
-//                allApiObject.capturePosthog(event: "settings-changed-ai-allow-website-alert-enabled", metadata: [:])
-//            }else{
-//                SettingsManagerObject.isAiAllowUrlShowAlertEnabled = false
-//                allApiObject.capturePosthog(event: "settings-changed-ai-allow-website-alert-disabled", metadata: [:])
-//            }
-//            SettingsManagerObject.isSettingsChanged = true
-//        }
     }
 }

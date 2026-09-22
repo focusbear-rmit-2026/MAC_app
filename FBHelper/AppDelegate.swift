@@ -13,10 +13,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     let startMainAppForceQuitMonitoring = Notification.Name("startMainAppForceQuitMonitoring")
     let stopMainAppForceQuitMonitoring = Notification.Name("stopMainAppForceQuitMonitoring")
-    
+    // #2575: main app asks us to relaunch it at a stored time ("turn everything off until tomorrow").
+    let scheduleMainAppRestart = Notification.Name("scheduleMainAppRestart")
+
     let mainAppQuitByUser = Notification.Name("MainAppQuitByUser")
     var timerBackgroundThread:Timer?
     var timerMainAppForceQuitMonitoring:Timer?
+    var timerScheduledRestart:Timer?
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Insert code here to initialize your application
@@ -43,8 +46,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 setTimerMainAppForceQuitMonitoring()
             }
         }
-        
-        
+
+        // #2575: watch for the main app's scheduled-restart request, and also pick up an outstanding one
+        // written before we (re)launched — the reboot case, where the target time may already have passed.
+        DistributedNotificationCenter.default().addObserver(self, selector: #selector(self.onScheduleMainAppRestart), name: scheduleMainAppRestart, object: "com.App.EarnYourScreentime")
+        if sharedDefaults?.object(forKey: kUserdefaultsMainAppScheduledRestartDate) is Date{
+            startScheduledRestartTimer()
+        }
+
+
         
         DistributedNotificationCenter.default().addObserver(self, selector: #selector(self.mainAppQuit), name: mainAppQuitByUser, object: "com.App.EarnYourScreentime")
         if sharedDefaults?.object(forKey: kUserdefaultsAppQuitForUser) is Date{
@@ -173,6 +183,65 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     
+    // MARK: #2575 scheduled restart (turn everything off until tomorrow)
+
+    @objc func onScheduleMainAppRestart(){
+        addLog(text: "onScheduleMainAppRestart")
+        startScheduledRestartTimer()
+    }
+
+    func startScheduledRestartTimer(){
+        addLog(text: "startScheduledRestartTimer")
+        stopScheduledRestartTimer()
+        DispatchQueue.global().sync {//async {
+            self.timerScheduledRestart = Timer.scheduledTimer(timeInterval: 15, target: self, selector: #selector(self.checkScheduledRestart), userInfo: nil, repeats: true)
+            RunLoop.main.add((self.timerScheduledRestart!), forMode: RunLoop.Mode.common)
+        }
+        // Check immediately too: if the target time has already passed (helper started after a reboot),
+        // there's no reason to wait a full interval.
+        checkScheduledRestart()
+    }
+
+    func stopScheduledRestartTimer(){
+        addLog(text: "stopScheduledRestartTimer")
+        if self.timerScheduledRestart != nil{
+            self.timerScheduledRestart?.invalidate()
+            self.timerScheduledRestart = nil
+        }
+    }
+
+    @objc func checkScheduledRestart(){
+        DispatchQueue.main.async {
+            guard let date = sharedDefaults?.object(forKey: kUserdefaultsMainAppScheduledRestartDate) as? Date else {
+                self.stopScheduledRestartTimer()
+                return
+            }
+            if Date() >= date {
+                addLog(text: "scheduled restart time reached (\(date)) - launching main app if needed")
+                if !self.isMainAppRunning(){
+                    self.launchMainApp()
+                }
+                sharedDefaults?.removeObject(forKey: kUserdefaultsMainAppScheduledRestartDate)
+                sharedDefaults?.synchronize()
+                self.stopScheduledRestartTimer()
+            }
+        }
+    }
+
+    /// Launch the main Focus Bear app that this helper is bundled inside — the helper's bundle sits three
+    /// levels below the .app (…/Focus Bear.app/Contents/…/FBHelper.app), the same derivation the force-quit
+    /// relaunch uses.
+    func launchMainApp(){
+        let path = Bundle.main.bundlePath as NSString
+        var components = path.pathComponents
+        components.removeLast()
+        components.removeLast()
+        components.removeLast()
+        let newPath = NSString.path(withComponents: components)
+        addLog(text: "launchMainApp \(newPath)")
+        NSWorkspace.shared.launchApplication(newPath)
+    }
+
     @objc func checkIsMainAppForceQuit(){
         DispatchQueue.main.async {
             if let state = sharedDefaults?.object(forKey: kUserdefaultsStartMainAppIfNotRunning) as? Bool{

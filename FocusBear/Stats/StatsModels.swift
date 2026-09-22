@@ -70,6 +70,13 @@ struct LongTermGoalsPayload: Encodable {
 struct LogQuantityQuestion: Codable, Equatable {
     var id: String
     var question: String?
+    /// How the backend aggregates this question's daily answers — `"SUM"` or `"AVG"` (settings key
+    /// `log_summary_type`). The `/stats` series already arrives aggregated that way; the app only
+    /// needs the setting to label the graph "Total" or "Average".
+    var logSummaryType: String?
+
+    /// True when this question's daily figure is a mean rather than a running total.
+    var isAveraged: Bool { (logSummaryType ?? "").caseInsensitiveCompare("AVG") == .orderedSame }
 }
 
 /// The slice of a routine activity the Habit Stats tab needs (from GET /user-settings).
@@ -123,6 +130,13 @@ struct ActivityStatItem: Codable, Equatable {
 struct CompletedActivityStats: Codable {
     var activityId: String?
     var items: [ActivityStatItem]?
+    /// `"duration"` or `"quantity"` — what `items[].summary` measures. For a quantity habit the
+    /// summary is the logged amount, NOT seconds, so an "hours spent" figure derived from it is
+    /// meaningless and must be hidden.
+    var statType: String?
+
+    /// True when `summary` is a count of seconds, i.e. an hours figure is meaningful.
+    var isDurationBased: Bool { (statType ?? "duration").caseInsensitiveCompare("duration") == .orderedSame }
 }
 
 struct LogQuantityAnswersStats: Codable {

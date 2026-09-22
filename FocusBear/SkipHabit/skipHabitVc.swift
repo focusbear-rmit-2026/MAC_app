@@ -139,6 +139,10 @@ class skipHabitVc: NSViewController {
             focusButtonServiceObject.cancelHabit()
         }
 
+        // Skipping ends the habit, so a window that stepped aside for an allowed-activity habit may come
+        // back (report 2026-09-16_17-05-07). A no-op unless we were the ones who shrank it.
+        applyFullScreen(forAllowedActivityHabit: false)
+
         if rememberNextHabitVcObj != nil{
             if activityCompletionVcObj!.view.subviews.contains(rememberNextHabitVcObj!.view){
                 rememberNextHabitVcObj!.view.removeFromSuperview()

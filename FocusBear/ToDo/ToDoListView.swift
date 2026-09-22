@@ -24,8 +24,19 @@ enum ToDoTheme {
     static let today = Color(NSColor.systemOrange)
     static let good = Color(NSColor.systemGreen)
     static let neutral = Color(NSColor.tertiaryLabelColor)
+    static let info = Color(NSColor.systemBlue)
     static let cornerRadius: CGFloat = 8
     static let rowSpacing: CGFloat = 6
+
+    /// The colour a due date is shown in: red once it has passed, orange on the day, otherwise
+    /// unremarkable. One definition so every due chip and metric agrees.
+    static func dueTint(_ isoString: String?, isCompleted: Bool) -> Color {
+        switch ToDoDates.dueState(isoString, isCompleted: isCompleted) {
+        case .overdue: return overdue
+        case .today: return today
+        default: return neutral
+        }
+    }
 
     static func bucketColor(_ bucket: PortfolioBucket) -> Color {
         switch bucket {
@@ -40,7 +51,7 @@ enum ToDoTheme {
         switch quadrant {
         case .doIt: return overdue
         case .decide: return today
-        case .delegate: return Color(NSColor.systemBlue)
+        case .delegate: return info
         case .delete: return neutral
         }
     }
@@ -76,7 +87,12 @@ struct ReturnGuardTextField: NSViewRepresentable {
     @Binding var text: String
     var placeholder: String
     var onCommit: () -> Void = {}
+    /// Focus leaving the field. The due-date editor uses it to apply a typed date the user never
+    /// pressed Return on — they typed "14d" and clicked Save, and the date was dropped
+    /// (report 2026-09-11_21-40-57, follow-up).
+    var onEndEditing: () -> Void = {}
     var isBordered = true
+    var fontSize: CGFloat = 13
 
     final class GuardedTextField: NSTextField {
         var onCommit: () -> Void = {}
@@ -97,6 +113,19 @@ struct ReturnGuardTextField: NSViewRepresentable {
             guard let field = notification.object as? NSTextField else { return }
             parent.text = field.stringValue
         }
+        func controlTextDidEndEditing(_ notification: Notification) {
+            guard let field = notification.object as? NSTextField else { return }
+            parent.text = field.stringValue
+            parent.onEndEditing()
+        }
+        func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+            guard commandSelector == #selector(NSResponder.insertNewline(_:)) else { return false }
+            // A normal field editor sends insertNewline to its delegate, without necessarily
+            // passing through performKeyEquivalent (the borderless-window fallback above).
+            parent.text = textView.string
+            parent.onCommit()
+            return true
+        }
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -108,8 +137,10 @@ struct ReturnGuardTextField: NSViewRepresentable {
         field.isBezeled = isBordered
         field.bezelStyle = .roundedBezel
         field.drawsBackground = isBordered
+        // Not literal white: in Dark mode that is white-on-white. Light mode is unchanged.
+        field.backgroundColor = .textBackgroundColor
         field.focusRingType = .none
-        field.font = NSFont.systemFont(ofSize: 13)
+        field.font = NSFont.systemFont(ofSize: fontSize)
         field.lineBreakMode = .byTruncatingTail
         field.cell?.usesSingleLineMode = true
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -186,6 +217,10 @@ struct ToDoScreen: View {
 
     private var strings: ToDoStrings { todoStore.strings }
 
+    /// The screen's own window, so a confirmation can be attached to it rather than presented
+    /// app-modally — see `NSAlert.presentAsSheet`.
+    @SwiftUI.State private var hostWindow: NSWindow?
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -206,14 +241,34 @@ struct ToDoScreen: View {
             footer
         }
         .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color(backgroundColor))
         .sheet(item: $todoStore.editorSession) { session in
             ToDoEditorSheet(store: todoStore, task: session.task, initialTitle: session.initialTitle, initialProject: session.initialProject)
         }
-        .alert(item: $todoStore.taskToDelete) { _ in
-            Alert(title: Text(strings[.deleteTask]), message: Text(strings[.deleteTaskConfirmation]),
-                  primaryButton: .destructive(Text(strings[.delete])) { todoStore.confirmDelete() },
-                  secondaryButton: .cancel(Text(strings[.cancel])))
+        .background(HostWindowReader { hostWindow = $0 })
+        // A sheet on this window rather than a SwiftUI Alert: an Alert raised while the editor sheet
+        // is up is drawn on the window underneath it, so it holds the keyboard where nobody can see
+        // it (report 2026-09-14_11-50-38).
+        .onChange(of: todoStore.taskToDelete) { task in
+            guard task != nil else { return }
+            confirmDelete()
+        }
+    }
+
+    private func confirmDelete() {
+        let alert = NSAlert()
+        alert.messageText = strings[.deleteTask]
+        alert.informativeText = strings[.deleteTaskConfirmation]
+        alert.addButton(withTitle: strings[.delete])      // .alertFirstButtonReturn
+        alert.addButton(withTitle: strings[.cancel])
+        alert.buttons.first?.hasDestructiveAction = true
+        alert.presentAsSheet(for: hostWindow) { response in
+            if response == .alertFirstButtonReturn {
+                todoStore.confirmDelete()
+            } else {
+                todoStore.taskToDelete = nil
+            }
         }
     }
 
@@ -223,8 +278,20 @@ struct ToDoScreen: View {
                 Text(message).font(.system(size: 12)).foregroundColor(.secondary).transition(.opacity)
             }
             Spacer()
-            SwiftUI.Button(action: onClose) { Text(strings[.close]) }
+            SwiftUI.Button(action: closeOneLevel) { Text(strings[.close]) }
                 .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 30))
+        }
+    }
+
+    /// Close the innermost thing first. Closing the window from inside a project's notes looked like
+    /// the whole app quitting, since this window is the app's only visible surface
+    /// (report 2026-09-14_19-4x).
+    private func closeOneLevel() {
+        let detail = projectsStore.detail
+        switch ToDoCloseStep.next(hasOpenNote: detail?.openNote != nil, hasOpenProject: detail != nil) {
+        case .closeNote: detail?.closeNote()
+        case .closeProject: projectsStore.closeDetail()
+        case .closeScreen: onClose()
         }
     }
 }
@@ -233,6 +300,14 @@ struct ToDoScreen: View {
 
 struct TasksTabView: View {
     @ObservedObject var store: ToDoStore
+    /// The same forecast store the Projects tab uses — `ProjectsStore` is constructed with
+    /// `todoStore.forecast` — so the reschedule plan has one owner and one implementation wherever
+    /// it is opened from.
+    @ObservedObject private var forecast: LocalForecastStore
+    init(store: ToDoStore) {
+        self.store = store
+        self.forecast = store.forecast
+    }
     private var strings: ToDoStrings { store.strings }
 
     var body: some View {
@@ -241,6 +316,7 @@ struct TasksTabView: View {
             if let banner = store.completionBannerText {
                 completionBanner(banner)
             }
+            reprioritiseBanner
             if store.showFilters {
                 ToDoFiltersPanel(store: store)
             }
@@ -249,6 +325,10 @@ struct TasksTabView: View {
         .sheet(isPresented: $store.isBrainDumpVisible) { ToDoBrainDumpSheet(store: store) }
         .sheet(isPresented: $store.isMatrixVisible) { ToDoEisenhowerSheet(store: store) }
         .sheet(isPresented: $store.isProcrastinateVisible) { ToDoProcrastinateSheet(store: store) }
+        // The reschedule plan belongs to the task list, not the project list ("Move reschedule tasks
+        // to the Tasks list screen rather than Projects screen", report 2026-09-16_06-38-30). Same
+        // sheet, same store — the Projects tab no longer presents it.
+        .sheet(isPresented: $forecast.showsWorkPlan) { ForecastReschedulePlanSheet(store: forecast) }
     }
 
     private var toolbar: some View {
@@ -289,6 +369,15 @@ struct TasksTabView: View {
 
     private var toolsMenu: some View {
         Menu {
+            // This menu is where the Tasks list already keeps its whole-list actions that open a
+            // sheet — brain dump, the Eisenhower matrix, procrastinate — so the reschedule plan goes
+            // here rather than as a fourth button crowding a toolbar that already holds New task,
+            // search, filter and a three-way sort picker.
+            SwiftUI.Button(action: { forecast.prepareWorkPlanLoadingIfNeeded() }) {
+                Label(ForecastText[.reprioritiseMenuItem], systemImage: "calendar.badge.clock")
+            }
+            .disabled(forecast.isApplying)
+            Divider()
             SwiftUI.Button(action: { store.resetBrainDump(); store.isBrainDumpVisible = true }) {
                 Label(strings[.brainDumpToTasks], systemImage: "brain")
             }
@@ -304,6 +393,7 @@ struct TasksTabView: View {
             Image(systemName: "ellipsis.circle").font(.system(size: 15, weight: .medium))
         }
         .menuStyle(BorderlessButtonMenuStyle())
+        .menuItemIcons()
         .frame(width: 30, height: 30)
         .background(ToDoTheme.card)
         .overlay(RoundedRectangle(cornerRadius: 6).stroke(ToDoTheme.separator))
@@ -314,6 +404,37 @@ struct TasksTabView: View {
     /// Third-party sync (ClickUp, Trello, calendars, MCP) is managed on the web dashboard.
     private func openDashboardIntegrations() {
         if let url = URL(string: ToDoExternalLinks.integrations) { NSWorkspace.shared.open(url) }
+    }
+
+    /// A suggestion, not an alarm: it offers the reschedule plan when the backlog has grown past
+    /// what hand-fixing is pleasant, and it can be sent away.
+    ///
+    /// This is a NEW banner because the Tasks list has none. The Day Plan gets the same offer added
+    /// to the over-capacity banner it already shows, rather than a second banner saying nearly the
+    /// same thing beside it.
+    @ViewBuilder private var reprioritiseBanner: some View {
+        if let reason = forecast.reprioritiseSuggestion {
+            HStack(spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill").foregroundColor(.orange)
+                Text(ReprioritiseSuggestion.text(for: reason))
+                    .font(.system(size: 13, weight: .medium))
+                    .fixedSize(horizontal: false, vertical: true)
+                SwiftUI.Button(ForecastText[.reprioritiseLink]) { forecast.prepareWorkPlanLoadingIfNeeded() }
+                    .buttonStyle(LinkButtonStyle())
+                Spacer(minLength: 8)
+                SwiftUI.Button(action: { forecast.dismissReprioritiseSuggestion() }) {
+                    Image(systemName: "xmark").foregroundColor(.secondary)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .pointingHandCursor()
+                .help(ForecastText[.reprioritiseDismiss])
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.orange.opacity(0.12))
+            .cornerRadius(ToDoTheme.cornerRadius)
+            .transition(.opacity)
+        }
     }
 
     private func completionBanner(_ text: String) -> some View {
@@ -518,7 +639,6 @@ struct ToDoTaskRow: View {
     @SwiftUI.State private var isDuePopoverShown = false
     @SwiftUI.State private var isSnoozeShown = false
     @SwiftUI.State private var isConfirmingDelete = false
-    @SwiftUI.State private var lastTapAt = Date.distantPast
 
     private static let maxProjectChips = 3
     private static let selectedBorderWidth: CGFloat = 2
@@ -574,19 +694,8 @@ struct ToDoTaskRow: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
         .contentShape(Rectangle())
-        // Detect the double-click ourselves instead of adding a SwiftUI `onTapGesture(count: 2)`:
-        // a coexisting count-2 gesture makes SwiftUI wait out the double-tap timeout (~0.5s) before
-        // firing the single tap, so the row expanded late. Here the single tap expands instantly and
-        // a second tap within the system double-click interval opens the editor.
-        .onTapGesture {
-            let now = Date()
-            if now.timeIntervalSince(lastTapAt) < NSEvent.doubleClickInterval {
-                store.openEditor(for: task)
-            } else {
-                store.select(task)
-            }
-            lastTapAt = now
-        }
+        .onTapGesture(count: 2) { store.openEditor(for: task) }
+        .onTapGesture { store.select(task) }
     }
 
     /// Beneath the selected row, joined to it inside the orange border like the Day Plan's selected
@@ -744,6 +853,12 @@ struct ToDoDueDatePopover: View {
                 Text(parsed.map { strings.dueLabel(ToDoDates.ymd($0)) } ?? strings[.unrecognisedDate])
                     .font(.system(size: 11))
                     .foregroundColor(parsed == nil ? ToDoTheme.overdue : .secondary)
+                HStack {
+                    Spacer()
+                    SwiftUI.Button(action: commit) { Text(strings[.save]) }
+                        .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 30))
+                        .disabled(parsed == nil)
+                }
             } else {
                 HStack(spacing: 6) {
                     presetButton(strings[.today]) { onCommit(Calendar.current.startOfDay(for: Date())) }
@@ -768,4 +883,25 @@ struct ToDoDueDatePopover: View {
         guard let day = parsed else { return }
         onCommit(day)
     }
+}
+
+/// macOS renders SwiftUI menu labels title-only unless the style says otherwise, so every
+/// `Label(_, systemImage:)` inside a `Menu` silently loses its icon — the icons were always
+/// specified, they were just never drawn (report 2026-09-16_08-45-24). Applying this to the `Menu`
+/// rather than each item means it reaches them through the environment, so an item added later
+/// gets its icon without the author having to know about this quirk.
+///
+/// `.titleAndIcon` is macOS 12+ and this app targets macOS 11, hence the availability split.
+struct MenuItemIconsModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 12.0, *) {
+            content.labelStyle(.titleAndIcon)
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    func menuItemIcons() -> some View { modifier(MenuItemIconsModifier()) }
 }

@@ -1972,7 +1972,7 @@ class activityCompletionVc: NSViewController {
             nextActivityName = arrFilteredMorningHabits[lastHabitIndex+1].name!
             lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"
             allApiObject.capturePosthog(event: "complete-morning-routine-activity", metadata: ["routine-type":"morning_routine"])
-            if SettingsManagerObject.isPromptToRememberHabit{
+            if SettingsManagerObject.isPromptToRememberHabit && !FeatureSnooze.isSnoozed(.habitNotifications){
                 if !isPromptToRememberHabitShowedInLastHabit{
                     randomIntToRememberNextHabit = Int.random(in: 0..<6)
                     if randomIntToRememberNextHabit == 5{
@@ -2230,7 +2230,7 @@ class activityCompletionVc: NSViewController {
             nextActivityName = arrFilteredMorningHabits[lastHabitIndex+1].name!
             lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"
             allApiObject.capturePosthog(event: "complete-morning-routine-activity", metadata: ["routine-type":"morning_routine"])
-            if SettingsManagerObject.isPromptToRememberHabit{
+            if SettingsManagerObject.isPromptToRememberHabit && !FeatureSnooze.isSnoozed(.habitNotifications){
                 if !isPromptToRememberHabitShowedInLastHabit{
                     randomIntToRememberNextHabit = Int.random(in: 0..<6)  
                     if randomIntToRememberNextHabit == 5{

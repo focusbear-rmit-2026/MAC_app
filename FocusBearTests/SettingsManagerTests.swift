@@ -12,9 +12,12 @@ import XCTest
 class SettingsManagerTests: XCTestCase {
 
     var settings: SettingsManager!
+    private var originalPreferenceKey = ""
 
     override func setUp() {
         super.setUp()
+        originalPreferenceKey = SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks
+        SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks = "FocusBear.Tests.SettingsManager.\(UUID().uuidString)"
         settings = SettingsManager()
         // getCurrentStrictnessLevel() reads this UserDefaults key directly.
         // Set it to a known value so strictness tests are deterministic.
@@ -26,6 +29,7 @@ class SettingsManagerTests: XCTestCase {
         settings = nil
         UserDefaults.standard.removeObject(
             forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
+        SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks = originalPreferenceKey
         super.tearDown()
     }
 

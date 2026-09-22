@@ -554,6 +554,13 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         get { stateQueue.sync { _isAnyCustomScheduleOn } }
         set { stateQueue.sync { _isAnyCustomScheduleOn = newValue } }
     }
+    /// The schedule that is blocking right now, if any. Several screens need to name it (the menu's
+    /// blocking card, the focus-start notice), and each was re-deriving it from `arrBlockingSchedule`.
+    var runningSchedule: customBlockingSchedule? {
+        guard isAnyCustomScheduleOn else { return nil }
+        return arrBlockingSchedule.first { $0.state == .on }
+    }
+
     var currentScheduleFinishTime:Date?
     var isAnyCustomSchedulePaused = false
     var pendingFirstBlockingSchedule: customBlockingSchedule?
@@ -803,23 +810,23 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
                     if SettingsManagerObject.isGeekModeEnabled{
                         if pomodoroVcObj != nil{
                             if pomodoroVcObj?.isViewVisible ?? false{
-                                let intentionAdded = pomodoroVcObj?.textViewAchieve.string
+                                let intentionAdded = pomodoroVcObj?.goalText
                                 leftMenuVcObj?.showPomodoro(pomodoroVcObj: pomodoroVcObj!.view)
                                 
                                 //Postpone intention overwritten by blocking schedule #1815 added v 3.32.484
                                 if let intentionAdded = intentionAdded{
-                                    pomodoroVcObj?.textViewAchieve.string = intentionAdded
+                                    pomodoroVcObj?.goalText = intentionAdded
                                 }
                             }
                         }
                     }else if simplePomodoroVcObj != nil{
                         if simplePomodoroVcObj?.isViewVisible ?? false{
-                            let intentionAdded = simplePomodoroVcObj?.textViewAchieve.string
+                            let intentionAdded = simplePomodoroVcObj?.goalText
                             leftMenuVcObj?.showPomodoro(pomodoroVcObj: simplePomodoroVcObj!.view)
                             
                             //Postpone intention overwritten by blocking schedule #1815 added v 3.32.484
                             if let intentionAdded = intentionAdded{
-                                simplePomodoroVcObj?.textViewAchieve.string = intentionAdded
+                                simplePomodoroVcObj?.goalText = intentionAdded
                             }
                         }
                     }
@@ -1027,12 +1034,17 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         // (see CLAUDE.md). Read the associated block list's is_ai_enabled (absent ⇒ on). Fall back to the
         // schedule's own now-hidden flag only if the block list can't be resolved.
         if let focusMode = arrFocusType.first(where: { $0["id"] as? String == active.focusModeID }) {
-            // Report the block list's AI intent (absent ⇒ on). Where AI actually applies — allow-list
-            // URLs only; a blacklist short-circuits every non-listed URL to allowed and never consults
-            // the AI — is handled downstream by the shared focus-session enforcement path
-            // (focusTimerManager.checkInBackground → checkUrlFromAi), exactly as for a normally-started
-            // focus session running this same block list, so there's no need to gate on the approach here.
-            return focusMode["is_ai_enabled"] as? Bool ?? true
+            // AI relevance checking is only wired into the ALLOW-LIST approach: the per-URL loop
+            // (focusTimerManager.checkInBackground) routes an un-allowed URL to focusTryToBlockUnwantedUrl
+            // → checkUrlFromAi only when the block list uses an allow-list. A blacklist ("block these
+            // specific sites, allow everything else") short-circuits every non-listed URL to allowed and
+            // never consults the AI. So a blacklist with is_ai_enabled=true would make isAIBlockingEnabled()
+            // report true — starting an "AI blocking session" that blocks nothing but the few listed sites
+            // (bug: user in a meeting saw AI blocking start yet everything was allowed). Gate the AI flag on
+            // the approach so a blacklist falls back to plain static enforcement.
+            let isAllowedListApproach = focusMode["isAllowedListApproach"] as? Bool ?? false
+            let isAiEnabledForBlockList = focusMode["is_ai_enabled"] as? Bool ?? true
+            return isAllowedListApproach && isAiEnabledForBlockList
         }
         return active.isAIBlockingEnabled
     }

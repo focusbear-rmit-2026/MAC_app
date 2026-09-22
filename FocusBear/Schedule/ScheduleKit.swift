@@ -96,12 +96,21 @@ struct ScheduleHabitInput {
     var id: String?             // the habit's server id — needed to complete/skip a PAST habit by id
 }
 
-struct ScheduleMeetingInput {
+struct ScheduleMeetingInput: Equatable {
     let id: String
     let title: String
     let start: Date
     let end: Date
     var isDismissed: Bool = false   // hidden by the user; surfaced (struck through) when "Show dismissed events" is on
+    /// Who organises it, as far as EventKit can prove. Read on the same background fetch as the rest
+    /// of this struct: the Fix modal decides each meeting's action from these, and doing that from the
+    /// modal would put one `EKEventStore` lookup per meeting on the main thread.
+    var ownership: EventOwnership = .unknown
+    /// Whether anyone besides the signed-in user is on it — the difference between "skip it quietly"
+    /// and "someone has to be told".
+    var hasOtherAttendees: Bool = false
+    /// Whether it repeats, so a removal can ask which occurrences it means.
+    var isRecurring: Bool = false
 }
 
 /// A routine (morning / evening / a custom routine) and the time window its habits may run in.
@@ -235,22 +244,29 @@ enum ScheduleBuilder {
             // overflow group CONTIGUOUS and in routine order. (A previous per-item offset gave them distinct
             // starts, so a deep-work block sorted BETWEEN two overflow anchors and split them into two "not
             // enough time today" cards.) When no habit fit at all, the anchor is segStart and this whole
-            // segment is one overflow group. Preview/earlier routines drop them.
-            if seg.actionable {
-                for h in placement.unplaced {
-                    var b = ScheduleBlock(kind: .habit, title: h.title, start: overflowAnchor, end: overflowAnchor,
-                                          habitIndex: h.index, routineName: seg.name)
-                    b.isActionable = true
-                    b.isEditable = true
-                    b.isDone = h.isDone
-                    b.habitId = h.id
-                    b.didOverflow = true
-                    // Keep the block zero-duration (start == end) so it groups and doesn't count as busy
-                    // time, but remember the habit's own length so the UI can show a sequential range.
-                    b.overflowDurationSeconds = remainingSeconds(of: h)
-                    blocks.append(b)
-                    placed.append(blocks.count - 1)
-                }
+            // segment is one overflow group.
+            //
+            // This runs for EVERY segment, not just the actionable one. A preview segment (the evening
+            // routine, a custom routine, or any routine on a past/future day — `segmentsForDate` builds
+            // them all with `actionable: false`) used to drop its unplaced habits silently, so a packed
+            // future day rendered "🧩 Morning routine habits · 6:30–6:57am" as if the whole routine fitted
+            // in a 27-minute gap between the end of sleep and the first meeting. The plan must say the
+            // rest of the routine has nowhere to go on any day the user can look at, not only today.
+            // (An "earlier today" section places every habit with no window cap, so it has no unplaced
+            // habits to surface.)
+            for h in placement.unplaced {
+                var b = ScheduleBlock(kind: .habit, title: h.title, start: overflowAnchor, end: overflowAnchor,
+                                      habitIndex: h.index, routineName: seg.name)
+                b.isActionable = seg.actionable
+                b.isEditable = true
+                b.isDone = h.isDone
+                b.habitId = h.id
+                b.didOverflow = true
+                // Keep the block zero-duration (start == end) so it groups and doesn't count as busy
+                // time, but remember the habit's own length so the UI can show its real length.
+                b.overflowDurationSeconds = remainingSeconds(of: h)
+                blocks.append(b)
+                placed.append(blocks.count - 1)
             }
 
             // The whole active routine is tappable (tap a habit to move the action bar to it); its
@@ -441,5 +457,594 @@ enum RoutineReorder {
         // Removing an item that sat *before* the anchor shifts the anchor down one place.
         out.insert(moved, at: min(from < target ? target - 1 : target, out.count))
         return out
+    }
+}
+
+// MARK: - Day Plan: due-date projection
+
+/// Synced unfinished work has one canonical home: its due date, or today if overdue.
+/// Future days contain only work due on that day; viewing a future date does not age today's work.
+enum DayPlanDueProjection {
+    static func canonicalDay(dueDate: String?, today: String) -> String? {
+        guard let date = ToDoDates.parse(dueDate) else { return nil }
+        return max(today, ToDoDates.ymd(date))
+    }
+
+    static func reconcile(_ stored: [String: [DayPlanTask]],
+                          rows: [(due: String, task: DayPlanTask)], today: String) -> [String: [DayPlanTask]] {
+        var result = stored.mapValues { $0.filter { $0.sourceTaskId == nil || $0.done } }
+        let completedToday = Set((stored[today] ?? []).filter(\.done).compactMap(\.sourceTaskId))
+        var seen = Set<String>()
+        for row in rows {
+            guard let id = row.task.sourceTaskId, seen.insert(id).inserted,
+                  !completedToday.contains(id) else { continue }
+            result[row.due, default: []].append(row.task)
+        }
+        // Preserve the user's row order when a refresh leaves tasks on the same due day.
+        for day in result.keys {
+            let order = Dictionary((stored[day] ?? []).enumerated().map { ($0.element.id, $0.offset) },
+                                   uniquingKeysWith: { first, _ in first })
+            result[day] = result[day]?.enumerated().sorted {
+                let left = order[$0.element.id] ?? Int.max, right = order[$1.element.id] ?? Int.max
+                return left == right ? $0.offset < $1.offset : left < right
+            }.map(\.element)
+        }
+        return result.filter { !$0.value.isEmpty }
+    }
+
+
+}
+
+// MARK: - Day Plan: free time vs. time-boxed task load
+
+/// How the tasks nested under a time-boxed block (a meeting or a deep-work sprint) affect the
+/// "🕒 Nh free" figure in the Day Plan's tasks panel.
+enum DayPlanFreeTime {
+
+    /// Minutes a block's nested tasks add to the day *beyond* the block's own duration.
+    ///
+    /// Tasks dropped onto a block are meant to be worked inside it, so that time is already carved
+    /// out of the day — counting them again on top makes the day look fuller than it is. Only the
+    /// overflow costs anything: a 10-minute block carrying 20 minutes of tasks costs 10 extra
+    /// minutes, not 30. Tasks that fit inside the block cost nothing, and an under-filled block
+    /// never hands time back (the result is never negative).
+    static func excessMinutes(taskMinutes: Int, blockMinutes: Int) -> Int {
+        max(0, taskMinutes - max(0, blockMinutes))
+    }
+
+    /// One time-boxed block's own length and the total length of the tasks nested under it.
+    struct BlockLoad: Equatable {
+        let blockMinutes: Int
+        let taskMinutes: Int
+        init(blockMinutes: Int, taskMinutes: Int) {
+            self.blockMinutes = blockMinutes
+            self.taskMinutes = taskMinutes
+        }
+    }
+
+    /// Free minutes left once every time-boxed block's overflow is deducted. Clamped at zero — an
+    /// over-committed day reports no free time rather than a negative one.
+    static func adjustedFreeMinutes(rawFreeMinutes: Int, blocks: [BlockLoad]) -> Int {
+        let overflow = blocks.reduce(0) { $0 + excessMinutes(taskMinutes: $1.taskMinutes, blockMinutes: $1.blockMinutes) }
+        return max(0, rawFreeMinutes - overflow)
+    }
+}
+
+// MARK: - Day Plan: block keys
+
+/// The `DayPlanTask.blockKey` vocabulary — which block of the day a time-boxed task is pinned to.
+///
+/// The prefixes were written out as literals in `scheduleViewController.blockKey(for:)`, again in
+/// `HabitTaskChecklist`, and again in every capacity path that asked "is this a habit key?". That
+/// last repetition is how the capacity model came to absorb task work into habits but not into
+/// calendar events: two of the three places tested for `"habit:"` and nobody noticed the third kind
+/// of key existed (report 2026-09-17_09-08-25). One vocabulary, one place.
+enum DayPlanBlockKey {
+    static let habitPrefix = "habit:"
+    static let eventPrefix = "event:"
+    static let deepWorkPrefix = "deepwork:"
+
+    /// Habits are keyed by NAME, not by server id — the Day Plan builds its rows from the routine's
+    /// habit titles, so renaming a habit detaches its tasks.
+    static func habit(named name: String) -> String { habitPrefix + name }
+    static func event(id: String) -> String { eventPrefix + id }
+    /// Deep-work sprints drift as the day repacks, so their key is the start time they were pinned
+    /// at and the timeline re-matches it to the nearest current sprint.
+    static func deepWork(startingAt start: Date) -> String {
+        deepWorkPrefix + String(Int(start.timeIntervalSince1970))
+    }
+
+    /// Whether a task pinned to this block is worked inside time the day has ALREADY committed, so
+    /// its minutes must not be charged against the day's free time a second time.
+    ///
+    /// Habits and calendar events qualify — "if I drag a task to an event, it should be the same
+    /// impact on day plan free time as if I drag it to a habit" (report 2026-09-17_09-08-25).
+    /// Deep work does not: a deep-work block is not committed time, it IS the day's free work time,
+    /// so absorbing into it would refund the very minutes it represents.
+    static func absorbs(_ key: String?) -> Bool {
+        guard let key = key else { return false }
+        return key.hasPrefix(habitPrefix) || key.hasPrefix(eventPrefix)
+    }
+}
+
+// MARK: - Day Plan: backend to-do field parsing
+
+/// Field readers for the raw `/to-do` JSON the Day Plan imports.
+enum TodoFieldParsing {
+
+    /// A to-do's estimated duration in seconds.
+    ///
+    /// The API returns `duration` as a **string** (`"300"`, `"3600"`, `"0"`) — a Postgres numeric
+    /// rendered as text — so a plain `as? Int` cast always fails and every imported to-do silently
+    /// fell back to the 15-minute default, inflating the Day Plan's task totals. Accept both shapes.
+    static func durationSeconds(_ raw: Any?) -> Int {
+        if let i = raw as? Int { return i }
+        if let n = raw as? NSNumber { return n.intValue }
+        if let s = raw as? String, let i = Int(s.trimmingCharacters(in: .whitespaces)) { return i }
+        if let d = raw as? Double { return Int(d) }
+        return 0
+    }
+
+    /// The Day Plan duration (minutes) for a to-do, defaulting to `fallbackMinutes` when unset.
+    static func durationMinutes(_ raw: Any?, fallbackMinutes: Int = 15) -> Int {
+        let secs = durationSeconds(raw)
+        return secs > 0 ? max(1, secs / 60) : fallbackMinutes
+    }
+}
+
+// MARK: - The routine's "get focused" prompt
+
+/// Whether the motivation / visualise screen has already been shown for a routine today.
+///
+/// It was gated only by an in-memory flag, so restarting a routine — or the app — showed the star
+/// rating and "what's motivating you today?" again, several times in one evening
+/// (report 2026-09-13_20-30-50). The answer is per routine per day, so that is what gets stored.
+enum RoutineVisualizePrompt {
+    /// One routine's prompt. Custom routines are keyed individually so answering one doesn't
+    /// silence another.
+    enum Routine: Equatable {
+        case morning, evening, custom(String)
+
+        var storageKey: String {
+            switch self {
+            case .morning: return "routineVisualizeShownDay.morning"
+            case .evening: return "routineVisualizeShownDay.evening"
+            case .custom(let id): return "routineVisualizeShownDay.custom.\(id)"
+            }
+        }
+    }
+
+    /// Pure rule: show it unless it has already been shown on this day.
+    static func shouldShow(lastShownDay: String?, today: String) -> Bool {
+        guard let lastShownDay = lastShownDay, !lastShownDay.isEmpty else { return true }
+        return lastShownDay != today
+    }
+
+    static func dayKey(_ date: Date = Date()) -> String {
+        getStringFromDate(date: date, dateFormat: "yyyy-MM-dd")
+    }
+
+    static func shouldShow(for routine: Routine, now: Date = Date(),
+                           defaults: UserDefaults = .standard) -> Bool {
+        shouldShow(lastShownDay: defaults.string(forKey: routine.storageKey), today: dayKey(now))
+    }
+
+    static func markShown(for routine: Routine, now: Date = Date(), defaults: UserDefaults = .standard) {
+        defaults.set(dayKey(now), forKey: routine.storageKey)
+    }
+}
+
+// MARK: - Habits skipped ahead of time
+
+/// Habits the user has skipped for a specific day, before that day arrives.
+///
+/// "Allow me to skip certain habits in advance so if I know I don't have much time for habits for
+/// tomorrow I can" (report 2026-09-13_20-13-58). Today's skips are a server concern
+/// (`skipped_habit_ids` on the routine), but a skip for a future day has nowhere to live yet, so it
+/// is kept on this Mac and applied when that day is built.
+enum DayPlanHabitSkips {
+    private static let storageKey = "dayPlanSkippedHabitIdsByDay"
+    /// Days kept. Old entries are dropped so the list can't grow without bound.
+    static let retainedDays = 60
+
+    static func dayKey(_ date: Date) -> String { getStringFromDate(date: date, dateFormat: "yyyy-MM-dd") }
+
+    static func skippedIds(on day: Date, defaults: UserDefaults = .standard) -> Set<String> {
+        Set(stored(defaults)[dayKey(day)] ?? [])
+    }
+
+    static func isSkipped(_ habitId: String?, on day: Date, defaults: UserDefaults = .standard) -> Bool {
+        guard let habitId = habitId, !habitId.isEmpty else { return false }
+        return skippedIds(on: day, defaults: defaults).contains(habitId)
+    }
+
+    /// Returns the new state, so the caller can report what it did.
+    @discardableResult
+    static func toggle(_ habitId: String, on day: Date, defaults: UserDefaults = .standard) -> Bool {
+        var map = stored(defaults)
+        let key = dayKey(day)
+        var ids = Set(map[key] ?? [])
+        let nowSkipped = ids.insert(habitId).inserted
+        if !nowSkipped { ids.remove(habitId) }
+        if ids.isEmpty { map.removeValue(forKey: key) } else { map[key] = Array(ids).sorted() }
+        defaults.set(pruned(map), forKey: storageKey)
+        return nowSkipped
+    }
+
+    static func clear(on day: Date, defaults: UserDefaults = .standard) {
+        var map = stored(defaults)
+        map.removeValue(forKey: dayKey(day))
+        defaults.set(map, forKey: storageKey)
+    }
+
+    private static func stored(_ defaults: UserDefaults) -> [String: [String]] {
+        defaults.dictionary(forKey: storageKey) as? [String: [String]] ?? [:]
+    }
+
+    /// Keeps the most recent days only — `yyyy-MM-dd` sorts chronologically as a string.
+    static func pruned(_ map: [String: [String]]) -> [String: [String]] {
+        guard map.count > retainedDays else { return map }
+        let keep = map.keys.sorted().suffix(retainedDays)
+        return map.filter { keep.contains($0.key) }
+    }
+}
+
+/// Whether a habit belongs in a given day's routine.
+///
+/// One rule, asked by both the Day Plan and the routine player. `DayPlanHabitSkips` used to be read
+/// only when drawing the plan, so a habit skipped ahead for tomorrow disappeared from tomorrow's
+/// plan and then played anyway when tomorrow's routine started (report 2026-09-16_15-14-58 — a
+/// habit skipped the night before was offered the next morning). Anything that decides which habits
+/// run must go through here, so the two answers cannot drift apart again.
+enum RoutineHabitSchedule {
+    static func shouldPlay(habitId: String?, daysOfWeek: [String], on day: Date,
+                           defaults: UserDefaults = .standard) -> Bool {
+        isScheduledForWeekday(daysOfWeek, currentWeekDay: day.dayOfWeek())
+            && !DayPlanHabitSkips.isSkipped(habitId, on: day, defaults: defaults)
+    }
+}
+
+// MARK: - Habits shortened for one day
+
+/// A habit trimmed for one specific day, without changing the habit itself.
+///
+/// "Can we add a shorten option that makes the habit shorter just for today (only persists locally).
+/// Available both for current day and future days" (report 2026-09-15_20-29-02). A habit's real
+/// duration is a server setting shared with every other day and every other device, so a one-day trim
+/// has nowhere to live but this Mac — it is kept here and applied when that day is built, exactly like
+/// `DayPlanHabitSkips`. Nothing here is ever sent to the server, so Settings › Edit habits keeps
+/// showing the true duration.
+enum DayPlanHabitDurations {
+    private static let storageKey = "dayPlanHabitDurationOverridesByDay"
+    /// Days kept. Old entries are dropped so the map can't grow without bound.
+    static let retainedDays = 60
+    /// The shortest trim offered or accepted — below a minute a habit block stops being a usable slot.
+    static let minimumSeconds = 60
+    /// The lengths offered in the sheet, longest first once filtered against the habit's real length.
+    static let presetMinutes = [30, 20, 15, 10, 5]
+
+    static func dayKey(_ date: Date) -> String { getStringFromDate(date: date, dateFormat: "yyyy-MM-dd") }
+
+    /// The trim recorded for this habit on this day, or nil when it runs its real length.
+    static func overrideSeconds(for habitId: String?, on day: Date, defaults: UserDefaults = .standard) -> Int? {
+        guard let habitId = habitId, !habitId.isEmpty else { return nil }
+        guard let seconds = stored(defaults)[dayKey(day)]?[habitId], seconds > 0 else { return nil }
+        return seconds
+    }
+
+    /// How long to schedule (or run) this habit on this day: the trim when there is one, never longer
+    /// than the habit's real length — this only ever shortens.
+    static func effectiveSeconds(for habitId: String?, on day: Date, actual: Int,
+                                 defaults: UserDefaults = .standard) -> Int {
+        guard let trimmed = overrideSeconds(for: habitId, on: day, defaults: defaults) else { return actual }
+        return min(trimmed, actual)
+    }
+
+    /// Records a trim, clamped to at least `minimumSeconds`. Asking for the real length (or longer)
+    /// clears the trim instead of storing one. Returns the trim now in force, nil when cleared.
+    @discardableResult
+    static func setOverride(_ seconds: Int, for habitId: String, on day: Date, actual: Int,
+                            defaults: UserDefaults = .standard) -> Int? {
+        guard !habitId.isEmpty else { return nil }
+        let wanted = max(seconds, minimumSeconds)
+        guard wanted < actual else {
+            clearOverride(for: habitId, on: day, defaults: defaults)
+            return nil
+        }
+        var map = stored(defaults)
+        let key = dayKey(day)
+        var dayMap = map[key] ?? [:]
+        dayMap[habitId] = wanted
+        map[key] = dayMap
+        defaults.set(pruned(map), forKey: storageKey)
+        return wanted
+    }
+
+    /// Back to the habit's real length on this day.
+    static func clearOverride(for habitId: String, on day: Date, defaults: UserDefaults = .standard) {
+        var map = stored(defaults)
+        let key = dayKey(day)
+        guard var dayMap = map[key], dayMap.removeValue(forKey: habitId) != nil else { return }
+        if dayMap.isEmpty { map.removeValue(forKey: key) } else { map[key] = dayMap }
+        defaults.set(map, forKey: storageKey)
+    }
+
+    static func clear(on day: Date, defaults: UserDefaults = .standard) {
+        var map = stored(defaults)
+        map.removeValue(forKey: dayKey(day))
+        defaults.set(map, forKey: storageKey)
+    }
+
+    /// The trims worth offering for a habit of this real length: the presets that are genuinely
+    /// shorter, longest first. A habit already near the floor gets the one-minute trim, and a habit at
+    /// or under the floor gets nothing to choose from.
+    static func options(forActualSeconds actual: Int) -> [Int] {
+        let fromPresets = presetMinutes.map { $0 * 60 }.filter { $0 >= minimumSeconds && $0 < actual }
+        if !fromPresets.isEmpty { return fromPresets }
+        return actual > minimumSeconds ? [minimumSeconds] : []
+    }
+
+    /// What a typed length means for a habit of `actualSeconds`.
+    ///
+    /// Kept here, pure, so the field's grammar and the "only ever shortens" rule are unit-tested
+    /// rather than living in the sheet. The grammar itself is `QuickAddTaskParser` — the same parser
+    /// the Day Plan's other duration fields use, so "4h", "1h30", "90min" and a bare number all mean
+    /// here exactly what they mean there.
+    enum TypedTrim: Equatable {
+        case apply(seconds: Int)
+        /// Nothing in the text reads as a length.
+        case notADuration
+        /// A real length, but not shorter than the habit — refused rather than applied, because this
+        /// only ever shortens. "Full length" is how you clear a trim.
+        case notShorter
+    }
+
+    static func typedTrim(_ text: String, actualSeconds: Int) -> TypedTrim {
+        guard let minutes = QuickAddTaskParser.durationMinutes(fromFieldText: text) else { return .notADuration }
+        let seconds = max(minutes * 60, minimumSeconds)
+        guard seconds < actualSeconds else { return .notShorter }
+        return .apply(seconds: seconds)
+    }
+
+    /// Whole minutes to show for a length — a 90-second habit reads "2 min", never "0 min".
+    static func minutesLabel(_ seconds: Int) -> Int { max(1, Int((Double(seconds) / 60.0).rounded())) }
+
+    private static func stored(_ defaults: UserDefaults) -> [String: [String: Int]] {
+        defaults.dictionary(forKey: storageKey) as? [String: [String: Int]] ?? [:]
+    }
+
+    /// Keeps the most recent days only — `yyyy-MM-dd` sorts chronologically as a string.
+    static func pruned(_ map: [String: [String: Int]]) -> [String: [String: Int]] {
+        guard map.count > retainedDays else { return map }
+        let keep = map.keys.sorted().suffix(retainedDays)
+        return map.filter { keep.contains($0.key) }
+    }
+}
+
+/// A meeting trimmed for one specific day, in the Day Plan only.
+///
+/// The Fix modal's meetings route offers "shorten - similar to the habit shorten UI"
+/// (report 2026-09-17_08-15-57), and "similar to the habit shorten UI" is the whole specification:
+/// like `DayPlanHabitDurations`, this is one day, on this Mac, and reversible.
+///
+/// It is deliberately **not** a write to the calendar. Shortening a meeting from a "make today fit"
+/// modal would push an update to every attendee, and on a repeating event EventKit would happily
+/// apply it to the wrong occurrence (`store.event(withIdentifier:)` hands back the series' first
+/// one). Cancelling and declining are the actions that reach other people, and they keep their
+/// confirmation; trimming the slot the day plan reserves does not need to.
+///
+/// It is also deliberately not `CalendarManager.LocalEventOverride`, which holds the user's own
+/// manual edits (title, notes, a series-wide time shift) to events they don't own. A trim written
+/// there would have to overwrite that record to change one end time.
+enum DayPlanMeetingDurations {
+    private static let storageKey = "dayPlanMeetingDurationOverridesByDay"
+    /// Days kept, so the map can't grow without bound — same horizon as the habit trims.
+    static let retainedDays = 60
+
+    static func dayKey(_ date: Date) -> String { DayPlanHabitDurations.dayKey(date) }
+
+    /// The trim recorded for this meeting on this day, or nil when it keeps its calendar length.
+    static func overrideSeconds(forEventID id: String, on day: Date,
+                                defaults: UserDefaults = .standard) -> Int? {
+        guard !id.isEmpty, let seconds = stored(defaults)[dayKey(day)]?[id], seconds > 0 else { return nil }
+        return seconds
+    }
+
+    /// The end the Day Plan should use for this occurrence: the trim when there is one, and never
+    /// later than the meeting really ends — this only ever shortens.
+    static func trimmedEnd(forEventID id: String, on day: Date, start: Date, end: Date,
+                           defaults: UserDefaults = .standard) -> Date {
+        guard let seconds = overrideSeconds(forEventID: id, on: day, defaults: defaults) else { return end }
+        let trimmed = start.addingTimeInterval(TimeInterval(seconds))
+        return min(trimmed, end)
+    }
+
+    /// Records a trim, clamped to at least a minute. Asking for the meeting's real length (or longer)
+    /// clears the trim instead of storing one. Returns the trim now in force, nil when cleared.
+    @discardableResult
+    static func setOverride(_ seconds: Int, forEventID id: String, on day: Date, actual: Int,
+                            defaults: UserDefaults = .standard) -> Int? {
+        guard !id.isEmpty else { return nil }
+        let wanted = max(seconds, DayPlanHabitDurations.minimumSeconds)
+        guard wanted < actual else {
+            clearOverride(forEventID: id, on: day, defaults: defaults)
+            return nil
+        }
+        var map = stored(defaults)
+        let key = dayKey(day)
+        var dayMap = map[key] ?? [:]
+        dayMap[id] = wanted
+        map[key] = dayMap
+        defaults.set(pruned(map), forKey: storageKey)
+        return wanted
+    }
+
+    /// Back to the meeting's real length on this day.
+    static func clearOverride(forEventID id: String, on day: Date, defaults: UserDefaults = .standard) {
+        var map = stored(defaults)
+        let key = dayKey(day)
+        guard var dayMap = map[key], dayMap.removeValue(forKey: id) != nil else { return }
+        if dayMap.isEmpty { map.removeValue(forKey: key) } else { map[key] = dayMap }
+        defaults.set(map, forKey: storageKey)
+    }
+
+    private static func stored(_ defaults: UserDefaults) -> [String: [String: Int]] {
+        defaults.dictionary(forKey: storageKey) as? [String: [String: Int]] ?? [:]
+    }
+
+    /// Keeps the most recent days only — `yyyy-MM-dd` sorts chronologically as a string.
+    static func pruned(_ map: [String: [String: Int]]) -> [String: [String: Int]] {
+        guard map.count > retainedDays else { return map }
+        let keep = map.keys.sorted().suffix(retainedDays)
+        return map.filter { keep.contains($0.key) }
+    }
+}
+
+// MARK: - Day Plan reload instrumentation
+
+/// Wall-clock cost of one Day Plan reload, split into the phases that have actually been slow, so a
+/// freeze shows up in the log as "which phase", not just "the app stopped responding".
+///
+/// Kept pure (no AppKit, no clock of its own) so the thresholding and the log wording are unit-tested;
+/// `scheduleViewController.reloadLive()` fills in the measured durations.
+struct DayPlanReloadTiming: Equatable {
+    /// Gathering the routine's habit segments (in-memory arrays).
+    var segments: TimeInterval = 0
+    /// Reading the day's calendar meetings — the phase that used to block on EventKit for 7-24s.
+    var meetings: TimeInterval = 0
+    /// ScheduleBuilder laying habits/meetings/deep-work out across the day.
+    var build: TimeInterval = 0
+    /// Building and installing the AppKit rows for the resulting blocks.
+    var render: TimeInterval = 0
+    /// The date bar, insets, routine toggle and panels that follow the render.
+    var finish: TimeInterval = 0
+
+    private var phases: [(name: String, seconds: TimeInterval)] {
+        [("segments", segments), ("meetings", meetings), ("build", build),
+         ("render", render), ("finish", finish)]
+    }
+
+    var total: TimeInterval { phases.reduce(0) { $0 + $1.seconds } }
+
+    /// Whether this reload was slow enough to be worth a log line.
+    func isSlow(threshold: TimeInterval) -> Bool { total >= threshold }
+
+    /// The phase that dominated, so the log line names a suspect. "none" for a reload that did no
+    /// measurable work (every phase zero), which would otherwise always report the first phase.
+    var slowestPhase: String {
+        guard let worst = phases.max(by: { $0.seconds < $1.seconds }), worst.seconds > 0 else { return "none" }
+        return worst.name
+    }
+
+    /// e.g. "total=17204ms slowest=meetings segments=2ms meetings=17180ms build=9ms render=11ms finish=2ms"
+    var summary: String {
+        let breakdown = phases.map { "\($0.name)=\(Self.milliseconds($0.seconds))ms" }.joined(separator: " ")
+        return "total=\(Self.milliseconds(total))ms slowest=\(slowestPhase) \(breakdown)"
+    }
+
+    private static func milliseconds(_ seconds: TimeInterval) -> Int { Int((seconds * 1000).rounded()) }
+}
+
+/// The Day Plan's meetings cache. Free of EventKit so its staleness policy is unit-testable without a
+/// live event store — `CalendarManager` owns the actual query and calls into this.
+///
+/// The policy exists because reading EventKit blocks for seconds (see CalendarManager's "Meetings
+/// cache" note): an entry that has gone out of date is still served while a background refresh
+/// replaces it, so a caller on the main thread is never made to wait.
+final class MeetingsCache {
+
+    /// One cached day. `dayStart` is midnight, so two Dates on the same day share an entry.
+    struct Key: Hashable {
+        let dayStart: Date
+        let includeDismissed: Bool
+    }
+
+    /// What a caller should do: use `meetings` now, and start a background refresh if `needsRefresh`.
+    struct Lookup: Equatable {
+        let meetings: [ScheduleMeetingInput]
+        let needsRefresh: Bool
+    }
+
+    private let lock = NSLock()
+    private var values: [Key: [ScheduleMeetingInput]] = [:]
+    private var staleKeys: Set<Key> = []
+    private var refreshingKeys: Set<Key> = []
+
+    /// The value to serve for `key`. A key that has never been fetched serves [] — the same thing an
+    /// unauthorized store returns — and asks for a refresh.
+    func lookup(_ key: Key) -> Lookup {
+        lock.lock(); defer { lock.unlock() }
+        guard let cached = values[key] else { return Lookup(meetings: [], needsRefresh: true) }
+        return Lookup(meetings: cached, needsRefresh: staleKeys.contains(key))
+    }
+
+    /// Whether `key` has ever been fetched — i.e. whether the [] a cold `lookup` serves means "no
+    /// meetings" or merely "not read yet". `lookup` deliberately conflates the two so the main thread
+    /// always has something to render; a caller that must not *decide* on an unread day (the date
+    /// picker's capacity badge) asks this first. A stale-but-present entry counts as known: it holds a
+    /// real answer, just one refresh old.
+    func hasValue(_ key: Key) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        return values[key] != nil
+    }
+
+    /// Records a fetched value and clears its stale mark. Returns true when the value differs from what
+    /// lookups were already being served, i.e. when the UI must be told to re-render.
+    @discardableResult
+    func store(_ meetings: [ScheduleMeetingInput], for key: Key) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        let changed = values[key] != meetings
+        values[key] = meetings
+        staleKeys.remove(key)
+        return changed
+    }
+
+    /// Claims the refresh for `key`. False when one is already in flight, so repeated ticks (and the
+    /// three Day Plan hosts that each reload) collapse into a single query.
+    func beginRefresh(_ key: Key) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        return refreshingKeys.insert(key).inserted
+    }
+
+    func endRefresh(_ key: Key) {
+        lock.lock(); defer { lock.unlock() }
+        refreshingKeys.remove(key)
+    }
+
+    /// Marks every entry out of date WITHOUT dropping it, and returns the keys that now owe a refresh.
+    @discardableResult
+    func invalidateAll() -> [Key] {
+        lock.lock(); defer { lock.unlock() }
+        staleKeys = Set(values.keys)
+        return Array(values.keys)
+    }
+}
+
+/// How a block's length is written next to it — "(45 min)", "(1h43m)", "(2h)".
+///
+/// The Day Plan showed every duration in bare minutes, so a deep-work block read "(103 min)" and the
+/// reader had to do the division (report 2026-09-21_17-57-15). Anything an hour or longer now says so.
+///
+/// The three patterns are passed in rather than read from `configjson` here, so the thresholds can be
+/// tested without the config globals and the strings stay translatable.
+enum ScheduleDuration {
+
+    /// Whole hours and the remaining minutes. Negative input is treated as zero — a block cannot run
+    /// backwards, and `(-1h-43m)` is a worse way to show a bug than `(0 min)`.
+    static func hoursAndMinutes(_ totalMinutes: Int) -> (hours: Int, minutes: Int) {
+        let safe = max(totalMinutes, 0)
+        return (safe / 60, safe % 60)
+    }
+
+    /// Picks among the three forms. An exact hour drops the minutes ("2h", not "2h0m"); under an
+    /// hour stays in minutes, because "0h45m" is noise.
+    static func bracketed(_ totalMinutes: Int,
+                          minutesOnly: String,
+                          hoursOnly: String,
+                          hoursAndMinutes hoursAndMinutesPattern: String) -> String {
+        let split = hoursAndMinutes(totalMinutes)
+        if split.hours == 0 { return String(format: minutesOnly, split.minutes) }
+        if split.minutes == 0 { return String(format: hoursOnly, split.hours) }
+        return String(format: hoursAndMinutesPattern, split.hours, split.minutes)
     }
 }

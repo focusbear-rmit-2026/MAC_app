@@ -69,3 +69,51 @@ enum TodoCompletionMapping {
         return changed ? updated : nil
     }
 }
+
+/// The backend's `todo-completed` Pusher event: a to-do was marked complete SOMEWHERE — this Mac, the
+/// phone, the web dashboard — broadcast on the user's own `private-<user_id>` channel.
+///
+/// The string keys mirror the backend's `TodoCompletedEventPayload` and are a wire contract shared
+/// with Windows and mobile: change the constants' names freely, never their values.
+enum TodoCompletedPusherEvent {
+    /// Pusher event name, bound in `pusherEvents.startEventNotifications()`.
+    static let eventName = "todo-completed"
+
+    private static let todoIDKey = "todo_id"
+    private static let isCompletedKey = "is_completed"
+    private static let completedAtKey = "completed_at"
+
+    struct Payload: Equatable {
+        let todoID: String
+        let isCompleted: Bool
+        /// ISO-8601 instant the backend persisted the completion. Carried for logging/diagnostics —
+        /// the app has nowhere to show it yet.
+        let completedAt: String?
+    }
+
+    /// Decode an event body. Returns nil for anything without a usable to-do id, so a malformed or
+    /// future-shaped payload is ignored rather than mutating state from half-understood data.
+    /// `is_completed` defaults to true when absent: the event name already says what happened, and a
+    /// missing flag must not silently UN-tick a task.
+    static func payload(fromJSON json: String?) -> Payload? {
+        guard let data = json?.data(using: .utf8),
+              let body = (try? JSONSerialization.jsonObject(with: data, options: [])) as? [String: Any],
+              let todoID = body[todoIDKey] as? String, !todoID.isEmpty else { return nil }
+        return Payload(todoID: todoID,
+                       isCompleted: body[isCompletedKey] as? Bool ?? true,
+                       completedAt: body[completedAtKey] as? String)
+    }
+
+    /// Route a received event into the app. Announcing on `TodoCompletionBus` is deliberately the ONLY
+    /// effect: both `DayPlanTaskStore` and `ToDoStore` apply a bus change straight to their own caches
+    /// and never write it back, so a completion that arrived FROM the server can't echo a `PUT /to-do`
+    /// at it — which is what would loop. Anything that needs the server told must not be wired here.
+    /// Returns whether the event was understood, for the caller's log line and for tests.
+    @discardableResult
+    static func handle(eventData: String?,
+                       announce: (String, Bool) -> Void = TodoCompletionBus.post) -> Bool {
+        guard let payload = payload(fromJSON: eventData) else { return false }
+        announce(payload.todoID, payload.isCompleted)
+        return true
+    }
+}

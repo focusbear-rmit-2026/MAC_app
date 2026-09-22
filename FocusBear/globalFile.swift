@@ -245,7 +245,7 @@ var dayPlanCompletedHabitIds = Set<String>() {
 func recordPastHabitCompletionViaOfflineSync(activity_id: String, activity_sequence_id: String,
                                              performedAt: Date, duration: Int, quantity: Double?,
                                              notes: String, dayKey: String) {
-    let fmt = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+    let fmt = offlineActivityTimestampFormat
     let startStr = getStringFromDateInUtc(date: performedAt, dateFormat: fmt)
     let finish = Calendar.current.date(byAdding: .second, value: max(duration, 1), to: performedAt) ?? performedAt
     let finishStr = getStringFromDateInUtc(date: finish, dateFormat: fmt)
@@ -304,6 +304,19 @@ func loadPersistedDayPlanCompletedIds() {
     if !ids.isEmpty { dayPlanCompletedHabitIds = ids }
 }
 
+/// The format the offline activities CSV writes its start/finish timestamps in (UTC).
+let offlineActivityTimestampFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+
+/// The LOCAL day (`yyyy-MM-dd`) an offline activity row belongs to. Habit completion is tracked per
+/// local day everywhere else, while the CSV stores UTC — so the two only agree once the timestamp is
+/// converted. Matching the raw UTC text instead dropped every completion whose local morning falls on
+/// the previous UTC day (UTC+10: 8:49am Thursday is 22:49 Wednesday UTC), i.e. most of a Melbourne
+/// morning routine.
+func offlineActivityLocalDayKey(_ timestampUtc: String) -> String? {
+    guard let date = getDateFromStringInUtc(date: timestampUtc, dateFormat: offlineActivityTimestampFormat) else { return nil }
+    return getStringFromDate(date: date, dateFormat: "yyyy-MM-dd")
+}
+
 /// Today's completed/skipped habit ids from the offline activities CSV — the local cache of activity
 /// completions made while offline that the backend (and current-activity-props) doesn't know about
 /// yet. Folding these in keeps the Day Plan correct for offline completions until they sync.
@@ -311,11 +324,11 @@ func offlineCompletedHabitIds() -> Set<String> {
     guard let url = offlineActivitiesCsvURL,
           let content = try? String(contentsOf: url, encoding: .utf8) else { return [] }
     // CSV: activity_id,duration_logged,device_id,activity_sequence_id,start_time,finish_time,…
-    let todayUtc = getStringFromDateInUtc(date: Date(), dateFormat: "yyyy-MM-dd")
+    let today = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd")
     var ids = Set<String>()
     for (i, row) in content.components(separatedBy: "\n").enumerated() where i > 0 && !row.isEmpty {
         let cols = row.components(separatedBy: ",")
-        guard cols.count > 5, !cols[0].isEmpty, cols[5].hasPrefix(todayUtc) else { continue }
+        guard cols.count > 5, !cols[0].isEmpty, offlineActivityLocalDayKey(cols[5]) == today else { continue }
         ids.insert(cols[0])
     }
     return ids
@@ -549,6 +562,15 @@ enum CURRENTSTATE:Int, CustomStringConvertible {
         case ._LOGIN_: return "_LOGIN_"
         }
     }
+
+    /// The user has explicitly stepped away from a routine for a while. Postponed is NOT active — the
+    /// routine owns neither the window nor the left menu in these states.
+    var isRoutinePostponed: Bool {
+        switch self {
+        case ._POSTPONE_MORNING_HABIT_, ._POSTPONE_EVENING_HABIT_, ._POSTPONE_FOCUS_SUMMARY_: return true
+        default: return false
+        }
+    }
 }//_POSTPONE_BREAK_ACTIVITY_ is not required because we always reset break activity timer when user clicks on postpone
 
 var lastCurrentStateSaved:CURRENTSTATE = ._NOTHING_
@@ -592,6 +614,13 @@ var currentState:CURRENTSTATE = ._NOTHING_{
             if oldValue != currentState{
                 leftMenuVcObj?.habitStarted()
             }
+        }
+        // Postponed is NOT active: stepping away from a routine has to give the whole left menu back.
+        // The postpone paths already do this via habitOver(), but a postpone reached any other way
+        // (e.g. the custom-routine rollback above) would otherwise strand the menu in the restricted
+        // state a running routine left behind.
+        if oldValue != currentState, currentState.isRoutinePostponed {
+            leftMenuVcObj?.applyRoutineMenuAvailability()
         }
         if oldValue != currentState {
             // Defer to the next runloop. Mutating the Schedule view's hierarchy synchronously here
@@ -753,9 +782,9 @@ var activityFinishedUnlockNowSoundText = "<ACTIVITY> finished. You’ve earned y
 var startNonTimerActivityButtonText = "Start <NAME>"
 
 var startActivityButtonText = "Start <TIME> <NAME>"
-var unlockMachineButtonText = "Unlock the machine"
+var unlockMachineButtonText = "Let's start work"
 var activityFinishedText = "<ACTIVITY> finished!✅"
-var lastActivityFinishedText = "<ACTIVITY> finished!✅ Nice break - Let's get back into it 💪"
+var lastActivityFinishedText = "<ACTIVITY> finished!✅"
 var activitySkippedText = "<ACTIVITY> skipped!"
 var lastActivitySkippedText = "<ACTIVITY> skipped! Nice break - Let's get back into it 💪"
 var startBreakActivityTitleText = "It’s time for a break. Do <TIME> of <ACTIVITY> to earn more screentime."
@@ -1161,6 +1190,16 @@ var selfAppName = Bundle.main.infoDictionary!["CFBundleName"] as! String
 
 var lastFrontMostApplication:NSRunningApplication?
 
+/// The app the user is actually looking at right now, ignoring Focus Bear's own windows: presenting a
+/// block prompt makes Focus Bear frontmost, so `frontmostApplication` can't be trusted on its own. Falls
+/// back to the last non-Focus-Bear app that was frontmost.
+func currentUserFacingApp() -> NSRunningApplication? {
+    if let front = NSWorkspace.shared.frontmostApplication, front.bundleIdentifier != mainAppBundelId {
+        return front
+    }
+    return lastFrontMostApplication
+}
+
 
 func getColorString(color:NSColor)->String{
     let ciColor:CIColor = CIColor(color: color)!
@@ -1192,6 +1231,10 @@ func intFromHexString(hexStr: String) -> UInt32 {
 
 
 func isBlockSuperDistractingFocusModeOn()->Bool{
+    // An accountability-buddy session judges apps/sites with the AI against the user's goal, NOT the
+    // curated "super distracting" blocklist — so it must not count as the super-distracting mode even
+    // though it piggybacks on the default focus mode. Otherwise the AI URL/app check is skipped.
+    if currentAccountabilityBuddySession != nil { return false }
     if currentRunningFocusType["isDefault"] as? Bool == true {
         return true
     }
@@ -1224,6 +1267,17 @@ func disableSystemSleep(){
 }
 func enableSystemSleep(){
     IOPMAssertionRelease(assertionIDDisableSleep);
+}
+
+/// True when the window's first responder is a text field or text view the user is typing into.
+/// The app's Return-key monitor fires before the responder chain sees the event, so any shortcut it
+/// runs has to check this or it steals Return from every multi-line field on screen.
+func isTextInputFocused(in window: NSWindow?) -> Bool {
+    guard let responder = window?.firstResponder else { return false }
+    if responder is NSTextView { return true }
+    // A focused NSTextField is represented by its field editor, whose delegate is the field.
+    if let fieldEditor = responder as? NSText, fieldEditor.delegate is NSTextField { return true }
+    return responder is NSTextField
 }
 
 
@@ -1271,14 +1325,16 @@ func reloadFocusMusicListIfVisible(){
     }
 }
 
+/// Whether the app should be in its borderless full-screen window RIGHT NOW.
+///
+/// The user's setting says they want full-screen mode; `FullScreenStates` says which states it
+/// covers. Full screen is for holding the user inside a running routine, so a postponed routine and
+/// a micro break are not covered — both used to take the whole display with no traffic lights
+/// (report 2026-09-14_16-31-53). The old mid-meeting break exception is subsumed: no micro break is
+/// covered now, in a meeting or not.
 func checkIsFullScreenEnabled()-> Bool{
-    if currentState == ._MICRO_BREAK_{
-        if isBreakActivityShowingWhileMeeting{
-            return false
-        }
-    }
-    
-    return SettingsManagerObject.isFullScreenEnabled
+    FullScreenStates.shouldUseFullScreen(setting: SettingsManagerObject.isFullScreenEnabled,
+                                         state: currentState)
 }
 
 
@@ -1291,8 +1347,30 @@ var newGifsNamesArray = ["Glasses-Bear-250-px_V3", "cheer_250px_trans_centered",
 //
 
 func wildcard(_ string: String, pattern: String) -> Bool {
-    let pred = NSPredicate(format: "self LIKE %@", pattern)
+    let pred = NSPredicate(format: "self LIKE %@", escapedForLike(pattern))
     return !NSArray(object: string).filtered(using: pred).isEmpty
+}
+
+/// Makes a `LIKE` pattern safe to hand to `NSPredicate`.
+///
+/// A trailing unescaped backslash makes `NSPredicate` raise `NSInvalidArgumentException`, which is
+/// an Objective-C exception and so cannot be caught from Swift — it terminates the app. Verified
+/// directly: the process dies with "terminating due to uncaught exception of type NSException".
+///
+/// Most callers wrap the user's entry as `*entry*`, so the backslash is never last and the hazard
+/// never shows. `isUrlValid`'s `file://` branch does not wrap (urlValidation.swift), so an
+/// allow-list entry like `file:///Users/me/folder\` reaches here unwrapped and crashes Focus Bear.
+///
+/// Doubling an odd run of trailing backslashes escapes the last one, which is what the user meant
+/// by typing it: a literal backslash. `*` and `?` elsewhere in the pattern keep their wildcard
+/// meaning, so no caller's behaviour changes.
+func escapedForLike(_ pattern: String) -> String {
+    var trailing = 0
+    for character in pattern.reversed() {
+        guard character == "\\" else { break }
+        trailing += 1
+    }
+    return trailing % 2 == 0 ? pattern : pattern + "\\"
 }
 
 func getDomainFromUrl(url:String) -> String{
@@ -1563,22 +1641,73 @@ var helperUrl: URL = {
     return helperURL
 }()
 
+/// The LaunchAgent that starts the nudge helper at login.
+///
+/// Split out from `createLaunchAgentForHelperApp()` so what gets written is assertable without
+/// touching ~/Library/LaunchAgents or launchctl.
+enum HelperLaunchAgent {
+    static let label = "com.focusbear.focusbearhelper"
+
+    /// The helper's own executable inside its bundle.
+    static func executablePath(helperBundle: URL) -> String {
+        helperBundle.appendingPathComponent("Contents/MacOS/FBHelper").path
+    }
+
+    /// What launchd should run.
+    ///
+    /// Deliberately NOT `/usr/bin/open`, which is what this used to be. Two things were wrong with
+    /// that, and the one the user sees is the second:
+    ///
+    /// * `open` exits as soon as LaunchServices has been asked to start the helper, so `KeepAlive`
+    ///   was supervising `open` rather than the helper — `launchctl list` shows the job with no PID
+    ///   while the helper runs under a separate LaunchServices label. launchd relaunched `open` on a
+    ///   loop and never watched the thing it was meant to keep alive.
+    /// * macOS names a background item after the program it runs, so Login Items and the
+    ///   "Background Items Added" notice both called this **"open"** — which reads like something
+    ///   suspicious rather than like Focus Bear (report 2026-09-21_18-01-43, issue #409).
+    ///
+    /// Pointing at the executable INSIDE FBHelper.app also lets macOS attribute the item to that
+    /// bundle, so it can show the bundle's display name instead of a bare executable name.
+    static func programArguments(helperBundle: URL) -> [String] {
+        [executablePath(helperBundle: helperBundle)]
+    }
+
+    static func plist(helperBundle: URL) -> [String: Any] {
+        ["Label": label,
+         "ProgramArguments": programArguments(helperBundle: helperBundle),
+         "RunAtLoad": true,
+         "KeepAlive": true]
+    }
+
+    /// Whether an already-loaded job matches what we would write now. Used to leave a correct agent
+    /// alone — and, just as importantly, to REPLACE an old `/usr/bin/open` one instead of returning
+    /// early because it merely mentions the helper somewhere in its arguments, which is what the
+    /// previous check did.
+    static func matchesCurrentDesign(existingArguments: [String]?, helperBundle: URL) -> Bool {
+        existingArguments == programArguments(helperBundle: helperBundle)
+    }
+}
+
 func createLaunchAgentForHelperApp(){
     //Background process "open" modified when Focus Bear opened?  #409 It shouldn't appear every time the app is restarted
-    let helperBundleID = "com.focusbear.focusbearhelper"
-    let path = helperUrl.path
+    let helperBundleID = HelperLaunchAgent.label
+    let userLaunchAgentsPath = "/Users/\(NSUserName())/Library/LaunchAgents/\(helperBundleID).plist"
+    var needsUnloadFirst = false
     if let userLA = AHLaunchCtl.allJobsFromFiles(in: AHLaunchDomain.userLaunchAgent) as? [AHLaunchJob] {
-        for uLA in userLA {
-            if uLA.isCurrentlyLoaded{
-                if let arguments = uLA.programArguments as? [String]{
-                    if arguments.contains(where: {$0.caseInsensitiveCompare(path) == .orderedSame}) {
-                        return;
-                    }
-                }
+        for uLA in userLA where uLA.isCurrentlyLoaded {
+            let arguments = uLA.programArguments as? [String]
+            guard arguments?.contains(where: { $0.contains("FBHelper") }) == true else { continue }
+            if HelperLaunchAgent.matchesCurrentDesign(existingArguments: arguments, helperBundle: helperUrl) {
+               // return          // already what we would write
             }
-            
-            
+            // An older agent for the same helper — the /usr/bin/open one. `launchctl load` is a
+            // no-op while a label is loaded, so it has to go before the replacement can take.
+            needsUnloadFirst = true
         }
+    }
+    if needsUnloadFirst {
+        addLog(text: "replacing the legacy /usr/bin/open helper LaunchAgent")
+        shell(launchPath: "/bin/launchctl", arguments: ["unload", "-w", userLaunchAgentsPath])
     }
     //
     
@@ -1594,18 +1723,14 @@ func createLaunchAgentForHelperApp(){
     }
     
     // saves the agent plist file
-    let userLaunchAgentsPath = "\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(helperBundleID).plist")"
-    
-    let dicContent = ["Label": "\(helperBundleID).plist", "ProgramArguments":["/usr/bin/open","-F","-g",path,"--args"],"RunAtLoad":true,"KeepAlive":true] as [String : Any]
-    
-    let plistContent = NSDictionary(dictionary: dicContent)
+    let plistContent = NSDictionary(dictionary: HelperLaunchAgent.plist(helperBundle: helperUrl))
     let success:Bool = plistContent.write(toFile: userLaunchAgentsPath, atomically: true)
     if success {
         print("file has been created!")
     }else{
         print("unable to create the file")
     }
-    shell(launchPath: "/bin/launchctl", arguments: ["load","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(helperBundleID).plist")"])
+    shell(launchPath: "/bin/launchctl", arguments: ["load", "-w", userLaunchAgentsPath])
 }
 
 func deleteLaunchAgent(){
@@ -1712,6 +1837,23 @@ func runShellCommand(command:String){
     task.launchPath = "/bin/sh"
     task.arguments = args as? [String]
     task.launch()
+}
+
+/// Auto Do-Not-Disturb when a focus mode starts.
+///
+/// This was written out five times, in focusModeData, addTaskVc, pomodoroVc and pusherEvents, and
+/// the copies had drifted: most also switch DND on for a deep-work or default block list when the
+/// mode's own flag is off, and one does not. `includingDeepWorkAndDefault` keeps that difference
+/// explicit at the call site rather than hidden in a fifth copy.
+func applyAutoDoNotDisturb(forFocusModeAt index: Int, includingDeepWorkAndDefault: Bool) {
+    guard arrFocusType.indices.contains(index) else { return }
+    if arrFocusType[index]["isAutoDoNotDisturbEnabled"] as? Bool == true, isAccessibilityEnabled(isPrompt: true) {
+        DNDManager.shared.setDND(true)
+    }
+    guard includingDeepWorkAndDefault, !DNDManager.shared.isDndEnabled else { return }
+    let wantsDND = (arrFocusType[index]["isDeepWorkFocus"] as? Bool)
+        ?? (arrFocusType[index]["isDefault"] as? Bool) ?? false
+    if wantsDND, isAccessibilityEnabled(isPrompt: true) { DNDManager.shared.setDND(true) }
 }
 
 func workBeforeFocusBegin(index:Int){
@@ -1846,6 +1988,51 @@ func getArrItem(data: String) -> [String] {
 
 
 var arrLanguageDic = [["name":"English", "id":"en", "languageName":"English"], ["name":"Spanish", "id":"es", "languageName":"Spanish"]]
+/// Every language the bundled configuration ships, and the resource each one lives in.
+///
+/// English is `config.json`; every other language is `config-<code>.json` — the same rule the runtime
+/// loader in `AppDelegate` already uses. Screens that preload their strings used to hardcode the pair
+/// `[("en", "config"), ("es", "config-es")]`, so a new language loaded at runtime but was invisible to
+/// every one of those screens. Add a language here and they all pick it up.
+enum BundledConfigLanguage {
+    static let english = "en"
+    static let supported = [english, "es", "de", "fr", "pl"]
+
+    /// `config` for English, `config-<code>` otherwise. The file does not have to exist yet: a missing
+    /// one simply leaves that language falling back to English, which is what an untranslated app does.
+    static func resource(_ code: String) -> String {
+        code == english ? "config" : "config-\(code)"
+    }
+
+    /// The supported language CODE for the language in use ("es-419" → "es"), else English. Screens
+    /// that keep their strings keyed by code look themselves up with this.
+    static func code(_ code: String = currentLanguageCode) -> String {
+        let base = code.lowercased().split(separator: "-").first.map(String.init) ?? english
+        return supported.contains(base) ? base : english
+    }
+
+    /// (code, resource) for every supported language, for screens that preload all of them.
+    static var all: [(code: String, resource: String)] { supported.map { ($0, resource($0)) } }
+
+    /// The language NAME the AI endpoints expect ("please answer in <language>"). Without an entry a
+    /// user gets English answers however well the UI is translated, so this list has to grow with
+    /// `supported`.
+    private static let apiNames = [
+        "en": "english", "es": "spanish", "de": "german", "fr": "french", "pl": "polish",
+    ]
+
+    static func apiName(_ code: String = currentLanguageCode) -> String {
+        let base = code.lowercased().split(separator: "-").first.map(String.init) ?? english
+        return apiNames[base] ?? "english"
+    }
+
+    /// The bundled resource for the language in use, normalised ("es-419" → "es") and defaulting to English.
+    static func current(_ code: String = currentLanguageCode) -> String {
+        let base = code.lowercased().split(separator: "-").first.map(String.init) ?? english
+        return resource(supported.contains(base) ? base : english)
+    }
+}
+
 var currentLanguageCode = ""
 
 
@@ -1928,6 +2115,53 @@ func showAlertNoInternet(window:NSWindow){
     })
 }
 
+/// Ask for the after-cutoff postpone password, running `onAuthorized` only if it is correct.
+///
+/// A fresh controller each time, matching `popupAppointmentTimeVc`: the shared preferences instance
+/// carries its own presentation state and reusing it here showed the wrong view.
+func askPostponePasswordAfterCutoff(presenter: NSViewController, onAuthorized: @escaping () -> Void) {
+    guard let passwordVc = mainStoryboard.instantiateController(
+        withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as? enterPasswordVc else {
+        // Without the sheet there is no way to ask, and silently postponing would be the hole the
+        // password exists to close. Refusing is the safe direction.
+        addLog(text: "askPostponePasswordAfterCutoff:- could not load enterPasswordVc, refusing")
+        showCutoffPostponeRefusedAlert()
+        return
+    }
+    passwordVc.requestAuthorization(action: onAuthorized)
+    presenter.presentAsSheet(passwordVc)
+}
+
+/// Tells the user their cutoff time has passed, so the evening routine can't be postponed any further.
+///
+/// Used for the focus-session extension case (`forExtension`), where the cutoff genuinely leaves no
+/// room for another whole minute, and as the fallback when the password sheet cannot be loaded.
+func showCutoffPostponeRefusedAlert(forExtension: Bool = false) {
+    var title = "Your cutoff time has passed"
+    var message = "It's past your cutoff time, so your evening routine can't be postponed any further."
+    if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
+        title = activityPostponeInfo.value(forKey: "cutoffPostponeRefusedTitle") as? String ?? title
+        message = activityPostponeInfo.value(forKey: "cutoffPostponeRefusedText") as? String ?? message
+    }
+    if forExtension {
+        let info = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary
+        title = info?.value(forKey: "cutoffExtensionRefusedTitle") as? String ?? "Your cutoff limits this extension" // i18n-ignore: bundled config fallback
+        message = info?.value(forKey: "cutoffExtensionRefusedText") as? String ?? "This focus session cannot be extended past <TIME>. There is no room for another full minute." // i18n-ignore: bundled config fallback
+    }
+    message = message.replacingOccurrences(of: "<TIME>", with: cutOffTimeString)
+    let alert = NSAlert()
+    alert.setSharingType()
+    alert.alertStyle = .informational
+    alert.messageText = title
+    alert.informativeText = message
+    alert.addButton(withTitle: buttonOkText)
+    if let window = mainWindowControllerObj?.window, window.isVisible, !window.isMiniaturized{
+        alert.beginSheetModal(for: window, completionHandler: { _ in })
+    }else{
+        alert.runModal()
+    }
+}
+
 
 
 var allActivityTodaySummaryData:NSDictionary?
@@ -1945,6 +2179,7 @@ func setDocBarTo(isHide:Bool){
         if !SettingsManagerObject.isHideDockInActivity{
             return
         }
+        guard !shouldSkipSystemEventsAppleEvent() else { return }
         var script: String = ""
         var hideVal = "true"
         if isHide{
@@ -1967,12 +2202,7 @@ func setDocBarTo(isHide:Bool){
 }
 
 func checkDocBarState()->String?{
-    // Don't run a System Events script while the grant is missing (it would loop the OS consent dialog);
-    // raise the one-time prompt instead — see the runtime System Events gate.
-    if shouldSkipSystemEventsAppleEvent() {
-        requestSystemEventsAutomationOnceIfNeeded()
-        return nil
-    }
+    guard !shouldSkipSystemEventsAppleEvent() else { return nil }
     var script: String = ""
 
     script =
@@ -2057,6 +2287,28 @@ struct fontStyle{
 let intelOneMonoFontIndex = 7
 let openDyslexicFontIndex = 8
 let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex]
+
+/// A digits-only number formatter capped at three characters, used by the duration/ratio/tab-limit
+/// text fields. It lived on the old pomodoro start screen; that screen is SwiftUI now, so it moved
+/// here to the other shared helpers rather than being deleted with the scene.
+class IntegerFormatter: NumberFormatter {
+    let maxLength = 3
+
+    let wrongCharacterSet = CharacterSet(charactersIn: "0123456789").inverted
+    override func isPartialStringValid(_ partialString: String, newEditingString newString: AutoreleasingUnsafeMutablePointer<NSString?>?, errorDescription error: AutoreleasingUnsafeMutablePointer<NSString?>?) -> Bool {
+
+        self.maximumFractionDigits = 2
+        self.minimumFractionDigits = 0
+
+        if partialString.count > maxLength {
+            return false
+        }
+        if partialString.rangeOfCharacter(from: wrongCharacterSet) != nil {
+            return false
+        }
+        return true
+    }
+}
 
 func getRegularFont(size: CGFloat)->NSFont{
     if SettingsManagerObject.selectedFontIndex == systemFontIndex{
@@ -2511,7 +2763,7 @@ private func installMainThreadAppleScriptBudgetResetIfNeeded() {
 /// seconds`, and we additionally guard with a wall-clock timeout so an unresponsive target app can't
 /// wedge the queue or block the caller indefinitely.
 @discardableResult
-func runAppleScriptSafely(_ source: String, timeoutSeconds: Int = 5, errors: inout NSDictionary?) -> NSAppleEventDescriptor? {
+func runAppleScriptSafely(_ source: String, timeoutSeconds: Int = 5, errors: inout NSDictionary?, authorization: @escaping () -> Bool = { true }) -> NSAppleEventDescriptor? {
     // The script runs on `appleScriptSerialQueue`, but the semaphore wait below blocks the *caller*.
     // On the MAIN thread that means a frozen UI, so cap the main-thread wait hard: browser/URL and
     // focus-timer scripts return in well under 100 ms normally, and only a hung target app would ever
@@ -2548,6 +2800,7 @@ func runAppleScriptSafely(_ source: String, timeoutSeconds: Int = 5, errors: ino
     let callerQoS = DispatchQoS(qosClass: DispatchQoS.QoSClass(rawValue: qos_class_self()) ?? .default,
                                 relativePriority: 0)
     appleScriptSerialQueue.async(qos: callerQoS, flags: .enforceQoS) {
+        guard authorization() else { done.signal(); return }
         if let appleScript = NSAppleScript(source: bounded) {
             result = appleScript.executeAndReturnError(&capturedErrors)
         }
@@ -2588,37 +2841,42 @@ func executeScriptAndReturnBool(script:String)->Bool{
     return desc?.booleanValue ?? false
 }
 
-func executeScriptAndReturnString(script:String)->String?{
-    var errors : NSDictionary? = nil
-    guard let desc = runAppleScriptSafely(script, errors: &errors) else { return nil }
-    if errors != nil {
-            print(errors!)
-            if let appName = errors?.value(forKey: "NSAppleScriptErrorAppName") as? String, let errorCode = errors?.value(forKey: "NSAppleScriptErrorNumber") as? Int{
-                let lowerCaseAppName = appName.lowercased()
-                if let browser = getCurrentBrowserFrom(browserName: lowerCaseAppName){
-                    if errorCode == -1743{
-                        if var arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
-                            for i in 0..<arrBrowsersInfo.count{
-                                let info = arrBrowsersInfo[i]
-                                let browserRawValue = info["browser"] as? Int ?? 0
-                                if browser.rawValue == browserRawValue{
-                                    arrBrowsersInfo[i]["isEnabled"] = false
-                                    break;
-                                }
-                            }
-                            UserDefaults.standard.set(arrBrowsersInfo, forKey: kUserdefaultsAllBrowsersPermissionInfo)
-                        }
-                        return nil
-                    }else if desc.stringValue == nil{// && errorCode == -1719{// doing this beacuse in gogle chrome in slect profile screen we can't get url so handle this situation and return a blank string so ask permission alert will not be visible  again for chrome
-                        return ""
-                    }
-                }
-            }
-        }
-    return desc.stringValue ?? ""
+
+/// Which RevenueCat entitlements mean the account is paid.
+///
+/// A user commonly holds several at once: a team admin's `activeEntitlements` comes back as
+/// `[team_admin, team_member, team_owner]`. The old check read only `activeEntitlements.first`, so
+/// `team_admin` sorting first marked a fully paid admin as unpaid — being an admin was itself enough
+/// to be offered an upgrade (report 2026-09-14_19-47-35). Any qualifying entitlement now counts.
+enum SubscriptionEntitlements {
+    static let paid: Set<String> = ["personal", "team_admin", "team_member", "team_owner", "team_size_5"]
+
+    /// The entitlement granting access, or nil when none of the active ones do. Returned rather than
+    /// a Bool because the caller looks the expiry up by entitlement name.
+    static func payingEntitlement(in active: [String]) -> String? {
+        active.first(where: { paid.contains($0) })
+    }
 }
 
-func showFocusAppBlockNotification(appName: String, runningApp: NSRunningApplication? = nil){
+func executeScriptAndReturnString(script:String)->String?{
+    var errors : NSDictionary? = nil
+    let desc = runAppleScriptSafely(script, errors: &errors)
+    switch BrowserScriptStringResult.interpret(value: desc?.stringValue, hasDescriptor: desc != nil, errors: errors) {
+    case .value(let value):
+        return value
+    case .automationDenied(let application):
+        if let browser = getCurrentBrowserFrom(browserName: application.lowercased()) {
+            recordBrowserAutomationPermission(browser: browser, enabled: false)
+        }
+        return nil
+    case .unavailable:
+        return nil
+    }
+}
+
+/// `isQuickLookPreview`: the block is a Quick Look preview and `appName` is the previewed file's name,
+/// so the card says "Previewing <file> …" instead of treating the file as an app.
+func showFocusAppBlockNotification(appName: String, runningApp: NSRunningApplication? = nil, isQuickLookPreview: Bool = false){
     addLog(text: "show Focus App Block Notification called")
     let arrAppsAvoidNotification = ["loginwindow", "screensaverengine"]//lowercased
     if arrAppsAvoidNotification.contains(appName.lowercased()){
@@ -2632,15 +2890,24 @@ func showFocusAppBlockNotification(appName: String, runningApp: NSRunningApplica
     let isTeacherSession = teacherSessionManagerObject.isTeacherSessionActive()
     var msg: String
     if isTeacherSession {
-        msg = "<APP_NAME> is blocked during your class session. Ask your teacher to unlock it."
-        if let teacherInfo = configjson.value(forKey: "teacherSessionInfo") as? NSDictionary{
-            msg = teacherInfo.value(forKey: "appBlockedClassSessionText") as? String ?? msg
+        if isQuickLookPreview {
+            msg = "Previewing <FILE_NAME> is blocked during your class session. Ask your teacher to unlock it."
+        } else {
+            msg = "<APP_NAME> is blocked during your class session. Ask your teacher to unlock it."
         }
-        msg = msg.replacingOccurrences(of: "<APP_NAME>", with: appName)
+        if let teacherInfo = configjson.value(forKey: "teacherSessionInfo") as? NSDictionary{
+            let key = isQuickLookPreview ? "quickLookBlockedRequestUnlockText" : "appBlockedRequestUnlockText"
+            msg = teacherInfo.value(forKey: key) as? String ?? msg
+        }
     } else {
-        msg = "<APP_NAME> isn't allowed in the <FOCUS_NAME> focus mode."
+        if isQuickLookPreview {
+            msg = "Previewing <FILE_NAME> isn't allowed in the <FOCUS_NAME> focus mode."
+        } else {
+            msg = "<APP_NAME> isn't allowed in the <FOCUS_NAME> focus mode."
+        }
         if let common = configjson.value(forKey: "common") as? NSDictionary{
-            msg = common.value(forKey: "appBlockNotificationTitle") as? String ?? msg
+            let key = isQuickLookPreview ? "quickLookBlockNotificationTitle" : "appBlockNotificationTitle"
+            msg = common.value(forKey: key) as? String ?? msg
         }
         var focusMode = ""
         for dic in arrFocusType{
@@ -2649,9 +2916,9 @@ func showFocusAppBlockNotification(appName: String, runningApp: NSRunningApplica
                 break;
             }
         }
-        msg = msg.replacingOccurrences(of: "<APP_NAME>", with: appName)
         msg = msg.replacingOccurrences(of: "<FOCUS_NAME>", with: focusMode)
     }
+    msg = msg.replacingOccurrences(of: isQuickLookPreview ? "<FILE_NAME>" : "<APP_NAME>", with: appName)
     addLog(text: "func showFocusAppBlockNotification:- show notification for app:- \(appName)")
     // Show a custom top-right notification every time the app is blocked. Unlike the old
     // NSUserNotification path there is NO one-time-per-session limit; the manager only suppresses a
@@ -3274,12 +3541,8 @@ func isPasswordRequireInOpenSettingsEnabled() -> Bool{
         if SettingsManagerObject.isPasswordRequireInPreferencesAfterCutoff{
             return true
         }
-    }else{
-        if SettingsManagerObject.isPasswordRequireInChangeSettings{
-            return true
-        }
     }
-    return false
+    return SettingsManagerObject.isPasswordRequireInChangeSettings
 }
 
 
@@ -3475,12 +3738,7 @@ func getGoalsAndFocusdJsonForBlockedScript()-> String{
 // the AX window list; the sweep of any enumerable windows then catches the fullscreen one. Must be called
 // after a warm-up read (see exitFullScreen) — the first cold AX query returns empty.
 func isAppInFullScreen(runningApp:NSRunningApplication) -> Bool {
-    // Skip the System Events AX query while the grant is missing (else it loops the consent dialog);
-    // raise the one-time prompt instead — see the runtime System Events gate.
-    if shouldSkipSystemEventsAppleEvent() {
-        requestSystemEventsAutomationOnceIfNeeded()
-        return false
-    }
+    guard !shouldSkipSystemEventsAppleEvent() else { return false }
     let appName = runningApp.localizedName ?? ""
     let script =
     """
@@ -3511,12 +3769,9 @@ func isAppInFullScreen(runningApp:NSRunningApplication) -> Bool {
 // them. We only send the toggle when the app is ACTUALLY fullscreen (else ⌃⌘F would send it INTO
 // fullscreen), and activate it first so the keystroke lands on the right app.
 func exitFullScreen(runningApp:NSRunningApplication){
-    // Skip the System Events AX warm-up + keystroke while the grant is missing (else it loops the
-    // consent dialog); raise the one-time prompt instead — see the runtime System Events gate.
-    if shouldSkipSystemEventsAppleEvent() {
-        requestSystemEventsAutomationOnceIfNeeded()
-        return
-    }
+    // A Quick Look preview isn't an app window in fullscreen; skip the AppleScript round trips.
+    if isQuickLookService(runningApp) { return }
+    guard !shouldSkipSystemEventsAppleEvent() else { return }
     // The AX warm-up + isAppInFullScreen (+ the ⌃⌘F keystroke) are 2–3 blocking AppleScript reads,
     // each capped at ~1.2s on the main thread by runAppleScriptSafely. exitFullScreen runs on EVERY
     // app switch (frontApplicationChanged → block checks), so on the main thread those reads stack into
@@ -3626,87 +3881,135 @@ func sleepMac() {
     }
 }
 
+/// Compatibility name for the onboarding callers. Permission is read directly, without an
+/// AppleScript, so a prompt timeout or an unavailable Dock property is not mistaken for denial.
 func checkAutomationPermissionWithAppleScript() -> Bool {
-    if checkDocBarState() == nil{
-        return false
-    }else{
-        return true
-    }
+    !shouldSkipSystemEventsAppleEvent()
 }
 
-// MARK: - Runtime System Events automation gate (stops the consent-prompt loop)
-//
-// Same failure mode as the browser Apple Events (see shouldSkipBrowserAppleEvent): when the app runs a
-// `tell application "System Events"` script (dock state, full-screen detect/exit) WITHOUT the System
-// Events Automation grant, macOS shows the consent dialog and runAppleScriptSafely's ~5s timeout tears
-// it down and the next tick re-fires it — the dialog flashes on a ~5s loop (e.g. a fresh user who
-// skipped System Events during onboarding, then switches to a browser). Fix: before running any System
-// Events script, check the grant WITHOUT prompting; if it's missing, raise the consent prompt exactly
-// ONCE this session (a single blocking AEDeterminePermissionToAutomateTarget(askUserIfNeeded:true), no
-// AppleScript) and SKIP the script. On allow the scripts run normally next time; on deny we don't re-ask.
+// MARK: - System Events permission gates
 
-/// True while the one-time blocking System-Events consent prompt is on screen — pauses the gated scripts.
-var isSystemEventsAutomationRequestInFlight = false
-/// Set once we've raised the System-Events consent prompt this session, so a denial isn't re-asked.
-private var systemEventsAutoPromptAttempted = false
+enum SystemEventsAutomationResult: String {
+    case granted, denied, consentRequired, unknown
 
-/// Whether Focus Bear has System Events Automation, checked WITHOUT prompting (askUserIfNeeded:false).
-func isSystemEventsAutomationAuthorized() -> Bool {
-    let target = NSAppleEventDescriptor(bundleIdentifier: "com.apple.systemevents")
-    return AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, false) == noErr
-}
-
-/// Whether we should NOT run a System Events script right now: a consent prompt is already showing, or
-/// the grant is missing. When true, the caller should also give requestSystemEventsAutomationOnceIfNeeded()
-/// a chance to raise the one-time prompt.
-func shouldSkipSystemEventsAppleEvent() -> Bool {
-    if isSystemEventsAutomationRequestInFlight { return true }
-    return !isSystemEventsAutomationAuthorized()
-}
-
-/// Raise the System Events Automation consent dialog exactly ONCE this session (blocking), instead of
-/// letting an ungranted `tell application "System Events"` script trigger it and loop on the timeout.
-func requestSystemEventsAutomationOnceIfNeeded() {
-    if isSystemEventsAutomationRequestInFlight { return }
-    if systemEventsAutoPromptAttempted { return }
-    if isSystemEventsAutomationAuthorized() { return }
-    systemEventsAutoPromptAttempted = true
-    isSystemEventsAutomationRequestInFlight = true
-    DispatchQueue.global().async {
-        ensureSystemEventsRunningForAutomation() // else AEDetermine returns procNotFound (-600)
-        let target = NSAppleEventDescriptor(bundleIdentifier: "com.apple.systemevents")
-        let status = AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, true)
-        DispatchQueue.main.async {
-            isSystemEventsAutomationRequestInFlight = false
-            if status == noErr {
-                menuViewControllerObj?.systemEventsPermissionGiven = true
-            }
+    init(status: Int32) {
+        switch status {
+        case 0: self = .granted
+        case -1743: self = .denied
+        case -1744: self = .consentRequired
+        default: self = .unknown
         }
     }
+
+    func permitsRuntimeScript(requestInFlight: Bool) -> Bool {
+        self == .granted && !requestInFlight
+    }
 }
 
-/// Launch System Events (an LSUIElement background app) if it isn't running, so AEDetermine can target it
-/// instead of returning procNotFound (-600). Mirrors systemEventsPermissionVc.ensureSystemEventsRunning().
+private enum SystemEventsAutomationObservation {
+    static let lock = NSLock()
+    static var requestInFlight = false
+    static var lastStatus: Int32?
+    static var launchInFlight = false
+    static var lastLaunchAttempt: TimeInterval?
+}
+
+var isSystemEventsAutomationRequestInFlight: Bool {
+    SystemEventsAutomationObservation.lock.lock()
+    defer { SystemEventsAutomationObservation.lock.unlock() }
+    return SystemEventsAutomationObservation.requestInFlight
+}
+
+/// Only the wizard's explicit button invokes this. Runtime probes never request consent.
+func beginSystemEventsAutomationRequest() -> Bool {
+    SystemEventsAutomationObservation.lock.lock()
+    defer { SystemEventsAutomationObservation.lock.unlock() }
+    guard !SystemEventsAutomationObservation.requestInFlight else { return false }
+    SystemEventsAutomationObservation.requestInFlight = true
+    return true
+}
+
+func finishSystemEventsAutomationRequest(status: Int32) {
+    SystemEventsAutomationObservation.lock.lock()
+    SystemEventsAutomationObservation.requestInFlight = false
+    SystemEventsAutomationObservation.lock.unlock()
+    recordSystemEventsAutomationStatus(status)
+}
+
+func recordSystemEventsAutomationStatus(_ status: Int32) {
+    SystemEventsAutomationObservation.lock.lock()
+    let changed = SystemEventsAutomationObservation.lastStatus != status
+    SystemEventsAutomationObservation.lastStatus = status
+    SystemEventsAutomationObservation.lock.unlock()
+    if changed {
+        addLog(text: "System Events permission: pid=\(ProcessInfo.processInfo.processIdentifier) status=\(status) result=\(SystemEventsAutomationResult(status: status).rawValue)")
+    }
+}
+
+func shouldSkipSystemEventsAppleEvent() -> Bool {
+    // Do not query or send an AppleScript while the explicit blocking consent request is pending.
+    guard !isSystemEventsAutomationRequestInFlight else { return true }
+    let status: Int32
+    if let process = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.systemevents").first {
+        let target = NSAppleEventDescriptor(processIdentifier: process.processIdentifier)
+        status = AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, false)
+    } else {
+        status = -600 // target not running: unknown, not evidence of a denied grant
+        launchSystemEventsForNonpromptingProbeIfNeeded()
+    }
+    recordSystemEventsAutomationStatus(status)
+    return !SystemEventsAutomationResult(status: status)
+        .permitsRuntimeScript(requestInFlight: isSystemEventsAutomationRequestInFlight)
+}
+
+/// System Events can exit while idle. Launching its background process restores the old
+/// AppleEvent auto-launch behavior, without granting access or opening a consent dialog.
+/// One launch may be pending, with a ten-second retry interval and bounded registration wait.
+private func launchSystemEventsForNonpromptingProbeIfNeeded() {
+    let now = ProcessInfo.processInfo.systemUptime
+    SystemEventsAutomationObservation.lock.lock()
+    guard !SystemEventsAutomationObservation.requestInFlight,
+          !SystemEventsAutomationObservation.launchInFlight,
+          SystemEventsAutomationObservation.lastLaunchAttempt.map({ now - $0 >= 10 }) ?? true else {
+        SystemEventsAutomationObservation.lock.unlock()
+        return
+    }
+    SystemEventsAutomationObservation.launchInFlight = true
+    SystemEventsAutomationObservation.lastLaunchAttempt = now
+    SystemEventsAutomationObservation.lock.unlock()
+    DispatchQueue.global().async {
+        defer {
+            SystemEventsAutomationObservation.lock.lock()
+            SystemEventsAutomationObservation.launchInFlight = false
+            SystemEventsAutomationObservation.lock.unlock()
+        }
+        ensureSystemEventsRunningForAutomation()
+        guard !isSystemEventsAutomationRequestInFlight,
+              let process = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.systemevents").first else { return }
+        let target = NSAppleEventDescriptor(processIdentifier: process.processIdentifier)
+        let status = AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, false)
+        recordSystemEventsAutomationStatus(status)
+    }
+}
+
+/// Runs off the main thread for either the explicit wizard request or the nonprompting runtime
+/// recovery. Opening this LSUIElement does not activate an app window or request Automation.
 func ensureSystemEventsRunningForAutomation() {
-    let bundleId = "com.apple.systemevents"
-    if !NSRunningApplication.runningApplications(withBundleIdentifier: bundleId).isEmpty { return }
-    if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) {
-        let config = NSWorkspace.OpenConfiguration()
-        config.activates = false
-        let sem = DispatchSemaphore(value: 0)
-        NSWorkspace.shared.openApplication(at: url, configuration: config) { _, _ in sem.signal() }
-        _ = sem.wait(timeout: .now() + 5)
+    let bundleID = "com.apple.systemevents"
+    if !NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty { return }
+    if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = false
+        let completion = DispatchSemaphore(value: 0)
+        NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, _ in completion.signal() }
+        _ = completion.wait(timeout: .now() + 5)
     }
-    var tries = 0
-    while NSRunningApplication.runningApplications(withBundleIdentifier: bundleId).isEmpty && tries < 30 {
-        usleep(100_000) // 0.1s
-        tries += 1
+    var attempts = 0
+    while NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty && attempts < 30 {
+        usleep(100_000)
+        attempts += 1
     }
 }
-
-
-
-
 
 func getWindowFrame(pid: pid_t) -> CGRect? {
     var windowFrame: CGRect?
@@ -3844,9 +4147,8 @@ func isFrontmostAppInNativeFullScreen() -> Bool {
 
 /// True when the frontmost OTHER app is covering the whole main screen — EITHER native full-screen (window
 /// at y=0 over the menu bar) OR non-native full-screen / a maximised window that fills everything BELOW the
-/// menu bar (y≈menuBarHeight, e.g. iTerm's non-native full-screen). In both cases the popover/menu window
-/// must float above the app. Broader than `isFrontmostAppInNativeFullScreen`, which only matches the y=0
-/// native case and so MISSES non-native full-screen (where the menu still can't render normally).
+/// menu bar (y≈menuBarHeight). In both cases the popover and a plain window can't reliably render above the
+/// app, so the menu must be shown in the overlay NSPanel. Broader than `isFrontmostAppInNativeFullScreen`.
 func isFrontmostAppCoveringScreen() -> Bool {
     guard let frontApp = NSWorkspace.shared.frontmostApplication,
           frontApp.bundleIdentifier != Bundle.main.bundleIdentifier else { return false }
@@ -4005,6 +4307,18 @@ func startMainAppForceQuitMonitoring(){
     DistributedNotificationCenter.default().post(name: startMainAppForceQuitMonitoring,object: mainAppBundelId)
 }
 
+/// #2575: schedule the always-running helper (FBHelper) to relaunch the main app at `date`. Stores the
+/// target in the shared suite and pokes the helper via a distributed notification so it starts watching
+/// immediately; the helper also reads the key on its own launch (the reboot case) and clears it once it
+/// has relaunched us. This is how "turn everything off until tomorrow" brings the app back on its own
+/// without adding a LaunchAgent.
+func scheduleMainAppRestart(at date: Date){
+    appdelegate!.sharedDefaults?.setValue(date, forKeyPath: kUserdefaultsMainAppScheduledRestartDate)
+    appdelegate!.sharedDefaults?.synchronize()
+    let scheduleMainAppRestart = Notification.Name("scheduleMainAppRestart")
+    DistributedNotificationCenter.default().post(name: scheduleMainAppRestart, object: mainAppBundelId)
+}
+
 func stopMainAppForceQuitMonitoring(){
     if let state = appdelegate!.sharedDefaults?.object(forKey: kUserdefaultsStartMainAppIfNotRunning) as? Bool{
         if state{
@@ -4032,6 +4346,37 @@ func getWindowTheme()->String{
 
 // blocking helpers
 let validation = urlValidation()
+/// The loopback ports Focus Bear's own embedded servers can occupy. `firstAvailablePort(from:)`
+/// starts at 50501 and tries 50 ports, so this is that whole span rather than one number.
+let focusBearLocalPortRange = 50501...50550
+
+/// Whether a URL is a page Focus Bear itself is serving — the block page, the focus-block reminder,
+/// the Firefox helper.
+///
+/// Exempting only the CURRENT port is not enough, and that is what caused report
+/// 2026-09-21_10-04-40. A previous run's server keeps its port until it is reaped, so each launch
+/// picks a higher one. A block page a browser is still showing from an earlier run then has a
+/// different port from the running app's, stops being recognised as ours, and gets blocked — by a
+/// block page that carries the first one as `old_url`. The user's screenshot is that recursion:
+/// 50504 blocking 50503, which was itself blocking ankiweb.net.
+///
+/// Matched on the parsed HOST and PORT, never as a substring, so a hostile URL that merely mentions
+/// `localhost:50504` inside its query string is not let through.
+func isFocusBearLocalPage(_ url: String) -> Bool {
+    let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return false }
+    // URLComponents needs a scheme to find a host; browsers hand us both spellings.
+    // The "://" is required, not optional: a bare "localhost:50504/?old_url=x" otherwise matches
+    // a scheme pattern, and Foundation then parses "localhost" AS the scheme and reports no host
+    // at all — so the app's own block page would be treated as somebody else's page.
+    let hasScheme = trimmed.range(of: "^[A-Za-z][A-Za-z0-9+.-]*://", options: .regularExpression) != nil
+    guard let components = URLComponents(string: hasScheme ? trimmed : "http://" + trimmed),
+          let host = components.host?.lowercased(),
+          let port = components.port else { return false }
+    guard ["localhost", "127.0.0.1", "::1", "0.0.0.0"].contains(host) else { return false }
+    return focusBearLocalPortRange.contains(port)
+}
+
 var defaultAllowedUrl = ["focus-block.html",
                          "earnyourscreentime.com",
                          "devtools://",
@@ -4066,6 +4411,5 @@ func reloadPermissionsIfNeeded() {
 
     customVC.checkPermissions()
 }
-
 
 

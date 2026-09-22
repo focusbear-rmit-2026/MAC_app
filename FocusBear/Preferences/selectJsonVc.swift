@@ -8,10 +8,13 @@
 
 import Cocoa
 import WebKit
-class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, webViewLoadFailedDelegate {
-    
+class selectJsonVc: NSViewController, NSTextViewDelegate {
+
 //    @IBOutlet weak var boxHeightConstraint: NSLayoutConstraint!
 //    @IBOutlet weak var boxWidthConstraint: NSLayoutConstraint!
+    // No longer navigated or shown — Edit Habits now shares one WKWebView with Todo List / Stats
+    // via SharedDashboardWebViewManager. Kept only because removing it means editing the
+    // storyboard scene.
     @IBOutlet weak var webview: WKWebView!
     @IBOutlet weak var customBox: NSBox!
 
@@ -26,7 +29,6 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
         addLog(text: "Edit settings (selectJsonVc) viewdidload start")
         selectJsonVcObj = self
 
@@ -55,175 +57,13 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
                     }
                 }
             }
-            
-        }
-        let handler = MessageHandler()
-        webview.configuration.userContentController.add(handler, name: "setting_saved")
-        webview.configuration.userContentController.add(handler, name: "open_marketplace")
-        webview.configuration.userContentController.add(handler, name: "detect_user_settings_change")
-        webview.configuration.userContentController.add(AccessTokenRequestHandler.shared, name: AccessTokenRequestHandler.messageName)
 
-        loadWebView()
-        
-        webview.backgroundcolor = NSColor.clear
+        }
         addLog(text: "Edit settings (selectJsonVc) viewdidload end")
     }
 
-    func loadWebView(){
-        var settingUrl = "https://dashboard.focusbear.io"
-        if let settings = configjson.value(forKey: "settings") as? NSDictionary{
-            if let url = settings.value(forKey: "settingUrlNew") as? String{
-                settingUrl = url
-            }
-        }
-       
-        var url = "\(settingUrl)/webview/settings?bust_cache=\(getUuid())&device_id=\(currentDeviceId)"
-        
-        var fileURL = URL(string: url)
-        if fileURL == nil{
-            addLog(text: "url is nil")
-            url = "\(settingUrl)?device_id=\(currentDeviceId)"
-            fileURL = URL(string: url)
-        }
-        
-        self.webview.navigationDelegate = self
-        let request = NSMutableURLRequest(url: fileURL!)
-
-        webview!.load(request as URLRequest)
-    }
-    
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        DispatchQueue.global().async {
-            sleep(1)
-            DispatchQueue.main.async {
-                self.removeWebViewLoadFailedView(webView: webView)
-                self.setSettingsToWebView()
-            }
-        }
-    }
-
-    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        handleLoadError(webView: webView)
-    }
-    
-    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        handleLoadError(webView: webView)
-    }
-  
-
-    var webViewLoadFailedVcObj:webViewLoadFailedVc?
-    func removeWebViewLoadFailedView(webView: WKWebView) {
-        if webViewLoadFailedVcObj != nil{
-            if webView.subviews.contains(webViewLoadFailedVcObj!.view){
-                webViewLoadFailedVcObj?.view.removeFromSuperview()
-            }
-        }
-    }
-   
-    func handleLoadError(webView: WKWebView) {
-        if webViewLoadFailedVcObj != nil{
-            if webView.subviews.contains(webViewLoadFailedVcObj!.view){
-                webViewLoadFailedVcObj?.reloadData()
-                return;
-            }
-        }
-        webViewLoadFailedVcObj = getWebViewLoadFailedVcObject()
-        webViewLoadFailedVcObj!.customDelegate = self
-        webViewLoadFailedVcObj?.webView = webView
-        webView.addSubview(webViewLoadFailedVcObj!.view)
-        webView.addConstraints(subView: webViewLoadFailedVcObj!.view)
-        webViewLoadFailedVcObj?.reloadData()
-    }
-    
-    
-    func reloadClicked(webView:WKWebView){
-        loadWebView()
-    }
-
-    func setSettingsToWebView(requestId: String? = nil){
-        let theme = getWindowTheme()
-        var flags = "[\"settings-updated\"]"
-        if SettingsManagerObject.isGeekModeEnabled{
-            flags = "[\"settings-updated\",\"geek-mode\",\"save-settings-migrate-to-web\"]"
-        }else{
-            flags = "[\"settings-updated\",\"simple-mode\",\"save-settings-migrate-to-web\"]"
-        }
-        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
-        let accessToken = appdelegate!.credential?.accessToken ?? ""
-        var settingsJson = "{\"access_token\":\"\(accessToken)\",\"platform\":\"mac\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"flags\":\(flags)}"
-        if let requestId = requestId {
-            settingsJson = String(settingsJson.dropLast()) + ",\"requestId\":\"\(requestId)\"}"
-        }
-        let javascript = "loadSettingsData(\(settingsJson));"
-        
-        webview?.evaluateJavaScript(javascript,completionHandler: { (html: Any?, error: Error?) in
-            print(error)
-            print(html)
-        })
-        // Installed apps are the web's allowed-app suggestions (one enumerator for every loader: InstalledApps).
-        let installedApps = InstalledApps.shared.names()
-        addLog(text: "Load Installed Apps to web settings:- \(installedApps.count) apps")
-        let mutableDic = NSMutableDictionary()
-        mutableDic["installedApps"] = installedApps
-        
-        do {
-            let data = try (JSONSerialization.data(withJSONObject: mutableDic, options: .prettyPrinted))
-            if let str = String(data: data, encoding: String.Encoding.utf8){
-                print(str)
-                
-             
-                let script = "LoadInstalledApps(\(str));"
-                
-                webview?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
-                    print(error)
-                    print(html)
-                })
-                
-            }
-        } catch let error as NSError {
-            print(error)
-        }
-        
-        
-        // load focus names
-        
-        var arrFocusNames = [[String:String]]()
-        for i in 0..<arrFocusType.count{
-            if let name = arrFocusType[i]["name"] as? String{
-                let dic = ["id":arrFocusType[i]["id"] as? String ?? "", "name":name]
-                arrFocusNames.append(dic)
-            }
-        }
-        
-        
-        let focusNamesDic = NSMutableDictionary()
-        focusNamesDic["focusNames"] = arrFocusNames
-        
-        do {
-            let data = try (JSONSerialization.data(withJSONObject: focusNamesDic, options: .prettyPrinted))
-            if let str = String(data: data, encoding: String.Encoding.utf8){
-                print(str)
-                
-             
-                let script = "LoadFocusNames(\(str));"
-                
-                webview?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
-                    print(error)
-                    print(html)
-                })
-                
-            }
-        } catch let error as NSError {
-            print(error)
-        }
-       
-        
-    }
-    
-    
     override func viewWillAppear() {
-        self.setSettingsToWebView()
-        allApiObject.capturePosthog(event: "edit-habits", metadata: [:])
+        SharedDashboardWebViewManager.shared.present(.editHabits, in: self.view)
     }
 
     var alertSettingChanged:NSAlert?
@@ -617,7 +457,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             if message.body as? String == "user-settings-updated"{
                 if currentState == ._ONBOARDING_{
                     installHabitPacksVcObj?.showNextView()
-                }else if message.webView == selectJsonVcObj?.webview{
+                }else if message.webView == SharedDashboardWebViewManager.shared.webView{
                     selectJsonVcObj?.alertSettingsSaved()
                 }else{
                     if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
@@ -627,7 +467,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                     }
                 }
             }else if message.body as? String == "user-settings-update-failed"{
-                if message.webView == selectJsonVcObj?.webview{
+                if message.webView == SharedDashboardWebViewManager.shared.webView{
                     selectJsonVcObj?.alertSettingsNotValid()
                 }else{
                     if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
@@ -642,7 +482,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                     do {
                         let jsonResult:NSDictionary = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
                         print(jsonResult)
-                        if message.webView == selectJsonVcObj?.webview{
+                        if message.webView == SharedDashboardWebViewManager.shared.webView{
                             selectJsonVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
                         }else{
                             if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{

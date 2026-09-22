@@ -349,6 +349,21 @@ class habitsVc: NSViewController {
     
     func showAskPostponeView(){
         addLog(text: "show AskPostpone View")
+        // AI accountability buddy: skip the "minutes to postpone" picker for habit postpones and go
+        // straight to the chat (the AI sets the duration). Placeholder minutes here — the real duration
+        // comes from the AI-approved verdict on `onApproved`.
+        if SettingsManagerObject.isAccountabilityBuddyActive {
+            switch currentState {
+            case ._MORNING_HABIT_:
+                postponeMorningHabitFor(minutes: 30, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true); return
+            case ._EVENING_HABIT_:
+                postponeEveningHabitFor(minutes: 30, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true); return
+            case ._FOCUS_SUMMARY_:
+                postponeFocusSummaryFor(minutes: 30, showAskIntention: true); return
+            default:
+                break
+            }
+        }
         // Host on the window's content view (always window-sized and on top) rather than habitsVc.view,
         // which grows to the full Day Plan height — there the centred dialog landed off-screen, and it
         // wasn't visible at all from the Tools/Help screens. Idempotent so re-triggers don't stack it.
@@ -464,9 +479,19 @@ class habitsVc: NSViewController {
                 }
             }
         }
-        
+
+        // Report 2026-09-17_17-05-10: after the cutoff, a user who requires a password to postpone the
+        // evening routine has declared that window off-limits — there is nothing left to postpone into,
+        // so refuse here rather than opening the picker, the AI buddy chat or the password sheet. This
+        // is the ONE funnel for user-initiated evening/shutdown postpones (the easy-skip window, the
+        // minutes picker and the password sheet all hang off the branches below), so nothing has been
+        // mutated yet and the user simply stays in their routine.
+        // No cutoff refusal here. Past the cutoff, a user who asked for a password gets asked for it
+        // by `popupAppointmentTimeVc.computeShouldAskPassword()`, which is one of the branches below —
+        // that is the gate the setting describes. Refusing at this point pre-empted it.
+
         switch currentState {// added on 9/9/25 in 2.27.413
-            
+
         case ._NOTHING_:
             addLog(text: "current state is:- nothing")
         case ._MORNING_HABIT_:
@@ -956,6 +981,8 @@ class habitsVc: NSViewController {
         }
     }
     func removeSubViews(){
+        // The break start screen owns a countdown and an unsaved brain dump; tell it that it's going.
+        breakStartVcObj?.breakStartDismissed()
         let viewsArr = habitsView.subviews
         for subview in viewsArr {
             subview.removeFromSuperview()
@@ -974,7 +1001,9 @@ class habitsVc: NSViewController {
         habitsView.addConstraints(subView: shutOffTimeVcObj!.view)
         currentState = ._SHUTOFFMAC_
         stopActivityTimer()
-        NSApplication.shared.activate(ignoringOtherApps: true)
+        // The shutdown screen is the one prompt in here that genuinely has to be seen, so it is
+        // allowed to insist — but still not out of a menu the user has open.
+        appdelegate?.requestShutdownFocus(urgency: .shutdownStarting)
     }
     
     func showAlertNoHighPriorityActivities(){
@@ -2754,6 +2783,17 @@ class habitsVc: NSViewController {
             }
         }
     }
+    /// Help/Settings navigation detaches the Day Plan without ending its routine. After password
+    /// authentication the next approval sheet must use the window that is still on screen.
+    func postponeIntentionPresenter() -> NSViewController? {
+        guard let window = mainWindowControllerObj?.window,
+              window.isVisible, !window.isMiniaturized else { return nil }
+        if isViewLoaded, view.window === window { return self }
+        guard let root = window.contentViewController,
+              root.isViewLoaded, root.view.window === window else { return nil }
+        return root
+    }
+
     func postponeMorningHabitFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool, showAskIntention:Bool, isExtendingPostponeFromAppStart:Bool = false){
         var showAskIntention = showAskIntention
         
@@ -2762,10 +2802,27 @@ class habitsVc: NSViewController {
             showAskIntention = false
         }
         if showAskIntention{
-            if self.view.window != nil{
-                addLog(text: "postponeMorningHabitFor:- askPostponeIntention")// added in 2.28.444
-                self.presentAsSheet(getAskPostponeIntentionVcObject())
-                askPostponeIntentionVcObj?.resetData(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, lastCurrentState: ._MORNING_HABIT_)
+            if let presenter = postponeIntentionPresenter(){
+                if SettingsManagerObject.isAccountabilityBuddyActive{
+                    // AI accountability buddy: gate the postpone via the chat (sheet, so it shows over the
+                    // full-screen routine). Only its approval actually postpones (showAskIntention:false).
+                    addLog(text: "postponeMorningHabitFor:- AI accountability buddy")
+                    AccountabilityBuddyChatViewController.present(over: presenter, initialGoal: "",
+                        onApproved: { [weak self] goal, duration in
+                            self?.postponeMorningHabitFor(minutes: duration, secondsToPostpone: nil, showAskFocusModeView: showAskFocusModeView, showAskIntention: false)
+                            if showAskFocusModeView && SettingsManagerObject.isGeekModeEnabled && !goal.isEmpty{
+                                pomodoroVcObj?.isIntentionFromMorningPostpone = true
+                                // The start screen is SwiftUI now — use its shims, not the removed outlets.
+                                pomodoroVcObj?.goalText = goal
+                                pomodoroVcObj?.showPostponeTitle()
+                            }
+                        },
+                        onCancel: { })   // gave up — habit not postponed, routine continues
+                }else{
+                    addLog(text: "postponeMorningHabitFor:- askPostponeIntention")// added in 2.28.444
+                    presenter.presentAsSheet(getAskPostponeIntentionVcObject())
+                    askPostponeIntentionVcObj?.resetData(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, lastCurrentState: ._MORNING_HABIT_)
+                }
             }else{
                 addLog(text: "postponeMorningHabitFor:- window is nil")// added in 2.28.444
             }
@@ -2851,8 +2908,8 @@ class habitsVc: NSViewController {
                     UserDefaults.standard.set(postponeEndDate, forKey: kUserDefaultsLastRoutinePostponeEndDate)
                     UserDefaults.standard.set(CURRENTSTATE._POSTPONE_MORNING_HABIT_.rawValue,forKey: kUserDefaultsLastRoutinePostponeState)
                     
-                    if seconds > 120{
-                        setPostponeNotificationTimer(duration: ((seconds) - 120))
+                    if seconds > MeetingPostponeRules.endNotificationLeadSeconds{
+                        setPostponeNotificationTimer(duration: (seconds - MeetingPostponeRules.endNotificationLeadSeconds))
                     }
                 }
             }
@@ -2869,9 +2926,9 @@ class habitsVc: NSViewController {
                     if !(pomodoroVcObj?.isViewLoaded ?? false){
                         pomodoroVcObj?.loadView()
                     }
-                    pomodoroVcObj!.textFieldWorkDuration.integerValue = minutes - 1
+                    pomodoroVcObj!.workDurationMinutes = minutes - 1
                     pomodoroVcObj!.updateBreakDuration()
-                    pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
+                    pomodoroVcObj!.showPostponeTitle()
                     
                 }else{
                     if !(leftMenuVcObj?.boxFocusSession.isSelected ?? false){// without this check app is crashing because add task vc dissmiss cause crash because that view will be change before dissmiss v 2.28.440
@@ -2973,10 +3030,25 @@ class habitsVc: NSViewController {
         }
         
         if showAskIntention{
-            if self.view.window != nil{
-                addLog(text: "postponeEveningHabitFor:- askPostponeIntention")// added in 2.28.444
-                self.presentAsSheet(getAskPostponeIntentionVcObject())
-                askPostponeIntentionVcObj?.resetData(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, lastCurrentState: ._EVENING_HABIT_)
+            if let presenter = postponeIntentionPresenter(){
+                if SettingsManagerObject.isAccountabilityBuddyActive{
+                    addLog(text: "postponeEveningHabitFor:- AI accountability buddy")
+                    AccountabilityBuddyChatViewController.present(over: presenter, initialGoal: "",
+                        onApproved: { [weak self] goal, duration in
+                            self?.postponeEveningHabitFor(minutes: duration, secondsToPostpone: nil, showAskFocusModeView: showAskFocusModeView, showAskIntention: false)
+                            if showAskFocusModeView && SettingsManagerObject.isGeekModeEnabled && !goal.isEmpty{
+                                pomodoroVcObj?.isIntentionFromMorningPostpone = true
+                                // The start screen is SwiftUI now — use its shims, not the removed outlets.
+                                pomodoroVcObj?.goalText = goal
+                                pomodoroVcObj?.showPostponeTitle()
+                            }
+                        },
+                        onCancel: { })
+                }else{
+                    addLog(text: "postponeEveningHabitFor:- askPostponeIntention")// added in 2.28.444
+                    presenter.presentAsSheet(getAskPostponeIntentionVcObject())
+                    askPostponeIntentionVcObj?.resetData(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, lastCurrentState: ._EVENING_HABIT_)
+                }
             }else{
                 addLog(text: "postponeEveningHabitFor:- window is nil")// added in 2.28.444
             }
@@ -2989,6 +3061,13 @@ class habitsVc: NSViewController {
                 }
             }else{
                 seconds = minutes*60
+            }
+            // Report 2026-09-17_17-05-10: a postpone must not end after the cutoff — the app abandons
+            // running postpones there anyway, so longer grants were a promise it would break.
+            let requestedSeconds = seconds
+            seconds = cutoffLimitedPostponeSeconds(seconds)
+            if seconds != requestedSeconds{
+                addLog(text: "postpone evening habits, clamped to cutoff \(cutOffTimeString):- \(requestedSeconds)s -> \(seconds)s")
             }
             addLog(text: "postpone evening habits, Timer reset Done:- \(seconds) seconds")
             
@@ -3065,8 +3144,8 @@ class habitsVc: NSViewController {
                     UserDefaults.standard.set(CURRENTSTATE._POSTPONE_EVENING_HABIT_.rawValue,forKey: kUserDefaultsLastRoutinePostponeState)
                     
                     
-                    if seconds > 120{
-                        setPostponeNotificationTimer(duration: ((seconds) - 120))
+                    if seconds > MeetingPostponeRules.endNotificationLeadSeconds{
+                        setPostponeNotificationTimer(duration: (seconds - MeetingPostponeRules.endNotificationLeadSeconds))
                     }
                 }
             }
@@ -3082,9 +3161,9 @@ class habitsVc: NSViewController {
                 if !(pomodoroVcObj?.isViewLoaded ?? false){
                     pomodoroVcObj?.loadView()
                 }
-                pomodoroVcObj!.textFieldWorkDuration.integerValue = minutes - 1
+                pomodoroVcObj!.workDurationMinutes = minutes - 1
                 pomodoroVcObj!.updateBreakDuration()
-                pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
+                pomodoroVcObj!.showPostponeTitle()
                 
             }else{
                 removeSubViews()
@@ -3100,7 +3179,14 @@ class habitsVc: NSViewController {
         }
     }
     
-    func postponeFocusSummaryFor(minutes:Int, showAskIntention:Bool){
+    func postponeFocusSummaryFor(minutes requestedMinutes:Int, showAskIntention:Bool){
+        // Report 2026-09-17_17-05-10: the shutdown's Focus Summary was postponed 10 minutes PAST the
+        // 17:00 cutoff. A postpone must not end after the cutoff — the app abandons running postpones
+        // there anyway, so longer grants were a promise it would break.
+        let minutes = cutoffLimitedPostponeMinutes(requestedMinutes)
+        if minutes != requestedMinutes{
+            addLog(text: "postpone Focus Summary clamped to cutoff \(cutOffTimeString):- \(requestedMinutes) -> \(minutes) minutes")
+        }
         addLog(text: "postpone Focus Summary Done:- \(minutes) minutes")
 
         // #1942: a pending "one more minute" timer (giveOneMoreMinuteBeforeShutOffMac)
@@ -3118,10 +3204,19 @@ class habitsVc: NSViewController {
             showAskIntention = false
         }
         if showAskIntention{
-            if self.view.window != nil{
-                addLog(text: "postponeFocusSummaryFor:- askPostponeIntention")// added in 2.28.444
-                self.presentAsSheet(getAskPostponeIntentionVcObject())
-                askPostponeIntentionVcObj?.resetData(minutes: minutes, secondsToPostpone: nil, showAskFocusModeView: false, lastCurrentState: ._FOCUS_SUMMARY_)
+            if let presenter = postponeIntentionPresenter(){
+                if SettingsManagerObject.isAccountabilityBuddyActive{
+                    addLog(text: "postponeFocusSummaryFor:- AI accountability buddy")
+                    AccountabilityBuddyChatViewController.present(over: presenter, initialGoal: "",
+                        onApproved: { [weak self] _, duration in
+                            self?.postponeFocusSummaryFor(minutes: duration, showAskIntention: false)
+                        },
+                        onCancel: { })
+                }else{
+                    addLog(text: "postponeFocusSummaryFor:- askPostponeIntention")// added in 2.28.444
+                    presenter.presentAsSheet(getAskPostponeIntentionVcObject())
+                    askPostponeIntentionVcObj?.resetData(minutes: minutes, secondsToPostpone: nil, showAskFocusModeView: false, lastCurrentState: ._FOCUS_SUMMARY_)
+                }
             }else{
                 addLog(text: "postponeFocusSummaryFor:- window is nil")// added in 2.28.444
             }
@@ -3146,8 +3241,8 @@ class habitsVc: NSViewController {
                 UserDefaults.standard.set(CURRENTSTATE._POSTPONE_FOCUS_SUMMARY_.rawValue,forKey: kUserDefaultsLastRoutinePostponeState)
                 
                 
-                if minutes > 2{
-                    setPostponeNotificationTimer(duration: ((minutes*60) - 120))
+                if minutes*60 > MeetingPostponeRules.endNotificationLeadSeconds{
+                    setPostponeNotificationTimer(duration: ((minutes*60) - MeetingPostponeRules.endNotificationLeadSeconds))
                 }
             }
             if SettingsManagerObject.IsShowBreaksInPostponeEnabled{
@@ -3163,9 +3258,9 @@ class habitsVc: NSViewController {
                 if !(pomodoroVcObj?.isViewLoaded ?? false){
                     pomodoroVcObj?.loadView()
                 }
-                pomodoroVcObj!.textFieldWorkDuration.integerValue = minutes - 1
+                pomodoroVcObj!.workDurationMinutes = minutes - 1
                 pomodoroVcObj!.updateBreakDuration()
-                pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
+                pomodoroVcObj!.showPostponeTitle()
                 
             }else{
                 removeSubViews()
@@ -3184,20 +3279,92 @@ class habitsVc: NSViewController {
         self.postponeNotificationTimer = Timer.scheduledTimer(timeInterval: TimeInterval(duration), target: self, selector: #selector(self.showPostponeEndNotification), userInfo: nil, repeats: false)
         RunLoop.main.add((postponeNotificationTimer!), forMode: RunLoop.Mode.common)
     }
+
+    /// Stretches a running postpone over the meeting chain that is live or about to start, and
+    /// reports whether it did.
+    ///
+    /// A postpone exists so the routine waits while the user is busy, and a meeting Focus Bear
+    /// itself announced is the clearest possible "busy". Sized for one meeting, the postpone
+    /// expired into the next one; re-postponing here re-arms the countdown timer as well, so the
+    /// check repeats for each meeting in the chain until nothing is left to cover.
+    @discardableResult
+    func extendPostponeToCoverAnnouncedMeetings() -> Bool {
+        guard let seconds = MeetingCoverage.extensionSecondsToCoverMeeting(now: Date(),
+                                                                          meetings: AnnouncedMeetingRegister.shared.activeMeetings()) else {
+            return false
+        }
+        // Only the two habit postpones can be re-armed this way; a postponed focus summary has no
+        // habits left to protect, so it is left to end normally.
+        switch currentState {
+        case ._POSTPONE_MORNING_HABIT_:
+            addLog(text: "extendPostponeToCoverAnnouncedMeetings:- morning postpone extended to \(seconds) seconds to cover a live/imminent meeting")
+            postponeMorningHabitFor(minutes: 0, secondsToPostpone: seconds, showAskFocusModeView: false, showAskIntention: false)
+            return true
+        case ._POSTPONE_EVENING_HABIT_:
+            addLog(text: "extendPostponeToCoverAnnouncedMeetings:- evening postpone extended to \(seconds) seconds to cover a live/imminent meeting")
+            postponeEveningHabitFor(minutes: 0, secondsToPostpone: seconds, showAskFocusModeView: false, showAskIntention: false)
+            return true
+        default:
+            return false
+        }
+    }
     
     @objc func showPostponeEndNotification(){
+        // Never announce "Habit resumes in…" over a meeting that is live or seconds away — extend
+        // the postpone past it instead (report 2026-09-15_13-03-02).
+        if extendPostponeToCoverAnnouncedMeetings(){ return }
         if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_ || currentState == ._POSTPONE_MORNING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit && !isCustomRoutineWasRunningBetweenMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit && !isCustomRoutineWasRunningBetweenEveningHabit){
             var msg = "Habit resumes in"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
                 msg = common.value(forKey: "postponeEndsText") as? String ?? msg
             }
             addLog(text: "Show Postpone End Notification")
-            showSmallTimerWindow(durationSeconds: 120, msg: msg, isFocusBreak: true, currentTimerValue: 0)
+            showSmallTimerWindow(durationSeconds: MeetingPostponeRules.endNotificationLeadSeconds, msg: msg, isFocusBreak: true, currentTimerValue: 0)
         }
     }
     
+
+    /// The meeting guard in front of every resume, now aware of WHICH entry point is asking.
+    ///
+    /// `resumeMorningHabit` and friends are reached two ways: the postpone timer elapsing, and the user
+    /// stopping a session that was started by postponing (`stopFocusModeAndResumeRoutine`). The guard was
+    /// written for the first and silently swallowed the second (report 2026-09-17_12-03-44), which is why
+    /// the entry point is an input rather than something inferred here.
+    ///
+    /// - Parameter isMeetingSessionLive: must be sampled BEFORE the session is finished — the stop path
+    ///   finishes the session first, so reading it here would always see `false`.
+    /// - Returns: true when the routine should resume now. When it should not, this has already extended
+    ///   the postpone if that was the right answer.
+    func shouldResumeRoutineNow(trigger: RoutineResumeTrigger, isMeetingSessionLive: Bool) -> Bool {
+        let isRoutinePostponed = currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_
+        let hasMeetingToCover = MeetingCoverage.extensionSecondsToCoverMeeting(
+            now: Date(), meetings: AnnouncedMeetingRegister.shared.activeMeetings()) != nil
+        let decision = RoutineResume.decision(trigger: trigger,
+                                              isRoutinePostponed: isRoutinePostponed,
+                                              hasMeetingToCover: hasMeetingToCover,
+                                              isMeetingSessionLive: isMeetingSessionLive)
+        addLog(text: "routine resume: \(decision) (trigger=\(trigger) state=\(currentState) postponed=\(isRoutinePostponed) meetingToCover=\(hasMeetingToCover) meetingSessionLive=\(isMeetingSessionLive))")
+        switch decision {
+        case .resume:
+            return true
+        case .extendPostponeOverMeeting:
+            extendPostponeToCoverAnnouncedMeetings()
+            return false
+        case .stayPostponed:
+            return false
+        }
+    }
+
     @objc func resumeMorningHabit(){// func name "backgrounThread" will do work for showing morning routing again we just need to false this (currentState) variable
+        resumePostponedMorningRoutine(for: .postponeElapsed)
+    }
+
+    func resumePostponedMorningRoutine(for trigger: RoutineResumeTrigger,
+                                       isMeetingSessionLive: Bool = currentAccountabilityBuddySession?.isMeeting == true){
         addLog(text: "Morning habits postpone finished")
+        // Last line of defence: a meeting announced inside the final countdown would otherwise land
+        // the routine on screen mid-call. An explicit user request is exempt — see RoutineResume.
+        if !shouldResumeRoutineNow(trigger: trigger, isMeetingSessionLive: isMeetingSessionLive){ return }
         if currentState == ._POSTPONE_MORNING_HABIT_{
             currentState = ._NOTHING_
             stopActivityTimer()
@@ -3232,7 +3399,14 @@ class habitsVc: NSViewController {
     }
     
     @objc func resumeEveningHabit(){// func name "backgrounThread" will do work for showing evening routing again we just need to false this (currentState) variable
+        resumePostponedEveningRoutine(for: .postponeElapsed)
+    }
+
+    func resumePostponedEveningRoutine(for trigger: RoutineResumeTrigger,
+                                       isMeetingSessionLive: Bool = currentAccountabilityBuddySession?.isMeeting == true){
         addLog(text: "Evening habits postpone finished")
+        // Last line of defence — see resumeMorningHabit.
+        if !shouldResumeRoutineNow(trigger: trigger, isMeetingSessionLive: isMeetingSessionLive){ return }
         if currentState == ._POSTPONE_EVENING_HABIT_{
             currentState = ._NOTHING_
             stopActivityTimer()
@@ -3326,9 +3500,14 @@ class habitsVc: NSViewController {
                 }
             }
         }else{
-            if isFocusModeOn(){
-                showToDoListWindow()
-            }else{
+            // A break interrupts a focus session; ending it has to hand the user back to that session.
+            // This used to call showToDoListWindow(), which landed on the session's task player back
+            // when the To-do slot rendered it — that slot no longer always does, so ask for the
+            // session screen by name. Paused counts: it is still the user's session to resume.
+            switch BreakStartKit.destinationAfterBreak(isFocusSessionActive: isFocusModeOnOrPaused()){
+            case .focusSession:
+                showRunningFocusSessionWindow()
+            case .suggestFocusSession:
                 appdelegate!.showAutoPomodoroModeView()
             }
         }
@@ -3399,7 +3578,22 @@ class habitsVc: NSViewController {
                 }
                 return;
             }
-            
+
+            if FeatureSnooze.isSnoozed(.breakNotifications){
+                // Breaks paused from the quit popup — push the due date out a full interval (forceReset)
+                // so this doesn't short-retry in a tight loop while paused; it resumes on its own once
+                // the pause window passes.
+                self.setActivityTimer(forceReset: true)
+                addLog(text: "Breaks are paused (quit-popup snooze) :- Break Activities cancelled.")
+                if self.isWaitingForInactivityToStartMicroBreak{
+                    self.breakInactivitySecondsToCheck = 5
+                    self.isWaitingForInactivityToStartMicroBreak = false
+                    self.inActivityStartTime = nil
+                    setFocusBearIconToNormal()
+                }
+                return;
+            }
+
             if let disableBreaksForTodayDate = UserDefaults.standard.object(forKey: kUserdefaultsDisableBreaksForToday) as? Date{
                 if Calendar.current.isDateInToday(disableBreaksForTodayDate){
                     // Breaks are intentionally off for today — push the due date out a full interval
@@ -3749,12 +3943,12 @@ class habitsVc: NSViewController {
         }
     }
     
-    func reFillBreakActivitiesArray(){
+    func reFillBreakActivitiesArray(excludingActivityIDs: Set<String> = []){
         var isAnyMandatoryActivityIncluded = false
         var arrActivitiesIncludeInEveryBreak = [breakActivity]()
         var arrActivitiesExcludeInEveryBreak = [breakActivity]()
         
-        for activity in arrAllbreakActivities{
+        for activity in BreakStartKit.unplayedActivities(from: arrAllbreakActivities, excludingIDs: excludingActivityIDs){
             if isBreakActivityShowingWhileMeeting{
                 if !activity.isOfficeFriendly{
                     continue;
@@ -3775,7 +3969,8 @@ class habitsVc: NSViewController {
         }
         //                checking if  Office Mode is on and if there is not any activity office friendly than turn off office mode
         if SettingsManagerObject.isOfficeModeEnabled{
-            if arrActivitiesExcludeInEveryBreak.count == 0 && arrActivitiesIncludeInEveryBreak.count == 0{
+            if arrActivitiesExcludeInEveryBreak.count == 0 && arrActivitiesIncludeInEveryBreak.count == 0
+                && (excludingActivityIDs.isEmpty || !BreakStartKit.canEnterOfficeMode(from: arrAllbreakActivities)) {
                 addLog(text: "SettingsManagerObject.isOfficeModeEnabled false becuse no office friendly activity found.")
                 SettingsManagerObject.isOfficeModeEnabled = false
                 NSApplication.shared.applicationIconImage = nil
@@ -3785,7 +3980,7 @@ class habitsVc: NSViewController {
                 SettingsManagerObject.putUserLocalDeviceSettings()
                 
                 
-                for activity in arrAllbreakActivities{
+                for activity in BreakStartKit.unplayedActivities(from: arrAllbreakActivities, excludingIDs: excludingActivityIDs){
                     if activity.IncludeInEveryBreak{
                         isAnyMandatoryActivityIncluded = true//than two step will be happen// first mandatory array than normal array
                         arrActivitiesIncludeInEveryBreak.append(activity)
@@ -3950,10 +4145,12 @@ class habitsVc: NSViewController {
         addLog(text: "showBreakActivityListView")
         currentAction = ._START_//new work #502
         self.removeSubViews()
-        firstViewControllerObj?.isFirstTime = false
-        habitsView.addSubview(firstViewControllerObj!.view)
-        habitsView.addConstraints(subView: firstViewControllerObj!.view)
-        firstViewControllerObj?.tblViewHabits.reloadData()
+        // The break start screen is its own SwiftUI screen (breakStartVc); routine habit lists still
+        // use firstViewController.
+        let breakStart = getBreakStartVcObject()
+        habitsView.addSubview(breakStart.view)
+        habitsView.addConstraints(subView: breakStart.view)
+        breakStart.showBreakStart()
     }
     
     @IBAction func btnHiddenClicked(_ sender: Any) {

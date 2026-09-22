@@ -30,11 +30,4 @@ class pomodoroWindowController: NSWindowController, NSWindowDelegate {
         allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
         return true
     }
-    func windowWillEnterFullScreen(_ notification: Notification) {
-        if self.contentViewController == simplePomodoroVcObj{
-            if simplePomodoroVcObj?.stackViewStrictnessLevel.isHidden ?? false{
-                simplePomodoroVcObj?.btnViewAccordionMoreOptionsClicked(self)
-            }
-        }
-    }
 }

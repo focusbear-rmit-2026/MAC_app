@@ -48,6 +48,7 @@ class focusTimerManager {
     
     
     @objc func checkInBackground(){
+        ManagedBlockingRuntime.shared.checkCurrentBrowserNow()
         addLog(text:"func call:- checkInBackground")
         
         if !isRunning.testAndSet() {
@@ -163,6 +164,7 @@ class focusTimerManager {
                 return;
             }
             
+            if ManagedBlockingRuntime.shared.shouldDeferLegacyURL(url) { return }
             originalUrlStringFromBrowser = url
             
             if currentBrowser == ._OPERA_GX_{
@@ -241,6 +243,15 @@ class focusTimerManager {
                         }
                     }
                 }
+            }
+            // Focus Bear's own pages, whichever loopback port this run or a previous one is
+            // serving them on. The list below pins a single current port, which a block page left
+            // over from an earlier run no longer matches (report 2026-09-21_10-04-40).
+            if isFocusBearLocalPage(url) {
+                DispatchQueue.main.async {
+                    self.urlInvalidCloseEveryThing()
+                }
+                return;
             }
             //blockWebUrlString
             for turl in defaultAllowedUrl{

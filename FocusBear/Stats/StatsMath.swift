@@ -401,9 +401,12 @@ struct ProductivitySummary: Equatable {
 // MARK: - Focus log
 
 enum FocusLogColumn: CaseIterable, Identifiable {
-    case duration, startTime, finishTime, intention, distractions, focusMode
+    /// Start and finish share one column: two date columns of their own left the intention — the
+    /// only column whose content varies — truncated to "Work on th…" (report 2026-09-11_19-55-15).
+    /// Sorting and day-filtering the merged column both work on the start time.
+    case duration, time, intention, distractions, focusMode
     var id: Self { self }
-    var isDateColumn: Bool { self == .startTime || self == .finishTime }
+    var isDateColumn: Bool { self == .time }
 }
 
 enum FocusLogMath {
@@ -430,10 +433,8 @@ enum FocusLogMath {
         switch column {
         case .duration:
             return entries.sorted { effectiveDurationSeconds($0) > effectiveDurationSeconds($1) }
-        case .startTime:
+        case .time:
             return entries.sorted { ($0.startTime ?? "") > ($1.startTime ?? "") }
-        case .finishTime:
-            return entries.sorted { ($0.finishTime ?? "") > ($1.finishTime ?? "") }
         case .intention:
             return entries.sorted { ($0.intention ?? "").lowercased() > ($1.intention ?? "").lowercased() }
         case .distractions:
@@ -451,10 +452,9 @@ enum FocusLogMath {
             switch column {
             case .duration:
                 return needle.isEmpty || humanizeSeconds(effectiveDurationSeconds(entry)).lowercased().contains(needle)
-            case .startTime, .finishTime:
+            case .time:
                 guard let day = day else { return true }
-                let raw = column == .startTime ? entry.startTime : entry.finishTime
-                guard let date = StatsDates.parse(raw) else { return false }
+                guard let date = StatsDates.parse(entry.startTime) else { return false }
                 return StatsDates.dayKey(date) == StatsDates.dayKey(day)
             case .intention:
                 return needle.isEmpty || displayText(entry.intention).lowercased().contains(needle)
@@ -522,11 +522,23 @@ enum LeaderboardSortKey: String, CaseIterable, Identifiable {
 
 /// One leaderboard column for one user: the completion percentage over the stats window plus the
 /// `(completed/window)` fraction behind it and the current streak.
+///
+/// `windowDays` is how many days the metric was *measured* against, which is not the same as the
+/// `windowSpanDays` the window covers. Every streak walk forgives days — a weekend with no focus
+/// session or micro break, a day the routine was not scheduled — and since backend #2424 the tally
+/// forgives exactly the same days so the two figures can no longer contradict each other. That is
+/// why a 149-day focus streak reads "84 / 84" inside a 90-day window rather than "84 / 90".
 struct LeaderboardMetric: Equatable {
     let percentage: Double
     let completedDays: Double
     let windowDays: Double
+    /// Days the stats window covers (server `num_days_of_stats`), forgiven days included.
+    let windowSpanDays: Double
     let streak: Double
+
+    /// Days inside the window that counted as neither a hit nor a miss — what the streak forgave.
+    var forgivenDays: Double { max(windowSpanDays - windowDays, 0) }
+    var hasForgivenDays: Bool { forgivenDays > 0 }
 }
 
 enum LeaderboardSorting {
@@ -567,8 +579,32 @@ enum LeaderboardSorting {
             serverPercent = nil
             streak = user.focusModesStreak.doubleValue
         }
+        // A window shorter than the measured days would mean the server disagrees with itself; take
+        // the larger so `forgivenDays` stays a count of forgiven days rather than going negative.
+        let windowSpan = max(user.numDaysOfStats.doubleValue, window)
         return LeaderboardMetric(percentage: serverPercent?.value ?? percentage(completedDays: completed, windowDays: window),
-                                 completedDays: completed, windowDays: window, streak: streak)
+                                 completedDays: completed, windowDays: window, windowSpanDays: windowSpan, streak: streak)
+    }
+
+    /// The caption under a leaderboard column: "88 days completed out of last 90 days".
+    ///
+    /// When the streak forgave days that sentence becomes false — the denominator is the measured-day
+    /// count, not the length of the window — and it reads as if the user's history had shrunk
+    /// ("why is it saying 84/84? I've clearly got > 90 days of data"). Name the forgiven days instead.
+    static func completionSummary(_ metric: LeaderboardMetric, strings: StatsStrings) -> String {
+        let completed = StatsChart.plainNumber(metric.completedDays)
+        let total = StatsChart.plainNumber(metric.windowDays)
+        guard metric.hasForgivenDays else {
+            return StatsStrings.fill(strings.daysCompletedOutOf, ["completed": completed, "total": total])
+        }
+        // Leads with the WINDOW, because "84" on its own is what invited the misreading: the user
+        // asked twice, the second time as "if my streak is 147 days, how can I only have 84 days of
+        // data?". Saying "Last 90 days: 84 completed, 6 weekend days forgiven" answers "84 out of
+        // what?" in the first three words, and 84 + 6 = 90 accounts for every day on its face.
+        return StatsStrings.fill(strings.daysCompletedOutOfExpected,
+                                 ["completed": completed,
+                                  "forgiven": StatsChart.plainNumber(metric.forgivenDays),
+                                  "window": StatsChart.plainNumber(metric.windowSpanDays)])
     }
 
     /// Stable order by the column's percentage, then days completed, then current streak; `ascending`
@@ -630,6 +666,26 @@ enum LevelTargets {
         let start = level < windowEnd ? 0 : level - windowEnd + 1
         let end = level >= windowEnd ? level + 1 : visibleLevels
         return start..<min(end, maxLevel + 2)
+    }
+}
+
+/// The per-level bear figure shown on the Progress tab, mirroring the web dashboard's
+/// `getLevelIconAndName` (`src/utils/stats.util.ts`), where a level is a direct index into the
+/// artwork array: 0 = Novice … 6 = Mentor … 9 = Achiever.
+///
+/// Keyed by the level *index*, never by the displayed level name — that name is config-driven and
+/// localised (`StatsStrings.levelNames`), so keying art off it would break the moment a translation
+/// or a server config change renamed a level.
+enum LevelArtwork {
+    private static let assetNames = ["levelNovice", "levelApprentice", "levelExplorer",
+                                     "levelDisciplined", "levelDiligent", "levelStrategist",
+                                     "levelMentor", "levelScholar", "levelGuardian", "levelAchiever"]
+
+    /// The asset-catalog name for a level, or nil for a level with no artwork (a level the server
+    /// introduced that this build doesn't ship art for) so the caller can fall back gracefully.
+    static func assetName(level: Int) -> String? {
+        guard assetNames.indices.contains(level) else { return nil }
+        return assetNames[level]
     }
 }
 

@@ -13,17 +13,56 @@ import Cocoa
 import EventKit
 import SwiftUI
 
+/// Renders the small "(shortened)" marker after a trimmed habit's name in the Day Plan list.
+///
+/// It is appended to the title label's own attributed string rather than added as a sibling view: a
+/// fixed-width sibling competing with the flexible title is exactly how the Day Plan has twice had a
+/// column collapse to zero, and this way the marker truncates with the name it belongs to instead of
+/// squeezing it. Pure, so the marker is unit-tested without the view controller.
+enum DayPlanShortenedTag {
+    static let fontSize: CGFloat = 11
+    /// On the selected habit's solid-orange header the secondary grey is unreadable — the marker
+    /// matches the header's white text at this alpha instead.
+    static let onOrangeAlpha: CGFloat = 0.85
+
+    /// `text` with " <tag>" appended in the smaller, dimmer style. An empty base is left alone (there
+    /// is no name for the marker to belong to).
+    static func appended(to text: NSAttributedString, tag: String, color: NSColor) -> NSAttributedString {
+        guard text.length > 0, !tag.isEmpty else { return text }
+        let result = NSMutableAttributedString(attributedString: text)
+        result.append(NSAttributedString(string: " " + tag, attributes: [
+            .font: NSFont.systemFont(ofSize: fontSize),
+            .foregroundColor: color,
+        ]))
+        return result
+    }
+}
+
 /// All user-facing strings for the Schedule tab, read from the `scheduleViewInfo` config block
 /// (with English fallbacks) so they can be translated like the rest of the app.
 enum ScheduleText {
     private static var info: NSDictionary? { configjson.value(forKey: "scheduleViewInfo") as? NSDictionary }
     static func t(_ key: String, _ fallback: String) -> String {
-        // Treat an EMPTY config value like a missing one and use the English fallback — a blank string in
-        // the (downloaded) config must never render as an empty label/button (e.g. a blank "Save").
         let value = info?.value(forKey: key) as? String
-        return (value?.isEmpty == false) ? value! : fallback
+        if let value = value, !value.isEmpty { return value }
+        let language = BundledConfigLanguage.code()
+        return bundled[language]?[key] ?? bundled["en"]?[key] ?? fallback
     }
+    private static let bundled: [String: [String: String]] = {
+        var result: [String: [String: String]] = [:]
+        for (language, file) in BundledConfigLanguage.all {
+            guard let url = Bundle.main.url(forResource: file, withExtension: "json"),
+                  let data = try? Data(contentsOf: url),
+                  let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+                  let values = json["scheduleViewInfo"] as? [String: String] else { continue }
+            result[language] = values
+        }
+        return result
+    }()
     static var morningRoutineHabits: String { t("morningRoutineHabits", "Morning routine habits") }
+    static var notEnoughTimeToday: String { t("notEnoughTimeToday", "Not enough time today") }
+    /// The same note for a past/future day being previewed, where "today" would be a lie.
+    static var notEnoughTimeThisDay: String { t("notEnoughTimeThisDay", "Not enough time on this day") }
     static var eveningRoutineHabits: String { t("eveningRoutineHabits", "Evening routine habits") }
     static var habitsSuffix: String { t("habitsSuffix", "habits") }          // "<routine> habits"
     static var play: String { t("play", "Play") }
@@ -32,8 +71,6 @@ enum ScheduleText {
     static var habitsDone: String { t("habitsDone", "Habits done") }
     static var meeting: String { t("meeting", "meeting") }
     static var noHabitsLeft: String { t("noHabitsLeft", "No habits left for now — enjoy your free time! 🎉") }
-    /// Header suffix of the collapsed group holding the habits that didn't fit before the day's meetings.
-    static var notEnoughTimeToday: String { t("notEnoughTimeToday", "Not enough time today") }
     static var nothingScheduled: String { t("nothingScheduled", "Nothing scheduled for this day.") }
     static var calendarBanner: String { t("calendarBanner", "Connect your calendar to see meetings and free time for deep work.") }
     static var grantAccess: String { t("grantAccess", "Grant access") }
@@ -72,10 +109,29 @@ enum ScheduleText {
     static var eventCalendarLabel: String { t("eventCalendarLabel", "Calendar") }
     static var eventStartsLabel: String { t("eventStartsLabel", "Starts") }
     static var eventEndsLabel: String { t("eventEndsLabel", "Ends") }
+    /// Placeholder in the event form's typed time field — an example of the spellings it accepts.
+    static var eventTimePlaceholder: String { t("eventTimePlaceholder", "e.g. 7:30 am") }
     static var eventSave: String { t("eventSave", "Save") }
     static var eventCancel: String { t("eventCancel", "Cancel") }
     static var eventSaveError: String { t("eventSaveError", "Couldn't save the event. Check calendar access and try again.") }
     static var eventNotOwnedWarning: String { t("eventNotOwnedWarning", "Warning: You don't own this event. Changes will only be reflected on your day plan.") }
+    /// Tooltip / VoiceOver label for the ✕ that dismisses the event editor (it shows no text of its own).
+    static var eventCloseForm: String { t("eventCloseForm", "Close") }
+    /// Destructive action shown when the signed-in user organises the event.
+    static var eventCancelEventButton: String { t("eventCancelEventButton", "Cancel Event") }
+    /// Destructive action shown when someone else organises it (or ownership can't be established).
+    static var eventDeclineEventButton: String { t("eventDeclineEventButton", "Decline event") }
+    static var eventCancelEventConfirmTitle: String { t("eventCancelEventConfirmTitle", "Cancel this event?") }
+    static var eventCancelEventConfirmMessage: String { t("eventCancelEventConfirmMessage", "You organise this event, so deleting it also sends a cancellation to the other attendees through your calendar account. Focus Bear can't undo this.") }
+    static var eventDeclineEventConfirmTitle: String { t("eventDeclineEventConfirmTitle", "Decline this event?") }
+    static var eventDeclineEventConfirmMessage: String { t("eventDeclineEventConfirmMessage", "This removes the invitation from your own calendar and leaves the meeting in place for everyone else. macOS gives apps no way to send an RSVP, so whether the organiser is told depends on your calendar account — reply in Calendar if they need to know.") }
+    /// The confirmation's non-destructive button: back out and leave the event alone.
+    static var eventCancelEventKeep: String { t("eventCancelEventKeep", "Keep event") }
+    static var eventRemoveFailedTitle: String { t("eventRemoveFailedTitle", "Couldn't remove this event") }
+    static var eventRemoveFailedMessage: String { t("eventRemoveFailedMessage", "Your calendar wouldn't let Focus Bear remove this event. It may live in a read-only calendar, or have already been deleted elsewhere.") }
+    static var eventRemoveFailedOk: String { t("eventRemoveFailedOk", "OK") }
+    /// The repeating-event question, asked for a removal rather than an edit.
+    static var removeRepeatingInfo: String { t("removeRepeatingInfo", "Do you want to remove only this event, or all events in the series?") }
     static var showEarlierEvents: String { t("showEarlierEvents", "Show events from earlier today") }
     static var hideDeepWork: String { t("hideDeepWork", "Hide deep work blocks") }
     static var hideHabitBlocks: String { t("hideHabitBlocks", "Hide habits") }
@@ -93,12 +149,17 @@ enum ScheduleText {
     static var dismissRepeatingJustThisOne: String { t("dismissRepeatingJustThisOne", "Just this one") }
     static var dismissRepeatingAllSeries: String { t("dismissRepeatingAllSeries", "All events in series") }
     static var dismissRepeatingCancel: String { t("dismissRepeatingCancel", "Cancel") }
-    // Prompt shown when editing (not dismissing) a recurring event — choose one occurrence vs the series.
-    static var editRepeatingTitle: String { t("editRepeatingTitle", "This is a repeating event") }
-    static var editRepeatingInfo: String { t("editRepeatingInfo", "Do you want to change only this event, or all events in the series?") }
     static var showHabits: String { t("showHabits", "Show habits") }
     static var hideHabits: String { t("hideHabits", "Hide habits") }
+    static var routineCompleted: String { t("routineCompleted", "Completed") }
     static var deepWorkSession: String { t("deepWorkSession", "Deep work") }
+    /// "(45 min)" under an hour, "(1h43m)" above it, "(2h)" on the hour — see `ScheduleDuration`.
+    static func durationMinutesBrackets(_ mins: Int) -> String {
+        ScheduleDuration.bracketed(mins,
+                                   minutesOnly: t("durationMinutesBrackets", "(%d min)"),
+                                   hoursOnly: t("durationHoursBrackets", "(%dh)"),
+                                   hoursAndMinutes: t("durationHoursMinutesBrackets", "(%dh%dm)"))
+    }
     static var showDeepWorkBreakdown: String { t("showDeepWorkBreakdown", "Show deep work breakdown") }
     static var hideDeepWorkBreakdown: String { t("hideDeepWorkBreakdown", "Hide deep work breakdown") }
     static var cancelledMorningRoutineMessage: String { t("cancelledMorningRoutineMessage", "You cancelled your morning routine. If you changed your mind, click \"Uncancel My Morning Routine\" to continue your morning habits.") }
@@ -119,6 +180,8 @@ enum ScheduleText {
     static var eventNotesLabel: String { t("eventNotesLabel", "Description (shared with other attendees)") }
     static var eventPrivateNotesLabel: String { t("eventPrivateNotesLabel", "My private notes (only you)") }
     static var freeTimeToday: String { t("freeTimeToday", "🕒 %@ free") }
+    static var tasksTotalToDo: String { t("tasksTotalToDo", "≈ %@ of tasks to do") }
+    // Free time once the day's tasks are subtracted can go negative (over-committed) — shown in red.
     static var repeatNone: String { t("repeatNone", "Does not repeat") }
     static var repeatDaily: String { t("repeatDaily", "Daily") }
     static var repeatWeekly: String { t("repeatWeekly", "Weekly") }
@@ -133,6 +196,26 @@ enum ScheduleText {
     static var tasksSnooze: String { t("tasksSnooze", "Snooze") }
     static var tasksRemove: String { t("tasksRemove", "Remove") }
     static var tasksDetailsTitle: String { t("tasksDetailsTitle", "Task details") }
+    // "Fix" — the action on the Day Plan's over-capacity warning (report 2026-09-17_08-15-57).
+    static var dayFixLink: String { t("dayFixLink", "Fix") }
+    static var dayFixTitle: String { t("dayFixTitle", "Make today fit") }
+    static var dayFixGap: String { t("dayFixGap", "Today is <DURATION> over what you can fit.") }
+    static var dayFixMeetingsOption: String { t("dayFixMeetingsOption", "Cancel or shorten meetings") }
+    static var dayFixMeetingsDetail: String { t("dayFixMeetingsDetail", "<DURATION> of meetings still to come") }
+    static func dayFixMeetingShortenHint(_ day: String) -> String {
+        String(format: t("dayFixMeetingShortenHint", "Applies on %@ only, and only on this Mac. The meeting on your calendar is untouched, so nobody else sees a change."), day)
+    }
+    static var dayFixMeetingShortenNoOptions: String { t("dayFixMeetingShortenNoOptions", "This meeting is already as short as it goes.") }
+    static var dayFixRoutineOption: String { t("dayFixRoutineOption", "Shorten the routine") }
+    static var dayFixRoutineDetail: String { t("dayFixRoutineDetail", "<DURATION> of habits before the evening routine") }
+    static var dayFixTasksOption: String { t("dayFixTasksOption", "Postpone tasks") }
+    static var dayFixTasksDetail: String { t("dayFixTasksDetail", "<DURATION> of tasks planned today") }
+    static var dayFixNothingToFree: String { t("dayFixNothingToFree", "Nothing left on today can be shortened or moved from here.") }
+    static var dayFixSkip: String { t("dayFixSkip", "Skip") }
+    static var dayFixUnskip: String { t("dayFixUnskip", "Un-skip") }
+    static var dayFixShorten: String { t("dayFixShorten", "Shorten") }
+    static var dayFixBack: String { t("dayFixBack", "Back") }
+    static var dayFixDone: String { t("dayFixDone", "Done") }
     static var tasksProjectLabel: String { t("tasksProjectLabel", "Project") }
     static var tasksProjectField: String { t("tasksProjectField", "Project (optional)") }
     static var tasksDurationLabel: String { t("tasksDurationLabel", "Duration (min)") }
@@ -156,26 +239,47 @@ enum ScheduleText {
     static var tasksDragHint: String { t("tasksDragHint", "Drag onto a block to schedule it") }
     static var tasksReturnToPanel: String { t("tasksReturnToPanel", "Move back to tasks") }
     static var tasksTimeBoxed: String { t("tasksTimeBoxed", "Time boxed") }
+    /// Tooltip on the time-boxed clock badge; `%@` is the block the task is pinned to.
+    static var tasksTimeBoxedUnder: String { t("tasksTimeBoxedUnder", "Time boxed under %@") }
     static var tasksNotTimeBoxed: String { t("tasksNotTimeBoxed", "Not yet time boxed") }
     static var tasksSnoozeHint: String { t("tasksSnoozeHint", "Snooze — move to another day") }
     static var tasksSnoozeTitle: String { t("tasksSnoozeTitle", "Move task to…") }
     static var tasksSnoozePlaceholder: String { t("tasksSnoozePlaceholder", "e.g. 2d, -1d, tue, tom") }
-    static var tasksSnoozeHelp: String { t("tasksSnoozeHelp", "2d = in 2 days · 2w = in 2 weeks · tue = next Tuesday · tom = tomorrow · -1d / yesterday = a past day · 1 Jul = a date") }
+    static var tasksSnoozeHelp: String { t("tasksSnoozeHelp", "2d = in 2 days · 2w = in 2 weeks · tue = next Tuesday · tom = tomorrow · 23 = the 23rd · -1d / yesterday = a past day · 1 Jul = a date") }
     static var tasksSnoozeConfirm: String { t("tasksSnoozeConfirm", "Move") }
     static var tasksSnoozeCancel: String { t("tasksSnoozeCancel", "Cancel") }
     static var tasksSnoozeSmart: String { t("tasksSnoozeSmart", "Choose a good time for me") }
     static var tasksSnoozeSmartInfo: String { t("tasksSnoozeSmartInfo", "Finds the next day which has sufficient free time for the task") }
     static func tasksSnoozeNextSlot(_ day: String) -> String { String(format: t("tasksSnoozeNextSlot", "Next free slot: %@"), day) }
+    static var tasksDoesNotFitToday: String { t("tasksDoesNotFitToday", "Doesn't fit today") }
+    static func tasksMoveToProjectedDay(_ day: String) -> String { String(format: t("tasksMoveToProjectedDay", "Move to %@"), day) }
     static var tasksNoProject: String { t("tasksNoProject", "No project") }
     static var tasksProjectHint: String { t("tasksProjectHint", "Type #project to group this task") }
+    /// Shown when a typed task name is nothing but tokens, so stripping them leaves no name to save.
+    /// It also says where the tokens belong, because a `#project` typed FIRST swallows the rest of the line.
+    static var tasksNameNeeded: String { t("tasksNameNeeded", "Add a name for this task. Tags like #project, !priority and *minutes go after the name.") }
+    // The dismissible card explaining the name-field shortcuts (report 2026-09-21_07-42-02). Each hint
+    // is a whole sentence rather than a token plus a separate description, because the token has to sit
+    // where the sentence puts it in each language — the shape `tasksProjectHint` already uses.
+    static var tasksShortcutsTitle: String { t("tasksShortcutsTitle", "Shortcuts you can type in the name") }
+    static var tasksShortcutsDismiss: String { t("tasksShortcutsDismiss", "Don't show this again") }
+    static var tasksShortcutProject: String { t("tasksShortcutProject", "#project — file the task under a project") }
+    static var tasksShortcutPriority: String { t("tasksShortcutPriority", "!1 to !5 — set importance (!5 is the most important)") }
+    static var tasksShortcutMinutes: String { t("tasksShortcutMinutes", "*15 — set the duration to 15 minutes") }
+    static var tasksShortcutDurationWords: String { t("tasksShortcutDurationWords", "30m, 2h or 1h30m — set the duration in words") }
     static var customRoutinesTitle: String { t("customRoutinesTitle", "Custom routines") }
     static var customRoutinesEmpty: String { t("customRoutinesEmpty", "No on-demand routines") }
     static var customRoutinesAfterCutoff: String { t("customRoutinesAfterCutoff", "On demand custom routines deactivated until tomorrow morning - time to wind down now") }
+    // The habit player's "Tasks" pane: the Day Plan tasks dragged onto the habit being played.
+    static var habitTasksTab: String { t("habitTasksTab", "Tasks") }
+    static var habitTasksTitle: String { t("habitTasksTitle", "Tasks for this habit") }
     static var tabCustomRoutine: String { t("tabCustomRoutine", "Custom routine") }
     static var tabDayPlan: String { t("tabDayPlan", "Day Plan") }
 
     // Editing a habit from the Day Plan (the action bar's Edit button → DayPlanHabitEditor sheet).
     static var editHabit: String { t("editHabit", "Edit") }
+    /// Caption on the habit action bar's Stats button (sits beside Edit).
+    static var habitStats: String { t("habitStats", "Stats") }
     static var editHabitTitle: String { t("editHabitTitle", "Edit habit") }
     static var habitFieldName: String { t("habitFieldName", "Habit name") }
     static var habitFieldUseTimer: String { t("habitFieldUseTimer", "Use timer") }
@@ -238,7 +342,6 @@ enum ScheduleText {
     static var habitInvalidVideo: String { t("habitInvalidVideo", "Video links must be YouTube or Vimeo URLs.") }
     static var habitInvalidQuestions: String { t("habitInvalidQuestions", "Every question needs text, and min must be less than max.") }
     static var habitInvalidTags: String { t("habitInvalidTags", "Tags can only contain letters, spaces, underscores, brackets, commas, & and -.") }
-    static var habitInvalidCutoff: String { t("habitInvalidCutoff", "The cutoff must fall between the evening routine start and the morning routine start.") }
     static var habitEditUnavailable: String { t("habitEditUnavailable", "This habit couldn't be found in your settings. Edit it from Settings › Edit habits instead.") }
     // Routine header "…" menu + the "Edit routine timing" sheet.
     static var routineMoreActions: String { t("routineMoreActions", "Routine options") }
@@ -248,9 +351,69 @@ enum ScheduleText {
     static var habitPickEmoji: String { t("habitPickEmoji", "Pick an emoji") }
     static var routineTimingQuestion: String { t("routineTimingQuestion", "When do you want %@ to start?") }
     static var routineTimingHint: String { t("routineTimingHint", "This moves the routine on every day it's scheduled.") }
+    static var habitSkipAhead: String { t("habitSkipAhead", "Skip") }
+    static var habitUnskipAhead: String { t("habitUnskipAhead", "Unskip") }
+    // Shortening a habit for one day only (local, never sent to the server).
+    static var habitShorten: String { t("habitShorten", "Shorten") }
+    static var habitShortened: String { t("habitShortened", "Shortened") }
+    static var habitShortenTitle: String { t("habitShortenTitle", "Shorten just for this day") }
+    static func habitShortenMinutes(_ minutes: Int) -> String { String(format: t("habitShortenMinutes", "%d min"), minutes) }
+    static func habitShortenFullLength(_ length: String) -> String { String(format: t("habitShortenFullLength", "Full length: %@"), length) }
+    static var habitShortenFullLengthAction: String { t("habitShortenFullLengthAction", "Full length") }
+    static func habitShortenHint(_ day: String) -> String {
+        String(format: t("habitShortenHint", "Applies on %@ only, and only on this Mac. The habit keeps its real length everywhere else."), day)
+    }
+    static var habitShortenNoOptions: String { t("habitShortenNoOptions", "This habit is already as short as it goes.") }
+    static var habitShortenTypePlaceholder: String { t("habitShortenTypePlaceholder", "e.g. 25min, 1h30") }
+    static var habitShortenUseTyped: String { t("habitShortenUseTyped", "Use this length") }
+    static var habitShortenTypeInvalid: String { t("habitShortenTypeInvalid", "Type a length like 25min, 1h30 or 90.") }
+    static func habitShortenTypeNotShorter(_ length: String) -> String {
+        String(format: t("habitShortenTypeNotShorter", "That isn't shorter than %@. Pick a smaller length, or use Full length to clear the trim."), length)
+    }
+    /// The small "(shortened)" after a trimmed habit's name in the day's list.
+    static var habitShortenedTag: String { t("habitShortenedTag", "(shortened)") }
+    static var eventScopeTitle: String { t("eventScopeTitle", "This is a repeating event") }
+    static var eventScopeMessage: String { t("eventScopeMessage", "Change only this occurrence, or this one and every later one?") }
+    static var eventScopeThis: String { t("eventScopeThis", "Only this event") }
+    static var eventScopeFuture: String { t("eventScopeFuture", "All future events") }
+    static var routineCutoffLabel: String { t("routineCutoffLabel", "Evening cutoff time") }
+    static var routineCutoffHint: String { t("routineCutoffHint", "Optional evening habits stop at this time; must-do habits keep their own late cutoffs.") }
+    static var routineCutoffInvalid: String { t("routineCutoffInvalid", "Choose a cutoff between the evening routine start and the next morning routine start.") }
     static var routineNameMorning: String { t("routineNameMorning", "your morning routine") }
     static var routineNameEvening: String { t("routineNameEvening", "your evening routine") }
     static var routineNameCustom: String { t("routineNameCustom", "this routine") }
+    // Creating / editing custom routines from the Day Plan (DayPlanCustomRoutines).
+    static var customRoutineManage: String { t("customRoutineManage", "Add or edit custom routines") }
+    static var customRoutineNew: String { t("customRoutineNew", "New routine") }
+    static var customRoutineNewTitle: String { t("customRoutineNewTitle", "New routine") }
+    static var customRoutineEditTitle: String { t("customRoutineEditTitle", "Edit routine") }
+    static var customRoutineBack: String { t("customRoutineBack", "All routines") }
+    static var customRoutineNone: String { t("customRoutineNone", "You don't have any custom routines yet.") }
+    static var customRoutineUntitled: String { t("customRoutineUntitled", "Untitled routine") }
+    static var customRoutineFieldName: String { t("customRoutineFieldName", "Routine name") }
+    static var customRoutineFieldTrigger: String { t("customRoutineFieldTrigger", "How it starts") }
+    static var customRoutineTriggerScheduled: String { t("customRoutineTriggerScheduled", "At a scheduled time") }
+    static var customRoutineTriggerOnDemand: String { t("customRoutineTriggerOnDemand", "On demand") }
+    static var customRoutineOnDemandHint: String { t("customRoutineOnDemandHint", "An on-demand routine only starts when you press play on it, so it has no start time.") }
+    static var customRoutineFieldStart: String { t("customRoutineFieldStart", "Starts at") }
+    static var customRoutineFieldEnd: String { t("customRoutineFieldEnd", "Ends by") }
+    static var customRoutineHabitsTitle: String { t("customRoutineHabitsTitle", "Habits in this routine") }
+    static var customRoutineAddHabit: String { t("customRoutineAddHabit", "Add habit") }
+    static var customRoutineRemoveHabit: String { t("customRoutineRemoveHabit", "Remove habit") }
+    static var customRoutineMoveUp: String { t("customRoutineMoveUp", "Move up") }
+    static var customRoutineMoveDown: String { t("customRoutineMoveDown", "Move down") }
+    static var customRoutineEmptyHabits: String { t("customRoutineEmptyHabits", "Add at least one habit — a routine with no habits is dropped when your settings are saved.") }
+    static var customRoutineCreate: String { t("customRoutineCreate", "Create routine") }
+    static var customRoutineDelete: String { t("customRoutineDelete", "Delete routine") }
+    static var customRoutineDeleteConfirm: String { t("customRoutineDeleteConfirm", "Delete this routine and all of its habits?") }
+    static var customRoutineInvalidName: String { t("customRoutineInvalidName", "Give the routine a name.") }
+    static var customRoutineInvalidWindow: String { t("customRoutineInvalidWindow", "The routine must end after it starts.") }
+    static var customRoutineHabitCount: String { t("customRoutineHabitCount", "%d habits") }
+    static var customRoutineHabitCountOne: String { t("customRoutineHabitCountOne", "1 habit") }
+    static var customRoutineHabitUntilDone: String { t("customRoutineHabitUntilDone", "until done") }
+    static var customRoutineDraftHint: String { t("customRoutineDraftHint", "Changes are drafted until you press “Save and restart app” on the Day Plan.") }
+    static var customRoutineSummarySeparator: String { t("customRoutineSummarySeparator", " · ") }
+    static var customRoutineDaySeparator: String { t("customRoutineDaySeparator", ", ") }
     // Drafted-changes banner at the top of the Day Plan.
     static var draftBanner: String { t("draftBanner", "Routine changes drafted: ready to save?") }
     static var draftSaveRestart: String { t("draftSaveRestart", "Save and restart app") }
@@ -259,6 +422,62 @@ enum ScheduleText {
     static var draftSaveFailedMessage: String { t("draftSaveFailedMessage", "The server didn't accept the changes (status %d). Your draft is still here — check your connection and try again.") }
     static var draftSaveFailedServerSaid: String { t("draftSaveFailedServerSaid", "The server said:") }
     static var draftSaveFailedOk: String { t("draftSaveFailedOk", "OK") }
+}
+
+/// How much net free time a day has, and the (subtle) colour that represents it. Net free =
+/// schedule-free minutes minus that day's tasks still to do, so it can be ≤ 0 (over-committed).
+/// One place for the thresholds + colour mapping, shared by the tasks-panel header and the
+/// date-picker calendar's per-day badges.
+enum DayPlanFreeLevel {
+    /// ≤ this many minutes free → red ("none left" / over-committed).
+    static let noneMaxMinutes = 0
+    /// ≤ this → orange (tight).
+    static let tightMaxMinutes = 60
+    /// ≤ this → blue (some); more than this → green (plenty).
+    static let comfortableMaxMinutes = 120
+
+    static func color(forFreeMinutes minutes: Int) -> NSColor {
+        if minutes <= noneMaxMinutes { return .systemRed }
+        if minutes <= tightMaxMinutes { return .systemOrange }
+        if minutes <= comfortableMaxMinutes { return .systemBlue }
+        return .systemGreen
+    }
+}
+
+/// A shared duration scale for meetings, routines and deep-work blocks. Cards keep a
+/// content-sized minimum for readability, but long blocks are no longer capped.
+enum DayPlanEventHeight {
+    static let pointsPerMinute: CGFloat = 0.55
+
+    static func points(forDurationSeconds seconds: Int) -> CGFloat {
+        guard seconds > 0 else { return 0 }
+        return CGFloat(seconds) / 60 * pointsPerMinute
+    }
+}
+
+/// The badge decision for one day in the date-picker's month grid, kept out of the AppKit cell so the
+/// rule itself can be tested: **a day whose inputs have not loaded is unknown, never "fits"**.
+///
+/// Capacity is computed from the day's meetings, and `CalendarManager` answers the main thread from a
+/// cache that holds nothing for a day until a background EventKit read lands. Feeding that cold [] into
+/// the capacity model describes a completely free day — the top of the scale — so the first time the
+/// picker opened, every future day it had never read painted GREEN, and only reopening it once the
+/// refreshes had landed showed the real orange/red (report 2026-09-17_21-51-06). Optimism is the worst
+/// possible default here: the badge exists precisely to warn that a day is already full.
+///
+/// No badge is the honest rendering of "not known yet" — the same blank a past day gets — and the
+/// caller fills it in once the day's meetings have been read.
+enum DayPlanDayBadge {
+    /// - Parameters:
+    ///   - isFuture: past days and today are never badged (today's free time is in the panel header).
+    ///   - inputsAreLoaded: false while the day's meetings are still unread.
+    ///   - netFreeMinutes: nil when the day has no schedule to measure. Evaluated only when it counts,
+    ///     so an unknown day costs no schedule build.
+    static func color(isFuture: Bool, inputsAreLoaded: Bool,
+                      netFreeMinutes: @autoclosure () -> Int?) -> NSColor? {
+        guard isFuture, inputsAreLoaded, let minutes = netFreeMinutes() else { return nil }
+        return DayPlanFreeLevel.color(forFreeMinutes: minutes)
+    }
 }
 
 /// Implemented by each habit-list screen that can present the Schedule tab
@@ -361,23 +580,44 @@ enum ScheduleTab {
     /// completed today are dropped (safety net over the arrFiltered* arrays). For other days this
     /// must be false, or tomorrow's routine would hide whatever you finished *today*. The original
     /// index is preserved on the kept habits so Play/Done/Skip still target the right row.
-    static func habitInputs(from habits: [habit], now: Date, dropCompleted: Bool = true) -> [ScheduleHabitInput] {
+    static func habitInputs(from habits: [habit], now: Date, dropCompleted: Bool = true,
+                            includeOptional: Bool = true) -> [ScheduleHabitInput] {
         // Completion is per-day: derive the day from `now` so a PAST-day view reflects that day's
         // (backdated) completions, not only today's — dayPlanCompletedHabitIds is today-only.
         let dayKey = getStringFromDate(date: now, dateFormat: "yyyy-MM-dd")
         return habits.enumerated().compactMap { idx, h in
+            if !includeOptional && !h.isPriorityHigh { return nil }
+            // Skipped ahead of time for this day: not part of the plan, and not counted as missed.
+            if DayPlanHabitSkips.isSkipped(h.id, on: now) { return nil }
             if dropCompleted, let id = h.id, isHabitDoneForDay(id, dayKey: dayKey) { return nil }
             let playing = currentHabitPlaying?.id != nil && currentHabitPlaying?.id == h.id
             let done = h.id.map { isHabitDoneForDay($0, dayKey: dayKey) } ?? false
             return ScheduleHabitInput(index: idx,
                                       title: h.name ?? "Habit",
-                                      durationSeconds: estimatedDuration(for: h),
+                                      durationSeconds: plannedDuration(for: h, on: now),
                                       isPlaying: playing,
                                       elapsedSeconds: 0,
                                       cutoff: timeToday(h.cutOffTime, now: now),
                                       isDone: done,
                                       id: h.id)
         }
+    }
+
+    /// Duration to schedule a habit for on `day` — its real length, trimmed by a "shorten for this
+    /// day" override if the user set one. Every Day Plan and forecast input goes through here, so the
+    /// trim re-flows the whole day (and its capacity numbers) without touching the habit itself.
+    static func plannedDuration(for h: habit, on day: Date) -> Int {
+        DayPlanHabitDurations.effectiveSeconds(for: h.id, on: day, actual: estimatedDuration(for: h))
+    }
+
+    /// The routine habit with this server id, wherever it lives — the morning routine, the evening
+    /// routine, or any custom routine. Used by actions addressed by habit id rather than row index.
+    static func routineHabit(withId id: String) -> habit? {
+        let lists = [arrAllDaysMorningHabits, arrAllDaysEveningHabits] + arrAllCustomRoutine.map { $0.arrAllHabits }
+        for list in lists {
+            if let found = list.first(where: { $0.id == id }) { return found }
+        }
+        return nil
     }
 
     /// Duration to schedule a habit for. Timer habits use their set duration; non-timer
@@ -469,8 +709,10 @@ enum ScheduleTab {
 
     /// Read-only timetable segments for an arbitrary day (past or future): morning + evening
     /// routine habits scheduled for that weekday, plus custom routines scheduled then. All
-    /// non-actionable — you can't act on another day's habits.
-    static func segmentsForDate(_ date: Date) -> [ScheduleRoutineSegment] {
+    /// non-actionable — you can't act on another day's habits. The portfolio forecast excludes
+    /// optional evening habits before placement; the actual Day Plan keeps its full routine.
+    static func segmentsForDate(_ date: Date, includeCompleted: Bool = false,
+                                includeOptionalEvening: Bool = true) -> [ScheduleRoutineSegment] {
         var segs = [ScheduleRoutineSegment]()
         let cal = Calendar.current
         let weekday = date.dayOfWeek()
@@ -482,14 +724,15 @@ enum ScheduleTab {
         // routine should show (dayPlanCompletedHabitIds only reflects today's completions).
         let isToday = cal.isDateInToday(date)
 
-        let morning = habitInputs(from: filterByWeekday(arrAllDaysMorningHabits, weekday: weekday), now: morningStart, dropCompleted: isToday)
+        let morning = habitInputs(from: filterByWeekday(arrAllDaysMorningHabits, weekday: weekday), now: morningStart, dropCompleted: isToday && !includeCompleted)
         if !morning.isEmpty {
             segs.append(ScheduleRoutineSegment(name: ScheduleText.morningRoutineHabits, habits: morning,
                                                windowStart: morningStart, windowEnd: eveningStart ?? endOfDay,
                                                actionable: false))
         }
         if let es = eveningStart {
-            let evening = habitInputs(from: filterByWeekday(arrAllDaysEveningHabits, weekday: weekday), now: es, dropCompleted: isToday)
+            let evening = habitInputs(from: filterByWeekday(arrAllDaysEveningHabits, weekday: weekday), now: es,
+                                      dropCompleted: isToday && !includeCompleted, includeOptional: includeOptionalEvening)
             if !evening.isEmpty {
                 segs.append(ScheduleRoutineSegment(name: ScheduleText.eveningRoutineHabits, habits: evening,
                                                    windowStart: es, windowEnd: endOfDay, actionable: false))
@@ -497,7 +740,7 @@ enum ScheduleTab {
         }
         for r in arrAllCustomRoutine {
             guard isScheduledOn(r.days_of_week, weekday: weekday), let st = timeOnDate(r.startTime, date: date) else { continue }
-            let habitsC = habitInputs(from: r.arrAllHabits, now: st, dropCompleted: isToday)
+            let habitsC = habitInputs(from: r.arrAllHabits, now: st, dropCompleted: isToday && !includeCompleted)
             guard !habitsC.isEmpty else { continue }
             let totalDur = Double(habitsC.reduce(0) { $0 + $1.durationSeconds })
             let end = timeOnDate(r.endTime, date: date).flatMap { $0 > st ? $0 : nil } ?? st.addingTimeInterval(totalDur)
@@ -580,6 +823,13 @@ class scheduleViewController: NSViewController {
     private let tasksPanelMaxWidth: CGFloat = 600
     private var refreshTimer: Timer?
     private var didBecomeActiveObserver: NSObjectProtocol?
+    /// Watches for a background meetings refresh landing (see CalendarManager.meetingsDidChange).
+    private var meetingsChangedObserver: NSObjectProtocol?
+    private var dayChangedObserver: NSObjectProtocol?
+    private var forecastSettingsObserver: NSObjectProtocol?
+    /// True while the Day Plan is showing "today" and should FOLLOW the day across midnight (the default).
+    /// Cleared when the user navigates to a specific other day; re-set when they return to today.
+    private var followingToday = true
     private var postponeHiddenObservation: NSKeyValueObservation?
     private var viewHiddenObservation: NSKeyValueObservation?
     private var hasPendingRenderWhileHidden = false
@@ -621,10 +871,15 @@ class scheduleViewController: NSViewController {
     private var addEventPopover: NSPopover?
     private var addTitleField: NSTextField?
     private var addCalendarPopup: NSPopUpButton?
-    private var addStartPicker: NSDatePicker?
-    private var addEndPicker: NSDatePicker?
+    private var addStartPicker: EventDateTimeField?
+    private var addEndPicker: EventDateTimeField?
     private var addRecurrencePopup: NSPopUpButton?
     private var addNotesView: NSTextView?
+    /// The description exactly as the calendar stores it (HTML), kept so an untouched description is
+    /// saved back unchanged instead of being replaced by its rendered plain text.
+    private var addNotesSourceHTML = ""
+    /// What `addNotesSourceHTML` renders to — the yardstick for "did the user actually edit this?".
+    private var addNotesRenderedText = ""
     private var addPrivateNotesView: NSTextView?
     private var addErrorLabel: NSTextField?
     private var addCalendarIDs: [String] = []
@@ -634,22 +889,30 @@ class scheduleViewController: NSViewController {
     private var addCalendarIsUserChoice = false
     /// Event id being edited (nil = creating a new event).
     private var editingEventID: String?
-    // For a recurring event, the start of the SPECIFIC occurrence being edited, so a "just this one" edit
-    // targets that occurrence rather than the series' first instance. nil for new/non-recurring events.
-    private var editingOccurrenceStart: Date?
+    /// The occurrence of a recurring event the open editor is editing, when known.
+    private var editingEventOccurrence: (start: Date, end: Date)?
+    /// Which occurrences the open edit applies to, chosen when the form opened (nil = not repeating).
+    private var editingEventScope: EKSpan?
     /// True when the event being edited is NOT owned by the current user (a meeting someone else
     /// organised). The save then can't touch the shared calendar, so we store a local, day-plan-only
     /// override instead and warn the user in the form.
     private var editingEventIsNotOwned = false
+    /// Who owns the event being edited — decides whether the editor's destructive action is
+    /// "Cancel Event" (the user organises it) or "Decline event" (an invitation, or ownership EventKit
+    /// can't establish). See EventCancellation.swift.
+    private var editingEventOwnership: EventOwnership = .unknown
+    /// Whether the event being edited repeats, so the destructive action knows to ask
+    /// this-occurrence-vs-series before removing anything.
+    private var editingEventIsRecurring = false
     private var addSelectedColor: NSColor?
     private var addColorButtons: [NSButton] = []
 
     // "Add from to-do list" picker state.
     private var todoPopover: NSPopover?
     private var todoAllTasks: [NSDictionary] = []
+    private var todoSearchWorkItem: DispatchWorkItem?   // debounces the backend to-do search
     private var todoSelectedIDs = Set<String>()
     private var todoSearch = ""
-    private var todoSearchWorkItem: DispatchWorkItem?   // debounces the backend to-do search
     private var todoProjectFilterID: String?
     private var todoProjectIDs: [String] = []
     private weak var todoListStack: NSStackView?
@@ -719,24 +982,30 @@ class scheduleViewController: NSViewController {
     /// unlike the active routine. Rebuilt each reload(); a user click still overrides (see below).
     private var earlierRoutineNames: Set<String> = []
 
-    /// `overflow` keys the "not enough time today" group separately from the routine's timed group (the
-    /// same routine can produce both on one day), so each expands/collapses independently.
-    private func routineCollapseKey(_ name: String, sectionId: String, date: Date, overflow: Bool = false) -> String {
-        "\(name)|\(Int(date.timeIntervalSince1970 / 86400))|\(sectionId)\(overflow ? "|overflow" : "")"
+    // A routine can appear as several separate cards in one day (e.g. a morning routine split around a
+    // meeting, plus its "not enough time" overflow card). Keying only by name|day made them share one
+    // accordion state, so expanding one expanded them all — include the group's start so each card
+    // toggles independently.
+    private func routineCollapseKey(_ name: String, date: Date, sectionId: String, overflow: Bool = false) -> String {
+        // Key by the section's FIRST-habit id (unique + stable per card) — NOT the group start time,
+        // which the active routine re-packs from `now` (unstable across reloads) and which the "not
+        // enough time today" overflow card can share with the active card (so toggling the overflow card
+        // toggled the active card above it). The overflow flag is kept as belt-and-suspenders.
+        "\(name)|\(Int(date.timeIntervalSince1970 / 86400))|\(sectionId)\(overflow ? "|of" : "")"
     }
-    private func isRoutineCollapsed(name: String, sectionId: String, date: Date, overflow: Bool = false) -> Bool {
-        if let explicit = routineCollapseOverrides[routineCollapseKey(name, sectionId: sectionId, date: date, overflow: overflow)] { return explicit }
-        // The overflow group (the routine didn't fit in the day) starts collapsed so it doesn't dominate
-        // a packed plan — the user can still expand it and do the habits.
-        if overflow { return true }
+    private func isRoutineCollapsed(name: String, date: Date, sectionId: String, completed: Bool = false, overflow: Bool = false) -> Bool {
+        if let explicit = routineCollapseOverrides[routineCollapseKey(name, date: date, sectionId: sectionId, overflow: overflow)] { return explicit }
         // Past routines shown under the "earlier today" toggle start collapsed even on today.
         if earlierRoutineNames.contains(name) { return true }
+        // A finished routine (every habit done) collapses by default — it's history, no need to fill the
+        // plan with struck-through rows — but a user expand still wins (the override above).
+        if completed { return true }
         // Default: future days start collapsed; today (and past) stay expanded.
         return Calendar.current.compare(date, to: Date(), toGranularity: .day) == .orderedDescending
     }
-    private func toggleRoutineCollapsed(name: String, sectionId: String, date: Date, overflow: Bool = false) {
-        let key = routineCollapseKey(name, sectionId: sectionId, date: date, overflow: overflow)
-        routineCollapseOverrides[key] = !isRoutineCollapsed(name: name, sectionId: sectionId, date: date, overflow: overflow)
+    private func toggleRoutineCollapsed(name: String, date: Date, sectionId: String, completed: Bool = false, overflow: Bool = false) {
+        let key = routineCollapseKey(name, date: date, sectionId: sectionId, overflow: overflow)
+        routineCollapseOverrides[key] = !isRoutineCollapsed(name: name, date: date, sectionId: sectionId, completed: completed, overflow: overflow)
         lastRenderSignature = nil
         reload()
     }
@@ -813,6 +1082,23 @@ class scheduleViewController: NSViewController {
         // Smart snooze asks the host (which owns the routine/calendar → schedule build) how much free
         // time a future day has, so it can move a task to the next day it actually fits.
         tasksPanel.scheduleFreeMinutesForDate = { scheduleViewController.scheduleFreeMinutes(on: $0) }
+        // The Fix modal's routine route drives exactly the same skip/shorten paths the Day Plan rows
+        // already use — the panel asks the host rather than reaching into habits itself, because the
+        // day's blocks live here (report 2026-09-17_08-15-57).
+        tasksPanel.dayFixHabits = { [weak self] in self?.dayFixHabitRows() ?? [] }
+        tasksPanel.dayFixSkipHabit = { [weak self] id in
+            guard let self = self else { return }
+            _ = DayPlanHabitSkips.toggle(id, on: self.selectedDate)
+            addLog(text: "[user-action] day plan: habit skip toggled from Fix for \(DayPlanHabitDurations.dayKey(self.selectedDate))")
+            self.reloadAfterShorten()
+        }
+        tasksPanel.dayFixShortenHabit = { [weak self] id in self?.openShortenHabitSheet(habitId: id) }
+        // The meetings route asks the host for the same reason: the day's meetings (and the editor's
+        // cancel/decline flow) live here, not in the tasks panel.
+        tasksPanel.dayFixMeetings = { [weak self] in self?.dayFixMeetingRows() ?? [] }
+        tasksPanel.dayFixSkipMeeting = { [weak self] row in self?.dayFixToggleSkipMeeting(row) }
+        tasksPanel.dayFixCancelMeeting = { [weak self] row in self?.dayFixCancelMeeting(row) }
+        tasksPanel.dayFixShortenMeeting = { [weak self] row in self?.dayFixShortenMeeting(row) }
         let separator = NSView()
         separator.wantsLayer = true
         separator.layer?.backgroundColor = NSColor.separatorColor.cgColor
@@ -847,6 +1133,7 @@ class scheduleViewController: NSViewController {
         root.addSubview(separator)
         root.addSubview(tasksPanel)
         root.addSubview(customRoutinesPanel)
+        customRoutinesPanel.onManage = { [weak self] in self?.openCustomRoutineManager() }
         root.addSubview(crSeparator)
 
         // Toggle shown only while a custom routine is active: [Custom routine | Day Plan].
@@ -963,17 +1250,11 @@ class scheduleViewController: NSViewController {
     }
 
     /// Load the user's backend projects so the `#project` autocomplete can suggest real projects
-    /// (e.g. "House") even before any task on the day uses them.
+    /// (e.g. "House") even before any task on the day uses them. With the list in hand, any task whose
+    /// project only ever existed on this Mac can be told apart from a real one — so repair those.
     private func fetchProjectsForAutocomplete() {
-        allApiObject.getProjectsList { dicts in
-            DispatchQueue.main.async {
-                guard let dicts = dicts else { return }
-                let projects = dicts.compactMap { dict -> (id: String, name: String)? in
-                    guard let id = dict.value(forKey: "id") as? String, let name = dict.value(forKey: "name") as? String else { return nil }
-                    return (id: id, name: name)
-                }
-                DayPlanTaskStore.shared.setRemoteProjects(projects)
-            }
+        DayPlanTaskStore.shared.refreshRemoteProjects { loaded in
+            if loaded { DayPlanProjectRepair.shared.runIfDue(trigger: .projectsLoaded) }
         }
     }
 
@@ -1147,6 +1428,7 @@ class scheduleViewController: NSViewController {
     private func changeDay(by days: Int) {
         guard let d = Calendar.current.date(byAdding: .day, value: days, to: selectedDate) else { return }
         selectedDate = d
+        followingToday = Calendar.current.isDateInToday(d)   // only keep following if they landed on today
         DayPlanAnalytics.capture(DayPlanAnalytics.dayChanged,
                                  ["days": days, "direction": days >= 0 ? "forward" : "back",
                                   "is_today": Calendar.current.isDateInToday(d)])
@@ -1154,6 +1436,19 @@ class scheduleViewController: NSViewController {
         selectedPastHabitId = nil       // a past selection is date-specific
         lastRenderSignature = nil
         reload()
+    }
+
+    /// At midnight (or a timezone/clock change) the Day Plan should roll to the new day on its own,
+    /// instead of stranding the user on "yesterday" needing to tap "Back to today". Only auto-advances
+    /// when it was FOLLOWING today (the user hadn't navigated to a specific day). Returns true if it
+    /// advanced (and reloaded).
+    @discardableResult
+    private func advanceToTodayIfFollowing() -> Bool {
+        guard followingToday, !isViewingToday else { return false }
+        selectedDate = Date()
+        selectedHabitIndex = nil; selectedPastHabitId = nil; lastRenderSignature = nil
+        reload()
+        return true
     }
 
     /// Drop any manual habit pick so the highlight falls back to the current habit. Called when the
@@ -1170,41 +1465,36 @@ class scheduleViewController: NSViewController {
     @objc private func nextDayClicked() { changeDay(by: 1) }
     @objc private func goTodayClicked() {
         selectedDate = Date()
+        followingToday = true   // back on today → follow the day across midnight again
         // "Back to today" is a day change too (like the prev/next arrows in changeDay) — track it.
         DayPlanAnalytics.capture(DayPlanAnalytics.dayChanged, ["direction": "today", "is_today": true])
         selectedHabitIndex = nil; selectedPastHabitId = nil; lastRenderSignature = nil; reload()
     }
 
     @objc private func pickDateClicked() {
-        let picker = NSDatePicker()
-        picker.datePickerStyle = .clockAndCalendar
-        picker.datePickerElements = .yearMonthDay
-        picker.dateValue = selectedDate
-        picker.target = self
-        picker.action = #selector(datePicked(_:))
-        picker.translatesAutoresizingMaskIntoConstraints = false
-        let vc = NSViewController()
-        vc.view = NSView(frame: NSRect(x: 0, y: 0, width: 200, height: 160))
-        vc.view.addSubview(picker)
-        NSLayoutConstraint.activate([
-            picker.centerXAnchor.constraint(equalTo: vc.view.centerXAnchor),
-            picker.centerYAnchor.constraint(equalTo: vc.view.centerYAnchor),
-        ])
+        // A custom month grid (not NSDatePicker) so each day can carry a free-time colour badge —
+        // NSDatePicker's calendar draws its own cells and offers no per-day customisation hook.
+        let controller = DayPlanDatePickerController(
+            selectedDate: selectedDate,
+            freeMinutesProvider: { [weak self] in self?.netFreeMinutes(on: $0) ?? nil },
+            onSelect: { [weak self] date in
+                self?.datePopover?.close()
+                self?.chooseDate(date)
+            })
         let pop = NSPopover()
-        pop.contentViewController = vc
+        pop.contentViewController = controller
         pop.behavior = .transient
         pop.show(relativeTo: dateLabelButton.bounds, of: dateLabelButton, preferredEdge: .maxY)
         datePopover = pop
     }
 
-    @objc private func datePicked(_ sender: NSDatePicker) {
-        // NSDatePicker (.clockAndCalendar) can fire its action twice for a single selection. Ignore the
-        // repeat — only the DAY matters here — so we don't emit a duplicate day-changed event or reload.
-        guard !Calendar.current.isDate(sender.dateValue, inSameDayAs: selectedDate) else { return }
-        selectedDate = sender.dateValue
-        // Picking a date from the calendar is a day change too — track it (segmented as "picker").
+    /// Jump the Day Plan to `date` picked from the calendar grid. Mirrors the prev/next arrows.
+    private func chooseDate(_ date: Date) {
+        guard !Calendar.current.isDate(date, inSameDayAs: selectedDate) else { return }
+        selectedDate = date
+        followingToday = Calendar.current.isDateInToday(date)   // only follow midnight if they picked today
         DayPlanAnalytics.capture(DayPlanAnalytics.dayChanged,
-                                 ["direction": "picker", "is_today": Calendar.current.isDateInToday(selectedDate)])
+                                 ["direction": "picker", "is_today": Calendar.current.isDateInToday(date)])
         selectedHabitIndex = nil
         selectedPastHabitId = nil
         lastRenderSignature = nil
@@ -1221,9 +1511,11 @@ class scheduleViewController: NSViewController {
     }
 
     /// Open the edit form for an existing calendar event, anchored to its card.
-    func openEventEditor(eventID: String, occurrenceStart: Date?, from view: NSView) {
+    func openEventEditor(eventID: String, occurrence: (start: Date, end: Date)? = nil, from view: NSView) {
         DayPlanAnalytics.capture(DayPlanAnalytics.eventSettingsOpened)
-        requestCalendarThen { [weak self] in self?.presentEventForm(editingID: eventID, occurrenceStart: occurrenceStart, relativeTo: view) }
+        requestCalendarThen { [weak self] in
+            self?.presentEventForm(editingID: eventID, occurrence: occurrence, relativeTo: view)
+        }
     }
 
     /// Run `action` once we have calendar access (requesting it first if undetermined).
@@ -1263,23 +1555,47 @@ class scheduleViewController: NSViewController {
     }
 
     /// Shared create/edit event form. `editingID` nil = create; otherwise pre-fills from the event.
-    private func presentEventForm(editingID: String?, occurrenceStart: Date? = nil, relativeTo anchor: NSView) {
+    /// `scope` is the already-chosen span for a repeating event. nil on the first call: a repeating
+    /// event asks, then re-enters with the answer — so the check below is "have we asked yet", not
+    /// "is it repeating", and it cannot ask twice.
+    private func presentEventForm(editingID: String?, occurrence: (start: Date, end: Date)? = nil,
+                                  relativeTo anchor: NSView, scope: EKSpan? = nil) {
+        // A repeating event gets the question every calendar app asks — up front, so the rest of the
+        // form is edited knowing what it applies to. Declining leaves the plan untouched.
+        if scope == nil, let editID = editingID, CalendarManager.shared.isRecurring(id: editID) {
+            askEventEditScope { [weak self] chosen in
+                guard let self = self, let chosen = chosen else { return }
+                self.presentEventForm(editingID: editingID, occurrence: occurrence,
+                                      relativeTo: anchor, scope: chosen)
+            }
+            return
+        }
         editingEventID = editingID
-        editingOccurrenceStart = occurrenceStart
+        editingEventScope = scope
         let existing = editingID.flatMap { CalendarManager.shared.event(withID: $0) }
         editingEventIsNotOwned = existing.map { !CalendarManager.shared.isEventOwnedByCurrentUser($0) } ?? false
-        // For a non-owned event the user may have a prior local-only edit — prefill the title/notes from it
-        // so re-opening shows their tweaks rather than the untouched calendar values. (Time stays the
-        // calendar's own occurrence time: the override never moves the meeting on the Day Plan.)
+        editingEventOwnership = existing.map { CalendarManager.shared.ownership(of: $0) } ?? .unknown
+        editingEventIsRecurring = existing?.hasRecurrenceRules ?? false
+        // For a non-owned event the user may have a prior local-only edit — prefill from it so re-opening
+        // shows their tweaks rather than the untouched calendar values.
         let localOverride = editingID.flatMap { CalendarManager.shared.localOverride(forEventID: $0) }
-        // `existing` is the series' FIRST occurrence for a repeat, so prefer the clicked occurrence's start
-        // (keeping the event's duration) — otherwise the editor would show the first instance's date/time.
-        let duration = existing.map { $0.endDate.timeIntervalSince($0.startDate) } ?? (30 * 60)
-        let start = occurrenceStart ?? existing?.startDate ?? defaultEventStart()
-        let end = occurrenceStart != nil ? start.addingTimeInterval(duration)
-                                         : (existing?.endDate ?? start.addingTimeInterval(30 * 60))
+        // The clicked row's own times win: they are this occurrence's, while the event fetched by id
+        // carries the series' first occurrence. A stored override only applies to its own occurrence.
+        let overrideTimes = occurrence.flatMap { row in
+            CalendarManager.overrideTimes(localOverride, onDay: CalendarManager.dayKey(row.start))
+        }
+        editingEventOccurrence = occurrence
+        let start = overrideTimes?.start ?? occurrence?.start ?? localOverride?.start ?? existing?.startDate ?? defaultEventStart()
+        let end = overrideTimes?.end ?? occurrence?.end ?? localOverride?.end ?? existing?.endDate ?? start.addingTimeInterval(30 * 60)
 
-        let header = makeLabel(editingID == nil ? ScheduleText.addEvent : ScheduleText.editEventTitle, size: 14, bold: true)
+        // Title plus the ✕ that dismisses the form. Dismissing used to be a button labelled "Cancel"
+        // sitting beside "Save", which reads as "cancel the meeting" — that name now belongs to the
+        // destructive action in the footer.
+        let header = NSHostingView(rootView: EventFormHeaderView(
+            title: editingID == nil ? ScheduleText.addEvent : ScheduleText.editEventTitle,
+            closeHint: ScheduleText.eventCloseForm,
+            onClose: { [weak self] in self?.cancelEventForm() }))
+        header.translatesAutoresizingMaskIntoConstraints = false
 
         // Warns that edits to an event the user doesn't own can't reach the shared calendar — they're
         // kept locally on the user's own day plan only.
@@ -1319,27 +1635,12 @@ class scheduleViewController: NSViewController {
         calendarPopup.translatesAutoresizingMaskIntoConstraints = false
         addCalendarPopup = calendarPopup
 
-        func picker(_ value: Date, action: Selector?) -> NSDatePicker {
-            let p = NSDatePicker()
-            p.datePickerStyle = .textFieldAndStepper
-            p.datePickerElements = [.yearMonthDay, .hourMinute]
-            p.dateValue = value
-            if let action = action { p.target = self; p.action = action }
-            p.translatesAutoresizingMaskIntoConstraints = false
-            return p
-        }
-        let startPicker = picker(start, action: #selector(startPickerChanged))
-        let endPicker = picker(end, action: nil)
+        // Day via a date picker, time via a typed field — see EventDateTimeField for why the time
+        // is NOT an NSDatePicker segment (typing "30" for the minutes was near-impossible).
+        let startPicker = EventDateTimeField(date: start, target: self, action: #selector(startPickerChanged))
+        let endPicker = EventDateTimeField(date: end, target: nil, action: nil)
         addStartPicker = startPicker
         addEndPicker = endPicker
-        // A meeting you don't own can only be renamed locally — the Day Plan always keeps its real calendar
-        // time (see CalendarManager.fetchMeetings, which overlays TITLE ONLY). Disable the time pickers so
-        // it's clear the time is locked, instead of letting the user change a value that's silently ignored
-        // on save. The "you don't own this event" warning above explains why.
-        if editingEventIsNotOwned {
-            startPicker.isEnabled = false
-            endPicker.isEnabled = false
-        }
 
         let recurrencePopup = NSPopUpButton()
         recurrencePopup.addItems(withTitles: [ScheduleText.repeatNone, ScheduleText.repeatDaily,
@@ -1347,9 +1648,6 @@ class scheduleViewController: NSViewController {
         if let ev = existing { recurrencePopup.selectItem(at: CalendarManager.shared.recurrence(of: ev).rawValue) }
         recurrencePopup.translatesAutoresizingMaskIntoConstraints = false
         addRecurrencePopup = recurrencePopup
-        // Same as the time pickers: you can't change the repeat rule of an event you don't own — the change
-        // can't reach the shared calendar and isn't overlaid locally, so disable it rather than mislead.
-        if editingEventIsNotOwned { recurrencePopup.isEnabled = false }
 
         // Colour swatches — pre-select the event's saved colour (matched by hex) or the default.
         let savedColor = editingID.flatMap { CalendarManager.shared.color(forEventID: $0) }
@@ -1406,8 +1704,24 @@ class scheduleViewController: NSViewController {
 
         // Description — written to the calendar event, so it's shared with the other attendees. (For a
         // non-owned event this can't reach the shared calendar; it's kept in the local override instead.)
-        let (notesView, notesScroll) = notesBox(localOverride?.notes ?? existing?.notes ?? "")
+        //
+        // Google Calendar stores descriptions as HTML, so what's on the event is markup. The field
+        // shows it rendered (<br>/<b>/<a> only — see EventDescriptionHTML); the source is kept in
+        // `addNotesSourceHTML` so saving an untouched description writes the original back verbatim
+        // rather than flattening the other attendees' copy.
+        let notesSource = localOverride?.notes ?? existing?.notes ?? ""
+        let notesRendered = EventDescriptionHTML.plainText(from: notesSource)
+        let (notesView, notesScroll) = notesBox(notesRendered)
+        notesView.isRichText = true                     // so the rendered bold/links actually draw
+        notesView.isAutomaticLinkDetectionEnabled = false
+        notesView.delegate = self                       // gates which links may open
+        notesView.textStorage?.setAttributedString(
+            EventDescriptionHTML.attributedString(from: notesSource,
+                                                  font: .systemFont(ofSize: 13),
+                                                  textColor: .textColor))
         addNotesView = notesView
+        addNotesSourceHTML = notesSource
+        addNotesRenderedText = notesRendered
 
         // Private notes — stored only in Focus Bear (never written to the calendar), so attendees of a
         // shared event can't see them.
@@ -1422,15 +1736,23 @@ class scheduleViewController: NSViewController {
         errorLabel.usesSingleLineMode = false
         addErrorLabel = errorLabel
 
-        let cancelButton = cursorButton(title: ScheduleText.eventCancel, target: self, action: #selector(cancelEventForm))
-        cancelButton.bezelStyle = .rounded
-        cancelButton.keyEquivalent = "\u{1b}"           // Esc
         let saveButton = cursorButton(title: ScheduleText.eventSave, target: self, action: #selector(saveEventForm))
         saveButton.bezelStyle = .rounded
         saveButton.keyEquivalent = "\r"                 // Return
-        let buttonRow = NSStackView(views: [NSView(), cancelButton, saveButton])
+        // An existing event gets the destructive action on the left of the footer; a brand-new one has
+        // nothing to cancel yet, so ✕ (or Esc) is the only way out of it.
+        var buttonRowViews: [NSView] = []
+        if editingID != nil {
+            let destructive = NSHostingView(rootView: EventDestructiveActionView(
+                title: EventCancelAction(ownership: editingEventOwnership).buttonTitle,
+                action: { [weak self] in self?.cancelOrDeclineEvent() }))
+            destructive.translatesAutoresizingMaskIntoConstraints = false
+            buttonRowViews.append(destructive)
+        }
+        buttonRowViews += [NSView(), saveButton]
+        let buttonRow = NSStackView(views: buttonRowViews)
         buttonRow.orientation = .horizontal
-        buttonRow.spacing = 8
+        buttonRow.spacing = EventFormMetrics.rowSpacing
 
         // Participants — read-only list of the event's attendees, so you can see who you're meeting
         // with. Only shown when the calendar event actually has attendees (skipped for solo/new
@@ -1475,6 +1797,7 @@ class scheduleViewController: NSViewController {
         form.spacing = 10
         form.translatesAutoresizingMaskIntoConstraints = false
         buttonRow.widthAnchor.constraint(equalTo: titleField.widthAnchor).isActive = true
+        header.widthAnchor.constraint(equalTo: titleField.widthAnchor).isActive = true
 
         let container = NSView()
         container.addSubview(form)
@@ -1536,10 +1859,52 @@ class scheduleViewController: NSViewController {
     @objc private func cancelEventForm() {
         addEventPopover?.close()
         addEventPopover = nil
+        clearEventFormState()
+    }
+
+    /// Forget whatever the editor was editing. Shared by dismissing the form, saving it, and the
+    /// destructive Cancel/Decline action, so none of this state can outlive the form it belonged to.
+    private func clearEventFormState() {
         editingEventID = nil
-        editingOccurrenceStart = nil
+        editingEventScope = nil
         editingEventIsNotOwned = false
+        editingEventOwnership = .unknown
+        editingEventIsRecurring = false
         addCalendarIsUserChoice = false
+        addNotesSourceHTML = ""
+        addNotesRenderedText = ""
+    }
+
+    /// "Only this event" / "All future events" for a repeating event, the way every calendar app
+    /// asks (report 2026-09-11_21-00-30). Returns nil when the user cancels, so the form stays open
+    /// with their edits intact.
+    /// Ask which occurrences a change covers — as a SHEET, and BEFORE the form opens.
+    ///
+    /// It used to be `NSAlert.runModal()` at save time. Two problems, both reported: asking at save is
+    /// too late to be useful ("it should ask when I first click on it not when I save"), and a modal
+    /// with no parent window can appear behind the app while still holding keyboard focus — "I can't
+    /// see it but it has keyboard focus so I can't interact with anything else"
+    /// (report 2026-09-11_21-00-30). A sheet is attached to the window and cannot hide behind it.
+    ///
+    /// This is the one occurrence-scope question in the editor, and it is asked ONCE per editing
+    /// session: opening the form asks it, and cancelling/declining reuses that answer
+    /// (`EventCancellationFlow.run(knownScope:)`). It is only asked again when the form was never
+    /// opened on a repeating event, in which case `message` names the destructive action instead.
+    private func askEventEditScope(message: String = ScheduleText.eventScopeMessage,
+                                   completion: @escaping (EKSpan?) -> Void) {
+        let alert = NSAlert()
+        alert.messageText = ScheduleText.eventScopeTitle
+        alert.informativeText = message
+        alert.addButton(withTitle: ScheduleText.eventScopeThis)     // .alertFirstButtonReturn
+        alert.addButton(withTitle: ScheduleText.eventScopeFuture)   // .alertSecondButtonReturn
+        alert.addButton(withTitle: ScheduleText.habitCancel)        // .alertThirdButtonReturn
+        alert.presentAsSheet(for: view.window) { response in
+            switch response {
+            case .alertFirstButtonReturn: completion(.thisEvent)
+            case .alertSecondButtonReturn: completion(.futureEvents)
+            default: completion(nil)
+            }
+        }
     }
 
     @objc private func saveEventForm() {
@@ -1557,31 +1922,34 @@ class scheduleViewController: NSViewController {
             ? addCalendarIDs[idx] : nil
         let recurrence = CalendarManager.Recurrence(rawValue: addRecurrencePopup?.indexOfSelectedItem ?? 0) ?? .none
 
-        let notes = addNotesView?.string ?? ""
+        // Rendered for display only: unless the user actually edited the description, the event's
+        // original HTML goes back untouched, so moving a meeting never strips the links and
+        // formatting the other attendees see.
+        let notes = EventDescriptionHTML.notesToSave(edited: addNotesView?.string ?? "",
+                                                     rendered: addNotesRenderedText,
+                                                     original: addNotesSourceHTML)
         let wasEditing = editingEventID != nil
+        // The scope was chosen when the form opened, not here — asking at save is too late to shape
+        // what the user is editing (report 2026-09-11_21-00-30, follow-up).
+        let span: EKSpan? = editingEventScope
         let eventID: String?
         if let editID = editingEventID {
             if editingEventIsNotOwned {
                 // Can't write to a calendar event we don't own — persist the edit locally so it shows on
                 // the user's own day plan only, never on the shared calendar the other attendees see.
+                // "All future events" on an event we don't own means the time of day, not the date:
+                // the override is applied to every occurrence from its start/end clock times.
+                let wholeSeries = span == .futureEvents
                 CalendarManager.shared.setLocalOverride(
                     CalendarManager.LocalEventOverride(title: finalTitle, start: start, end: end,
-                                                       notes: notes.isEmpty ? nil : notes),
+                                                       notes: notes.isEmpty ? nil : notes,
+                                                       occurrenceDay: CalendarManager.dayKey(editingEventOccurrence?.start ?? start),
+                                                       appliesToSeries: wholeSeries ? true : nil),
                     forEventID: editID)
             } else {
-                let span: EKSpan
-                if CalendarManager.shared.event(withID: editID)?.hasRecurrenceRules == true {
-                    switch promptRecurringEditScope() {
-                    case .thisEvent: span = .thisEvent
-                    case .series:    span = .futureEvents
-                    case .cancel:    return   // user backed out; leave the editor as-is
-                    }
-                } else {
-                    span = .thisEvent
-                }
                 guard CalendarManager.shared.updateEvent(id: editID, title: finalTitle, start: start, end: end,
-                                                         calendarID: calendarID, recurrence: recurrence, notes: notes,
-                                                         span: span, occurrenceStart: editingOccurrenceStart) else {
+                                                         calendarID: calendarID, recurrence: recurrence,
+                                                         notes: notes, span: span) else {
                     showAddEventError(); NSSound.beep(); return
                 }
             }
@@ -1607,10 +1975,7 @@ class scheduleViewController: NSViewController {
 
         addEventPopover?.close()
         addEventPopover = nil
-        editingEventID = nil
-        editingOccurrenceStart = nil
-        editingEventIsNotOwned = false
-        addCalendarIsUserChoice = false
+        clearEventFormState()
         // For a brand-new event, jump to its day so the user sees it land. For an edit, stay on the
         // day the user was viewing — a repeating event's `start` is its first instance, so jumping
         // would yank the view back weeks/months (e.g. editing today's task sent the user to May).
@@ -1627,22 +1992,93 @@ class scheduleViewController: NSViewController {
         addErrorLabel?.isHidden = false
     }
 
-    private enum RecurringEditScope { case thisEvent, series, cancel }
+    // MARK: - Cancel / decline the event
 
-    /// Asks whether an edit to a recurring event should apply to just this occurrence or the whole
-    /// series, so a single-occurrence move doesn't rewrite the series (see CalendarManager.updateEvent).
-    private func promptRecurringEditScope() -> RecurringEditScope {
+    /// The event editor's destructive action: "Cancel Event" when the user organises the event,
+    /// "Decline event" when they were invited to it (or when EventKit can't say who owns it — the
+    /// non-destructive choice, because cancelling would take the meeting off everyone else's calendar).
+    ///
+    /// Confirm first, always; then — only if the editor has not already been told — the
+    /// this-occurrence-vs-series question; only then does anything get removed. See
+    /// EventCancellationFlow, which is unit-tested.
+    private func cancelOrDeclineEvent() {
+        guard let editID = editingEventID else { return }
+        let action = EventCancelAction(ownership: editingEventOwnership)
+        let occurrenceStart = editingEventOccurrence?.start
+        let isRecurring = editingEventIsRecurring
+        // The scope the user picked when the form opened. It has to be read BEFORE the teardown below,
+        // which nils it — not reading it here is what made declining a series ask the very same
+        // question a second time, after the user had already answered it ("I'd already said at the
+        // start that I wanted to edit all future events", report 2026-09-15_20-53-31).
+        let chosenScope = editingEventScope
+        // Close the popover before the first sheet: a transient popover dismisses itself the moment a
+        // sheet takes key focus, which would leave the sheet floating over a half-vanished form.
+        addEventPopover?.close()
+        addEventPopover = nil
+        clearEventFormState()
+
+        removeEvent(eventID: editID, action: action, isRecurring: isRecurring,
+                    occurrenceStart: occurrenceStart, knownScope: chosenScope)
+    }
+
+    /// Confirm → (for a repeating meeting) which occurrences → remove, for one event. Shared by the
+    /// editor's destructive button and the Fix modal's meetings route, so there is one implementation
+    /// of taking a meeting off the calendar and one confirmation in front of it.
+    ///
+    /// - Parameter knownScope: the span the caller has already asked the user for; nil means nobody has
+    ///   asked yet and the flow must.
+    private func removeEvent(eventID: String, action: EventCancelAction, isRecurring: Bool,
+                             occurrenceStart: Date?, knownScope: EKSpan?) {
+        EventCancellationFlow.run(
+            action: action,
+            isRecurring: isRecurring,
+            knownScope: knownScope,
+            confirm: { [weak self] pending, done in self?.confirmEventRemoval(pending, done) },
+            askScope: { [weak self] done in
+                self?.askEventEditScope(message: ScheduleText.removeRepeatingInfo, completion: done)
+            },
+            remove: { span in
+                CalendarManager.shared.removeEvent(id: eventID, span: span, occurrenceStart: occurrenceStart)
+            },
+            completion: { [weak self] outcome in
+                guard let self = self else { return }
+                switch outcome {
+                case .cancelledByUser:
+                    break                                   // nothing was touched
+                case .failed:
+                    self.showEventRemovalError()
+                case .removed:
+                    DayPlanAnalytics.capture(action == .cancelEvent ? DayPlanAnalytics.eventCancelled
+                                                                    : DayPlanAnalytics.eventDeclined)
+                    self.selectedHabitIndex = nil
+                    self.lastRenderSignature = nil
+                    self.reload()
+                }
+            })
+    }
+
+    /// Destructive actions get an explicit confirmation, and it spells out what the removal really does
+    /// — including that Focus Bear cannot itself send an RSVP when declining (EventKit exposes no such
+    /// API; see EventCancellation.swift).
+    private func confirmEventRemoval(_ action: EventCancelAction, _ done: @escaping (Bool) -> Void) {
         let alert = NSAlert()
-        alert.messageText = ScheduleText.editRepeatingTitle
-        alert.informativeText = ScheduleText.editRepeatingInfo
-        alert.addButton(withTitle: ScheduleText.dismissRepeatingJustThisOne)   // "Just this one"
-        alert.addButton(withTitle: ScheduleText.dismissRepeatingAllSeries)     // "All events in series"
-        alert.addButton(withTitle: ScheduleText.dismissRepeatingCancel)        // "Cancel"
-        switch alert.runModal() {
-        case .alertFirstButtonReturn:  return .thisEvent
-        case .alertSecondButtonReturn: return .series
-        default:                       return .cancel
-        }
+        alert.alertStyle = .warning
+        alert.messageText = action.confirmTitle
+        alert.informativeText = action.confirmMessage
+        alert.addButton(withTitle: action.buttonTitle)                  // .alertFirstButtonReturn
+        alert.addButton(withTitle: ScheduleText.eventCancelEventKeep)
+        alert.presentAsSheet(for: view.window) { done($0 == .alertFirstButtonReturn) }
+    }
+
+    /// The editor is already closed by the time a removal can fail, so the error can't go in its inline
+    /// error label — it gets its own sheet rather than failing silently.
+    private func showEventRemovalError() {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = ScheduleText.eventRemoveFailedTitle
+        alert.informativeText = ScheduleText.eventRemoveFailedMessage
+        alert.addButton(withTitle: ScheduleText.eventRemoveFailedOk)
+        alert.presentAsSheet(for: view.window) { _ in }
     }
 
     // MARK: - Lifecycle / refresh
@@ -1654,10 +2090,40 @@ class scheduleViewController: NSViewController {
         lastHydratedDay = nil
         reload()
         refreshTimer?.invalidate()
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
-            self?.reload()
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: Self.autoRefreshInterval, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            // Roll to the new day if midnight passed (backup for the NSCalendarDayChanged observer);
+            // advanceToTodayIfFollowing reloads itself when it advances, so don't reload twice.
+            if self.advanceToTodayIfFollowing() { return }
+            self.reload()
         }
         if let t = refreshTimer { RunLoop.main.add(t, forMode: .common) }
+        // CalendarManager answers the main thread from its cache and reads EventKit in the background,
+        // so a reload can render meetings that are one refresh behind (the first ever render, or the
+        // tick straight after a calendar edit). This is how the fresh data gets on screen without
+        // waiting for the next 30s tick.
+        if meetingsChangedObserver == nil {
+            meetingsChangedObserver = NotificationCenter.default.addObserver(
+                forName: CalendarManager.meetingsDidChange, object: nil, queue: .main) { [weak self] _ in
+                guard let self = self, !self.view.isHidden else { return }
+                self.reload()
+            }
+        }
+        if forecastSettingsObserver == nil {
+            forecastSettingsObserver = NotificationCenter.default.addObserver(
+                forName: LocalForecastPreferences.didChange, object: nil, queue: .main) { [weak self] _ in
+                    self?.lastRenderSignature = nil
+                    self?.reload()
+                }
+        }
+        // Immediate roll-over at midnight (and on timezone/clock changes) so the user isn't left on
+        // yesterday until the next 30s tick.
+        if dayChangedObserver == nil {
+            dayChangedObserver = NotificationCenter.default.addObserver(
+                forName: .NSCalendarDayChanged, object: nil, queue: .main) { [weak self] _ in
+                    self?.advanceToTodayIfFollowing()
+                }
+        }
         // Re-check Calendar permission when the user returns to the app (e.g. after granting it in
         // System Settings). Force a fresh render so the "Grant access" banner re-evaluates and clears
         // once access is authorized. Only active while the Day Plan is shown.
@@ -1707,9 +2173,21 @@ class scheduleViewController: NSViewController {
     func stopAutoRefresh() {
         refreshTimer?.invalidate()
         refreshTimer = nil
+        if let observer = forecastSettingsObserver {
+            NotificationCenter.default.removeObserver(observer)
+            forecastSettingsObserver = nil
+        }
         if let obs = didBecomeActiveObserver {
             NotificationCenter.default.removeObserver(obs)
             didBecomeActiveObserver = nil
+        }
+        if let obs = meetingsChangedObserver {
+            NotificationCenter.default.removeObserver(obs)
+            meetingsChangedObserver = nil
+        }
+        if let obs = dayChangedObserver {
+            NotificationCenter.default.removeObserver(obs)
+            dayChangedObserver = nil
         }
         postponeHiddenObservation?.invalidate()
         postponeHiddenObservation = nil
@@ -1812,6 +2290,12 @@ class scheduleViewController: NSViewController {
     /// The day the schedule is showing (defaults to today). Past/future days are read-only.
     var selectedDate = Date()
     var isViewingToday: Bool { Calendar.current.isDateInToday(selectedDate) }
+    /// The day being viewed has already gone by, so there is nothing left to plan for it.
+    var isViewingPastDay: Bool {
+        Calendar.current.startOfDay(for: selectedDate) < Calendar.current.startOfDay(for: Date())
+    }
+    /// "Shorten for this day" is a planning tool: offered for today and any day still ahead.
+    var canShortenHabits: Bool { !isViewingPastDay }
     /// Last day we pulled the backend Day Plan for, so hydration fires once per day shown (not on
     /// every timer-driven reload). Reset when the selected day changes.
     private var lastHydratedDay: Date?
@@ -1823,6 +2307,13 @@ class scheduleViewController: NSViewController {
     /// cadence so re-hydrating stays gentle on the backend, and `hydrate()` only re-renders the panel
     /// when the fetched status actually changed, so idle ticks don't flicker or re-order the list.
     private static let todayTaskRehydrateInterval: TimeInterval = 60
+    /// How often the Day Plan rebuilds itself while it's on screen.
+    private static let autoRefreshInterval: TimeInterval = 30
+    /// A reload that takes at least this long gets a per-phase breakdown in the log. Well under
+    /// MainThreadWatchdog's 4s stall threshold, so a reload heading towards a beachball is recorded
+    /// with its slowest phase named before the watchdog ever fires — and a healthy tick (single-digit
+    /// milliseconds) logs nothing.
+    private static let slowReloadLogThreshold: TimeInterval = 0.5
     /// When the last successful task hydrate landed, so TODAY can be re-pulled once it goes stale (see
     /// `todayTaskRehydrateInterval`). Only advanced after a real fetch — a skipped/failed fetch leaves it
     /// unchanged so the retry keeps firing (same guarantee as `lastHydratedDay`; does not regress #2145).
@@ -1886,10 +2377,9 @@ class scheduleViewController: NSViewController {
         // navigating days reset it). Now the timer retries today until the fetch succeeds, then throttles.
         let day = selectedDate
         let isNewDay = lastHydratedDay == nil || !Calendar.current.isDate(lastHydratedDay!, inSameDayAs: day)
-        // Today additionally re-hydrates once the last successful pull goes stale, so completions made
-        // elsewhere surface without a day-navigation. Past/future days never change, so they only need
-        // the once-per-day `isNewDay` pull.
-        let todayIsStale = isViewingToday
+        // Current and future views refresh periodically so due-date edits and completions made
+        // elsewhere surface without navigating away. Past views retain their historical hydration.
+        let todayIsStale = day >= Calendar.current.startOfDay(for: Date())
             && (lastTaskHydrateAt.map { Date().timeIntervalSince($0) >= Self.todayTaskRehydrateInterval } ?? true)
         let needsHydrate = isNewDay || todayIsStale
         let inFlight = hydratingDay.map { Calendar.current.isDate($0, inSameDayAs: day) } ?? false
@@ -1902,9 +2392,8 @@ class scheduleViewController: NSViewController {
                 self.hydratingDay = nil
                 if fetched { self.lastHydratedDay = day; self.lastTaskHydrateAt = Date() }
             })
-            // Today also surfaces overdue / due-today to-dos that aren't planned for a later day, so a
-            // due-but-unplanned task shows in "Tasks for today" (dedup by sourceTaskId keeps it single).
-            if isViewingToday {
+            // Reconcile by due date, with overdue work assigned only to the real current day.
+            if day >= Calendar.current.startOfDay(for: Date()) {
                 DayPlanTaskStore.shared.loadAndMergeDueTodos(for: day, onChange: { [weak self] in
                     self?.tasksPanel.reload()
                 })
@@ -1945,6 +2434,15 @@ class scheduleViewController: NSViewController {
         // dialog they never asked for. Instead, the "Connect your calendar" banner (with its
         // "Grant access" button) shows whenever access isn't authorized, so the request is always
         // gated behind an explicit user tap (grantCalendarClicked / requestCalendarThen).
+        var timing = DayPlanReloadTiming()
+        var phaseStart = Date()
+        /// Closes off the phase that just ran and starts the next one's clock.
+        func endPhase(_ record: (TimeInterval) -> Void) {
+            let finished = Date()
+            record(finished.timeIntervalSince(phaseStart))
+            phaseStart = finished
+        }
+
         let isToday = isViewingToday
         // Today anchors to the current moment; other days anchor to that day's morning routine
         // start so the whole day's plan lays out from the top.
@@ -1973,10 +2471,12 @@ class scheduleViewController: NSViewController {
             if !fresh.isEmpty { lastGoodSegments = fresh }
             segments = fresh.isEmpty ? (lastGoodSegments ?? []) : fresh
         }
+        endPhase { timing.segments = $0 }
         // The day always runs through to 23:59 of the day being viewed.
         let cal = Calendar.current
         let dayEnd = cal.date(bySettingHour: 23, minute: 59, second: 0, of: selectedDate) ?? scheduleDayEnd(now: now)
         let meetings = CalendarManager.shared.meetings(for: selectedDate, includeDismissed: showDismissedEvents)   // [] when no calendar access
+        endPhase { timing.meetings = $0 }
 
         // "Show events from earlier today" only makes sense on today, and only when there actually
         // are meetings that already finished. Other days already show their whole timetable.
@@ -2032,11 +2532,18 @@ class scheduleViewController: NSViewController {
             sprintWorkSeconds: breakAfterMinutes * 60,
             sprintBreakSeconds: dwBreakMinutes * 60,
             labels: ScheduleText.engineLabels)
+        endPhase { timing.build = $0 }
 
         // Diagnostic for the reported blank Day Plan: capture the state that produced this render so a
         // reproduction pinpoints an empty/hidden plan (host nil → no segments, wrong state, etc.).
-        addLog(text: "dayplan reload: state=\(currentState) host=\(host != nil ? String(describing: type(of: host!)) : "NIL") isToday=\(isToday) segs=\(segments.count) blocks=\(blocks.count) viewHidden=\(view.isHidden) contentHidden=\(isDayPlanContentHidden)")
+        // `dwMins` vs the panel's free figure is the check for "it says I have time but the plan has
+        // no deep work in it" (report 2026-09-14_09-09-13): the two are built from the same blocks and
+        // should agree, so a gap between them in a log is the bug, not the user's reading of it.
+        let deepWorkMinutes = Int(blocks.filter { $0.kind == .deepWork }
+            .reduce(0) { $0 + $1.end.timeIntervalSince($1.start) } / 60)
+        addLog(text: "dayplan reload: state=\(currentState) host=\(host != nil ? String(describing: type(of: host!)) : "NIL") isToday=\(isToday) segs=\(segments.count) blocks=\(blocks.count) dwMins=\(deepWorkMinutes) viewHidden=\(view.isHidden) contentHidden=\(isDayPlanContentHidden)")
         render(blocks: blocks)
+        endPhase { timing.render = $0 }
         updateDateBar()
         updateFullScreenInsets()   // self-correct if full-screen state changed
         updateRoutineToggle()
@@ -2045,6 +2552,18 @@ class scheduleViewController: NSViewController {
         // Keep the tasks panel on the viewed day (only rebuild when the day actually changes).
         if !Calendar.current.isDate(tasksPanel.date, inSameDayAs: selectedDate) {
             tasksPanel.date = selectedDate
+        }
+        // The plan just rebuilt from the live calendars — tell the portfolio what they occupy (#2418).
+        BusyHoursReporter.shared.report(trigger: .dayPlanBuilt)
+        // A project a task only has locally (pre-#2392, or a push that failed offline) gets another
+        // chance to reach the backend each build — throttled inside, so this is cheap to call here.
+        DayPlanProjectRepair.shared.runIfDue(trigger: .dayPlanBuild)
+        endPhase { timing.finish = $0 }
+        // Freeze-diag: MainThreadWatchdog says the main thread stopped, this says which part of the
+        // reload was holding it. Only logged when the reload was actually slow, so a healthy tick
+        // stays quiet.
+        if timing.isSlow(threshold: Self.slowReloadLogThreshold) {
+            addLog(text: "dayplan reload SLOW: \(timing.summary)")
         }
     }
 
@@ -2085,9 +2604,6 @@ class scheduleViewController: NSViewController {
     /// `lastRenderSignature` so a forced rebuild with unchanged tasks doesn't needlessly reload.
     private var lastTaskSig: String?
 
-    /// Unscheduled time inside the day's active span: the span from the first to the last time-occupying
-    /// block, minus the union of those blocks (so overlaps aren't double-counted). Sleep and the
-    /// zero-length markers (all-done / routine transitions) don't count as "busy".
     /// Unscheduled (free) time left in the productive day. Deep-work blocks are NOT busy — they're the
     /// open, task-able time the engine fills with "deep work" sprints (drop tasks into them), so they
     /// count as FREE. Only meetings, breaks and habits are genuinely busy.
@@ -2099,23 +2615,12 @@ class scheduleViewController: NSViewController {
     private func freeTimeSeconds(in blocks: [ScheduleBlock], from: Date?, until: Date?) -> Int {
         let busyKinds: Set<ScheduleBlockKind> = [.meeting, .breakSprint, .habit]
         let intervals = blocks.filter { busyKinds.contains($0.kind) && $0.end > $0.start }
-            .map { ($0.start, $0.end) }
-            .sorted { $0.0 < $1.0 }
-        guard let firstBusy = intervals.first?.0, let lastBusy = intervals.map({ $0.1 }).max() else { return 0 }
+        guard let firstBusy = intervals.map({ $0.start }).min(),
+              let lastBusy = intervals.map({ $0.end }).max() else { return 0 }
         let windowStart = max(firstBusy, from ?? firstBusy)
         let windowEnd = min(lastBusy, until ?? lastBusy)
         guard windowEnd > windowStart else { return 0 }
-        var merged: [(Date, Date)] = []
-        for iv in intervals {
-            let s = max(iv.0, windowStart), e = min(iv.1, windowEnd)   // clip each busy block to the window
-            guard e > s else { continue }
-            if let m = merged.last, s <= m.1 {
-                merged[merged.count - 1].1 = max(m.1, e)
-            } else {
-                merged.append((s, e))
-            }
-        }
-        let busy = merged.reduce(0) { $0 + Int($1.1.timeIntervalSince($1.0)) }
+        let busy = Self.busySeconds(in: blocks, windowStart: windowStart, windowEnd: windowEnd)
         return max(0, Int(windowEnd.timeIntervalSince(windowStart)) - busy)
     }
 
@@ -2139,44 +2644,89 @@ class scheduleViewController: NSViewController {
         return merged.reduce(0) { $0 + Int($1.1.timeIntervalSince($1.0)) }
     }
 
-    /// Raw schedule-free minutes on `date`: the productive window [morning-routine start, evening-routine
-    /// start] minus meetings/breaks/habits — WITHOUT subtracting that day's tasks. Smart snooze needs the
-    /// schedule-free and the task load separately so it can apply its cumulative-rollover model. Builds the
-    /// day's timetable exactly as the Day Plan does (routine segments + meetings → `ScheduleBuilder`).
-    /// Intended for FUTURE days (no "now" clamp): the window is fixed to the productive day, so a
-    /// completely empty day correctly reports its whole span as free. Synchronous (EventKit's
-    /// `meetings(for:)` is a synchronous query), so the caller runs it inline. Reads only the app's
-    /// schedule globals, so the To-do list's snooze can call it without a live Day Plan.
+    /// Where a forecast snapshot of `date` starts, and whether completed habits belong in it.
+    ///
+    /// Today has to be built from the CURRENT time, exactly like the rendered Day Plan: a habit that
+    /// hasn't run yet is re-placed into the time that is *left*, so it occupies the afternoon rather
+    /// than the morning slot it was scheduled in. Building today from midnight left those habits in
+    /// the past, where `availableFrom` clips them away, and the budget then counted gaps the plan had
+    /// already spent on the routine — "45m available" on a day with no deep-work block in it at all
+    /// (report 2026-09-14_09-09-13). Completed habits drop out with them: re-placing a habit that has
+    /// already run would book its time twice. Other days keep the whole timetable from midnight.
+    static func forecastBuildPoint(for date: Date, now: Date = Date(),
+                                   calendar: Calendar = .current) -> (start: Date, includeCompleted: Bool) {
+        calendar.isDate(date, inSameDayAs: now) ? (now, false) : (calendar.startOfDay(for: date), true)
+    }
+
+    /// Full-day, read-only Day Plan snapshot used by capacity and smart date suggestions.
+    /// Hidden meetings follow the forecast reader.
+    static func localForecastBlocks(on date: Date) -> [ScheduleBlock] {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: date)
+        guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return [] }
+        let point = forecastBuildPoint(for: date, calendar: calendar)
+        return ScheduleBuilder.build(segments: ScheduleTab.segmentsForDate(date, includeCompleted: point.includeCompleted),
+            meetings: CalendarManager.shared.meetings(for: date, includeDismissed: false),
+            now: point.start, dayEnd: end, leaveBufferSeconds: 120,
+            outOfOrderAllowed: SettingsManagerObject.isOutOfOrderHabitsAllowed,
+            meetingsFrom: start, labels: ScheduleText.engineLabels)
+    }
+
     static func scheduleFreeMinutes(on date: Date) -> Int {
+        Int(localForecast(on: date).days.first?.capacity.availableWorkMinutes ?? 0)
+    }
+
+    private static func localForecast(on date: Date) -> LocalTimeForecast.Result {
+        let settings = LocalForecastPreferences.load(account: appdelegate?.user?.userId ?? "")
+        let day = LocalTimeForecast.DayInput.fromDayPlan(date: date, blocks: localForecastBlocks(on: date),
+                                                       settings: settings, availableFrom: Date())
+        let tasks = DayPlanTaskStore.shared.tasks(for: date).map { task in
+            LocalTimeForecast.TaskInput(id: task.id, estimatedMinutes: Double(task.durationMinutes), outcome: task.outcome ?? 2,
+                blockAssignment: DayPlanBlockKey.absorbs(task.blockKey)
+                    ? task.blockKey.map { .init(date: date, blockKey: $0) } : nil,
+                completed: task.done)
+        }
+        return LocalTimeForecast.calculate(days: [day], projects: [], tasks: tasks, calendar: Calendar.current)
+    }
+
+    /// Build the day's schedule blocks for an arbitrary date, headless (no rendering) — used to
+    /// measure free time for the date-picker calendar badges. Mirrors the core `ScheduleBuilder.build`
+    /// call in `reload()` (minus its on-screen-only concerns like the "earlier today" toggle). For
+    /// today it uses the live/actionable segments so its free figure matches the tasks-panel header.
+    private func scheduleBlocks(for date: Date) -> [ScheduleBlock] {
         let cal = Calendar.current
-        let dayStart = cal.startOfDay(for: date)
-        let anchor = ScheduleTab.timeOnDate(startTime, date: date) ?? dayStart
-        let dayEnd = cal.date(bySettingHour: 23, minute: 59, second: 0, of: date) ?? anchor
-        let eveningStart = ScheduleTab.timeOnDate(shutOffTime, date: date)
-        let segments = ScheduleTab.segmentsForDate(date)
-        let meetings = CalendarManager.shared.meetings(for: date)
-        // Same deep-work split cadence the live reload uses (a 0 break still splits at 5-min).
+        let isToday = cal.isDateInToday(date)
+        let now = isToday ? Date() : cal.startOfDay(for: date)
+        let segments = isToday
+            ? (host?.scheduleSegments(now: now) ?? ScheduleTab.segmentsForDate(date))
+            : ScheduleTab.segmentsForDate(date)
+        let dayEnd = cal.date(bySettingHour: 23, minute: 59, second: 0, of: date) ?? date
+        let meetings = CalendarManager.shared.meetings(for: date, includeDismissed: false)
         let storedBreakDur = (UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes) as? Int) ?? 5
         let dwBreakMinutes = storedBreakDur > 0 ? storedBreakDur : 5
-        let blocks = ScheduleBuilder.build(
+        return ScheduleBuilder.build(
             segments: segments,
             meetings: meetings,
-            now: anchor,
+            now: now,
             dayEnd: dayEnd,
             leaveBufferSeconds: 2 * 60,
             outOfOrderAllowed: SettingsManagerObject.isOutOfOrderHabitsAllowed,
-            eveningRoutineStart: eveningStart,
-            morningRoutineStart: anchor,
-            meetingsFrom: dayStart,   // count every meeting that day as busy, not just after the morning start
+            eveningRoutineStart: ScheduleTab.timeOnDate(shutOffTime, date: date),
+            morningRoutineStart: ScheduleTab.timeOnDate(startTime, date: date),
+            meetingsFrom: now,
             deepWorkCutoff: ScheduleTab.timeOnDate(cutOffTime, date: date),
             sprintWorkSeconds: breakAfterMinutes * 60,
             sprintBreakSeconds: dwBreakMinutes * 60,
             labels: ScheduleText.engineLabels)
-        let windowStart = anchor
-        let windowEnd = eveningStart ?? dayEnd
-        guard windowEnd > windowStart else { return 0 }
-        let busy = busySeconds(in: blocks, windowStart: windowStart, windowEnd: windowEnd)
-        return max(0, Int(windowEnd.timeIntervalSince(windowStart)) - busy) / 60
+    }
+
+    /// The same remaining-day capacity and task absorption as the header. Net out all unfinished
+    /// task work, including work that does not fit, so an overcommitted date remains negative.
+    func netFreeMinutes(on date: Date) -> Int? {
+        let forecast = Self.localForecast(on: date)
+        guard let day = forecast.days.first else { return nil }
+        let remaining = forecast.tasks.filter { !$0.task.completed }.reduce(0) { $0 + ($1.task.estimatedMinutes ?? 0) }
+        return Int(day.capacity.availableWorkMinutes - max(0, remaining - day.absorbedBlockMinutes))
     }
 
     /// Run `body` with this view's appearance current, so any `NSColor.cgColor` resolved inside
@@ -2237,7 +2787,7 @@ class scheduleViewController: NSViewController {
         let bannerOn = CalendarManager.shared.shouldShowPermissionBanner() && !bannerDismissed
         // Include nested-task state so dropping / completing / un-nesting a task forces a rebuild.
         let taskSig = DayPlanTaskStore.shared.tasks(for: selectedDate)
-            .map { "\($0.id)\($0.blockKey ?? "")\($0.done)\($0.title)" }.joined()
+            .map { "\($0.id)\($0.blockKey ?? "")\($0.done)\($0.title)\($0.durationMinutes)\($0.outcome ?? 0)" }.joined()
         // The cards bake cgColors for the current Light/Dark appearance, and AppKit doesn't
         // re-resolve them on a live switch. Include the effective (window/app-theme) appearance in
         // the cache key so an appearance flip forces a rebuild instead of being skipped here —
@@ -2291,6 +2841,15 @@ class scheduleViewController: NSViewController {
         // same top-left corner and the cog would overlap it.
         scheduleCog.isHidden = (currentState == ._CUSTOM_ROUTINE_)
 
+        // The same remaining-day capacity/absorption formula used by Time Forecast. In particular,
+        // dragging a 17-minute task onto a 10-minute habit — or onto a 10-minute calendar event —
+        // adds only seven minutes of task work. The day already pays for both kinds of block.
+        let capacity = Self.localForecast(on: selectedDate).days.first
+        tasksPanel.scheduleFreeMinutes = Int(capacity?.capacity.availableWorkMinutes ?? 0)
+        addLog(text: "dayplan capacity: free=\(Int(capacity?.capacity.availableWorkMinutes ?? 0))m absorbed=\(Int(capacity?.absorbedBlockMinutes ?? 0))m")
+        tasksPanel.forecastAbsorbedMinutes = capacity?.absorbedBlockMinutes ?? 0
+
+
         if blocks.isEmpty {
             let empty = makeLabel(isViewingToday ? ScheduleText.noHabitsLeft : ScheduleText.nothingScheduled, size: 14, bold: false)
             empty.textColor = .secondaryLabelColor
@@ -2299,15 +2858,6 @@ class scheduleViewController: NSViewController {
             return
         }
 
-        // How much unscheduled (free) time the day's plan leaves — shown in the tasks panel next to
-        // the "tasks to do" total. Only count time that's still ahead today, and only up to the evening
-        // routine (the end of the productive day) — not the whole 5am-midnight span.
-        let now = Date()
-        let eveningStart = shutOffTime.flatMap {
-            Calendar.current.date(bySettingHour: $0.hour, minute: $0.minute, second: $0.second, of: selectedDate)
-        }
-        let freeSecs = freeTimeSeconds(in: blocks, from: isViewingToday ? now : nil, until: eveningStart)
-        tasksPanel.freeTimeMinutes = freeSecs >= 60 ? freeSecs / 60 : nil
 
         // Consecutive habits of the same routine collapse into one grouped block; a routine
         // boundary (or any non-habit block) starts a new card.
@@ -2315,6 +2865,10 @@ class scheduleViewController: NSViewController {
         // so map each task to the nearest current deep-work sprint (by its ordinal) up front.
         let dwBlocks = blocks.filter { $0.kind == .deepWork }
         let dwTasksByOrdinal = deepWorkTasksByOrdinal(dwBlocks)
+
+        // Let the panel's time-boxed badge name the block each task is pinned to.
+        tasksPanel.timeBoxedBlockTitles = timeBoxedTitles(in: blocks, dwBlocks: dwBlocks,
+                                                          dwTasksByOrdinal: dwTasksByOrdinal)
 
         var i = 0
         var dwOrdinal = 0
@@ -2392,7 +2946,8 @@ class scheduleViewController: NSViewController {
         let dateForToggle = selectedDate
         let collapsed = isDeepWorkCollapsed(runIndex: runIndex, date: dateForToggle)
         let chevron = makeDisclosureChevron(collapsed: collapsed)
-        let header = makeLabel("🧠 \(ScheduleText.deepWorkSession)  ·  \(timeString(first.start))–\(timeString(last.end))",
+        let dwMinutes = max(0, Int(last.end.timeIntervalSince(first.start) / 60))
+        let header = makeLabel("🧠 \(ScheduleText.deepWorkSession)  ·  \(timeString(first.start))–\(timeString(last.end))  \(ScheduleText.durationMinutesBrackets(dwMinutes))",
                                size: 15, bold: false)
         header.textColor = .labelColor
         header.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -2409,7 +2964,8 @@ class scheduleViewController: NSViewController {
         headerRow.onClick = { [weak self] in self?.toggleDeepWorkCollapsed(runIndex: runIndex, date: dateForToggle) }
         headerRow.toolTip = collapsed ? ScheduleText.showDeepWorkBreakdown : ScheduleText.hideDeepWorkBreakdown
         addCard(styledCard(fill: NSColor.systemGreen.withAlphaComponent(0.05),
-                           border: NSColor.separatorColor, hasBorder: true, content: headerRow))
+                           border: NSColor.separatorColor, hasBorder: true, content: headerRow,
+                           minimumHeight: collapsed ? DayPlanEventHeight.points(forDurationSeconds: dwMinutes * 60) : 0))
 
         for block in run {
             if collapsed {
@@ -2435,10 +2991,30 @@ class scheduleViewController: NSViewController {
     /// time (matched fuzzily on render); meetings by event id.
     private func blockKey(for block: ScheduleBlock) -> String? {
         switch block.kind {
-        case .meeting: return block.eventID.map { "event:\($0)" }
-        case .deepWork: return "deepwork:\(Int(block.start.timeIntervalSince1970))"
+        case .meeting: return block.eventID.map { DayPlanBlockKey.event(id: $0) }
+        case .deepWork: return DayPlanBlockKey.deepWork(startingAt: block.start)
         default: return nil
         }
+    }
+
+    /// blockKey → the human name of the block, so the tasks panel's time-boxed badge can say which
+    /// block a task is pinned to instead of just "Time boxed". Deep-work keys are resolved through the
+    /// same ordinal matching the timeline uses, so a drifted key still names the sprint it renders under.
+    private func timeBoxedTitles(in blocks: [ScheduleBlock], dwBlocks: [ScheduleBlock],
+                                 dwTasksByOrdinal: [Int: [DayPlanTask]]) -> [String: String] {
+        var titles: [String: String] = [:]
+        func label(_ block: ScheduleBlock) -> String {
+            "\(block.title)  ·  \(timeString(block.start))–\(timeString(block.end))"
+        }
+        for block in blocks where block.kind != .deepWork {
+            if let key = blockKey(for: block) { titles[key] = label(block) }
+        }
+        for (ordinal, tasks) in dwTasksByOrdinal {
+            guard dwBlocks.indices.contains(ordinal) else { continue }
+            let sprint = label(dwBlocks[ordinal])
+            for task in tasks { if let key = task.blockKey { titles[key] = sprint } }
+        }
+        return titles
     }
 
     /// The anchor timestamp stored in a deep-work task's key ("deepwork:<epoch>"), if any.
@@ -2637,6 +3213,8 @@ class scheduleViewController: NSViewController {
     /// One bordered block holding all consecutive habits of a routine. Only the *selected*
     /// actionable habit shows a Play/Done/Skip bar underneath it; tapping another habit moves it.
     private func makeHabitGroupCard(_ habits: [ScheduleBlock]) -> DropTargetView {
+        let durationHeight = DayPlanEventHeight.points(forDurationSeconds:
+            habits.filter { !$0.didOverflow }.reduce(0) { $0 + max(0, $1.durationSeconds) })
         let inner = NSStackView()
         inner.orientation = .vertical
         inner.alignment = .leading
@@ -2664,10 +3242,15 @@ class scheduleViewController: NSViewController {
             ?? habits.first.flatMap { $0.habitIndex.map { "idx\($0)" } }
             ?? "start\(Int((habits.first?.start ?? selectedDate).timeIntervalSince1970))" // i18n-ignore — internal accordion key, never shown
         let dateForToggle = selectedDate
-        // An overflow group holds the habits the engine couldn't fit before the day's meetings (a whole-day
-        // event ⇒ the entire routine); it has its own accordion key and starts collapsed.
+        // An overflow group (the routine didn't fit in the day) defaults to collapsed so it doesn't
+        // dominate a packed plan — but a user expand/collapse still wins.
         let isOverflow = habits.first?.didOverflow == true
-        let collapsed = isRoutineCollapsed(name: routineName, sectionId: sectionId, date: dateForToggle, overflow: isOverflow)
+        // A routine with every habit done is complete → collapse by default (see isRoutineCollapsed).
+        let habitBlocks = habits.filter { $0.kind == .habit }
+        let routineComplete = !habitBlocks.isEmpty && habitBlocks.allSatisfy { $0.isDone }
+        let collapsed = isOverflow
+            ? (routineCollapseOverrides[routineCollapseKey(routineName, date: dateForToggle, sectionId: sectionId, overflow: true)] ?? true)
+            : isRoutineCollapsed(name: routineName, date: dateForToggle, sectionId: sectionId, completed: routineComplete)
         // #2010: is THIS routine's section force-cancelled? Drives the uncancel message and hides the
         // "Skip routine for today" action (there's nothing to skip once it's cancelled).
         let cancel = host?.cancelledRoutine()
@@ -2677,10 +3260,15 @@ class scheduleViewController: NSViewController {
             // it was too small to read as a tap target for collapse/expand.
             let chevron = makeDisclosureChevron(collapsed: collapsed)
             // Overflow groups have no meaningful time range (they're anchored after the last habit that
-            // fit) — say "not enough time today" instead of a "4:51pm–4:51pm" range.
-            let headerSuffix = isOverflow ? ScheduleText.notEnoughTimeToday : "\(timeString(first.start))–\(timeString(last.end))"
-            let header = makeLabel("🧩 \(routineName)  ·  \(headerSuffix)", size: 15, bold: false)
-            header.textColor = .labelColor
+            // fit) — say "not enough time" instead of a "4:51pm–4:51pm" range. On another day's plan the
+            // note must not claim "today".
+            let overflowNote = isViewingToday ? ScheduleText.notEnoughTimeToday : ScheduleText.notEnoughTimeThisDay
+            let headerSuffix = isOverflow ? overflowNote : "\(timeString(first.start))–\(timeString(last.end))"
+            // A completed routine should read as "done" at a glance: swap the puzzle glyph for a green
+            // check and dim the title, plus a trailing "Completed" badge added below.
+            let routineGlyph = routineComplete ? "✅" : "🧩"
+            let header = makeLabel("\(routineGlyph) \(routineName)  ·  \(headerSuffix)", size: 15, bold: false)
+            header.textColor = routineComplete ? .secondaryLabelColor : .labelColor
             // Title stretches to fill and TRUNCATES in a narrow window; the skip button keeps its
             // intrinsic width pinned to the trailing edge.
             header.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -2695,16 +3283,26 @@ class scheduleViewController: NSViewController {
             headerRow.translatesAutoresizingMaskIntoConstraints = false
             headerRow.addArrangedSubview(chevron)
             headerRow.addArrangedSubview(header)
-            // The header's "…" menu: "Skip routine for today" (active routine only) and "Edit routine
-            // timing" (any routine we can trace back to the settings JSON via one of its habit ids).
+            if routineComplete {
+                // Explicit green "Completed" badge pinned to the trailing edge — the clearest signal the
+                // routine is finished (the collapsed-by-default state alone didn't say why).
+                let completedBadge = makeLabel("✓ \(ScheduleText.routineCompleted)", size: 13, bold: true)
+                completedBadge.textColor = .systemGreen
+                completedBadge.setContentHuggingPriority(.required, for: .horizontal)
+                completedBadge.setContentCompressionResistancePriority(.required, for: .horizontal)
+                headerRow.addArrangedSubview(completedBadge)
+            }
+            // The header's "…" menu: "Skip routine for today" (active, unfinished routine only) and "Edit
+            // routine timing" (any routine we can trace back to the settings JSON via one of its habit ids).
             let section = habits.first?.habitId.flatMap { DayPlanRoutineDraft.shared.routineSection(forHabitId: $0) }
-            if !isCancelled && (isActiveRoutine || section != nil) {
-                let menuBtn = makeRoutineMenuButton(section: section, showsSkip: isActiveRoutine)
+            let showsSkip = isActiveRoutine && !routineComplete
+            if !isCancelled && (showsSkip || section != nil) {
+                let menuBtn = makeRoutineMenuButton(section: section, showsSkip: showsSkip)
                 menuBtn.setContentHuggingPriority(.required, for: .horizontal)
                 menuBtn.setContentCompressionResistancePriority(.required, for: .horizontal)
                 headerRow.addArrangedSubview(menuBtn)
             }
-            headerRow.onClick = { [weak self] in self?.toggleRoutineCollapsed(name: routineName, sectionId: sectionId, date: dateForToggle, overflow: isOverflow) }
+            headerRow.onClick = { [weak self] in self?.toggleRoutineCollapsed(name: routineName, date: dateForToggle, sectionId: sectionId, completed: routineComplete, overflow: isOverflow) }
             headerRow.toolTip = collapsed ? ScheduleText.showHabits : ScheduleText.hideHabits
             inner.addArrangedSubview(headerRow)
             headerRow.widthAnchor.constraint(equalTo: inner.widthAnchor).isActive = true
@@ -2727,7 +3325,7 @@ class scheduleViewController: NSViewController {
                 inner.addArrangedSubview(btn)
             }
             return styledCard(fill: NSColor.systemOrange.withAlphaComponent(0.05),
-                              border: NSColor.separatorColor, hasBorder: true, content: inner)
+                              border: NSColor.separatorColor, hasBorder: true, content: inner, minimumHeight: durationHeight)
         }
 
         // Default selection = the next-up habit; keep the user's pick if it's still valid.
@@ -2737,26 +3335,8 @@ class scheduleViewController: NSViewController {
 
         // A whole previous calendar day is in the past (so its habits are retroactively completable),
         // as is today's "earlier today" accordion (h.isEarlier). A future day is neither.
-        let isPastDay = Calendar.current.startOfDay(for: selectedDate) < Calendar.current.startOfDay(for: Date())
-        // Overflow habits are all anchored at the same cursor (so they stay one group and don't interleave
-        // with deep work). For DISPLAY only, lay them out back-to-back from that anchor using each habit's
-        // own length, so every row shows a valid sequential range (8:29–8:45, 8:45–9:00, …) — illustrative
-        // "dead time" under the Not-enough-time header, not a bogus 8:29–8:29 slot. Copies (value type) so
-        // the real zero-duration blocks used for sorting/free-time are untouched.
-        let rowHabits: [ScheduleBlock]
-        if isOverflow {
-            var running = habits.first?.start ?? selectedDate
-            rowHabits = habits.map { blk in
-                var copy = blk
-                copy.start = running
-                copy.end = running.addingTimeInterval(Double(blk.overflowDurationSeconds ?? 0))
-                running = copy.end
-                return copy
-            }
-        } else {
-            rowHabits = habits
-        }
-        for h in rowHabits where !collapsed {
+        let isPastDay = isViewingPastDay
+        for h in habits where !collapsed {
             let isSel = canAct && h.isActionable && h.habitIndex == selected
             let isPastCompletable = (h.isEarlier || isPastDay) && !h.isDone && h.habitId != nil
             let rowView: NSView
@@ -2791,7 +3371,8 @@ class scheduleViewController: NSViewController {
             }
             // Wrap each habit in its own drop target so a dragged task attaches to this specific
             // habit (keyed by its title), and nests directly beneath it — not at the group's end.
-            let key = "habit:\(h.title)"
+            // The same key is what the habit player reads to show these tasks as a checklist.
+            let key = HabitTaskChecklist.blockKey(forHabitNamed: h.title)
             let drop = DropTargetView()
             drop.translatesAutoresizingMaskIntoConstraints = false
             drop.onDrop = { [weak self] tid in self?.assignTask(tid, toKey: key) ?? false }
@@ -2814,7 +3395,7 @@ class scheduleViewController: NSViewController {
 
         return styledCard(fill: NSColor.systemOrange.withAlphaComponent(0.05),
                           border: isActiveRoutine ? NSColor.systemOrange : NSColor.separatorColor,
-                          hasBorder: true, content: inner)
+                          hasBorder: true, content: inner, minimumHeight: durationHeight)
     }
 
     /// A larger, sharper disclosure chevron for a routine/section accordion header (replaces the tiny
@@ -2869,9 +3450,15 @@ class scheduleViewController: NSViewController {
         if sender.showsSkip {
             menu.addItem(withTitle: ScheduleText.skipRoutineForToday, action: #selector(skipRoutineForTodayClicked), keyEquivalent: "").target = self
         }
-        if sender.section != nil {
-            for (title, action) in [(ScheduleText.editRoutineTiming, #selector(editRoutineTimingClicked(_:))),
-                                    (ScheduleText.addNewHabit, #selector(addNewHabitClicked(_:)))] {
+        if let section = sender.section {
+            var actions = [(ScheduleText.editRoutineTiming, #selector(editRoutineTimingClicked(_:))),
+                           (ScheduleText.addNewHabit, #selector(addNewHabitClicked(_:)))]
+            // A custom routine has more than a start time to edit (name, days, on-demand, its habits'
+            // order), so it also gets a way into the custom-routine manager.
+            if case .custom = section {
+                actions.append((ScheduleText.customRoutineEditTitle, #selector(editCustomRoutineClicked(_:))))
+            }
+            for (title, action) in actions {
                 let item = menu.addItem(withTitle: title, action: action, keyEquivalent: "")
                 item.target = self
                 item.representedObject = sender
@@ -2935,6 +3522,17 @@ class scheduleViewController: NSViewController {
         host?.uncancelRoutine()
     }
 
+    /// The leading time column of a habit row. An overflow habit has no slot in the day — the builder
+    /// parks it zero-duration at the cursor — so rendering its start–end would read "6:57am–6:57am".
+    /// Show how long it needs instead, which is the number that explains why it didn't fit.
+    private func timeColumn(for block: ScheduleBlock) -> String {
+        if block.didOverflow {
+            let seconds = block.overflowDurationSeconds ?? block.durationSeconds
+            if seconds > 0 { return HabitDurationText.short(seconds: seconds) }
+        }
+        return "\(timeString(block.start))–\(timeString(block.end))"
+    }
+
     /// A single tappable habit line: time · emoji · name. No inline buttons — selecting it
     /// reveals the action bar underneath (see makeHabitGroupCard).
     private func makeHabitRow(_ block: ScheduleBlock, isSelected: Bool, onSelect: (() -> Void)? = nil) -> NSView {
@@ -2970,7 +3568,7 @@ class scheduleViewController: NSViewController {
         }
 
         let (titleLabel, _) = layoutColumns(in: container,
-                                            time: "\(timeString(block.start))–\(timeString(block.end))",
+                                            time: timeColumn(for: block),
                                             title: block.title, leadingInset: 6, vPad: 6,
                                             timeColor: .secondaryLabelColor, titleColor: .labelColor)
         if block.isDone {
@@ -2978,7 +3576,24 @@ class scheduleViewController: NSViewController {
         } else if block.didOverflow {
             titleLabel.textColor = .systemRed
         }
+        // After the strike-through / colour, which both rewrite the label's attributed string.
+        if isHabitShortened(block.habitId) { appendShortenedTag(to: titleLabel) }
         return container
+    }
+
+    /// Whether this habit is running a shortened length on the day being viewed. The one answer behind
+    /// both the action bar's "Shortened" caption and the list row's "(shortened)" tag, so the two can't
+    /// disagree.
+    func isHabitShortened(_ habitId: String?) -> Bool {
+        DayPlanHabitDurations.overrideSeconds(for: habitId, on: selectedDate) != nil
+    }
+
+    /// Adds the small "(shortened)" after the habit's name so a trimmed habit is obvious in the list
+    /// without opening its action bar.
+    private func appendShortenedTag(to label: NSTextField, color: NSColor = .secondaryLabelColor) {
+        label.attributedStringValue = DayPlanShortenedTag.appended(to: label.attributedStringValue,
+                                                                   tag: ScheduleText.habitShortenedTag,
+                                                                   color: color)
     }
 
     /// Strikes a completed habit's title through (same style as a done nested task). Uses the label's own
@@ -2996,13 +3611,15 @@ class scheduleViewController: NSViewController {
     /// time · emoji · name) with the Play/Done/Skip bar joined directly beneath, all inside
     /// one orange rounded border with no gap between them.
     private func makeSelectedHabitUnit(_ block: ScheduleBlock, idx: Int) -> NSView {
-        makeSelectedUnit(block, bar: makeActionBar(idx: idx, habitId: block.habitId, liveActions: true))
+        makeSelectedUnit(block, bar: makeActionBar(idx: idx, habitId: block.habitId, liveActions: true,
+                                                   canShorten: canShortenHabits && !block.isDone))
     }
 
     /// The selected habit of a routine that can't be acted on here — a preview/future routine, or a habit
     /// already completed earlier today: Edit is the only action.
     private func makeSelectedEditableHabitUnit(_ block: ScheduleBlock, id: String) -> NSView {
-        makeSelectedUnit(block, bar: makeActionBar(idx: block.habitIndex ?? 0, habitId: id, liveActions: false))
+        makeSelectedUnit(block, bar: makeActionBar(idx: block.habitIndex ?? 0, habitId: id, liveActions: false,
+                                                   canShorten: canShortenHabits && !block.isDone))
     }
 
     /// One connected orange unit — header (white text, same column x-positions as the plain rows so it
@@ -3013,12 +3630,17 @@ class scheduleViewController: NSViewController {
         header.wantsLayer = true
         header.layer?.backgroundColor = NSColor.systemOrange.cgColor
         header.translatesAutoresizingMaskIntoConstraints = false
-        let (headerTitle, _) = layoutColumns(in: header, time: "\(timeString(block.start))–\(timeString(block.end))",
+        let (headerTitle, _) = layoutColumns(in: header, time: timeColumn(for: block),
                                             title: block.title, leadingInset: 6, vPad: 8,
                                             timeColor: .white, titleColor: .white)
         // A completed habit stays struck through while it's selected, so the Edit bar doesn't make it
         // read as un-done (white strike on the orange header, matching the plain row's grey one).
         if block.isDone { strikeThrough(headerTitle, color: .white) }
+        // On the solid-orange header the secondary grey is unreadable — match the header's white text.
+        if isHabitShortened(block.habitId) {
+            appendShortenedTag(to: headerTitle,
+                               color: NSColor.white.withAlphaComponent(DayPlanShortenedTag.onOrangeAlpha))
+        }
 
         let unit = NSStackView(views: [header, bar])
         unit.orientation = .vertical
@@ -3063,11 +3685,11 @@ class scheduleViewController: NSViewController {
         return divider
     }
 
-    /// The Play / Done / Skip / Edit bar shown beneath the selected habit (icon + label columns). Edit
-    /// needs the habit's server id (it edits the settings entry, not the row), so it's omitted for a
-    /// habit without one. `liveActions` is false for a routine that isn't running (preview/future):
-    /// only Edit is offered.
-    private func makeActionBar(idx: Int, habitId: String?, liveActions: Bool) -> NSView {
+    /// The Play / Done / Skip / Edit / Stats bar shown beneath the selected habit (icon + label
+    /// columns). Edit and Stats both need the habit's server id (they address the settings entry and
+    /// the completed-activity history, not today's row), so both are omitted for a habit without one.
+    /// `liveActions` is false for a routine that isn't running (preview/future): only Edit and Stats.
+    private func makeActionBar(idx: Int, habitId: String?, liveActions: Bool, canShorten: Bool) -> NSView {
         let secondaryFill = NSColor.systemGray.withAlphaComponent(0.3)
         var columns = liveActions ? [
             makeActionColumn("play.fill", "▶", ScheduleText.play, .play, idx: idx, habitId: habitId, fill: .systemOrange),
@@ -3075,10 +3697,17 @@ class scheduleViewController: NSViewController {
             makeActionColumn("forward.fill", "≫", ScheduleText.skip, .skip, idx: idx, habitId: habitId, fill: secondaryFill),
         ] : []
         if let habitId = habitId {
-            // Edit changes the habit's settings rather than acting on today's row, so a hairline sets it
+            // Edit/Stats are about the habit itself rather than today's row, so a hairline sets them
             // apart from Play/Done/Skip. The Edit-only bar (preview routines) has nothing to separate.
             if !columns.isEmpty { columns.append(makeActionBarDivider()) }
+            // Skipping ahead only makes sense on a day that hasn't started — today's routine has its
+            // own live Skip above (report 2026-09-13_20-13-58).
+            if !liveActions { columns.append(makeSkipAheadColumn(idx: idx, habitId: habitId)) }
+            // Shortening is about the plan for the day being viewed, so unlike Skip ahead it is offered
+            // on today as well as on future days — just not on a day that has already been and gone.
+            if canShorten { columns.append(makeShortenColumn(idx: idx, habitId: habitId)) }
             columns.append(makeEditColumn(idx: idx, habitId: habitId))
+            columns.append(makeStatsColumn(idx: idx, habitId: habitId))
         }
         return makeActionBarContainer(columns: columns)
     }
@@ -3104,6 +3733,32 @@ class scheduleViewController: NSViewController {
     /// row index doesn't matter — only the habit id, which the button carries in its identifier).
     private func makeEditColumn(idx: Int, habitId: String) -> NSView {
         makeActionColumn("pencil", "✎", ScheduleText.editHabit, .edit,
+                         idx: idx, habitId: habitId, fill: NSColor.systemGray.withAlphaComponent(0.3))
+    }
+
+    /// Skip this habit on the day being viewed, before it starts — and unskip it again. The state is
+    /// per day, so skipping tomorrow's meditation leaves every other day alone.
+    private func makeSkipAheadColumn(idx: Int, habitId: String) -> NSView {
+        let skipped = DayPlanHabitSkips.isSkipped(habitId, on: selectedDate)
+        return makeActionColumn(skipped ? "arrow.uturn.backward" : "forward.end.fill", skipped ? "↩" : "⏭",
+                                skipped ? ScheduleText.habitUnskipAhead : ScheduleText.habitSkipAhead, .skipAhead,
+                                idx: idx, habitId: habitId, fill: NSColor.systemGray.withAlphaComponent(0.3))
+    }
+
+    /// Trim this habit for the day being viewed only — and put it back. The trim lives on this Mac and
+    /// never touches the habit, so every other day keeps the real length.
+    private func makeShortenColumn(idx: Int, habitId: String) -> NSView {
+        let shortened = isHabitShortened(habitId)
+        return makeActionColumn("timer", "⏱", shortened ? ScheduleText.habitShortened : ScheduleText.habitShorten,
+                                .shorten, idx: idx, habitId: habitId,
+                                fill: shortened ? NSColor.systemOrange.withAlphaComponent(0.35)
+                                                : NSColor.systemGray.withAlphaComponent(0.3))
+    }
+
+    /// The Stats action, sitting beside Edit — it opens this habit's own streak / heat map / logged-
+    /// quantity history, so like Edit it's addressed by habit id rather than row index.
+    private func makeStatsColumn(idx: Int, habitId: String) -> NSView {
+        makeActionColumn("chart.bar", "📊", ScheduleText.habitStats, .stats,
                          idx: idx, habitId: habitId, fill: NSColor.systemGray.withAlphaComponent(0.3))
     }
 
@@ -3313,18 +3968,20 @@ class scheduleViewController: NSViewController {
                 x.heightAnchor.constraint(equalToConstant: 22),
                 x.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -8),
                 x.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
-                // Keep the title clear of the Hide/Show button. A meeting has no subtitle, so nothing else
-                // caps the title's trailing edge — without this a long title runs under the button.
-                titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: x.leadingAnchor, constant: -8),
             ])
         }
 
-        let card = styledCard(fill: fill, border: border, hasBorder: block.kind != .allDone, content: content)
+        let durationHeight = [.meeting, .deepWork, .breakSprint].contains(block.kind)
+            ? DayPlanEventHeight.points(forDurationSeconds: block.durationSeconds) : 0
+        let card = styledCard(fill: fill, border: border, hasBorder: block.kind != .allDone,
+                              content: content, minimumHeight: durationHeight)
         // Click a meeting card (anywhere but the ✕) to open its edit form.
         if block.kind == .meeting, let eid = block.eventID {
-            // Carry the occurrence's start (epoch, first so it can't collide with "|" in an identifier) so
-            // a "just this one" edit targets THIS occurrence, not the series' first instance.
-            card.identifier = NSUserInterfaceItemIdentifier("edit:\(block.start.timeIntervalSince1970)|\(eid)")
+            // The occurrence travels with the id: a recurring event's identifier names the whole
+            // series, so without it the editor would open on the series' first occurrence — which is
+            // how an edit made in September showed an August date (report 2026-09-11_21-00-07).
+            card.identifier = NSUserInterfaceItemIdentifier(
+                "edit:\(eid)\(Self.occurrenceSeparator)\(block.start.timeIntervalSince1970)-\(block.end.timeIntervalSince1970)")
             let click = NSClickGestureRecognizer(target: self, action: #selector(meetingCardClicked(_:)))
             click.delegate = self   // so it ignores clicks on the ✕ (dismiss) button
             card.addGestureRecognizer(click)
@@ -3332,16 +3989,31 @@ class scheduleViewController: NSViewController {
         return card
     }
 
-    @objc private func meetingCardClicked(_ g: NSClickGestureRecognizer) {
-        guard let card = g.view, let raw = card.identifier?.rawValue, raw.hasPrefix("edit:") else { return }
-        // Identifier is "edit:<occurrenceStartEpoch>|<eventID>" (epoch first; the id can contain "|").
-        let payload = String(raw.dropFirst("edit:".count))
-        let parts = payload.split(separator: "|", maxSplits: 1, omittingEmptySubsequences: false)
-        if parts.count == 2, let epoch = TimeInterval(parts[0]) {
-            openEventEditor(eventID: String(parts[1]), occurrenceStart: Date(timeIntervalSince1970: epoch), from: card)
-        } else {
-            openEventEditor(eventID: payload, occurrenceStart: nil, from: card)   // legacy/no-occurrence form
+    /// Separates a card's event id from the occurrence times appended after it. Chosen so it cannot
+    /// appear inside an EventKit identifier.
+    static let occurrenceSeparator = "|occ:"
+
+    /// Splits `edit:<id>|occ:<start>-<end>` back into its parts. The occurrence is absent for cards
+    /// written before this, and for anything that isn't a meeting card.
+    static func parseMeetingCardIdentifier(_ raw: String) -> (eventID: String, start: Date, end: Date)? {
+        guard raw.hasPrefix("edit:") else { return nil }
+        let body = String(raw.dropFirst("edit:".count))
+        let parts = body.components(separatedBy: occurrenceSeparator)
+        guard parts.count == 2, !parts[0].isEmpty else {
+            return body.isEmpty ? nil : (body, .distantPast, .distantPast)
         }
+        let times = parts[1].components(separatedBy: "-")
+        guard times.count == 2, let start = Double(times[0]), let end = Double(times[1]), end > start else {
+            return (parts[0], .distantPast, .distantPast)
+        }
+        return (parts[0], Date(timeIntervalSince1970: start), Date(timeIntervalSince1970: end))
+    }
+
+    @objc private func meetingCardClicked(_ g: NSClickGestureRecognizer) {
+        guard let card = g.view, let raw = card.identifier?.rawValue,
+              let parsed = Self.parseMeetingCardIdentifier(raw) else { return }
+        let occurrence = parsed.start == .distantPast ? nil : (start: parsed.start, end: parsed.end)
+        openEventEditor(eventID: parsed.eventID, occurrence: occurrence, from: card)
     }
 
     /// Finds the meeting card's ✕ (dismiss) button, if any, anywhere in its subtree.
@@ -3355,7 +4027,11 @@ class scheduleViewController: NSViewController {
 
     /// A rounded, optionally-bordered card sized to its content and the stack width. It's a
     /// DropTargetView so the caller can accept a dragged task (set its `onDrop`).
-    private func styledCard(fill: NSColor, border: NSColor, hasBorder: Bool, content: NSView) -> DropTargetView {
+    ///
+    /// `minimumHeight` reserves duration space and centres content within it.
+    /// Zero keeps a content-sized card.
+    private func styledCard(fill: NSColor, border: NSColor, hasBorder: Bool, content: NSView,
+                            minimumHeight: CGFloat = 0) -> DropTargetView {
         let card = DropTargetView()
         card.wantsLayer = true
         card.layer?.backgroundColor = fill.cgColor
@@ -3368,15 +4044,41 @@ class scheduleViewController: NSViewController {
         NSLayoutConstraint.activate([
             content.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 12),
             content.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -12),
-            content.topAnchor.constraint(equalTo: card.topAnchor, constant: 8),
-            content.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -8),
+            content.centerYAnchor.constraint(equalTo: card.centerYAnchor),
+            content.topAnchor.constraint(greaterThanOrEqualTo: card.topAnchor, constant: 8),
+            card.bottomAnchor.constraint(greaterThanOrEqualTo: content.bottomAnchor, constant: 8),
         ])
+        // A weak preferred height lets intrinsic content grow while keeping unused space
+        // symmetric above and below the title and its time range.
+        let preferredHeight = card.heightAnchor.constraint(equalToConstant: minimumHeight)
+        preferredHeight.priority = NSLayoutConstraint.Priority(249)
+        preferredHeight.isActive = true
+        if minimumHeight > 0 {
+            card.heightAnchor.constraint(greaterThanOrEqualToConstant: minimumHeight).isActive = true
+        }
         return card   // width is constrained by addCard(), once the card is in the stack
     }
 
-    private enum ActionKind { case play, done, skip, edit }
+    private enum ActionKind { case play, done, skip, edit, stats, skipAhead, shorten }
     /// Edit buttons carry the habit id after this prefix in their identifier (Play/Done/Skip are index-based).
     private static let editActionPrefix = "edit:"
+    /// Stats buttons carry the habit id the same way.
+    private static let statsActionPrefix = "stats:"
+    /// Skip-ahead buttons too — the skip is recorded against the habit id and the viewed day.
+    private static let skipAheadActionPrefix = "skipAhead:"
+    /// Shorten buttons — the one-day trim is recorded against the habit id and the viewed day.
+    private static let shortenActionPrefix = "shorten:"
+
+    /// The habit-id-addressed actions and the prefix each stamps into its button identifier.
+    private static func actionPrefix(for kind: ActionKind) -> String? {
+        switch kind {
+        case .edit: return editActionPrefix
+        case .stats: return statsActionPrefix
+        case .skipAhead: return skipAheadActionPrefix
+        case .shorten: return shortenActionPrefix
+        default: return nil
+        }
+    }
 
     private func makeActionButton(symbol: String, fallback: String, idx: Int, kind: ActionKind, habitId: String? = nil,
                                   diameter: CGFloat = 30, fill: NSColor? = nil) -> NSView {
@@ -3402,7 +4104,8 @@ class scheduleViewController: NSViewController {
         btn.contentTintColor = (kind == .play) ? .white : .labelColor
         btn.tag = idx
         btn.translatesAutoresizingMaskIntoConstraints = false
-        btn.identifier = NSUserInterfaceItemIdentifier(kind == .edit ? Self.editActionPrefix + (habitId ?? "") : "\(kind)")
+        btn.identifier = NSUserInterfaceItemIdentifier(
+            Self.actionPrefix(for: kind).map { $0 + (habitId ?? "") } ?? "\(kind)")
 
         disc.addSubview(btn)
         NSLayoutConstraint.activate([
@@ -3438,11 +4141,235 @@ class scheduleViewController: NSViewController {
             removeHabitFromCache(index: idx)
             host?.scheduleSkip(index: idx)
             scheduleReload(after: 0.25)
+        case _ where id.hasPrefix(Self.skipAheadActionPrefix):
+            let habitId = String(id.dropFirst(Self.skipAheadActionPrefix.count))
+            let skipped = DayPlanHabitSkips.toggle(habitId, on: selectedDate)
+            addLog(text: "[user-action] day plan: habit \(skipped ? "skipped" : "unskipped") ahead for \(DayPlanHabitSkips.dayKey(selectedDate))")
+            lastRenderSignature = nil
+            reload()
+        case _ where id.hasPrefix(Self.shortenActionPrefix):
+            openShortenHabitSheet(habitId: String(id.dropFirst(Self.shortenActionPrefix.count)))
         case _ where id.hasPrefix(Self.editActionPrefix):
             openHabitEditor(habitId: String(id.dropFirst(Self.editActionPrefix.count)))
+        case _ where id.hasPrefix(Self.statsActionPrefix):
+            openHabitStats(habitId: String(id.dropFirst(Self.statsActionPrefix.count)))
         default: break
         }
     }
+
+    // MARK: - Per-habit stats
+
+    /// The habit's "✍️ Journal" style title from the routine settings, handed to the stats sheet so its
+    /// header reads correctly while `/user-settings` is still in flight.
+    private func habitDisplayTitle(habitId: String) -> String {
+        guard let values = DayPlanRoutineDraft.shared.habitEditValues(id: habitId) else { return ScheduleText.habitStats }
+        let composed = [values.icon, values.name].filter { !$0.isEmpty }.joined(separator: " ")
+        return composed.isEmpty ? ScheduleText.habitStats : composed
+    }
+
+    /// The day's habits for the Fix modal, **longest first** — that is where the minutes are, and the
+    /// report asked for it. Skipped habits stay on the list so the skip can be undone from the same
+    /// place it was made.
+    ///
+    /// The evening routine is left out: "we assume all tasks get completed before evening routine -
+    /// just offer to shorten morning routine" (report 2026-09-17_08-15-57, follow-up). Counting it made
+    /// the route offer 5h 54m of habits on a day whose morning routine was a fraction of that.
+    private func dayFixHabitRows() -> [DayFixHabitRow] {
+        let day = selectedDate
+        let eveningStart = ScheduleTab.timeOnDate(shutOffTime, date: day)
+        let habitBlocks = DayFixPlan.habitsInsideWorkingDay(
+            scheduleBlocks(for: day).filter { $0.kind == .habit && !$0.didOverflow },
+            start: { $0.start },
+            isEveningRoutine: { $0.routineName == ScheduleText.eveningRoutineHabits },
+            eveningRoutineStart: eveningStart)
+        var seen = Set<String>()
+        let rows: [DayFixHabitRow] = habitBlocks.compactMap { block in
+            guard let id = block.habitId, !id.isEmpty, seen.insert(id).inserted else { return nil }
+            return DayFixHabitRow(id: id, title: block.title,
+                                  seconds: block.durationSeconds,
+                                  isSkipped: DayPlanHabitSkips.isSkipped(id, on: day),
+                                  isShortened: DayPlanHabitDurations.overrideSeconds(for: id, on: day) != nil)
+        }
+        return DayFixPlan.longestFirst(rows, seconds: { $0.seconds }, name: { $0.title })
+    }
+
+    // MARK: - The Fix modal's meetings route
+
+    /// The meetings the Fix modal can still claw time back from, longest first.
+    ///
+    /// Only what is still ahead on the day being viewed: a meeting that has already finished cannot
+    /// give the day a minute back, so offering to cancel it would be a dead button. Dismissed meetings
+    /// stay on the list (struck through) so a skip can be undone where it was made — they are not
+    /// counted towards what the route could free, because they already cost the day nothing.
+    private func dayFixMeetingRows() -> [DayFixMeetingRow] {
+        let day = selectedDate
+        let cal = Calendar.current
+        let floor = cal.isDateInToday(day) ? Date() : cal.startOfDay(for: day)
+        // The SAME cache key the day's own render uses. Asking for a different one would hand back an
+        // empty list the first time the modal is opened (the meetings cache never blocks the main
+        // thread — it refreshes in the background and answers from what it has), which is exactly the
+        // "missing calendar events" this route exists to fix.
+        let rows = CalendarManager.shared.meetings(for: day, includeDismissed: showDismissedEvents)
+            .filter { $0.end > floor }
+            .map { meeting -> DayFixMeetingRow in
+                DayFixMeetingRow(
+                    id: "\(meeting.id)|\(meeting.start.timeIntervalSince1970)",
+                    eventID: meeting.id,
+                    title: meeting.title,
+                    start: meeting.start,
+                    timeLabel: Self.timeFormatter.string(from: meeting.start),
+                    seconds: Int(meeting.end.timeIntervalSince(meeting.start)),
+                    // Ownership and attendees were read on the background fetch, so deciding the action
+                    // costs nothing here.
+                    action: DayFixPlan.meetingAction(hasOtherAttendees: meeting.hasOtherAttendees,
+                                                     ownership: meeting.ownership),
+                    isRecurring: meeting.isRecurring,
+                    isSkipped: meeting.isDismissed,
+                    isShortened: DayPlanMeetingDurations.overrideSeconds(forEventID: meeting.id, on: day) != nil)
+            }
+        return DayFixPlan.longestFirst(rows, seconds: { $0.seconds }, name: { $0.title })
+    }
+
+    /// Skip / un-skip one meeting for the day being viewed. Same per-day dismissal the row's own ✕
+    /// makes, so a meeting skipped from the Fix modal can be brought back with "Show dismissed events"
+    /// like any other.
+    private func dayFixToggleSkipMeeting(_ row: DayFixMeetingRow) {
+        if row.isSkipped {
+            lastRenderSignature = nil
+            CalendarManager.shared.restoreDismissedEvent(id: row.eventID, forDay: selectedDate)
+            DayPlanSync.shared.undismissEvent(eventID: row.eventID, on: selectedDate)
+            reload()
+        } else {
+            // This day only — the Fix modal is about one day, and the series-wide question the Day Plan
+            // row asks would be the wrong question here.
+            dismissMeeting(eventId: row.eventID, seriesWide: false)
+        }
+    }
+
+    /// Cancel or decline one meeting from the Fix modal. The confirmation, the this-occurrence-or-the-
+    /// series question and the removal itself are the editor's, unchanged — this only supplies the
+    /// event, so there is one implementation of "take a meeting off the calendar" (`EventCancellationFlow`).
+    private func dayFixCancelMeeting(_ row: DayFixMeetingRow) {
+        // The row already carries which of the two it is (`DayFixPlan.meetingAction`), so the rule is
+        // not re-derived — and a row offering Skip never reaches here.
+        guard row.action != .skip else { return }
+        let action: EventCancelAction = row.action == .cancel ? .cancelEvent : .declineEvent
+        removeEvent(eventID: row.eventID, action: action,
+                    isRecurring: row.isRecurring,
+                    occurrenceStart: row.start,
+                    // Nothing has asked which occurrences yet — the Fix modal has no form to have
+                    // asked in — so the flow asks, once, for a repeating meeting.
+                    knownScope: nil)
+    }
+
+    /// The shorten sheet for one meeting: the same sheet a habit gets, saying honestly that the trim is
+    /// the Day Plan's and the calendar copy is untouched.
+    private func dayFixShortenMeeting(_ row: DayFixMeetingRow) {
+        guard #available(macOS 11.0, *) else { return }
+        let day = selectedDate
+        guard let actualSeconds = CalendarManager.shared.untrimmedSeconds(forEventID: row.eventID, on: day,
+                                                                         occurrenceStart: row.start) else {
+            showDraftAlert(title: ScheduleText.eventRemoveFailedTitle, message: "")
+            return
+        }
+        DayPlanAnalytics.capture(DayPlanAnalytics.eventShortenOpened)
+        var sheet: DayPlanSheetController!
+        let view = DayPlanShortenHabitView(
+            habitTitle: row.title,
+            copy: .meeting(dayLabel: Self.dateFormatterThisYear.string(from: day)),
+            actualSeconds: actualSeconds,
+            currentSeconds: DayPlanMeetingDurations.overrideSeconds(forEventID: row.eventID, on: day),
+            onPick: { [weak self] seconds in
+                let applied = CalendarManager.shared.setMeetingTrim(seconds, forEventID: row.eventID, on: day,
+                                                                    actualSeconds: actualSeconds)
+                DayPlanAnalytics.capture(applied == nil ? DayPlanAnalytics.eventShortenCleared
+                                                        : DayPlanAnalytics.eventShortened)
+                addLog(text: "[user-action] day plan: meeting shortened to \(applied.map(String.init) ?? "full") seconds for \(DayPlanMeetingDurations.dayKey(day))")
+                self?.dismissDraftSheet(sheet)
+                self?.reloadAfterShorten()
+            },
+            onFullLength: { [weak self] in
+                CalendarManager.shared.setMeetingTrim(nil, forEventID: row.eventID, on: day,
+                                                      actualSeconds: actualSeconds)
+                DayPlanAnalytics.capture(DayPlanAnalytics.eventShortenCleared)
+                addLog(text: "[user-action] day plan: meeting restored to full length for \(DayPlanMeetingDurations.dayKey(day))")
+                self?.dismissDraftSheet(sheet)
+                self?.reloadAfterShorten()
+            },
+            onCancel: { [weak self] in self?.dismissDraftSheet(sheet) })
+        sheet = DayPlanSheetController(size: Self.shortenHabitSheetSize, content: view)
+        presentAsSheet(sheet)
+    }
+
+    // MARK: - Shortening a habit for one day
+
+    /// Opens the "Shorten" sheet for the habit and the day currently being viewed. The chosen length is
+    /// stored locally against that day only (`DayPlanHabitDurations`); the habit itself is untouched, so
+    /// Settings › Edit habits still shows the real duration (report 2026-09-15_20-29-02).
+    private func openShortenHabitSheet(habitId: String) {
+        guard #available(macOS 11.0, *), !habitId.isEmpty else { return }
+        guard let model = ScheduleTab.routineHabit(withId: habitId) else {
+            showDraftAlert(title: ScheduleText.habitEditUnavailable, message: "")
+            return
+        }
+        let actualSeconds = ScheduleTab.estimatedDuration(for: model)
+        let day = selectedDate
+        DayPlanAnalytics.capture(DayPlanAnalytics.habitShortenOpened)
+        var sheet: DayPlanSheetController!
+        let view = DayPlanShortenHabitView(
+            habitTitle: model.name ?? ScheduleText.habitShortenTitle,
+            copy: .habit(dayLabel: Self.dateFormatterThisYear.string(from: day)),
+            actualSeconds: actualSeconds,
+            currentSeconds: DayPlanHabitDurations.overrideSeconds(for: habitId, on: day),
+            onPick: { [weak self] seconds in
+                let applied = DayPlanHabitDurations.setOverride(seconds, for: habitId, on: day, actual: actualSeconds)
+                DayPlanAnalytics.capture(applied == nil ? DayPlanAnalytics.habitShortenCleared
+                                                        : DayPlanAnalytics.habitShortened)
+                addLog(text: "[user-action] day plan: habit shortened to \(applied.map(String.init) ?? "full") seconds for \(DayPlanHabitDurations.dayKey(day))")
+                self?.dismissDraftSheet(sheet)
+                self?.reloadAfterShorten()
+            },
+            onFullLength: { [weak self] in
+                DayPlanHabitDurations.clearOverride(for: habitId, on: day)
+                DayPlanAnalytics.capture(DayPlanAnalytics.habitShortenCleared)
+                addLog(text: "[user-action] day plan: habit restored to full length for \(DayPlanHabitDurations.dayKey(day))")
+                self?.dismissDraftSheet(sheet)
+                self?.reloadAfterShorten()
+            },
+            onCancel: { [weak self] in self?.dismissDraftSheet(sheet) })
+        sheet = DayPlanSheetController(size: Self.shortenHabitSheetSize, content: view)
+        presentAsSheet(sheet)
+    }
+
+    /// The trim changes every block after it, so the cached render signature has to be dropped before
+    /// the day is laid out again (same as skipping a habit ahead). The 90-day forecast reuses its
+    /// snapshot for fifteen minutes and only re-reads on this notification, so it has to be told too —
+    /// a shortened habit really does free capacity on that day.
+    private func reloadAfterShorten() {
+        lastRenderSignature = nil
+        NotificationCenter.default.post(name: DayPlanTaskStore.forecastSnapshotDidChange, object: nil)
+        reload()
+    }
+
+    /// Tall enough for the presets, the typed-length row (with a validation line under it) and the
+    /// two-line hint without scrolling in English; the sheet scrolls if a translation needs more.
+    private static let shortenHabitSheetSize = NSSize(width: 430, height: 440)
+
+    /// Opens this habit's own stats — current streak, completion heat map and a chart per log-quantity
+    /// question — as a sheet, reusing the native Stats screen's components.
+    private func openHabitStats(habitId: String) {
+        guard #available(macOS 11.0, *), !habitId.isEmpty else { return }
+        DayPlanAnalytics.capture(DayPlanAnalytics.habitStatsOpened)
+        let store = SingleHabitStatsStore(habitId: habitId, fallbackTitle: habitDisplayTitle(habitId: habitId))
+        var sheet: DayPlanSheetController!
+        let view = SingleHabitStatsView(store: store, strings: StatsStrings.load(), onClose: { [weak self] in
+            self?.dismissDraftSheet(sheet)
+        })
+        sheet = DayPlanSheetController(size: Self.habitStatsSheetSize, content: view)
+        presentAsSheet(sheet)
+    }
+
+    private static let habitStatsSheetSize = NSSize(width: 720, height: 620)
 
     // MARK: - Editing habits / routine timing (DayPlanRoutineDraft)
 
@@ -3500,21 +4427,65 @@ class scheduleViewController: NSViewController {
     }
 
     /// "When do you want <routine> to start?" — a time picker sheet for the routine's start time.
-    private func openRoutineTimingEditor(section: RoutineSettingsSection) {
+    private func openRoutineTimingEditor(section: RoutineSettingsSection, authorized: Bool = false) {
+        if !authorized, isPasswordRequireInOpenSettings() {
+            guard let main = mainViewControllerObj else { return }
+            main.askPasswordForSettings()
+            getEnterPasswordVcObjForPreferences().requestAuthorization(action: { [weak self] in
+                self?.openRoutineTimingEditor(section: section, authorized: true)
+            }, onCancel: {})
+            return
+        }
         guard #available(macOS 11.0, *) else { return }
         let draft = DayPlanRoutineDraft.shared
         var sheet: DayPlanSheetController!
+        let account = appdelegate?.user?.userId ?? ""
+        let cutoff = draft.eveningCutoffMinutes()
         let picker = RoutineTimingView(routineName: draft.routineDisplayName(section),
                                        minutes: draft.routineStartMinutes(section) ?? 7 * 60,
-                                       onSave: { [weak self] minutes in
-            draft.applyRoutineStart(section, minutes: minutes)
+                                       showsCutoff: section == .evening,
+                                       cutoffEnabled: cutoff != nil,
+                                       cutoffMinutes: cutoff ?? draft.routineStartMinutes(section) ?? 21 * 60,
+                                       morningStartMinutes: draft.routineStartMinutes(.morning),
+                                       onSave: { [weak self] minutes, cutoff in
+            guard !account.isEmpty, appdelegate?.user?.userId == account,
+                  draft.applyRoutineTiming(section, minutes: minutes, eveningCutoffMinutes: cutoff) else {
+                self?.showDraftAlert(title: ScheduleText.habitEditUnavailable, message: "")
+                self?.dismissDraftSheet(sheet)
+                return
+            }
             DayPlanAnalytics.capture(DayPlanAnalytics.routineTimingEdited)
             self?.dismissDraftSheet(sheet)
         }, onCancel: { [weak self] in
             self?.dismissDraftSheet(sheet)
         })
-        sheet = DayPlanSheetController(size: NSSize(width: 420, height: 210), content: picker)
+        sheet = DayPlanSheetController(size: NSSize(width: 420, height: section == .evening ? 380 : 210), content: picker)
         presentAsSheet(sheet)
+    }
+
+    /// The custom-routine manager: list every custom routine, create one, edit or delete one, and add /
+    /// remove / reorder its habits. Reuses the same draft store (and the same habit editor) as the
+    /// Day Plan's habit editing, so nothing is written to the server until "Save and restart app".
+    private func openCustomRoutineManager(sequenceId: String? = nil) {
+        guard #available(macOS 11.0, *) else { return }
+        DayPlanAnalytics.capture(DayPlanAnalytics.customRoutineManagerOpened)
+        let model = CustomRoutineManagerModel()
+        if let sequenceId = sequenceId, let routine = model.routines.first(where: { $0.id == sequenceId }) {
+            model.startEditing(routine)
+        }
+        var sheet: DayPlanSheetController!
+        let manager = CustomRoutineManagerView(model: model, onClose: { [weak self] in
+            self?.dismissDraftSheet(sheet)
+        })
+        sheet = DayPlanSheetController(size: Self.customRoutineManagerSheetSize, content: manager)
+        presentAsSheet(sheet)
+    }
+
+    private static let customRoutineManagerSheetSize = NSSize(width: 620, height: 560)
+
+    @objc private func editCustomRoutineClicked(_ item: NSMenuItem) {
+        guard case .custom(let sequenceId)? = (item.representedObject as? RoutineMenuButton)?.section else { return }
+        openCustomRoutineManager(sequenceId: sequenceId)
     }
 
     private func dismissDraftSheet(_ sheet: NSViewController?) {
@@ -3973,16 +4944,18 @@ class scheduleViewController: NSViewController {
             guard todoSelectedIDs.contains(id) else { continue }
             let title = (task.value(forKey: "title") as? String) ?? "Task"
             // Use the to-do's own estimated duration (seconds) if set, else a 15-minute default.
-            let secs = (task.value(forKey: "duration") as? Int) ?? 0
-            let minutes = secs > 0 ? max(1, secs / 60) : 15
-            // Group imported tasks under their to-do's first tag (its "project").
-            let tags = (task.value(forKey: "tags") as? [[String: String]]) ?? []
-            let project = tags.first?["text"]
+            let minutes = TodoFieldParsing.durationMinutes(task.value(forKey: "duration"))
+            // Group imported tasks under their to-do's project (`project_id`, else its first tag) and
+            // record the link so the repair pass knows this one is already on the backend.
+            let fields = TodoProjectFields(todo: task)
+            let project = DayPlanTaskStore.shared.projectName(for: fields)
             // Capture the to-do's Eisenhower quadrant so completion/planning can round-trip through
             // the `PUT /to-do` upsert (which requires it) without clobbering it.
             let quadrant = (task.value(forKey: "eisenhower_quadrant") as? Int)
             DayPlanTaskStore.shared.add(DayPlanTask(title: title, durationMinutes: minutes, sourceTaskId: id,
-                                                    project: project, eisenhowerQuadrant: quadrant),
+                                                    project: project, eisenhowerQuadrant: quadrant,
+                                                    projectID: fields.projectID, tags: fields.tags,
+                                                    hasSyncedExternalProject: fields.hasSyncedExternalProject),
                                         for: selectedDate)
             addedCount += 1
         }
@@ -4264,6 +5237,21 @@ class scheduleViewController: NSViewController {
     private func durationString(_ seconds: Int) -> String { HabitDurationText.short(seconds: seconds) }
 }
 
+extension scheduleViewController: NSTextViewDelegate {
+
+    /// A link in an event description opens only if it is http(s). The description is markup from
+    /// whoever sent the invite, so a `javascript:` or `file:` href must not be actionable — the
+    /// renderer already refuses to attach one, and this is the second gate in case a link ever
+    /// reaches the text view another way. Returning true in both branches means "handled", so AppKit
+    /// never falls back to opening it itself.
+    func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
+        let href = (link as? URL)?.absoluteString ?? (link as? String) ?? ""
+        guard let url = EventDescriptionHTML.openableURL(from: href) else { return true }
+        NSWorkspace.shared.open(url)
+        return true
+    }
+}
+
 extension scheduleViewController: NSGestureRecognizerDelegate {
     /// Don't let the meeting card's edit gesture fire when the click is on the ✕ (dismiss) button —
     /// let the button handle its own click instead.
@@ -4299,6 +5287,14 @@ private extension Character {
 private var tvcScheduleVCKey: UInt8 = 0
 private var tvcSegmentKey: UInt8 = 0
 private var tvcDayPlanBoxKey: UInt8 = 0
+
+/// The allowed-activity player's two panes, in the order its segmented control lists them.
+/// (Previously these were bare 0/1 literals spread across the tab code.)
+enum AllowedActivityTab: Int {
+    case habitPlayer = 0
+    case dayPlan = 1
+}
+
 extension timerViewcontroller {
 
     private var allowedActivityScheduleVC: scheduleViewController? {
@@ -4320,7 +5316,13 @@ extension timerViewcontroller {
     /// Day Plan 2has its own clock) — same as the other Day Plan hosts.
     var isAllowedActivityDayPlanFront: Bool {
         guard let seg = allowedActivitySegment, seg.superview?.isHidden == false else { return false }
-        return seg.selectedSegment == 1
+        return seg.selectedSegment == AllowedActivityTab.dayPlan.rawValue
+    }
+
+    /// Whether the allowed-activity player's "Habit Player | Day Plan" tab bar is on screen, i.e.
+    /// an allowed-app habit is the thing currently playing.
+    var hasAllowedActivityTabs: Bool {
+        allowedActivitySegment?.superview?.isHidden == false
     }
 
     /// Builds the segmented control + Day Plan overlay once, lazily. Idempotent.
@@ -4361,7 +5363,7 @@ extension timerViewcontroller {
         let seg = NSSegmentedControl(labels: [ScheduleText.habitPlayerTab, ScheduleText.dayPlanTab],
                                      trackingMode: .selectOne, target: self,
                                      action: #selector(allowedActivityTabChanged(_:)))
-        seg.selectedSegment = 0
+        seg.selectedSegment = AllowedActivityTab.habitPlayer.rawValue
         seg.translatesAutoresizingMaskIntoConstraints = false
         let bar = NSView()
         bar.translatesAutoresizingMaskIntoConstraints = false
@@ -4392,14 +5394,14 @@ extension timerViewcontroller {
         }
         seg.superview?.isHidden = !show                          // the top bar
         // Always reset to the player pane when (re)starting a habit.
-        seg.selectedSegment = 0
+        seg.selectedSegment = AllowedActivityTab.habitPlayer.rawValue
         allowedActivityDayPlanBox?.isHidden = true
         allowedActivityScheduleVC?.stopAutoRefresh()
         getHabitsVcObject().refreshDateTimeClockVisibility()
     }
 
     @objc private func allowedActivityTabChanged(_ sender: NSSegmentedControl) {
-        let showDayPlan = sender.selectedSegment == 1
+        let showDayPlan = sender.selectedSegment == AllowedActivityTab.dayPlan.rawValue
         allowedActivityDayPlanBox?.isHidden = !showDayPlan
         getHabitsVcObject().refreshDateTimeClockVisibility()    // clock hidden on the Day Plan tab
         if showDayPlan {
@@ -4414,11 +5416,31 @@ extension timerViewcontroller {
     /// habit in the Day Plan that's already playing — switch tabs rather than restarting it.
     func showAllowedActivityPlayerTab() {
         guard let seg = allowedActivitySegment, seg.superview?.isHidden == false else { return }
-        seg.selectedSegment = 0
+        seg.selectedSegment = AllowedActivityTab.habitPlayer.rawValue
         allowedActivityDayPlanBox?.isHidden = true
         allowedActivityScheduleVC?.stopAutoRefresh()
         getHabitsVcObject().refreshDateTimeClockVisibility()
         mainWindowControllerObj?.window?.makeKeyAndOrderFront(nil)
+    }
+
+    /// Switch the allowed-activity tabs to the **Day Plan** pane — the counterpart to
+    /// `showAllowedActivityPlayerTab()`, and what the menu's "View full day plan" needs during an
+    /// allowed-app habit: the main window's Day Plan dispatch (`showDayPlanForCurrentState`)
+    /// deliberately bails while a routine is live, so without this the user landed on the Habit
+    /// Player tab instead (report 2026-06-25_18-11-05).
+    /// - Returns: whether the Day Plan tab was actually shown (false when no tabs are on screen).
+    @discardableResult
+    func showAllowedActivityDayPlanTab() -> Bool {
+        guard let seg = allowedActivitySegment, seg.superview?.isHidden == false else { return false }
+        seg.selectedSegment = AllowedActivityTab.dayPlan.rawValue
+        allowedActivityDayPlanBox?.isHidden = false
+        // Mirror allowedActivityTabChanged's Day Plan branch — the segment is set programmatically
+        // here, so the control's action doesn't fire and the pane wouldn't otherwise be populated.
+        allowedActivityScheduleVC?.reload()
+        allowedActivityScheduleVC?.startAutoRefresh()
+        getHabitsVcObject().refreshDateTimeClockVisibility()
+        mainWindowControllerObj?.window?.makeKeyAndOrderFront(nil)
+        return true
     }
 }
 
@@ -4573,6 +5595,9 @@ enum DayPlanMockup {
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
                               styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentViewController = vc
+        // Installing a controller adopts its default 590x415 view size. Restore the
+        // requested render size before measuring or the mockup clips most of the day.
+        window.setContentSize(size)
         vc.selectedDate = baseDate
         vc.mockConfig = config
         vc.reload()
@@ -4615,3 +5640,278 @@ enum DayPlanMockup {
 }
 
 #endif  // DEBUG — Day Plan mockup renderer
+
+// MARK: - Day Plan date picker (month grid with free-time badges)
+
+/// One day in the date-picker's month grid: a day number with a small coloured dot underneath
+/// showing how much net free time that day has (see `DayPlanFreeLevel`). Padding cells (leading /
+/// trailing days outside the month) have no date, number or dot.
+private final class DayPlanDayCell: NSView {
+    static let size: CGFloat = 34
+    private static let underlineWidth: CGFloat = 14   // free-time badge: a short line under the number
+    private static let underlineThickness: CGFloat = 2
+    private static let discDiameter: CGFloat = 19   // selection/today disc — kept snug so it doesn't dominate
+    private static let numberRaise: CGFloat = 3      // slight lift so the badge underline sits below
+
+    private let numberLabel = NSTextField(labelWithString: "")
+    // Layer-backed square view for the selection/today circle. A drawn `ovalIn:` rect renders as an OVAL
+    // when the stack stretches the cell non-square; a layer with cornerRadius = size/2 is ALWAYS a
+    // perfect circle regardless of the cell's frame.
+    private let discView = NSView()
+    private var date: Date?
+    private var isToday = false
+    private var isSelected = false
+    private var dotColor: NSColor?
+    var onSelect: ((Date) -> Void)?
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        discView.wantsLayer = true
+        discView.layer?.cornerRadius = Self.discDiameter / 2
+        discView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(discView)   // behind the number
+
+        numberLabel.font = .systemFont(ofSize: 12)
+        numberLabel.alignment = .center
+        numberLabel.isBezeled = false
+        numberLabel.drawsBackground = false
+        numberLabel.isEditable = false
+        numberLabel.isSelectable = false
+        numberLabel.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(numberLabel)
+        NSLayoutConstraint.activate([
+            widthAnchor.constraint(equalToConstant: Self.size),
+            heightAnchor.constraint(equalToConstant: Self.size),
+            numberLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+            numberLabel.centerYAnchor.constraint(equalTo: centerYAnchor, constant: Self.numberRaise),
+            discView.widthAnchor.constraint(equalToConstant: Self.discDiameter),
+            discView.heightAnchor.constraint(equalToConstant: Self.discDiameter),
+            discView.centerXAnchor.constraint(equalTo: numberLabel.centerXAnchor),
+            discView.centerYAnchor.constraint(equalTo: numberLabel.centerYAnchor),
+        ])
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func configure(day: Int?, date: Date?, isToday: Bool, isSelected: Bool, dotColor: NSColor?) {
+        self.date = date
+        self.isToday = isToday
+        self.isSelected = isSelected
+        self.dotColor = dotColor
+        numberLabel.stringValue = day.map(String.init) ?? ""
+        numberLabel.textColor = isSelected ? .white : .labelColor
+        // Selected = filled accent circle; today (not selected) = thin accent ring; else nothing.
+        let layer = discView.layer
+        if isSelected {
+            layer?.backgroundColor = NSColor.controlAccentColor.cgColor
+            layer?.borderWidth = 0
+        } else if isToday {
+            layer?.backgroundColor = NSColor.clear.cgColor
+            layer?.borderColor = NSColor.controlAccentColor.withAlphaComponent(0.55).cgColor
+            layer?.borderWidth = 1
+        } else {
+            layer?.backgroundColor = NSColor.clear.cgColor
+            layer?.borderWidth = 0
+        }
+        needsDisplay = true
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        if let color = dotColor {
+            // A short underline beneath the day number (a line, not a dot — subtler).
+            let r = NSRect(x: bounds.midX - Self.underlineWidth / 2, y: 5,
+                           width: Self.underlineWidth, height: Self.underlineThickness)
+            color.setFill()
+            NSBezierPath(rect: r).fill()
+        }
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard let date = date else { return }
+        onSelect?(date)
+    }
+}
+
+/// The popover content behind the Day Plan's date label: a month calendar the user can page through,
+/// each day carrying a subtle free-time dot. Free minutes per day are computed once via the provider
+/// and cached for the popover's lifetime (a schedule build per day).
+///
+/// A day is badged only once its meetings have actually been read — see `DayPlanDayBadge`. The grid
+/// therefore renders in two passes: unread days come up blank, `warmMeetings` reads them off the main
+/// thread, and the grid rebuilds with their real colours. Two passes rather than one blocking pass
+/// because the EventKit read behind each day regularly takes seconds (CalendarManager's "Meetings
+/// cache" note), and a popover that freezes on open is not an improvement on a wrong colour.
+private final class DayPlanDatePickerController: NSViewController {
+    private let freeMinutesProvider: (Date) -> Int?
+    private let onSelect: (Date) -> Void
+    private let selectedDate: Date
+    private var monthAnchor: Date                 // first day of the displayed month
+    private var freeCache: [Date: Int?] = [:]     // startOfDay → net free minutes (nil = no schedule)
+    /// Days already handed to `warmMeetings`, so a rebuild triggered by one warm pass can't start another
+    /// for the same days — that would loop for as long as the popover is open.
+    private var warmRequested: Set<Date> = []
+
+    private let calendar = Calendar.current
+    private let titleLabel = NSTextField(labelWithString: "")
+    private let weeksStack = NSStackView()
+
+    private static let columns = 7
+    private static let weeks = 6
+    private static let outerPadding: CGFloat = 12
+    private static let rowSpacing: CGFloat = 2
+
+    private static let monthTitleFormatter: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "LLLL yyyy"; f.calendar = Calendar.current; return f
+    }()
+
+    init(selectedDate: Date, freeMinutesProvider: @escaping (Date) -> Int?, onSelect: @escaping (Date) -> Void) {
+        self.selectedDate = selectedDate
+        self.freeMinutesProvider = freeMinutesProvider
+        self.onSelect = onSelect
+        self.monthAnchor = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: selectedDate)) ?? selectedDate
+        super.init(nibName: nil, bundle: nil)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func loadView() {
+        let gridWidth = DayPlanDayCell.size * CGFloat(Self.columns)
+        let container = NSView(frame: NSRect(x: 0, y: 0,
+                                             width: gridWidth + Self.outerPadding * 2, height: 260))
+
+        let prev = navButton(symbol: "chevron.left", fallback: "‹", action: #selector(prevMonth))
+        let next = navButton(symbol: "chevron.right", fallback: "›", action: #selector(nextMonth))
+        titleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        titleLabel.alignment = .center
+        titleLabel.isBezeled = false; titleLabel.drawsBackground = false; titleLabel.isEditable = false
+        let header = NSStackView(views: [prev, titleLabel, next])
+        header.orientation = .horizontal
+        header.distribution = .fill
+        titleLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+
+        let weekdayRow = makeWeekdayHeaderRow()
+
+        weeksStack.orientation = .vertical
+        weeksStack.spacing = Self.rowSpacing
+        weeksStack.alignment = .centerX
+
+        let outer = NSStackView(views: [header, weekdayRow, weeksStack])
+        outer.orientation = .vertical
+        outer.spacing = 8
+        outer.alignment = .centerX
+        outer.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(outer)
+        NSLayoutConstraint.activate([
+            outer.topAnchor.constraint(equalTo: container.topAnchor, constant: Self.outerPadding),
+            outer.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: Self.outerPadding),
+            outer.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -Self.outerPadding),
+            outer.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -Self.outerPadding),
+            header.widthAnchor.constraint(equalToConstant: gridWidth),
+        ])
+        view = container
+        rebuildGrid()
+    }
+
+    private func navButton(symbol: String, fallback: String, action: Selector) -> NSButton {
+        let b = NSButton(title: "", target: self, action: action)
+        b.bezelStyle = .inline
+        b.isBordered = false
+        if #available(macOS 11.0, *) {
+            b.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+        } else {
+            b.title = fallback
+        }
+        b.setContentHuggingPriority(.required, for: .horizontal)
+        return b
+    }
+
+    /// The weekday initials (S M T W T F S), ordered from the locale's first weekday.
+    private func makeWeekdayHeaderRow() -> NSStackView {
+        let symbols = Self.monthTitleFormatter.veryShortWeekdaySymbols ?? ["S", "M", "T", "W", "T", "F", "S"]
+        let firstWeekdayIndex = calendar.firstWeekday - 1     // 0-based into `symbols` (which start on Sunday)
+        var labels: [NSView] = []
+        for offset in 0..<Self.columns {
+            let symbol = symbols[(firstWeekdayIndex + offset) % Self.columns]
+            let l = NSTextField(labelWithString: symbol)
+            l.font = .systemFont(ofSize: 10)
+            l.textColor = .secondaryLabelColor
+            l.alignment = .center
+            l.widthAnchor.constraint(equalToConstant: DayPlanDayCell.size).isActive = true
+            labels.append(l)
+        }
+        let row = NSStackView(views: labels)
+        row.orientation = .horizontal
+        row.spacing = 0
+        return row
+    }
+
+    @objc private func prevMonth() { changeMonth(by: -1) }
+    @objc private func nextMonth() { changeMonth(by: 1) }
+    private func changeMonth(by delta: Int) {
+        guard let m = calendar.date(byAdding: .month, value: delta, to: monthAnchor) else { return }
+        monthAnchor = m
+        rebuildGrid()
+    }
+
+    /// Net free minutes for `date`, computed once then memoised for the popover's lifetime.
+    private func freeMinutes(for date: Date) -> Int? {
+        let key = calendar.startOfDay(for: date)
+        if let cached = freeCache[key] { return cached }
+        let value = freeMinutesProvider(date)
+        freeCache[key] = value
+        return value
+    }
+
+    /// Read the meetings of every day the grid had to leave blank, then rebuild it with their colours.
+    /// One pass per set of days: `warmRequested` stops the rebuild this completion triggers from
+    /// asking again.
+    private func warmUnknownDays(_ days: [Date]) {
+        let pending = days.filter { warmRequested.insert(calendar.startOfDay(for: $0)).inserted }
+        guard !pending.isEmpty else { return }
+        CalendarManager.shared.warmMeetings(for: pending) { [weak self] in
+            guard let self = self, self.isViewLoaded else { return }
+            self.rebuildGrid()
+        }
+    }
+
+    private func rebuildGrid() {
+        titleLabel.stringValue = Self.monthTitleFormatter.string(from: monthAnchor)
+        weeksStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        var unknownDays: [Date] = []
+
+        let weekday = calendar.component(.weekday, from: monthAnchor)     // 1 = Sunday
+        let leadingBlanks = (weekday - calendar.firstWeekday + Self.columns) % Self.columns
+        let daysInMonth = calendar.range(of: .day, in: .month, for: monthAnchor)?.count ?? 30
+
+        for week in 0..<Self.weeks {
+            var cells: [NSView] = []
+            for column in 0..<Self.columns {
+                let cellIndex = week * Self.columns + column
+                let dayNumber = cellIndex - leadingBlanks + 1
+                let cell = DayPlanDayCell()
+                if dayNumber >= 1, dayNumber <= daysInMonth,
+                   let date = calendar.date(byAdding: .day, value: dayNumber - 1, to: monthAnchor) {
+                    // Only badge FUTURE days — past days can't be re-planned and today's free time is
+                    // already in the tasks-panel header, so badging them is just noise.
+                    let isFuture = calendar.compare(date, to: Date(), toGranularity: .day) == .orderedDescending
+                    let loaded = CalendarManager.shared.meetingsAreKnown(for: date)
+                    if isFuture, !loaded { unknownDays.append(date) }
+                    let badgeColor = DayPlanDayBadge.color(isFuture: isFuture, inputsAreLoaded: loaded,
+                                                           netFreeMinutes: self.freeMinutes(for: date))
+                    cell.configure(day: dayNumber, date: date,
+                                   isToday: calendar.isDateInToday(date),
+                                   isSelected: calendar.isDate(date, inSameDayAs: selectedDate),
+                                   dotColor: badgeColor)
+                    cell.onSelect = { [weak self] in self?.onSelect($0) }
+                } else {
+                    cell.configure(day: nil, date: nil, isToday: false, isSelected: false, dotColor: nil)
+                }
+                cells.append(cell)
+            }
+            let row = NSStackView(views: cells)
+            row.orientation = .horizontal
+            row.spacing = 0
+            weeksStack.addArrangedSubview(row)
+        }
+        warmUnknownDays(unknownDays)
+    }
+}

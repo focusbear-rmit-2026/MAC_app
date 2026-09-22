@@ -9,6 +9,71 @@
 import Cocoa
 import SwiftUI
 
+/// A left-menu item whose availability a running routine governs.
+enum LeftMenuRoutineItem: CaseIterable {
+    case editHabits
+    case settings
+    case blocking
+    case microBreaks
+    case focusSession
+    case habits
+    case customRoutine
+}
+
+/// Why a routine has disabled a left-menu item. `leftMenuVc` maps this to the localized sentence
+/// (`disableReasonMorningRoutine` and friends, loaded from `leftMenuVcInfo` in config.json).
+enum LeftMenuDisableReason: CaseIterable {
+    case morningRoutine
+    case eveningRoutine
+    case focusSummary
+    case shutoffTime
+    case customRoutine
+}
+
+/// Which left-menu items stay clickable in a given app state — a pure function of `CURRENTSTATE`, so
+/// the rule is unit-testable and `leftMenuVc` only applies the answer to its boxes.
+///
+/// A routine "owns" the main window only while it is genuinely RUNNING. Every `_POSTPONE_*` state is
+/// the user explicitly stepping away from the routine, so nothing is restricted there — postponed is
+/// not active, and the menu comes back exactly as it is when idle.
+enum LeftMenuAvailability {
+
+    /// Items that stay available even while a routine owns the window. These are the "go and change a
+    /// preference" destinations: the user must be able to adjust their settings, their habit list and
+    /// what is blocked without first ending the routine. All three share the same tab handling —
+    /// `askPasswordForSettingsIfNeeded()` still enforces strictness, and
+    /// `checkScreenSizeIfFullScreenHabitIsRunning()` keeps the full-screen window — so opening any of
+    /// them cannot let the user slip out of a running routine.
+    static let alwaysAvailable: Set<LeftMenuRoutineItem> = [.editHabits, .settings, .blocking]
+
+    /// Why the menu is restricted in `state`, or nil when no routine owns the window (idle, every
+    /// `_POSTPONE_*` state, onboarding, a micro break — micro breaks run their own disable pass in
+    /// `microBreaksStarted`).
+    static func disableReason(for state: CURRENTSTATE) -> LeftMenuDisableReason? {
+        switch state {
+        case ._MORNING_HABIT_:  return .morningRoutine
+        case ._EVENING_HABIT_:  return .eveningRoutine
+        case ._FOCUS_SUMMARY_:  return .focusSummary
+        case ._SHUTOFFMAC_:     return .shutoffTime
+        case ._CUSTOM_ROUTINE_: return .customRoutine
+        default:                return nil
+        }
+    }
+
+    /// Whether `item` is clickable while the app is in `state`.
+    static func isEnabled(_ item: LeftMenuRoutineItem, during state: CURRENTSTATE) -> Bool {
+        guard let reason = disableReason(for: state) else { return true }
+        if alwaysAvailable.contains(item) { return true }
+        // The running routine's own tab is the way back into it, so it stays clickable; the other
+        // routine tab — and the tabs that would start a competing activity — does not.
+        switch item {
+        case .habits:        return reason != .customRoutine
+        case .customRoutine: return reason == .customRoutine
+        default:             return false
+        }
+    }
+}
+
 class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
 
     
@@ -26,6 +91,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     @IBOutlet weak var boxFocusMusic: mainWindowListBox!
     @IBOutlet weak var boxBrainDump: mainWindowListBox!
     @IBOutlet weak var boxTodoPlayer: mainWindowListBox!
+
+    /// Drives the "Focusing (Nm left)" row title while a session is running.
+    private var focusMinutesTimer: Timer?
     @IBOutlet weak var boxToolsItems: accordionBox!
     @IBOutlet weak var boxBrowsersTabAudit: mainWindowListBox!
     // Programmatically-added TOOLS items, surfaced out of Settings > Add-Ons.
@@ -48,9 +116,12 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     var disableReasonCustomRoutine = "Disabled because your custom routine is in progress. Go to the Custom Routine tab to continue."
     
     var lastSelectedBox:mainWindowListBox?
-    // #2352 (Bala feedback): TOOLS starts COLLAPSED on every launch (not persisted). It auto-expands
-    // only when a tool inside it becomes selected — see selectableListBoxSelectionDidChange.
-    private var isToolsSectionExpanded = false
+    // #2352 (Bala feedback): TOOLS starts COLLAPSED — still true for anyone who has never opened it.
+    // It is now REMEMBERED once the user chooses (report 2026-09-21_16-00-46: "tools keeps
+    // collapsing"), so the default survives and a deliberate choice is not overridden every launch.
+    // It still auto-expands when a tool inside it becomes selected, and that does NOT count as a
+    // choice — see ToolsSectionPreference.
+    private var isToolsSectionExpanded = ToolsSectionPreference.isExpandedForCurrentUser
     private var hiddenToolsPopover: NSPopover?
 
     override func viewDidLoad() {
@@ -91,12 +162,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         
         boxTodoPlayer.imageIcon = NSImage(named: "validIcon")
         boxTodoPlayer.alwaysEnabled = true   // Todo List must always stay reachable (never greyed out)
-        
-        if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-            boxTodoPlayer.title = "Todo Player"
-        }else{
-            boxTodoPlayer.title = "Todo List"
-        }
+        applyTodoToolTitle()
         
         boxBrainDump.imageIcon = NSImage(named: "brainDump")
         boxBrainDump.title = "Notes"   // i18n-ignore: last-resort default; the real string comes from config (menuNotes)
@@ -185,14 +251,19 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         // panel); hide it explicitly here.
         boxCustomRoutine.isHidden = true
 
-        // #2352: start the TOOLS section COLLAPSED on every launch. setExpanded runs before
-        // onStateChanged is assigned, so it doesn't apply row visibility itself — refreshToolsVisibility()
-        // below does that (and hides every tool row, since isToolsSectionExpanded defaults to false).
-        boxToolsItems.setExpanded(false)
+        // Restore what this account last chose; collapsed if it never has (#2352's default).
+        // setExpanded runs before onStateChanged is assigned, so it doesn't apply row visibility
+        // itself — refreshToolsVisibility() below does that.
+        boxToolsItems.setExpanded(ToolsSectionPreference.isExpandedForCurrentUser)
         boxToolsItems.onStateChanged = { [weak self] isExpanded in
-            print("Tools is now \(isExpanded ? "expanded" : "collapsed")")
             self?.isToolsSectionExpanded = isExpanded
             self?.refreshToolsVisibility()
+        }
+        // Only a click is a choice. The auto-expand in selectableListBoxSelectionDidChange goes
+        // through setExpanded and so never lands here, which is what stops it silently cancelling a
+        // collapse the user asked for.
+        boxToolsItems.onUserToggled = { isExpanded in
+            ToolsSectionPreference.recordUserChoice(isExpanded)
         }
         boxToolsItems.onGearClicked = { [weak self] in
             self?.showHiddenToolsPopover()
@@ -245,11 +316,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuStartFocusSession") as? String ?? boxFocusSession.title
             boxMicroBreaks.title = leftMenuVcInfo.value(forKey: "menuStartMicroBreak") as? String ?? boxMicroBreaks.title
             
-            if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-                boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoPlayer") as? String ?? boxTodoPlayer.title
-            }else{
-                boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoList") as? String ?? boxTodoPlayer.title
-            }
+            applyTodoToolTitle()
             boxBrainDump.title = leftMenuVcInfo.value(forKey: "menuNotes") as? String ?? boxBrainDump.title
             boxBrowsersTabAudit.title = leftMenuVcInfo.value(forKey: "menuTabAudit") as? String ?? boxBrowsersTabAudit.title
             boxFocusMusic.title = leftMenuVcInfo.value(forKey: "menuFocusMusic") as? String ?? boxFocusMusic.title
@@ -305,24 +372,27 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         let isFocusModePaused = isFocusModePaused()
 
         if isFocusModeOn{
-            boxFocusSession.title = "Stop Focus Session"
-//            imgViewStopSuperFocusSession.image = iconStopFocusSession
-            if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
-                boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuStopFocusSession") as? String ?? boxFocusSession.title
-            }
+            // The row says what is happening, not what tapping it does — it has never stopped the
+            // session, it opens the session screen (see `case boxFocusSession`), where pause and End
+            // Session live. It used to read "Stop Focus Session", which promised something it did not do.
+            boxFocusSession.title = focusingRowTitle()
+            startFocusMinutesTicker()
         }else if isFocusModePaused{
+            stopFocusMinutesTicker()
             boxFocusSession.title = "Resume Focus Session"
 //            imgViewStopSuperFocusSession.image = iconResumeFocusSession
             if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
                 boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuResumeFocusSession") as? String ?? boxFocusSession.title
             }
         }else if isHardCorePomodoroModeOn{
+            stopFocusMinutesTicker()
             boxFocusSession.title = "Stop Super Focus Session"
 //            imgViewStopSuperFocusSession.image = iconStopFocusSession
             if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
                 boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuStopSuperFocusSession") as? String ?? boxFocusSession.title
             }
         }else{
+            stopFocusMinutesTicker()
             boxFocusSession.title = "Start Focus Session"
             if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
                 boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuStartFocusSession") as? String ?? boxFocusSession.title
@@ -540,23 +610,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             showDayPlanForCurrentState()
             break;
         case boxFocusSession:
-            let isFocusModeOn = isFocusModeOn()
-            let isFocusModePaused = isFocusModePaused()
-
-            if isFocusModeOn{
-                mainViewControllerObj?.showFocusModeState()
-            }else if isFocusModePaused{
-                mainViewControllerObj?.showFocusModeState()
-            }else if isHardCorePomodoroModeOn{
-                mainViewControllerObj?.showFocusModeState()
-            }else{
-                if SettingsManagerObject.isGeekModeEnabled{
-                    appdelegate?.menuShowPomodoroModeView()
-                }else{
-                    appdelegate?.menuShowSimplePomodoroModeView()
-                }
-            }
-            //enableAllItems()
+            showFocusSessionTabContent()
         case boxMicroBreaks:
             if currentState == ._MICRO_BREAK_{
                 var isBreakWarningVisible = false
@@ -648,14 +702,20 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
             }
         case boxFocusSession:
-            if currentState == ._MICRO_BREAK_{// if micro break started while focus mode is running and focus mode finished after miro break started then dont show small view if full screen is enabled v 2.28.438 
-                if checkIsFullScreenEnabled(){
-                    mainViewControllerObj?.checkIsFullScreenNeeded()
-                }else{
-                    mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
-                }
-            }else{
+            // Starting a session lands here (showRunningFocusSessionWindow -> showFocusModeStateView),
+            // so this runs on every session start. It used to call showSmallScreen(showMinimumSize: true)
+            // for every state but _MICRO_BREAK_, which snapped the window back to 1008x600 — the user's
+            // "starting a session changes the size of the window". The window is now left alone unless
+            // the app's borderless full-screen window is actually up; see FocusSessionRouting.windowSizing.
+            switch FocusSessionRouting.windowSizing(
+                isFullScreenWindowVisible: mainWindowControllerObj?.isFullScreenVisible ?? false,
+                isFullScreenModeEnabled: checkIsFullScreenEnabled()){
+            case .keepFullScreen:
+                mainViewControllerObj?.checkIsFullScreenNeeded()
+            case .restoreSmallWindow:
                 mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            case .leaveAsIs:
+                break
             }
         case boxMicroBreaks:
             if currentState == ._MICRO_BREAK_{
@@ -700,11 +760,11 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         case boxFocusMusic:
             checkScreenSizeIfFullScreenHabitIsRunning()
         case boxBlocks:
-            checkScreenSizeIfFullScreenHabitIsRunning()
+            keepFullScreenLockOrShrink()
         case boxSettings:
-            checkScreenSizeIfFullScreenHabitIsRunning()
+            keepFullScreenLockOrShrink()
         case boxEditHabits:
-            checkScreenSizeIfFullScreenHabitIsRunning()
+            keepFullScreenLockOrShrink()
         case boxMotivation:
             checkScreenSizeIfFullScreenHabitIsRunning()
         case boxHelpAndSupport:
@@ -721,6 +781,19 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         }
     }
     
+    /// Settings / Blocks / Edit-Habits nav items used to unconditionally shrink to a normal window — which,
+    /// in Focus Bear's borderless full-screen (kiosk) mode, DROPPED OUT of full-screen and exposed the
+    /// desktop / other apps (e.g. opening Settings from a full-screen Day Plan). When full-screen mode is
+    /// on, keep the lock (show the pane inside the full-screen window); otherwise shrink as before. Mirrors
+    /// the tool-tab fix that uses checkScreenSizeIfFullScreenHabitIsRunning for routine states.
+    private func keepFullScreenLockOrShrink() {
+        if checkIsFullScreenEnabled() {
+            mainViewControllerObj?.checkIsFullScreenNeeded()
+        } else {
+            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+        }
+    }
+
     func checkScreenSizeIfFullScreenHabitIsRunning(){
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_ || currentState == ._CUSTOM_ROUTINE_ || currentState == ._MICRO_BREAK_{
             
@@ -841,8 +914,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     
     
     func habitStarted(){
-        disableAllExceptHabitTab()
-        
+        applyRoutineMenuAvailability()
+
         boxHabits.isSelected = true
         mainViewControllerObj?.showHabitsView()
         reloadHabitStatus()
@@ -853,8 +926,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     }
     
     func customRoutineStarted(){
-        disableAllExceptCustomRoutineTab()
-        
+        applyRoutineMenuAvailability()
+
         boxCustomRoutine.isSelected = true
         mainViewControllerObj?.showHabitsView()
         reloadHabitStatus()
@@ -863,33 +936,44 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         mainWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
     }
     
-    func disableAllExceptHabitTab(){
-        var toolTipDisableReason = ""
-        
-        if currentState == ._MORNING_HABIT_{
-            toolTipDisableReason = disableReasonMorningRoutine
-        }else if currentState == ._EVENING_HABIT_{
-            toolTipDisableReason = disableReasonEveningRoutine
-        }else if currentState == ._FOCUS_SUMMARY_{
-            toolTipDisableReason = disableReasonFocusSummary
-        }else if currentState == ._SHUTOFFMAC_{
-            toolTipDisableReason = disableReasonShutoffTime
-        }else if currentState == ._CUSTOM_ROUTINE_{
-            toolTipDisableReason = disableReasonCustomRoutine
+    /// Bring the routine-governed left-menu items in line with `currentState` (`LeftMenuAvailability`).
+    /// Disabled items carry that state's reason as their tooltip; in a state where no routine owns the
+    /// window — idle, or any `_POSTPONE_*` — everything here is re-enabled.
+    func applyRoutineMenuAvailability(){
+        let toolTipDisableReason = localizedDisableReason(LeftMenuAvailability.disableReason(for: currentState))
+        for item in LeftMenuRoutineItem.allCases {
+            let box = boxFor(item)
+            if LeftMenuAvailability.isEnabled(item, during: currentState) {
+                box.isEnabled = true
+            } else {
+                box.setDisableWithRaason(reason: toolTipDisableReason)
+            }
         }
-        
-        // Settings + Edit Habits stay available during an active routine so the user can
-        // adjust preferences / their habit list without having to end the routine first.
-        boxEditHabits.isEnabled = true
-        boxSettings.isEnabled = true
-        boxBlocks.setDisableWithRaason(reason: toolTipDisableReason)
-
-        boxMicroBreaks.setDisableWithRaason(reason: toolTipDisableReason)
-        boxFocusSession.setDisableWithRaason(reason: toolTipDisableReason)
-        boxHabits.isEnabled = true
-        boxCustomRoutine.setDisableWithRaason(reason: toolTipDisableReason)
     }
-    
+
+    private func boxFor(_ item: LeftMenuRoutineItem) -> mainWindowListBox {
+        switch item {
+        case .editHabits:    return boxEditHabits
+        case .settings:      return boxSettings
+        case .blocking:      return boxBlocks
+        case .microBreaks:   return boxMicroBreaks
+        case .focusSession:  return boxFocusSession
+        case .habits:        return boxHabits
+        case .customRoutine: return boxCustomRoutine
+        }
+    }
+
+    private func localizedDisableReason(_ reason: LeftMenuDisableReason?) -> String {
+        switch reason {
+        case .morningRoutine: return disableReasonMorningRoutine
+        case .eveningRoutine: return disableReasonEveningRoutine
+        case .focusSummary:   return disableReasonFocusSummary
+        case .shutoffTime:    return disableReasonShutoffTime
+        case .customRoutine:  return disableReasonCustomRoutine
+        case nil:             return ""
+        }
+    }
+
     func disableAllTabForOnboarding(){
         let toolTipDisableReason = ""
         boxEditHabits.setDisableWithRaason(reason: toolTipDisableReason)
@@ -920,33 +1004,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     }
     
     
-    func disableAllExceptCustomRoutineTab(){
-        var toolTipDisableReason = ""
-        
-        if currentState == ._MORNING_HABIT_{
-            toolTipDisableReason = disableReasonMorningRoutine
-        }else if currentState == ._EVENING_HABIT_{
-            toolTipDisableReason = disableReasonEveningRoutine
-        }else if currentState == ._FOCUS_SUMMARY_{
-            toolTipDisableReason = disableReasonFocusSummary
-        }else if currentState == ._SHUTOFFMAC_{
-            toolTipDisableReason = disableReasonShutoffTime
-        }else if currentState == ._CUSTOM_ROUTINE_{
-            toolTipDisableReason = disableReasonCustomRoutine
-        }
-
-        // Settings + Edit Habits stay available during an active routine (see disableAllExceptHabitTab).
-        boxEditHabits.isEnabled = true
-        boxSettings.isEnabled = true
-        boxBlocks.setDisableWithRaason(reason: toolTipDisableReason)
-
-        boxMicroBreaks.setDisableWithRaason(reason: toolTipDisableReason)
-        boxFocusSession.setDisableWithRaason(reason: toolTipDisableReason)
-        boxHabits.setDisableWithRaason(reason: toolTipDisableReason)
-        boxCustomRoutine.isEnabled = true
-    }
-    
     func habitOver(){
+        mainWindowControllerObj?.restoreWindowAfterPostponement()
         enableAllItems()
         reloadHabitStatus()
         mainViewControllerObj?.expandLeftPanel()
@@ -1139,9 +1198,36 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     
     func showFocusModeStateView(){
         boxFocusSession.isSelected = true
-        mainViewControllerObj?.showFocusModeState()
+        showFocusSessionTabContent()
     }
-    
+
+    /// Puts the right screen in the Focus Session tab: the ongoing-session screen while there IS a
+    /// session, otherwise the start-a-session screen.
+    ///
+    /// The single funnel for both the left-menu click and every `showRunningFocusSessionWindow()`
+    /// caller, so the two can't drift. A running **blocking schedule** is not a session and must land
+    /// on "start a session" — report 2026-09-16_15-13-57: an all-day schedule left the tab stuck on
+    /// "Ongoing Focus Session" (headed with the *schedule's* block list), with no way to start a real
+    /// one. The schedule stays visible — it still blocks, and the start screen names it.
+    func showFocusSessionTabContent(){
+        switch FocusSessionRouting.destinationNow{
+        case .runningSession:
+            mainViewControllerObj?.showFocusModeState()
+        case .startSession:
+            showStartFocusSessionView()
+        }
+    }
+
+    /// The start-a-session screen — advanced in geek mode, simple otherwise. Each entry point returns
+    /// early for the mode it isn't, so the choice has to be made here.
+    func showStartFocusSessionView(){
+        if SettingsManagerObject.isGeekModeEnabled{
+            appdelegate?.menuShowPomodoroModeView()
+        }else{
+            appdelegate?.menuShowSimplePomodoroModeView()
+        }
+    }
+
     func showEditHabitsView(){
         if mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false{
             return;
@@ -1152,18 +1238,54 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         mainViewControllerObj?.askPasswordForSettingsIfNeeded()
     }
     
-    func focusModeOrFocusModeHabitStarted(){// also for custom schedule blocking
-        boxTodoPlayer.title = "Todo Player"
+    /// "Focusing (29m left)" — the running session and how much of it is left.
+    private func focusingRowTitle() -> String {
+        var template = "Focusing (<MINUTES>m left)"   // i18n-ignore: last-resort default; the real string comes from config (menuFocusingTimeLeft)
         if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
-            boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoPlayer") as? String ?? boxTodoPlayer.title
+            template = leftMenuVcInfo.value(forKey: "menuFocusingTimeLeft") as? String ?? template
         }
+        guard let end = endFocusModeTime else { return template.replacingOccurrences(of: "<MINUTES>", with: "0") }
+        let minutes = FocusSessionClock.minutesRemaining(until: end)
+        return template.replacingOccurrences(of: "<MINUTES>", with: "\(minutes)")
     }
-    
-    func focusModeOrFocusModeHabitFinished(){
-        boxTodoPlayer.title = "Todo List"
+
+    /// Keeps the countdown in the row's title honest while a session runs. Deliberately re-enters
+    /// `resetFocusModeTitle()` so the title has exactly one place it is computed, and every other
+    /// branch of that method stops the ticker — so pause, finish and abort all revert cleanly.
+    private func startFocusMinutesTicker(){
+        guard focusMinutesTimer == nil else { return }
+        let timer = Timer(timeInterval: leftMenuFocusMinutesTickInterval, repeats: true) { [weak self] _ in
+            self?.resetFocusModeTitle()
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        focusMinutesTimer = timer
+    }
+
+    private func stopFocusMinutesTicker(){
+        focusMinutesTimer?.invalidate()
+        focusMinutesTimer = nil
+    }
+
+    /// The TOOLS entry is the To-do list in every session state. It used to flip to "Todo Player"
+    /// while a focus session, allowed activity or blocking schedule was running, because the slot then
+    /// opened the web To-do Player instead; the running session now carries its own native task queue,
+    /// so the slot is only ever the list. Kept as one helper so the title has a single source.
+    private func applyTodoToolTitle(){
+        boxTodoPlayer.title = "Todo List"   // i18n-ignore: last-resort default; the real string comes from config (menuTodoList)
         if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
             boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoList") as? String ?? boxTodoPlayer.title
         }
+    }
+
+    /// Session start / finish no longer change the TOOLS title, but both are called from ~20 places
+    /// across the routine, pomodoro and blocking paths; they stay as the one place that would need to
+    /// react if the tool ever becomes session-dependent again.
+    func focusModeOrFocusModeHabitStarted(){// also for custom schedule blocking
+        applyTodoToolTitle()
+    }
+
+    func focusModeOrFocusModeHabitFinished(){
+        applyTodoToolTitle()
     }
 
     @IBAction func btnExpandLeftMenuClicked(_ sender: Any) {

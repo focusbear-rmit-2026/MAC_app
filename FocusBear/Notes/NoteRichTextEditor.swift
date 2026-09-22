@@ -16,7 +16,7 @@ final class NoteEditorController: ObservableObject {
 
     func toggleBold() { textView?.toggleFontTrait(.boldFontMask) }
     func toggleItalic() { textView?.toggleFontTrait(.italicFontMask) }
-    func toggleUnderline() { textView?.toggleUnderline() }
+    func toggleUnderline() { textView?.underline(nil) }
     func toggleBulletList() { textView?.toggleList(ordered: false) }
     func toggleNumberedList() { textView?.toggleList(ordered: true) }
     func focus() { textView?.window?.makeFirstResponder(textView) }
@@ -185,7 +185,7 @@ final class NoteTextView: NSTextView {
             switch key {
             case "b": toggleFontTrait(.boldFontMask); return true
             case "i": toggleFontTrait(.italicFontMask); return true
-            case "u": toggleUnderline(); return true
+            case "u": underline(nil); return true
             default: break
             }
         }
@@ -258,30 +258,6 @@ final class NoteTextView: NSTextView {
             let newFont = everyRunHasTrait ? fontManager.convert(font, toNotHaveTrait: trait) : fontManager.convert(font, toHaveTrait: trait)
             storage.addAttribute(.font, value: newFont, range: runRange)
         }
-        storage.endEditing()
-        didChangeText()
-    }
-
-    /// Underline toggle done directly on the storage / selection (not the system `underline(_:)`),
-    /// so it works even though clicking the SwiftUI toolbar button takes first responder off the text
-    /// view — matching how toggleFontTrait handles bold/italic.
-    func toggleUnderline() {
-        let single = NSUnderlineStyle.single.rawValue
-        let range = selectedRange()
-        if range.length == 0 {
-            var attributes = typingAttributes
-            let underlined = (attributes[.underlineStyle] as? Int ?? 0) != 0
-            if underlined { attributes[.underlineStyle] = 0 } else { attributes[.underlineStyle] = single }
-            typingAttributes = attributes
-            return
-        }
-        guard let storage = textStorage, shouldChangeText(in: range, replacementString: nil) else { return }
-        var everyRunUnderlined = true
-        storage.enumerateAttribute(.underlineStyle, in: range, options: []) { value, _, _ in
-            if (value as? Int ?? 0) == 0 { everyRunUnderlined = false }
-        }
-        storage.beginEditing()
-        storage.addAttribute(.underlineStyle, value: everyRunUnderlined ? 0 : single, range: range)
         storage.endEditing()
         didChangeText()
     }

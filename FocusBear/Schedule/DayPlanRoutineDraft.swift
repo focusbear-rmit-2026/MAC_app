@@ -32,11 +32,13 @@ enum RoutineSettingsKey {
     static let standaloneActivities = "standalone_activities"
     static let startupTime = "startup_time"
     static let shutdownTime = "shutdown_time"
+    static let eveningCutoffTime = "cutoff_time_for_non_high_priority_activities"
     static let routineStartTime = "start_time"
     static let routineEndTime = "end_time"
     static let routineName = "name"
     static let activitySequenceId = "activity_sequence_id"
     static let routineDaysOfWeek = "days_of_week"
+    static let routineTrigger = "trigger"
 
     static let id = "id"
     static let activityType = "activity_type"
@@ -80,6 +82,10 @@ enum RoutineSettingsKey {
     static let activityTypeMorning = "morning"
     static let activityTypeEvening = "evening"
     static let activityTypeStandalone = "standalone"
+
+    /// `trigger` values of a custom routine (web `CUSTOM_ROUTINE_TRIGGER`).
+    static let triggerOnDemand = "ON_DEMAND"
+    static let triggerOnSchedule = "ON_SCHEDULE"
 }
 
 /// The web's `DEFAULT_DURATION` for a habit added to each routine (`newHabit` reducer): morning habits
@@ -196,6 +202,56 @@ struct HabitEditValues: Equatable {
     }
 }
 
+/// The routine-level fields of a custom routine, as the custom-routine editor shows them. Mirrors the
+/// web's `CustomRoutineType` (web_dashboard/src/interfaces/setting.interface.ts:97).
+struct CustomRoutineEditValues: Equatable {
+    /// The web's `INIT_CUSTOM_ROUTINE`: no name, scheduled (not on-demand), every day, starting now and
+    /// running for an hour.
+    static let defaultLengthMinutes = 60
+
+    var name: String
+    var triggerOnDemand: Bool
+    var daysOfWeek: Set<String>
+    var startMinutes: Int
+    var endMinutes: Int
+
+    var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
+    var orderedDays: [String] { HabitEditValues.weekdayCodes.filter { daysOfWeek.contains($0) } }
+
+    /// An on-demand routine is started by hand, so its window is bookkeeping only; a scheduled one must
+    /// have a real window (the API rejects `end_time <= start_time`).
+    var isWindowValid: Bool { triggerOnDemand || endMinutes > startMinutes }
+
+    static func newRoutine(now: Date = Date()) -> CustomRoutineEditValues {
+        let parts = Calendar.current.dateComponents([.hour, .minute], from: now)
+        let start = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+        return CustomRoutineEditValues(
+            name: "", triggerOnDemand: false, daysOfWeek: Set(HabitEditValues.weekdayCodes),
+            startMinutes: start,
+            endMinutes: min(DayPlanRoutineDraft.lastMinuteOfDay, start + defaultLengthMinutes))
+    }
+}
+
+/// One habit of a custom routine as the routine editor lists it (name + the label the Day Plan uses).
+struct CustomRoutineHabitSummary: Identifiable, Equatable {
+    var id: String
+    var name: String
+    var durationLabel: String
+}
+
+/// A custom routine as the manager's list shows it.
+struct CustomRoutineSummary: Identifiable, Equatable {
+    /// The routine's `activity_sequence_id` — what `RoutineSettingsSection.custom` is keyed by, and
+    /// stable across reordering (unlike the array index the on-demand panel's play button uses).
+    var id: String
+    var values: CustomRoutineEditValues
+    var habits: [CustomRoutineHabitSummary]
+
+    /// AppDelegate.readSettingsJsonDictionary drops a custom routine with no habits, so an empty one
+    /// would silently vanish on the post-save restart. The editor warns instead of failing quietly.
+    var isEmpty: Bool { habits.isEmpty }
+}
+
 final class DayPlanRoutineDraft {
     static let shared = DayPlanRoutineDraft()
 
@@ -291,6 +347,24 @@ final class DayPlanRoutineDraft {
         }
     }
 
+    /// Global evening cutoff, distinct from a must-do habit's individual late cutoff.
+    func eveningCutoffMinutes() -> Int? {
+        guard let text = workingSettings()?[RoutineSettingsKey.eveningCutoffTime] as? String,
+              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        return Self.minutes(fromTimeString: text)
+    }
+
+    /// Follow the global routine window across midnight; per-habit late cutoffs remain independent.
+    static func isEveningCutoffValid(_ cutoff: Int?, eveningStart: Int, morningStart: Int?) -> Bool {
+        guard (0..<1440).contains(eveningStart) else { return false }
+        guard let cutoff = cutoff else { return true }
+        guard (0..<1440).contains(cutoff) else { return false }
+        guard let morning = morningStart, (0..<1440).contains(morning) else { return true }
+        let routineWindow = (morning - eveningStart + 1440) % 1440
+        let untilCutoff = (cutoff - eveningStart + 1440) % 1440
+        return routineWindow > 0 && untilCutoff <= routineWindow
+    }
+
     /// The routine's display name for the "When do you want … to start?" prompt.
     func routineDisplayName(_ section: RoutineSettingsSection) -> String {
         switch section {
@@ -357,9 +431,15 @@ final class DayPlanRoutineDraft {
         return true
     }
 
-    /// Moves the routine's start time, in both the JSON and the runtime globals the Day Plan reads.
-    func applyRoutineStart(_ section: RoutineSettingsSection, minutes: Int) {
-        guard let root = workingSettings() else { return }
+    /// Atomically stages the routine start and (for evening only) global cutoff in the existing
+    /// save/restart draft. Invalid input changes neither the draft nor live timing globals.
+    @discardableResult
+    func applyRoutineTiming(_ section: RoutineSettingsSection, minutes: Int, eveningCutoffMinutes: Int? = nil) -> Bool {
+        guard !isSaving, (0..<1440).contains(minutes), let root = workingSettings() else { return false }
+        if section == .evening {
+            let morning = (root[RoutineSettingsKey.startupTime] as? String).map { Self.minutes(fromTimeString: $0) }
+            guard Self.isEveningCutoffValid(eveningCutoffMinutes, eveningStart: minutes, morningStart: morning) else { return false }
+        }
         let timeString = Self.timeString(fromMinutes: minutes)
         switch section {
         case .morning:
@@ -370,8 +450,18 @@ final class DayPlanRoutineDraft {
             root[RoutineSettingsKey.shutdownTime] = timeString
             shutOffTimeString = timeString
             shutOffTime = getTimeFromString(val: timeString)
+            if let cutoff = eveningCutoffMinutes {
+                let cutoffString = Self.timeString(fromMinutes: cutoff)
+                root[RoutineSettingsKey.eveningCutoffTime] = cutoffString
+                cutOffTimeString = cutoffString
+                cutOffTime = getTimeFromString(val: cutoffString)
+            } else {
+                root.removeObject(forKey: RoutineSettingsKey.eveningCutoffTime)
+                cutOffTimeString = ""
+                cutOffTime = nil
+            }
         case .custom(let sequenceId):
-            guard let entry = customRoutineEntry(sequenceId: sequenceId, in: root) else { return }
+            guard let entry = customRoutineEntry(sequenceId: sequenceId, in: root) else { return false }
             // The API rejects end_time <= start_time, so moving the start past the end drags the end
             // along, keeping the routine's length (capped at the end of the day).
             let oldStart = (entry[RoutineSettingsKey.routineStartTime] as? String).map { Self.minutes(fromTimeString: $0) } ?? minutes
@@ -389,6 +479,163 @@ final class DayPlanRoutineDraft {
         }
         settings = root
         requestDayPlanRefresh()   // the time globals have no didSet, unlike the habit arrays
+        NotificationCenter.default.post(name: LocalForecastPreferences.didChange, object: nil)
+        return true
+    }
+
+    // MARK: Custom routines
+
+    /// Every custom routine in the draft (or, with no draft yet, the saved settings), in settings order.
+    func customRoutineSummaries() -> [CustomRoutineSummary] {
+        guard let root = workingSettings() else { return [] }
+        return customRoutineEntries(root).compactMap { entry in
+            guard let sequenceId = entry[RoutineSettingsKey.activitySequenceId] as? String else { return nil }
+            return CustomRoutineSummary(id: sequenceId,
+                                        values: Self.routineValues(entry),
+                                        habits: Self.habitSummaries(entry))
+        }
+    }
+
+    func customRoutineValues(sequenceId: String) -> CustomRoutineEditValues? {
+        guard let root = workingSettings(), let entry = customRoutineEntry(sequenceId: sequenceId, in: root) else { return nil }
+        return Self.routineValues(entry)
+    }
+
+    private static func routineValues(_ entry: NSDictionary) -> CustomRoutineEditValues {
+        let start = (entry[RoutineSettingsKey.routineStartTime] as? String).map { minutes(fromTimeString: $0) } ?? 0
+        let end = (entry[RoutineSettingsKey.routineEndTime] as? String).map { minutes(fromTimeString: $0) }
+        let days = (entry[RoutineSettingsKey.routineDaysOfWeek] as? [String]) ?? HabitEditValues.weekdayCodes
+        return CustomRoutineEditValues(
+            name: entry[RoutineSettingsKey.routineName] as? String ?? "",
+            triggerOnDemand: (entry[RoutineSettingsKey.routineTrigger] as? String)?.uppercased() == RoutineSettingsKey.triggerOnDemand,
+            daysOfWeek: Set(days.map { $0.uppercased() }),
+            startMinutes: start,
+            endMinutes: end ?? min(lastMinuteOfDay, start + CustomRoutineEditValues.defaultLengthMinutes))
+    }
+
+    private static func habitSummaries(_ entry: NSDictionary) -> [CustomRoutineHabitSummary] {
+        (entry[RoutineSettingsKey.standaloneActivities] as? [NSDictionary] ?? []).compactMap { habit in
+            guard let id = habit[RoutineSettingsKey.id] as? String else { return nil }
+            let icon = (habit[RoutineSettingsKey.icon] as? String ?? "").trimmingCharacters(in: .whitespaces)
+            let name = habit[RoutineSettingsKey.name] as? String ?? ""
+            let completion = habit[RoutineSettingsKey.completionRequirements] as? String
+            let label = (completion?.isEmpty == false)
+                ? ScheduleText.customRoutineHabitUntilDone
+                : HabitDurationText.short(seconds: habit[RoutineSettingsKey.durationSeconds] as? Int ?? 0)
+            return CustomRoutineHabitSummary(id: id, name: icon.isEmpty ? name : "\(icon) \(name)", durationLabel: label)
+        }
+    }
+
+    /// Appends a custom routine the way the web's `INIT_CUSTOM_ROUTINE` builds one: its own `id` AND
+    /// `activity_sequence_id` (both fresh UUIDs), a `trigger`, days, a start/end window and an empty
+    /// `standalone_activities` list. Returns the new routine's `activity_sequence_id`.
+    @discardableResult
+    func applyCustomRoutineAdd(values: CustomRoutineEditValues) -> String? {
+        guard let root = workingSettings(), let list = customRoutineList(in: root, createIfMissing: true) else { return nil }
+        let sequenceId = UUID().uuidString.lowercased()
+        let entry = NSMutableDictionary()
+        entry[RoutineSettingsKey.id] = UUID().uuidString.lowercased()
+        entry[RoutineSettingsKey.activitySequenceId] = sequenceId
+        entry[RoutineSettingsKey.standaloneActivities] = NSMutableArray()
+        Self.writeRoutineEntry(entry, values: values)
+        list.add(entry)
+        settings = root
+        arrAllCustomRoutine.append(Self.liveRoutine(sequenceId: sequenceId, values: values))
+        return sequenceId
+    }
+
+    /// Writes the routine-level form back to the routine's JSON entry and its runtime copy.
+    @discardableResult
+    func applyCustomRoutineEdit(sequenceId: String, values: CustomRoutineEditValues) -> Bool {
+        guard let root = workingSettings(), let entry = customRoutineEntry(sequenceId: sequenceId, in: root) else { return false }
+        Self.writeRoutineEntry(entry, values: values)
+        // A custom routine's habits must carry a subset of the routine's days (the API's rule), so
+        // narrowing the routine's days narrows theirs too.
+        let days = values.orderedDays
+        for habit in (entry[RoutineSettingsKey.standaloneActivities] as? [NSMutableDictionary] ?? []) {
+            let existing = (habit[RoutineSettingsKey.daysOfWeek] as? [String] ?? days).map { $0.uppercased() }
+            let narrowed = days.filter { existing.contains($0) }
+            habit[RoutineSettingsKey.daysOfWeek] = narrowed.isEmpty ? days : narrowed
+        }
+        settings = root
+        for i in arrAllCustomRoutine.indices where arrAllCustomRoutine[i].sequenceId == sequenceId {
+            arrAllCustomRoutine[i].title = values.trimmedName
+            arrAllCustomRoutine[i].triggerOnDemand = values.triggerOnDemand
+            arrAllCustomRoutine[i].days_of_week = days
+            arrAllCustomRoutine[i].startTime = getTimeFromString(val: Self.timeString(fromMinutes: values.startMinutes))
+            arrAllCustomRoutine[i].endTime = getTimeFromString(val: Self.timeString(fromMinutes: values.endMinutes))
+        }
+        requestDayPlanRefresh()   // title/trigger changes don't go through a habit array's didSet
+        return true
+    }
+
+    /// Removes the routine and every habit in it (the web's `updateCustomRoutines` splice).
+    @discardableResult
+    func applyCustomRoutineDelete(sequenceId: String) -> Bool {
+        guard let root = workingSettings(), let list = customRoutineList(in: root, createIfMissing: false) else { return false }
+        guard let index = list.enumerated().first(where: {
+            ($0.element as? NSDictionary)?[RoutineSettingsKey.activitySequenceId] as? String == sequenceId
+        })?.offset else { return false }
+        list.removeObject(at: index)
+        settings = root
+        arrAllCustomRoutine.removeAll { $0.sequenceId == sequenceId }
+        return true
+    }
+
+    /// Moves a habit within its routine's list — the settings array's order IS the routine's running
+    /// order, so a move is a plain remove-and-insert in both the JSON and the runtime arrays.
+    @discardableResult
+    func applyHabitMove(in section: RoutineSettingsSection, from: Int, to: Int) -> Bool {
+        guard let root = workingSettings(), let list = habitList(for: section, in: root, createIfMissing: false),
+              from != to, (0..<list.count).contains(from), (0..<list.count).contains(to) else { return false }
+        let entry = list.object(at: from)
+        list.removeObject(at: from)
+        list.insert(entry, at: to)
+        settings = root
+        moveLiveHabit(in: section, from: from, to: to)
+        return true
+    }
+
+    private func moveLiveHabit(in section: RoutineSettingsSection, from: Int, to: Int) {
+        func move(_ habits: inout [habit]) {
+            guard habits.indices.contains(from), habits.indices.contains(to) else { return }
+            habits.insert(habits.remove(at: from), at: to)
+        }
+        switch section {
+        case .morning:
+            move(&arrAllDaysMorningHabits); move(&arrPreFilteredMorningHabits); move(&arrFilteredMorningHabits)
+        case .evening:
+            move(&arrAllDaysEveningHabits); move(&arrPreFilteredEveningHabits); move(&arrFilteredEveningHabits)
+        case .custom(let sequenceId):
+            for i in arrAllCustomRoutine.indices where arrAllCustomRoutine[i].sequenceId == sequenceId {
+                move(&arrAllCustomRoutine[i].arrAllHabits)
+                move(&arrAllCustomRoutine[i].arrAllPreFilterHabits)
+                move(&arrAllCustomRoutine[i].arrAllFilteredHabits)
+            }
+        }
+    }
+
+    private static func writeRoutineEntry(_ entry: NSMutableDictionary, values: CustomRoutineEditValues) {
+        entry[RoutineSettingsKey.routineName] = values.trimmedName
+        entry[RoutineSettingsKey.routineTrigger] = values.triggerOnDemand ? RoutineSettingsKey.triggerOnDemand
+                                                                         : RoutineSettingsKey.triggerOnSchedule
+        entry[RoutineSettingsKey.routineDaysOfWeek] = values.orderedDays
+        entry[RoutineSettingsKey.routineStartTime] = timeString(fromMinutes: values.startMinutes)
+        // The API rejects `end_time <= start_time`, so an on-demand routine (whose window is bookkeeping
+        // only, and which the editor doesn't ask about) still gets a valid one.
+        let end = values.endMinutes > values.startMinutes
+            ? values.endMinutes
+            : min(lastMinuteOfDay, values.startMinutes + CustomRoutineEditValues.defaultLengthMinutes)
+        entry[RoutineSettingsKey.routineEndTime] = timeString(fromMinutes: end)
+    }
+
+    private static func liveRoutine(sequenceId: String, values: CustomRoutineEditValues) -> routine {
+        routine(title: values.trimmedName,
+                sequenceId: sequenceId,
+                startTime: getTimeFromString(val: timeString(fromMinutes: values.startMinutes)),
+                endTime: getTimeFromString(val: timeString(fromMinutes: values.endMinutes)),
+                triggerOnDemand: values.triggerOnDemand,
+                days_of_week: values.orderedDays)
     }
 
     // MARK: Saving
@@ -487,6 +734,16 @@ final class DayPlanRoutineDraft {
 
     private func customRoutineEntries(_ root: NSMutableDictionary) -> [NSMutableDictionary] {
         root[RoutineSettingsKey.customRoutines] as? [NSMutableDictionary] ?? []
+    }
+
+    /// The `custom_routines` array as the mutable one JSONSerialization parsed, so an add/remove lands
+    /// in the draft itself rather than in a bridged copy.
+    private func customRoutineList(in root: NSMutableDictionary, createIfMissing: Bool) -> NSMutableArray? {
+        if let list = root[RoutineSettingsKey.customRoutines] as? NSMutableArray { return list }
+        guard createIfMissing else { return nil }
+        let list = NSMutableArray()
+        root[RoutineSettingsKey.customRoutines] = list
+        return list
     }
 
     private func customRoutineEntry(sequenceId: String, in root: NSMutableDictionary) -> NSMutableDictionary? {

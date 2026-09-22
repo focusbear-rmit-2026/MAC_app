@@ -410,7 +410,7 @@ class askQuitVc: NSViewController {
             timerViewcontrollerObj?.btnPauseClicked(self)
             timerViewcontrollerObj?.menuItemSkipHabitClicked()
             leftMenuVcObj?.showHabitsView()
-            leftMenuVcObj?.disableAllExceptHabitTab()
+            leftMenuVcObj?.applyRoutineMenuAvailability()
             
             closeSmallCountDownTimerBoxIfVisible()
             

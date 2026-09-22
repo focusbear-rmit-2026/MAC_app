@@ -86,6 +86,31 @@ big wins) · **P2** structural (plan refactors) · **P3** hygiene.
 
 ---
 
+## P1-15 — Relevance freshness still blocks the main thread on AppleScript
+
+`urlRelevanceTargetIsCurrent` (`FocusBear/Focus mode/focusModeData.swift`) re-reads the active tab's
+URL and title before applying an AI relevance verdict. Each read is a **blocking AppleScript
+round-trip on the main thread, capped at 1.2s**, so a verdict can freeze the UI for up to 2.4s. This
+is a beachball users report.
+
+Two of the four have been removed: the reads are lazy (they only run once the cheap frontmost check
+has passed) and, as of 2026-09-17, memoised (`memoisedRead`), so the diagnostics line no longer
+re-reads what the decision already read. **The remaining two are still synchronous and still on
+main.**
+
+The likely fix is a short-TTL cache rather than an async refactor. `checkInBackground` already reads
+the active tab URL roughly **once a second**, so a cache of the last successful read — written by
+whichever caller performed it — would make the verdict path a cache hit almost every time and cost
+no AppleScript at all.
+
+The design question to settle first, because it is a real trade-off and not a detail: the re-read
+exists to prove the user has not navigated away since the check began. A reading up to ~1s old
+mostly answers that (and `currentUrlRelevanceKey == key` already proves no newer check started), but
+it does weaken the guarantee in exactly the case the code was written for. Decide the TTL
+deliberately and test the boundary; do not bolt a cache on without it.
+
+---
+
 ## Suggested attack order (highest value ÷ risk first)
 
 1. **P0-1 / P0-2 / P0-3** — stop logging tokens, rotate & externalize notarization creds, turn off Sentry PII/debug. Hours of work, real exposure.

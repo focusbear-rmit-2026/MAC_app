@@ -187,8 +187,12 @@ var kUserdefaultsIsGlobalUUIDLinked = "kUserdefaultsIsGlobalUUIDLinked"
 var kUserdefaultsIsMacIdLinked = "kUserdefaultsIsMacIdLinked"
 
 var kUserdefaultsLastFocusModeStrictness = "kUserdefaultsLastFocusModeStrictness"
+// Whether the running focus session was started by the app (a Late No More meeting, or an
+// approved-postpone accountability buddy) rather than by the user. Persisted beside the strictness
+// above and restored with it, so an auto-started session stays stoppable after a relaunch.
+// See FocusSessionStopPermission.swift.
+var kUserdefaultsIsFocusSessionAutoStarted = "kUserdefaultsIsFocusSessionAutoStarted"
 
-var kUserdefaultsDontShowConfirmGeekModeAlert = "kUserdefaultsDontShowConfirmGeekModeAlert"
 // Suppresses the "Want to play some focus music?" prompt shown after a focus session starts.
 var kUserdefaultsDontAskFocusMusicPrompt = "kUserdefaultsDontAskFocusMusicPrompt"
 // The user's saved answer to the focus-music prompt: "ask" (default, prompt each focus session),
@@ -238,11 +242,14 @@ var kUserdefaultsFocusAllThingsExpanded = "kUserdefaultsFocusAllThingsExpanded"
 
 var kUserdefaultsStartMainAppIfNotRunning = "kUserdefaultsStartMainAppIfNotRunning"
 
+// #2575: a Date in the shared suite. When set, the always-running helper (FBHelper) relaunches the main
+// app once this time passes, then clears the key. Written by scheduleMainAppRestart() when the user picks
+// "turn everything off until tomorrow". Must match the identical constant in FBHelper/globalFile.swift.
+let kUserdefaultsMainAppScheduledRestartDate = "kUserdefaultsMainAppScheduledRestartDate"
+
 var kUserdefaultsBrowsersTabAuditReportSaveDate = "kUserdefaultsBrowsersTabAuditReportSaveDate"
 
 var kUserdefaultsLastUnlockTimeByAccountabilityBuddy = "kLastUnlockTimeByAccountabilityBuddy"
-
-var kUserdefaultsUserShouldDoFirstFocusSesion = "kUserShouldDoFirstFocusSesion"
 
 
 

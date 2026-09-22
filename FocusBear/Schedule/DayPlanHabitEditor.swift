@@ -113,25 +113,10 @@ final class HabitEditModel: ObservableObject {
         if HabitEditValues.cleaned(values.tags).contains(where: { $0.range(of: Self.tagPattern, options: .regularExpression) == nil }) {
             return ScheduleText.habitInvalidTags
         }
-        if showsCutoff, values.cutoffEnabled, !isCutoffAllowed(values.cutoffMinutes) {
-            return ScheduleText.habitInvalidCutoff
-        }
+        // A habit's late cutoff is deliberately NOT constrained against the global shutdown/startup/cutoff
+        // times: it stands on its own (bug report 2026-09-09). `MinutesTimePicker` can only produce a real
+        // time of day, so there is nothing further to validate here.
         return nil
-    }
-
-    /// A late cutoff must sit between the evening routine start and the next morning's start (the window
-    /// wraps past midnight) and — like the API's check — not before the global non-high-priority cutoff.
-    private func isCutoffAllowed(_ minutes: Int) -> Bool {
-        guard let shutdown = shutOffTime, let startup = startTime else { return true }
-        let shutdownMinutes = shutdown.hour * 60 + shutdown.minute
-        let startupMinutes = startup.hour * 60 + startup.minute
-        // Minutes since the evening start, so the overnight window is a plain range.
-        func sinceShutdown(_ m: Int) -> Int { (m - shutdownMinutes + 24 * 60) % (24 * 60) }
-        guard sinceShutdown(minutes) <= sinceShutdown(startupMinutes) else { return false }
-        if let global = cutOffTime {
-            return sinceShutdown(minutes) >= sinceShutdown(global.hour * 60 + global.minute)
-        }
-        return true
     }
 
     func addLogQuestion() {
@@ -561,8 +546,17 @@ struct HabitEditView: View {
 struct RoutineTimingView: View {
     let routineName: String
     @SwiftUI.State var minutes: Int
-    let onSave: (Int) -> Void
+    let showsCutoff: Bool
+    @SwiftUI.State var cutoffEnabled: Bool
+    @SwiftUI.State var cutoffMinutes: Int
+    let morningStartMinutes: Int?
+    let onSave: (Int, Int?) -> Void
     let onCancel: () -> Void
+
+    private var cutoffIsValid: Bool {
+        !showsCutoff || DayPlanRoutineDraft.isEveningCutoffValid(cutoffEnabled ? cutoffMinutes : nil,
+            eveningStart: minutes, morningStart: morningStartMinutes)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -572,14 +566,29 @@ struct RoutineTimingView: View {
             MinutesTimePicker(minutes: $minutes)
             Text(ScheduleText.routineTimingHint).font(.fbRegular(12)).foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            if showsCutoff {
+                VStack(alignment: .leading, spacing: 6) {
+                    Toggle(ScheduleText.routineCutoffLabel, isOn: $cutoffEnabled).font(.fbMedium(13))
+                    if cutoffEnabled {
+                        MinutesTimePicker(minutes: $cutoffMinutes).accessibilityLabel(ScheduleText.routineCutoffLabel)
+                        Text(ScheduleText.routineCutoffHint).font(.fbRegular(12)).foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    if !cutoffIsValid {
+                        Text(ScheduleText.routineCutoffInvalid).font(.fbRegular(12)).foregroundColor(.red)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
             HStack {
                 Spacer()
                 SwiftUI.Button(action: onCancel) { Text(ScheduleText.habitCancel) }
                     .buttonStyle(AppOrangeButtonStyle(secondary: true))
                     .keyboardShortcut(.cancelAction)
-                SwiftUI.Button(action: { onSave(minutes) }) { Text(ScheduleText.habitSave) }
+                SwiftUI.Button(action: { onSave(minutes, showsCutoff && cutoffEnabled ? cutoffMinutes : nil) }) { Text(ScheduleText.habitSave) }
                     .buttonStyle(AppOrangeButtonStyle(secondary: false))
                     .keyboardShortcut(.defaultAction)
+                    .disabled(!cutoffIsValid)
             }
         }
         .padding(22)
@@ -592,7 +601,7 @@ struct RoutineTimingView: View {
 
 /// An hour:minute picker bound to minutes-since-midnight (the form's unit for cutoffs and routine starts).
 @available(macOS 11.0, *)
-private struct MinutesTimePicker: View {
+struct MinutesTimePicker: View {
     @Binding var minutes: Int
 
     var body: some View {
@@ -613,7 +622,7 @@ private struct MinutesTimePicker: View {
 
 /// Seven day chips ("MON"…"SUN" codes, locale-short labels) plus weekdays / weekend / every-day shortcuts.
 @available(macOS 11.0, *)
-private struct DayOfWeekPicker: View {
+struct DayOfWeekPicker: View {
     @Binding var selection: Set<String>
 
     private static let weekdays: Set<String> = ["MON", "TUE", "WED", "THU", "FRI"]
@@ -656,7 +665,7 @@ private struct DayOfWeekPicker: View {
     }
 
     /// Locale-aware 2-3 letter day label; `shortWeekdaySymbols` starts at Sunday.
-    private static func shortLabel(_ code: String) -> String {
+    static func shortLabel(_ code: String) -> String {
         guard let index = HabitEditValues.weekdayCodes.firstIndex(of: code) else { return code }
         let symbols = Calendar.current.shortWeekdaySymbols
         return symbols[(index + 1) % symbols.count]
@@ -696,7 +705,7 @@ private struct EditableStringList: View {
 
 /// The filled red counterpart of `AppOrangeButtonStyle` for the delete confirmation.
 @available(macOS 11.0, *)
-private struct DestructiveButtonStyle: ButtonStyle {
+struct DestructiveButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 14, weight: .medium))
@@ -1018,4 +1027,176 @@ private struct RemoveRowButton: View {
         .buttonStyle(FBButtonStyle())
         .help(ScheduleText.habitRemoveItem)
     }
+}
+
+// MARK: - Shorten a habit for one day
+
+/// The "Shorten" sheet from the selected habit's action bar: pick a shorter length for the day being
+/// viewed, or put the habit back to its real length.
+///
+/// The trim is local to this Mac and scoped to one day (`DayPlanHabitDurations`) — nothing here writes
+/// to the habit, so Settings › Edit habits keeps showing the true duration (report 2026-09-15_20-29-02).
+@available(macOS 11.0, *)
+struct DayPlanShortenHabitView: View {
+    /// The wording that differs between shortening a habit and shortening a meeting. Everything else
+    /// on this sheet — the presets, the typed length, "Full length" — is the same question either way,
+    /// so the sheet is shared and only the two sentences that would otherwise lie are swapped.
+    struct Copy: Equatable {
+        /// What the trim applies to, spelled out under the options.
+        let scopeHint: String
+        /// Shown instead of the options when nothing shorter can be offered.
+        let noOptions: String
+
+        static func habit(dayLabel: String) -> Copy {
+            Copy(scopeHint: ScheduleText.habitShortenHint(dayLabel),
+                 noOptions: ScheduleText.habitShortenNoOptions)
+        }
+
+        /// A meeting's trim is a Day-Plan-only overlay (`CalendarManager.LocalEventOverride`), so it
+        /// must not claim the meeting itself got shorter — the other attendees see no change.
+        static func meeting(dayLabel: String) -> Copy {
+            Copy(scopeHint: ScheduleText.dayFixMeetingShortenHint(dayLabel),
+                 noOptions: ScheduleText.dayFixMeetingShortenNoOptions)
+        }
+    }
+
+    /// Emoji + name, as the Day Plan row shows it.
+    let habitTitle: String
+    /// The wording for what is being shortened.
+    let copy: Copy
+    /// The habit's real length in seconds.
+    let actualSeconds: Int
+    /// The trim currently in force for this day, if any.
+    let currentSeconds: Int?
+    let onPick: (Int) -> Void
+    let onFullLength: () -> Void
+    let onCancel: () -> Void
+
+    /// What the user has typed into the length field. `ReturnGuardTextField` writes it on every
+    /// keystroke, so "Use this length" reads the current text without the field having to lose focus
+    /// first — the ordering that dropped a typed due date and four other commits today.
+    @SwiftUI.State private var typedLength = ""
+    /// Why the typed length wasn't used, shown under the field. Cleared as soon as it's retyped.
+    @SwiftUI.State private var typedError: String?
+
+    private var options: [Int] { DayPlanHabitDurations.options(forActualSeconds: actualSeconds) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // The sheet is a fixed size (its host switches off SwiftUI's intrinsic sizing so it can't
+            // grow the window), and the hint wraps to more lines in a longer language — so the body
+            // scrolls rather than clipping its last line, which is what it did at 300pt tall.
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(ScheduleText.habitShortenTitle).font(.fbSemibold(16))
+                    Text(habitTitle).font(.fbRegular(14))
+                    Text(ScheduleText.habitShortenFullLength(
+                        ScheduleText.habitShortenMinutes(DayPlanHabitDurations.minutesLabel(actualSeconds))))
+                        .font(.fbRegular(12)).foregroundColor(.secondary)
+
+                    if options.isEmpty {
+                        Text(copy.noOptions).font(.fbRegular(13)).foregroundColor(.secondary)
+                    } else {
+                        HStack(spacing: Self.optionSpacing) {
+                            ForEach(options, id: \.self) { seconds in optionButton(seconds) }
+                        }
+                    }
+
+                    typedLengthField
+
+                    SwiftUI.Button(action: onFullLength) {
+                        Text(ScheduleText.habitShortenFullLengthAction).fbOutlineButtonLabel()
+                    }
+                    .buttonStyle(FBButtonStyle())
+                    .disabled(currentSeconds == nil)
+                    .opacity(currentSeconds == nil ? Self.disabledOpacity : 1)
+
+                    Text(copy.scopeHint).font(.fbRegular(11)).foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            HStack {
+                Spacer()
+                SwiftUI.Button(action: onCancel) { Text(ScheduleText.habitCancel).fbOutlineButtonLabel() }
+                    .buttonStyle(FBButtonStyle())
+            }
+            .padding(.top, 12)
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    /// Type a length instead of picking one. Return applies it, and so does the button beside it —
+    /// neither waits for the field to lose focus.
+    private var typedLengthField: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: Self.optionSpacing) {
+                ReturnGuardTextField(text: $typedLength, placeholder: ScheduleText.habitShortenTypePlaceholder,
+                                     onCommit: applyTypedLength, onEndEditing: validateTypedLength)
+                    .frame(width: Self.typedFieldWidth)
+                SwiftUI.Button(action: applyTypedLength) {
+                    Text(ScheduleText.habitShortenUseTyped).fbOutlineButtonLabel()
+                }
+                .buttonStyle(FBButtonStyle())
+            }
+            if let typedError = typedError {
+                Text(typedError).font(.fbRegular(11)).foregroundColor(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    /// Applies whatever is in the field right now. Nothing is written for a length that isn't shorter
+    /// than the habit — this only ever shortens, and "Full length" is how a trim is cleared.
+    private func applyTypedLength() {
+        switch DayPlanHabitDurations.typedTrim(typedLength, actualSeconds: actualSeconds) {
+        case .apply(let seconds):
+            typedError = nil
+            onPick(seconds)
+        case .notADuration:
+            typedError = ScheduleText.habitShortenTypeInvalid
+        case .notShorter:
+            typedError = ScheduleText.habitShortenTypeNotShorter(
+                ScheduleText.habitShortenMinutes(DayPlanHabitDurations.minutesLabel(actualSeconds)))
+        }
+    }
+
+    /// Losing focus only reports whether the text reads as a shorter length — it must never apply one
+    /// by itself, or clicking a preset would silently commit whatever was half-typed in the field.
+    private func validateTypedLength() {
+        guard !typedLength.trimmingCharacters(in: .whitespaces).isEmpty else {
+            typedError = nil
+            return
+        }
+        switch DayPlanHabitDurations.typedTrim(typedLength, actualSeconds: actualSeconds) {
+        case .apply: typedError = nil
+        case .notADuration: typedError = ScheduleText.habitShortenTypeInvalid
+        case .notShorter:
+            typedError = ScheduleText.habitShortenTypeNotShorter(
+                ScheduleText.habitShortenMinutes(DayPlanHabitDurations.minutesLabel(actualSeconds)))
+        }
+    }
+
+    private func optionButton(_ seconds: Int) -> some View {
+        let isCurrent = currentSeconds == seconds
+        return SwiftUI.Button(action: { onPick(seconds) }) {
+            Text(ScheduleText.habitShortenMinutes(DayPlanHabitDurations.minutesLabel(seconds)))
+                .font(.fbSemibold(13))
+                .foregroundColor(isCurrent ? .white : .primary)
+                .frame(minWidth: Self.optionWidth)
+                .padding(.vertical, 8)
+                .background(RoundedRectangle(cornerRadius: 8)
+                    .fill(isCurrent ? FBColor.accent : FBColor.lightOrangeBackground))
+                .overlay(RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(isCurrent ? FBColor.accent : FBColor.lightOrangeBorder, lineWidth: 1))
+        }
+        .buttonStyle(FBButtonStyle())
+    }
+
+    private static let optionSpacing: CGFloat = 8
+    private static let optionWidth: CGFloat = 56
+    private static let typedFieldWidth: CGFloat = 110
+    private static let disabledOpacity: Double = 0.4
 }

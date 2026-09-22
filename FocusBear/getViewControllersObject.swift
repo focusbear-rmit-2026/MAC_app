@@ -183,6 +183,16 @@ func getInitialQuitFeedbackVcObject()->initialQuitFeedbackVc{
 }
 
 
+//breakStartVc — the SwiftUI break start screen (the micro-break habit list + office/WFH toggle).
+var breakStartVcObj:breakStartVc?
+func getBreakStartVcObject()->breakStartVc{
+    if breakStartVcObj == nil{
+        // Built in code (SwiftUI-hosted), not from the storyboard.
+        breakStartVcObj = breakStartVc()
+    }
+    return breakStartVcObj!
+}
+
 var brainDumpVcObj:brainDumpVc?
 func getBrainDumpVcObject()->brainDumpVc{
     if brainDumpVcObj == nil{
@@ -1791,19 +1801,17 @@ func getWebViewLoadFailedVcObject()->webViewLoadFailedVc{
 }
 
 
-var menuWcObj:MenuWc?
-func getMenuWindowObject()->MenuWc{
+var menuWcObj:commonWindowController?
+func getMenuWindowObject()->commonWindowController{
     if menuWcObj == nil{
-        menuWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("MenuWc")) as? MenuWc
+        menuWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
         menuWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
         menuWcObj?.window?.standardWindowButton(.zoomButton)?.isHidden = true
         menuWcObj?.window?.standardWindowButton(.miniaturizeButton)?.isHidden = true
-        // The window is a non-activating NSPanel (class set in the storyboard MenuWc scene) so opening the
-        // menu never activates Focus Bear or switches Spaces. The .nonactivatingPanel style bit only takes
-        // effect because the window's class is NSPanel. It is deliberately NOT canJoinAllSpaces /
-        // fullScreenAuxiliary — that would float it over every app's full-screen and leave it stuck on top;
-        // instead it's brought over another app's full-screen space on demand (see togglePopover).
-        menuWcObj?.window?.styleMask.insert(.nonactivatingPanel)
+        // canJoinAllSpaces + fullScreenAuxiliary so the menu also appears over another app's native
+        // full-screen space (Chrome/etc. green-button full screen); canJoinAllSpaces also keeps it
+        // visible under Stage Manager. // 19/6/25, full-screen fix
+        menuWcObj?.window?.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
     }
     return menuWcObj!
 }
@@ -2076,7 +2084,8 @@ func getHelpVcObject()->helpVc{
 var focusModeStateVcObj:focusModeStateVc?
 func getFocusModeStateVcObject()->focusModeStateVc{
     if focusModeStateVcObj == nil{
-        focusModeStateVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusModeStateVc")) as? focusModeStateVc
+        // Built in code, not from the storyboard — the screen is SwiftUI hosted in loadView().
+        focusModeStateVcObj = focusModeStateVc()
     }
     return focusModeStateVcObj!
 }

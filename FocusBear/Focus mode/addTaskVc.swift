@@ -50,6 +50,10 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
     var arrAllAppsTabsData = [[String:Any]]()
     var hiddenTaskTabViewItem: NSTabViewItem?
     var alertExtendPostpone: NSAlert?
+    private var approvedExtensionMinutes: Int?
+    var extensionMinutesForPostpone: Int {
+        approvedExtensionMinutes ?? Int(popUpBtnSelectMinutes.title) ?? 0
+    }
     let enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as? enterPasswordVc
     var focusModeFocusedTitles = [String]()
     var focusModeDecentTitles = [String]()
@@ -434,7 +438,27 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
     }
     
     @IBAction func btnExtendSessionClicked(_ sender: Any) {
-        let totalMinutes = Int(popUpBtnSelectMinutes.title) ?? 0
+        approvedExtensionMinutes = nil
+        let requestedMinutes = Int(popUpBtnSelectMinutes.title) ?? 0
+        FocusSessionExtension.askWhyMoreTimeIsNeeded(minutes: requestedMinutes, presenter: self, restarting: true) { [weak self] minutes in
+            guard let self = self, minutes > 0 else { return }
+            self.approvedExtensionMinutes = minutes
+            self.continueExtensionAfterApproval(minutes: minutes)
+        }
+    }
+
+    private func continueExtensionAfterApproval(minutes requestedMinutes: Int) {
+        let totalMinutes = FocusSessionExtension.cutoffLimitedMinutes(requestedMinutes, from: nil)
+        guard totalMinutes > 0 else { return }
+        // A focus session running under a routine postpone completed on its own: the postpone timer
+        // already resumed the routine, so currentState is back to ._NOTHING_ and the live guard below
+        // misses it — we'd extend focus WITHOUT re-covering the habits, and they interrupt seconds
+        // later (#2213). Re-postpone from the persisted last-postpone state so the extend keeps them
+        // covered.
+        if currentState == ._NOTHING_, let resumingState = routinePostponeStateToReCoverOnExtend() {
+            rePostponeForExtendAfterCompletion(state: resumingState, totalMinutes: totalMinutes)
+            return
+        }
         if currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
             if getHabitsVcObject().postponeTimer != nil {
                 if getHabitsVcObject().postponeTimer!.isValid{
@@ -460,6 +484,8 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                         alertExtendPostpone!.addButton(withTitle: buttonDoNotExtendPostponeText)
                         
                         alertExtendPostpone!.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                            let totalMinutes = FocusSessionExtension.cutoffLimitedMinutes(totalMinutes, from: nil)
+                            guard totalMinutes > 0 else { return }
                             if modalResponse == .alertFirstButtonReturn{
                                 if currentState == ._POSTPONE_MORNING_HABIT_{
                                     if SettingsManagerObject.isEasySkipEnabled{
@@ -518,57 +544,92 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         
         extendFocusMode()
     }
-
-    func extendFocusMode(){
-        allApiObject.capturePosthog(event: "extend-focus-session-from-popup", metadata: [:])
-        if presentingViewController != nil { self.dismiss(self) }   // guard: dismissing a non-presented VC throws NSInternalInconsistencyException (crash 1A8, when a sheet is force-ended during quit)
-        if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-            customBlockingScheduleManagerObj.customBlockingScheduleFinished()
+    
+    /// Re-postpone the routine when extending focus after the covering session already completed and
+    /// currentState fell back to ._NOTHING_ (see routinePostponeStateToReCoverOnExtend / #2213). Mirrors
+    /// the password / easy-skip gating of the live-postpone branch above.
+    private func rePostponeForExtendAfterCompletion(state: CURRENTSTATE, totalMinutes: Int) {
+        if state == ._POSTPONE_MORNING_HABIT_ {
+            if !SettingsManagerObject.isEasySkipEnabled,
+               SettingsManagerObject.isPasswordRequireInPostponeMorning, shouldAskPassword(forPostpone: true) {
+                self.presentAsSheet(self.enterPasswordVcObj!)
+                self.enterPasswordVcObj?.parentVc = self
+            } else {
+                getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                self.extendFocusMode()
+            }
+            return
         }
-        
-        let minutesToExtend = Int(popUpBtnSelectMinutes.title) ?? 0
-        var currentFocusModeIndex = -1
-        for i in 0..<arrFocusType.count{
-            if arrFocusType[i]["id"] as? String == focusCompletedVcObj?.currentFocusModeId ?? ""{
-                currentFocusModeIndex = i
-                break;
+        // ._POSTPONE_EVENING_HABIT_ or ._POSTPONE_FOCUS_SUMMARY_
+        var shouldAskPasswordForEvening = false
+        if shouldAskPassword(forPostpone: true) && !SettingsManagerObject.isEasySkipEnabled {
+            if isCutOffTimeGoing() {
+                shouldAskPasswordForEvening = SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff
+            } else {
+                shouldAskPasswordForEvening = SettingsManagerObject.isPasswordRequireInPostponeEvening
             }
         }
-        
-        if currentFocusModeIndex == -1{
+        if shouldAskPasswordForEvening {
+            self.presentAsSheet(self.enterPasswordVcObj!)
+            self.enterPasswordVcObj?.parentVc = self
+        } else {
+            if state == ._POSTPONE_EVENING_HABIT_ {
+                getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+            } else {
+                getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
+            }
+            self.extendFocusMode()
+        }
+    }
+
+    func extendFocusMode(){
+        // The button obtains approval before extending the routine's postpone timer or opening
+        // password confirmation. Those continuations consume that same approved duration once.
+        if let minutes = approvedExtensionMinutes {
+            approvedExtensionMinutes = nil
+            applyApprovedExtension(minutes: minutes)
+            return
+        }
+        let minutes = Int(popUpBtnSelectMinutes.title) ?? 0
+        FocusSessionExtension.askWhyMoreTimeIsNeeded(minutes: minutes, presenter: self, restarting: true) { [weak self] approved in
+            self?.applyApprovedExtension(minutes: approved)
+        }
+    }
+
+    private func applyApprovedExtension(minutes requestedMinutes: Int) {
+        let minutes = FocusSessionExtension.cutoffLimitedMinutes(requestedMinutes, from: nil)
+        guard minutes > 0 else { return }
+        allApiObject.capturePosthog(event: "extend-focus-session-from-popup", metadata: [:])
+        // A completed buddy needs its scoped blocking restored, but only after fresh approval.
+        if let buddy = lastCompletedAccountabilityBuddySession {
+            lastCompletedAccountabilityBuddySession = nil
+            if presentingViewController != nil { self.dismiss(self) }
+            startScopedAiFocusSession(goal: whatToAchieveInFocusBlock.isEmpty ? buddy.goal : whatToAchieveInFocusBlock,
+                                      minutes: minutes,
+                                      allowedApps: buddy.allowedApps, allowedUrls: buddy.allowedUrls,
+                                      event: "accountability-buddy-session-extended",
+                                      initialTasks: FocusSessionTaskQueue.decode(focusModeTaskString).filter { !$0.status.isCompleted })
+        } else {
+            applyExtension(minutes: minutes)
+        }
+    }
+
+    private func applyExtension(minutes minutesToExtend: Int){
+        if presentingViewController != nil { self.dismiss(self) }   // guard: dismissing a non-presented VC throws NSInternalInconsistencyException (crash 1A8, when a sheet is force-ended during quit)
+        // An extension CONTINUES the session that is already running. Unlike STARTING a session
+        // (AppDelegate.focusModeStartted, which deliberately supersedes a running custom blocking
+        // schedule) it must not finish that schedule: doing so moved AI relevance checking onto a
+        // different block list — or onto the global toggle — and so cancelled the AI blocking that was
+        // in place for exactly the minutes the user asked for. See focusSessionExtension.swift.
+        guard let currentFocusModeIndex = FocusSessionExtension.applyLocalExtension(
+            focusModeId: focusCompletedVcObj?.currentFocusModeId ?? "",
+            minutes: minutesToExtend) else {
             return;
         }
 
-        let calendar = Calendar.current
-       
-        endFocusModeTime = calendar.date(byAdding: .minute, value: minutesToExtend, to: Date())
-        arrFocusType[currentFocusModeIndex]["isOn"] = true
-        arrFocusType[currentFocusModeIndex]["lastScheduledEndDate"] = getStringFromDate(date: endFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
-        if let isAutoDoNotDisturbEnabled = arrFocusType[currentFocusModeIndex]["isAutoDoNotDisturbEnabled"] as? Bool{
-            if isAutoDoNotDisturbEnabled{
-                if isAccessibilityEnabled(isPrompt: true){
-                    DNDManager.shared.setDND(true)
-                }
-            }
-        }
-        if !DNDManager.shared.isDndEnabled{
-            if let isDeepWorkFocus = arrFocusType[currentFocusModeIndex]["isDeepWorkFocus"] as? Bool{
-                if  isDeepWorkFocus{
-                    if isAccessibilityEnabled(isPrompt: true){
-                        DNDManager.shared.setDND(true)
-                    }
-                }
-            }else if let isDefault = arrFocusType[currentFocusModeIndex]["isDefault"] as? Bool{
-                if  isDefault{
-                    if isAccessibilityEnabled(isPrompt: true){
-                        DNDManager.shared.setDND(true)
-                    }
-                }
-            }
-        }
+        applyAutoDoNotDisturb(forFocusModeAt: currentFocusModeIndex, includingDeepWorkAndDefault: true)
         
         workBeforeFocusBegin(index: currentFocusModeIndex)
-        isFocusModeRunning = true
         appdelegate!.setStatusBarButtonColorForFocusMode(color: nil, colorString:arrFocusType[currentFocusModeIndex]["color"] as? String ?? "")
         appdelegate!.setStatusBarButtonTitleForFocusMode(title: whatToAchieveInFocusBlock)
         appdelegate!.statusbutton?.imagePosition = .imageLeft
@@ -576,7 +637,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         
         appdelegate?.setFocusModeTimerForExtendAfterComplete(hour: nil, minute: minutesToExtend)
         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled && currentState != ._MICRO_BREAK_{
-            showTaskPlayerWindow(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock, automatically:false)
+            showRunningFocusSessionWindow()
             leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
             leftMenuVcObj?.resetFocusModeTitle()
         }else{
@@ -589,9 +650,11 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
             }
         }
         
-        allApiObject.extendFocusMode(id: arrFocusType[currentFocusModeIndex]["id"] as? String ?? "", finish_time: endFocusModeTime!, completionHandler: {dic in
-            
-        })
+        if let finishTime = endFocusModeTime{
+            allApiObject.extendFocusMode(id: arrFocusType[currentFocusModeIndex]["id"] as? String ?? "", finish_time: finishTime, completionHandler: {dic in
+                
+            })
+        }
         updateAllFocusModes()
     }
     //self.view.window?.close()

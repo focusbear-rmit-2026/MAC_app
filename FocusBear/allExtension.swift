@@ -506,6 +506,44 @@ extension NSAlert{
     }
 }
 
+extension NSAlert {
+    /// Ask this alert as a SHEET on `window`, never `runModal()`.
+    ///
+    /// `runModal()` runs an app-modal loop on a panel that macOS is free to order BEHIND the app's own
+    /// windows — it holds the keyboard while being invisible, so the app reads as frozen and the button
+    /// that opened it reads as dead. A SwiftUI `Alert` inside a `.sheet` fails the same way for a
+    /// different reason: it is presented on the window *underneath* the sheet
+    /// (reports 2026-09-11_21-00-30 and 2026-09-14_11-50-38). A sheet belongs to the window it is
+    /// attached to and cannot fall behind it.
+    ///
+    /// `ScheduleViewController.presentAlertAsSheet` (PR #2496) is the same helper for AppKit callers
+    /// that have a `view.window`; once both have landed it should call through to this one.
+    func presentAsSheet(for window: NSWindow?, completion: @escaping (NSApplication.ModalResponse) -> Void = { _ in }) {
+        setSharingType()
+        if let window = window ?? NSApp.keyWindow ?? NSApp.mainWindow {
+            beginSheetModal(for: window, completionHandler: completion)
+            return
+        }
+        // Nothing to attach to: at least bring the app forward so the alert cannot open behind another
+        // app, then run it windowless.
+        NSApp.activate(ignoringOtherApps: true)
+        completion(runModal())
+    }
+}
+
+extension NSImage {
+    /// The image's real resolution, not its DPI-scaled point size. A Retina screenshot carries a 144
+    /// dpi tag, so `size` reports half its pixels — sizing a preview from that is what made the report
+    /// lightbox look so small (report 2026-09-13_21-19-23 follow-up, "make it larger").
+    var naturalPixelSize: CGSize {
+        let pixels = representations.reduce(CGSize.zero) { widest, representation in
+            CGSize(width: max(widest.width, CGFloat(representation.pixelsWide)),
+                   height: max(widest.height, CGFloat(representation.pixelsHigh)))
+        }
+        return pixels.width > 0 && pixels.height > 0 ? pixels : size
+    }
+}
+
 
 // zip a folder
 public extension URL {
@@ -807,8 +845,10 @@ final class AccessTokenRequestHandler: NSObject, WKScriptMessageHandler {
             // initial load, carrying the requestId so web can match the reply.
             if requestWebView === taskPlayerVcObj?.webView {
                 taskPlayerVcObj?.setAccessTokenToWebView(requestId: requestId)
-            } else if requestWebView === selectJsonVcObj?.webview {
-                selectJsonVcObj?.setSettingsToWebView(requestId: requestId)
+            } else if requestWebView === SharedDashboardWebViewManager.shared.webView {
+                // Shared by Todo List / Edit Habits / Stats — routes by whichever of the three is
+                // currently loaded, since it's the same physical webview for all three.
+                SharedDashboardWebViewManager.shared.reinjectCurrentScreenToken(requestId: requestId)
             } else if requestWebView === editHabitRoutineVcObj?.webView {
                 editHabitRoutineVcObj?.setSettingsToWebView(requestId: requestId)
             } else if requestWebView === surveyVcObj?.webView {

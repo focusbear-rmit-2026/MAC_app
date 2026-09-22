@@ -8,6 +8,293 @@
 
 import Cocoa
 
+/// The custom borderless fullscreen window still covers the display. Only its interactive content
+/// moves below the visible menu bar / camera housing; titled and native-fullscreen windows keep
+/// AppKit's own content geometry.
+/// Which states full-screen mode actually covers.
+///
+/// Full screen exists to hold the user inside a ROUTINE that is running. It was being applied to
+/// every screen the setting could reach, so a postponed routine — the user getting on with their
+/// day — and a one-minute micro break both took over the whole display, with no traffic lights and
+/// only "Exit Fullscreen" to escape (report 2026-09-14_16-31-53).
+enum FullScreenStates {
+    /// Routine states: the routine itself, the flows that belong to it (shutdown, focus summary,
+    /// breathing, an allowed-activity habit, the abort prompt — which must not become an escape
+    /// hatch) and onboarding, which drives the window itself.
+    static let covered: Set<CURRENTSTATE> = [
+        ._MORNING_HABIT_, ._EVENING_HABIT_, ._CUSTOM_ROUTINE_, ._SHUTOFFMAC_,
+        ._FOCUS_SUMMARY_, ._BREATHING_, ._SPECIAL_ACTIVITY_, ._ABORT_, ._ONBOARDING_,
+    ]
+
+    /// Notably NOT covered: `_POSTPONE_*` (the routine is deferred, the user is working),
+    /// `_MICRO_BREAK_` (a break is not a routine), `_NOTHING_` and `_LOGIN_`.
+    static func shouldUseFullScreen(setting: Bool, state: CURRENTSTATE) -> Bool {
+        setting && covered.contains(state)
+    }
+}
+
+/// What activating the app — ⌘-Tab, the app switcher, a Dock click — should do about the main window.
+///
+/// ⌘-Tab itself is not observable: the system app switcher swallows the keystroke and never delivers it
+/// to the app. The *activation* it causes is, and that is all this needs. `applicationDidBecomeActive`
+/// already fired on every switch-to; it simply did nothing with it, so switching back to Focus Bear
+/// after closing its window left the user looking at no window at all (report 2026-09-16_16-01-15).
+///
+/// The rule is: **restore only when the activation came from outside the app.** A self-activation — the
+/// app putting up its own menu, a Late No More meeting announcement, a nudge — is not someone asking for
+/// the main window, and answering one with a window would drop it over a meeting prompt or a meeting.
+///
+/// AppKit will not tell us where an activation came from. `NSApplication.didBecomeActiveNotification`
+/// carries no `userInfo`; `NSWorkspace`'s activation notifications name the app that became active, not
+/// whatever initiated it; and even macOS 14's cooperative activation exposes no origin (the deployment
+/// target here is macOS 11 regardless). Nor is there a choke point to intercept: the app self-activates
+/// from ~110 call sites across three different calls (`NSApp.activate`, `NSApplication.shared.activate`,
+/// `NSRunningApplication.current.activate`), so no subclass or single wrapper catches them all.
+///
+/// So origin is **declared, not detected**: the paths that bring the app to the front for a purpose of
+/// their own call `AppDelegate.noteSelfActivation()`, and the decision is deferred by
+/// `activationSettleSeconds` so that declaration lands first. Two backstops keep the declaration list
+/// from having to be exhaustive: a self-activation almost always exists in order to SHOW something, so a
+/// window that OPENS during the settle period is treated as one (`didAnotherWindowOpenSinceActivation`);
+/// and the routine states own their own window anyway. The list is only needed where neither backstop
+/// applies — see `noteSelfActivation`'s callers.
+///
+/// What is on screen *already* is deliberately not a reason to do nothing. An earlier version stopped
+/// whenever any other window was visible; the user's answer to that was explicit — "if an alert/nudge is
+/// showing, it should still open the full window, if menu is open it shouldn't" — and it is also what
+/// kept the fix from ever firing in practice: any second window the app happened to have up was enough
+/// to answer a ⌘-Tab with nothing (report 2026-09-16_16-01-15, fourth round: activations at 16:54:51,
+/// 16:55:02, 16:55:04 and 16:55:09 on 17 Sep, all `other=true`, `main=false`, no window shown).
+///
+/// Pure, so the policy can be tested without instantiating a single AppKit window.
+enum AppActivationRestore {
+    enum Action: Equatable {
+        /// The main window is already up, the menu is, or the window is deliberately absent — leave it
+        /// alone.
+        case doNothing
+        /// Put the main window back as it is.
+        case showMainWindow
+        /// Put the main window back, restoring its title bar first: the controller is still configured
+        /// borderless from a full-screen state that has since ended (a routine the user postponed), and
+        /// reopening it borderless would drop them into the screen-filling window they just escaped.
+        case showMainWindowAsSmallWindow
+    }
+
+    /// States where the routine state machine — not the user's app switching — decides whether the main
+    /// window is on screen. A routine keeps running with its window closed (an allowed-activity habit
+    /// backgrounds itself), a micro break can be dismissed, onboarding drives the window itself. In all
+    /// of them "no window" is a deliberate outcome, and yanking one to the front mid-meeting would be a
+    /// worse bug than the one being fixed here, so activation stays out of the way.
+    ///
+    /// Not listed, and so restorable: `_NOTHING_` (the ordinary case), `_LOGIN_` (the login screen IS the
+    /// main window — `showAskLoginWindow` already routes the menu-bar click to it) and the `_POSTPONE_*`
+    /// states (the routine is deferred, the user is working, the main window is an ordinary browsable
+    /// window — and `_POSTPONE_MORNING_HABIT_` is the state the report was filed from).
+    static let statesThatOwnMainWindow: Set<CURRENTSTATE> = [
+        ._MORNING_HABIT_, ._EVENING_HABIT_, ._MICRO_BREAK_, ._SHUTOFFMAC_, ._BREATHING_,
+        ._ABORT_, ._FOCUS_SUMMARY_, ._SPECIAL_ACTIVITY_, ._CUSTOM_ROUTINE_, ._ONBOARDING_,
+    ]
+
+    /// How long after launch an activation is assumed to be the system's rather than the user's.
+    ///
+    /// macOS activates a foreground launch about a second in (visible in the logs as an
+    /// `applicationDidBecomeActive` one second after "running app version"), long before the app has
+    /// decided whether the user is logging in, onboarding, or going straight to the main window. Focus
+    /// Bear also starts at login, and popping its window open on every boot would be its own bug. An
+    /// app started into the background never gets that activation, so a ⌘-Tab to it — which can only
+    /// come later than this — is still restored.
+    static let launchSettlingSeconds: TimeInterval = 5
+
+    /// How long the decision waits after activation, so the app's own reason for coming to the front
+    /// can land first.
+    ///
+    /// Deciding inside `applicationDidBecomeActive` is too early, and the user's own logs prove it: on a
+    /// menu-bar click `applicationDidBecomeActive` is logged **before** `togglePopover start`, so at the
+    /// moment of activation the popover is opening but not yet open and `isMenuVisible` is still false.
+    /// One settle period later the popover is up (or `noteSelfActivation()` has been called), and both
+    /// signals read correctly. Short enough that a real ⌘-Tab still feels immediate.
+    static let activationSettleSeconds: TimeInterval = 0.35
+
+    /// How long a `noteSelfActivation()` marker stays valid.
+    ///
+    /// The marker can be set either just before the activation (a deep link that activates us) or just
+    /// after it (the menu-bar click, whose action is delivered after `applicationDidBecomeActive`), so
+    /// the window has to straddle both. It is also consumed once read, so a self-activation suppresses
+    /// exactly one decision rather than blunting every ⌘-Tab for the next couple of seconds.
+    static let selfActivationWindowSeconds: TimeInterval = 2
+
+    /// How much of the main window has to land on an attached screen before it counts as "already on
+    /// screen". Below this it is stranded, and the user is looking at nothing.
+    static let minimumVisibleFractionOfMainWindow: CGFloat = 0.25
+
+    /// Whether a window sits where the user can actually see it.
+    ///
+    /// `NSWindow.isVisible` means *ordered in*, not *on a display*. A window left on a monitor that has
+    /// since been unplugged, or pushed off the edge of the desktop, stays `isVisible == true` forever —
+    /// so the restore decision read "you already have a window" and did nothing, on a ⌘-Tab where the
+    /// user could see no window at all (report 2026-09-16_16-01-15, third round: two activations logged
+    /// 12:01:31 and 12:01:34 on 17 Sep, neither followed by a restore).
+    ///
+    /// A fraction rather than any overlap at all: a window poking one pixel onto a display is not a
+    /// window you can use.
+    static func isOnVisibleScreen(windowFrame: NSRect, screenFrames: [NSRect]) -> Bool {
+        let area = windowFrame.width * windowFrame.height
+        guard area > 0 else { return false }
+        let visible = screenFrames.reduce(CGFloat.zero) { total, screen in
+            let overlap = screen.intersection(windowFrame)
+            return total + (overlap.isNull ? 0 : overlap.width * overlap.height)
+        }
+        return visible / area >= minimumVisibleFractionOfMainWindow
+    }
+
+    /// A running focus session is deliberately NOT an input. A session hides no window of its own, and
+    /// someone who switches to Focus Bear mid-session is usually after the session screen itself.
+    ///
+    /// - Parameter isSelfActivation: the app brought *itself* to the front for a purpose of its own (see
+    ///   `AppDelegate.noteSelfActivation`). Only an activation that came from OUTSIDE the app — ⌘-Tab,
+    ///   the app switcher, the Dock — is a request for the main window.
+    /// - Parameter didAnotherWindowOpenSinceActivation: a window of ours arrived DURING the settle period,
+    ///   i.e. the app came to the front in order to show it. That is an undeclared self-activation, and
+    ///   the main window must not land on top of whatever it came to say. A window that was already there
+    ///   when the user switched in is not this, and no longer suppresses anything.
+    /// - Parameter isMainWindowConfiguredBorderless: `mainWindowController.isFullScreenVisible`.
+    /// - Parameter isAnotherFocusBearWindowFront: the app's key/main window is one of ITS OWN non-main
+    ///   windows (the quit window, and any future window the user works in). When the user switched back
+    ///   TO such a window they were not asking for the main window, so opening it on top is wrong. This is
+    ///   deliberately the *front/focused* window rather than "anything visible": an incidental alert or
+    ///   nudge merely on screen must still let a ⌘-Tab open the main window (report 2026-09-16). Because it
+    ///   keys off "is a non-main window the front one" rather than naming any window, a new window that
+    ///   hits this same bug is covered automatically, with no per-window special case (#2585).
+    /// - Parameter didAnotherWindowCloseSinceActivation: one of our OWN non-main windows was on screen when
+    ///   the activation was recorded but is gone by decision time — i.e. a Focus Bear popup CLOSED during
+    ///   the settle. Dismissing a popup while the app is in the background activates the app (clicking a
+    ///   background window brings its app forward) and closes the popup in the same click; the deferred
+    ///   decision then sees "app active, no window" and would wrongly open the main window. The front-window
+    ///   check above can't catch it because the popup is already gone at decision time — this is the same
+    ///   snapshot read the other way. It does NOT fire for a window that merely stays open across the settle
+    ///   (a nudge on a ⌘-Tab), so it can't re-break report 2026-09-16.
+    static func action(secondsSinceLaunch: TimeInterval,
+                       isSelfActivation: Bool,
+                       isMainWindowVisible: Bool,
+                       didAnotherWindowOpenSinceActivation: Bool,
+                       didAnotherWindowCloseSinceActivation: Bool,
+                       isMenuVisible: Bool,
+                       isAnotherFocusBearWindowFront: Bool,
+                       state: CURRENTSTATE,
+                       isMainWindowConfiguredBorderless: Bool) -> Action {
+        // Activation fires constantly — every switch-to, every alert, every self-activation the app does
+        // when it puts up a window of its own — so everything below stays cheap and idempotent.
+        guard secondsSinceLaunch >= launchSettlingSeconds else { return .doNothing }
+        guard !isSelfActivation, !didAnotherWindowOpenSinceActivation else { return .doNothing }
+        guard !didAnotherWindowCloseSinceActivation else { return .doNothing }
+        guard !isMainWindowVisible, !isMenuVisible else { return .doNothing }
+        guard !isAnotherFocusBearWindowFront else { return .doNothing }
+        guard !statesThatOwnMainWindow.contains(state) else { return .doNothing }
+        return isMainWindowConfiguredBorderless ? .showMainWindowAsSmallWindow : .showMainWindow
+    }
+}
+
+enum MainWindowContentLayout {
+    static func topInset(contentFrameOnScreen: NSRect, screenFrame: NSRect,
+                         visibleScreenFrame: NSRect, screenSafeAreaTop: CGFloat,
+                         isCustomFullScreen: Bool, styleMask: NSWindow.StyleMask) -> CGFloat {
+        guard isCustomFullScreen, !styleMask.contains(.titled), !styleMask.contains(.fullScreen) else { return 0 }
+        let safeTop = min(visibleScreenFrame.maxY, screenFrame.maxY - max(0, screenSafeAreaTop))
+        return min(contentFrameOnScreen.height, max(0, contentFrameOnScreen.maxY - safeTop))
+    }
+
+    /// The single width cap kept on the main window's content view (see `constrainWidthToWindow`).
+    static let viewportWidthConstraintIdentifier = "mainWindowViewportWidth"
+
+    static func viewportWidthCap(on root: NSView) -> NSLayoutConstraint? {
+        root.constraints.first { $0.identifier == viewportWidthConstraintIdentifier }
+    }
+
+    /// The widest a window could ever be dragged: across every screen the desktop spans.
+    /// Pure so the ceiling used during a live resize can be unit-tested.
+    static func liveResizeCeiling(screenFrames: [NSRect]) -> CGFloat {
+        guard let union = screenFrames.reduce(nil as NSRect?, { $0?.union($1) ?? $1 }) else { return 0 }
+        return union.width
+    }
+
+    /// AppKit can grow an unconstrained window content view beyond the actual window when a split
+    /// pane's intrinsic content resists compression. The window still fits the display, but its
+    /// trailing task panel and Exit Fullscreen control are clipped. Keep the root tied to the real
+    /// viewport, so the pane's text compresses instead. Refresh on layout/resize; never use the
+    /// already-expanded root frame as the source of the width.
+    ///
+    /// The cap is also a ceiling on the WINDOW — see `allowWindowWidth` — so while the user is
+    /// dragging an edge it is held open to the whole desktop instead of being pulled back onto the
+    /// size being dragged away from (report 2026-09-16_10-36-19: the window grew taller but not wider,
+    /// because every layout pass mid-drag re-pinned the cap to the width it already had).
+    static func constrainWidthToWindow(_ root: NSView) {
+        guard let window = root.window, window.contentView === root else { return }
+        let viewport = window.contentLayoutRect.width
+        guard viewport.isFinite, viewport > 0 else { return }
+        let width = window.inLiveResize
+            ? max(viewport, liveResizeCeiling(screenFrames: NSScreen.screens.map(\.frame)))
+            : viewport
+        if let constraint = viewportWidthCap(on: root) {
+            if abs(constraint.constant - width) > 0.5 { constraint.constant = width }
+        } else {
+            // A CAP, not a pin. As an equality this was a required `width == N` on the content view,
+            // which Auto Layout defended against the user dragging the window's edge: the window
+            // could not be made narrower at all (report 2026-09-14_15-04-30). `<=` still keeps the
+            // content inside the viewport — which is the whole point.
+            let constraint = root.widthAnchor.constraint(lessThanOrEqualToConstant: width)
+            constraint.identifier = viewportWidthConstraintIdentifier
+            constraint.isActive = true
+        }
+    }
+
+    /// Raise the viewport cap so a resize that is ABOUT to happen isn't vetoed.
+    ///
+    /// AppKit reads a required width constraint on a window's content view as a limit on the window
+    /// itself, so a cap sitting on the current viewport width is a ceiling the window can never pass:
+    /// verified offscreen — with the cap in place a window asked to grow by 300pt gained the height
+    /// and none of the width, which is exactly what was reported. Lowering the constraint's priority
+    /// does not help (AppKit honours an optional cap when it derives that limit), and there is nothing
+    /// relative to constrain against: `contentLayoutGuide` is nil in the borderless full-screen window,
+    /// and the window's own frame view grows with the content, so neither contains anything. The cap
+    /// therefore has to be lifted before the frame changes; `constrainWidthToWindow` brings it back
+    /// down to the real viewport on the next layout pass, which is what keeps content contained.
+    ///
+    /// Only ever raises: shrinking is the layout pass's job.
+    @discardableResult
+    static func allowWindowWidth(_ width: CGFloat, on root: NSView?) -> Bool {
+        guard let root = root, let cap = viewportWidthCap(on: root),
+              width.isFinite, width > cap.constant else { return false }
+        cap.constant = width
+        return true
+    }
+
+    /// The Main storyboard pins boxContainer.top to its root view. A positive AppKit top-anchor
+    /// constant moves the box down, including for the storyboard's unflipped NSView/NSBox pair.
+    @discardableResult
+    static func apply(topInset: CGFloat, to content: NSView, in root: NSView) -> Bool {
+        guard let constraint = root.constraints.first(where: {
+            ($0.firstItem as? NSView) === content && $0.firstAttribute == .top &&
+                ($0.secondItem as? NSView) === root && $0.secondAttribute == .top
+        }) else { return false }
+        if abs(constraint.constant - topInset) > 0.5 { constraint.constant = topInset }
+        return true
+    }
+
+    /// The storyboard nests its custom minimize control inside boxContainer. Window chrome must
+    /// stay at the window's top edge when the sidebar/page host moves below the fullscreen inset.
+    /// Keep the original view (including its action and tracking area), above the content host.
+    static func attachWindowControls(_ controls: NSView, to root: NSView) {
+        guard controls !== root, controls.superview !== root else { return }
+        controls.removeFromSuperview()
+        controls.translatesAutoresizingMaskIntoConstraints = false
+        root.addSubview(controls, positioned: .above, relativeTo: nil)
+        NSLayoutConstraint.activate([
+            controls.topAnchor.constraint(equalTo: root.topAnchor),
+            controls.leadingAnchor.constraint(equalTo: root.leadingAnchor)
+        ])
+    }
+}
+
 class mainWindowController: NSWindowController, NSWindowDelegate {
     
     let smallWindowMinWidth = 900
@@ -35,6 +322,13 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     private var isProgrammaticallyCenteringRoutineWindow = false
 
     var isFullScreenVisible = false
+
+    /// A saved fullscreen preference alone must not cover other displays while Help or another
+    /// ordinary titled window is open, or after the main window has been hidden.
+    var shouldCoverSecondaryScreens: Bool {
+        guard isFullScreenVisible, let window = window else { return false }
+        return window.isVisible && !window.isMiniaturized && !window.styleMask.contains(.titled)
+    }
     override func windowDidLoad() {
         super.windowDidLoad()
         
@@ -52,15 +346,47 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         
         self.window?.appearance = getAppAppearance()
         self.contentViewController =  mainViewControllerObj
+        NotificationCenter.default.addObserver(self, selector: #selector(refreshContentInsets),
+                                              name: NSApplication.didChangeScreenParametersNotification, object: nil)
+    }
+
+    deinit { NotificationCenter.default.removeObserver(self) }
+
+    @objc private func refreshContentInsets() {
+        (contentViewController as? ViewController)?.updateFullScreenContentInsets()
+    }
+
+    func windowDidResize(_ notification: Notification) { refreshContentInsets() }
+    func windowDidChangeScreen(_ notification: Notification) { refreshContentInsets() }
+    func windowDidBecomeKey(_ notification: Notification) {
+        refreshContentInsets()
+        // A fullscreen request may arrive before showWindow makes the host visible. Retry only
+        // after AppKit orders it in, so the visibility guard never drops legitimate first-show covers.
+        restoreSecondaryScreenCoversIfNeeded()
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        hideBlankWindowInSecondaryMonitor()
+    }
+
+    private func restoreSecondaryScreenCoversIfNeeded() {
+        guard arrWindows.isEmpty, shouldCoverSecondaryScreens, checkIsFullScreenEnabled() else { return }
+        // Lifecycle events only restore coverage; they must not run the legacy modal cleanup.
+        appdelegate?.showExtraWindows()
     }
     
     
     func showFullSizeWindow(){
         isFullScreenVisible = true
-        // Guard against `window` being nil (rather than force-unwrapping): it can legitimately be nil in
-        // a race between a window-state change and this call landing. The codebase already treats
-        // mainWindowControllerObj.window as nilable elsewhere (customBlockingScheduleData.swift,
-        // habitsVc.swift), just not here.
+        // However the window got back to full screen — this restore, or a route that bypasses
+        // `checkIsFullScreenNeeded()` entirely such as `endFullScreenCalendarGrant()` — we no longer owe
+        // anyone a step-aside restore. Clearing it HERE, at the one place the borderless window is
+        // actually created, is what keeps the marker honest without enumerating entry points.
+        allowedActivityFullScreenCoordinator.noteFullScreenWindowShown()
+        // Optional-chained rather than force-unwrapped (#2522): `window` can legitimately be nil in a
+        // race between a window-state change and this call landing, and the rest of the codebase
+        // already treats mainWindowControllerObj.window as nilable (customBlockingScheduleData.swift,
+        // habitsVc.swift) — this was the one place that did not.
         window?.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces          // we want these
         window?.canHide = false
         window?.isExcludedFromWindowsMenu = true
@@ -72,6 +398,9 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         window?.backingType = .buffered
         self.window?.minSize = NSSize(width: 900, height: 450)// unused
         self.window?.title = ""
+        refreshContentInsets()
+        // Also cover the transition when an already-key titled Help window becomes fullscreen.
+        restoreSecondaryScreenCoversIfNeeded()
         
         if isMainWindowLoaded{
             mainViewControllerObj!.boxTopButtons.isHidden = false
@@ -86,9 +415,31 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         }
     }
     
+    /// Approval may start/reveal a focus session without navigating to a different sidebar item.
+    /// Its routing deliberately preserves existing window size, so finish the routine's fullscreen
+    /// transition explicitly after the approval callback unwinds. Never interrupt a newer routine.
+    func restoreWindowAfterPostponement(stateProvider: @escaping () -> CURRENTSTATE = { currentState }) {
+        let postponedState = stateProvider()
+        guard [CURRENTSTATE._POSTPONE_MORNING_HABIT_, ._POSTPONE_EVENING_HABIT_, ._POSTPONE_FOCUS_SUMMARY_].contains(postponedState),
+              isFullScreenVisible, let postponedWindow = window else { return }
+        DispatchQueue.main.async { [weak self, weak postponedWindow] in
+            guard let self = self, let window = postponedWindow, self.window === window,
+                  stateProvider() == postponedState, self.isFullScreenVisible,
+                  !window.styleMask.contains(.fullScreen) else { return }
+            // A style-mask change calls viewWillDisappear. Keep the newly opened focus/Help page,
+            // including unsaved input, just as checkIsFullScreenNeeded preserves it on entry.
+            let root = window.contentViewController as? ViewController
+            let previousIgnore = root?.shouldIgnoreViewWilDisappear ?? false
+            root?.shouldIgnoreViewWilDisappear = true
+            defer { root?.shouldIgnoreViewWilDisappear = previousIgnore }
+            self.showSmallSizeWindow()
+        }
+    }
+
     func showSmallSizeWindow(){
         isFullScreenVisible = false
-        // Guard against `window` being nil here too (see showFullSizeWindow above).
+        hideBlankWindowInSecondaryMonitor()
+        // Optional-chained here too — see showFullSizeWindow above (#2522).
         window?.isRestorable = true
         window?.collectionBehavior = [.fullScreenAllowsTiling, .fullScreenPrimary]
         self.window?.minSize = NSSize(width: smallWindowMinWidth, height: smallWindowMinHeight)
@@ -103,6 +454,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         window?.animationBehavior = .default
         window?.hasShadow = true
         window?.canHide = true
+        refreshContentInsets()
        
         if isMainWindowLoaded{
             mainViewControllerObj!.boxTopButtons.isHidden = true
@@ -126,9 +478,24 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         if isFullScreenVisible{
             return sender.frame.size // ignore user resize
         }else{
+            // The viewport cap is also the window's own maximum width, so lift it to the size being
+            // resized to before AppKit applies it (report 2026-09-16_10-36-19).
+            MainWindowContentLayout.allowWindowWidth(frameSize.width, on: sender.contentView)
             return frameSize
         }
     }
+
+    /// A drag starts before any layout pass can notice `inLiveResize`, so open the ceiling here —
+    /// otherwise the first resize event of the drag is clamped to the width the window already has.
+    func windowWillStartLiveResize(_ notification: Notification) {
+        guard !isFullScreenVisible, let root = window?.contentView else { return }
+        MainWindowContentLayout.allowWindowWidth(
+            MainWindowContentLayout.liveResizeCeiling(screenFrames: NSScreen.screens.map(\.frame)), on: root)
+    }
+
+    /// The drag is over, so the cap can be pulled back onto the window the user settled on — which is
+    /// what keeps the Day Plan's content inside the viewport.
+    func windowDidEndLiveResize(_ notification: Notification) { refreshContentInsets() }
     
     
     func windowShouldClose(_ sender: NSWindow) -> Bool {
@@ -491,6 +858,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func windowDidMove(_ notification: Notification) {
+        refreshContentInsets()
         scheduleDragAwayCheck()
     }
 

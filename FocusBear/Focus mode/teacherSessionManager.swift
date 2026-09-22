@@ -489,7 +489,7 @@ class teacherSessionManager: NSObject {
         // otherwise load it and close the main window so the focus tab next renders FocusModeStateVC
         // for the now-active class session.
         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-            showTaskPlayerWindow(totalDuration: diffMinutes, intention: whatToAchieveInFocusBlock, automatically:true)
+            showRunningFocusSessionWindow()
         }else{
             if !getTaskPlayerVcObject().isViewLoaded{
                 getTaskPlayerVcObject().loadView()

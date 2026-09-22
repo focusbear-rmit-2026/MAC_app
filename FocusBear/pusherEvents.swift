@@ -131,28 +131,7 @@ class pusherEvents:NSObject, PusherDelegate {
                                         arrFocusType[currentFocusModeIndex]["lastStartedDate"] = getStringFromDate(date: startFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
                                         arrFocusType[currentFocusModeIndex]["lastScheduledEndDate"] = getStringFromDate(date: endFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
                                         shouldReloadTaskPlayer = true
-                                        if let isAutoDoNotDisturbEnabled = arrFocusType[currentFocusModeIndex]["isAutoDoNotDisturbEnabled"] as? Bool{
-                                            if isAutoDoNotDisturbEnabled{
-                                                if isAccessibilityEnabled(isPrompt: true){
-                                                    DNDManager.shared.setDND(true)
-                                                }
-                                            }
-                                        }
-                                        if !DNDManager.shared.isDndEnabled{
-                                            if let isDeepWorkFocus = arrFocusType[currentFocusModeIndex]["isDeepWorkFocus"] as? Bool{
-                                                if  isDeepWorkFocus{
-                                                    if isAccessibilityEnabled(isPrompt: true){
-                                                        DNDManager.shared.setDND(true)
-                                                    }
-                                                }
-                                            }else if let isDefault = arrFocusType[currentFocusModeIndex]["isDefault"] as? Bool{
-                                                if  isDefault{
-                                                    if isAccessibilityEnabled(isPrompt: true){
-                                                        DNDManager.shared.setDND(true)
-                                                    }
-                                                }
-                                            }
-                                        }
+                                        applyAutoDoNotDisturb(forFocusModeAt: currentFocusModeIndex, includingDeepWorkAndDefault: true)
                                         
                                         workBeforeFocusBegin(index: currentFocusModeIndex)
                                         isFocusModeRunning = true
@@ -177,7 +156,7 @@ class pusherEvents:NSObject, PusherDelegate {
                                             sleep(1)
                                             DispatchQueue.main.async {
                                                 if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-                                                    showTaskPlayerWindow(totalDuration: diffMinutes, intention: whatToAchieveInFocusBlock, automatically:true)
+                                                    showRunningFocusSessionWindow()
                                                 }else{
                                                     if !getTaskPlayerVcObject().isViewLoaded{
                                                         getTaskPlayerVcObject().loadView()
@@ -275,8 +254,12 @@ class pusherEvents:NSObject, PusherDelegate {
                         arrFocusType[i]["isPaused"] = false
                         currentFocusModeName = arrFocusType[i]["name"] as? String ?? ""
 
+                        // The session is finishing, so Do Not Disturb has to come back off. This
+                        // said `setDND(true)` — a copy of the start path that landed in the finish
+                        // path — which the "already enabled" guard turned into a no-op, so a focus
+                        // session stopped from another device left DND switched on indefinitely.
                         if DNDManager.shared.isDndEnabled{
-                            DNDManager.shared.setDND(true)
+                            DNDManager.shared.setDND(false)
                         }
                         
                         workAfterFocusBegin(index: i)
@@ -486,6 +469,14 @@ class pusherEvents:NSObject, PusherDelegate {
                     }
                 }
             }
+        })
+
+        // A to-do completed anywhere — this Mac, the phone, the web dashboard. Hand it to the same
+        // in-process bus the local screens use so the Day Plan and the To-do list both tick the row;
+        // see `TodoCompletedPusherEvent.handle` for why that's the only thing done with it.
+        _ = channel.bind(eventName: TodoCompletedPusherEvent.eventName, eventCallback: { (event: PusherEvent) in
+            let understood = TodoCompletedPusherEvent.handle(eventData: event.data)
+            addLog(text: "Pusher \(TodoCompletedPusherEvent.eventName) received (understood=\(understood))")
         })
 
         _ = channel.bind(eventName: "settings-updated", eventCallback: { (event: PusherEvent) in

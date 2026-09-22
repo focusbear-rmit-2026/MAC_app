@@ -22,16 +22,30 @@ class todoListToolVc: NSViewController {
     /// Which tab is showing; a project tap on the Projects tab switches back to Tasks.
     private let tabSubject = ToDoTabSelection()
 
+    /// Open this screen on the Tasks tab with the reschedule plan already opening — the Day Plan's
+    /// over-capacity banner offers it, and the plan lives here.
+    func openReprioritisePlan(focusing target: ForecastDayFocus.Target? = nil) {
+        tabSubject.selectedTab = .tasks
+        todoStore.forecast.prepareWorkPlanLoadingIfNeeded(focusing: target)
+    }
+
     init() {
         let strings = ToDoStrings.load()
         todoStore = ToDoStore(strings: strings)
-        projectsStore = ProjectsStore(strings: strings)
+        projectsStore = ProjectsStore(strings: strings, forecast: todoStore.forecast)
         super.init(nibName: nil, bundle: nil)
         projectsStore.onSelectProject = { [weak self] project in
             self?.todoStore.setProjectFilter(project.id)
             self?.tabSubject.selectedTab = .tasks
         }
-        todoStore.onTaskChanged = { [weak self] in self?.projectsStore.detail?.reloadTasks() }
+        todoStore.onTaskChanged = { [weak self] in
+            self?.projectsStore.detail?.reloadTasks()
+            self?.todoStore.forecast.markDirty()
+        }
+        todoStore.forecast.onApplied = { [weak self] in
+            self?.projectsStore.loadProjects()
+            self?.projectsStore.detail?.reloadTasks()
+        }
         // The row's Snooze is the Day Plan's smart snooze; it scans the schedule's free time per day.
         todoStore.scheduleFreeMinutes = { scheduleViewController.scheduleFreeMinutes(on: $0) }
         // A project created on either tab must show up on the other: the Projects list / portfolio

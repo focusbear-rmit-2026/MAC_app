@@ -23,26 +23,23 @@ struct StatsScreen: View {
                 content
                     .padding(20)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    // Keep a persistent scroller on the content area: without it the overlay scrollbar
-                    // stays hidden and a long tab (e.g. Focus Log, whose rows load after first layout)
-                    // looked un-scrollable until the window was resized.
-                    .background(PersistentScrollerConfigurator())
             }
         }
         .background(StatsPalette.page)
     }
 
-    // The "Stats" title was redundant (the screen is opened from the Stats menu item / Tools), so the
-    // tab strip gets the full width — and shows its scroll indicator so it's obvious more tabs scroll in.
     private var header: some View {
-        ScrollView(.horizontal, showsIndicators: true) {
-            HStack(spacing: 6) {
-                ForEach(StatsTab.allCases) { tab in
-                    StatsTabButton(title: tab.title(strings), systemImage: tab.systemImage,
-                                   isSelected: store.selectedTab == tab) { store.selectedTab = tab }
+        HStack(spacing: 16) {
+            Text(strings.title).font(.system(size: 20, weight: .semibold))
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(StatsTab.allCases) { tab in
+                        StatsTabButton(title: tab.title(strings), systemImage: tab.systemImage,
+                                       isSelected: store.selectedTab == tab) { store.selectedTab = tab }
+                    }
                 }
+                .padding(.vertical, 2)
             }
-            .padding(.vertical, 2)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
@@ -322,12 +319,7 @@ struct ProgressTab: View {
         return StatsCard {
             HStack(alignment: .top, spacing: 20) {
                 VStack(spacing: 6) {
-                    Text(String(level))
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 64, height: 64)
-                        .background(StatsPalette.orange)
-                        .clipShape(Circle())
+                    levelBadge(level: level)
                     Text(strings.levelName(level)).font(.system(size: 13, weight: .semibold))
                 }
                 .frame(width: 120)
@@ -339,6 +331,26 @@ struct ProgressTab: View {
                 }
                 Spacer()
             }
+        }
+    }
+
+    /// The level's bear figure, as on the web dashboard. Falls back to the numbered orange disc when a
+    /// level has no artwork in this build, so a future server-side level still renders something.
+    @ViewBuilder
+    private func levelBadge(level: Int) -> some View {
+        if let name = LevelArtwork.assetName(level: level), let image = NSImage(named: name) {
+            Image(nsImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 104, height: 116)
+                .accessibilityLabel(strings.levelName(level))
+        } else {
+            Text(String(level))
+                .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.white)
+                .frame(width: 64, height: 64)
+                .background(StatsPalette.orange)
+                .clipShape(Circle())
         }
     }
 
@@ -467,12 +479,7 @@ struct LongTermGoalsTab: View {
                 ForEach(store.goals.indices, id: \.self) { index in
                     HStack(spacing: 8) {
                         Text("\(index + 1).").foregroundColor(StatsPalette.secondaryText).frame(width: 24, alignment: .trailing)
-                        // Bounds-guarded binding: Save drops empty goals, shrinking the array, so a direct
-                        // `$store.goals[index]` subscript would trap (Index out of range) for a row that no
-                        // longer exists while the view re-renders.
-                        TextField(strings.goalPlaceholder, text: Binding(
-                            get: { index < store.goals.count ? store.goals[index] : "" },
-                            set: { if index < store.goals.count { store.goals[index] = $0 } }))
+                        TextField(strings.goalPlaceholder, text: $store.goals[index])
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                         SwiftUI.Button(action: { store.removeGoal(at: index) }) {
                             Image(systemName: "trash").foregroundColor(StatsPalette.secondaryText)
@@ -524,7 +531,14 @@ struct PepTalkTab: View {
                 if store.text.isEmpty && store.isStreaming {
                     ProgressView().frame(maxWidth: .infinity).padding(.vertical, 20)
                 } else if store.failed && store.text.isEmpty {
-                    Text(strings.pepTalkUnavailable).foregroundColor(StatsPalette.secondaryText)
+                    VStack(alignment: .leading, spacing: 8) {
+                        // Say which failure it was. "Try again later" for a rate limit is advice the
+                        // user cannot act on, and they pressed Retry five times because of it.
+                        Text(store.isRateLimited ? strings.pepTalkRateLimited : strings.pepTalkUnavailable)
+                            .foregroundColor(StatsPalette.secondaryText)
+                        SwiftUI.Button(strings.retry) { store.select(tone: store.tone) }
+                            .disabled(!store.canRetryNow)
+                    }
                 } else {
                     MarkdownText(markdown: store.text, fontSize: PepTalkTab.messageFontSize,
                                  lineSpacing: PepTalkTab.messageLineSpacing, alignment: .leading)
@@ -534,22 +548,3 @@ struct PepTalkTab: View {
         }
     }
 }
-
-/// Reaches the enclosing NSScrollView of the SwiftUI ScrollView it's placed inside and forces a
-/// classic, always-present vertical scroller. SwiftUI's default overlay scrollbar stays hidden until
-/// you scroll/hover, and on content that grows after first layout (Focus Log loads its rows from the
-/// API) it wasn't obviously scrollable until the window was resized. Zero-size and transparent, so it
-/// has no visual footprint of its own.
-struct PersistentScrollerConfigurator: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSView { NSView(frame: .zero) }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async {
-            guard let scrollView = nsView.enclosingScrollView else { return }
-            scrollView.scrollerStyle = .legacy
-            scrollView.autohidesScrollers = false
-            scrollView.hasVerticalScroller = true
-        }
-    }
-}
-

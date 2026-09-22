@@ -21,6 +21,13 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
+        // #2577: closing the AI block popup blocks the caught app/site (the check-in has no direct block on
+        // its primary/argue screens). aiBlockBuddyCloseButtonBlocks() fires the block and closes the window
+        // itself, so return false here to avoid a second close.
+        if aiBlockBuddyWcObj != nil, self == aiBlockBuddyWcObj{
+            return aiBlockBuddyCloseButtonBlocks()
+        }
+
         if permissionBlockDistractionWcObj != nil{
             if self == permissionBlockDistractionWcObj{
                 allApiObject.capturePosthog(event: "permission-popup-closed", metadata: [:])

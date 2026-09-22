@@ -16,6 +16,7 @@ import AppKit
 private struct ToDoSheetHeader<Trailing: View>: View {
     let title: String
     let closeTitle: String
+    var canClose: Bool = true
     let onClose: () -> Void
     @ViewBuilder let trailing: () -> Trailing
 
@@ -27,6 +28,7 @@ private struct ToDoSheetHeader<Trailing: View>: View {
             SwiftUI.Button(action: onClose) { Text(closeTitle) }
                 .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 30))
                 .keyboardShortcut(.cancelAction)
+                .disabled(!canClose)
         }
     }
 }
@@ -41,16 +43,24 @@ struct ToDoBrainDumpSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             ToDoSheetHeader(title: hasConvertedTasks ? strings[.tasksFromBrainDump] : strings[.brainDumpTitle],
-                            closeTitle: strings[.close], onClose: close) {
+                            closeTitle: strings[.close], canClose: !store.isCreatingBrainDumpTasks, onClose: close) {
                 if hasConvertedTasks {
                     SwiftUI.Button(action: { store.createBrainDumpTasks() }) {
                         Text(store.isCreatingBrainDumpTasks ? strings[.saving] : strings[.createTasks])
                     }
                     .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 30))
-                    .disabled(store.validBrainDumpTasks.isEmpty || store.isCreatingBrainDumpTasks)
+                    .disabled(store.validBrainDumpTasks.isEmpty || store.validBrainDumpTasks.count != store.brainDumpTasks.count || store.isCreatingBrainDumpTasks)
                 }
             }
             if hasConvertedTasks { convertedList } else { input }
+            if hasConvertedTasks && store.validBrainDumpTasks.count != store.brainDumpTasks.count {
+                Text(strings[.brainDumpInvalidDraft]).foregroundColor(.red).font(.system(size: 12))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if let error = store.brainDumpError {
+                Text(error).foregroundColor(.red).font(.system(size: 12))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(16)
         .frame(minWidth: 620, idealWidth: 660, minHeight: 460)
@@ -58,6 +68,7 @@ struct ToDoBrainDumpSheet: View {
     }
 
     private func close() {
+        guard !store.isCreatingBrainDumpTasks else { return }
         store.resetBrainDump()
         store.isBrainDumpVisible = false
     }
@@ -65,9 +76,6 @@ struct ToDoBrainDumpSheet: View {
     private var input: some View {
         VStack(alignment: .leading, spacing: 10) {
             ToDoMultilineEditor(text: $store.brainDumpText, placeholder: strings[.brainDumpPlaceholder], height: 180)
-                .onChange(of: store.brainDumpText) { value in
-                    if value.count > ToDoStore.brainDumpCharLimit { store.brainDumpText = String(value.prefix(ToDoStore.brainDumpCharLimit)) }
-                }
             HStack {
                 Text("\(store.brainDumpText.count) / \(ToDoStore.brainDumpCharLimit)").font(.system(size: 11)).foregroundColor(.secondary)
                 Spacer()
@@ -99,6 +107,7 @@ struct ToDoBrainDumpSheet: View {
                 VStack(spacing: 6) {
                     ForEach(store.brainDumpTasks) { task in
                         BrainDumpTaskRow(store: store, task: task)
+                            .disabled(store.isCreatingBrainDumpTasks)
                     }
                 }
             }
@@ -180,13 +189,8 @@ struct ToDoEisenhowerSheet: View {
     }
 
     private func axisLabel(_ text: String) -> some View {
-        // fixedSize() first so the label lays out on one line at its natural width; rotationEffect only
-        // rotates visually (it doesn't change layout size), so without it the frame(width: 20) wraps the
-        // text into a 20pt column ("im / por / tan / t") before it's rotated.
         Text(text).font(.system(size: 11, weight: .semibold)).foregroundColor(.secondary)
-            .fixedSize()
-            .rotationEffect(.degrees(-90))
-            .frame(width: 20)
+            .rotationEffect(.degrees(-90)).frame(width: 20)
     }
 
     private func quadrantCell(_ quadrant: EisenhowerQuadrant) -> some View {

@@ -45,7 +45,7 @@ class onboardingBlockedAppsVc: NSViewController {
         //progress
         self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
         self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
-        getDistractionBlockingProgressVcObj().setProgress(level: 1, progress: 0.65)
+        getDistractionBlockingProgressVcObj().setProgress(level: 1, progress: 0.80)
         
         btnAdd.horizontalPadding = 25
         btnRemove.horizontalPadding = 25
@@ -238,10 +238,9 @@ class onboardingBlockedAppsVc: NSViewController {
         SettingsManagerObject.arrBlockedApps = arrBlockedApps
         UserDefaults.standard.set(SettingsManagerObject.arrBlockedApps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)//
         UserDefaults.standard.set(true, forKey: kUserdefaultsIsAnyDistractionSetByUser)
-        // Blocking order: after blocked URLs + blocked apps, show allowed URLs last (navigateToAllowedUrlsVc
-        // resets/populates that list, incl. any occupation-based suggestions). Allowed URLs then → hold on.
-        getOnboardingVcObject().navigateToAllowedUrlsVc()
-
+        // Blocking is the first onboarding section now: hand off to the habits intro next.
+        getOnboardingVcObject().navigate(to: ._HOLD_ON_)
+        
     }
 }
 

@@ -285,8 +285,17 @@ bail:
     //init size
     propertySize = sizeof(isRunning);
 
-    //query to get 'kAudioDevicePropertyDeviceIsRunningSomewhere' status
-    status = AudioDeviceGetProperty(deviceID, 0, false, kAudioDevicePropertyDeviceIsRunningSomewhere, &propertySize, &isRunning);
+    // Query 'kAudioDevicePropertyDeviceIsRunningSomewhere' with the MODERN CoreAudio API. The old
+    // AudioDeviceGetProperty (deprecated since 10.6) fails on recent macOS (26.x), so the Bluetooth/USB
+    // default-input check silently returned "off" and a Bluetooth-headset meeting went undetected
+    // (mic reads off → meeting-detection loses its primary signal). AudioObjectGetPropertyData works
+    // across all supported versions.
+    AudioObjectPropertyAddress runningAddress = {
+        kAudioDevicePropertyDeviceIsRunningSomewhere,
+        kAudioObjectPropertyScopeGlobal,
+        kAudioObjectPropertyElementMain
+    };
+    status = AudioObjectGetPropertyData(deviceID, &runningAddress, 0, NULL, &propertySize, &isRunning);
     if(noErr != status)
     {
         //err msg

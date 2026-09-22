@@ -294,11 +294,15 @@ class createFirstBlockingScheduleVc: NSViewController {
     override func viewWillAppear() {
         allApiObject.capturePosthog(event: "create-first-blocking-schedule-screen-shown", metadata: [:])
         showSelectedStrictnessLevel()
-        // Default the schedule to start at the current time and end one hour later. Without this the
-        // storyboard's useCurrentDate leaves both pickers at the current time.
-        let now = Date()
-        datePickerFrom.dateValue = now
-        datePickerTill.dateValue = Calendar.current.date(byAdding: .hour, value: 1, to: now) ?? now
+        // Default the window to the shared new-schedule defaults. Without this the storyboard's
+        // useCurrentDate leaves both pickers at the current time.
+        datePickerFrom.dateValue = Self.date(atMinuteOfDay: BlockingScheduleDefaults.startMinutes)
+        datePickerTill.dateValue = Self.date(atMinuteOfDay: BlockingScheduleDefaults.endMinutes)
+    }
+
+    /// Today at the given minute-of-day — the date pickers are time-only, so the day part is ignored.
+    private static func date(atMinuteOfDay minutes: Int) -> Date {
+        Calendar.current.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: Date()) ?? Date()
     }
     
     override func viewDidAppear() {
@@ -346,20 +350,13 @@ class createFirstBlockingScheduleVc: NSViewController {
             }
         }
         
-        blockMode = ._NORMAL_
+        blockMode = BlockingScheduleDefaults.strictness
         sliderStrictness.integerValue = 1
-        checkBoxAiEnabled.state = .on
-        checkBoxSkipMicroBreaks.state = .on
-        
-        let now = Date()
-        
-        // From = current time + 2 minutes
-        let from = Calendar.current.date(byAdding: .minute, value: 2, to: now)!
-        
-        // Till = from + 1 hour
-        let till = Calendar.current.date(byAdding: .hour, value: 1, to: from)!
-        datePickerFrom.dateValue = from
-        datePickerTill.dateValue = till
+        checkBoxAiEnabled.state = BlockingScheduleDefaults.isAIEnabled ? .on : .off
+        checkBoxSkipMicroBreaks.state = BlockingScheduleDefaults.skipMicroBreaks ? .on : .off
+
+        datePickerFrom.dateValue = Self.date(atMinuteOfDay: BlockingScheduleDefaults.startMinutes)
+        datePickerTill.dateValue = Self.date(atMinuteOfDay: BlockingScheduleDefaults.endMinutes)
         
         showSelectedStrictnessLevel()
         

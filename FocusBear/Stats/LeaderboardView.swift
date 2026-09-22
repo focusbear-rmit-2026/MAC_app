@@ -79,8 +79,8 @@ struct LeaderboardTab: View {
             if store.users.isEmpty {
                 Text(strings.noUserFound).foregroundColor(StatsPalette.secondaryText).padding(.vertical, 24)
             }
-            ForEach(store.users) { user in
-                LeaderboardRow(user: user, isCurrentUser: user.id == store.currentUserId,
+            ForEach(Array(store.users.enumerated()), id: \.element.id) { index, user in
+                LeaderboardRow(user: user, rank: index + 1, isCurrentUser: user.id == store.currentUserId,
                                isExpanded: store.expandedUserId == user.id, strings: strings,
                                rankWidth: LeaderboardTab.rankWidth, streakWidth: LeaderboardTab.streakWidth) {
                     store.toggleExpanded(user)
@@ -120,6 +120,7 @@ struct LeaderboardTab: View {
 
 private struct LeaderboardRow: View {
     let user: LeaderboardUser
+    let rank: Int
     let isCurrentUser: Bool
     let isExpanded: Bool
     let strings: StatsStrings
@@ -134,15 +135,13 @@ private struct LeaderboardRow: View {
     private struct Metric {
         let title: String
         let value: String
-        let streak: Double
-        let completed: Double
-        let total: Double
+        let values: LeaderboardMetric
     }
 
     private func metric(_ key: LeaderboardSortKey, title: String) -> Metric {
         let values = LeaderboardSorting.metric(user, key: key)
         return Metric(title: title, value: StatsStrings.fill(strings.percentValue, ["value": StatsChart.plainNumber(values.percentage)]),
-                      streak: values.streak, completed: values.completedDays, total: values.windowDays)
+                      values: values)
     }
 
     private var metrics: [Metric] {
@@ -152,15 +151,21 @@ private struct LeaderboardRow: View {
          metric(.focusMode, title: strings.focusMode)]
     }
 
-    private func streakTooltip(_ metric: Metric) -> String {
-        StatsStrings.fill(strings.streakValue, ["streak": StatsChart.plainNumber(metric.streak)])
+    private func streakText(_ metric: Metric) -> String {
+        StatsStrings.fill(strings.streakValue, ["streak": StatsChart.plainNumber(metric.values.streak)])
+    }
+
+    /// The collapsed row only has room for "(84/84)", which is the half of the story that confuses
+    /// people; the tooltip carries the streak and the sentence explaining the denominator.
+    private func tooltip(_ metric: Metric) -> String {
+        streakText(metric) + "\n" + LeaderboardSorting.completionSummary(metric.values, strings: strings)
     }
 
     var body: some View {
         VStack(spacing: 0) {
             SwiftUI.Button(action: onTap) {
                 HStack(spacing: 8) {
-                    Text(StatsChart.plainNumber(user.rank.doubleValue)).frame(width: rankWidth, alignment: .leading)
+                    Text(String(rank)).frame(width: rankWidth, alignment: .leading)
                     Text(user.username ?? LeaderboardRow.usernamePlaceholder)
                         .fontWeight(isCurrentUser ? .semibold : .regular)
                         .lineLimit(1)
@@ -168,13 +173,13 @@ private struct LeaderboardRow: View {
                     ForEach(Array(metrics.enumerated()), id: \.offset) { _, metric in
                         HStack(spacing: 4) {
                             Text(metric.value).fontWeight(.medium)
-                            if metric.total > 0 {
-                                Text("(\(StatsChart.plainNumber(metric.completed))/\(StatsChart.plainNumber(metric.total)))")
+                            if metric.values.windowDays > 0 {
+                                Text("(\(StatsChart.plainNumber(metric.values.completedDays))/\(StatsChart.plainNumber(metric.values.windowDays)))")
                                     .font(.system(size: 11)).foregroundColor(StatsPalette.secondaryText)
                             }
                         }
                         .frame(width: streakWidth, alignment: .leading)
-                        .help(streakTooltip(metric))
+                        .help(tooltip(metric))
                     }
                 }
                 .padding(.vertical, 8)
@@ -190,12 +195,11 @@ private struct LeaderboardRow: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(metric.title).font(.system(size: 12, weight: .semibold))
                             Text(metric.value).font(.system(size: 18, weight: .bold)).foregroundColor(StatsPalette.orange)
-                            Text(streakTooltip(metric))
+                            Text(streakText(metric))
                                 .font(.system(size: 12)).foregroundColor(StatsPalette.secondaryText)
-                            Text(StatsStrings.fill(strings.daysCompletedOutOf,
-                                                   ["completed": StatsChart.plainNumber(metric.completed),
-                                                    "total": StatsChart.plainNumber(min(metric.total, Double(HabitConsistencyRanking.windowMaxDays)))]))
+                            Text(LeaderboardSorting.completionSummary(metric.values, strings: strings))
                                 .font(.system(size: 11)).foregroundColor(StatsPalette.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                         .padding(10)
                         .frame(maxWidth: .infinity, alignment: .leading)

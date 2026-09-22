@@ -96,6 +96,7 @@ class AllApi:NSObject {
     /// allowed_focus_mode_id: allowed_focus_mode_id must be a UUID") so the caller can show something the
     /// user can act on instead of a bare status code.
     func putUserSettings(settings:NSDictionary, isOnboarding:Bool, completionHandler: @escaping(_ result: NSDictionary?, _ statusCode:Int, _ errorMessage: String?) -> ()){
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { completionHandler(nil, 403, ManagedBlockingText.value("settingsLocked", fallback: "Settings are locked. A parent must approve home schedule changes.")); return }
         addLog(text: "func call:- api isSettingsValid user-settings")
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
@@ -929,12 +930,13 @@ class AllApi:NSObject {
     var errorCodeRequestTimeout = -1001
     var errorCodeNoInternet = -1009
 
-    /// #2150: the habits the user actually COMPLETED on a past day, so the Day Plan can strike them
-    /// through when navigating back. `GET /completed-activity-sequence/routine-progress?date=&timezone=`
+    /// #2150: the habits the user has DEALT WITH on a past day (completed OR skipped), so the Day Plan can
+    /// strike them through when navigating back. `GET /completed-activity-sequence/routine-progress?date=&timezone=`
     /// returns the same shape as `today_routine_progress` (per-routine `completed_habit_ids` /
-    /// `skipped_habit_ids`). Note `completed_habit_ids` includes skipped ones, so we subtract
-    /// `skipped_habit_ids` to get strictly-completed. Best-effort — nil on any failure (Day Plan then
-    /// falls back to the local per-day cache).
+    /// `skipped_habit_ids`). A skip counts as done here — a skipped habit is resolved, not pending — so the
+    /// routine reads as complete, matching the live/today path (`captureDayPlanCompletedIds`). This also
+    /// covers "skip but I actually did it", which the backend lists in BOTH arrays (subtracting skips would
+    /// wrongly drop it). Best-effort — nil on any failure (Day Plan then falls back to the local per-day cache).
     func fetchDayRoutineProgress(dayKey: String, completion: @escaping (_ completedIds: Set<String>?) -> Void) {
         appdelegate?.credentialsManager.credentials { credentialsInfo in
             appdelegate?.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
@@ -950,14 +952,15 @@ class AllApi:NSObject {
                       let json = (try? JSONSerialization.jsonObject(with: data)) as? NSDictionary else {
                     DispatchQueue.main.async { completion(nil) }; return
                 }
-                // Union strictly-completed ids across every routine in the payload (morning / evening /
-                // any custom or standalone), robust to which routine keys are present for the day.
+                // Union dealt-with ids (completed OR skipped) across every routine in the payload (morning /
+                // evening / any custom or standalone), robust to which routine keys are present for the day.
                 var completed = Set<String>()
                 for value in json.allValues {
                     guard let routine = value as? NSDictionary else { continue }
                     let done = (routine["completed_habit_ids"] as? [String]).map(Set.init) ?? []
                     let skipped = (routine["skipped_habit_ids"] as? [String]).map(Set.init) ?? []
-                    completed.formUnion(done.subtracting(skipped))
+                    completed.formUnion(done)
+                    completed.formUnion(skipped)
                 }
                 DispatchQueue.main.async { completion(completed) }
             }.resume()
@@ -1678,6 +1681,7 @@ class AllApi:NSObject {
     }
     
     func putUserLocalDeviceSettings(settings:[String: [String:Any]], completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { completionHandler(nil); return }
         addLog(text: "func call:-  putUserLocalDeviceSettings:- user-local-device-settings")
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
@@ -1853,7 +1857,15 @@ class AllApi:NSObject {
                     if let httpResponse = response as? HTTPURLResponse {
                         self.isApiActivityCompletedErrorFound = false
                         if httpResponse.statusCode == 201{
-                            
+                            // Reflect a live habit completion in the Day Plan / accountability buddy
+                            // IMMEDIATELY, rather than waiting for the next current-activity-props refetch
+                            // to repopulate dayPlanCompletedHabitIds. Without this a habit the user JUST
+                            // finished still counts as "to do" — e.g. the buddy re-suggesting it. Skips are
+                            // not completions, so they don't mark done.
+                            if !is_skipped {
+                                DispatchQueue.main.async { markPastHabitDoneInDayPlan(id: activity_id) }
+                            }
+
                             if data != nil{
                                 do {
                                     if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
@@ -3004,6 +3016,7 @@ class AllApi:NSObject {
 
     
     func addFocusMode(focusType:[String:Any],completionHandler: @escaping(_ result: Bool) -> ()){
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { completionHandler(false); return }
         addLog(text: "func call:- addFocusMode:- focus-mode")
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
@@ -3040,6 +3053,7 @@ class AllApi:NSObject {
                     dic.removeValue(forKey: "allowed_urls")
                     dic.removeValue(forKey: "allowed_apps")
                     dic.removeValue(forKey: "tags")
+                    applyFocusModeCategories(from: focusType, to: &json, metadata: &dic)
                     json["metadata"] = dic
                     
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)
@@ -3112,83 +3126,17 @@ class AllApi:NSObject {
             }
         }
     }
-    func deleteFocusMode(id:String, completionHandler: @escaping(_ isDeleted:Bool) -> ()){
-        addLog(text: "func call:- deleteFocusMode :- focus-mode")
-        
-        appdelegate!.credentialsManager.credentials {credentialsInfo in
-            addLog(text: "get updated credentialsInfo from credentialsManager")
-            
-            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
-            
-            if appdelegate!.credential != nil{
-                let responsePath = "\(baseUrl)/focus-mode?id=\(id)"
-                if let responsePathUrl = NSURL(string: responsePath){
-                    addLog(text: "api call deleteFocusMode \(responsePathUrl)")
-                    let token = appdelegate!.credential!.accessToken
-                    
-                    let request = makeRequest(responsePathUrl: responsePathUrl)
-                    request.httpMethod = "DELETE";
-                    
-                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                        data, response, error in
-                        
-                        if let httpResponse = response as? HTTPURLResponse{
-                            self.isApiDeleteFocusModeErrorFound = false
-                            if httpResponse.statusCode == 204{ //it means it is right
-                                addLog(text: "api call deleteFocusMode success")
-                                completionHandler(true)
-                                return
-                                
-                            }else{
-                                addLog(text: "api call deleteFocusMode error:- statusCode is \(httpResponse.statusCode)")
-                                self.writeJsonInLog(data: data)
-                                completionHandler(false)
-                                return
-                            }
-                        }
-                        
-                        
-                        if error != nil {
-                            addLog(text: "api call deleteFocusMode error:- \(error!.localizedDescription)")
-                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
-                                if self.isApiDeleteFocusModeErrorFound{
-                                    self.isApiDeleteFocusModeErrorFound = false
-                                    completionHandler(false)
-                                    return
-                                }else{
-                                    self.isApiDeleteFocusModeErrorFound = true
-                                    addLog(text: "error deleteFocusMode:- try second time")
-                                    self.deleteFocusMode(id: id, completionHandler: {isDeleted in
-                                        completionHandler(isDeleted)
-                                        return
-                                    })
-                                    
-                                }
-                            }else{
-                                completionHandler(false)
-                                return
-                            }
-                            
-                            
-                        }else{
-                            completionHandler(false)
-                            return
-                        }
-                        
-                    }
-                    
-                    task.resume()
-                }else{
-                    completionHandler(false)
-                    return
-                }
-            }else{
-                completionHandler(false)
-            }
+    func deleteFocusMode(id: String, mutationContext: LegacySettingsMutationContext? = nil,
+                         completionHandler: @escaping (Bool) -> Void) {
+        guard !id.isEmpty, let context = mutationContext ?? LegacySettingsMutationContext.captureCurrent() else {
+            completionHandler(false); return
         }
+        performLegacyFocusModeMutation(method: "DELETE", modeId: id, body: nil, context: context,
+                                       expectedStatus: 204) { succeeded, _ in completionHandler(succeeded) }
     }
-    
+
     func editFocusMode(focusType:[String:Any], completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { completionHandler(nil); return }
         if focusType["isLockedFocus"] as? Bool == true{
             completionHandler(nil)
             return
@@ -3233,6 +3181,7 @@ class AllApi:NSObject {
                     dic.removeValue(forKey: "allowed_urls")
                     dic.removeValue(forKey: "allowed_apps")
                     dic.removeValue(forKey: "tags")
+                    applyFocusModeCategories(from: focusType, to: &json, metadata: &dic)
                     json["metadata"] = dic
                     
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)
@@ -3308,101 +3257,79 @@ class AllApi:NSObject {
         }
     }
     
-    func updateAllFocusMode(focusModes:[[String:Any]], completionHandler: @escaping(_ newDic:[NSDictionary]?) -> ()){
-        addLog(text: "func call:- updateAllFocusMode:- focus-mode")
-        
-        
-        appdelegate!.credentialsManager.credentials {credentialsInfo in
-            addLog(text: "get updated credentialsInfo from credentialsManager")
-            
-            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
-            
-            if appdelegate!.credential != nil{
-                
-                let responsePath = "\(baseUrl)/focus-mode"
-                if let responsePathUrl = NSURL(string: responsePath){
-                    addLog(text: "api call updateAllFocusMode \(responsePathUrl)")
-                    let token = appdelegate!.credential!.accessToken
-                    
-                    let request = makeRequest(responsePathUrl: responsePathUrl)
-                    request.httpMethod = "PUT";
-                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                    
-                    let jsonData = try? JSONSerialization.data(withJSONObject: focusModes)
-                    request.httpBody = jsonData
-                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                        data, response, error in
-                        
-                        if let httpResponse = response as? HTTPURLResponse{
-                            self.isApiUpdateAllFocusModeErrorFound = false
-                            if httpResponse.statusCode == 200{ //it means it is right
-                                
-                                if data != nil{
-                                    do {
-                                        if let jsonResult: [NSDictionary] = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? [NSDictionary]{
-                                            
-                                            addLog(text: "api call updateAllFocusMode success")
-                                            completionHandler(jsonResult)
-                                            return
-                                        }
-                                        
-                                    }catch{
-                                        addLog(text: "api call updateAllFocusMode error:- \(error.localizedDescription)")
-                                        completionHandler(nil)
-                                        print(error)
-                                        return;
-                                    }
-                                }
-                            }else{
-                                addLog(text: "api call updateAllFocusMode error:- statusCode is \(httpResponse.statusCode)")
-                                self.writeJsonInLog(data: data)
-                                completionHandler(nil)
-                                return
-                            }
-                        }
-                        
-                        
-                        if error != nil {
-                            addLog(text: "api call updateAllFocusMode error:- \(error!.localizedDescription)")
-                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
-                                if self.isApiUpdateAllFocusModeErrorFound{
-                                    self.isApiUpdateAllFocusModeErrorFound = false
-                                    completionHandler(nil)
-                                    return
-                                }else{
-                                    self.isApiUpdateAllFocusModeErrorFound = true
-                                    addLog(text: "error updateAllFocusMode:- try second time")
-                                    
-                                    self.updateAllFocusMode(focusModes:focusModes, completionHandler: {newDic in
-                                        completionHandler(newDic)
-                                        return
-                                    })
-                                    
-                                }
-                            }else{
-                                completionHandler(nil)
-                                return
-                            }
-                            
-                        }else{
-                            completionHandler(nil)
-                            return
-                        }
-                        
+    func updateAllFocusMode(focusModes: [[String: Any]], completionHandler: @escaping ([NSDictionary]?) -> Void) {
+        guard let context = LegacySettingsMutationContext.captureCurrent(),
+              let body = try? JSONSerialization.data(withJSONObject: focusModes) else {
+            completionHandler(nil); return
+        }
+        performLegacyFocusModeMutation(method: "PUT", modeId: nil, body: body, context: context,
+                                       expectedStatus: 200) { succeeded, data in
+            guard succeeded, let data = data,
+                  let result = try? JSONSerialization.jsonObject(with: data) as? [NSDictionary] else {
+                completionHandler(nil); return
+            }
+            completionHandler(result)
+        }
+    }
+
+    /// Mutation-only authorization. GET /focus-mode and server snapshot application remain available
+    /// while managed settings are locked. A timeout retry keeps the original identity and reviewed body.
+    private func performLegacyFocusModeMutation(method: String, modeId: String?, body: Data?,
+                                                context: LegacySettingsMutationContext, expectedStatus: Int,
+                                                hasRetried: Bool = false,
+                                                completion: @escaping (Bool, Data?) -> Void) {
+        DispatchQueue.main.async {
+            guard context.isCurrent, let delegate = appdelegate else { completion(false, nil); return }
+            delegate.credentialsManager.credentials { result in
+                DispatchQueue.main.async {
+                    guard context.isCurrent, case .success(let credentials) = result,
+                          context.permitsCredential(userId: AuthUser(from: credentials.accessToken)?.userId) else {
+                        completion(false, nil); return
                     }
-                    
-                    task.resume()
-                }else{
-                    
+                    guard var components = URLComponents(string: baseUrl + "/focus-mode") else {
+                        completion(false, nil); return
+                    }
+                    if let modeId = modeId { components.queryItems = [URLQueryItem(name: "id", value: modeId)] }
+                    guard let url = components.url else { completion(false, nil); return }
+                    var request = URLRequest(url: url)
+                    request.httpMethod = method
+                    request.httpBody = body
+                    request.setValue("Bearer " + credentials.accessToken, forHTTPHeaderField: "Authorization")
+                    // Only declare a JSON body when there actually is one. A bodyless request (DELETE)
+                    // that still advertises `application/json` is rejected by the API with HTTP 400
+                    // "Body cannot be empty when content-type is set to 'application/json'". The legacy
+                    // `makeRequest` path never set this header, which is why delete worked before.
+                    if body != nil { request.setValue("application/json", forHTTPHeaderField: "Content-Type") }
+                    request.setValue("mac-os", forHTTPHeaderField: "platform")
+                    request.setValue(getAppVersionInString(), forHTTPHeaderField: "app-version")
+                    request.setValue(context.userId, forHTTPHeaderField: "x-focus-bear-user-id")
+                    request.setValue(context.deviceId, forHTTPHeaderField: "device-id")
+                    request.setValue(context.deviceId, forHTTPHeaderField: "device_id")
+                    // No asynchronous hop between this authorization check and sending the request.
+                    guard context.isCurrent else { completion(false, nil); return }
+                    URLSession.shared.dataTask(with: request) { data, response, error in
+                        DispatchQueue.main.async {
+                            guard context.isCurrent else { completion(false, nil); return }
+                            if let error = error {
+                                if (error as NSError).code == self.errorCodeRequestTimeout, !hasRetried {
+                                    self.performLegacyFocusModeMutation(method: method, modeId: modeId, body: body,
+                                                                        context: context, expectedStatus: expectedStatus,
+                                                                        hasRetried: true, completion: completion)
+                                } else { completion(false, nil) }
+                                return
+                            }
+                            guard let response = response as? HTTPURLResponse, response.statusCode == expectedStatus else {
+                                self.writeJsonInLog(data: data)
+                                completion(false, nil); return
+                            }
+                            completion(true, data)
+                        }
+                    }.resume()
                 }
-                
-            }else{
-                completionHandler(nil)
             }
         }
     }
-    
-    
+
     func startFocusMode(id:String,intention:String, start_time:Date, finish_time:Date, completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
         addLog(text: "func call:- startFocusMode:- focus-mode/id/start")
         
@@ -4167,10 +4094,7 @@ class AllApi:NSObject {
                     request.httpMethod = "POST";
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                     
-                    var language = "english"
-                    if currentLanguageCode == "es"{
-                        language = "spanish"
-                    }
+                    let language = BundledConfigLanguage.apiName()
                     
                     var json: [String: Any] = [
                         "url": url,
@@ -4189,7 +4113,9 @@ class AllApi:NSObject {
                         json["habit_name"] = currentHabitName
                     }
                     
-                    if currentFocusModeStrictness == ._SUPER_STRICT_ {
+                    // A buddy session judges every app/site against the goal, so force strict alignment
+                    // even if currentFocusModeStrictness got reset mid-session (accountability buddy).
+                    if isTaskRequiredToAlignToFocusIntention() {
                         json["task_must_align_to_focus_intention"] = true
                     }
                     addLog(text: "chatGPTIsURLSafe: json data for api is:- \(json)")// will remove it after some time // from all chatgpt functions // 2.27.427
@@ -4269,10 +4195,7 @@ class AllApi:NSObject {
                     request.httpMethod = "POST";
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                     
-                    var language = "english"
-                    if currentLanguageCode == "es"{
-                        language = "spanish"
-                    }
+                    let language = BundledConfigLanguage.apiName()
                     var json: [String: Any] = [
                         "url": url,
                         "tab_title": tab_title,
@@ -4290,7 +4213,9 @@ class AllApi:NSObject {
                     if let currentHabitName = currentHabitName{
                         json["habit_name"] = currentHabitName
                     }
-                    if currentFocusModeStrictness == ._SUPER_STRICT_ {
+                    // A buddy session judges every app/site against the goal, so force strict alignment
+                    // even if currentFocusModeStrictness got reset mid-session (accountability buddy).
+                    if isTaskRequiredToAlignToFocusIntention() {
                         json["task_must_align_to_focus_intention"] = true
                     }
                     addLog(text: "chatGPTIsURLSafeWithNewIntention: json data for api is:- \(json)")// will remove it after some time
@@ -4382,10 +4307,7 @@ class AllApi:NSObject {
                     request.httpMethod = "POST";
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                     
-                    var language = "english"
-                    if currentLanguageCode == "es"{
-                        language = "spanish"
-                    }
+                    let language = BundledConfigLanguage.apiName()
                     var json: [String: Any] = [
                         "focusMode": focus_mode,
                         "intention": intention,
@@ -4400,7 +4322,9 @@ class AllApi:NSObject {
                     if let currentHabitName = currentHabitName{
                         json["habit_name"] = currentHabitName
                     }
-                    if currentFocusModeStrictness == ._SUPER_STRICT_ {
+                    // A buddy session judges every app/site against the goal, so force strict alignment
+                    // even if currentFocusModeStrictness got reset mid-session (accountability buddy).
+                    if isTaskRequiredToAlignToFocusIntention() {
                         json["task_must_align_to_focus_intention"] = true
                     }
                     
@@ -4483,10 +4407,7 @@ class AllApi:NSObject {
                     request.httpMethod = "POST";
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                     
-                    var language = "english"
-                    if currentLanguageCode == "es"{
-                        language = "spanish"
-                    }
+                    let language = BundledConfigLanguage.apiName()
                     var json: [String: Any] = [
                         "focusMode": focus_mode,
                         "intention": intention,
@@ -4501,7 +4422,9 @@ class AllApi:NSObject {
                     if let currentHabitName = currentHabitName{
                         json["habit_name"] = currentHabitName
                     }
-                    if currentFocusModeStrictness == ._SUPER_STRICT_ {
+                    // A buddy session judges every app/site against the goal, so force strict alignment
+                    // even if currentFocusModeStrictness got reset mid-session (accountability buddy).
+                    if isTaskRequiredToAlignToFocusIntention() {
                         json["task_must_align_to_focus_intention"] = true
                     }
                     addLog(text: "chatGPTIsAppSafeWithNewIntention: json data for api is:- \(json)")// will remove it after some time
@@ -5884,12 +5807,17 @@ class AllApi:NSObject {
     /// /to-do/recent (recency, plain array), this endpoint is paginated and already prioritised,
     /// so the Day Plan picker shows the same order as the web to-do list. Handles both a plain
     /// array and a `{ data: [...] }` wrapper response.
-    func getSmartTasks(completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
+    /// `projectId` narrows the page to one project server-side (`GET /to-do?project_id=`), so a
+    /// project's tasks can be found even when they fall outside the unfiltered top 50.
+    func getSmartTasks(projectId: String? = nil, completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
         addLog(text: "func call:- getSmartTasks")
         appdelegate!.credentialsManager.credentials { credentialsInfo in
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             guard appdelegate!.credential != nil else { completionHandler(nil); return }
-            let responsePath = "\(baseUrl)/to-do?page=1&take=50&status=NOT_STARTED&order=DESC&sort_mode=SMART"
+            var responsePath = "\(baseUrl)/to-do?page=1&take=50&status=NOT_STARTED&order=DESC&sort_mode=SMART"
+            if let projectId = projectId, !projectId.isEmpty {
+                responsePath += "&project_id=\(projectId)"
+            }
             guard let responsePathUrl = NSURL(string: responsePath) else { completionHandler(nil); return }
             addLog(text: "api call getSmartTasks \(responsePathUrl)")
             let request = makeRequest(responsePathUrl: responsePathUrl)
@@ -5909,6 +5837,43 @@ class AllApi:NSObject {
                     addLog(text: "getSmartTasks: unexpected response shape")
                 } catch {
                     addLog(text: "error getSmartTasks parse: \(error.localizedDescription)")
+                }
+                completionHandler(nil)
+            }
+            task.resume()
+        }
+    }
+
+    /// The to-dos with the earliest due dates (`sort_mode=DUE_DATE`, which the backend always sorts
+    /// earliest-first so overdue rows come out on top). The Day Plan's due-task merge needs this
+    /// because the SMART page it used to rely on is the top 50 *by score*: an overdue task with a
+    /// low TOP score fell off the end of it and never reached today's plan
+    /// (report 2026-09-12_20-50-55).
+    func getDueTodos(completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
+        addLog(text: "func call:- getDueTodos")
+        appdelegate!.credentialsManager.credentials { credentialsInfo in
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            guard appdelegate!.credential != nil else { completionHandler(nil); return }
+            let responsePath = "\(baseUrl)/to-do?page=1&take=50&status=NOT_STARTED&order=ASC&sort_mode=DUE_DATE"
+            guard let responsePathUrl = NSURL(string: responsePath) else { completionHandler(nil); return }
+            addLog(text: "api call getDueTodos \(responsePathUrl)")
+            let request = makeRequest(responsePathUrl: responsePathUrl)
+            request.httpMethod = "GET"
+            let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, _ in
+                guard let httpResponse = response as? HTTPURLResponse else { completionHandler(nil); return }
+                guard httpResponse.statusCode == 200, let data = data else {
+                    addLog(text: "getDueTodos statusCode \((response as? HTTPURLResponse)?.statusCode ?? -1)")
+                    completionHandler(nil); return
+                }
+                do {
+                    let json = try JSONSerialization.jsonObject(with: data, options: .mutableContainers)
+                    if let arr = json as? [NSDictionary] { completionHandler(arr); return }
+                    if let obj = json as? NSDictionary, let arr = obj.value(forKey: "data") as? [NSDictionary] {
+                        completionHandler(arr); return
+                    }
+                    addLog(text: "getDueTodos: unexpected response shape")
+                } catch {
+                    addLog(text: "error getDueTodos parse: \(error.localizedDescription)")
                 }
                 completionHandler(nil)
             }
@@ -6083,6 +6048,7 @@ class AllApi:NSObject {
     
     
     func addBlockingSchedule(jsonData:Data, completionHandler: @escaping(_ result: Bool) -> ()){
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { completionHandler(false); return }
         addLog(text: "func call:- addBlockingSchedule")
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
@@ -6158,6 +6124,7 @@ class AllApi:NSObject {
     
     
     func updateBlockingSchedule(id: String, jsonData:Data, completionHandler: @escaping(_ result: Bool) -> ()){
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { completionHandler(false); return }
         addLog(text: "func call:- updateBlockingSchedule")
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
@@ -6232,6 +6199,7 @@ class AllApi:NSObject {
     }
     
     func deleteBlockingSchedule(id: String, completionHandler: @escaping(_ result: Bool) -> ()){
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { completionHandler(false); return }
         addLog(text: "func call:- deleteBlockingSchedule")
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in

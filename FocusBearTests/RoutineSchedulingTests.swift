@@ -20,8 +20,6 @@ class RoutineSchedulingTests: XCTestCase {
         super.setUp()
         arrAllCustomRoutine.removeAll()
         isProcessingCustomRoutine = false
-        isPurchased = true  // avoid early return in checkCustomRoutineTime
-        daysLeft    = 30
     }
 
     override func tearDown() {

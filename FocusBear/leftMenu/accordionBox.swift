@@ -27,6 +27,14 @@ class accordionBox: NSBox {
     
     var onStateChanged: ((Bool) -> Void)?
 
+    /// Fired ONLY when the user clicks the header, never by `setExpanded(_:)`.
+    ///
+    /// `onStateChanged` cannot tell the two apart — it runs from `isExpanded`'s `didSet`, which is
+    /// reached by a click and by every programmatic call. A section that PERSISTS its state needs
+    /// the difference: TOOLS auto-expands when a tool inside it is selected, and persisting that
+    /// would quietly undo a collapse the user asked for (report 2026-09-21_16-00-46).
+    var onUserToggled: ((Bool) -> Void)?
+
     /// Set to show a gear icon to the left of the chevron (e.g. TOOLS, to restore hidden rows).
     /// Left nil for sections that don't need one.
     var onGearClicked: (() -> Void)? {
@@ -153,12 +161,18 @@ class accordionBox: NSBox {
     override func mouseUp(with event: NSEvent) {
         self.alphaValue = 1.0
         
-        let point = convert(event.locationInWindow, from: nil)
-        if bounds.contains(point) {
-            isExpanded.toggle()
-        }
+        handleHeaderClick(at: convert(event.locationInWindow, from: nil))
     }
     
+    /// The click half of `mouseUp`, split out so it can be exercised without synthesising an
+    /// NSEvent. Without this the "a click IS recorded" half of the rule was untestable, and a
+    /// mutation deleting `onUserToggled?` from the click path survived the suite.
+    func handleHeaderClick(at point: NSPoint) {
+        guard bounds.contains(point) else { return }
+        isExpanded.toggle()
+        onUserToggled?(isExpanded)
+    }
+
     // MARK: - Public Methods
     func setExpanded(_ expanded: Bool, animated: Bool = false) {
         isExpanded = expanded

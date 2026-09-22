@@ -15,6 +15,7 @@ on:
       - 'Podfile'
       - 'Podfile.lock'
       - 'scripts/fetch-sparkle.sh'
+      - 'scripts/check-managed-blocking-translations.py'
       - '.github/workflows/unit-tests.yml'
   push:
     branches:
@@ -28,11 +29,7 @@ concurrency:
 jobs:
   unit-tests:
     name: Logic unit tests (macOS)
-    # Runs on the self-hosted Apple Silicon runner (jeznag's Mac) instead of a
-    # paid GitHub-hosted macOS image — these are pure-logic tests, so no signing
-    # certs or permissioned desktop are needed. macOS-hosted minutes bill at 10x
-    # Linux; this job was ~2,400 min/month (~$145), now ~$0. To fall back to the
-    # cloud, set runs-on back to macos-15.
+    # Use the existing Mac runner; the user prefers local validation to hosted costs.
     runs-on: [self-hosted, macOS, ARM64, focusbear-mac-local]
     permissions:
       contents: read
@@ -42,25 +39,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Select latest stable Xcode
-        # GitHub-hosted images keep versioned Xcodes at /Applications/Xcode_*.app;
-        # the self-hosted runner already has the default /Applications/Xcode.app
-        # selected, so only switch when a versioned bundle is actually present.
-        run: |
-          APP=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
-          if [ -n "$APP" ]; then sudo xcode-select -s "$APP" || true; fi
-
       - name: Show toolchain
         run: |
           xcodebuild -version
           swift --version
+
+      - name: Check managed safety translations
+        run: python3 scripts/check-managed-blocking-translations.py
 
       # Sparkle.framework is not committed to the repo; fetch the pinned,
       # checksum-verified build the project links/embeds.
       - name: Fetch Sparkle.framework
         run: ./scripts/fetch-sparkle.sh
 
+      # ONNX Runtime (relevance model) is not committed either; fetch the pinned,
+      # checksum-verified arm64 dylib + headers the project links/embeds.
+      - name: Fetch ONNX Runtime
+        run: ./scripts/fetch-onnxruntime.sh
+
       - name: Run logic unit tests
+        env:
+          TEST_RUNNER_FOCUS_START_VISUAL_QA: '1'
+          TEST_RUNNER_FOCUSBEAR_CAPTURE_ONGOING: '1'
+          TEST_RUNNER_FOCUSBEAR_CAPTURE_DIRECTORY: ${{ runner.temp }}/ongoing-visuals-${{ github.sha }}
         run: |
           set -o pipefail
           xcodebuild test \
@@ -68,25 +69,111 @@ jobs:
             -scheme "Focus Bear" \
             -configuration Debug \
             -destination 'platform=macOS' \
+            -parallel-testing-enabled NO \
             -resultBundlePath TestResults.xcresult \
+            -only-testing:"Focus BearTests/LogicTestHostTests" \
+            -only-testing:"Focus BearTests/AccountabilityPostponeRecoveryTests" \
+            -only-testing:"Focus BearTests/AiRelevanceDecisionCacheTests" \
             -only-testing:"Focus BearTests/AppBlockingTests" \
             -only-testing:"Focus BearTests/URLBlockingTests" \
+            -only-testing:"Focus BearTests/WildcardPatternSafetyTests" \
             -only-testing:"Focus BearTests/validationTest" \
             -only-testing:"Focus BearTests/ScheduleKitTests" \
+            -only-testing:"Focus BearTests/SmartSnoozeMathTests" \
             -only-testing:"Focus BearTests/FocusMusicMediaKeyTests" \
             -only-testing:"Focus BearTests/DaysOfWeekTests" \
             -only-testing:"Focus BearTests/CustomBlockingScheduleTests" \
             -only-testing:"Focus BearTests/DayPlanRoutineDraftTests" \
+            -only-testing:"Focus BearTests/DayPlanProjectRepairTests" \
+            -only-testing:"Focus BearTests/DayPlanProjectMergeFollowTests" \
+            -only-testing:"Focus BearTests/DayPlanUserActionReloadTests" \
+            -only-testing:"Focus BearTests/HabitCutoffValidationTests" \
+            -only-testing:"Focus BearTests/CustomRoutineDraftTests" \
             -only-testing:"Focus BearTests/QuickAddTaskParserTests" \
+            -only-testing:"Focus BearTests/TaskShortcutCardTests" \
+            -only-testing:"Focus BearTests/TaskNameCommitTests" \
             -only-testing:"Focus BearTests/ToDoLogicTests" \
+            -only-testing:"Focus BearTests/ToDoDueDateFieldTests" \
+            -only-testing:"Focus BearTests/ToDoFieldCommitTests" \
+            -only-testing:"Focus BearTests/ProjectKanbanDragTests" \
+            -only-testing:"Focus BearTests/ToDoEditorSaveTests" \
+            -only-testing:"Focus BearTests/ImagePreviewSizingTests" \
+            -only-testing:"Focus BearTests/ProjectNotesFeedTests" \
             -only-testing:"Focus BearTests/SmartSnoozeTests" \
+            -only-testing:"Focus BearTests/BrowserMeetingUrlTests" \
+            -only-testing:"Focus BearTests/AiBlockBuddyTaskPickerTests" \
+            -only-testing:"Focus BearTests/CredentialsKeychainStorageTests" \
+            -only-testing:"Focus BearTests/FocusSessionTests" \
+            -only-testing:"Focus BearTests/ProjectNoteEditorTests" \
+            -only-testing:"Focus BearTests/ProjectNoteSyncSupportTests" \
+            -only-testing:"Focus BearTests/LocalReportStatusTests" \
+            -only-testing:"Focus BearTests/MainWindowListBoxInteractionTests" \
+            -only-testing:"Focus BearTests/MainWindowContentLayoutTests" \
+            -only-testing:"Focus BearTests/MainThreadWindowTitleTests" \
+            -only-testing:"Focus BearTests/AllowedActivityFullScreenTests" \
+            -only-testing:"Focus BearTests/LeftMenuAvailabilityTests" \
+            -only-testing:"Focus BearTests/BlockListComboBoxTextTests" \
             -only-testing:"Focus BearTests/EventCalendarPickerTests" \
+            -only-testing:"Focus BearTests/DayPlanReloadTimingTests" \
+            -only-testing:"Focus BearTests/MeetingsCacheTests" \
+            -only-testing:"Focus BearTests/DayPlanDayBadgeTests" \
+            -only-testing:"Focus BearTests/DayPlanEventHeightTests" \
+            -only-testing:"Focus BearTests/StatsLogicTests" \
+            -only-testing:"Focus BearTests/HabitTaskChecklistTests" \
+            -only-testing:"Focus BearTests/FocusSessionStopPermissionTests" \
+            -only-testing:"Focus BearTests/BreakStartKitTests" \
+            -only-testing:"Focus BearTests/FocusStartTests" \
+            -only-testing:"Focus BearTests/BlockingDecisionTests" \
+            -only-testing:"Focus BearTests/FocusAlignmentScoreTests" \
+            -only-testing:"Focus BearTests/RoutineSchedulingTests" \
+            -only-testing:"Focus BearTests/SettingsManagerTests" \
+            -only-testing:"Focus BearTests/TimeParsingTests" \
+            -only-testing:"Focus BearTests/ManagedHomeDraftTests" \
+            -only-testing:"Focus BearTests/ManagedPolicyTests" \
+            -only-testing:"Focus BearTests/ManagedPolicyStoreAccessTests" \
+            -only-testing:"Focus BearTests/ManagedSafetyPrecedenceTests" \
+            -only-testing:"Focus BearTests/RelevanceFreshnessTests" \
+            -only-testing:"Focus BearTests/LocalTimeForecastTests" \
+            -only-testing:"Focus BearTests/LocalForecastPortfolioTests" \
+            -only-testing:"Focus BearTests/ForecastReschedulingTests" \
+            -only-testing:"Focus BearTests/LegacySettingsMutationTests" \
+            CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION=YES \
+            -only-testing:"Focus BearTests/FocusStartVisualTests" \
+            -only-testing:"Focus BearTests/EventCancellationTests" \
+            -only-testing:"Focus BearTests/ToDoAttachmentsTests" \
+            -only-testing:"Focus BearTests/BlockListCategoryTests" \
+            -only-testing:"Focus BearTests/LateNoMoreEventMatcherTests" \
+            -only-testing:"Focus BearTests/MeetingPostponeCoverageTests" \
+            -only-testing:"Focus BearTests/OccupationDescriptionTests" \
+            -only-testing:"Focus BearTests/FocusSessionExtensionTests" \
+            -only-testing:"Focus BearTests/MorningRoutineStartGuardTests" \
+            -only-testing:"Focus BearTests/EventTimeParserTests" \
+            -only-testing:"Focus BearTests/PostponeGateTests" \
+            -only-testing:"Focus BearTests/DayPlanDestinationTests" \
+            -only-testing:"Focus BearTests/BlockingScheduleDefaultsTests" \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGN_STYLE=Manual \
             PROVISIONING_PROFILE_SPECIFIER="" \
             DEVELOPMENT_TEAM="" \
             SWIFT_ENABLE_EXPLICIT_MODULES=NO \
             | tee xcodebuild.log
+
+      - name: Export visual QA captures
+        if: always()
+        run: |
+          if [ -d TestResults.xcresult ]; then
+            xcrun xcresulttool export attachments --path TestResults.xcresult --output-path VisualEvidence
+            python3 -c 'from pathlib import Path; count = len(list(Path("VisualEvidence").rglob("*.png"))); assert count == 46, f"Expected 32 start and 14 ongoing visual fixtures, received {count}"'
+          fi
+
+      - name: Upload visual QA captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: combined-focus-visual-evidence
+          path: VisualEvidence
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Upload test results
         if: always()
@@ -97,4 +184,13 @@ jobs:
             TestResults.xcresult
             xcodebuild.log
           if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload ongoing session visual fixtures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ongoing-session-visuals
+          path: ${{ runner.temp }}/ongoing-visuals-${{ github.sha }}
+          if-no-files-found: error
           retention-days: 7

@@ -7,8 +7,15 @@
 //
 
 import Cocoa
+import SwiftUI
+import Combine
 
 class focusPreferencesVc: NSViewController, NSMenuDelegate {
+
+    // SwiftUI block-list redesign, hosted on top of the legacy storyboard content (which we hide).
+    // Typed `Any?` because the deployment target is macOS 11 and `BlockListStore` is gated on it.
+    private var blockListStore: Any?
+    private var blockListHostingView: NSView?
 
     @IBOutlet weak var stackViewLeftPanel: NSStackView!
     @IBOutlet weak var lineBelowFocusModes: NSBox!
@@ -66,6 +73,9 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     var isViewVisible = false
     var isRevealHiddenModesOn = false
     var cp = NSColorPanel.shared
+    private var managedPolicyHost: NSHostingController<ManagedPolicyInspector>?
+    private var managedPolicyObservation: AnyCancellable?
+    private var legacyVisibility: [(NSView, Bool)] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -228,7 +238,55 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         stackViewLeftPanel.addArrangedSubview(chkReveal)
         updateRevealHiddenCheckboxVisibility(chkReveal)
 
+        setupBlockListRedesign()
+
         addLog(text: "focusPreferencesVc viewdidload end")
+        managedPolicyObservation = ManagedBlockingRuntime.shared.$isSettingsLocked
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.updateManagedPolicyView() }
+    }
+
+    /// Managed students can inspect policies without gaining access to legacy local mutations.
+    /// The inspector is reusable by the forthcoming Figma block-list shell.
+    private func updateManagedPolicyView() {
+        if ManagedBlockingRuntime.shared.isSettingsLocked {
+            let inspector = ManagedPolicyInspector(runtime: .shared, onClose: presentingViewController == nil ? nil : { [weak self] in
+                guard let self = self else { return }
+                self.dismiss(self)
+            })
+            if let host = managedPolicyHost {
+                host.rootView = inspector
+                return
+            }
+            legacyVisibility = view.subviews.map { ($0, $0.isHidden) }
+            legacyVisibility.forEach { $0.0.isHidden = true }
+            let host = NSHostingController(rootView: inspector)
+            addChild(host)
+            host.view.translatesAutoresizingMaskIntoConstraints = false
+            if #available(macOS 13.0, *) {
+                (host.view as? NSHostingView<ManagedPolicyInspector>)?.sizingOptions = []
+            }
+            for axis in [NSLayoutConstraint.Orientation.horizontal, .vertical] {
+                host.view.setContentHuggingPriority(.defaultLow, for: axis)
+                host.view.setContentCompressionResistancePriority(.defaultLow, for: axis)
+            }
+            view.addSubview(host.view)
+            NSLayoutConstraint.activate([
+                host.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                host.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                host.view.topAnchor.constraint(equalTo: view.topAnchor),
+                host.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            ])
+            managedPolicyHost = host
+        } else if let host = managedPolicyHost {
+            host.view.removeFromSuperview()
+            host.removeFromParent()
+            managedPolicyHost = nil
+            legacyVisibility.forEach { $0.0.isHidden = $0.1 }
+            legacyVisibility.removeAll()
+            reloadData()
+        }
     }
 
     override func viewDidLayout() {// after scrollview resize it removes title and not srawing it again so doing this here 
@@ -238,6 +296,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
 
     
     func selectFocusModeWithId(id:String){
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         for i in 0..<arrFocusType.count{
             let focusMode = arrFocusType[i]
             if focusMode["id"] as? String == id{
@@ -256,6 +315,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     }
     
     @IBAction func btnShowColorPanelClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         cp = NSColorPanel.shared
         cp.color = colorWell.color
         cp.mode = .RGB
@@ -267,6 +327,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     }
     
     @objc func colorDidChange(){
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         if tblViewFocusType.selectedRow == -1{
             return;
         }
@@ -288,6 +349,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     }
     
     func makeDuplicateFocus(row:Int){
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         guard row >= 0 else { return }
         var isDefault = false
         var item = arrFocusType[row]
@@ -384,6 +446,8 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     
     override func viewWillAppear() {
         isViewVisible = true
+        updateManagedPolicyView()
+        if ManagedBlockingRuntime.shared.isSettingsLocked { return }
         
         focusPreferencesAdvancedVcObj?.arrAllTags.removeAll()
         for tagInfo in arrAllFocusModeTags{
@@ -425,9 +489,13 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             btnBackToCustomBlockingSmall.isHidden = true
         }
         scrollView.scrollToTop()
+        // The legacy chrome above is all hidden behind the SwiftUI overlay; re-pull the modes so a
+        // block list added or deleted elsewhere shows up.
+        refreshBlockListRedesign()
     }
     
     override func viewDidAppear() {
+        if ManagedBlockingRuntime.shared.isSettingsLocked { updateManagedPolicyView(); return }
         scrollView.scrollToTop()
     }
     
@@ -435,13 +503,17 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         isViewVisible = false
         tabStrictnessContainerVcObj?.segmentControlGeekMode.isHidden = false
         focusPreferencesAdvancedVcObj?.arrAllTags.removeAll()
-        updateAllFocusModes()
+        if !ManagedBlockingRuntime.shared.isSettingsLocked { updateAllFocusModes() }
         btnBackToCustomBlocking.isHidden = true
         btnBack.isHidden = false
     }
 
     
     func reloadData(){
+        if ManagedBlockingRuntime.shared.isSettingsLocked {
+            updateManagedPolicyView()
+            return
+        }
         tblViewFocusType.reloadData()
         checkState()
         
@@ -458,9 +530,13 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             tblViewAllowedApps.reloadData()
             tblViewAllowedUrls.reloadData()
         }
+        // Every legacy add/duplicate/delete path funnels through here, so this is the one place the
+        // SwiftUI overlay needs to hear about focus modes changing underneath it.
+        refreshBlockListRedesign()
     }
     
     @IBAction func radioBtnAllowAllAppsClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         radioBtnAllowAllApps.state = .on
         radioBtnAllowSelectedApps.state = .off
         tblViewAllowedApps.isEnabled = false
@@ -482,6 +558,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         allApiObject.capturePosthog(event: "allowed-all-apps-in-focus-mode", metadata: [:])//#490
     }
     @IBAction func radioBtnAllowSelectedAppsClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         radioBtnAllowAllApps.state = .off
         radioBtnAllowSelectedApps.state = .on
         tblViewAllowedApps.isEnabled = true
@@ -509,6 +586,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     
   
     @objc func tableRowAllowedUrlsDoubleClicked(){
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let selectedTow = tblViewAllowedUrls.selectedRow
         if selectedTow == -1{
             return;
@@ -529,7 +607,8 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     
     
     
-    @IBAction func btnAddFocusTypeClicked(_ sender: Any) { 
+    @IBAction func btnAddFocusTypeClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         self.presentAsSheet(addFocusTypeVcObj!)
     }
     
@@ -544,6 +623,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     // MARK: - Hide Focus Mode
 
     @objc func toggleHideFocusModeClicked(_ sender: NSButton) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let row = sender.tag
         guard row >= 0, row < arrFocusType.count else { return }
         guard let id = arrFocusType[row]["id"] as? String else { return }
@@ -601,7 +681,19 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         }
     }
     
+    private func currentDeletionIndex(for id: String) -> Int? {
+        var configuredHardcoreName: String?
+        if UserDefaults.standard.bool(forKey: SettingsManagerObject.kUserdefaultsPomodoroModeEnabled),
+           UserDefaults.standard.bool(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroEnabled) {
+            configuredHardcoreName = UserDefaults.standard.string(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName)
+        }
+        return LegacyFocusModeDeletion.index(for: id, modes: arrFocusType,
+            scheduledModeIDs: Set(customBlockingScheduleManagerObj.arrBlockingSchedule.map { $0.focusModeID }),
+            hardcoreIsRunning: isHardCorePomodoroModeOn, configuredHardcoreModeName: configuredHardcoreName)
+    }
+
     @IBAction func btnRemoveFocusTypeClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         if isHardCorePomodoroModeOn{
             let alert = NSAlert()
             alert.setSharingType()
@@ -616,9 +708,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             return
         }
         let selectedRow = tblViewFocusType.selectedRow
-        if selectedRow == -1{
-            return
-        }
+        guard selectedRow >= 0, selectedRow < arrFocusType.count else { return }
         if arrFocusType[selectedRow]["isDefault"] as? Bool == true || arrFocusType[selectedRow]["isMeetings"] as? Bool == true || arrFocusType[selectedRow]["isLockedFocus"] as? Bool == true{//this key will only be awailable in default focus type
             
             let alertFocusModeDefault = NSAlert()
@@ -673,7 +763,8 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             
         }
         
-        let id = arrFocusType[selectedRow]["id"] as? String ?? ""
+        guard let id = arrFocusType[selectedRow]["id"] as? String, !id.isEmpty,
+              let mutationContext = LegacySettingsMutationContext.captureCurrent() else { return }
         for i in 0..<customBlockingScheduleManagerObj.arrBlockingSchedule.count{
             let schedule = customBlockingScheduleManagerObj.arrBlockingSchedule[i]
             if schedule.focusModeID == id{
@@ -692,6 +783,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                 alert.addButton(withTitle: buttonCancelText)
                 
                 alert.beginSheetModal(for: self.view.window!){ result in
+            guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
                     if result == .alertFirstButtonReturn{
                         //without password bacuse settngs is alreday opened
                         leftMenuVcObj?.boxBlocks.isSelected = true
@@ -739,34 +831,23 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         alert.addButton(withTitle: yesText)
         alert.addButton(withTitle: noText)
         
-        alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-            if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-                if arrFocusType.count > selectedRow{
-                    
-                    let id = arrFocusType[selectedRow]["id"] as? String ?? ""
-                    arrFocusType.remove(at: selectedRow)
+        alert.beginSheetModal(for: self.view.window!, completionHandler: { [weak self] modalResponse in
+            guard let self = self, modalResponse == .alertFirstButtonReturn,
+                  mutationContext.isCurrent, self.currentDeletionIndex(for: id) != nil else { return }
+            allApiObject.deleteFocusMode(id: id, mutationContext: mutationContext) { [weak self] isDeleted in
+                DispatchQueue.main.async {
+                    // A failed/cancelled/stale write must not remove or persist any local mode.
+                    guard let self = self, isDeleted, mutationContext.isCurrent,
+                          let index = self.currentDeletionIndex(for: id) else { return }
+                    arrFocusType.remove(at: index)
                     self.tblViewFocusType.reloadData()
                     self.checkState()
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                     resetPomodoroVcFocusListIfNeeded()
-                    // The deleted mode's id must not linger in the hidden set — drop any hidden ids
-                    // that no longer map to a live focus mode.
                     HiddenFocusModeManager.reconcile(against: arrFocusType)
-
-                    allApiObject.deleteFocusMode(id: id, completionHandler: {isDeleted in
-                        
-                        DispatchQueue.main.async {
-                            if isDeleted{
-                                
-                            }else{
-                                
-                            }
-                            
-                        }
-                        
-                    })
+                    // #2571 (14): keep the SwiftUI block-list rail in step when the delete came from it.
+                    self.refreshBlockListRedesign()
                     allApiObject.capturePosthog(event: "delete-focus-mode", metadata: [:])
-                    
                 }
             }
         })
@@ -774,6 +855,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     }
     
     @IBAction func btnAddAppClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         
         let openPanel = NSOpenPanel()
         openPanel.canChooseFiles = true
@@ -796,6 +878,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             }
         }
         openPanel.beginSheetModal(for: self.view.window!) { response in
+            guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
             guard response.rawValue == NSApplication.ModalResponse.OK.rawValue else {
                 //                if var arr =
                 
@@ -881,6 +964,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     }
     //    Some of the items selected are already present in the list.
     @IBAction func btnRemoveAppClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let selectedFocusTypeRow = tblViewFocusType.selectedRow
         if selectedFocusTypeRow == -1{
             return
@@ -923,6 +1007,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         
     }
     @IBAction func btnAddUrlClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         
         if arrFocusType[tblViewFocusType.selectedRow]["isDefault"] as? Bool == true {
             addWebUrlVcObj!.currenUrlAddingtState = ._ALL_BLOCK_URL
@@ -937,6 +1022,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         self.presentAsSheet(addWebUrlVcObj!)
     }
     @IBAction func btnRemoveUrlClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let selectedFocusTypeRow = tblViewFocusType.selectedRow
         if selectedFocusTypeRow == -1{
             return
@@ -984,6 +1070,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     }
     
     @IBAction func btnAdvancedClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         if focusPreferencesAdvancedVcObj == nil{
             focusPreferencesAdvancedVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusPreferencesAdvancedVc")) as? focusPreferencesAdvancedVc
         }
@@ -1009,6 +1096,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     
     
     @IBAction func radioBtnAllowListApprochClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         radioBtnBlockListApproch.state = .off
         lblUrlsQuestion.stringValue = allowUrlsQuestionText
         
@@ -1045,6 +1133,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     }
     
     @IBAction func radioBtnBlockListApprochClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         radioBtnAllowListApproch.state = .off
 
         lblUrlsQuestion.stringValue = blockUrlsQuestionText
@@ -1099,8 +1188,210 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             tabStrictnessContainerVcObj?.showStrictnessView()
         }
     }
-    
-    
+
+    // MARK: - SwiftUI block-list redesign
+
+    /// Builds the SwiftUI block-list screen and hosts it over the legacy storyboard content, which we
+    /// hide. Same approach as `customBlockingSchedulesVc`: the outlets — above all
+    /// `tblViewFocusType.selectedRow` — stay alive, because `addWebUrlVc`,
+    /// `focusPreferencesAdvancedVc` and `addFocusTypeVc` all read them to know which block list is
+    /// selected. On macOS < 11 the storyboard UI is used untouched.
+    func setupBlockListRedesign() {
+        guard #available(macOS 11.0, *) else { return }
+
+        // Hide the legacy controls before overlaying, so they don't render or intercept clicks behind
+        // the hosting view (added afterwards, so it stays visible).
+        view.subviews.forEach { $0.isHidden = true }
+
+        let store = BlockListStore()
+        blockListStore = store
+        if let index = store.selectedIndex { selectFocusModeRow(index) }
+
+        let root = BlockListView(
+            store: store,
+            onEdit: { [weak self] index in
+                guard let self else { return }
+                self.selectFocusModeRow(index)
+                self.btnAdvancedClicked(self)
+            },
+            onCreate: { [weak self] in
+                guard let self else { return }
+                self.btnAddFocusTypeClicked(self)
+            },
+            onSelect: { [weak self] index in
+                self?.selectFocusModeRow(index)
+            },
+            onBack: { [weak self] in
+                guard let self else { return }
+                self.btnBackClicked(self)
+            },
+            onDuplicate: { [weak self] index in
+                self?.duplicateFocusModeFromRedesign(index: index)
+            },
+            onToggleHide: { [weak self] index in
+                self?.toggleHideFocusModeFromRedesign(index: index)
+            },
+            onDelete: { [weak self] index in
+                self?.deleteFocusModeFromRedesign(index: index)
+            },
+            onRename: { [weak self] index, newName in
+                self?.renameFocusModeFromRedesign(index: index, to: newName)
+            },
+            onChangeColor: { [weak self] index in
+                self?.changeColorForFocusModeFromRedesign(index: index)
+            },
+            onAddApp: { [weak self] in
+                self?.addAppsFromRedesign()
+            })
+
+        let hosting = NSHostingView(rootView: root)
+        hosting.translatesAutoresizingMaskIntoConstraints = false
+        // Without these, the hosting view reports SwiftUI's intrinsic content size to Auto Layout,
+        // which becomes a floor on the window's width: the user can make the window taller but not
+        // narrower. `BlockListView` derives every width from the width it is handed, so it has
+        // nothing useful to say about how wide the window ought to be. Same treatment as the
+        // managed-policy inspector above.
+        if #available(macOS 13.0, *) { hosting.sizingOptions = [] }
+        for axis in [NSLayoutConstraint.Orientation.horizontal, .vertical] {
+            hosting.setContentHuggingPriority(.defaultLow, for: axis)
+            hosting.setContentCompressionResistancePriority(.defaultLow, for: axis)
+        }
+        view.addSubview(hosting)
+        NSLayoutConstraint.activate([
+            hosting.topAnchor.constraint(equalTo: view.topAnchor),
+            hosting.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            hosting.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hosting.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+        ])
+        blockListHostingView = hosting
+    }
+
+    /// Mirrors the SwiftUI selection onto the hidden table, which the legacy sheets treat as the
+    /// authoritative "which block list is being edited".
+    private func selectFocusModeRow(_ index: Int) {
+        guard index >= 0, index < tblViewFocusType.numberOfRows else { return }
+        tblViewFocusType.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
+    }
+
+    /// Re-pulls focus modes into the SwiftUI store after a legacy sheet added, edited or deleted one.
+    func refreshBlockListRedesign() {
+        guard #available(macOS 11.0, *), let store = blockListStore as? BlockListStore else { return }
+        store.reload()
+    }
+
+    // MARK: - Redesign per-mode actions (#2571 14)
+
+    /// Duplicates the mode, reusing the legacy `makeDuplicateFocus` (insert, sort, sync), then selects
+    /// the new copy in the rail.
+    private func duplicateFocusModeFromRedesign(index: Int) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
+        makeDuplicateFocus(row: index)
+        guard #available(macOS 11.0, *), let store = blockListStore as? BlockListStore else { return }
+        store.reload()
+        let newRow = tblViewFocusType.selectedRow
+        if newRow >= 0, newRow < arrFocusType.count { store.selectedIndex = newRow }
+    }
+
+    /// Hides or shows the mode in the pickers, mirroring the legacy "Hide"/"Show" toggle.
+    private func toggleHideFocusModeFromRedesign(index: Int) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
+        guard arrFocusType.indices.contains(index),
+              let id = arrFocusType[index]["id"] as? String, !id.isEmpty else { return }
+        let nowHidden = HiddenFocusModeManager.toggle(id: id)
+        let modeName = arrFocusType[index]["name"] as? String ?? id
+        allApiObject.capturePosthog(event: nowHidden ? "focus-mode-hidden" : "focus-mode-shown",
+                                    metadata: ["focus_mode_id": id, "focus_mode_name": modeName])
+        addLog(text: "focusPreferencesVc: toggled hide (redesign) for '\(modeName)' → hidden=\(nowHidden)")
+        refreshBlockListRedesign()
+    }
+
+    /// Applies the inline rename typed in the panel header. Validation, the local write and the server
+    /// sync all live in `BlockListStore.renameSelected`; a duplicate name is reported and discarded.
+    private func renameFocusModeFromRedesign(index: Int, to newName: String) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
+        guard #available(macOS 11.0, *), let store = blockListStore as? BlockListStore else { return }
+        selectFocusModeRow(index)
+        store.selectedIndex = index
+        switch store.renameSelected(to: newName) {
+        case .renamed:
+            allApiObject.capturePosthog(event: "change-focus-mode-name", metadata: [:])
+        case .duplicate:
+            guard let window = view.window else { return }
+            let clash = NSAlert()
+            clash.setSharingType()
+            clash.messageText = BlockListText.duplicateName
+            clash.addButton(withTitle: buttonOkText)
+            clash.beginSheetModal(for: window, completionHandler: nil)
+        case .empty, .unchanged:
+            break
+        }
+    }
+
+    /// Opens the shared colour panel seeded with the mode's current colour; `redesignColorPanelChanged`
+    /// writes each pick back through the store.
+    private func changeColorForFocusModeFromRedesign(index: Int) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
+        guard #available(macOS 11.0, *), let store = blockListStore as? BlockListStore,
+              arrFocusType.indices.contains(index) else { return }
+        selectFocusModeRow(index)
+        store.selectedIndex = index
+
+        let panel = NSColorPanel.shared
+        if let hex = arrFocusType[index]["color"] as? String, !hex.isEmpty {
+            panel.color = HexToColor(hexString: hex)
+        }
+        panel.mode = .RGB
+        panel.isContinuous = false   // one API sync per committed colour, not per drag
+        panel.setTarget(self)
+        panel.setAction(#selector(redesignColorPanelChanged(_:)))
+        panel.makeKeyAndOrderFront(self)
+    }
+
+    @available(macOS 11.0, *)
+    @objc private func redesignColorPanelChanged(_ sender: NSColorPanel) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked,
+              let store = blockListStore as? BlockListStore else { return }
+        store.setColor(getColorString(color: sender.color))
+        allApiObject.capturePosthog(event: "edit-focus-mode-colour", metadata: [:])
+    }
+
+    /// Opens a file picker for the selected block list and adds the chosen apps through the store.
+    /// Apps can't be typed as a path, so the redesign's "Add App" button routes here. (#2571 11)
+    private func addAppsFromRedesign() {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
+        guard #available(macOS 11.0, *), let store = blockListStore as? BlockListStore,
+              let window = view.window else { return }
+
+        let openPanel = NSOpenPanel()
+        openPanel.canChooseFiles = true
+        openPanel.canChooseDirectories = false
+        openPanel.allowsMultipleSelection = true
+        openPanel.treatsFilePackagesAsDirectories = false
+        openPanel.directoryURL = URL(fileURLWithPath: "/Applications")
+        openPanel.allowedFileTypes = ["app"]
+        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool == true {
+            openPanel.sharingType = .none
+        }
+        openPanel.prompt = (configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary)?
+            .value(forKey: "buttonSelectAppText") as? String ?? "Select"
+
+        openPanel.beginSheetModal(for: window) { response in
+            guard !ManagedBlockingRuntime.shared.isSettingsLocked,
+                  response == .OK else { return }
+            for url in openPanel.urls { store.addApp(url.path) }
+        }
+    }
+
+    /// Routes deletion through the legacy handler so every guard (built-in modes, hardcore pomodoro,
+    /// schedule assignment, a running mode) and the confirmation still apply.
+    private func deleteFocusModeFromRedesign(index: Int) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
+        selectFocusModeRow(index)
+        if #available(macOS 11.0, *), let store = blockListStore as? BlockListStore {
+            store.selectedIndex = index
+        }
+        btnRemoveFocusTypeClicked(self)
+    }
 }
 
 extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
@@ -1348,6 +1639,7 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
     }
     
     func tableViewSelectionDidChange(_ notification: Notification) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         print("tableViewSelectionDidChange")
         guard let tblview = notification.object as? NSTableView else {
             return
@@ -1587,6 +1879,7 @@ class TableRowViewResult: NSTableRowView {
 extension focusPreferencesVc:NSTextFieldDelegate{
     
     func controlTextDidChange(_ obj: Notification) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         if let textfield = obj.object as? NSTextField{
             if textfield == textFieldSelectedFocusType{
                 if textFieldSelectedFocusType.stringValue.count > 250{
@@ -1597,6 +1890,7 @@ extension focusPreferencesVc:NSTextFieldDelegate{
         }
     }
     func controlTextDidEndEditing(_ obj: Notification) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         if let textfield = obj.object as? NSTextField{
             if textfield == textFieldSelectedFocusType{
                 let selectedRow = tblViewFocusType.selectedRow

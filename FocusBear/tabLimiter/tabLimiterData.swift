@@ -17,6 +17,34 @@ var arcBrowserTabsInfo = [String]()
 var operaGxWindowsInfo = [String:[String]]()
 var cometWindowsInfo = [String:[String]]()
 
+enum BrowserTabLimitDecision: Equatable {
+    case allow, warnExisting, rejectNew
+
+    static func evaluate(previous: Int, current: Int, otherBrowsers: Int, limit: Int) -> Self {
+        guard current + max(0, otherBrowsers) > max(1, limit) else { return .allow }
+        // A first snapshot cannot identify a newly opened tab: warn without deleting existing work.
+        return previous > 0 && current > previous ? .rejectNew : .warnExisting
+    }
+}
+
+private func cachedTabWindows(_ browser: BROWSER) -> [String: [String]] {
+    switch browser {
+    case ._SAFARI_: return safariWindowsInfo
+    case ._GOOGLE_CHROME_: return googleChromeWindowsInfo
+    case ._OPERA_: return operaWindowsInfo
+    case ._VIVALDI_: return vivaldiWindowsInfo
+    case ._BRAVE_BROWSER_: return braveBrowserWindowsInfo
+    case ._SIDEKICK_: return sidekickWindowsInfo
+    case ._MICROSOFT_EDGE_: return microsoftEdgeWindowsInfo
+    case ._ARC_: return ["window": arcBrowserTabsInfo]
+    case ._OPERA_GX_: return operaGxWindowsInfo
+    case ._COMET_: return cometWindowsInfo
+    default: return [:]
+    }
+}
+
+private var lastTabLimitSnapshot: [BROWSER: String] = [:]
+
 func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
     if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
         return true
@@ -29,7 +57,22 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
     }
     
     guard let browserStruct = getBrowserAllWindowStructSafeInBackground(browser: currentBrowser) else {
-        return true ;
+        if lastTabLimitSnapshot[currentBrowser] != "unavailable" {
+            addLog(text: "tab limiter: browser=\(currentBrowser) snapshot unavailable")
+            lastTabLimitSnapshot[currentBrowser] = "unavailable"
+        }
+        return true
+    }
+    let previousCount = cachedTabWindows(currentBrowser).values.reduce(0) { $0 + $1.count }
+    let currentCount = browserStruct.values.reduce(0) { $0 + $1.count }
+    let otherCount = max(0, getAllBrowsersTabCount() - previousCount)
+    let decision = BrowserTabLimitDecision.evaluate(previous: previousCount, current: currentCount,
+        otherBrowsers: otherCount, limit: SettingsManagerObject.maxTabLimitCount)
+    let snapshot = "current=\(currentCount) other=\(otherCount) limit=\(SettingsManagerObject.maxTabLimitCount) decision=\(decision)"
+    if lastTabLimitSnapshot[currentBrowser] != snapshot {
+        addLog(text: "tab limiter: browser=\(currentBrowser) \(snapshot)")
+        lastTabLimitSnapshot[currentBrowser] = snapshot
+        if decision == .warnExisting { showAlertMaxTabLimitWindow() }
     }
     if currentBrowser == ._SAFARI_{
         var currentBrowserTabsArr = [String]()
@@ -50,7 +93,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
         if allSelfTabArr.count == currentBrowserTabsArr.count{
             safariWindowsInfo = browserStruct
         }else if currentBrowserTabsArr.count > allSelfTabArr.count{// new tab created
-            if (getAllBrowsersTabCount() + 1) > SettingsManagerObject.maxTabLimitCount{
+            if decision == .rejectNew{
                 
                 let keys = browserStruct.keys
                 for key in keys{
@@ -63,11 +106,11 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 for i in 0..<browserTabsArr.count{
                                     if i < selfTabArr.count{
                                         if browserTabsArr[i] != selfTabArr[i]{
-                                            closeTabAt(index: i, browser: currentBrowser)
+                                            closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                             break;
                                         }
                                     }else{
-                                        closeTabAt(index: i, browser: currentBrowser)
+                                        closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                         break;
                                     }
                                 }
@@ -76,7 +119,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 
                             }
                         }else{//new window created
-                            closeTabAt(index: 0, browser: currentBrowser)
+                            closeTabAt(index: 0, browser: currentBrowser, windowID: key)
                             showAlertMaxTabLimitWindow()
                             return false
                         }
@@ -109,7 +152,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
         if allSelfTabArr.count == currentBrowserTabsArr.count{
             googleChromeWindowsInfo = browserStruct
         }else if currentBrowserTabsArr.count > allSelfTabArr.count{// new tab created
-            if (getAllBrowsersTabCount() + 1) > SettingsManagerObject.maxTabLimitCount{
+            if decision == .rejectNew{
                 
                 let keys = browserStruct.keys
                 for key in keys{
@@ -122,11 +165,11 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 for i in 0..<browserTabsArr.count{
                                     if i < selfTabArr.count{
                                         if browserTabsArr[i] != selfTabArr[i]{
-                                            closeTabAt(index: i, browser: currentBrowser)
+                                            closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                             break;
                                         }
                                     }else{
-                                        closeTabAt(index: i, browser: currentBrowser)
+                                        closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                         break;
                                     }
                                 }
@@ -135,7 +178,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 
                             }
                         }else{//new window created
-                            closeTabAt(index: 0, browser: currentBrowser)
+                            closeTabAt(index: 0, browser: currentBrowser, windowID: key)
                             showAlertMaxTabLimitWindow()
                             return false
                         }
@@ -168,7 +211,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
         if allSelfTabArr.count == currentBrowserTabsArr.count{
             operaWindowsInfo = browserStruct
         }else if currentBrowserTabsArr.count > allSelfTabArr.count{// new tab created
-            if (getAllBrowsersTabCount() + 1) > SettingsManagerObject.maxTabLimitCount{
+            if decision == .rejectNew{
                 
                 let keys = browserStruct.keys
                 for key in keys{
@@ -181,11 +224,11 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 for i in 0..<browserTabsArr.count{
                                     if i < selfTabArr.count{
                                         if browserTabsArr[i] != selfTabArr[i]{
-                                            closeTabAt(index: i, browser: currentBrowser)
+                                            closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                             break;
                                         }
                                     }else{
-                                        closeTabAt(index: i, browser: currentBrowser)
+                                        closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                         break;
                                     }
                                 }
@@ -194,7 +237,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 
                             }
                         }else{//new window created
-                            closeTabAt(index: 0, browser: currentBrowser)
+                            closeTabAt(index: 0, browser: currentBrowser, windowID: key)
                             showAlertMaxTabLimitWindow()
                             return false
                         }
@@ -227,7 +270,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
         if allSelfTabArr.count == currentBrowserTabsArr.count{
             operaGxWindowsInfo = browserStruct
         }else if currentBrowserTabsArr.count > allSelfTabArr.count{// new tab created
-            if (getAllBrowsersTabCount() + 1) > SettingsManagerObject.maxTabLimitCount{
+            if decision == .rejectNew{
                 
                 let keys = browserStruct.keys
                 for key in keys{
@@ -240,11 +283,11 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 for i in 0..<browserTabsArr.count{
                                     if i < selfTabArr.count{
                                         if browserTabsArr[i] != selfTabArr[i]{
-                                            closeTabAt(index: i, browser: currentBrowser)
+                                            closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                             break;
                                         }
                                     }else{
-                                        closeTabAt(index: i, browser: currentBrowser)
+                                        closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                         break;
                                     }
                                 }
@@ -253,7 +296,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 
                             }
                         }else{//new window created
-                            closeTabAt(index: 0, browser: currentBrowser)
+                            closeTabAt(index: 0, browser: currentBrowser, windowID: key)
                             showAlertMaxTabLimitWindow()
                             return false
                         }
@@ -286,7 +329,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
         if allSelfTabArr.count == currentBrowserTabsArr.count{
             vivaldiWindowsInfo = browserStruct
         }else if currentBrowserTabsArr.count > allSelfTabArr.count{// new tab created
-            if (getAllBrowsersTabCount() + 1) > SettingsManagerObject.maxTabLimitCount{
+            if decision == .rejectNew{
                 
                 let keys = browserStruct.keys
                 for key in keys{
@@ -299,11 +342,11 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 for i in 0..<browserTabsArr.count{
                                     if i < selfTabArr.count{
                                         if browserTabsArr[i] != selfTabArr[i]{
-                                            closeTabAt(index: i, browser: currentBrowser)
+                                            closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                             break;
                                         }
                                     }else{
-                                        closeTabAt(index: i, browser: currentBrowser)
+                                        closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                         break;
                                     }
                                 }
@@ -312,7 +355,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 
                             }
                         }else{//new window created
-                            closeTabAt(index: 0, browser: currentBrowser)
+                            closeTabAt(index: 0, browser: currentBrowser, windowID: key)
                             showAlertMaxTabLimitWindow()
                             return false
                         }
@@ -345,7 +388,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
         if allSelfTabArr.count == currentBrowserTabsArr.count{
             braveBrowserWindowsInfo = browserStruct
         }else if currentBrowserTabsArr.count > allSelfTabArr.count{// new tab created
-            if (getAllBrowsersTabCount() + 1) > SettingsManagerObject.maxTabLimitCount{
+            if decision == .rejectNew{
                 
                 let keys = browserStruct.keys
                 for key in keys{
@@ -358,11 +401,11 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 for i in 0..<browserTabsArr.count{
                                     if i < selfTabArr.count{
                                         if browserTabsArr[i] != selfTabArr[i]{
-                                            closeTabAt(index: i, browser: currentBrowser)
+                                            closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                             break;
                                         }
                                     }else{
-                                        closeTabAt(index: i, browser: currentBrowser)
+                                        closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                         break;
                                     }
                                 }
@@ -371,7 +414,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 
                             }
                         }else{//new window created
-                            closeTabAt(index: 0, browser: currentBrowser)
+                            closeTabAt(index: 0, browser: currentBrowser, windowID: key)
                             showAlertMaxTabLimitWindow()
                             return false
                         }
@@ -404,7 +447,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
         if allSelfTabArr.count == currentBrowserTabsArr.count{
             sidekickWindowsInfo = browserStruct
         }else if currentBrowserTabsArr.count > allSelfTabArr.count{// new tab created
-            if (getAllBrowsersTabCount() + 1) > SettingsManagerObject.maxTabLimitCount{
+            if decision == .rejectNew{
                 
                 let keys = browserStruct.keys
                 for key in keys{
@@ -417,11 +460,11 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 for i in 0..<browserTabsArr.count{
                                     if i < selfTabArr.count{
                                         if browserTabsArr[i] != selfTabArr[i]{
-                                            closeTabAt(index: i, browser: currentBrowser)
+                                            closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                             break;
                                         }
                                     }else{
-                                        closeTabAt(index: i, browser: currentBrowser)
+                                        closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                         break;
                                     }
                                 }
@@ -430,7 +473,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 
                             }
                         }else{//new window created
-                            closeTabAt(index: 0, browser: currentBrowser)
+                            closeTabAt(index: 0, browser: currentBrowser, windowID: key)
                             showAlertMaxTabLimitWindow()
                             return false
                         }
@@ -463,7 +506,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
         if allSelfTabArr.count == currentBrowserTabsArr.count{
             microsoftEdgeWindowsInfo = browserStruct
         }else if currentBrowserTabsArr.count > allSelfTabArr.count{// new tab created
-            if (getAllBrowsersTabCount() + 1) > SettingsManagerObject.maxTabLimitCount{
+            if decision == .rejectNew{
                 
                 let keys = browserStruct.keys
                 for key in keys{
@@ -476,11 +519,11 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 for i in 0..<browserTabsArr.count{
                                     if i < selfTabArr.count{
                                         if browserTabsArr[i] != selfTabArr[i]{
-                                            closeTabAt(index: i, browser: currentBrowser)
+                                            closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                             break;
                                         }
                                     }else{
-                                        closeTabAt(index: i, browser: currentBrowser)
+                                        closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                         break;
                                     }
                                 }
@@ -489,7 +532,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 
                             }
                         }else{//new window created
-                            closeTabAt(index: 0, browser: currentBrowser)
+                            closeTabAt(index: 0, browser: currentBrowser, windowID: key)
                             showAlertMaxTabLimitWindow()
                             return false
                         }
@@ -509,7 +552,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
         if allSelfTabArr.count == currentBrowserTabsArr.count{
             arcBrowserTabsInfo = currentBrowserTabsArr
         }else if currentBrowserTabsArr.count > allSelfTabArr.count{// new tab created
-            if (getAllBrowsersTabCount() + 1) > SettingsManagerObject.maxTabLimitCount{
+            if decision == .rejectNew{
                 
                 for i in 0..<currentBrowserTabsArr.count{
                     if i < allSelfTabArr.count{
@@ -553,7 +596,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
         if allSelfTabArr.count == currentBrowserTabsArr.count{
             cometWindowsInfo = browserStruct
         }else if currentBrowserTabsArr.count > allSelfTabArr.count{// new tab created
-            if (getAllBrowsersTabCount() + 1) > SettingsManagerObject.maxTabLimitCount{
+            if decision == .rejectNew{
                 
                 let keys = browserStruct.keys
                 for key in keys{
@@ -566,11 +609,11 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 for i in 0..<browserTabsArr.count{
                                     if i < selfTabArr.count{
                                         if browserTabsArr[i] != selfTabArr[i]{
-                                            closeTabAt(index: i, browser: currentBrowser)
+                                            closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                             break;
                                         }
                                     }else{
-                                        closeTabAt(index: i, browser: currentBrowser)
+                                        closeTabAt(index: i, browser: currentBrowser, windowID: key)
                                         break;
                                     }
                                 }
@@ -579,7 +622,7 @@ func checkIsCurrentTabAllowed(currentBrowser:BROWSER)->Bool{
                                 
                             }
                         }else{//new window created
-                            closeTabAt(index: 0, browser: currentBrowser)
+                            closeTabAt(index: 0, browser: currentBrowser, windowID: key)
                             showAlertMaxTabLimitWindow()
                             return false
                         }

@@ -39,10 +39,10 @@ class askDetailsNotBlockingVc: NSViewController {
         if isExplainingPermissionsWindowShowingFromPomodoro{
             if SettingsManagerObject.isGeekModeEnabled{
                 appdelegate?.menuShowPomodoroModeView()
-                pomodoroVcObj?.textViewAchieve.string = pomodoroVcObj?.intentionToShowAgain ?? ""
+                pomodoroVcObj?.goalText = pomodoroVcObj?.intentionToShowAgain ?? ""
             }else{
                 appdelegate?.menuShowSimplePomodoroModeView()
-                simplePomodoroVcObj?.textViewAchieve.string = simplePomodoroVcObj?.intentionToShowAgain ?? ""
+                simplePomodoroVcObj?.goalText = simplePomodoroVcObj?.intentionToShowAgain ?? ""
             }
         }else if isExplainingPermissionsWindowShowingFromBlockingSchedule{
             if mainWindowControllerObj?.window?.isVisible ?? false{

@@ -132,7 +132,8 @@ class focusEndWarningVc: NSViewController {
     }
     
     @IBAction func btnExtendClicked(_ sender: Any) {
-        let totalMinutes = Int(popUpBtn.title) ?? 0
+        let totalMinutes = FocusSessionExtension.cutoffLimitedMinutes(Int(popUpBtn.title) ?? 0, from: endFocusModeTime)
+        guard totalMinutes > 0 else { return }
         if currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
             if getHabitsVcObject().postponeTimer != nil {
                 if getHabitsVcObject().postponeTimer!.isValid{
@@ -158,6 +159,8 @@ class focusEndWarningVc: NSViewController {
                         alertExtendPostpone!.addButton(withTitle: buttonDoNotExtendPostponeText)
                         
                         alertExtendPostpone!.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                            let totalMinutes = FocusSessionExtension.cutoffLimitedMinutes(totalMinutes, from: endFocusModeTime)
+                            guard totalMinutes > 0 else { return }
                             if modalResponse == .alertFirstButtonReturn{
                                 if currentState == ._POSTPONE_MORNING_HABIT_{
                                     if SettingsManagerObject.isEasySkipEnabled{
@@ -216,8 +219,13 @@ class focusEndWarningVc: NSViewController {
     
     func extendFocusMode(){
         allApiObject.capturePosthog(event: "extend-focus-session-from-warning", metadata: [:])
-        appdelegate?.extendFocusModeFor(minutes: Int(popUpBtn.title) ?? 0)
-        self.view.window?.close()
+        let minutesToExtend = Int(popUpBtn.title) ?? 0
+        // The AI accountability buddy asks why the extra time is needed before it is granted; the
+        // answer becomes the intention the AI judges the extension against.
+        FocusSessionExtension.askWhyMoreTimeIsNeeded(minutes: minutesToExtend, presenter: self) { [weak self] approvedMinutes in
+            appdelegate?.extendFocusModeFor(minutes: approvedMinutes)
+            self?.view.window?.close()
+        }
     }
     
     @IBAction func btnEndFocusSessionClicked(_ sender: Any) {

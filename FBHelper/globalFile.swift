@@ -182,6 +182,10 @@ let kUserdefaultsOnboardingIncompleted = "kUserdefaultsOnboardingIncompleted"
 
 var kUserdefaultsStartMainAppIfNotRunning = "kUserdefaultsStartMainAppIfNotRunning"
 
+// #2575: a Date written by the main app (scheduleMainAppRestart). When set, this helper relaunches the
+// main app once the time passes, then clears it. Must match the constant in FocusBear/allUserdefaults.swift.
+let kUserdefaultsMainAppScheduledRestartDate = "kUserdefaultsMainAppScheduledRestartDate"
+
 let appdelegate = NSApplication.shared.delegate as? AppDelegate
 
 

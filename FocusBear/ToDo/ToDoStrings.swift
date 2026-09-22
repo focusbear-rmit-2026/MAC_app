@@ -113,12 +113,25 @@ enum ToDoStringKey: String, CaseIterable {
     case outcome = "outcomeText"
     case perspiration = "perspirationText"
     case scoreFormula = "scoreFormulaText"
-    case outcomeWhoCares = "outcomeWhoCaresText"
-    case outcomeKindOfImportant = "outcomeKindOfImportantText"
-    case outcomeBigDeal = "outcomeBigDealText"
-    case outcomeHuge = "outcomeHugeText"
-    case outcomeDoItNow = "outcomeDoItNowText"
-    case outcomeMindBlowing = "outcomeMindBlowingText"
+    // Outcome is a SHIFTABILITY scale — how far this can be pushed back, not how much it matters
+    // or how urgent it is. Every rung is phrased that way ("can't shift", "a few days", "a year or
+    // more"), which is what tells the planner it may only ever resist a move and must never win an
+    // earlier slot (reports 2026-09-15_20-12-49, 2026-09-16_08-52-35).
+    //
+    // Keyed by RUNG, not by the duration a rung currently names: the first set of keys was named
+    // after its words (`outcomePostponeWeeksText`), and when the scale was re-cut those names began
+    // describing the wrong rung. Position is the part that is stable. The old keys are left in
+    // place untouched because other platforms read them (CLAUDE.md: add new keys, never repurpose).
+    case outcomeBand1 = "outcomeBand1Text"
+    case outcomeBand2 = "outcomeBand2Text"
+    case outcomeBand3 = "outcomeBand3Text"
+    case outcomeBand4 = "outcomeBand4Text"
+    case outcomeBand5 = "outcomeBand5Text"
+    case outcomePostponeYears = "outcomePostponeYearsText"
+    case outcomePostponeAYear = "outcomePostponeAYearText"
+    case outcomePostponeMonths = "outcomePostponeMonthsText"
+    case outcomePostponeWeeks = "outcomePostponeWeeksText"
+    case outcomeHardDeadline = "outcomeHardDeadlineText"
     case perspirationFiveMinutes = "perspirationFiveMinutesText"
     case perspirationFifteenMinutes = "perspirationFifteenMinutesText"
     case perspirationHalfAnHour = "perspirationHalfAnHourText"
@@ -132,6 +145,7 @@ enum ToDoStringKey: String, CaseIterable {
     case noProjectsFound = "noProjectsFoundText"
     case createProjectNamed = "createProjectNamedText"
     case assignee = "assigneeText"
+    case assigneeNotChanged = "assigneeNotChangedText"
     case unassigned = "unassignedText"
     case me = "meText"
     case description = "descriptionText"
@@ -199,6 +213,10 @@ enum ToDoStringKey: String, CaseIterable {
     case tasksWillBeCreated = "tasksWillBeCreatedText"
     case minutes = "minutesText"
     case brainDumpFailed = "brainDumpFailedText"
+    case createTasksUsingAI = "createTasksUsingAIText"
+    case brainDumpLimit = "brainDumpLimitText"
+    case brainDumpPartialSave = "brainDumpPartialSaveText"
+    case brainDumpInvalidDraft = "brainDumpInvalidDraftText"
     // Procrastinate
     case procrastinateInfo = "procrastinateInfoText"
     case url = "urlText"
@@ -229,22 +247,30 @@ enum ToDoStringKey: String, CaseIterable {
     case badgeOvercommitted = "badgeOvercommittedText"
     case badgeStartNow = "badgeStartNowText"
     case badgeSacrifice = "badgeSacrificeText"
+    case badgeUnscheduled = "badgeUnscheduledText"
+    case badgePushedBack = "badgePushedBackText"
+    case scheduledOfRequired = "scheduledOfRequiredText"
+    case projectedCompletionTooltip = "projectedCompletionTooltip"
     case nextTask = "nextTaskText"
     case nextTaskEmpty = "nextTaskEmptyText"
     case topScoreTooltip = "topScoreTooltip"
     case dueWithDate = "dueWithDateText"
     case setDueDate = "setDueDateText"
+    case setOutcome = "setOutcomeText"
+    case editOutcome = "editOutcomeText"
     case requiredHours = "requiredHoursText"
+    case requiredHoursTooltip = "requiredHoursTooltipText"
     case recommendedDaily = "recommendedDailyText"
     case recommendedDailyTooltip = "recommendedDailyTooltip"
-    case recommendedTodayTitle = "recommendedTodayTitle"
-    case recommendedTodayItem = "recommendedTodayItemText"
-    case recommendedTodayTotal = "recommendedTodayTotalText"
-    case recommendedTodayMore = "recommendedTodayMoreText"
     case membersCount = "membersCountText"
     case tasksCount = "tasksCountText"
+    case tasksToDoCount = "tasksToDoCountText"
     case memberBadge = "memberBadgeText"
     case syncedProject = "syncedProjectText"
+    case syncedSourceUnavailable = "syncedSourceUnavailableText"
+    case syncedSource = "syncedSourceText"
+    case projectTaskCompletion = "projectTaskCompletionText"
+    case projectAlphabeticalSubset = "projectAlphabeticalSubsetText"
     case projectSearchPlaceholder = "projectSearchPlaceholder"
     case projectStatusActive = "projectStatusActiveText"
     case projectStatusCompleted = "projectStatusCompletedText"
@@ -281,6 +307,39 @@ enum ToDoStringKey: String, CaseIterable {
     // Project detail
     case backToProjects = "backToProjectsText"
     case projectNotFound = "projectNotFoundText"
+    case renameProjectHint = "renameProjectHintText"
+    case attachments = "attachmentsText"
+    case addAttachment = "addAttachmentText"
+    case attachmentFailed = "attachmentFailedText"
+    case attachmentTooLarge = "attachmentTooLargeText"
+    case attachmentLimitReached = "attachmentLimitReachedText"
+    case attachmentsAfterSaving = "attachmentsAfterSavingText"
+    case attachmentsNeedTodo = "attachmentsNeedTodoText"
+    case projectIconAutomatic = "projectIconAutomaticText"
+    case projectIconChange = "projectIconChangeText"
+    case projectIconSearch = "projectIconSearchText"
+    case projectIconNoMatches = "projectIconNoMatchesText"
+    case projectIconClear = "projectIconClearText"
+    case couldNotSaveIcon = "couldNotSaveIconText"
+    case projectTags = "projectTagsText"
+    case addProjectTag = "addProjectTagText"
+    case projectTagPlaceholder = "projectTagPlaceholderText"
+    case removeProjectTag = "removeProjectTagText"
+    case addProjectTagNamed = "addProjectTagNamedText"
+    case projectTagSuggestions = "projectTagSuggestionsText"
+    case projectTagsFull = "projectTagsFullText"
+    case couldNotSaveTags = "couldNotSaveTagsText"
+    case allTags = "allTagsText"
+    case filterByTag = "filterByTagText"
+    case noProjectsWithTag = "noProjectsWithTagText"
+    case showAllTags = "showAllTagsText"
+    case tagAndSearchBothActive = "tagAndSearchBothActiveText"
+    case projectTagsApplyImmediately = "projectTagsApplyImmediatelyText"
+    case previewAttachment = "previewAttachmentText"
+    case attachmentPreviewUnavailable = "attachmentPreviewUnavailableText"
+    case attachmentSaveCopy = "attachmentSaveCopyText"
+    case attachmentPasteHint = "attachmentPasteHintText"
+    case attachmentPastePending = "attachmentPastePendingText"
     case detailTabTasks = "detailTabTasksText"
     case detailTabNotes = "detailTabNotesText"
     case membersWithCount = "membersWithCountText"
@@ -299,6 +358,8 @@ enum ToDoStringKey: String, CaseIterable {
     case columnDone = "columnDoneText"
     case noTasksInColumn = "noTasksInColumnText"
     case moveTo = "moveToText"
+    case dropMarksComplete = "dropMarksCompleteText"
+    case dropReopens = "dropReopensText"
     case inviteMember = "inviteMemberText"
     case emailPlaceholder = "emailPlaceholder"
     case invalidEmail = "invalidEmailText"
@@ -310,12 +371,18 @@ enum ToDoStringKey: String, CaseIterable {
     case invitationAcceptedStatus = "invitationAcceptedStatusText"
     case invitationPendingStatus = "invitationPendingStatusText"
     case invitationDeclinedStatus = "invitationDeclinedStatusText"
+    case invitationFailedStatus = "invitationFailedStatusText"
     case you = "youText"
     case projectOwner = "projectOwnerText"
     case unknownUser = "unknownUserText"
     case removeMember = "removeMemberText"
     case invitationSent = "invitationSentText"
     case couldNotSendInvitation = "couldNotSendInvitationText"
+    case resendInvitation = "resendInvitationText"
+    case confirmResendInvitation = "confirmResendInvitationText"
+    case invitationResent = "invitationResentText"
+    case couldNotResendInvitation = "couldNotResendInvitationText"
+    case invitationJustSent = "invitationJustSentText"
     case memberRemoved = "memberRemovedText"
     case couldNotRemoveMember = "couldNotRemoveMemberText"
     case memberRoleUpdated = "memberRoleUpdatedText"
@@ -337,15 +404,36 @@ enum ToDoStringKey: String, CaseIterable {
     case projectDeleted = "projectDeletedText"
     case couldNotDeleteProject = "couldNotDeleteProjectText"
     case markCompleteProject = "markCompleteProjectText"
-    case markCompleteConfirm = "markCompleteConfirmText"
     case archiveProject = "archiveProjectText"
-    case archiveConfirm = "archiveConfirmText"
     case restoreProject = "restoreProjectText"
-    case restoreConfirm = "restoreConfirmText"
+    case projectMarkedComplete = "projectMarkedCompleteText"
+    case projectArchived = "projectArchivedText"
+    case projectRestored = "projectRestoredText"
+    case showAllProjects = "showAllProjectsText"
+    case showFewerProjects = "showFewerProjectsText"
+    case mergeProject = "mergeProjectText"
+    case mergeProjectTitle = "mergeProjectTitleText"
+    case mergeProjectExplanation = "mergeProjectExplanationText"
+    case mergeProjectSearch = "mergeProjectSearchText"
+    case mergeProjectConfirm = "mergeProjectConfirmText"
+    case mergeProjectRunning = "mergeProjectRunningText"
+    case mergeProjectNoDestinations = "mergeProjectNoDestinationsText"
+    case projectMergeMoved = "projectMergeMovedText"
+    case projectMergeSkipped = "projectMergeSkippedText"
+    case projectMergeFailed = "projectMergeFailedText"
+    case projectMergeArchived = "projectMergeArchivedText"
+    case couldNotMergeProject = "couldNotMergeProjectText"
+    case couldNotLoadProjects = "couldNotLoadProjectsText"
+    case projectCompletedBanner = "projectCompletedBannerText"
+    case projectArchivedBanner = "projectArchivedBannerText"
     case nameTooLong = "nameTooLongText"
     case nameOnlyDigits = "nameOnlyDigitsText"
     case createNote = "createNoteText"
     case untitledNote = "untitledNoteText"
+    case renameNoteHint = "renameNoteHintText"
+    case noteRenamed = "noteRenamedText"
+    case couldNotRenameNote = "couldNotRenameNoteText"
+    case noteBodyWebOnly = "noteBodyWebOnlyText"
     case noNotesYet = "noNotesYetText"
     case noNotesDescription = "noNotesDescriptionText"
     case lastEdited = "lastEditedText"
@@ -372,6 +460,8 @@ struct ToDoStrings {
     static let projectsToken = "<PROJECTS>"
     static let phraseToken = "<PHRASE>"
     static let daysToken = "<DAYS>"
+    static let scheduledToken = "<SCHEDULED>"
+    static let totalToken = "<TOTAL>"
     /// Multi-value strings (phrases, weekday names) are stored `|`-separated.
     static let listSeparator = "|"
 
@@ -401,7 +491,7 @@ struct ToDoStrings {
         .subtasks: "Subtasks", .dueShort: "Due", .createdShort: "Created", .topShort: "TOP", .created: "Created <DATE>",
         .today: "Today", .tomorrow: "Tomorrow", .yesterday: "Yesterday", .noDueDate: "No due date",
         .editDueDate: "Edit due date", .dueDatePlaceholder: "e.g. 2d, 30th, fri", .unrecognisedDate: "Unrecognised date",
-        .dueDateGrammarHelp: "Type a date and press Return: 2d, 3w, 1m, fri, next fri, tomorrow, 28th, 28 sep, 25/9, 2026-09-25, in 2 days",
+        .dueDateGrammarHelp: "Type a date and press Return: 2d, 3w, 1m (months), 2y (years), -1d for yesterday, fri, next fri, tomorrow, 28th, 28 sep, 25/9, 2026-09-25, in 2 days",
         .nextWeek: "Next week", .clear: "Clear",
         .createTaskTitle: "New task", .editTaskTitle: "Edit task", .addATask: "Add a task",
         .titleIsNeeded: "Write a title to save the task", .unsavedChanges: "Your changes will be lost. Discard them?",
@@ -410,14 +500,19 @@ struct ToDoStrings {
         .inTwoWeeks: "In Two Weeks", .inAMonth: "In a Month", .inAFewMonths: "In a Few Months", .inAYear: "In a Year",
         .neverDoThis: "Hah I'll never actually do this", .topScore: "TOP score", .timelineDueDate: "Timeline (due date)",
         .outcome: "Outcome", .perspiration: "Perspiration", .scoreFormula: "Score → T × O ÷ P = <SCORE>",
-        .outcomeWhoCares: "Who cares", .outcomeKindOfImportant: "Kind of important", .outcomeBigDeal: "Big deal",
-        .outcomeHuge: "Huge", .outcomeDoItNow: "Do it now", .outcomeMindBlowing: "Mind blowing",
+        .outcomeBand1: "Can postpone a year or more", .outcomeBand2: "Can postpone a few months",
+        .outcomeBand3: "Can postpone a few weeks", .outcomeBand4: "Can postpone a few days",
+        .outcomeBand5: "Hard deadline — can't shift",
+        .outcomePostponeYears: "Can postpone for years", .outcomePostponeAYear: "Can postpone for a year",
+        .outcomePostponeMonths: "Can postpone a few months", .outcomePostponeWeeks: "Can postpone a few weeks",
+        .outcomeHardDeadline: "Hard deadline — can't move",
         .perspirationFiveMinutes: "5 minutes job", .perspirationFifteenMinutes: "15 minutes work",
         .perspirationHalfAnHour: "Half an hour", .perspirationAnHour: "An hour", .perspirationHalfADay: "Half a day",
         .perspirationADay: "A day", .perspirationAWeek: "A week",
         .projects: "Projects", .searchProjectsPlaceholder: "Search projects...", .noExistingProjects: "No existing projects",
         .noProjectsFound: "No projects found", .createProjectNamed: "Create “<PROJECT>”",
         .assignee: "Assignee", .unassigned: "Unassigned", .me: "Me", .description: "Description",
+        .assigneeNotChanged: "Only the person who created this task can change who it’s assigned to.",
         .createSubtasks: "Create subtasks", .addASubtask: "Add a subtask…", .generateSubtasksViaAI: "Generate Subtasks via AI",
         .addSubtask: "Add Subtask", .quadrant: "Eisenhower quadrant", .quadrantDo: "Do", .quadrantDecide: "Decide",
         .quadrantDelegate: "Delegate", .quadrantDelete: "Delete", .quadrantUrgentImportant: "Urgent and Important",
@@ -446,6 +541,10 @@ struct ToDoStrings {
         .vagueInputPrompt: "Your input seems a bit brief. Adding more details will help generate better tasks. Try describing what you want to accomplish in more detail.",
         .convertAnyway: "Convert anyway", .converting: "Converting…", .createTasks: "Create tasks",
         .tasksWillBeCreated: "<COUNT> tasks will be created", .minutes: "minutes",
+        .createTasksUsingAI: "Create tasks using AI",
+        .brainDumpLimit: "Use up to <COUNT> characters for task suggestions. Your original note is unchanged.",
+        .brainDumpPartialSave: "Confirmed <COUNT> tasks saved. The remaining tasks are still here. Review them and try again.",
+        .brainDumpInvalidDraft: "Give each task a title and a valid estimate greater than zero minutes, or remove it before saving.",
         .brainDumpFailed: "Sorry, we were unable to convert your brain dump. Please try again.",
         .procrastinateInfo: "Save distracting links for later so you can get back to your task now.",
         .url: "URL", .note: "Note", .invalidUrl: "Enter a valid URL", .duplicateUrl: "This URL is already saved",
@@ -455,20 +554,26 @@ struct ToDoStrings {
         .focusEmptyTitle: "Nothing needs attention this week",
         .focusEmptyDescription: "You're clear for now. Browse all projects to plan ahead or create something new.",
         .askForExtensionSection: "Ask for an extension", .startNowSection: "Still achievable - start now",
-        .backBurnerSection: "Backburner - plenty of time", .overcommittedTitle: "Overcommitted",
-        .overcommittedDescription: "You don't have enough capacity for everything. Ask for an extension on: <PROJECTS>.",
-        .overcommittedDescriptionFallback: "You don't have enough capacity for everything. Consider asking for an extension on your highest-priority assignments.",
+        .backBurnerSection: "Backburner - plenty of time", .overcommittedTitle: "This plan is overloaded",
+        .overcommittedDescription: "There's more work here than the time available. An extension on these would ease the squeeze: <PROJECTS>.",
+        .overcommittedDescriptionFallback: "There's more work here than the time available. An extension on your highest-priority projects would ease the squeeze.",
         .overcommittedAndMore: "and <COUNT> more", .bucketOnTrack: "On track", .bucketAtRisk: "At risk",
-        .bucketCritical: "Critical", .bucketNoDeadline: "No deadline", .badgeOvercommitted: "Overcommitted",
-        .badgeStartNow: "Start now", .badgeSacrifice: "Consider dropping", .nextTask: "Next",
+        .bucketCritical: "Critical", .bucketNoDeadline: "No deadline", .badgeOvercommitted: "Overloaded",
+        .badgeStartNow: "Start now", .badgeSacrifice: "Consider dropping", .badgeUnscheduled: "Not scheduled",
+        .badgePushedBack: "Pushed back", .scheduledOfRequired: "Scheduled <SCHEDULED> of <TOTAL>",
+        .projectedCompletionTooltip: "Projected to finish <DATE> based on your Day Plan", .nextTask: "Next",
         .nextTaskEmpty: "No effort estimate — add tasks to plan next steps",
         .topScoreTooltip: "TOP ranks which task to do next. Higher means more urgent and valuable relative to effort.",
-        .dueWithDate: "Due: <DATE>", .setDueDate: "Set due date", .requiredHours: "<DURATION> project effort",
+        .dueWithDate: "Due: <DATE>", .setDueDate: "Set due date", .requiredHours: "<DURATION> left",
+        .setOutcome: "Set outcome", .editOutcome: "Edit outcome",
+        .requiredHoursTooltip: "Time still to do on this project. Finished tasks aren't counted.",
         .recommendedDaily: "<DURATION>/day to finish",
         .recommendedDailyTooltip: "Work about <DURATION> each day to finish by the due date",
-        .recommendedTodayTitle: "Today's pace to stay on track", .recommendedTodayItem: "Spend ~<DURATION> on <PROJECT>",
-        .recommendedTodayTotal: "About <DURATION> total today", .recommendedTodayMore: "+<COUNT> more in Start now",
-        .membersCount: "<COUNT> members", .tasksCount: "<COUNT> tasks", .memberBadge: "Member", .syncedProject: "Synced project",
+        .membersCount: "<COUNT> members", .tasksCount: "<COUNT> tasks", .tasksToDoCount: "<COUNT> to do", .memberBadge: "Member", .syncedProject: "Synced project",
+        .syncedSourceUnavailable: "Synced project · source unavailable",
+        .syncedSource: "Synced from <SOURCE>",
+        .projectTaskCompletion: "<PERCENT>% complete (<DONE>/<TOTAL> tasks)",
+        .projectAlphabeticalSubset: "Loaded projects are shown alphabetically. Load more to include the rest.",
         .projectSearchPlaceholder: "Search projects…", .projectStatusActive: "Active",
         .projectStatusCompleted: "Completed", .projectStatusArchived: "Archived", .noProjectsYet: "No projects yet",
         .createFirstProject: "Create your first project to get started", .noMatchingProjects: "No matching projects",
@@ -487,6 +592,38 @@ struct ToDoStrings {
         .weekdaysShort: "Mon|Tue|Wed|Thu|Fri|Sat|Sun",
         .backToProjects: "Back to Projects",
         .projectNotFound: "Project not found",
+        .renameProjectHint: "Click to rename this project",
+        .attachments: "Attachments", .addAttachment: "Add file…",
+        .attachmentFailed: "Couldn't attach that file. Try again.",
+        .attachmentTooLarge: "Files must be 20 MB or smaller.",
+        .attachmentLimitReached: "A task can hold 20 attachments.",
+        .attachmentsAfterSaving: "Save the task first, then you can attach files to it.",
+        .attachmentsNeedTodo: "Files are stored on this task's to-do. It hasn't synced to your to-do list yet, so nothing can be attached — reopen these details once it has.",
+        .projectIconAutomatic: "Focus Bear picks this icon automatically",
+        .projectIconChange: "Change icon",
+        .projectIconSearch: "Search emoji, or paste one",
+        .projectIconNoMatches: "No emoji match that",
+        .projectIconClear: "Use the automatic icon",
+        .couldNotSaveIcon: "Could not save the icon",
+        .projectTags: "Tags",
+        .addProjectTag: "Add tag",
+        .projectTagPlaceholder: "e.g. phd",
+        .removeProjectTag: "Remove \"<TITLE>\"",
+        .addProjectTagNamed: "Add \"<TITLE>\"",
+        .projectTagSuggestions: "Tags you already use",
+        .projectTagsFull: "A project can have up to 25 tags",
+        .couldNotSaveTags: "Could not save the tags",
+        .allTags: "All tags",
+        .filterByTag: "Filter by tag",
+        .noProjectsWithTag: "No projects tagged \"<TITLE>\"",
+        .showAllTags: "Show all tags",
+        .tagAndSearchBothActive: "A search is also active",
+        .projectTagsApplyImmediately: "Tag changes save straight away",
+        .previewAttachment: "Preview this file",
+        .attachmentPreviewUnavailable: "Focus Bear can't show this kind of file. Save a copy to open it yourself.",
+        .attachmentSaveCopy: "Save a copy…",
+        .attachmentPasteHint: "Or copy an image and press Command-V to attach it.",
+        .attachmentPastePending: "Image pasted — it will be attached once this task syncs.",
         .detailTabTasks: "Tasks",
         .detailTabNotes: "Notes",
         .membersWithCount: "Members (<COUNT>)",
@@ -505,6 +642,7 @@ struct ToDoStrings {
         .columnDone: "Done",
         .noTasksInColumn: "No tasks",
         .moveTo: "Move to",
+        .dropMarksComplete: "Completes this task", .dropReopens: "Reopens this task",
         .inviteMember: "Invite Member",
         .emailPlaceholder: "Enter email address",
         .invalidEmail: "Please enter a valid email address.",
@@ -516,12 +654,18 @@ struct ToDoStrings {
         .invitationAcceptedStatus: "Accepted",
         .invitationPendingStatus: "Pending",
         .invitationDeclinedStatus: "Declined",
+        .invitationFailedStatus: "Not delivered",
         .you: "You",
         .projectOwner: "Project Owner",
         .unknownUser: "Unknown User",
         .removeMember: "Remove member",
         .invitationSent: "Invitation sent successfully",
         .couldNotSendInvitation: "Could not send invitation",
+        .resendInvitation: "Resend invitation",
+        .confirmResendInvitation: "Click again to resend",
+        .invitationResent: "Invitation sent again",
+        .couldNotResendInvitation: "Could not resend invitation",
+        .invitationJustSent: "Just sent — try again in a minute",
         .memberRemoved: "Member removed successfully",
         .couldNotRemoveMember: "Could not remove member",
         .memberRoleUpdated: "Member role updated successfully",
@@ -542,16 +686,37 @@ struct ToDoStrings {
         .deleteProjectConfirm: "Are you sure you want to delete this project? This action cannot be undone.",
         .projectDeleted: "Project deleted successfully",
         .couldNotDeleteProject: "Could not delete project",
+        .showAllProjects: "Show all <COUNT>",
+        .showFewerProjects: "Show fewer",
+        .mergeProject: "Merge into another project…",
+        .mergeProjectTitle: "Merge <PROJECT> into…",
+        .mergeProjectExplanation: "Every task moves to the project you pick, and <PROJECT> is archived once it's empty. Tasks synced from another tool stay where they are.",
+        .mergeProjectSearch: "Search projects...",
+        .mergeProjectConfirm: "Merge",
+        .mergeProjectRunning: "Moving tasks…",
+        .mergeProjectNoDestinations: "No other active project to merge into.",
+        .projectMergeMoved: "Moved <COUNT> tasks into <PROJECT>",
+        .projectMergeSkipped: "<COUNT> synced tasks stayed with their own tool",
+        .projectMergeFailed: "<COUNT> tasks could not be moved",
+        .projectMergeArchived: "<PROJECT> is empty and has been archived",
+        .couldNotMergeProject: "Could not merge the project. Nothing was changed.",
+        .couldNotLoadProjects: "Could not load your projects",
         .markCompleteProject: "Mark complete",
-        .markCompleteConfirm: "Mark this project as completed? It will be hidden from your active list and portfolio.",
         .archiveProject: "Archive project",
-        .archiveConfirm: "Archive this project? It will be hidden from your active list and portfolio.",
         .restoreProject: "Restore to active",
-        .restoreConfirm: "Restore this project to your active list?",
+        .projectMarkedComplete: "Project marked complete",
+        .projectArchived: "Project archived",
+        .projectRestored: "Project restored to active",
+        .projectCompletedBanner: "This project is complete. It's hidden from your active list and portfolio.",
+        .projectArchivedBanner: "This project is archived. It's hidden from your active list and portfolio.",
         .nameTooLong: "Project name is too long (max 80 characters)",
         .nameOnlyDigits: "Project name cannot be only numbers",
         .createNote: "Create note",
         .untitledNote: "Untitled note",
+        .renameNoteHint: "Click to rename this note",
+        .noteRenamed: "Note renamed",
+        .couldNotRenameNote: "Could not rename the note",
+        .noteBodyWebOnly: "The note body is edited on the web, where several people can type in it at once. You can rename, create and delete notes here.",
         .noNotesYet: "No notes yet",
         .noNotesDescription: "Create a shared note for everyone in this project.",
         .lastEdited: "Last edited <DATE>",
@@ -590,15 +755,56 @@ struct ToDoStrings {
     }
 
     static func load() -> ToDoStrings {
-        guard let info = configjson.value(forKey: configBlockKey) as? NSDictionary else { return ToDoStrings() }
+        let language = BundledConfigLanguage.code()
         var values: [ToDoStringKey: String] = [:]
-        for key in ToDoStringKey.allCases {
-            if let value = info.value(forKey: key.rawValue) as? String, !value.isEmpty { values[key] = value }
+        // Keep newly shipped copy translated even when downloaded config predates this screen.
+        if let bundled = bundledValues[language] {
+            for key in ToDoStringKey.allCases { if let value = bundled[key.rawValue] { values[key] = value } }
+        }
+        if let info = configjson.value(forKey: configBlockKey) as? NSDictionary {
+            for key in ToDoStringKey.allCases {
+                if let value = info.value(forKey: key.rawValue) as? String, !value.isEmpty { values[key] = value }
+            }
         }
         return ToDoStrings(values: values)
     }
 
+    private static let bundledValues: [String: [String: String]] = {
+        var result: [String: [String: String]] = [:]
+        for (language, file) in BundledConfigLanguage.all {
+            guard let url = Bundle.main.url(forResource: file, withExtension: "json"),
+                  let data = try? Data(contentsOf: url),
+                  let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+                  let values = json[configBlockKey] as? [String: String] else { continue }
+            result[language] = values
+        }
+        return result
+    }()
+
     // MARK: Derived labels
+
+    func projectSyncSource(_ project: Project) -> String {
+        let names = ["zoho": "Zoho", "clickup": "ClickUp", "trello": "Trello", "jira": "Jira",
+                     "asana": "Asana", "monday": "monday.com", "google": "Google", "microsoft": "Microsoft"]
+        guard project.isSynced, let platform = project.synced_platform, let name = names[platform] else {
+            return self[.syncedSourceUnavailable]
+        }
+        return format(.syncedSource, ["<SOURCE>": name])
+    }
+
+    /// One sentence for a finished merge: what moved, plus anything left behind. The parts are
+    /// separate strings so a translation can order them naturally.
+    func projectMergeResult(moved: Int, skipped: Int, failed: Int, target: String) -> String {
+        var parts = [format(.projectMergeMoved, [ToDoStrings.countToken: "\(moved)",
+                                                 ToDoStrings.projectToken: target])]
+        if skipped > 0 { parts.append(format(.projectMergeSkipped, [ToDoStrings.countToken: "\(skipped)"])) }
+        if failed > 0 { parts.append(format(.projectMergeFailed, [ToDoStrings.countToken: "\(failed)"])) }
+        return parts.joined(separator: ". ")
+    }
+
+    func projectMergeArchived(_ name: String) -> String {
+        format(.projectMergeArchived, [ToDoStrings.projectToken: name])
+    }
 
     func sectionTitles() -> [ToDoStatus: String] {
         [.inProgress: self[.sectionDoing], .notStarted: self[.sectionToDo], .completed: self[.sectionDone]]
@@ -612,11 +818,27 @@ struct ToDoStrings {
         }
     }
 
-    /// Web `getOutcomeSteps`: the last step whose minimum is ≤ the value.
+    /// The ONE definition of the outcome scale, for tasks and for projects alike — every picker and
+    /// every chip in the app reads this, so the two screens cannot describe the same number
+    /// differently again (report 2026-09-15_20-12-49).
+    ///
+    /// The bands are the wire `/10` values behind each displayed `/5` step, and they line up exactly
+    /// with `LocalTimeForecast.postponementDays`, which plans against the same thresholds: 5/5 = no
+    /// slack, 4/5 ≈ a few days, 3/5 ≈ a few weeks, 2/5 ≈ a few months, 1/5 no finite limit. The
+    /// words and the day allowances are re-cut together, on purpose: if the planner does something
+    /// to a 5 that "hard deadline — can't shift" does not describe, the planner is wrong.
     func outcomeLabel(_ value: Int) -> String {
-        let steps: [(Int, ToDoStringKey)] = [(1, .outcomeWhoCares), (2, .outcomeKindOfImportant), (4, .outcomeBigDeal),
-                                             (6, .outcomeHuge), (8, .outcomeDoItNow), (9, .outcomeMindBlowing)]
+        let steps: [(Int, ToDoStringKey)] = [(1, .outcomeBand1), (4, .outcomeBand2),
+                                             (6, .outcomeBand3), (8, .outcomeBand4),
+                                             (10, .outcomeBand5)]
         return stepLabel(steps, value)
+    }
+
+    /// One picker row: the displayed `/5` step and the word for it, e.g. `4 / 5 · Can postpone a few
+    /// weeks`. Every outcome picker composes its rows through here so they read alike.
+    func outcomeOptionLabel(displayValue: Int) -> String {
+        let step = min(ToDoScoring.outcomeSteps, max(1, displayValue))
+        return "\(step) / \(ToDoScoring.outcomeSteps) · \(outcomeLabel(step * ToDoScoring.outcomeWireFactor))"
     }
 
     /// Web `getPerspirationSteps`.
@@ -665,6 +887,9 @@ struct ToDoStrings {
         case .overcommitted: return self[.badgeOvercommitted]
         case .startNow: return self[.badgeStartNow]
         case .sacrifice: return self[.badgeSacrifice]
+        case .unscheduled: return self[.badgeUnscheduled]
+        case .pushedBack: return self[.badgePushedBack]
+        case .unknown: return ""
         }
     }
 
@@ -689,6 +914,7 @@ struct ToDoStrings {
         case .accepted: return self[.invitationAcceptedStatus]
         case .pending: return self[.invitationPendingStatus]
         case .declined: return self[.invitationDeclinedStatus]
+        case .failed: return self[.invitationFailedStatus]
         }
     }
 

@@ -27,6 +27,10 @@ class focusButtonService: NSObject {
     // MARK: - Properties
     
     private var serialPort: ORSSerialPort?
+    /// ORSSerialPort's write can block in the kernel when a USB serial device is wedged.
+    /// Keep that blocking operation away from AppKit's main thread so a Focus Button failure
+    /// cannot hang the whole app (the device can be unplugged while a command is in flight).
+    private let serialWriteQueue = DispatchQueue(label: "com.focusbear.focus-button.serial-write", qos: .utility)
     var isRunning = false
     private var rxThread: Thread?
     private var rxBuffer = ""
@@ -851,7 +855,11 @@ class focusButtonService: NSObject {
             return
         }
         guard let port = serialPort, port.isOpen, !isConnecting else { return }
-        port.send((line + "\n").data(using: .utf8) ?? Data())
+        let data = (line + "\n").data(using: .utf8) ?? Data()
+        serialWriteQueue.async { [weak port] in
+            guard let port, port.isOpen else { return }
+            port.send(data)
+        }
     }
 
     private func sendCmd(_ cmd: String) {
@@ -883,8 +891,14 @@ class focusButtonService: NSObject {
         let command = cmd + "\n"
         log("FocusButton: SendCmd >> \(cmd)")
         
-        // Send data (this doesn't throw, but may fail silently)
-        port.send(command.data(using: .utf8) ?? Data())
+        // ORSSerialPort can block while the USB device is wedged. Never perform this write on
+        // the main thread: the response timer and UI must remain responsive while the queue
+        // drains or the device is disconnected.
+        let data = command.data(using: .utf8) ?? Data()
+        serialWriteQueue.async { [weak port] in
+            guard let port, port.isOpen else { return }
+            port.send(data)
+        }
     }
     
     private func responseCheckTick() {
@@ -1623,7 +1637,6 @@ final class FocusButtonFirmwareUpdater {
         }
     }
 }
-
 
 
 

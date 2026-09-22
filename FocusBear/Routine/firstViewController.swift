@@ -286,6 +286,9 @@ class firstViewController: NSViewController {
                 lblSubTitle.isHidden = true
                 preloadVisualizeInstructionsOnNextTurn()
             }else if currentState == ._MICRO_BREAK_{
+                // The break start screen moved to breakStartVc (SwiftUI), which habitsVc shows
+                // instead of this one, so this branch no longer renders the break list. Kept because
+                // this controller is still shown in other states and can be reached mid-break.
                 boxSegmentControlOfficeMode.isHidden = false
                 btnSelectHabitsToDo.isHidden = true
                 btnEditHabits.isHidden = true
@@ -569,95 +572,10 @@ class firstViewController: NSViewController {
         }
     }
     
-    func showConfirmRoutineDurationViewIfNeeded(){
-        if confirmRoutineDurationVcObj != nil{
-            if confirmRoutineDurationVcObj?.presentingViewController == self{
-                return;
-            }
-        }
-        
-        var shouldShowAlert = false
-        var dateUserdefaults = ""
-        if currentState == ._MORNING_HABIT_{
-            dateUserdefaults = kUserdefaultsBeginMorningHabitClickedDate
-        }else if currentState == ._EVENING_HABIT_{
-            dateUserdefaults = kUserdefaultsBeginEveningHabitClickedDate
-        }else{
-            return;
-        }
-        if let beginHabitClickedDate = UserDefaults.standard.object(forKey: dateUserdefaults) as? Date{
-            if Calendar.current.isDateInToday(beginHabitClickedDate){
-                shouldShowAlert = false
-            }else{
-                shouldShowAlert = true
-            }
-        }else{
-            shouldShowAlert = true
-        }
-        
-        
-        if shouldShowAlert{
-            var totalSecondsAllHabits = 0
-            if currentState == ._MORNING_HABIT_{
-                for i in 0..<arrFilteredMorningHabits.count{
-                    if arrFilteredMorningHabits[i].useTimer{
-                        totalSecondsAllHabits += arrFilteredMorningHabits[i].durationSeconds
-                    }else{
-                        if let arrDuartions = nonTimerBasedHabitsObject.arrNonTimerBasedHabitsDurations[arrFilteredMorningHabits[i].id]{
-                            let sum = arrDuartions.reduce(0, +)
-                            let averageValue =  sum / arrDuartions.count
-                            totalSecondsAllHabits += averageValue
-                        }
-                    }
-                }
-            }else if currentState == ._EVENING_HABIT_{
-                for i in 0..<arrFilteredEveningHabits.count{
-                    if isHighPrioritySequenceGoing{
-                        if arrFilteredEveningHabits[i].isPriorityHigh{
-                            if let cutOffTime = arrFilteredEveningHabits[i].cutOffTime{
-                                let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
-                                let currentDate = Date()
-                                if currentDate > cutOffDate{
-                                    addLog(text: " func showConfirmRoutineDurationViewIfNeeded")// remove this
-                                    addLog(text: "evening habit skipped:- this next habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[i].name)  \(arrFilteredEveningHabits[i].id)") // remove this
-                                    continue;
-                                }
-                            }
-                            if arrFilteredEveningHabits[i].useTimer{
-                                totalSecondsAllHabits += arrFilteredEveningHabits[i].durationSeconds
-                            }else{
-                                if let arrDuartions = nonTimerBasedHabitsObject.arrNonTimerBasedHabitsDurations[arrFilteredEveningHabits[i].id]{
-                                    let sum = arrDuartions.reduce(0, +)
-                                    let averageValue =  sum / arrDuartions.count
-                                    totalSecondsAllHabits += averageValue
-                                }
-                            }
-                        }
-                    }else{
-                        if arrFilteredEveningHabits[i].useTimer{
-                            totalSecondsAllHabits += arrFilteredEveningHabits[i].durationSeconds
-                        }else{
-                            if let arrDuartions = nonTimerBasedHabitsObject.arrNonTimerBasedHabitsDurations[arrFilteredEveningHabits[i].id]{
-                                let sum = arrDuartions.reduce(0, +)
-                                let averageValue =  sum / arrDuartions.count
-                                totalSecondsAllHabits += averageValue
-                            }
-                        }
-                    }
-                }
-            }
-            if totalSecondsAllHabits != 0{
-                if self.view.window != nil{
-                    addLog(text: "confirm Routine Duration view shown")
-                    allApiObject.capturePosthog(event: "confirm-routine-duration-shown", metadata: [:])
-                    self.presentAsSheet(getConfirmRoutineDurationVcObject())
-                    getConfirmRoutineDurationVcObject().resetData(totalSeconds: totalSecondsAllHabits)
-                }
-            }
-        }
-    }
-    
-    
+    // Kept as a no-op for the existing onboarding/upgrade completion callbacks.
+    // Routine duration is now managed in the Day Plan, without a startup interruption.
+    func showConfirmRoutineDurationViewIfNeeded() {}
+
     func startMicroBreakTimer(duration:Int) {
         if isTimerGoingOn{
             lbltimer.isHidden = false
@@ -847,11 +765,14 @@ class firstViewController: NSViewController {
             if currentState == ._MORNING_HABIT_{
                 sortMorningHabitsBySelectedFirst()
                 currentHabitIndex = -1
-                if shouldIgnoreVisualizeInstructions{
+                // Once per routine per day: the in-memory flag alone let a restart show the
+                // motivation prompt again (report 2026-09-13_20-30-50).
+                if shouldIgnoreVisualizeInstructions || !RoutineVisualizePrompt.shouldShow(for: .morning) {
                     getHabitsVcObject().startFirstMorningHabit()
                 }else{
                     getHabitsVcObject().showVisualizeInstructionsVc()
                     visualizeInstructionsVcObj?.startTimer()
+                    RoutineVisualizePrompt.markShown(for: .morning)
                     allApiObject.capturePosthog(event: "visualize-morning-routine", metadata: ["routine-type":"morning_routine"])
                     UserDefaults.standard.set(Date(), forKey: kUserdefaultsBeginMorningHabitClickedDate)
                 }
@@ -888,11 +809,12 @@ class firstViewController: NSViewController {
                     currentHabitIndex = -1
                 }
 
-                if shouldIgnoreVisualizeInstructions{
+                if shouldIgnoreVisualizeInstructions || !RoutineVisualizePrompt.shouldShow(for: .evening) {
                     getHabitsVcObject().startFirstEveningHabit()
                 }else{
                     getHabitsVcObject().showVisualizeInstructionsVc()
                     visualizeInstructionsVcObj?.startTimer()
+                    RoutineVisualizePrompt.markShown(for: .evening)
                     allApiObject.capturePosthog(event: "visualize-evening-routine", metadata: ["routine-type":"evening_routine"])
                     UserDefaults.standard.set(Date(), forKey: kUserdefaultsBeginEveningHabitClickedDate)
                 }
@@ -909,9 +831,17 @@ class firstViewController: NSViewController {
                     }
                 }
                 currentHabitIndex = -1
-                getHabitsVcObject().showVisualizeInstructionsVc()
-                visualizeInstructionsVcObj?.startTimer()
-                allApiObject.capturePosthog(event: "visualize-morning-routine", metadata: ["routine-type":"custom_routine"])
+                let routine = RoutineVisualizePrompt.Routine.custom(arrAllCustomRoutine.indices.contains(currentRoutineIndex)
+                                                                   ? arrAllCustomRoutine[currentRoutineIndex].sequenceId
+                                                                   : "\(currentRoutineIndex)")
+                if shouldIgnoreVisualizeInstructions || !RoutineVisualizePrompt.shouldShow(for: routine) {
+                    getHabitsVcObject().startFirstCustomRoutineHabit()
+                } else {
+                    getHabitsVcObject().showVisualizeInstructionsVc()
+                    visualizeInstructionsVcObj?.startTimer()
+                    RoutineVisualizePrompt.markShown(for: routine)
+                    allApiObject.capturePosthog(event: "visualize-morning-routine", metadata: ["routine-type":"custom_routine"])
+                }
             }
         }
     }

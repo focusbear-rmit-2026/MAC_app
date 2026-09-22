@@ -88,7 +88,7 @@ final class ToDoTaskDetailsStore: ObservableObject {
         }
     }
 
-    func isMine(_ comment: ToDoComment) -> Bool { comment.user_id == currentUserId && !currentUserId.isEmpty }
+    func isMine(_ comment: ToDoComment) -> Bool { (comment.user_id ?? currentUserId) == currentUserId }
 
     func hasReacted(_ emoji: String, on comment: ToDoComment) -> Bool {
         comment.reactionList.contains { $0.emoji == emoji && $0.user_id == currentUserId }
@@ -158,6 +158,26 @@ final class ToDoTaskDetailsStore: ObservableObject {
     }
 }
 
+/// When a new task's due date may be moved to the day the forecast proposes.
+///
+/// A default is not an opinion the app gets to keep re-asserting. It applies once, to a field the
+/// user has not touched: the moment the date differs from the one the app put there, it is the
+/// user's and is never overwritten (report 2026-09-15_20-08-56, "We should just default it to the
+/// suggested date"). Applying once also stops the proposal chasing itself — the candidate's own due
+/// date feeds the priority ordering that produces the next proposal.
+enum ToDoDueDateDefault {
+    /// The day to write, or nil to leave the field exactly as it is.
+    static func dayToApply(proposal: Date?, current: Date?, lastDefaulted: Date?, hasDefaulted: Bool,
+                           isNew: Bool, calendar: Calendar) -> Date? {
+        guard isNew, !hasDefaulted, let proposal = proposal else { return nil }
+        // Anything but the date the app itself seeded means the user has chosen one.
+        guard let current = current, let seeded = lastDefaulted,
+              calendar.isDate(current, inSameDayAs: seeded) else { return nil }
+        guard !calendar.isDate(proposal, inSameDayAs: current) else { return nil }
+        return proposal
+    }
+}
+
 struct ToDoEditorSheet: View {
     @ObservedObject var store: ToDoStore
     let task: ToDoTask?
@@ -165,7 +185,8 @@ struct ToDoEditorSheet: View {
     let initialProject: Project?
 
     @SwiftUI.State private var draft: ToDoTask
-    @SwiftUI.State private var original: ToDoTask
+    /// The sheet exactly as it opened, so "has anything been edited?" is one comparison.
+    @SwiftUI.State private var originalSnapshot: ToDoEditorSnapshot
     @SwiftUI.State private var selectedProjectIds: [String]
     @SwiftUI.State private var statusOwnerProjectId: String?
     @SwiftUI.State private var durationMinutesText: String
@@ -173,12 +194,17 @@ struct ToDoEditorSheet: View {
     @SwiftUI.State private var projectSearch = ""
     @SwiftUI.State private var newComment = ""
     @SwiftUI.State private var isGeneratingSubtasks = false
-    // One alert at a time: SwiftUI on macOS only presents a single `.alert` per view hierarchy, so
-    // separate discard/delete alerts silently suppressed each other. Drive both from one enum.
-    @SwiftUI.State private var activeAlert: EditorAlert?
-
-    private enum EditorAlert: Identifiable { case discard, delete; var id: Int { hashValue } }
+    /// The editor's own sheet window, so its confirmations can be attached to it (see `confirm`).
+    @SwiftUI.State private var hostWindow: NSWindow?
+    @SwiftUI.State private var previewedAttachment: ToDoAttachment?
+    /// The date the app seeded the field with, and whether the forecast has since corrected it. See
+    /// `ToDoDueDateDefault`: together they are how a default is told apart from a date the user chose.
+    @SwiftUI.State private var seededDueDate: Date?
+    @SwiftUI.State private var hasDefaultedDueDate = false
     @StateObject private var details: ToDoTaskDetailsStore
+    /// The task's files. Its own store, shared verbatim with the Day Plan's task details
+    /// (`ToDoAttachments.swift`) so the two surfaces can never drift apart.
+    @StateObject private var attachments: ToDoAttachmentsStore
 
     private static let maxVisibleProjectChips = 12
     /// Up to this many statuses stay a segmented control; more collapse into a single menu.
@@ -195,31 +221,54 @@ struct ToDoEditorSheet: View {
         self.task = task
         self.initialTitle = initialTitle
         self.initialProject = initialProject
-        let base = task.map(ToDoDraft.editable) ?? ToDoDraft.newTask(title: initialTitle, project: initialProject)
-        _draft = SwiftUI.State(initialValue: base)
-        _original = SwiftUI.State(initialValue: base)
-        _selectedProjectIds = SwiftUI.State(initialValue: base.tagList.map { $0.id })
-        _statusOwnerProjectId = SwiftUI.State(initialValue: base.project_id)
-        _durationMinutesText = SwiftUI.State(initialValue: ToDoEditorSheet.durationText(for: base))
+        // A new task starts on the first day with room left, not a flat "tomorrow" that ignores an
+        // already-full day (report 2026-09-14_19-50-05). This is only a cheap opening value:
+        // `nextFreeDay` scans for leftover slack, while the day the app actually proposes comes from
+        // the full next-slot allocation, which is far too expensive to run here on every open. The
+        // advice view hands that back and `ToDoDueDateDefault` corrects the field once it arrives —
+        // which is what stopped the field saying November while the forecast said October
+        // (report 2026-09-15_20-08-56).
+        let base = task.map(ToDoDraft.editable)
+            ?? ToDoDraft.newTask(title: initialTitle, project: initialProject,
+                                 dueDate: store.forecast.nextFreeDay)
+        // One opening snapshot seeds every editable field, so a field added to `ToDoEditorSnapshot`
+        // is initialised and compared in the same place.
+        let opening = ToDoEditorSnapshot(draft: base,
+                                         selectedProjectIds: base.tagList.map { $0.id },
+                                         statusOwnerProjectId: base.project_id,
+                                         durationMinutesText: ToDoEditorSheet.durationText(for: base),
+                                         pendingSubtask: "")
+        _originalSnapshot = SwiftUI.State(initialValue: opening)
+        _draft = SwiftUI.State(initialValue: opening.draft)
+        _seededDueDate = SwiftUI.State(initialValue: ToDoDates.parse(base.due_date))
+        _selectedProjectIds = SwiftUI.State(initialValue: opening.selectedProjectIds)
+        _statusOwnerProjectId = SwiftUI.State(initialValue: opening.statusOwnerProjectId)
+        _durationMinutesText = SwiftUI.State(initialValue: opening.durationMinutesText)
         _details = StateObject(wrappedValue: ToDoTaskDetailsStore(taskId: task?.id, strings: store.strings, showStatus: { [weak store] in store?.showStatus($0) }))
+        _attachments = StateObject(wrappedValue: ToDoAttachmentsStore(taskId: task?.id, strings: store.strings, showStatus: { [weak store] in store?.showStatus($0) }))
     }
 
     // MARK: Derived
 
     private var titleIsBlank: Bool { draft.title.trimmingCharacters(in: .whitespaces).isEmpty }
-    private var hasChanges: Bool {
-        draft != original || selectedProjectIds != original.tagList.map { $0.id } || !pendingSubtask.trimmingCharacters(in: .whitespaces).isEmpty
-            || durationMinutesText != ToDoEditorSheet.durationText(for: original)
+    /// The task as the sheet opened it, for the handful of places that need to compare one field.
+    private var original: ToDoTask { originalSnapshot.draft }
+    private var currentSnapshot: ToDoEditorSnapshot {
+        ToDoEditorSnapshot(draft: draft, selectedProjectIds: selectedProjectIds,
+                           statusOwnerProjectId: statusOwnerProjectId,
+                           durationMinutesText: durationMinutesText,
+                           pendingSubtask: pendingSubtask.trimmingCharacters(in: .whitespaces))
     }
+    private var hasChanges: Bool { currentSnapshot != originalSnapshot }
     /// What the duration field starts with: the explicit minutes, else the perspiration's.
-    private static func durationText(for task: ToDoTask) -> String {
+    static func durationText(for task: ToDoTask) -> String {
         String(ToDoScoring.durationSeconds(explicit: task.durationSeconds, perspiration: task.effectivePerspiration) / 60)
     }
-    // Enabled whenever there's a valid title and no save in flight. Not gated on hasChanges: comments
-    // and reactions persist on their own (they aren't in the task draft, so hasChanges never sees them),
-    // and the user still expects Save to dismiss the sheet after adding one. save() closes without a
-    // network write when the task itself is unchanged.
-    private var canSave: Bool { !titleIsBlank && !store.isSavingTask }
+    /// See `ToDoEditorSave.canSave` for why this is not gated on `hasChanges`.
+    private var canSave: Bool {
+        ToDoEditorSave.canSave(titleIsBlank: titleIsBlank, isSavingTask: store.isSavingTask,
+                               isUploadingAttachment: attachments.isUploading)
+    }
     /// The pre-linked project resolves from the session itself, so it shows as selected even if
     /// the catalogue is still the one fetched before it was created.
     private var selectedProjects: [Project] {
@@ -251,35 +300,49 @@ struct ToDoEditorSheet: View {
                     projectsSection
                     assigneeSection
                     labelled(strings[.description]) { ToDoMultilineEditor(text: detailsBinding, placeholder: strings[.description]) }
-                    labelled(strings[.objective]) { TextField(strings[.objectivePlaceholder], text: objectiveBinding).textFieldStyle(RoundedBorderTextFieldStyle()) }
                     subtasksSection
+                    attachmentsSection
                     if !isNew {
                         reactionsSection
                         commentsSection
                         deleteSection
                     }
                 }
-                // Breathing room so the focus ring of the first/edge fields (title, objective) isn't
-                // clipped by the ScrollView's bounds; extra trailing for the scroller.
-                .padding(EdgeInsets(top: 3, leading: 3, bottom: 3, trailing: 6))
+                .padding(.trailing, 4)
             }
         }
         .padding(16)
         .frame(minWidth: 680, idealWidth: 720, minHeight: 600, idealHeight: 700)
         .background(Color(NSColor.windowBackgroundColor))
-        .onAppear { details.load() }
-        .alert(item: $activeAlert) { which in
-            switch which {
-            case .discard:
-                return Alert(title: Text(strings[.unsavedChanges]),
-                             primaryButton: .destructive(Text(strings[.discard])) { store.closeEditor() },
-                             secondaryButton: .cancel(Text(strings[.cancel])))
-            case .delete:
-                return Alert(title: Text(strings[.deleteTask]),
-                             message: Text(strings[.deleteTaskConfirmation]),
-                             primaryButton: .destructive(Text(strings[.delete])) { if let task = task { store.delete(task) } },
-                             secondaryButton: .cancel(Text(strings[.cancel])))
-            }
+        .background(HostWindowReader { hostWindow = $0 })
+        .onAppear {
+            details.load()
+            attachments.load()
+            // Every open needs a forecast now, not just a new task's: the due date's capacity warning
+            // is shown for existing tasks too.
+            store.forecast.refreshIfNeeded()
+        }
+        .sheet(item: $previewedAttachment) { attachment in
+            ToDoAttachmentPreviewSheet(attachment: attachment, strings: strings) { previewedAttachment = nil }
+        }
+    }
+
+    /// Ask something destructive, attached to the editor's own sheet window.
+    ///
+    /// SwiftUI's `Alert` is presented on the window *underneath* a `.sheet`, so a confirmation raised
+    /// from in here was drawn behind the editor — present the whole time, holding the keyboard, and
+    /// invisible ("Delete task doesn't work - modal appears behind the edit task popup",
+    /// report 2026-09-14_11-50-38, still reproducing after the alert was moved into the sheet).
+    private func confirm(title: String, message: String?, confirmTitle: String, onConfirm: @escaping () -> Void) {
+        let alert = NSAlert()
+        alert.messageText = title
+        if let message = message { alert.informativeText = message }
+        alert.addButton(withTitle: confirmTitle)      // .alertFirstButtonReturn
+        alert.addButton(withTitle: strings[.cancel])
+        alert.buttons.first?.hasDestructiveAction = true
+        alert.presentAsSheet(for: hostWindow) { response in
+            guard response == .alertFirstButtonReturn else { return }
+            onConfirm()
         }
     }
 
@@ -306,7 +369,8 @@ struct ToDoEditorSheet: View {
 
     private func closeAttempt() {
         guard !store.isSavingTask else { return }
-        if hasChanges { activeAlert = .discard } else { store.closeEditor() }
+        guard hasChanges else { store.closeEditor(); return }
+        confirm(title: strings[.unsavedChanges], message: nil, confirmTitle: strings[.discard]) { store.closeEditor() }
     }
 
     // MARK: Title / status
@@ -319,14 +383,12 @@ struct ToDoEditorSheet: View {
             }
             .buttonStyle(PlainButtonStyle())
             .pointingHandCursor()
-            // No onCommit-to-save here: on macOS SwiftUI's onCommit also fires when the field loses
-            // first responder (there's no onSubmit on the macOS 11 target to distinguish Return), so
-            // saving on commit closed the sheet whenever focus left the title — e.g. after nudging the
-            // Outcome/Perspiration sliders (which don't steal first responder) and then clicking another
-            // field. Save is via the Save button / ⌘S instead.
-            TextField(strings[.addATask], text: $draft.title)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .font(.system(size: 15))
+            // NOT SwiftUI's TextField: its `onCommit` also fires when the field loses focus, so typing
+            // a title and then clicking the due-date field saved the task and closed the sheet
+            // mid-edit (report 2026-09-14_11-51-05). This field tells Return apart from blur, and
+            // only Return saves.
+            ReturnGuardTextField(text: $draft.title, placeholder: strings[.addATask],
+                                 onCommit: { if canSave { save() } }, fontSize: 15)
             if titleIsBlank {
                 Image(systemName: "exclamationmark.triangle").foregroundColor(ToDoTheme.today).help(strings[.titleIsNeeded])
             }
@@ -396,18 +458,23 @@ struct ToDoEditorSheet: View {
                 sectionTitle(strings[.topScore])
                 ToDoChip(text: ToDoScoring.rounded(topScore), tint: ToDoTheme.accent, filled: true)
                 Spacer()
-                Text(strings.format(.scoreFormula, ToDoStrings.scoreToken, ToDoScoring.rounded(topScore)))
-                    .font(.system(size: 11)).foregroundColor(.secondary)
             }
             HStack(alignment: .top, spacing: 16) {
                 topRow(letter: "T", title: strings[.timelineDueDate]) {
-                    let pressure = ToDoScoring.timePressure(dueDate: dueDate, effortMinutes: ToDoScoring.minutes(forPerspiration: draft.effectivePerspiration))
-                    Text(ToDoScoring.rounded(pressure)).font(.system(size: 11)).foregroundColor(.secondary)
+                    // The bare time-pressure sub-score ("1.7") meant nothing next to the TOP score
+                    // above it and made the card look busy (report 2026-09-14_19-50-05).
                     ToDoDueDateField(day: Binding(get: { dueDate }, set: { draft.due_date = $0.map(ToDoDates.ymd) }), strings: strings, isStacked: true)
+                    // Everything the forecast has to say about this date sits under the control it is
+                    // about, not at the foot of the card where it read as a comment on the whole task
+                    // (reports 2026-09-15_17-59-04 and _20-08-56). NOT gated on `isNew`: re-dating a
+                    // task that already exists — an overdue one especially — is exactly when "that day
+                    // has no room either" is worth knowing, and gating it was why the warning never
+                    // appeared at all.
+                    ForecastDueDateAdvice(store: store.forecast, task: draft, projectID: resolvedOwnerProjectId,
+                                          durationMinutes: Int(durationMinutesText) ?? 0,
+                                          selectedDate: dueDate, onProposal: applyProposedDueDate)
                 }
-                topRow(letter: "O", title: strings[.outcome]) {
-                    levelSlider(value: Binding(get: { draft.effectiveOutcome }, set: { draft.outcome = $0 }), label: strings.outcomeLabel(draft.effectiveOutcome))
-                }
+                ForecastOutcomePicker(wireValue: $draft.outcome)
                 topRow(letter: "P", title: strings[.perspiration]) {
                     levelSlider(value: Binding(get: { draft.effectivePerspiration }, set: { setPerspiration($0) }), label: strings.perspirationLabel(draft.effectivePerspiration))
                     durationField
@@ -432,6 +499,15 @@ struct ToDoEditorSheet: View {
                 }
             Text(strings[.minutes]).font(.system(size: 11)).foregroundColor(.secondary)
         }
+    }
+
+    private func applyProposedDueDate(_ proposal: Date) {
+        guard let day = ToDoDueDateDefault.dayToApply(proposal: proposal, current: dueDate,
+                                                      lastDefaulted: seededDueDate, hasDefaulted: hasDefaultedDueDate,
+                                                      isNew: isNew, calendar: .current) else { return }
+        hasDefaultedDueDate = true
+        seededDueDate = day
+        draft.due_date = ToDoDates.ymd(day)
     }
 
     private func setPerspiration(_ level: Int) {
@@ -484,10 +560,12 @@ struct ToDoEditorSheet: View {
             if !selectedProjects.isEmpty {
                 chipRow(selectedProjects.map { ($0.id, strings.projectName($0.name)) }, selected: true) { toggleProject($0) }
             }
-            // No onCommit: on macOS it also fires on focus loss, so clicking away from a non-matching
-            // search term would create a project. Use the explicit "Create “…”" button below instead.
-            TextField(strings[.searchProjectsPlaceholder], text: $projectSearch)
-                .textFieldStyle(RoundedBorderTextFieldStyle()).frame(maxWidth: ToDoEditorSheet.projectSearchWidth)
+            // Return only — SwiftUI's own `onCommit` also fires on losing focus, which would create a
+            // project simply because the user typed a search and clicked elsewhere (the same defect
+            // as the New Project sheet, report 2026-09-15_20-13-26).
+            ReturnGuardTextField(text: $projectSearch, placeholder: strings[.searchProjectsPlaceholder],
+                                 onCommit: createProjectFromSearch)
+                .frame(maxWidth: ToDoEditorSheet.projectSearchWidth)
             if store.projects.isEmpty {
                 Text(strings[.noExistingProjects]).font(.system(size: 12)).foregroundColor(.secondary)
             } else if filteredProjects.isEmpty {
@@ -544,32 +622,40 @@ struct ToDoEditorSheet: View {
 
     // MARK: Assignee
 
-    /// Web `TaskAssignee` candidates: me, then accepted members of the selected projects.
-    private var assigneeOptions: [(id: String, label: String)] {
-        var options: [(id: String, label: String)] = []
-        var seen = Set<String>()
-        if let me = appdelegate?.user?.userId, !me.isEmpty {
-            options.append((me, "\(strings[.me]) (\(appdelegate?.user?.email ?? ""))"))
-            seen.insert(me)
+    /// Web `TaskAssignee` candidates: me, then accepted members of the selected projects. The rules
+    /// live in `ToDoAssigneeChoices` because the Day Plan's task details offers the same control and
+    /// the two must not drift (report 2026-09-17_09-01-33).
+    private var assigneeOptions: [ToDoAssigneeOption] {
+        let me = (appdelegate?.user?.userId).flatMap { id -> ToDoAssigneeOption? in
+            guard !id.isEmpty else { return nil }
+            return ToDoAssigneeOption(id: id, label: "\(strings[.me]) (\(appdelegate?.user?.email ?? ""))")
         }
-        for project in selectedProjects {
-            for member in project.acceptedMembers {
-                guard let userId = member.user_id, !seen.contains(userId) else { continue }
-                seen.insert(userId)
-                options.append((userId, member.email ?? userId))
-            }
+        let members = selectedProjects.flatMap { $0.acceptedMembers }.compactMap { member -> ToDoAssigneeOption? in
+            guard let userId = member.user_id, !userId.isEmpty else { return nil }
+            return ToDoAssigneeOption(id: userId, label: member.email ?? userId)
         }
-        if let current = draft.assignee_id, !seen.contains(current) {
-            options.append((current, draft.assignee?.username ?? draft.assignee?.email ?? current))
+        let current = draft.assignee_id.map {
+            ToDoAssigneeOption(id: $0, label: draft.assignee?.username ?? draft.assignee?.email ?? $0)
         }
-        return options
+        return ToDoAssigneeChoices.options(me: me, members: members, current: current)
     }
 
+    private var canAssignToSomebodyElse: Bool {
+        ToDoAssigneeChoices.canAssign(options: assigneeOptions, currentAssigneeId: draft.assignee_id,
+                                      meId: appdelegate?.user?.userId)
+    }
+
+    @ViewBuilder
     private var assigneeSection: some View {
+        if canAssignToSomebodyElse { assigneePicker }
+    }
+
+    private var assigneePicker: some View {
         HStack(spacing: 8) {
             sectionTitle(strings[.assignee])
-            Picker("", selection: Binding(get: { draft.assignee_id ?? "" }, set: { draft.assignee_id = $0.isEmpty ? nil : $0 })) {
-                Text(strings[.unassigned]).tag("")
+            Picker("", selection: Binding(get: { draft.assignee_id ?? ToDoAssigneeChoices.unassignedTag },
+                                          set: { draft.assignee_id = $0.isEmpty ? nil : $0 })) {
+                Text(strings[.unassigned]).tag(ToDoAssigneeChoices.unassignedTag)
                 ForEach(assigneeOptions, id: \.id) { option in Text(option.label).tag(option.id) }
             }
             .labelsHidden().pickerStyle(MenuPickerStyle()).frame(maxWidth: 300)
@@ -589,22 +675,17 @@ struct ToDoEditorSheet: View {
                 .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 26))
                 .disabled(titleIsBlank || isGeneratingSubtasks)
             }
-            // The row index is only valid for the current render; deleting a subtask shrinks the array,
-            // so every subscript is bounds-guarded — an unguarded `draft.subtasks?[index]` traps
-            // (Index out of range) when a row is removed mid-render (the `?` only guards nil).
             ForEach(Array(draft.subtaskList.enumerated()), id: \.offset) { index, subtask in
                 HStack(spacing: 8) {
-                    SwiftUI.Button(action: { if index < draft.subtaskList.count { draft.subtasks?[index].is_completed.toggle() } }) {
+                    SwiftUI.Button(action: { draft.subtasks?[index].is_completed.toggle() }) {
                         Image(systemName: subtask.is_completed ? "checkmark.square.fill" : "square")
                             .foregroundColor(subtask.is_completed ? ToDoTheme.good : .secondary)
                     }
                     .buttonStyle(PlainButtonStyle()).pointingHandCursor()
-                    TextField(strings[.addASubtask], text: Binding(
-                        get: { index < draft.subtaskList.count ? draft.subtaskList[index].name : "" },
-                        set: { if index < draft.subtaskList.count { draft.subtasks?[index].name = $0 } }))
+                    TextField(strings[.addASubtask], text: Binding(get: { draft.subtasks?[index].name ?? "" }, set: { draft.subtasks?[index].name = $0 }))
                         .textFieldStyle(PlainTextFieldStyle())
                         .foregroundColor(subtask.is_completed ? .secondary : .primary)
-                    SwiftUI.Button(action: { if index < draft.subtaskList.count { draft.subtasks?.remove(at: index) } }) { Image(systemName: "trash").foregroundColor(.secondary) }
+                    SwiftUI.Button(action: { draft.subtasks?.remove(at: index) }) { Image(systemName: "trash").foregroundColor(.secondary) }
                         .buttonStyle(PlainButtonStyle()).pointingHandCursor()
                 }
                 .padding(.horizontal, 8).padding(.vertical, 4)
@@ -612,8 +693,7 @@ struct ToDoEditorSheet: View {
             }
             HStack(spacing: 8) {
                 TextField(strings[.addASubtask], text: $pendingSubtask, onCommit: addSubtask).textFieldStyle(RoundedBorderTextFieldStyle())
-                SwiftUI.Button(action: addSubtask) { Text(strings[.addSubtask]) }
-                    .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 26))
+                AddItemButton(title: strings[.addSubtask], action: addSubtask)
                     .disabled(pendingSubtask.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
@@ -665,6 +745,19 @@ struct ToDoEditorSheet: View {
         }
     }
 
+    /// Files on the task. Attaching needs the task to exist (the endpoint is `/to-do/:id/attachments`),
+    /// so a brand-new task says so rather than offering a button that cannot work
+    /// (report 2026-09-14_12-18-21). The rows, the picker and the preview are shared with the Day
+    /// Plan's task details — see `ToDoAttachments.swift`.
+    private var attachmentsSection: some View {
+        labelled(strings[.attachments]) {
+            ToDoAttachmentsList(store: attachments, strings: strings,
+                                unavailableMessage: strings[.attachmentsAfterSaving],
+                                onPreview: { previewedAttachment = $0 },
+                                pasteLabel: "todo-editor")
+        }
+    }
+
     private var commentsSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             sectionTitle(strings[.comments])
@@ -675,9 +768,7 @@ struct ToDoEditorSheet: View {
                 ToDoCommentRow(details: details, comment: comment, strings: strings)
             }
             HStack(spacing: 8) {
-                // No onCommit: on macOS it also fires on focus loss, so clicking away would post a
-                // half-typed comment (visible to other members). Use the "Add" button instead.
-                TextField(strings[.addCommentPlaceholder], text: $newComment).textFieldStyle(RoundedBorderTextFieldStyle())
+                TextField(strings[.addCommentPlaceholder], text: $newComment, onCommit: addComment).textFieldStyle(RoundedBorderTextFieldStyle())
                 SwiftUI.Button(action: addComment) { Text(strings[.add]) }
                     .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 26))
                     .disabled(newComment.trimmingCharacters(in: .whitespaces).isEmpty || details.isBusy)
@@ -692,14 +783,18 @@ struct ToDoEditorSheet: View {
     private var deleteSection: some View {
         HStack {
             Spacer()
-            // Confirm inside the sheet (via the single activeAlert): store.taskToDelete's alert lives on
-            // the list view behind the sheet, so it can't appear until the sheet closes. delete() removes
-            // the task and closes the editor itself.
-            SwiftUI.Button(action: { activeAlert = .delete }) {
+            // Confirmed on the editor's own window: `delete()` removes the task and closes the editor.
+            SwiftUI.Button(action: confirmDelete) {
                 Label(strings[.deleteTask], systemImage: "trash").foregroundColor(ToDoTheme.overdue)
             }
             .buttonStyle(PlainButtonStyle()).pointingHandCursor()
         }
+    }
+
+    private func confirmDelete() {
+        guard let task = task else { return }
+        confirm(title: strings[.deleteTask], message: strings[.deleteTaskConfirmation],
+                confirmTitle: strings[.delete]) { store.delete(task) }
     }
 
     // MARK: Helpers
@@ -716,16 +811,12 @@ struct ToDoEditorSheet: View {
     }
 
     private var detailsBinding: Binding<String> { Binding(get: { draft.details ?? "" }, set: { draft.details = $0 }) }
-    private var objectiveBinding: Binding<String> { Binding(get: { draft.objective ?? "" }, set: { draft.objective = $0 }) }
 
     // MARK: Save
 
     /// Web `TaskForm.handleSubmit` payload: tags from the selected projects, `project_id` = the
     /// status-owner project, the pending subtask appended, duration explicit or from perspiration.
     private func save() {
-        // Nothing changed on the task itself (e.g. only a comment/reaction was added, which already
-        // persisted) — just close, no redundant PUT.
-        if !isNew && !hasChanges { store.closeEditor(); return }
         var toSave = draft
         toSave.title = draft.title.trimmingCharacters(in: .whitespaces)
         toSave.details = (draft.details ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -738,7 +829,7 @@ struct ToDoEditorSheet: View {
         toSave.subtasks = subtasks
         let explicitMinutes = Int(durationMinutesText.trimmingCharacters(in: .whitespaces)) ?? 0
         toSave.duration = LenientInt(ToDoScoring.durationSeconds(explicit: explicitMinutes * 60, perspiration: draft.effectivePerspiration))
-        store.saveTask(toSave, isNew: isNew) { _ in }
+        store.saveTask(toSave, isNew: isNew, clearOutcome: draft.outcome == nil && original.outcome != nil) { _ in }
     }
 }
 
@@ -828,5 +919,72 @@ struct ToDoMultilineEditor: View {
         .background(ToDoTheme.field)
         .overlay(RoundedRectangle(cornerRadius: 6).stroke(ToDoTheme.separator))
         .cornerRadius(6)
+    }
+}
+
+/// The one "add another one of these" control a task editor offers — a sub-task, a file.
+///
+/// It exists because there were two of them. The Day Plan's task details drew "Add sub-task" as a
+/// small AppKit push button with a leading +, and the attachments' "Add file…" right underneath it as
+/// a wide filled pill; the to-do editor used the pill for both. "Can you make the add attachment
+/// button match the add sub task button?" (report 2026-09-15_11-16-30 follow-up) is what happens when
+/// one control is written twice. Copying one style onto the other would only have reset the clock, so
+/// every add button — either host, either toolkit — is now THIS view.
+struct AddItemButton: View {
+    let title: String
+    let action: () -> Void
+
+    /// The leading glyph: the one the sub-task button already showed, and the one the reporter asked
+    /// the file button to look like.
+    static let symbol = "plus"
+
+    var body: some View {
+        SwiftUI.Button(action: action) {
+            Label(title, systemImage: Self.symbol)
+        }
+        .controlSize(.small)
+        .pointingHandCursor()
+    }
+
+    /// The same control for an AppKit form — the Day Plan's task details popover is hand-built stack
+    /// views, and a second NSButton styled to match is exactly the drift being removed here.
+    ///
+    /// Hugging is required rather than default: an `NSHostingView` that lets the stack view around it
+    /// stretch it turns a small + button into a full-width bar — the same class of mistake as a hosted
+    /// view growing the window it sits in.
+    static func hosted(title: String, action: @escaping () -> Void) -> NSView {
+        let view = NSHostingView(rootView: AddItemButton(title: title, action: action))
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.setContentHuggingPriority(.required, for: .horizontal)
+        view.setContentHuggingPriority(.required, for: .vertical)
+        return view
+    }
+}
+
+/// Reports the AppKit window a SwiftUI view is living in. Inside a `.sheet` that is the sheet's own
+/// window — the one a confirmation has to be attached to so it cannot be ordered behind the sheet.
+struct HostWindowReader: NSViewRepresentable {
+    let onWindow: (NSWindow?) -> Void
+
+    func makeNSView(context: Context) -> NSView { WindowReportingView(onWindow: onWindow) }
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private final class WindowReportingView: NSView {
+        private let onWindow: (NSWindow?) -> Void
+
+        init(onWindow: @escaping (NSWindow?) -> Void) {
+            self.onWindow = onWindow
+            super.init(frame: .zero)
+        }
+
+        @available(*, unavailable) required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            let window = self.window
+            // SwiftUI is mid-update while this fires; handing it back on the next turn of the run loop
+            // avoids mutating @State during a layout pass.
+            DispatchQueue.main.async { [onWindow] in onWindow(window) }
+        }
     }
 }

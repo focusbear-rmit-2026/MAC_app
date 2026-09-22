@@ -22,9 +22,11 @@ enum AudhdResults {
     /// AuDHD test runs on — the results page + its Worker API (`/api/advanced-results`) live here, so the
     /// webview must load THIS domain (online-tests#57). `www.focusbear.io/tests/view-results` 404s.
     static let baseDomain = "https://audhdtest-focusbear.pages.dev"
-    /// Path (under `baseDomain`) of the gated advanced-results page. NOTE: `/view-results` (200), NOT
-    /// `/view-audhd-results` — the latter is only the custom-scheme deep-link path and 404s as a web URL.
-    static let resultsPath = "/view-results"
+    /// Path (under `baseDomain`) the webview loads. Uses `/resume` rather than `/view-results` so the test
+    /// flow keeps any remaining questions before showing the result — jumping straight to the gated
+    /// results page skipped them. (`/view-audhd-results` is only the custom-scheme deep-link path and 404s
+    /// as a web URL.)
+    static let resultsPath = "/resume"
 
     /// Case-sensitive marker the results Worker requires in the webview's User-Agent to serve the gated
     /// profile — without it `/api/advanced-results` returns 403 and the page shows "Open in the app"

@@ -183,7 +183,9 @@ enum NoteHTML {
 
     // MARK: - Tokenizer
 
-    fileprivate enum Token {
+    /// Shared with `EventDescriptionHTML`, which renders a much narrower subset off the same tokens —
+    /// one HTML parser in the app rather than one per feature.
+    enum Token {
         case text(String)
         case open(name: String, href: String?)
         case close(name: String)
@@ -191,7 +193,20 @@ enum NoteHTML {
 
     private static let hrefPattern = try! NSRegularExpression(pattern: "href\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)')", options: .caseInsensitive)
 
-    fileprivate static func tokenize(_ html: String) -> [Token] {
+    private static func isASCIILetter(_ scalar: Unicode.Scalar) -> Bool {
+        (scalar >= "a" && scalar <= "z") || (scalar >= "A" && scalar <= "Z")
+    }
+
+    /// Whether the "<" at `index` is followed by a tag name, as in `<b>` or `</b>`.
+    private static func startsTagName(_ scalars: [Unicode.Scalar], after index: Int) -> Bool {
+        guard index + 1 < scalars.count else { return false }
+        let next = scalars[index + 1]
+        if isASCIILetter(next) { return true }
+        guard next == "/", index + 2 < scalars.count else { return false }
+        return isASCIILetter(scalars[index + 2])
+    }
+
+    static func tokenize(_ html: String) -> [Token] {
         var tokens: [Token] = []
         let scalars = Array(html.unicodeScalars)
         var index = 0
@@ -223,6 +238,13 @@ enum NoteHTML {
                     while end < scalars.count, scalars[end] != ">" { end += 1 }
                     index = min(end + 1, scalars.count)
                 }
+                continue
+            }
+            // A "<" only opens a tag when a name (or "/name") follows it. Without this check, prose
+            // like "5 < 6 and 7 > 6" was read as a tag running to the next ">" and swallowed whole.
+            guard startsTagName(scalars, after: index) else {
+                textBuffer.append(scalar)
+                index += 1
                 continue
             }
             var end = index + 1
@@ -270,6 +292,26 @@ enum NoteHTML {
         "ndash": "\u{2013}", "mdash": "\u{2014}", "hellip": "\u{2026}", "copy": "\u{00A9}",
         "lsquo": "\u{2018}", "rsquo": "\u{2019}", "ldquo": "\u{201C}", "rdquo": "\u{201D}"
     ]
+
+    // MARK: - Links
+
+    /// The only schemes a rendered `<a href>` may become a clickable link for.
+    ///
+    /// An HTML body is content the app did not write — a note synced from the web editor, or a
+    /// calendar invite from anyone who can send one — so a `javascript:`, `file:` or `data:` href
+    /// must never end up as something the user can activate. Those render as ordinary text: still
+    /// legible, not actionable.
+    private static let openableLinkSchemes: Set<String> = ["http", "https"]
+
+    /// The URL an `href` may actually open, or nil when it must not be clickable.
+    static func openableURL(from href: String) -> URL? {
+        let trimmed = href.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let url = URL(string: trimmed),
+              let scheme = url.scheme?.lowercased(),
+              openableLinkSchemes.contains(scheme) else { return nil }
+        return url
+    }
 
     static func decodeEntities(_ text: String) -> String {
         guard text.contains("&") else { return text }
@@ -456,7 +498,7 @@ enum NoteHTML {
             var attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: textColor]
             if underline > 0 { attributes[.underlineStyle] = NSUnderlineStyle.single.rawValue }
             if strike > 0 { attributes[.strikethroughStyle] = NSUnderlineStyle.single.rawValue }
-            if let href = links.last, !href.isEmpty, let url = URL(string: href) { attributes[.link] = url }
+            if let href = links.last, let url = NoteHTML.openableURL(from: href) { attributes[.link] = url }
             if let level = headingLevel { attributes[headingLevelKey] = level }
             if !lists.isEmpty { attributes[.paragraphStyle] = NoteHTML.listParagraphStyle(depth: lists.count) }
             return attributes

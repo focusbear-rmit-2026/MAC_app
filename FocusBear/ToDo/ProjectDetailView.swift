@@ -4,7 +4,8 @@
 //
 //  One project, the native version of the web's `ProjectDetailPage`: header (back, lifecycle badge,
 //  Members / Settings / Leave), Tasks (list or board by the project's columns, add task, move
-//  between columns) and Notes (shared project notes, read-only with "Edit on the web"), plus the
+//  between columns, drag a card to another) and Notes (create / rename / delete; the body is a Yjs
+//  document edited natively by `ProjectNoteEditor`, with "Edit on the web" alongside it), plus the
 //  Members and Settings sheets.
 //
 
@@ -17,6 +18,11 @@ struct ProjectDetailView: View {
     let onBack: () -> Void
     let onShowInTaskList: () -> Void
 
+    @SwiftUI.State private var isIconPopoverShown = false
+    @SwiftUI.State private var isDuePopoverShown = false
+    @SwiftUI.State private var isOutcomePopoverShown = false
+    @SwiftUI.State private var isTagPopoverShown = false
+
     private var strings: ToDoStrings { store.strings }
 
     var body: some View {
@@ -25,12 +31,15 @@ struct ProjectDetailView: View {
             if store.notFound {
                 notFound
             } else {
+                if store.project.lifecycleStatus != .active { lifecycleBanner }
                 identityRow
                 if store.pageView == .tasks { ProjectTasksView(store: store, todoStore: todoStore) } else { ProjectNotesView(store: store) }
             }
         }
         .sheet(isPresented: $store.isMembersVisible) { ProjectMembersSheet(store: store) }
-        .sheet(isPresented: $store.isSettingsVisible) { ProjectSettingsSheet(store: store) }
+        .sheet(isPresented: $store.isSettingsVisible) {
+            ProjectSettingsSheet(store: store, knownTags: ProjectTags.known(in: todoStore.projects))
+        }
         .alert(item: $store.pendingConfirmation) { confirmation in
             Alert(title: Text(confirmationTitle(confirmation)), message: Text(confirmationMessage(confirmation)),
                   primaryButton: .destructive(Text(confirmationButton(confirmation))) { store.confirm(confirmation) },
@@ -43,9 +52,6 @@ struct ProjectDetailView: View {
             SwiftUI.Button(action: onBack) { Label(strings[.backToProjects], systemImage: "chevron.left") }
                 .buttonStyle(PlainButtonStyle()).pointingHandCursor()
                 .foregroundColor(ToDoTheme.accent)
-            if store.project.lifecycleStatus != .active {
-                ToDoChip(text: strings.projectStatusLabel(store.project.lifecycleStatus))
-            }
             if let message = store.statusMessage {
                 Text(message).font(.system(size: 12)).foregroundColor(.secondary).transition(.opacity)
             }
@@ -63,7 +69,7 @@ struct ProjectDetailView: View {
                     .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 28))
             }
             if store.canLeave {
-                SwiftUI.Button(action: { store.pendingConfirmation = .leave }) { Text(strings[.leave]) }
+                SwiftUI.Button(action: { store.requestConfirmation(.leave) }) { Text(strings[.leave]) }
                     .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 28))
             }
         }
@@ -71,11 +77,22 @@ struct ProjectDetailView: View {
 
     private var identityRow: some View {
         HStack(alignment: .top, spacing: 12) {
+            // The icon belongs beside the name it labels. It sat past the tab picker at the far
+            // right, where it read as another control rather than as part of the project's identity.
+            projectIcon
             VStack(alignment: .leading, spacing: 3) {
-                Text(strings.projectName(store.project.name)).font(.system(size: 18, weight: .bold)).lineLimit(1)
+                InlineRenameField(display: strings.projectName(store.project.name), value: store.project.name,
+                                  placeholder: strings[.projectNamePlaceholder], fontSize: ProjectDetailView.nameFontSize,
+                                  fontWeight: .bold, editHint: strings[.renameProjectHint],
+                                  isEditable: store.canEditName) { store.rename(to: $0) }
                 if let description = store.project.description, !description.isEmpty {
                     Text(description).font(.system(size: 12)).foregroundColor(.secondary).lineLimit(2)
                 }
+                if store.project.isSynced {
+                    Text(strings.projectSyncSource(store.project)).font(.system(size: 12)).foregroundColor(.secondary)
+                }
+                metaRow
+                tagsRow
             }
             Spacer()
             Picker("", selection: $store.pageView) {
@@ -84,9 +101,143 @@ struct ProjectDetailView: View {
             }
             .pickerStyle(SegmentedPickerStyle()).labelsHidden().frame(width: 180)
             .onChange(of: store.pageView) { view in if view == .notes { store.loadNotes() } }
-            if let icon = store.project.icon, !icon.isEmpty { Text(icon).font(.system(size: 28)) }
         }
     }
+
+    /// Due date and outcome beside the project name, so the two things a project is planned by are
+    /// readable — and changeable — without opening Settings first (report 2026-09-15_10-27-17,
+    /// follow-up). A viewer who may not edit sees the same facts as plain chips.
+    private var metaRow: some View {
+        HStack(spacing: 6) {
+            if store.canEditName {
+                SwiftUI.Button(action: { isDuePopoverShown = true }) { dueChip }
+                    .buttonStyle(PlainButtonStyle()).pointingHandCursor().help(strings[.editDueDate])
+                    .popover(isPresented: $isDuePopoverShown, arrowEdge: .bottom) {
+                        ToDoDueDatePopover(strings: strings, currentDue: store.project.due_date) { day in
+                            isDuePopoverShown = false
+                            store.setDueDate(day)
+                        }
+                    }
+                SwiftUI.Button(action: { isOutcomePopoverShown = true }) { outcomeChip }
+                    .buttonStyle(PlainButtonStyle()).pointingHandCursor().help(strings[.editOutcome])
+                    .popover(isPresented: $isOutcomePopoverShown, arrowEdge: .bottom) {
+                        // The very picker the Settings sheet and the task editor use, so the header
+                        // can never offer different words for the same number.
+                        ForecastOutcomePicker(wireValue: Binding(get: { store.project.outcome },
+                                                                 set: { store.setOutcome($0) }))
+                            .padding(12)
+                    }
+            } else {
+                dueChip
+                outcomeChip
+            }
+        }
+    }
+
+    /// The project's tags, on their own line under the due/outcome chips.
+    ///
+    /// A separate line rather than more chips in `metaRow`: tags are open-ended where due and outcome
+    /// are single values, so they are the part that grows, and keeping them off the name line keeps
+    /// that line stable. A viewer who may not edit sees the tags without the add control, and an
+    /// untagged project shows nothing at all — an empty label would be noise on most projects.
+    ///
+    /// The header is a *display*: past `maxVisibleTags` it collapses to a "+N" chip, the same way
+    /// `ToDoTaskRow` handles a task in many projects. Everything — adding and removing — happens in
+    /// the popover, so there is one place to manage tags and the header cannot grow without bound.
+    @ViewBuilder
+    private var tagsRow: some View {
+        let tags = store.tags
+        if store.canEditName || !tags.isEmpty {
+            HStack(spacing: 6) {
+                ForEach(tags.prefix(ProjectDetailView.maxVisibleTags), id: \.self) { tag in
+                    tagChipButton(ToDoChip(text: tag, systemImage: "tag", tint: ToDoTheme.accent), help: tag)
+                }
+                if tags.count > ProjectDetailView.maxVisibleTags {
+                    let hidden = tags.count - ProjectDetailView.maxVisibleTags
+                    tagChipButton(ToDoChip(text: "+\(hidden)", tint: ToDoTheme.neutral),
+                                  help: tags.dropFirst(ProjectDetailView.maxVisibleTags).joined(separator: "\n"))
+                }
+                // Always shown, not just on an untagged project: with the add control hidden behind
+                // "click one of your existing tags", a user with one tag has no visible way to add a
+                // second. The chip is the affordance; the tags beside it are also clickable.
+                if store.canEditName {
+                    tagChipButton(ToDoChip(text: tags.isEmpty ? strings[.addProjectTag] : "",
+                                           systemImage: "plus", tint: ToDoTheme.accent),
+                                  help: strings[.addProjectTag])
+                }
+            }
+            .popover(isPresented: $isTagPopoverShown, arrowEdge: .bottom) {
+                tagPopover.frame(width: ProjectDetailView.tagPopoverWidth)
+            }
+        }
+    }
+
+    /// A tag chip that opens the manage popover. Read-only viewers get the chip without the click,
+    /// so nothing offers an edit that would fail.
+    @ViewBuilder
+    private func tagChipButton(_ chip: ToDoChip, help: String) -> some View {
+        if store.canEditName {
+            SwiftUI.Button(action: { isTagPopoverShown = true }) { chip.contentShape(Rectangle()) }
+                .buttonStyle(PlainButtonStyle()).pointingHandCursor()
+                .help(help)
+        } else {
+            chip.help(help)
+        }
+    }
+
+    private var tagPopover: some View {
+        ProjectTagEditor(strings: strings,
+                         applied: store.tags,
+                         known: ProjectTags.known(in: todoStore.projects),
+                         onAdd: { store.addTag($0) },
+                         onRemove: { store.removeTag($0) })
+    }
+
+    private var dueChip: some View {
+        let due = store.project.due_date
+        let hasDue = !(due ?? "").isEmpty
+        return ToDoChip(text: hasDue ? strings.format(.dueWithDate, ToDoStrings.dateToken, strings.dueLabel(due)) : strings[.setDueDate],
+                        systemImage: "calendar",
+                        tint: hasDue ? ToDoTheme.dueTint(due, isCompleted: false) : ToDoTheme.neutral)
+    }
+
+    private var outcomeChip: some View {
+        let wire = store.project.outcome
+        let text = wire.map { strings.outcomeOptionLabel(displayValue: $0 / ToDoScoring.outcomeWireFactor) } ?? strings[.setOutcome]
+        return ToDoChip(text: text, systemImage: "flag", tint: ToDoTheme.neutral)
+    }
+
+    /// The icon is a button when the user may edit the project: clicking it picks a new emoji
+    /// (report 2026-09-14_20-07-42). Read-only members still just see the glyph.
+    @ViewBuilder
+    private var projectIcon: some View {
+        if store.canEditName {
+            SwiftUI.Button(action: { isIconPopoverShown = true }) {
+                ProjectIconGlyph(icon: store.project.iconEmoji, size: ProjectDetailView.iconSize)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PlainButtonStyle())
+            .pointingHandCursor()
+            .help(strings[.projectIconChange])
+            .popover(isPresented: $isIconPopoverShown, arrowEdge: .bottom) {
+                ProjectIconPicker(strings: strings) { chosen in
+                    // Close first: the picker must go away the moment a choice is made, not when
+                    // the server answers.
+                    isIconPopoverShown = false
+                    store.setIcon(chosen)
+                }
+            }
+        } else {
+            ProjectIconGlyph(icon: store.project.iconEmoji, size: ProjectDetailView.iconSize)
+                .help(strings[.projectIconAutomatic])
+        }
+    }
+
+    /// Past this the header collapses to a "+N" chip, as a task row does for its projects.
+    private static let maxVisibleTags = 6
+    private static let tagPopoverWidth: CGFloat = 230
+    private static let iconSize: CGFloat = 22
+    private static let nameFontSize: CGFloat = 18
 
     private var notFound: some View {
         VStack(spacing: 8) {
@@ -97,13 +248,33 @@ struct ProjectDetailView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    /// The user asked for an unmistakable marker: a project that is no longer active says so across
+    /// the top of its detail, with the one-click way back out.
+    private var lifecycleBanner: some View {
+        let isArchived = store.project.lifecycleStatus == .archived
+        return HStack(alignment: .center, spacing: 10) {
+            Image(systemName: isArchived ? "archivebox.fill" : "checkmark.seal.fill")
+                .foregroundColor(isArchived ? ToDoTheme.neutral : ToDoTheme.today)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(strings.projectStatusLabel(store.project.lifecycleStatus)).font(.system(size: 13, weight: .bold))
+                Text(strings[isArchived ? .projectArchivedBanner : .projectCompletedBanner])
+                    .font(.system(size: 12)).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            if store.canManageLifecycle {
+                SwiftUI.Button(action: { store.setLifecycle(.active) }) { Label(strings[.restoreProject], systemImage: "arrow.uturn.backward") }
+                    .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 28))
+            }
+        }
+        .padding(12)
+        .background((isArchived ? ToDoTheme.neutral : ToDoTheme.today).opacity(0.12))
+        .cornerRadius(ToDoTheme.cornerRadius)
+    }
+
     private func confirmationTitle(_ confirmation: ProjectDetailStore.PendingConfirmation) -> String {
         switch confirmation {
         case .leave: return strings[.leave]
         case .delete: return strings[.deleteProject]
-        case .markComplete: return strings[.markCompleteProject]
-        case .archive: return strings[.archiveProject]
-        case .restore: return strings[.restoreProject]
         case .deleteNote: return strings[.delete]
         }
     }
@@ -112,9 +283,6 @@ struct ProjectDetailView: View {
         switch confirmation {
         case .leave: return strings[.leaveConfirm]
         case .delete: return strings[.deleteProjectConfirm]
-        case .markComplete: return strings[.markCompleteConfirm]
-        case .archive: return strings[.archiveConfirm]
-        case .restore: return strings[.restoreConfirm]
         case .deleteNote: return strings[.deleteNoteConfirm]
         }
     }
@@ -123,10 +291,309 @@ struct ProjectDetailView: View {
         switch confirmation {
         case .leave: return strings[.leave]
         case .delete, .deleteNote: return strings[.delete]
-        case .markComplete: return strings[.markCompleteProject]
-        case .archive: return strings[.archiveProject]
-        case .restore: return strings[.restoreProject]
         }
+    }
+}
+
+/// Manage a project's tags: add by typing a new one or picking one already in use, remove the ones
+/// already applied.
+///
+/// Deliberately **not** `SearchableComboBoxField`, despite that being the app's existing "type and
+/// choose" control: it resolves whatever is typed to an id from its fixed option list and overwrites
+/// the text with the resolved name, so a tag the user is inventing — the whole point of the first
+/// `#phd` — is erased as they type it. The suggestion list below gives the same recognition benefit
+/// without closing off new values.
+private struct ProjectTagEditor: View {
+    let strings: ToDoStrings
+    /// Tags already on this project: shown for removal, and not offered as suggestions.
+    let applied: [String]
+    /// Every tag in use across the user's projects.
+    let known: [String]
+    let onAdd: (String) -> Void
+    let onRemove: (String) -> Void
+
+    @SwiftUI.State private var typed = ""
+
+    private static let listMaxHeight: CGFloat = 130
+    private static let captionSize: CGFloat = 11
+    private static let fieldHeight: CGFloat = 22
+    private static let glyphSize: CGFloat = 10
+
+    /// Suggestions matching what has been typed, minus the ones already on this project.
+    private var suggestions: [String] {
+        let query = ProjectTags.normalize(typed) ?? ""
+        let appliedSet = Set(applied)
+        return known.filter { !appliedSet.contains($0) && (query.isEmpty || $0.contains(query)) }
+    }
+
+    /// The tag the typed text would add, or nil when it would change nothing — blank, already
+    /// applied, or the project is at the cap. Nil is also what disables Return.
+    private var pendingTag: String? {
+        ProjectTags.adding(typed, to: applied).flatMap { $0.last }
+    }
+
+    private var isFull: Bool { applied.count >= ProjectTags.maxCount }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if isFull {
+                Text(strings[.projectTagsFull])
+                    .font(.system(size: ProjectTagEditor.captionSize)).foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                ReturnGuardTextField(text: $typed, placeholder: strings[.projectTagPlaceholder],
+                                     onCommit: commitTyped)
+                    .frame(height: ProjectTagEditor.fieldHeight)
+                if let tag = pendingTag {
+                    SwiftUI.Button(action: commitTyped) {
+                        Label(strings.format(.addProjectTagNamed, ToDoStrings.titleToken, tag), systemImage: "plus")
+                    }
+                    .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 26))
+                }
+            }
+            if !applied.isEmpty { appliedSection }
+            if !isFull, !suggestions.isEmpty { suggestionsSection }
+        }
+        .padding(12)
+    }
+
+    private var appliedSection: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(strings[.projectTags])
+                .font(.system(size: ProjectTagEditor.captionSize)).foregroundColor(.secondary)
+            ForEach(applied, id: \.self) { tag in
+                HStack(spacing: 4) {
+                    Image(systemName: "tag").font(.system(size: ProjectTagEditor.glyphSize))
+                        .foregroundColor(ToDoTheme.accent)
+                    Text(tag).font(.system(size: 12))
+                    Spacer()
+                    SwiftUI.Button(action: { onRemove(tag) }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: ProjectTagEditor.captionSize))
+                            .foregroundColor(.secondary)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PlainButtonStyle()).pointingHandCursor()
+                    .help(strings.format(.removeProjectTag, ToDoStrings.titleToken, tag))
+                    .accessibilityLabel(strings.format(.removeProjectTag, ToDoStrings.titleToken, tag))
+                }
+            }
+        }
+    }
+
+    private var suggestionsSection: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(strings[.projectTagSuggestions])
+                .font(.system(size: ProjectTagEditor.captionSize)).foregroundColor(.secondary)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(suggestions, id: \.self) { tag in
+                        SwiftUI.Button(action: { onAdd(tag) }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "tag").font(.system(size: ProjectTagEditor.glyphSize))
+                                Text(tag).font(.system(size: 12))
+                                Spacer()
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(PlainButtonStyle()).pointingHandCursor()
+                    }
+                }
+            }
+            .frame(maxHeight: ProjectTagEditor.listMaxHeight)
+        }
+    }
+
+    /// Adds the typed tag and clears the field, so several can be added without reopening.
+    private func commitTyped() {
+        guard let tag = pendingTag else { return }
+        typed = ""
+        onAdd(tag)
+    }
+}
+
+/// Pick a project's emoji without leaving the popover.
+///
+/// It deliberately does **not** call `NSApp.orderFrontCharacterPalette`: the system Character Viewer
+/// is a separate floating panel that stays on screen after a choice and cannot be dismissed
+/// programmatically, which is exactly what the report complained about (2026-09-14_20-07-42).
+/// Choosing here reports the emoji straight back, so the caller can close the popover at once.
+private struct ProjectIconPicker: View {
+    let strings: ToDoStrings
+    let onChoose: (String) -> Void
+
+    @SwiftUI.State private var query = ""
+
+    private static let columnCount = 8
+    private static let cellSize: CGFloat = 28
+    private static let cellSpacing: CGFloat = 4
+    private static let emojiSize: CGFloat = 18
+    private static let popoverWidth: CGFloat = 288
+    private static let gridMaxHeight: CGFloat = 196
+    private static let captionSize: CGFloat = 11
+
+    private var choices: [ProjectIconChoice] { ProjectIcon.choices(matching: query) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ReturnGuardTextField(text: $query, placeholder: strings[.projectIconSearch],
+                                 onCommit: chooseTyped)
+            if choices.isEmpty {
+                Text(strings[.projectIconNoMatches]).font(.system(size: ProjectIconPicker.captionSize))
+                    .foregroundColor(.secondary).frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                grid
+            }
+            SwiftUI.Button(action: { onChoose(ProjectIcon.cleared) }) {
+                Text(strings[.projectIconClear]).font(.system(size: ProjectIconPicker.captionSize))
+                    .foregroundColor(.secondary)
+            }
+            .buttonStyle(PlainButtonStyle()).pointingHandCursor()
+        }
+        .padding(12)
+        .frame(width: ProjectIconPicker.popoverWidth)
+    }
+
+    private var grid: some View {
+        ScrollView {
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(ProjectIconPicker.cellSize),
+                                                         spacing: ProjectIconPicker.cellSpacing),
+                                     count: ProjectIconPicker.columnCount),
+                      spacing: ProjectIconPicker.cellSpacing) {
+                ForEach(choices) { choice in
+                    SwiftUI.Button(action: { onChoose(choice.emoji) }) {
+                        Text(choice.emoji).font(.system(size: ProjectIconPicker.emojiSize))
+                            .frame(width: ProjectIconPicker.cellSize, height: ProjectIconPicker.cellSize)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PlainButtonStyle()).pointingHandCursor()
+                }
+            }
+        }
+        .frame(maxHeight: ProjectIconPicker.gridMaxHeight)
+    }
+
+    /// Return in the search box takes whatever emoji was typed or pasted, so an emoji the
+    /// catalogue does not carry still works.
+    private func chooseTyped() {
+        let typed = ProjectIcon.normalise(query)
+        guard !typed.isEmpty else { return }
+        onChoose(typed)
+    }
+}
+
+/// What a half-typed inline rename should do when its field goes away.
+///
+/// Navigating away — Back, or the whole screen closing — is not "throw this away": the user typed a
+/// new title and left, which everywhere else in this app means keep it (`popoverWillClose` saves a
+/// click-away for the same reason). Escape is the discard route, and it leaves nothing pending
+/// because it clears the edit first. Blank and unchanged titles are not renames.
+enum InlineRenameDismissal: Equatable {
+    case save(String)
+    case discard
+
+    static func onDismiss(draft: String, value: String, isEditing: Bool) -> InlineRenameDismissal {
+        guard isEditing else { return .discard }
+        let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != value else { return .discard }
+        return .save(trimmed)
+    }
+}
+
+/// A heading that turns into a text field when clicked, so renaming doesn't mean opening a form.
+/// Return or clicking away commits; Escape puts the old value back. Without `isEditable` it is just
+/// the heading, with no hover affordance to promise an edit that would be refused.
+///
+/// Shared by the project name and the note title: both are a plain string on the server that the
+/// Mac may overwrite last-write-wins, and their edit affordance must not drift apart.
+private struct InlineRenameField: View {
+    /// What to show — already localised / defaulted, so it can differ from the stored value.
+    let display: String
+    /// The stored value, which is what an edit starts from and commits against.
+    let value: String
+    let placeholder: String
+    let fontSize: CGFloat
+    let fontWeight: Font.Weight
+    let editHint: String
+    let isEditable: Bool
+    /// Whether a rename is in progress, for callers that must give Escape to the field while it is.
+    var onEditingChanged: (Bool) -> Void = { _ in }
+    let onCommit: (String) -> Void
+
+    @SwiftUI.State private var isEditing = false
+    @SwiftUI.State private var draft = ""
+
+    private static let editorWidth: CGFloat = 380
+
+    var body: some View {
+        Group {
+            if isEditing {
+                // Commit on blur as well as Return. Typing a note title and clicking into the note body
+                // (rather than pressing Return) left the new title in a field nobody read: the list kept
+                // saying "Untitled note" and nothing reached the server (report 2026-09-14_16-18-22).
+                ReturnGuardTextField(text: $draft, placeholder: placeholder,
+                                     onCommit: commit, onEndEditing: commit)
+                    .frame(width: InlineRenameField.editorWidth)
+                    .onExitCommand(perform: cancel)
+            } else if isEditable {
+                heading
+                    .contentShape(Rectangle())
+                    .onTapGesture(perform: beginEditing)
+                    .pointingHandCursor()
+                    .help(editHint)
+            } else {
+                heading
+            }
+        }
+        // A reload, or a different project / note opened, must not leave a stale draft over the new
+        // value — and must not strand the field in edit mode over something else's name.
+        .onChange(of: value) { newValue in
+            draft = newValue
+            setEditing(false)
+        }
+        // Clicking "Back" (or the screen closing) removes this field without the field editor ever
+        // resigning, so `controlTextDidEndEditing` never fires and the typed title was dropped
+        // (report 2026-09-15_20-24-10). Save it on the way out; nothing is notified because the
+        // caller is going away with us.
+        .onDisappear {
+            guard case .save(let title) = dismissal else { return }
+            isEditing = false
+            onCommit(title)
+        }
+    }
+
+    private var dismissal: InlineRenameDismissal {
+        InlineRenameDismissal.onDismiss(draft: draft, value: value, isEditing: isEditing)
+    }
+
+    private var heading: some View {
+        Text(display).font(.system(size: fontSize, weight: fontWeight)).lineLimit(1)
+    }
+
+    private func beginEditing() {
+        draft = value
+        setEditing(true)
+    }
+
+    private func cancel() {
+        draft = value
+        setEditing(false)
+    }
+
+    private func setEditing(_ editing: Bool) {
+        guard isEditing != editing else { return }
+        isEditing = editing
+        onEditingChanged(editing)
+    }
+
+    /// Idempotent: leaving edit mode tears the field down, which fires end-editing again. Clearing
+    /// `isEditing` first makes that second call a no-op, so one rename never becomes two PUTs.
+    private func commit() {
+        guard isEditing else { return }
+        let outcome = dismissal
+        setEditing(false)
+        guard case .save(let title) = outcome else { return }
+        onCommit(title)
     }
 }
 
@@ -135,6 +602,12 @@ struct ProjectDetailView: View {
 private struct ProjectTasksView: View {
     @ObservedObject var store: ProjectDetailStore
     @ObservedObject var todoStore: ToDoStore
+    /// Which card is being dragged and which column it is over. Starting, crossing a column and
+    /// dropping are the only changes it publishes, so the columns redraw on those and not per pixel.
+    @StateObject private var drag = ProjectCardDrag()
+    /// The pointer itself, on its own object: it changes with every mouse movement and only the
+    /// floating preview needs to follow it.
+    @StateObject private var pointer = ProjectCardDragPointer()
     private var strings: ToDoStrings { store.strings }
 
     var body: some View {
@@ -151,6 +624,31 @@ private struct ProjectTasksView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .coordinateSpace(name: ProjectTasksView.dragSpace)
+        .onPreferenceChange(ProjectColumnFramesKey.self) { drag.columnFrames = $0 }
+        .overlay(dragPreview, alignment: .topLeading)
+    }
+
+    /// The card under the pointer while it is being dragged. Drawn over the whole tasks area rather
+    /// than inside a column so it is never clipped by a column's scroll view, and hit-testing is off
+    /// so it cannot steal the drop from the column underneath it.
+    @ViewBuilder private var dragPreview: some View {
+        if let task = drag.task {
+            ProjectCardDragPreview(pointer: pointer, title: task.title, hint: dropHint)
+        }
+    }
+
+    /// What dropping here would do, phrased as the change rather than the column: a column flagged
+    /// `should_complete_task` finishes the task, any other column reopens a finished one. Silent
+    /// over the column the card came from, which is the no-op the drop already is.
+    private var dropHint: String? {
+        guard let task = drag.task, let columnId = drag.targetColumnId,
+              let column = store.columns.first(where: { $0.id == columnId }) else { return nil }
+        let statuses = store.project.usesCustomStatuses ? store.project.customStatuses : []
+        let wasFinished = ToDoCompletionState.isFinished(task, customStatuses: statuses)
+        if column.completes { return wasFinished ? nil : strings[.dropMarksComplete] }
+        if wasFinished { return strings[.dropReopens] }
+        return "\(strings[.moveTo]) \(column.label)"
     }
 
     private var toolbar: some View {
@@ -211,16 +709,18 @@ private struct ProjectTasksView: View {
 
     private func listSection(_ column: ProjectColumn) -> some View {
         let tasks = store.tasks(in: column)
-        return Group {
+        return VStack(alignment: .leading, spacing: ToDoTheme.rowSpacing) {
             columnHeader(column, count: tasks.count, size: 13)
                 .padding(.horizontal, 10).padding(.vertical, 6).background(ToDoTheme.card).cornerRadius(ToDoTheme.cornerRadius)
             if tasks.isEmpty {
                 Text(strings[.sectionEmpty]).font(.system(size: 12)).foregroundColor(.secondary).padding(.horizontal, 12).padding(.vertical, 4)
             }
             ForEach(tasks) { task in
-                ProjectTaskCard(store: store, todoStore: todoStore, task: task, compact: false)
+                ProjectTaskCard(store: store, todoStore: todoStore, drag: drag, pointer: pointer, task: task, compact: false)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .modifier(ProjectColumnDropTarget(column: column, drag: drag))
     }
 
     private var board: some View {
@@ -241,27 +741,143 @@ private struct ProjectTasksView: View {
                         Text(strings[.noTasksInColumn]).font(.system(size: 11)).italic().foregroundColor(.secondary).padding(.vertical, 12)
                     }
                     ForEach(tasks) { task in
-                        ProjectTaskCard(store: store, todoStore: todoStore, task: task, compact: true)
+                        ProjectTaskCard(store: store, todoStore: todoStore, drag: drag, pointer: pointer, task: task, compact: true)
                     }
                 }
             }
         }
         .padding(8)
-        .frame(width: 240)
+        .frame(width: ProjectTasksView.boardColumnWidth)
         .frame(maxHeight: .infinity, alignment: .top)
         .background((column.completes ? ToDoTheme.good : ToDoTheme.neutral).opacity(0.08))
         .cornerRadius(ToDoTheme.cornerRadius)
+        .modifier(ProjectColumnDropTarget(column: column, drag: drag))
     }
+
+    private static let boardColumnWidth: CGFloat = 240
+    /// Columns report their frames, and the pointer is read, in this one space, so "which column is
+    /// under the pointer" is a comparison and not a chain of conversions.
+    static let dragSpace = "projectTasksDrag"
+}
+
+/// Which card is in flight and which column it would land in.
+///
+/// Published sparingly — a drag starts, crosses into another column, and ends — so the board redraws
+/// on those three things. The pointer lives on `ProjectCardDragPointer` instead, because it changes
+/// with every mouse movement and only the floating preview follows it.
+private final class ProjectCardDrag: ObservableObject {
+    @Published private(set) var task: ToDoTask?
+    @Published private(set) var targetColumnId: String?
+    /// Every column's frame in `ProjectTasksView.dragSpace`, refreshed by the layout itself.
+    var columnFrames: [String: CGRect] = [:]
+    /// Where the card started, so hovering its own column offers nothing: that drop is a no-op.
+    private var originColumnId: String?
+
+    func begin(_ task: ToDoTask, from originColumnId: String?) {
+        self.task = task
+        self.originColumnId = originColumnId
+        targetColumnId = nil
+    }
+
+    func update(to point: CGPoint) {
+        let column = ProjectBoardDrag.columnId(at: point, frames: columnFrames)
+        targetColumnId = column == originColumnId ? nil : column
+    }
+
+    /// Ends the drag and reports the column to drop on, if the pointer is over one.
+    func end() -> String? {
+        defer { task = nil; targetColumnId = nil; originColumnId = nil }
+        return targetColumnId
+    }
+
+    func isDragging(_ task: ToDoTask) -> Bool { self.task?.id == task.id }
+}
+
+/// The pointer during a card drag, in `ProjectTasksView.dragSpace`.
+private final class ProjectCardDragPointer: ObservableObject {
+    @Published var location: CGPoint = .zero
+}
+
+/// Each column publishes its frame so the drag can tell which one the pointer is over.
+private struct ProjectColumnFramesKey: PreferenceKey {
+    static var defaultValue: [String: CGRect] { [:] }
+    static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
+        value.merge(nextValue()) { _, latest in latest }
+    }
+}
+
+/// Publishes a column's frame for the drag to hit-test against, and fills and outlines it in the
+/// accent colour while the pointer is over it so the drop has somewhere visible to land — including
+/// an empty column, which has nothing else to show. A list section is a column too, so both modes
+/// take the same modifier.
+private struct ProjectColumnDropTarget: ViewModifier {
+    let column: ProjectColumn
+    @ObservedObject var drag: ProjectCardDrag
+
+    func body(content: Content) -> some View {
+        let isTarget = drag.targetColumnId == column.id
+        return content
+            .background(GeometryReader { geometry in
+                Color.clear.preference(key: ProjectColumnFramesKey.self,
+                                       value: [column.id: geometry.frame(in: .named(ProjectTasksView.dragSpace))])
+            })
+            .overlay(
+                RoundedRectangle(cornerRadius: ToDoTheme.cornerRadius)
+                    .fill(ToDoTheme.accent.opacity(isTarget ? ProjectColumnDropTarget.targetFillOpacity : 0))
+                    .overlay(RoundedRectangle(cornerRadius: ToDoTheme.cornerRadius)
+                        .strokeBorder(ToDoTheme.accent, lineWidth: isTarget ? ProjectColumnDropTarget.targetBorderWidth : 0))
+                    .allowsHitTesting(false)
+            )
+    }
+
+    private static let targetBorderWidth: CGFloat = 2
+    private static let targetFillOpacity: Double = 0.1
+}
+
+/// The card that follows the pointer, with what dropping it here would do. It observes the pointer
+/// alone, so a mouse movement redraws this and nothing else.
+private struct ProjectCardDragPreview: View {
+    @ObservedObject var pointer: ProjectCardDragPointer
+    let title: String
+    let hint: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title).font(.system(size: 12, weight: .medium)).lineLimit(1)
+            if let hint = hint {
+                Text(hint).font(.system(size: 10)).foregroundColor(ToDoTheme.accent).lineLimit(1)
+            }
+        }
+        .padding(.horizontal, 8).padding(.vertical, 6)
+        .frame(maxWidth: ProjectCardDragPreview.maxWidth, alignment: .leading)
+        .background(ToDoTheme.card)
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(ToDoTheme.accent, lineWidth: 1))
+        .cornerRadius(6)
+        .shadow(radius: ProjectCardDragPreview.shadowRadius)
+        .opacity(ProjectCardDragPreview.opacity)
+        .offset(x: pointer.location.x + ProjectCardDragPreview.pointerOffset,
+                y: pointer.location.y + ProjectCardDragPreview.pointerOffset)
+        .allowsHitTesting(false)
+    }
+
+    private static let maxWidth: CGFloat = 200
+    private static let shadowRadius: CGFloat = 4
+    private static let opacity: Double = 0.95
+    /// Sits below and right of the pointer so the pointer itself, and the column under it, stay visible.
+    private static let pointerOffset: CGFloat = 10
 }
 
 /// A task in the project (board card or list row): title, due / TOP / tag chips, "Move to" menu.
 private struct ProjectTaskCard: View {
     @ObservedObject var store: ProjectDetailStore
     @ObservedObject var todoStore: ToDoStore
+    @ObservedObject var drag: ProjectCardDrag
+    let pointer: ProjectCardDragPointer
     let task: ToDoTask
     let compact: Bool
     private var strings: ToDoStrings { store.strings }
     private var isUpdating: Bool { store.updatingTaskIds.contains(task.id) }
+    private var isBeingDragged: Bool { drag.isDragging(task) }
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -279,9 +895,8 @@ private struct ProjectTaskCard: View {
                 }
                 HStack(spacing: 4) {
                     if task.due_date != nil {
-                        let state = ToDoDates.dueState(task.due_date, isCompleted: task.isCompleted)
                         ToDoChip(text: strings.format(.dueWithDate, ToDoStrings.dateToken, strings.dueLabel(task.due_date)), systemImage: "calendar",
-                                 tint: state == .overdue ? ToDoTheme.overdue : (state == .today ? ToDoTheme.today : ToDoTheme.neutral))
+                                 tint: ToDoTheme.dueTint(task.due_date, isCompleted: task.isCompleted))
                     }
                     let score = ToDoScoring.topScore(of: task)
                     if score > 0 { ToDoChip(text: "\(strings[.topShort]) \(ToDoScoring.rounded(score))", tint: ToDoTheme.accent) }
@@ -292,7 +907,7 @@ private struct ProjectTaskCard: View {
             Spacer(minLength: 4)
             if isUpdating {
                 ProgressView().scaleEffect(0.4).frame(width: 14, height: 14)
-            } else {
+            } else if store.canMoveTask {
                 Menu {
                     ForEach(store.columns) { column in
                         SwiftUI.Button(action: { store.move(task, toColumn: column.id) }) { Text(column.label) }
@@ -308,16 +923,51 @@ private struct ProjectTaskCard: View {
         .background(ToDoTheme.card)
         .overlay(RoundedRectangle(cornerRadius: 6).stroke(ToDoTheme.separator))
         .cornerRadius(6)
-        .opacity(task.isCompleted ? 0.7 : 1)
+        // The card itself fades where it started, so the preview under the pointer is plainly the
+        // same card in flight rather than a copy.
+        .opacity(isBeingDragged ? ProjectTaskCard.draggedOpacity : (task.isCompleted ? 0.7 : 1))
         .contentShape(Rectangle())
-        .onTapGesture(count: 2) { todoStore.openEditor(for: task) }
+        // One click opens the editor. A card has no inline actions to reveal first (unlike a Tasks
+        // list row), so a double-click requirement just read as a dead click. The drag takes the
+        // press first, but only once the pointer has actually moved, so a click still lands here.
+        .onTapGesture { todoStore.openEditor(for: task) }
+        .pointingHandCursor()
+        // High priority so the press becomes a drag before anything else claims it, but masked down
+        // to the subviews' own gestures for someone with no role in the project: they still click a
+        // card open, they just cannot carry it anywhere. `ProjectTaskMove.plan` refuses too.
+        .highPriorityGesture(cardDrag, including: store.canMoveTask ? .all : .subviews)
         .contextMenu {
             SwiftUI.Button(action: { todoStore.openEditor(for: task) }) { Text(strings[.editTaskTitle]) }
-            ForEach(store.columns) { column in
-                SwiftUI.Button(action: { store.move(task, toColumn: column.id) }) { Text("\(strings[.moveTo]): \(column.label)") }
+            if store.canMoveTask {
+                ForEach(store.columns) { column in
+                    SwiftUI.Button(action: { store.move(task, toColumn: column.id) }) { Text("\(strings[.moveTo]): \(column.label)") }
+                }
             }
         }
     }
+
+    /// Carrying the card to another column. The board tracks it rather than `onDrag` — see
+    /// `ProjectBoardDrag` for why an `NSDraggingSession` never showed up in this window.
+    private var cardDrag: some Gesture {
+        DragGesture(minimumDistance: ProjectBoardDrag.minimumDistance,
+                    coordinateSpace: .named(ProjectTasksView.dragSpace))
+            .onChanged { value in
+                if !isBeingDragged {
+                    drag.begin(task, from: ProjectKanban.columnId(for: task, columns: store.columns,
+                                                                  usesCustomStatuses: store.project.usesCustomStatuses))
+                }
+                pointer.location = value.location
+                drag.update(to: value.location)
+            }
+            .onEnded { value in
+                pointer.location = value.location
+                drag.update(to: value.location)
+                guard let columnId = drag.end() else { return }
+                store.move(task, toColumn: columnId)
+            }
+    }
+
+    private static let draggedOpacity: Double = 0.35
 }
 
 // MARK: - Notes
@@ -364,7 +1014,7 @@ private struct ProjectNotesView: View {
                                 Text(strings.format(.lastEdited, ToDoStrings.dateToken, ToDoDates.abbreviated(note.updated_at))).font(.system(size: 10)).foregroundColor(.secondary)
                             }
                             Spacer()
-                            SwiftUI.Button(action: { store.pendingConfirmation = .deleteNote(note) }) { Image(systemName: "trash").foregroundColor(.secondary) }
+                            SwiftUI.Button(action: { store.requestConfirmation(.deleteNote(note)) }) { Image(systemName: "trash").foregroundColor(.secondary) }
                                 .buttonStyle(PlainButtonStyle()).pointingHandCursor().help(strings[.delete])
                         }
                         .padding(8)
@@ -382,36 +1032,62 @@ private struct ProjectNotesView: View {
     @ViewBuilder
     private var noteDetail: some View {
         if let note = store.openNote {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(note.title.isEmpty ? strings[.untitledNote] : note.title).font(.system(size: 16, weight: .semibold))
-                    Spacer()
-                    SwiftUI.Button(action: { if let url = store.webURL(for: note) { NSWorkspace.shared.open(url) } }) {
-                        Label(strings[.editOnWeb], systemImage: "arrow.up.right.square")
-                    }
-                    .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 28))
-                }
-                if store.isNoteLoading {
-                    ProgressView().frame(maxWidth: .infinity)
-                } else {
-                    ScrollView {
-                        let text = note.plainText
-                        Text(text.isEmpty ? strings[.emptyNote] : text)
-                            .font(.system(size: 13))
-                            .foregroundColor(text.isEmpty ? .secondary : .primary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-            .padding(12)
-            .background(ToDoTheme.card)
-            .cornerRadius(ToDoTheme.cornerRadius)
+            ProjectNoteDetailView(note: note, projectId: store.project.id, strings: strings,
+                                  webURL: store.webURL(for: note),
+                                  onRename: { store.renameNote(note, to: $0) })
         } else {
             Text(strings[.selectNoteTitle]).font(.system(size: 13)).foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(ToDoTheme.card).cornerRadius(ToDoTheme.cornerRadius)
         }
+    }
+}
+
+/// One open project note: its title, renameable in place, an "edit on the web" link, and its body.
+///
+/// The body is a collaborative (Yjs) document, edited natively by `ProjectNoteEditor`. That editor
+/// owns the document session — realtime channel, local recovery drafts, autosave — for exactly as
+/// long as this view is in the view tree, and closes it when the view is removed, so whoever shows
+/// this view only has to stop showing it. The `.id(identity)` keeps one session per note: switching
+/// notes tears the old one down rather than re-pointing it.
+///
+/// The Projects screen and the Notes screen both render a note through here, so a note is equally
+/// editable wherever it was opened and only ever has one writer.
+struct ProjectNoteDetailView: View {
+    let note: ProjectNote
+    let projectId: String
+    let strings: ToDoStrings
+    let webURL: URL?
+    let onRename: (String) -> Void
+    /// Whether the title is being renamed right now. A screen with its own Escape handling needs this
+    /// so the field, not the screen, owns Escape mid-rename — see `NoteEscapeTarget`.
+    var onRenamingChanged: (Bool) -> Void = { _ in }
+
+    private static let titleFontSize: CGFloat = 16
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                InlineRenameField(display: note.title.isEmpty ? strings[.untitledNote] : note.title,
+                                  value: note.title, placeholder: strings[.untitledNote],
+                                  fontSize: ProjectNoteDetailView.titleFontSize, fontWeight: .semibold,
+                                  editHint: strings[.renameNoteHint], isEditable: true,
+                                  onEditingChanged: onRenamingChanged, onCommit: onRename)
+                Spacer()
+                SwiftUI.Button(action: { if let url = webURL { NSWorkspace.shared.open(url) } }) {
+                    Label(strings[.editOnWeb], systemImage: "arrow.up.right.square")
+                }
+                .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 28))
+                .disabled(webURL == nil)
+            }
+            let identity = ProjectNoteIdentity(accountID: appdelegate?.user?.userId ?? "",
+                                               projectID: projectId, noteID: note.id)
+            ProjectNoteEditor(identity: identity).id(identity)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(ToDoTheme.card)
+        .cornerRadius(ToDoTheme.cornerRadius)
     }
 }
 
@@ -454,7 +1130,10 @@ struct ProjectMembersSheet: View {
     private var inviteForm: some View {
         HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
-                TextField(strings[.emailPlaceholder], text: $email, onCommit: invite).textFieldStyle(RoundedBorderTextFieldStyle())
+                // Return only: SwiftUI's `onCommit` also fires on losing focus, and an invitation
+                // sent because the user clicked the role picker cannot be taken back (the same
+                // defect as the New Project sheet, report 2026-09-15_20-13-26).
+                ReturnGuardTextField(text: $email, placeholder: strings[.emailPlaceholder], onCommit: invite)
                 if attemptedInvite && !emailIsValid {
                     Text(strings[.invalidEmail]).font(.system(size: 11)).foregroundColor(ToDoTheme.overdue)
                 }
@@ -505,6 +1184,7 @@ struct ProjectMembersSheet: View {
                     }
                     .labelsHidden().pickerStyle(MenuPickerStyle()).frame(width: 130)
                 }
+                resendButton(member)
                 if actions.canRemove {
                     SwiftUI.Button(action: { store.remove(member) }) { Image(systemName: "trash").foregroundColor(ToDoTheme.overdue) }
                         .buttonStyle(PlainButtonStyle()).pointingHandCursor().help(strings[.removeMember])
@@ -512,6 +1192,30 @@ struct ProjectMembersSheet: View {
             }
         }
         .padding(8).background(ToDoTheme.card).cornerRadius(ToDoTheme.cornerRadius)
+    }
+
+    /// "Resend invitation", shown only on a row whose invitation is still outstanding and only to a
+    /// viewer allowed to invite. It takes two clicks: the first arms the button (it says so), the second
+    /// sends — a resend is an email to someone else, and the members box has already sent one by
+    /// accident once (report 2026-09-15_20-13-26). Rows still inside the server's cooldown say why
+    /// instead of offering a button.
+    @ViewBuilder
+    private func resendButton(_ member: ProjectMember) -> some View {
+        if ProjectInvitationResend.canResend(viewer: store.viewerRole, status: member.invitationStatus) {
+            if store.canResendInvitation(member) {
+                let armed = store.isResendArmed(member)
+                SwiftUI.Button(action: { armed ? store.resendInvitation(member) : store.armResend(member) }) {
+                    Label(armed ? strings[.confirmResendInvitation] : strings[.resendInvitation],
+                          systemImage: armed ? "exclamationmark.circle" : "paperplane")
+                        .font(.system(size: 11))
+                        .foregroundColor(armed ? ToDoTheme.overdue : ToDoTheme.accent)
+                }
+                .buttonStyle(PlainButtonStyle()).pointingHandCursor()
+                .help(strings[.resendInvitation])
+            } else {
+                Text(strings[.invitationJustSent]).font(.system(size: 11)).foregroundColor(.secondary)
+            }
+        }
     }
 
     /// Web `getMemberAvatarInitial`: first letter of the email, else O for the owner, else U.
@@ -530,20 +1234,43 @@ struct ProjectMembersSheet: View {
 
 struct ProjectSettingsSheet: View {
     @ObservedObject var store: ProjectDetailStore
+    /// Every tag in use across the user's projects, for the editor's suggestions.
+    let knownTags: [String]
     @SwiftUI.State private var form: ProjectDetailStore.SettingsForm
     @SwiftUI.State private var original: ProjectDetailStore.SettingsForm
     @SwiftUI.State private var newStatusLabel = ""
     @SwiftUI.State private var showDueDatePicker = false
     private var strings: ToDoStrings { store.strings }
 
-    init(store: ProjectDetailStore) {
+    init(store: ProjectDetailStore, knownTags: [String]) {
         self.store = store
+        self.knownTags = knownTags
         let form = ProjectDetailStore.SettingsForm(project: store.project)
         _form = SwiftUI.State(initialValue: form)
         _original = SwiftUI.State(initialValue: form)
     }
 
     private var trimmedName: String { form.name.trimmingCharacters(in: .whitespaces) }
+
+    /// Tags, the same editor the project header shows in a popover.
+    ///
+    /// Tags apply as they are clicked rather than waiting for Save, because both surfaces go through
+    /// the one store path (`addTag` / `removeTag` -> `tagsBody`). Routing them through `SettingsForm`
+    /// instead would mean a second place that builds a `metadata` body, and a second such place is
+    /// exactly how the assignee save learned to blank `assigned_mcp_token_id`. The note under the
+    /// heading says so, so Cancel is not read as undoing them.
+    private var tagsSection: some View {
+        labelled(strings[.projectTags]) {
+            Text(strings[.projectTagsApplyImmediately])
+                .font(.system(size: 11)).foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            ProjectTagEditor(strings: strings,
+                             applied: store.tags,
+                             known: knownTags,
+                             onAdd: { store.addTag($0) },
+                             onRemove: { store.removeTag($0) })
+        }
+    }
     /// Web `CreateProjectModal` name rules, ported here for parity.
     private var nameError: String? {
         guard !trimmedName.isEmpty else { return nil }
@@ -587,13 +1314,15 @@ struct ProjectSettingsSheet: View {
                                     .datePickerStyle(GraphicalDatePickerStyle()).labelsHidden()
                             }
                         }
-                        labelled(strings[.importance]) {
-                            Picker("", selection: $form.importance) {
-                                ForEach(PortfolioImportance.allCases, id: \.self) { Text(strings.importanceLabel($0)).tag($0) }
-                            }
-                            .labelsHidden().pickerStyle(MenuPickerStyle()).frame(width: 140)
-                        }
+                        // Outcome again, not importance: projects gained a real `outcome` column
+                        // (backend#2385, merged), so the rating a project carries is now the same
+                        // one — same scale, same words — a task carries. Legacy `importance` (1–4)
+                        // stays untouched on the model; it is what the server's portfolio risk
+                        // ranks by and is not the user's rating. Reports 2026-09-11_20-00-34 and
+                        // 2026-09-15_10-27-17 ("There is no outcome field in settings").
+                        ForecastOutcomePicker(wireValue: $form.outcome)
                     }
+                    if store.canEditName { tagsSection }
                     statusesSection
                     if store.canManageLifecycle { lifecycleSection }
                     if store.canDeleteProject { dangerZone }
@@ -656,15 +1385,15 @@ struct ProjectSettingsSheet: View {
         let status = store.project.lifecycleStatus
         return HStack(spacing: 8) {
             if status == .active {
-                SwiftUI.Button(action: { store.pendingConfirmation = .markComplete }) { Label(strings[.markCompleteProject], systemImage: "checkmark.square") }
+                SwiftUI.Button(action: { store.setLifecycle(.completed) }) { Label(strings[.markCompleteProject], systemImage: "checkmark.square") }
                     .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 28))
             }
             if status != .archived {
-                SwiftUI.Button(action: { store.pendingConfirmation = .archive }) { Label(strings[.archiveProject], systemImage: "archivebox") }
+                SwiftUI.Button(action: { store.setLifecycle(.archived) }) { Label(strings[.archiveProject], systemImage: "archivebox") }
                     .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 28))
             }
             if status != .active {
-                SwiftUI.Button(action: { store.pendingConfirmation = .restore }) { Label(strings[.restoreProject], systemImage: "arrow.uturn.backward") }
+                SwiftUI.Button(action: { store.setLifecycle(.active) }) { Label(strings[.restoreProject], systemImage: "arrow.uturn.backward") }
                     .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 28))
             }
         }
@@ -674,7 +1403,7 @@ struct ProjectSettingsSheet: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(strings[.dangerZone]).font(.system(size: 12, weight: .semibold)).foregroundColor(ToDoTheme.overdue)
             Text(strings[.deleteWarning]).font(.system(size: 11)).foregroundColor(.secondary)
-            SwiftUI.Button(action: { store.pendingConfirmation = .delete }) { Label(strings[.deleteProject], systemImage: "trash") }
+            SwiftUI.Button(action: { store.requestConfirmation(.delete) }) { Label(strings[.deleteProject], systemImage: "trash") }
                 .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 28))
         }
         .padding(10)

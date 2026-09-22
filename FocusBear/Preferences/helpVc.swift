@@ -393,14 +393,26 @@ extension helpVc:NSCollectionViewDelegate, NSCollectionViewDataSource, dropViewD
 // the AppKit controls. For one user it also shows a destination radio to send to Focus Bear support
 // (R2 + Cliq, the existing path) or to write a local Claude task instead.
 
+enum ReportProblemSubmission {
+    static func hasContent(note: String, screenshots: [URL]) -> Bool {
+        !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !screenshots.isEmpty
+    }
+}
+
 /// Bundle the current logs + this feedback (+ screenshots) into ~/FocusBear-Claude-Tasks/<timestamp>/
 /// with a TASK.md, ready to hand to Claude. Returns the folder.
 @discardableResult
-func writeFocusBearClaudeTask(note: String, screenshots: [URL]) -> URL? {
+func writeFocusBearClaudeTask(note: String, screenshots: [URL],
+                             root: URL = LocalReportStatusReader.defaultRoot,
+                             accountID: () -> String = { LocalReportCapability.currentAccount }) -> URL? {
+    // Reject stray/default-button submissions before looking up identity or touching the filesystem.
+    guard ReportProblemSubmission.hasContent(note: note, screenshots: screenshots) else { return nil }
+    let account = accountID()
+    guard LocalReportCapability.isEnabled(for: account) else { return nil }
     let fm = FileManager.default
     let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd_HH-mm-ss"
     let stamp = f.string(from: Date())
-    let folder = fm.homeDirectoryForCurrentUser.appendingPathComponent("FocusBear-Claude-Tasks/\(stamp)")
+    let folder = root.appendingPathComponent(stamp, isDirectory: true)
     try? fm.createDirectory(at: folder, withIntermediateDirectories: true)
 
     var copied: [String] = []
@@ -423,7 +435,7 @@ func writeFocusBearClaudeTask(note: String, screenshots: [URL]) -> URL? {
 
     - Created: \(stamp)
     - App version: \(version)
-    - User: \(appdelegate?.user?.userId ?? "")
+    - User: \(account)
 
     ## What to investigate
     \(note.isEmpty ? "_(no description provided)_" : note)
@@ -457,7 +469,13 @@ struct ReportProblemForm: View {
     @SwiftUI.State private var status: String?
     @SwiftUI.State private var dropTargeted = false
     @SwiftUI.State private var isPicking = false
+    @SwiftUI.State private var localReportRefreshToken = 0
+    @SwiftUI.State private var isCleanShotPickerVisible = false
     let showDestination: Bool
+    /// Both resolved once per launch, not per body pass — this struct is rebuilt on every keystroke in
+    /// the feedback field. Nil simply hides the button for anyone who does not have CleanShot.
+    private let cleanShotRoot = CleanShotLibrary.defaultRoot
+    private let cleanShotStrings = CleanShotPickerStrings.shared
     let onSend: (String, [URL], ReportDestination, @escaping (Bool) -> Void) -> Void
     /// Opens a window-attached file picker (handled by helpVc, which has the window). Done there rather
     /// than with NSOpenPanel.runModal() in SwiftUI — runModal stacked a nested modal loop per click and
@@ -501,23 +519,16 @@ struct ReportProblemForm: View {
                 }
 
                 HStack(spacing: 10) {
-                    SwiftUI.Button(action: { send() }) {
-                        Text(isSending ? "Sending…" : "Send")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .frame(minWidth: 130, minHeight: 35, maxHeight: 35)
-                            .background(RoundedRectangle(cornerRadius: 8).fill(Color("dark_OrangeColor")))
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(isSending)
-                    .opacity(isSending ? 0.6 : 1)
-                    .onHover { inside in
-                        if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
-                    }
+                    SwiftUI.Button(isSending ? "Sending…" : "Send") { send() }
+                        .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 40))
+                        // This form stays hosted while other Help controls/sheets handle Return.
+                        // Sending a report must not become the window-wide default action.
+                        .disabled(isSending || isPicking || !ReportProblemSubmission.hasContent(note: feedback, screenshots: screenshots))
                     if let s = status { Text(s).foregroundColor(.secondary) }
                     Spacer()
+                }
+                if showDestination {
+                    LocalReportStatusView(refreshToken: localReportRefreshToken)
                 }
             }
             .padding(16)
@@ -562,9 +573,29 @@ struct ReportProblemForm: View {
                 .onPasteCommand(of: [UTType.fileURL.identifier, UTType.image.identifier]) { providers in
                     _ = handleDrop(providers)
                 }
-            SwiftUI.Button { pasteScreenshots() } label: {
-                Label("Paste from clipboard", systemImage: "doc.on.clipboard")
-            }.buttonStyle(.link).font(.caption)
+            HStack(spacing: 12) {
+                SwiftUI.Button { pasteScreenshots() } label: {
+                    Label(cleanShotStrings["pasteFromClipboard"], systemImage: "doc.on.clipboard")
+                }.buttonStyle(.link).font(.caption)
+                // Only when CleanShot has actually saved something — offering a folder that does not
+                // exist is worse than not offering it at all.
+                if let root = cleanShotRoot {
+                    SwiftUI.Button { isCleanShotPickerVisible = true } label: {
+                        Label(cleanShotStrings["chooseFromCleanShot"], systemImage: "photo.on.rectangle.angled")
+                    }
+                    .buttonStyle(.link).font(.caption)
+                    .sheet(isPresented: $isCleanShotPickerVisible) {
+                        CleanShotPickerSheet(
+                            root: root,
+                            strings: cleanShotStrings,
+                            // The very same `screenshots` array the file picker, the drop zone and the
+                            // paste button fill, so Send treats a CleanShot pick identically.
+                            onChoose: { url in if !screenshots.contains(url) { screenshots.append(url) } },
+                            onClose: { isCleanShotPickerVisible = false })
+                    }
+                }
+                Spacer(minLength: 0)
+            }
         }
     }
 
@@ -631,12 +662,13 @@ struct ReportProblemForm: View {
     }
 
     private func send() {
-        guard !isSending else { return }
+        guard !isSending, !isPicking,
+              ReportProblemSubmission.hasContent(note: feedback, screenshots: screenshots) else { return }
         isSending = true; status = nil
         onSend(feedback, screenshots, showDestination ? destination : .support) { ok in
             isSending = false
             status = ok ? "Sent ✓" : "Failed — please try again"
-            if ok { feedback = ""; screenshots = [] }
+            if ok { feedback = ""; screenshots = []; localReportRefreshToken += 1 }
         }
     }
 }
@@ -645,7 +677,7 @@ extension helpVc {
     /// Host the SwiftUI report form over the AppKit Report Problem controls.
     func setupReportProblemSwiftUI() {
         guard #available(macOS 11.0, *), let container = tabViewReportProblem.view else { return }
-        let gated = (appdelegate?.user?.userId ?? "") == "9884b0af-dc9f-4207-964e-e4db537a2234"
+        let gated = LocalReportCapability.isEnabled(for: appdelegate?.user?.userId ?? "")
         let form = ReportProblemForm(
             showDestination: gated,
             onPickScreenshots: { [weak self] completion in self?.pickReportScreenshots(completion) },
@@ -666,6 +698,8 @@ extension helpVc {
                               collectionView.enclosingScrollView ?? collectionView,
                               lblAddScreenshots, btnSelectScreenshots, btnExportLogs]
         old.forEach { $0?.isHidden = true }
+        btnExportLogs.isEnabled = false
+        btnExportLogs.keyEquivalent = ""
     }
 
     /// Presents the screenshot picker as a sheet attached to the Help window. A sheet can't be opened
@@ -673,19 +707,34 @@ extension helpVc {
     /// cause of the freeze from the earlier runModal() approach.
     func pickReportScreenshots(_ completion: @escaping ([URL]) -> Void) {
         guard let window = view.window, window.attachedSheet == nil else { completion([]); return }
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        if #available(macOS 11.0, *) { panel.allowedContentTypes = [.image] }
-        panel.message = "Choose screenshots to attach"
-        panel.beginSheetModal(for: window) { resp in
-            completion(resp == .OK ? panel.urls : [])
+        // Building NSOpenPanel spins up com.apple.appkit.xpc.openAndSavePanelService and blocks the
+        // main thread for ~3s on first use. Done in the caller's run-loop turn, SwiftUI commits the
+        // "Opening…" spinner only AFTER that block — so the click looked completely dead for 3s
+        // (report 2026-06-24_17-56-32). Hopping to the next turn lets the spinner paint first; the
+        // wait is the same length, but it is now visibly acknowledged.
+        DispatchQueue.main.async { [weak self] in
+            // Re-check: a turn has passed, so the window may have gone or grown a sheet since.
+            guard let self = self, let window = self.view.window, window.attachedSheet == nil else {
+                completion([]); return
+            }
+            let panel = NSOpenPanel()
+            panel.allowsMultipleSelection = true
+            panel.canChooseDirectories = false
+            panel.canChooseFiles = true
+            if #available(macOS 11.0, *) { panel.allowedContentTypes = [.image] }
+            panel.message = "Choose screenshots to attach"
+            panel.beginSheetModal(for: window) { resp in
+                completion(resp == .OK ? panel.urls : [])
+            }
         }
     }
 
     @available(macOS 11.0, *)
     func sendReport(feedback: String, screenshots: [URL], destination: ReportDestination, completion: @escaping (Bool) -> Void) {
+        guard ReportProblemSubmission.hasContent(note: feedback, screenshots: screenshots) else {
+            completion(false)
+            return
+        }
         switch destination {
         case .support:
             let message = feedback.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? feedback

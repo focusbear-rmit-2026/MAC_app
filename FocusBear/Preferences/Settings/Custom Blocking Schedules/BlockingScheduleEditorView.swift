@@ -16,6 +16,34 @@ struct FocusModeOption: Identifiable {
     let name: String
 }
 
+/// Localised strings for the blocking-schedule editor — config-driven with an English fallback,
+/// mirroring `ScheduleText` / `FocusButtonText`. Keys live under `blockingScheduleEditorVcInfo` in
+/// config.json (and the assets repo config.json / config-es.json).
+enum BlockingScheduleEditorText {
+    private static var info: NSDictionary? { configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary }
+    private static func t(_ key: String, _ fallback: String) -> String {
+        (info?.value(forKey: key) as? String) ?? fallback
+    }
+    /// The schedule's start–end window. Named "Blocking time" rather than "Active time" so it reads as
+    /// "when blocking is on" instead of "when you are active" (report 2026-09-15_17-43-33).
+    static var titleBlockingTime: String { t("titleBlockingTime", "Blocking time") }
+}
+
+/// What a BRAND NEW blocking schedule starts out as. Only ever applied when creating one — an
+/// existing schedule is always loaded from its saved values, so changing these cannot rewrite
+/// anybody's saved window or toggles.
+enum BlockingScheduleDefaults {
+    /// 08:00–17:00, a plausible workday, asked for in report 2026-09-15_17-43-33. The old "two minutes
+    /// from now, for an hour" made onboarding create a block that expired the same morning.
+    static let startMinutes = 8 * 60
+    static let endMinutes = 17 * 60
+    /// Both off by default: the PO wants a new user to opt IN to AI relevance checking and to losing
+    /// microbreaks, rather than discover them already ticked (adjusts the defaults set by #2304).
+    static let isAIEnabled = false
+    static let skipMicroBreaks = false
+    static let strictness: FOCUSMODESTRICTNESS = ._NORMAL_
+}
+
 // MARK: - View model
 
 @available(macOS 11.0, *)
@@ -23,14 +51,37 @@ final class BlockingScheduleEditorModel: ObservableObject {
     @Published var name = ""
     @Published var emoji: String?
     @Published var selectedDays: Set<Int> = [1, 2, 3, 4, 5, 6, 7]   // 1=Sun ... 7=Sat
-    @Published var startMinutes = 9 * 60
-    @Published var endMinutes = 17 * 60
+    @Published var startMinutes = BlockingScheduleDefaults.startMinutes
+    @Published var endMinutes = BlockingScheduleDefaults.endMinutes
     @Published var focusModes: [FocusModeOption] = []
     @Published var selectedFocusModeID: String?
-    @Published var strictness: FOCUSMODESTRICTNESS = ._NORMAL_
-    @Published var useAI = true
-    @Published var skipMicroBreaks = false
+    @Published var strictness: FOCUSMODESTRICTNESS = BlockingScheduleDefaults.strictness
+    @Published var useAI = BlockingScheduleDefaults.isAIEnabled
+    @Published var skipMicroBreaks = BlockingScheduleDefaults.skipMicroBreaks
     @Published var isEditing = false
+
+    /// Seed the editor for a NEW schedule. Times can be pre-filled (dragging a slot on the calendar,
+    /// or picking a preset); anything not pre-filled falls back to `BlockingScheduleDefaults`.
+    func applyNewScheduleDefaults(startMinutes: Int? = nil, endMinutes: Int? = nil) {
+        isEditing = false
+        self.startMinutes = startMinutes ?? BlockingScheduleDefaults.startMinutes
+        self.endMinutes = endMinutes ?? BlockingScheduleDefaults.endMinutes
+        if self.endMinutes <= self.startMinutes { self.endMinutes = min(1440, self.startMinutes + 60) }
+        useAI = BlockingScheduleDefaults.isAIEnabled
+        skipMicroBreaks = BlockingScheduleDefaults.skipMicroBreaks
+    }
+
+    /// Load an EXISTING schedule's saved window and toggles. Defaults never apply here — this is what
+    /// keeps a user who already picked 9–6 (or ticked "skip microbreaks") seeing their own values.
+    func applySavedSchedule(startMinutes: Int, endMinutes: Int, isAIBlockingEnabled: Bool, isMicroBreaksEnabled: Bool) {
+        isEditing = true
+        self.startMinutes = startMinutes
+        // A cross-midnight window isn't representable on the slider; clamp it to the end of the day.
+        let rawEnd = endMinutes <= startMinutes ? 1440 : endMinutes
+        self.endMinutes = min(1440, max(startMinutes + 15, rawEnd))
+        useAI = isAIBlockingEnabled
+        skipMicroBreaks = !isMicroBreaksEnabled
+    }
 
     func reloadFocusModes() {
         focusModes = arrFocusType.compactMap { fm in
@@ -126,7 +177,7 @@ struct BlockingScheduleEditorView: View {
                 }
             }
 
-            field(title: "Active time") {
+            field(title: BlockingScheduleEditorText.titleBlockingTime) {
                 VStack(spacing: 8) {
                     HStack {
                         timeChip(model.startMinutes)

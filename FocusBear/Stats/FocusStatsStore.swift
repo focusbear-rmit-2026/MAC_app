@@ -60,7 +60,7 @@ final class FocusLogStore: ObservableObject {
     @Published private(set) var hasError = false
     @Published private(set) var canLoadMore = false
 
-    @Published var sortColumn = FocusLogColumn.startTime
+    @Published var sortColumn = FocusLogColumn.time
     @Published var filterColumn: FocusLogColumn?
     @Published var filterText = ""
     @Published var filterDay: Date?
@@ -205,10 +205,14 @@ final class FocusLogStore: ObservableObject {
                 addLog(text: "stats export csv failed:- \(error.localizedDescription)")
             }
         }
-        if let window = mainWindowControllerObj?.window {
+        if let window = mainWindowControllerObj?.window ?? NSApp.keyWindow {
             panel.beginSheetModal(for: window, completionHandler: write)
         } else {
-            write(panel.runModal())
+            // Never runModal() as the fallback: with no window to host it the panel can open behind
+            // another app, and runModal then blocks the main thread on something invisible
+            // (report 2026-09-14_22-12-31).
+            NSApp.activate(ignoringOtherApps: true)
+            panel.begin(completionHandler: write)
         }
     }
 }

@@ -25,10 +25,14 @@ class ViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        MainWindowContentLayout.attachWindowControls(boxTopButtons, to: view)
         
         topButtonsTrackingArea = NSTrackingArea.init(rect: stackViewTopButtons.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         stackViewTopButtons.addTrackingArea(topButtonsTrackingArea!)
-        boxMinimize.isHidden = true
+        // Always visible. Full screen has no traffic lights, so a minimise button that only appears
+        // when the pointer happens to cross the top bar reads as no minimise button at all — the user
+        // could see "Exit Fullscreen" and nothing else (report 2026-09-14_16-31-53).
+        boxMinimize.isHidden = false
 
         splitViewItemLeftView.subviews.removeAll()
         splitViewItemLeftView.addSubview(getLeftMenuVcObject().view)
@@ -49,6 +53,32 @@ class ViewController: NSViewController {
 
         splitViewItemLeftView.addObserver(self, forKeyPath: "frame", options: [.old, .new], context: nil)
     }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        updateFullScreenContentInsets()
+    }
+
+    /// The storyboard pins both sidebar and page content to boxContainer. Inset that shared host,
+    /// using screen coordinates so secondary monitors and already-inset content are handled once.
+    func updateFullScreenContentInsets() {
+        guard isViewLoaded else { return }
+        MainWindowContentLayout.constrainWidthToWindow(view)
+        guard let content = boxContainer else { return }
+        var inset: CGFloat = 0
+        if let window = view.window, let screen = window.screen {
+            let safeAreaTop: CGFloat
+            if #available(macOS 12.0, *) { safeAreaTop = screen.safeAreaInsets.top }
+            else { safeAreaTop = 0 }
+            inset = MainWindowContentLayout.topInset(
+                contentFrameOnScreen: window.convertToScreen(view.convert(view.bounds, to: nil)),
+                screenFrame: screen.frame, visibleScreenFrame: screen.visibleFrame,
+                screenSafeAreaTop: safeAreaTop,
+                isCustomFullScreen: (window.windowController as? mainWindowController)?.isFullScreenVisible == true,
+                styleMask: window.styleMask)
+        }
+        MainWindowContentLayout.apply(topInset: inset, to: content, in: view)
+    }
     
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if keyPath == "frame" {
@@ -65,7 +95,15 @@ class ViewController: NSViewController {
 
     var shouldIgnoreViewWilDisappear = false
     var lastSmallWindowFrame:NSRect?
-    func checkIsFullScreenNeeded() {
+    /// - Parameter isRestoringAfterAllowedActivityHabit: only `AllowedActivityFullScreen`'s restore
+    ///   passes true. Every other caller is ordinary window routing — a sidebar row, the menu-bar expand
+    ///   button, the re-assert after leaving macOS's own full screen — and must not cover the screen
+    ///   while an allowed-activity habit is playing. Gating it HERE rather than at each call site is
+    ///   deliberate: this is the one door into the borderless window, so a route added later is covered
+    ///   by default instead of quietly reopening the bug (report 2026-09-16_17-05-07 follow-up, where
+    ///   the new menu-bar expand button did exactly that).
+    func checkIsFullScreenNeeded(isRestoringAfterAllowedActivityHabit: Bool = false) {
+        if !isRestoringAfterAllowedActivityHabit, keepWindowedForAllowedActivityHabit() { return }
         if checkIsFullScreenEnabled(){
             if !(self.view.window?.styleMask.contains(.fullScreen) ?? false){// Don’t do this if the user is already in fullscreen. Wait until the user toggles back to a small screen, then check the setting again.
                 shouldIgnoreViewWilDisappear = true
@@ -96,30 +134,37 @@ class ViewController: NSViewController {
                     // the window must still fill the visible screen — the previous code centred it at
                     // minSize (900x450), which was too short and clipped the bottom of the break-activity
                     // content. Do NOT shrink this back to a compact size; that reintroduces the clip.
-                    let screenList = NSScreen.screens
-                    for screen in screenList {
-                        self.view.window?.setFrame(screen.visibleFrame, display: true)
-                        break;
+                    if let screen = NSScreen.screens.first {
+                        setMainWindowFrame(screen.visibleFrame)
                     }
                 }else{
-                    if let screen = self.view.window?.screen{ //
-                        self.view.window?.setFrame(screen.visibleFrame, display: true, animate: false)
-                    }else{
-                        let screenList = NSScreen.screens
-                        for screen in screenList {
-                            self.view.window?.setFrame(screen.visibleFrame, display: true)
-                            break;
-                        }
+                    if let screen = self.view.window?.screen ?? NSScreen.screens.first{ //
+                        setMainWindowFrame(screen.visibleFrame)
                     }
                 }
             }
         }
     }
     
+    /// Every programmatic resize of the main window goes through here. The viewport cap on the content
+    /// view is also AppKit's ceiling on the window itself (see `MainWindowContentLayout.allowWindowWidth`),
+    /// so a wider frame has to lift it first — otherwise Auto Layout silently clamps the window to the
+    /// width it already had, and e.g. growing into full screen from a small window keeps the small width.
+    private func setMainWindowFrame(_ frame: NSRect, animate: Bool = false) {
+        guard let window = view.window else { return }
+        MainWindowContentLayout.allowWindowWidth(frame.width, on: window.contentView)
+        window.setFrame(frame, display: true, animate: animate)
+    }
+
+    private func setMainWindowContentSize(_ size: NSSize) {
+        guard let window = view.window else { return }
+        MainWindowContentLayout.allowWindowWidth(size.width, on: window.contentView)
+        window.setContentSize(size)
+    }
+
     func showSmallScreen(showMinimumSize:Bool = false){
         mainWindowControllerObj?.showSmallSizeWindow()
-        let screenList = NSScreen.screens
-        
+
         if !(self.view.window?.styleMask.contains(.fullScreen) ?? false) && showMinimumSize{
             
           //  self.view.window?.center()
@@ -135,29 +180,19 @@ class ViewController: NSViewController {
 
             // Only set if difference > 100 px
             if widthDiff > 100 || heightDiff > 100 { // check added on 3/9/25 version 2.27.410
-                self.view.window?.setContentSize(newSize)
+                setMainWindowContentSize(newSize)
             }
         }else{
-            if let screen = self.view.window?.screen{ //
-                self.view.window?.setFrame(screen.visibleFrame, display: true, animate: false)
-            }else{
-                for screen in screenList {
-                    self.view.window?.setFrame(screen.visibleFrame, display: true, animate: false)
-                    break;
-                }
+            if let screen = self.view.window?.screen ?? NSScreen.screens.first{ //
+                setMainWindowFrame(screen.visibleFrame)
             }
         }
         boxTopButtons.isHidden = true
     }
 
     @objc func setframe() {
-        let screenList = NSScreen.screens
-        for screen in screenList {
-            self.view.window?.setFrame(NSMakeRect(NSMinX(screen.frame), NSMinY(screen.frame), NSWidth(screen.frame), NSHeight(screen.frame)), display: true) //  uncomment this line 
-//            self.view.window?.setFrame(NSMakeRect(100, 100, NSWidth(screen.frame) - 200, NSHeight(screen.frame) - 200) , display: true)//  comment this //  do this
-            
-            break;
-        }
+        guard let screen = NSScreen.screens.first else { return }
+        setMainWindowFrame(screen.frame)
     }//
     
     override func viewWillAppear() {
@@ -173,9 +208,25 @@ class ViewController: NSViewController {
             guard let self = self else { return }
             let viewsArr = self.containerView.subviews
             if viewsArr.count == 0{
-                addLog(text: "InstallHabitVC - containerView is empty, restoring last selected view")
                 if let leftMenuVcObj = leftMenuVcObj, let lastSelectedBox = leftMenuVcObj.lastSelectedBox{
+                    addLog(text: "InstallHabitVC - containerView is empty, restoring last selected view")
                     leftMenuVcObj.selectableListBoxDidChangeSelectionByUser(lastSelectedBox)
+                } else if let leftMenuVcObj = leftMenuVcObj {
+                    // #2581: a fresh session (e.g. right after login) has no lastSelectedBox yet, so the
+                    // branch above had nothing to restore and the pane stayed blank when the window was
+                    // brought up before the user had opened any view — the activation-restore / Dock-reopen
+                    // path shows the main window in state _NOTHING_ while this container is still empty.
+                    // Fall back to the Start Focus Session screen (boxFocusSession →
+                    // showFocusSessionTabContent(), which shows the start screen when no session is running
+                    // and never leaves the area blank): a fresh user most commonly wants to start a focus
+                    // session, so this is the natural landing view instead of a blank pane.
+                    addLog(text: "InstallHabitVC - containerView is empty and no lastSelectedBox — defaulting to Focus Session")
+                    leftMenuVcObj.boxFocusSession.isSelected = true
+                    leftMenuVcObj.selectableListBoxDidChangeSelectionByUser(leftMenuVcObj.boxFocusSession)
+                    // Window sizing lives in selectableListBoxSelectionDidChange, which this recovery
+                    // doesn't invoke, so size the window to the small default explicitly — a fresh session
+                    // in state _NOTHING_ is never the borderless full-screen routine window.
+                    mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
                 }
             }
         }
@@ -192,12 +243,8 @@ class ViewController: NSViewController {
             boxMinimize.isHidden = false
         }
     }
-    
-    override func mouseExited(with event: NSEvent) {
-        if event.trackingArea == topButtonsTrackingArea{
-            boxMinimize.isHidden = true
-        }
-    }
+
+    // Deliberately no mouseExited counterpart: the minimise button stays put once shown.
     
     @IBAction func btnMinimizeClicked(_ sender: Any) {
         addLog(text: "[user-action] button Minimize Clicked")// added on 10/4/25 in 1.21.356
@@ -351,12 +398,11 @@ class ViewController: NSViewController {
         for subview in viewsArr {
             subview.removeFromSuperview()
         }
-        let views = self.view.subviews
-        if views.count != 1{
-            for subview in views {
-                if subview != boxContainer{
-                    subview.removeFromSuperview()
-                }
+        // Both the page host and window chrome are permanent root children. The chrome's
+        // storyboard outlets are weak, so removing it here also destroys the minimize control.
+        for subview in view.subviews {
+            if subview !== boxContainer && subview !== boxTopButtons {
+                subview.removeFromSuperview()
             }
         }
         
@@ -514,23 +560,23 @@ class ViewController: NSViewController {
         containerView.addConstraints(subView: getAllTracksVcObj().view)
     }
     
+    /// The TOOLS entry always opens the native To-do list.
+    ///
+    /// It used to show the web To-do Player (`taskPlayerVc`) instead whenever a focus session, an
+    /// allowed activity or a custom blocking schedule was running — the same tool slot rendering a
+    /// different screen, complete with the web page's own "To Do Player / To Do List" tab header. The
+    /// running session now has its own native task queue (FocusBear/FocusSession), so that was two
+    /// routes to the same thing.
+    ///
+    /// `taskPlayerVc` is *not* retired: ~30 call sites still drive its webview headlessly, and its JS
+    /// bridge is what writes `focusModeTaskString` back. It simply no longer has a screen of its own,
+    /// and its deferred reload is now driven by the session lifecycle
+    /// (`reloadHeadlessToDoPlayerIfPending`) rather than by displaying a screen.
     func showTaskView(){
         self.removeSubViews()
-        if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-            if taskPlayerVcObj == nil{
-                getTaskPlayerVcObject().loadView()// handled in v2.27.435 otherwise app can be crash when focus resumes automatically after app opens(remaining focus mode)
-            }
-            containerView.addSubview(taskPlayerVcObj!.view)
-            containerView.addConstraints(subView: taskPlayerVcObj!.view)
-            if shouldReloadTaskPlayer{
-                shouldReloadTaskPlayer = false
-                taskPlayerVcObj?.reloadData(totalDuration: focusModeMinutesToPerform, intention:whatToAchieveInFocusBlock)
-            }
-        }else{
-            // The native screen reloads itself in viewWillAppear (like brainDumpVc).
-            containerView.addSubview(getTodoListToolVcObject().view)
-            containerView.addConstraints(subView: getTodoListToolVcObject().view)
-        }
+        // The native screen reloads itself in viewWillAppear (like brainDumpVc).
+        containerView.addSubview(getTodoListToolVcObject().view)
+        containerView.addConstraints(subView: getTodoListToolVcObject().view)
     }
     
     func showFocusCompletedView(){

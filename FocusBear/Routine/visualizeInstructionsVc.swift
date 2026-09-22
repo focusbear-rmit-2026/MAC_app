@@ -116,11 +116,14 @@ class visualizeInstructionsVc: NSViewController {
             hosting.trailingAnchor.constraint(equalTo: pepTalkContainer.trailingAnchor),
             hosting.bottomAnchor.constraint(equalTo: pepTalkContainer.bottomAnchor),
         ])
-        // No storyboard spinner over the container: the native Pep Talk tab already shows its own
-        // ProgressView while the first streamed chunk is loading (see PepTalkTab), so driving the
-        // storyboard loader on the same `isStreaming && text.isEmpty` condition produced two spinners
-        // (most visible when switching tone, e.g. tapping "court jester").
-        loader.stopAnimation(self)
+        // The storyboard spinner sits over the container: spin until the first streamed chunk lands.
+        store.pepTalk.$isStreaming.combineLatest(store.pepTalk.$text)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isStreaming, text in
+                guard let self = self else { return }
+                if isStreaming && text.isEmpty { self.loader.startAnimation(self) } else { self.loader.stopAnimation(self) }
+            }
+            .store(in: &pepTalkObservers)
         statsStore = store
         statsHostingView = hosting
         store.screenAppeared()

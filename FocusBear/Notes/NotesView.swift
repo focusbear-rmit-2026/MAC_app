@@ -51,6 +51,23 @@ struct NotesStrings {
     var underline = "Underline"
     var bulletList = "Bulleted list"
     var numberedList = "Numbered list"
+    var scopeAll = "All notes"
+    var scopePersonal = "Personal Notes"
+    var scopeProjectNotes = "Shared Notes"
+    var scopeArchived = "Archived"
+    var newProjectNote = "New shared note"
+    var backToNotes = "Back to notes"
+    var projectFilterAll = "All projects"
+    var projectFilterHelp = "Show shared notes from one project only"
+    var noArchivedNotes = "No archived notes"
+    var archiveNote = "Archive"
+    var archiveNoteHelp = "File this note away — it leaves the list but keeps everything in it"
+    var restoreNote = "Restore"
+    var restoreNoteHelp = "Put this note back in the list"
+    var noteArchived = "Note archived"
+    var noteRestored = "Note restored"
+    var couldNotArchiveNote = "Could not archive the note"
+    var couldNotRestoreNote = "Could not restore the note"
 
     static func load() -> NotesStrings {
         var strings = NotesStrings()
@@ -98,6 +115,23 @@ struct NotesStrings {
         read("underlineText", &strings.underline)
         read("bulletListText", &strings.bulletList)
         read("numberedListText", &strings.numberedList)
+        read("scopeAllText", &strings.scopeAll)
+        read("scopePersonalText", &strings.scopePersonal)
+        read("scopeProjectNotesText", &strings.scopeProjectNotes)
+        read("scopeArchivedText", &strings.scopeArchived)
+        read("newProjectNoteText", &strings.newProjectNote)
+        read("backToNotesText", &strings.backToNotes)
+        read("projectFilterAll", &strings.projectFilterAll)
+        read("projectFilterHelp", &strings.projectFilterHelp)
+        read("noArchivedNotesText", &strings.noArchivedNotes)
+        read("archiveNoteText", &strings.archiveNote)
+        read("archiveNoteHelpText", &strings.archiveNoteHelp)
+        read("restoreNoteText", &strings.restoreNote)
+        read("restoreNoteHelpText", &strings.restoreNoteHelp)
+        read("noteArchivedText", &strings.noteArchived)
+        read("noteRestoredText", &strings.noteRestored)
+        read("couldNotArchiveNoteText", &strings.couldNotArchiveNote)
+        read("couldNotRestoreNoteText", &strings.couldNotRestoreNote)
         strings.loadCloseFallback()
         return strings
     }
@@ -117,19 +151,37 @@ struct NotesScreen: View {
     @ObservedObject var store: NotesStore
     let onClose: () -> Void
 
+    private static let projectFilterWidth: CGFloat = 220
+    private static let projectFilterHeight: CGFloat = 24
+    /// Four segments now ("All notes / Personal Notes / Shared Notes / Archived").
+    private static let scopeWidth: CGFloat = 440
+    private static let spinnerScale: CGFloat = 0.5
+    private static let spinnerSide: CGFloat = 16
+    private static let footerButtonHeight: CGFloat = 30
+
     private var strings: NotesStrings { store.strings }
+
+    /// The projects that have notes, in the shape the searchable dropdown takes.
+    private var projectFilterOptions: [SearchableComboBoxField.Option] {
+        store.filterableProjects.map { SearchableComboBoxField.Option(id: $0.id, name: $0.name) }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if store.isBrainDumpVisible {
-                BrainDumpCard(store: store)
+            if let entry = store.openProjectNote {
+                ProjectNoteOpenView(store: store, entry: entry)
+            } else {
+                noteList
             }
-            toolbar
-            NotesList(store: store)
             footer
         }
         .padding(16)
         .background(Color(backgroundColor))
+        // An open project note owns a live collaborative document (web view, realtime channel, poll
+        // timer). Leaving the screen has to hand it back, or it keeps running behind a screen nobody
+        // is looking at. Hosts whose view tree survives a close (brainDumpVc) also call this from
+        // viewDidDisappear, where onDisappear never fires.
+        .onDisappear { store.screenDisappeared() }
         .sheet(item: $store.editorSession) { session in
             NoteEditorSheet(store: store, note: session.note)
         }
@@ -139,6 +191,62 @@ struct NotesScreen: View {
                 message: Text(strings.deleteConfirmation),
                 primaryButton: .destructive(Text(strings.delete)) { store.confirmDelete() },
                 secondaryButton: .cancel(Text(strings.cancel)))
+        }
+    }
+
+    private var noteList: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if store.isBrainDumpVisible {
+                BrainDumpCard(store: store)
+            }
+            toolbar
+            scopeBar
+            if store.isCreateProjectNoteVisible {
+                NewProjectNoteCard(store: store)
+            }
+            NotesList(store: store)
+        }
+    }
+
+    /// Personal notes, project notes, or both. Project notes are the reason this exists
+    /// (report 2026-09-15_10-39-04) — before it, they were reachable only inside a project.
+    private var scopeBar: some View {
+        HStack(spacing: 10) {
+            Picker(selection: $store.scope, label: EmptyView()) {
+                Text(strings.scopeAll).tag(NotesScope.all)
+                Text(strings.scopePersonal).tag(NotesScope.personal)
+                Text(strings.scopeProjectNotes).tag(NotesScope.project)
+                Text(strings.scopeArchived).tag(NotesScope.archived)
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .labelsHidden()
+            .frame(maxWidth: NotesScreen.scopeWidth)
+
+            // Only worth showing once project notes are actually in view and there is more than one
+            // project to choose between — otherwise it is a control with a single option. A flat
+            // Picker was unusable with many projects, so this one filters its menu as you type.
+            if store.scope.includesProjectNotes, store.filterableProjects.count > 1 {
+                SearchableComboBoxField(options: projectFilterOptions,
+                                        selectedId: $store.projectFilter,
+                                        clearedOptionTitle: strings.projectFilterAll)
+                    .frame(width: NotesScreen.projectFilterWidth, height: NotesScreen.projectFilterHeight)
+                    .help(strings.projectFilterHelp)
+            }
+
+            if store.isLoadingProjectNotes || store.isLoadingArchivedProjectNotes {
+                ProgressView().scaleEffect(NotesScreen.spinnerScale)
+                    .frame(width: NotesScreen.spinnerSide, height: NotesScreen.spinnerSide)
+            }
+
+            Spacer()
+
+            if !store.isBrainDumpVisible {
+                SwiftUI.Button(action: { store.toggleBrainDumpVisible() }) {
+                    Text("🧠 " + strings.showBrainDump)
+                }
+                .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 26))
+                .help(strings.showBrainDump)
+            }
         }
     }
 
@@ -171,13 +279,31 @@ struct NotesScreen: View {
             .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 30))
             .disabled(store.isFetchingNotes && store.visibleNotes.isEmpty)
 
-            if !store.isBrainDumpVisible {
-                SwiftUI.Button(action: { store.toggleBrainDumpVisible() }) {
-                    Text("🧠 " + strings.showBrainDump)
+            // A new note is an active note, so offering it from the archive would only file something
+            // into the list the user is not looking at.
+            if !store.scope.showsArchivedNotes {
+                SwiftUI.Button(action: { store.beginCreateProjectNote() }) {
+                    Label(strings.newProjectNote, systemImage: "folder.badge.plus")
                 }
                 .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 30))
-                .help(strings.showBrainDump)
+                .help(strings.newProjectNote)
+                .disabled(store.isCreateProjectNoteVisible)
             }
+
+            // The footer's Close button sits below a list that is usually taller than the panel, so
+            // inside the focus session there was no visible way out (report 2026-09-11_10-15-29).
+            // The toolbar is always on screen.
+            SwiftUI.Button(action: closeOneLevel) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: 22, height: 22)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PlainButtonStyle())
+            .pointingHandCursor()
+            .help(strings.close)
+            .accessibilityLabel(strings.close)
+            .keyboardShortcut(.cancelAction)
         }
     }
 
@@ -206,9 +332,180 @@ struct NotesScreen: View {
                     .transition(.opacity)
             }
             Spacer()
-            SwiftUI.Button(action: onClose) { Text(strings.close) }
-                .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 30))
+            footerButton
         }
+    }
+
+    /// Close belongs to the list. On an open note it was a duplicate of "Back to notes", so Archive
+    /// takes it instead (report 2026-09-15_20-22-23) — the way out of a note is still Back, or Escape
+    /// when no rename is in progress, and then the list's ✕ / Close dismisses the screen.
+    @ViewBuilder
+    private var footerButton: some View {
+        switch NotesFooterAction.next(openNote: store.openProjectNote?.note) {
+        case .closeScreen:
+            SwiftUI.Button(action: closeOneLevel) { Text(strings.close) }
+                .buttonStyle(AppOrangeButtonStyle(secondary: true, height: NotesScreen.footerButtonHeight))
+        case .archiveNote:
+            archiveButton(title: strings.archiveNote, help: strings.archiveNoteHelp, archived: true)
+        case .restoreNote:
+            archiveButton(title: strings.restoreNote, help: strings.restoreNoteHelp, archived: false)
+        }
+    }
+
+    @ViewBuilder
+    private func archiveButton(title: String, help: String, archived: Bool) -> some View {
+        SwiftUI.Button(action: { if let entry = store.openProjectNote { store.setArchived(entry, archived: archived) } }) {
+            Label(title, systemImage: archived ? "archivebox" : "arrow.uturn.backward")
+        }
+        .buttonStyle(AppOrangeButtonStyle(secondary: true, height: NotesScreen.footerButtonHeight))
+        .disabled(store.isArchivingNote)
+        .help(help)
+    }
+
+    /// Close the innermost thing first. Closing the window from inside a project note read as the
+    /// whole app quitting on the Projects screen — this window is the app's only visible surface
+    /// (report 2026-09-14_19-4x) — so Close steps back to the note list before it dismisses the screen.
+    private func closeOneLevel() {
+        switch NotesCloseStep.next(hasOpenProjectNote: store.openProjectNote != nil) {
+        case .closeProjectNote: store.closeProjectNote()
+        case .closeScreen: onClose()
+        }
+    }
+}
+
+// MARK: - Open project note
+
+/// An open project note, shown inside the Notes screen. It is rendered by `ProjectNoteDetailView`,
+/// the same view the Projects screen uses, so a note is editable wherever it was opened and there is
+/// one implementation rather than two that can drift.
+private struct ProjectNoteOpenView: View {
+    @ObservedObject var store: NotesStore
+    let entry: ProjectNoteEntry
+
+    private static let spinnerScale: CGFloat = 0.5
+    private static let spinnerSide: CGFloat = 16
+
+    /// Mid-rename Escape belongs to the title field, not to Back — see `NoteEscapeTarget`.
+    @SwiftUI.State private var isRenamingTitle = false
+
+    private var strings: NotesStrings { store.strings }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                backButton
+                ProjectNameChip(name: entry.projectName, label: store.projectStrings[.filterProject])
+                // The note's own metadata (title, last edited) is re-fetched on open; the body has
+                // its own status line inside the editor.
+                if store.isLoadingOpenProjectNote {
+                    ProgressView().scaleEffect(ProjectNoteOpenView.spinnerScale)
+                        .frame(width: ProjectNoteOpenView.spinnerSide, height: ProjectNoteOpenView.spinnerSide)
+                }
+                Spacer()
+            }
+            ProjectNoteDetailView(note: entry.note, projectId: entry.projectId,
+                                  strings: store.projectStrings, webURL: store.webURL(for: entry),
+                                  onRename: { store.renameProjectNote(entry, to: $0) },
+                                  onRenamingChanged: { isRenamingTitle = $0 })
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    /// Back saves a half-typed title (`InlineRenameDismissal`), so Escape must not also mean Back
+    /// while one is being typed — that would leave no way to abandon a rename. `.cancelAction` is a
+    /// window-wide key equivalent and beats the field's own Escape handling, so it is taken off the
+    /// button for exactly as long as the rename lasts.
+    @ViewBuilder
+    private var backButton: some View {
+        let button = SwiftUI.Button(action: { store.closeProjectNote() }) {
+            Label(strings.backToNotes, systemImage: "chevron.left")
+        }
+        .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 28))
+        switch NoteEscapeTarget.next(isRenamingTitle: isRenamingTitle) {
+        case .discardTitleEdit: button
+        case .backToList: button.keyboardShortcut(.cancelAction)
+        }
+    }
+}
+
+// MARK: - New project note
+
+/// Create a note straight into a project without visiting the project first. The title is asked for
+/// up front because creating a note is a `POST { title }` — the body is a separate collaborative
+/// document, written afterwards in the editor the new note opens into.
+private struct NewProjectNoteCard: View {
+    @ObservedObject var store: NotesStore
+
+    private static let projectFieldWidth: CGFloat = 240
+    /// Matches the scope bar's filter, so the two project fields line up.
+    private static let projectFieldHeight: CGFloat = 24
+
+    /// nil until a project is chosen — the same "nothing picked" the shared combo box reports.
+    @SwiftUI.State private var projectId: String?
+    @SwiftUI.State private var title = ""
+
+    private var strings: NotesStrings { store.strings }
+    private var projectStrings: ToDoStrings { store.projectStrings }
+    private var canCreate: Bool { NewProjectNote.canCreate(projectId: projectId) && !store.isCreatingProjectNote }
+    private var projectOptions: [SearchableComboBoxField.Option] {
+        store.projects.map { SearchableComboBoxField.Option(id: $0.id, name: $0.name) }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(strings.newProjectNote).font(.system(size: 13, weight: .semibold))
+            if store.projects.isEmpty {
+                Text(store.isLoadingProjectNotes ? projectStrings[.loading] : projectStrings[.noExistingProjects])
+                    .font(.system(size: 12)).foregroundColor(.secondary)
+            } else {
+                HStack(spacing: 8) {
+                    // The same typeahead the filter above uses. A flat Picker listing every project
+                    // is unusable once there are more than a handful, and this account has 128.
+                    SearchableComboBoxField(options: projectOptions, selectedId: $projectId,
+                                            clearedOptionTitle: projectStrings[.filterProject])
+                        .frame(width: NewProjectNoteCard.projectFieldWidth,
+                               height: NewProjectNoteCard.projectFieldHeight)
+                    TextField(strings.noteTitlePlaceholder, text: $title)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                }
+            }
+            HStack(spacing: 8) {
+                Spacer()
+                SwiftUI.Button(action: { store.cancelCreateProjectNote() }) { Text(strings.cancel) }
+                    .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 26))
+                SwiftUI.Button(action: { if let projectId = projectId { store.createProjectNote(projectId: projectId, title: title) } }) {
+                    Text(store.isCreatingProjectNote ? strings.saving : projectStrings[.createNote])
+                }
+                .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 26))
+                .disabled(!canCreate)
+            }
+        }
+        .padding(12)
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(8)
+        // Deliberately no default project. A Picker had to show something, so it pre-selected the
+        // first project and Create would file the note there if the user never touched it; a field
+        // you type into starts empty, and Create stays disabled until a project is actually chosen.
+    }
+}
+
+/// The project a note belongs to, so a row in a merged list says where it lives.
+struct ProjectNameChip: View {
+    let name: String
+    let label: String
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "folder")
+            Text(name).lineLimit(1)
+        }
+        .font(.system(size: 11))
+        .foregroundColor(.secondary)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(ToDoTheme.accent.opacity(0.12))
+        .cornerRadius(10)
+        .help(label + ": " + name)
     }
 }
 
@@ -287,12 +584,16 @@ struct NoteFormattingToolbar: View {
 
 private struct NotesList: View {
     @ObservedObject var store: NotesStore
+
+    private static let emptyGlyphSize: CGFloat = 36
+
     private var strings: NotesStrings { store.strings }
 
     var body: some View {
         Group {
-            if store.visibleNotes.isEmpty {
-                if store.isFetchingNotes || store.isSearching {
+            if store.listItems.isEmpty {
+                if store.isFetchingNotes || store.isSearching || store.isLoadingProjectNotes
+                    || store.isLoadingArchivedProjectNotes {
                     ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     emptyState
@@ -300,11 +601,8 @@ private struct NotesList: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 10) {
-                        ForEach(store.visibleNotes) { note in
-                            NoteRow(note: note, strings: strings,
-                                    onEdit: { store.openEditor(for: note) },
-                                    onDelete: { store.requestDelete(note) })
-                                .onAppear { store.rowAppeared(note) }
+                        ForEach(store.listItems) { item in
+                            row(for: item)
                         }
                         if store.isFetchingNotes && store.hasNextPage && !store.isSearchActive {
                             ProgressView().padding()
@@ -317,12 +615,31 @@ private struct NotesList: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    @ViewBuilder
+    private func row(for item: NotesListItem) -> some View {
+        switch item {
+        case .personal(let note):
+            NoteRow(note: note, strings: strings,
+                    onEdit: { store.openEditor(for: note) },
+                    onDelete: { store.requestDelete(note) })
+                // Paging is driven by the personal list, which is the only paged source.
+                .onAppear { store.rowAppeared(note) }
+        case .project(let entry):
+            ProjectNoteRow(entry: entry, strings: strings, projectStrings: store.projectStrings,
+                           onOpen: { store.open(entry) })
+        }
+    }
+
     private var emptyState: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "note.text").font(.system(size: 36)).foregroundColor(.secondary)
-            Text(strings.noNotesFound).font(.headline)
-            Text(store.isSearchActive ? strings.noNotesMatchSearch : strings.noNotesFound)
-                .font(.subheadline).foregroundColor(.secondary)
+        // An empty archive is the normal state, not a failure — say what is actually missing.
+        let isArchive = store.scope.showsArchivedNotes
+        let heading = isArchive ? strings.noArchivedNotes : strings.noNotesFound
+        let detail = store.isSearchActive ? strings.noNotesMatchSearch : heading
+        return VStack(spacing: 8) {
+            Image(systemName: isArchive ? "archivebox" : "note.text")
+                .font(.system(size: NotesList.emptyGlyphSize)).foregroundColor(.secondary)
+            Text(heading).font(.headline)
+            Text(detail).font(.subheadline).foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -372,6 +689,46 @@ private struct NoteRow: View {
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(NSColor.separatorColor)))
         .cornerRadius(8)
         .onTapGesture(count: 2, perform: onEdit)
+    }
+}
+
+/// A note that lives in a project. The list payload carries no body, so the row shows what it has —
+/// the title, the project, and when it last changed — and opening it fetches the rest.
+private struct ProjectNoteRow: View {
+    let entry: ProjectNoteEntry
+    let strings: NotesStrings
+    let projectStrings: ToDoStrings
+    let onOpen: () -> Void
+
+    private var displayTitle: String {
+        entry.title.isEmpty ? projectStrings[.untitledNote] : entry.title
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Text(displayTitle).font(.system(size: 15, weight: .medium))
+                Spacer()
+                ProjectNameChip(name: entry.projectName, label: projectStrings[.filterProject])
+            }
+            HStack {
+                Text(projectStrings.format(.lastEdited, ToDoStrings.dateToken,
+                                           ToDoDates.abbreviated(entry.sortDateString)))
+                    .font(.system(size: 11)).foregroundColor(.secondary)
+                Spacer()
+                SwiftUI.Button(action: onOpen) { Image(systemName: "chevron.right") }
+                    .buttonStyle(PlainButtonStyle()).pointingHandCursor()
+                    .accessibilityLabel(displayTitle)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(NSColor.controlBackgroundColor))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(ToDoTheme.accent.opacity(0.35)))
+        .cornerRadius(8)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onOpen)
+        .pointingHandCursor()
     }
 }
 

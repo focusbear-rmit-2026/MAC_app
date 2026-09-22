@@ -75,16 +75,17 @@ private struct FocusLogTable: View {
     let strings: StatsStrings
 
     private static let durationWidth: CGFloat = 130
-    private static let timeWidth: CGFloat = 150
+    private static let timeWidth: CGFloat = 210
     private static let modeWidth: CGFloat = 130
     private static let actionsWidth: CGFloat = 32
     private static let timePattern = "MMM dd yyyy, hh:mm a"
+    /// The finish time of a same-day session: the date is already on the start.
+    private static let clockPattern = "hh:mm a"
 
     private func title(_ column: FocusLogColumn) -> String {
         switch column {
         case .duration: return strings.duration
-        case .startTime: return strings.startTime
-        case .finishTime: return strings.finishTime
+        case .time: return strings.focusLogTime
         case .intention: return strings.intention
         case .distractions: return strings.distractions
         case .focusMode: return strings.focusMode
@@ -94,7 +95,7 @@ private struct FocusLogTable: View {
     private func width(_ column: FocusLogColumn) -> CGFloat? {
         switch column {
         case .duration: return FocusLogTable.durationWidth
-        case .startTime, .finishTime: return FocusLogTable.timeWidth
+        case .time: return FocusLogTable.timeWidth
         case .focusMode: return FocusLogTable.modeWidth
         case .intention, .distractions: return nil
         }
@@ -103,6 +104,18 @@ private struct FocusLogTable: View {
     static func timeText(_ raw: String?) -> String {
         guard let date = StatsDates.parse(raw) else { return "--" }
         return StatsDates.format(date, timePattern)
+    }
+
+    /// "Sep 11 2026, 12:14 pm – 12:58 pm", with the date repeated only for a session that ran past
+    /// midnight. One column instead of two leaves the intention room to be read.
+    static func rangeText(start: String?, finish: String?) -> String {
+        let startText = timeText(start)
+        guard let startDate = StatsDates.parse(start), let finishDate = StatsDates.parse(finish) else {
+            return finish == nil ? startText : "\(startText) – \(timeText(finish))"
+        }
+        let sameDay = StatsDates.dayKey(startDate) == StatsDates.dayKey(finishDate)
+        let finishText = sameDay ? StatsDates.format(finishDate, clockPattern) : timeText(finish)
+        return "\(startText) – \(finishText)"
     }
 
     var body: some View {
@@ -187,8 +200,8 @@ private struct FocusLogTable: View {
     private func row(_ entry: FocusLogEntry) -> some View {
         HStack(spacing: 8) {
             Text(FocusLogMath.humanizeSeconds(FocusLogMath.effectiveDurationSeconds(entry))).frame(width: FocusLogTable.durationWidth, alignment: .leading)
-            Text(FocusLogTable.timeText(entry.startTime)).frame(width: FocusLogTable.timeWidth, alignment: .leading)
-            Text(FocusLogTable.timeText(entry.finishTime)).frame(width: FocusLogTable.timeWidth, alignment: .leading)
+            Text(FocusLogTable.rangeText(start: entry.startTime, finish: entry.finishTime))
+                .frame(width: FocusLogTable.timeWidth, alignment: .leading)
             Text(FocusLogMath.displayText(entry.intention)).lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
             Text(FocusLogMath.displayText(entry.distractions)).lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
             Text(entry.focusModeName).lineLimit(1).frame(width: FocusLogTable.modeWidth, alignment: .leading)

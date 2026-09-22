@@ -85,6 +85,12 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     var arrImgUrls = [String]()
     var arrCheckList = [[String:Any]]()
     var images: [NSImage?] = []
+    private var isSelectingBreakMode = false
+    private var breakModeSwitchHadNoRemaining = false
+    private var breakPlayerGeneration = UUID()
+    private lazy var breakModeButton = BreakPlayerModeButton { [weak self] mode in
+        self?.selectBreakPlayerMode(mode)
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -167,14 +173,108 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         boxCheckList.isHidden = true
         btnTabCheckList.isHidden = true
         boxTutorial.isHidden = true
+        view.addSubview(breakModeButton)
+        NSLayoutConstraint.activate([
+            breakModeButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            breakModeButton.topAnchor.constraint(equalTo: view.topAnchor, constant: 8),
+            breakModeButton.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -16),
+            breakModeButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 28)
+        ])
+        refreshBreakModeButton()
     }
 
     
     override func viewWillAppear() {
+        refreshBreakModeButton()
         self.timerHideBearAnimation?.invalidate()
         self.timerHideBearAnimation = nil
         if !isActivityPaused{
             btnSkipHabit.isHidden = true
+        }
+    }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        refreshBreakModeButton()
+    }
+
+    private func refreshBreakModeButton() {
+        breakModeButton.update(mode: .from(isOfficeModeEnabled: SettingsManagerObject.isOfficeModeEnabled || isBreakActivityShowingWhileMeeting),
+            isActiveBreak: currentState == ._MICRO_BREAK_ && currentAction == ._INPROGRESS_,
+            isSelecting: isSelectingBreakMode || isBreakActivityShowingWhileMeeting,
+            fullMovementTitle: BreakPlayerText[.fullMovement], seatedTitle: BreakPlayerText[.seated])
+        if isBreakActivityShowingWhileMeeting {
+            breakModeButton.toolTip = BreakPlayerText[.meetingHelp]
+        } else if breakModeSwitchHadNoRemaining {
+            breakModeButton.toolTip = BreakPlayerText[.noRemainingHelp]
+        } else {
+            breakModeButton.toolTip = BreakPlayerText[.currentActivityHelp]
+        }
+    }
+
+    private func selectBreakPlayerMode(_ mode: BreakStartKit.BreakMode) {
+        guard currentState == ._MICRO_BREAK_, currentAction == ._INPROGRESS_, !isSelectingBreakMode,
+              !isBreakActivityShowingWhileMeeting,
+              mode != .from(isOfficeModeEnabled: SettingsManagerObject.isOfficeModeEnabled) else { return }
+        if mode.isOfficeMode && !BreakStartKit.canEnterOfficeMode(from: arrAllbreakActivities) {
+            guard let window = view.window else { return }
+            let account = appdelegate?.user?.userId
+            let generation = breakPlayerGeneration
+            let activityIndex = currentActivityIndex
+            let activityID = arrFinalBreakActivities.indices.contains(activityIndex)
+                ? arrFinalBreakActivities[activityIndex].activity?.id : nil
+            let alert = NSAlert()
+            alert.setSharingType()
+            alert.messageText = BreakPlayerText[.officeActivityPrompt]
+            alert.addButton(withTitle: BreakPlayerText[.addOfficeActivity])
+            alert.addButton(withTitle: BreakPlayerText[.declineOfficeActivity])
+            isSelectingBreakMode = true
+            refreshBreakModeButton()
+            alert.beginSheetModal(for: window) { [weak self] response in
+                guard let self = self else { return }
+                self.isSelectingBreakMode = false
+                defer { self.refreshBreakModeButton() }
+                guard response == .alertFirstButtonReturn, account == appdelegate?.user?.userId,
+                      generation == self.breakPlayerGeneration,
+                      currentState == ._MICRO_BREAK_, currentAction == ._INPROGRESS_, !isBreakActivityShowingWhileMeeting,
+                      currentActivityIndex == activityIndex,
+                      arrFinalBreakActivities.indices.contains(activityIndex),
+                      arrFinalBreakActivities[activityIndex].activity?.id == activityID else { return }
+                menuViewControllerObj?.addOfficeFriendlyActivityInSettings()
+                guard BreakStartKit.canEnterOfficeMode(from: arrAllbreakActivities) else { return }
+                self.applyBreakPlayerMode(mode)
+            }
+            return
+        }
+        applyBreakPlayerMode(mode)
+    }
+
+    private func applyBreakPlayerMode(_ mode: BreakStartKit.BreakMode) {
+        let account = appdelegate?.user?.userId
+        let generation = breakPlayerGeneration
+        let currentIndex = currentActivityIndex
+        let originalActivities = arrFinalBreakActivities
+        guard originalActivities.indices.contains(currentIndex) else { return }
+        // Use the shared settings action, then replace only the upcoming queue. Rebuilding without
+        // restoring this prefix would attribute the current timer/notes to a different activity.
+        isSelectingBreakMode = true
+        refreshBreakModeButton()
+        SettingsManagerObject.applyProfile(named: mode.profileName)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            defer { self.isSelectingBreakMode = false; self.refreshBreakModeButton() }
+            guard account == appdelegate?.user?.userId, generation == self.breakPlayerGeneration,
+                  currentState == ._MICRO_BREAK_, !isBreakActivityShowingWhileMeeting,
+                  currentAction == ._INPROGRESS_, currentActivityIndex == currentIndex,
+                  arrFinalBreakActivities.indices.contains(currentIndex),
+                  arrFinalBreakActivities[currentIndex].activity?.id == originalActivities[currentIndex].activity?.id else { return }
+            let playedIDs = Set(originalActivities.prefix(currentIndex + 1).map { $0.activity?.id ?? "" })
+            getHabitsVcObject().reFillBreakActivitiesArray(excludingActivityIDs: playedIDs)
+            arrFinalBreakActivities = BreakStartKit.replacingUpcomingActivities(in: originalActivities,
+                currentIndex: currentIndex, selected: arrFinalBreakActivities,
+                totalLimit: isExpired ? activitiesCountInExpireApp : nil) ?? originalActivities
+            currentActivityIndex = currentIndex
+            self.breakModeSwitchHadNoRemaining = arrFinalBreakActivities.count == currentIndex + 1
         }
     }
     
@@ -199,6 +299,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         boxInstructions.isHidden = false
         btnTabCheckList.state = .off
         btnTutorial.state = .off
+        deselectHabitTaskPane()
         if  collectionViewImges.enclosingScrollView?.isHidden == false{
             let containerWidth = stackViewCustomTab.frame.width
             let itemsWidth:CGFloat = CGFloat((arrImgUrls.count * 140) + ((arrImgUrls.count - 1)*10) + 5)
@@ -221,6 +322,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         boxInstructions.isHidden = true
         btnTabCheckList.state = .off
         btnTutorial.state = .off
+        deselectHabitTaskPane()
         self.view.window?.makeFirstResponder(textViewNotes)
     }
     
@@ -235,6 +337,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         btnTabInstructions.state = .off
         btnTabCheckList.state = .off
         btnTutorial.state = .off
+        deselectHabitTaskPane()
     }
     @IBAction func btnTabCheckListClicked(_ sender: Any) {
         webView.isHidden = true
@@ -247,6 +350,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         btnTabInstructions.state = .off
         btnTabCheckList.state = .on
         btnTutorial.state = .off
+        deselectHabitTaskPane()
     }
     
     @IBAction func btnTabTutorialClicked(_ sender: Any) {
@@ -260,6 +364,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         btnTabInstructions.state = .off
         btnTabCheckList.state = .off
         btnTutorial.state = .on
+        deselectHabitTaskPane()
     }
     
     @IBAction func btnBackToHabitsClicked(_ sender: Any) {
@@ -741,7 +846,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                             minutes = duration / 60
                         }
                         shouldReloadTaskPlayer = true
-                        showTaskPlayerWindow(totalDuration: minutes, intention: whatToAchieveInFocusBlock, automatically:true)
+                        showRunningFocusSessionWindow()
                         if leftMenuVcObj != nil{
                             leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
                         }
@@ -805,7 +910,14 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     }
     
     var tabCount = 0
-    func tryStartTimerHabit(durationSeconds:Int, name:String,currentHabit: habit, currentTimerValue:Int, shouldUpdateDeviceButton:Bool = true) {
+    /// Every route into playing a habit lands here, so this is where a Day Plan "shorten for this day"
+    /// trim is honoured — the habit itself still carries its real duration (report 2026-09-15_20-29-02).
+    /// Only timer habits are trimmed: a non-timer habit's `durationSeconds` is the 86400 "no duration"
+    /// sentinel, and shortening that would turn an untimed habit into a countdown.
+    func tryStartTimerHabit(durationSeconds rawDurationSeconds:Int, name:String,currentHabit: habit, currentTimerValue:Int, shouldUpdateDeviceButton:Bool = true) {
+        let durationSeconds = currentHabit.useTimer
+            ? DayPlanHabitDurations.effectiveSeconds(for: currentHabit.id, on: Date(), actual: rawDurationSeconds)
+            : rawDurationSeconds
         if askIntentionAllowedFocusModeActivityObj != nil{
             if askIntentionAllowedFocusModeActivityObj?.presentingViewController == self{
                 askIntentionAllowedFocusModeActivityObj?.dismiss(lateMorningHabitPopupVcObj)
@@ -958,6 +1070,10 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         // The flag drives the postpone-free minimise (covers allow-URLs habits, where the
         // currentHabitPlaying / focus-mode signals aren't set).
         isAllowedActivityHabitPlaying = currentHabit.isAllowedActivityHabit
+        // An allowed-activity habit is done in ANOTHER app, so the borderless full-screen window has to
+        // step aside for it — and an ordinary habit taking over is what asks for it back (report
+        // 2026-09-16_17-05-07). Symmetric on purpose: this one call covers both directions.
+        applyFullScreen(forAllowedActivityHabit: currentHabit.isAllowedActivityHabit)
         updateAllowedActivityScheduleTab(for: currentHabit)
         // Seed the to-do player with any Day Plan tasks assigned to this habit. Deferred so the player
         // has begun loading; the injection JS itself waits for the player to be ready. No-op if none.
@@ -1012,9 +1128,16 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         
         checkTutorialState(id: currentHabit.tutorial)
         
+        // Day Plan tasks dragged onto this habit become a "Tasks" pane. It goes FIRST in the
+        // auto-selection below: the user put those tasks on this habit deliberately, so they're what
+        // should be in front of them while it plays.
+        updateHabitTaskChecklist(for: currentHabit)
+        
         if tabCount > 1{
             boxButtonTabViews.isHidden = false
-            if btnTabVideo.isHidden == false{
+            if hasHabitTaskChecklist{
+                habitTaskPaneTabClicked(self)
+            }else if btnTabVideo.isHidden == false{
                 btnTabVideoClicked(self)
             }else if btnTabInstructions.isHidden == false{
                 btnTabInstructionsClicked(self)
@@ -1193,6 +1316,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         
         boxButtonTabViews.isHidden = true
         tabCount = 0
+        // Micro-break / special activities aren't habits, so they never carry Day Plan tasks.
+        updateHabitTaskChecklist(for: nil)
         
         if currentHabitPlaying == nil && currentActivityPlaying == nil{// do not allow  video  if activity is allow app type
             loadWebViewTo(url: url)
@@ -1321,6 +1446,10 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }
         }
         disableSystemSleep()
+        // Resuming a habit the app was restarted in the middle of never runs startTimerHabit, so tell the
+        // lifecycle the habit holds the screen here too — otherwise window routing would read "no habit"
+        // and let the menu-bar expand button cover the screen mid-habit.
+        applyFullScreen(forAllowedActivityHabit: isAllowedActivityHabitCurrentlyRunning)
         btnSkipHabit.isHidden = true
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(arrFilteredMorningHabits[currentHabitIndex].name!)."
         btnBackToHabits.isHidden = true
@@ -1455,6 +1584,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     
     func startTimerActivity(durationInSeconds:Int,name:String, urlsArray:[String], logQuantityQuestion:[quantityQuestion],currentActivity: breakActivity, currentChoice:activityChoice?,logQuantity:Bool, logQuantityType:String) {
+        breakPlayerGeneration = UUID()
+        breakModeSwitchHadNoRemaining = false
 //        isLastActivityStoppedInRunningState = false
         //lastActivityRunningId = ""
         //lastActivityStoppedTimerCount = 0
@@ -1532,6 +1663,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
         boxButtonTabViews.isHidden = true
         tabCount = 0
+        // Micro-break / special activities aren't habits, so they never carry Day Plan tasks.
+        updateHabitTaskChecklist(for: nil)
         if currentActivityPlaying == nil{// do not allow  video  if activity is allow app type
             loadWebViewTo(url: url)
         }else{
@@ -1759,6 +1892,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         btnTabCheckList.isHidden = true
         boxTutorial.isHidden = true
         btnTutorial.isHidden = true
+        // Breathing isn't a habit, so it never carries Day Plan tasks.
+        updateHabitTaskChecklist(for: nil)
         lblTitle.stringValue = getDoSomeActivityText(activityName: introActivity!.name!)//"Do some \(introActivity!.name!)."
         currentTimer = 0
         totalDuration = introActivity!.durationSeconds!
@@ -1798,6 +1933,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         self.webView.load(request)
     }
     @objc func performTimerCount() {
+        refreshBreakModeButton()
         currentTimer += 1
         if isAnyAllowedFocusModeActivityRunning{
             addEntryInProductivityStatsCsv()
@@ -1847,6 +1983,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             // flag and background without the postpone prompt. startTimerHabit re-sets it for the next
             // habit; the completion VC clears it for the last one.
             isAllowedActivityHabitPlaying = false
+            // The habit that displaced the full-screen window is over, so ask for it back before the
+            // *Over teardown re-shows the window — otherwise it reappears small and then grows.
+            applyFullScreen(forAllowedActivityHabit: false)
             enableSystemSleep()
             if popUpCheckListWcObj != nil{
                 if popUpCheckListWcObj?.window?.isVisible ?? false{
@@ -1889,6 +2028,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         if isActivityPaused{
             addLog(text:"[user-action]Ongoing activity:-btn Resume Clicked")
             isActivityPaused = false
+            // Resuming puts the person back in the habit's own app, so the full-screen window steps
+            // aside again (no-op for an ordinary habit, or if it was never full screen).
+            applyFullScreen(forAllowedActivityHabit: isAllowedActivityHabitCurrentlyRunning)
             allApiObject.capturePosthog(event: "resume-activity", metadata: [:])
             
             //focusButtonService---//
@@ -1928,6 +2070,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             addLog(text:"[user-action]Ongoing activity:-btn Pause Clicked")
             self.btnPause.image = playIcon
             isActivityPaused = true
+            // Paused means the person is no longer doing the allowed activity, so the routine's
+            // full-screen window may come back — the PO's "return to full screen if habit is paused".
+            applyFullScreen(forAllowedActivityHabit: false)
             allApiObject.capturePosthog(event: "pause-activity", metadata: [:])
             timer?.invalidate()
             
@@ -2091,6 +2236,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         // minimise in the gap before the next habit starts doesn't see a stale flag and background
         // without the postpone prompt. startTimerHabit re-sets it for the next habit.
         isAllowedActivityHabitPlaying = false
+        // Same as the timer-expiry path above: the habit is finished, so the full-screen window it
+        // stepped aside for may come back.
+        applyFullScreen(forAllowedActivityHabit: false)
         enableSystemSleep()
         if popUpCheckListWcObj != nil{
             if popUpCheckListWcObj?.window?.isVisible ?? false{
@@ -2343,3 +2491,96 @@ extension timerViewcontroller:NSTableViewDelegate, NSTableViewDataSource {
 }
 
 //bukN2P7WpwE
+
+/// The downloaded configuration can predate the installed player. Cache the bundled dictionaries
+/// once, then resolve every missing remote key in the selected language before falling back to EN.
+enum BreakPlayerText {
+    enum Key: String, CaseIterable {
+        case fullMovement = "buttonSwitchToFullMovementBreak"
+        case seated = "buttonSwitchToSeatedBreak"
+        case currentActivityHelp = "breakModeSwitchHelp"
+        case noRemainingHelp = "breakModeSwitchNoRemainingHelp"
+        case meetingHelp = "breakModeSwitchMeetingHelp"
+        case officeActivityPrompt = "noOfficeFriendlyActivityAlertText"
+        case addOfficeActivity = "noOfficeFriendlyActivityButtonFirstText"
+        case declineOfficeActivity = "noOfficeFriendlyActivityButtonSecondText"
+
+        var section: String {
+            switch self {
+            case .officeActivityPrompt, .addOfficeActivity, .declineOfficeActivity: return "menuInfo"
+            default: return "activityInfo"
+            }
+        }
+    }
+
+    static subscript(_ key: Key) -> String {
+        localized(key, languageCode: currentLanguageCode, remote: configjson[key.section] as? [String: String] ?? [:])
+    }
+
+    static func localized(_ key: Key, languageCode: String, remote: [String: String]) -> String {
+        if let value = remote[key.rawValue], !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return value }
+        let language = BundledConfigLanguage.code(languageCode)
+        return bundled[language]?[key.section]?[key.rawValue] ?? bundled["en"]?[key.section]?[key.rawValue] ?? fallback(key)
+    }
+
+    private static let bundled: [String: [String: [String: String]]] = {
+        var values: [String: [String: [String: String]]] = [:]
+        for (language, resource) in BundledConfigLanguage.all {
+            guard let url = Bundle.main.url(forResource: resource, withExtension: "json"),
+                  let data = try? Data(contentsOf: url),
+                  let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { continue }
+            values[language] = ["activityInfo": json["activityInfo"] as? [String: String] ?? [:],
+                                "menuInfo": json["menuInfo"] as? [String: String] ?? [:]]
+        }
+        return values
+    }()
+
+    private static func fallback(_ key: Key) -> String {
+        switch key {
+        case .fullMovement: return "Switch to full movement break"
+        case .seated: return "Switch to seated break"
+        case .currentActivityHelp: return "Your current activity and progress stay unchanged. Remaining break activities use the selected mode."
+        case .noRemainingHelp: return "Your current activity continues. No other activities remain in this break; the selected mode applies to your next break."
+        case .meetingHelp: return "This break uses seated activities while your meeting is in progress. You can switch modes after the meeting."
+        case .officeActivityPrompt: return "You don't have any office friendly break activities. Do you want me to add one for you to stand up and stretch for 20 seconds?"
+        case .addOfficeActivity: return "Yeah sounds good"
+        case .declineOfficeActivity: return "No I'm a machine! I don't need breaks"
+        }
+    }
+}
+
+/// Small AppKit control kept separate from the complex player lifecycle. Its only action selects
+/// a mode; the timer controller retains ownership of activity progress, playback and notes.
+final class BreakPlayerModeButton: NSButton {
+    private var mode: BreakStartKit.BreakMode = .fullMovement
+    private let onSelectMode: (BreakStartKit.BreakMode) -> Void
+
+    init(onSelectMode: @escaping (BreakStartKit.BreakMode) -> Void) {
+        self.onSelectMode = onSelectMode
+        super.init(frame: .zero)
+        translatesAutoresizingMaskIntoConstraints = false
+        bezelStyle = .rounded
+        setButtonType(.momentaryPushIn)
+        font = .systemFont(ofSize: 13)
+        target = self
+        action = #selector(selectOppositeMode)
+        isHidden = true
+    }
+
+    required init?(coder: NSCoder) { return nil }
+
+    func update(mode: BreakStartKit.BreakMode, isActiveBreak: Bool, isSelecting: Bool,
+                fullMovementTitle: String, seatedTitle: String) {
+        self.mode = mode
+        let nextTitle = mode.isOfficeMode ? fullMovementTitle : seatedTitle
+        if title != nextTitle { title = nextTitle }
+        if isHidden == isActiveBreak { isHidden = !isActiveBreak }
+        let enabled = isActiveBreak && !isSelecting
+        if isEnabled != enabled { isEnabled = enabled }
+    }
+
+    @objc private func selectOppositeMode() {
+        guard !isHidden, isEnabled else { return }
+        onSelectMode(mode.opposite)
+    }
+}

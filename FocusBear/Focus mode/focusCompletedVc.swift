@@ -669,7 +669,7 @@ class focusCompletedVc: NSViewController {
                     }
                 }else{
                     if pomodoroVcObj?.isBreakDurationComesFromBreakRatio ?? false {
-                        let workRatio = simplePomodoroVcObj?.workRatio ?? 5
+                        let workRatio = 5   // the simple start screen derives its break from a fixed 5:1 ratio
                         let breakRatio = simplePomodoroVcObj?.breakRatio ?? 1
                         
                         var breakDuration =  Int(((Double(focusModeActualDurationPerformed) / 60) / Double(workRatio)) * Double(breakRatio))

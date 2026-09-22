@@ -174,23 +174,19 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         }
     }
 
-    func tabClickedSelectNextTextField()->Bool{
+    func tabClickedSelectNextTextField(backwards: Bool = false)->Bool{
         if logQuantityQuestions.count > 1{
             for row in 0..<logQuantityQuestions.count{
                 if let cell = tblView.view(atColumn: 0, row: row, makeIfNecessary: true) as? tblCellLogQuantity{
                     if cell.textFieldCount.isFirstResponder || cell.lblSliderValue.isFirstResponder{
-                        var newRow = row
-                        if row == logQuantityQuestions.count - 1{
-                            newRow = 0
-                        }else{
-                            newRow = row + 1
-                        }
+                        let count = logQuantityQuestions.count
+                        let newRow = (row + (backwards ? count - 1 : 1)) % count
                         tblView.scrollRowToVisible(newRow)
                         if let cell = tblView.view(atColumn: 0, row: newRow, makeIfNecessary: true) as? tblCellLogQuantity{
                             if !cell.lblSliderValue.isHidden{
-                                cell.lblSliderValue.setFocus()
+                                cell.lblSliderValue.setFocusAndSelectText()
                             }else{
-                                cell.textFieldCount.setFocus()
+                                cell.textFieldCount.setFocusAndSelectText()
                             }
                             return true
                         }

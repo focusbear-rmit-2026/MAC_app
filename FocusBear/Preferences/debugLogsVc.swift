@@ -71,14 +71,7 @@ let maxAIBlockingLogEntries = 50
 private let aiBlockingLogQueue = DispatchQueue(label: "com.focusbear.aiBlockingLog")
 var arrAIBlockingLogEntries = [AIBlockingLogEntry]()
 
-/// Per-user key so one account's AI blocking logs (URLs/apps, tab titles, intentions) don't leak into
-/// the next account on a shared device — UserDefaults.standard is device-level. Namespacing by userId
-/// matches the app's convention for other device-level keys (see the `+ (self.user?.userId ?? "")`
-/// rebinds in AppDelegate after login). logout() calls quitAndRestartApp(), so the in-memory store is
-/// wiped on account switch and this reloads the new user's key on the next launch.
-private var aiBlockingLogDefaultsKey: String {
-    "aiBlockingLogEntries" + (appdelegate?.user?.userId ?? "")
-}
+private let aiBlockingLogDefaultsKey = "aiBlockingLogEntries"
 private var didLoadPersistedAiBlockingLog = false
 
 /// Hydrate the in-memory log from disk once per launch — the store used to be memory-only, so it was

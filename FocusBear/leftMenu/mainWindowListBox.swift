@@ -42,9 +42,13 @@ class mainWindowListBox: NSBox {
                     imageView?.alphaValue = 0.5
                 }
             }
+            updateTooltip()
+            hideButton?.isHidden = !(showsHideButton && hovered && isEnabled)
         }
     }
-    var disableReason = ""
+    var disableReason = "" {
+        didSet { updateTooltip() }
+    }
     weak var delegate: mainWindowListBoxDelegate?
     
     var isSelected: Bool = false {
@@ -74,6 +78,7 @@ class mainWindowListBox: NSBox {
     override var title: String{
         didSet {
             label?.stringValue = title
+            updateTooltip()
         }
     }
     
@@ -110,6 +115,7 @@ class mainWindowListBox: NSBox {
         
         setupContentView()
         updateAppearance()
+        updateTooltip()
         
         // Tracking area for hover effects
         let trackingArea = NSTrackingArea(
@@ -230,15 +236,36 @@ class mainWindowListBox: NSBox {
     }
     
     // MARK: - Mouse Events
+    /// The icon and label are passive parts of this row. Giving them the hit can consume a
+    /// click in their NSControl handling before it reaches the row's navigation action.
+    /// The trailing hide button remains an independent control with its own action.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard let hit = super.hitTest(point) else { return nil }
+        if let hideButton = hideButton, hit === hideButton || hit.isDescendant(of: hideButton) {
+            return hit
+        }
+        return self
+    }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        isEnabled
+    }
+
+    private func updateTooltip() {
+        let text = isEnabled ? title : disableReason
+        toolTip = text.isEmpty ? nil : text
+    }
+
     override func mouseEntered(with event: NSEvent) {
         super.mouseEntered(with: event)
-        // Use showTooltipWithOsTahoe here, not showTooltip: its .transient popover ate the row's first click to dismiss itself, so collapsed-sidebar icons needed multiple clicks (#2484).
+        // Tooltips here are NATIVE (`updateTooltip`), not a popover. Both popover helpers —
+        // `showTooltip` and `showTooltipWithOsTahoe` — put a real window under the cursor, and its
+        // .transient dismissal ate the row's first click, so a collapsed-sidebar icon needed two
+        // clicks to navigate (#2484, #2515). A native tooltip is passive and cannot do that, and it
+        // covers both cases those fixes handled: the row title when enabled, the disableReason when not.
         if isEnabled{
-            // Collapsed sidebar hides the row labels, so surface the item's title on hover. Only enabled
-            // items reach here (they never carry a disableReason), so the disabled tooltip below is untouched.
-            if (mainViewControllerObj?.isLeftPanelCollapsed ?? false), !title.isEmpty{
-                showTooltipWithOsTahoe(sender: self, msg: title, preferredEdge: .maxX, maxWidthVal: 250, autoCloseOnMouseExit: true)
-            }
+            // Native tooltips stay passive. The old transient popover could consume the first
+            // navigation click just to dismiss itself, especially in the collapsed sidebar.
             hovered = true
             updateAppearance()   // reveals the hover ✕ (see updateAppearance)
             DispatchQueue.global().async {
@@ -257,18 +284,11 @@ class mainWindowListBox: NSBox {
                     }
                 }
             }
-        }else{
-            // Disabled item: keep showing its disableReason (unchanged behavior).
-            if !disableReason.isEmpty{
-                showTooltipWithOsTahoe(sender: self, msg: disableReason, preferredEdge: .maxX, maxWidthVal: 250, autoCloseOnMouseExit: true)
-            }
         }
     }
 
     override func mouseExited(with event: NSEvent) {
         super.mouseExited(with: event)
-        // Close whatever hover tooltip we showed (disableReason or the collapsed-title one).
-        closePopoverTooltipIfVisible()
         if isEnabled{
             hovered = false
             updateAppearance()   // hides the hover ✕ (see updateAppearance)
@@ -277,7 +297,6 @@ class mainWindowListBox: NSBox {
     }
     
     override func mouseDown(with event: NSEvent) {
-        super.mouseDown(with: event)
         if isEnabled && !isSelected{
             if delegate?.selectableListBoxShouldChangeSelection(self) ?? true{
                 isSelected = true
