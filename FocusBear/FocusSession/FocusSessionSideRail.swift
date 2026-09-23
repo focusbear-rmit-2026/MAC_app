@@ -201,7 +201,10 @@ private struct FocusSessionMusicControls: SwiftUI.View {
     private var isPlaying: Bool {
         if music.youtubePlayingId != nil { return !music.youtubePaused }
         if music.spotifyPlayingId != nil { return true }
-        return music.currentSound?.isPlaying == true
+        // #2594: read the @Published localTracks flag, not currentSound?.isPlaying. currentSound is not
+        // @Published (so pausing didn't re-render this control) and NSSound.isPlaying isn't reliable after
+        // pause(); the track's isPlaying flag is kept in sync by play/pause + refresh(), so the icon flips.
+        return music.localTracks.contains(where: { $0.isPlaying })
     }
 
     var body: some SwiftUI.View {

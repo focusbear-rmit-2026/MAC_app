@@ -652,9 +652,11 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
                         .font(scale.font(FocusStartLayout.badgeFont, .medium))
                         .padding(scale.pt(8)).foregroundColor(.white)
                         // #2571: the "AI off" badge used secondaryText (a translucent gray) which, in dark
-                        // mode, composited with the selected row's light-orange fill and disappeared. Use an
-                        // opaque systemGray so the badge stays legible on any row background.
-                        .background(aiEnabled ? FocusStartPalette.accent : Color(NSColor.systemGray))
+                        // mode, composited with the selected row's light-orange fill and disappeared — so it
+                        // was made an opaque fill. #2603: systemGray was still too light for the white label
+                        // (~2:1). darkGray is a fixed mid-dark gray: white on it is ~7.6:1 (AAA), and being
+                        // darker than light rows yet lighter than dark-mode rows it stays visible on any row.
+                        .background(aiEnabled ? FocusStartPalette.accent : Color(NSColor.darkGray))
                         .cornerRadius(scale.pt(8))
                     Spacer(minLength: 0)
                 }.contentShape(Rectangle())
