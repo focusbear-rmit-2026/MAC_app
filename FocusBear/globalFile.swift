@@ -2655,6 +2655,11 @@ var arrAllTracks = [[String:Any]]()
 /// it can be stopped when that focus session ends (music the user started manually is left alone).
 var isFocusMusicStartedFromPrompt = false
 
+/// True while focus music was started from the active Focus Session's own music controls (the side
+/// rail), so it can be stopped when that session ends (#2600). Music started from the standalone
+/// Focus Music tab isn't marked, so it keeps playing after the session.
+var isFocusMusicStartedFromSession = false
+
 func checkAllTracksDownloadState(){
     for track in arrAllTracks{
         let thumbnailLocalUrlString = track["thumbnailLocalUrl"] as? String ?? ""

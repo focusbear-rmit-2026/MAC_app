@@ -210,7 +210,10 @@ private struct FocusSessionMusicControls: SwiftUI.View {
     var body: some SwiftUI.View {
         VStack(alignment: .leading, spacing: scale.pt(FocusSessionLayout.rowGap)) {
             if music.nowPlaying != nil || music.localTracks.contains(where: { $0.isPaused }) {
-                SwiftUI.Button(action: { music.handleMediaKeyCommand(.toggle) }) {
+                SwiftUI.Button(action: {
+                    isFocusMusicStartedFromSession = true   // #2600: started from session controls → stops on session end
+                    music.handleMediaKeyCommand(.toggle)
+                }) {
                     Label(isPlaying ? store.strings.pauseTooltip : store.strings.resumeTooltip,
                           systemImage: isPlaying ? "pause.fill" : "play.fill")
                 }
@@ -218,7 +221,10 @@ private struct FocusSessionMusicControls: SwiftUI.View {
             if music.localTracks.contains(where: { $0.isFileDownloaded }) {
                 Menu(store.strings.musicLibrary) {
                     ForEach(music.localTracks.filter { $0.isFileDownloaded }) { track in
-                        SwiftUI.Button(track.name) { music.toggleLocalTrack(atIndex: track.index) }
+                        SwiftUI.Button(track.name) {
+                            isFocusMusicStartedFromSession = true   // #2600
+                            music.toggleLocalTrack(atIndex: track.index)
+                        }
                     }
                 }
             } else { Text(store.strings.musicEmpty).foregroundColor(FocusSessionPalette.secondaryText) }
@@ -226,7 +232,10 @@ private struct FocusSessionMusicControls: SwiftUI.View {
                 Text(store.strings.musicVolume)
                 Slider(value: Binding(get: { Double(music.volume) }, set: { music.setVolume(Float($0)) }), in: 0...1)
             }
-            SwiftUI.Button { store.activeSheet = .music } label: {
+            SwiftUI.Button {
+                isFocusMusicStartedFromSession = true   // #2600: the "Focus Music" button opens the session's library
+                store.activeSheet = .music
+            } label: {
                 SwiftUI.Label(store.strings.focusMusicLabel, systemImage: "music.note")
             }
         }.font(scale.font(FocusSessionLayout.rowTitleFont))

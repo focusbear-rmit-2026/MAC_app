@@ -96,7 +96,10 @@ struct FocusSessionScreen: SwiftUI.View {
 
     private func quickTools(scale: FocusSessionScale) -> some SwiftUI.View {
         HStack {
-            SwiftUI.Button { store.activeSheet = .music } label: {
+            SwiftUI.Button {
+                isFocusMusicStartedFromSession = true   // #2600: the "Focus Music" button opens the session's library
+                store.activeSheet = .music
+            } label: {
                 SwiftUI.Label(store.strings.focusMusicLabel, systemImage: "music.note")
             }
             SwiftUI.Button(action: store.presentNotesLightbox) {

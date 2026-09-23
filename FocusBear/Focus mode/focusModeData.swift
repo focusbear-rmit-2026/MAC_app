@@ -2948,11 +2948,14 @@ func focusModeFinishedResetAllData(){
     arrAllowedTabTitlesInCuddlyModeCurrentFocus.removeAll()
     // The session is over — cancel any pending AI-block time-boxed re-prompts so none fires afterwards.
     AiBlockRepromptScheduler.shared.cancelAll()
-    // Stop focus music the "want to play some music?" prompt auto-started for this session — but leave
-    // music the user started manually playing.
-    if isFocusMusicStartedFromPrompt{
-        allTracksVcObj?.stopPlayback()
+    // Stop focus music that belongs to this session: the "want to play some music?" prompt auto-started
+    // it (isFocusMusicStartedFromPrompt), or the user started it from the session's own music controls
+    // (#2600, isFocusMusicStartedFromSession). Music started from the standalone Focus Music tab is left
+    // playing. Call the shared model directly (allTracksVcObj may never have been created).
+    if isFocusMusicStartedFromPrompt || isFocusMusicStartedFromSession {
+        FocusMusicViewModel.shared.stopLocalTrack()
         isFocusMusicStartedFromPrompt = false
+        isFocusMusicStartedFromSession = false
     }
 }
 
@@ -2974,6 +2977,8 @@ func focusModeStarttedResetAllData(){
     lastFocusModeTempInfo = nil
     appdelegate!.isAutoMeetingsModeStarted = false
     stageManagerObject.isStageManagerEnabled = stageManagerObject.checkIsStageManagerEnabled()
+    // #2600: start clean so a stale flag from a session that ended abnormally can't stop unrelated music.
+    isFocusMusicStartedFromSession = false
 }
 
 
