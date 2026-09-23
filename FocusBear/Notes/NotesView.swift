@@ -151,7 +151,7 @@ struct NotesScreen: View {
     @ObservedObject var store: NotesStore
     let onClose: () -> Void
 
-    private static let projectFilterWidth: CGFloat = 220
+    private static let projectFilterWidth: CGFloat = 160
     private static let projectFilterHeight: CGFloat = 24
     /// Four segments now ("All notes / Personal Notes / Shared Notes / Archived").
     private static let scopeWidth: CGFloat = 440
@@ -238,13 +238,16 @@ struct NotesScreen: View {
                     .frame(width: NotesScreen.spinnerSide, height: NotesScreen.spinnerSide)
             }
 
-            Spacer()
+            // minLength 0 lets the gap fully collapse on a narrow window, so the "Show brain dump"
+            // button stays on screen instead of being pushed past the right edge.
+            Spacer(minLength: 0)
 
             if !store.isBrainDumpVisible {
                 SwiftUI.Button(action: { store.toggleBrainDumpVisible() }) {
                     Text("🧠 " + strings.showBrainDump)
                 }
                 .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 26))
+                .fixedSize()
                 .help(strings.showBrainDump)
             }
         }
@@ -290,20 +293,7 @@ struct NotesScreen: View {
                 .disabled(store.isCreateProjectNoteVisible)
             }
 
-            // The footer's Close button sits below a list that is usually taller than the panel, so
-            // inside the focus session there was no visible way out (report 2026-09-11_10-15-29).
-            // The toolbar is always on screen.
-            SwiftUI.Button(action: closeOneLevel) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .semibold))
-                    .frame(width: 22, height: 22)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(PlainButtonStyle())
-            .pointingHandCursor()
-            .help(strings.close)
-            .accessibilityLabel(strings.close)
-            .keyboardShortcut(.cancelAction)
+            // #2598: no in-view close here — the macOS window's title-bar close is the single way out.
         }
     }
 
@@ -343,8 +333,8 @@ struct NotesScreen: View {
     private var footerButton: some View {
         switch NotesFooterAction.next(openNote: store.openProjectNote?.note) {
         case .closeScreen:
-            SwiftUI.Button(action: closeOneLevel) { Text(strings.close) }
-                .buttonStyle(AppOrangeButtonStyle(secondary: true, height: NotesScreen.footerButtonHeight))
+            // #2598: the macOS title-bar close is enough — no redundant in-view Close button.
+            EmptyView()
         case .archiveNote:
             archiveButton(title: strings.archiveNote, help: strings.archiveNoteHelp, archived: true)
         case .restoreNote:
@@ -362,15 +352,6 @@ struct NotesScreen: View {
         .help(help)
     }
 
-    /// Close the innermost thing first. Closing the window from inside a project note read as the
-    /// whole app quitting on the Projects screen — this window is the app's only visible surface
-    /// (report 2026-09-14_19-4x) — so Close steps back to the note list before it dismisses the screen.
-    private func closeOneLevel() {
-        switch NotesCloseStep.next(hasOpenProjectNote: store.openProjectNote != nil) {
-        case .closeProjectNote: store.closeProjectNote()
-        case .closeScreen: onClose()
-        }
-    }
 }
 
 // MARK: - Open project note

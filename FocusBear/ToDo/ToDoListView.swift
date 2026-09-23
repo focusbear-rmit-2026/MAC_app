@@ -278,20 +278,8 @@ struct ToDoScreen: View {
                 Text(message).font(.system(size: 12)).foregroundColor(.secondary).transition(.opacity)
             }
             Spacer()
-            SwiftUI.Button(action: closeOneLevel) { Text(strings[.close]) }
-                .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 30))
-        }
-    }
-
-    /// Close the innermost thing first. Closing the window from inside a project's notes looked like
-    /// the whole app quitting, since this window is the app's only visible surface
-    /// (report 2026-09-14_19-4x).
-    private func closeOneLevel() {
-        let detail = projectsStore.detail
-        switch ToDoCloseStep.next(hasOpenNote: detail?.openNote != nil, hasOpenProject: detail != nil) {
-        case .closeNote: detail?.closeNote()
-        case .closeProject: projectsStore.closeDetail()
-        case .closeScreen: onClose()
+            // #2598-related: the macOS window's title-bar close is the single way out — no in-view
+            // Close button. Stepping back from an open project/note uses that view's own Back control.
         }
     }
 }
