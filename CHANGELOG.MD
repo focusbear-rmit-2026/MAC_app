@@ -671,3 +671,45 @@ On a fresh install, your gated AuDHD quiz results now show first (when detected)
 
 Reliability:
 Fixed a potential crash when showing the main window. (#2522)
+
+
+# v3.36.545
+
+Start a focus session — redesigned:
+The Start Focus Session screen has been rebuilt. A clean "simple" view lets you just set your session length on a dial and go, while an "Extra powerful options" link opens the full advanced setup (block list, focus goal and the rest) whenever you want more control. (#2569)
+
+AI accountability buddy:
+When you postpone your habits, Focus Bear can now ask what you'd like to do instead and have an AI accountability buddy check whether it's a genuine reason to be on the computer. If it is, it starts a super-strict focus session that allows only the apps and websites you need for that goal and blocks everything else; if not, you get a gentle explanation and some alternatives. (The AI checks run on our server over your existing secure sign-in.) (#2569)
+
+Notes:
+The Notes screen is now native instead of a web view — a Brain Dump card to capture thoughts fast, search and new-note controls, and an infinite-scrolling list with a create/edit sheet. Your project notes now show up alongside your personal ones. (#2569)
+
+Plan ahead (To-Do forecast):
+A new forecast looks at your projects, tasks, meetings, habits and self-care time over a horizon you choose and tells you how likely you are to finish everything in time. You can generate a suggested plan, review the proposed changes, and apply only the ones you pick — or use "Fix" on a single day to reschedule just that day. (#2569)
+
+Main window:
+Fixed the main content area showing blank after re-opening the app from the Dock — it now restores your last view, or opens on Start Focus Session at the correct size when there isn't one. (#2569)
+
+Turn everything off:
+"Turn everything off until tomorrow" now fully quits Focus Bear and automatically relaunches it at your next routine start time, instead of leaving it running in the background. Also fixed the loading spinner and the "To uninstall…" hint overflowing in that dialog. (#2569)
+Fixed the quit window's controls staying greyed-out/busy when you reopened it after pausing something. (#2569)
+
+Blocking:
+The "AI is deciding what to block" popup now has a standard close button in the title bar — closing it blocks the app or page, as the buttons inside do — and every button in the popup shows the pointer cursor on hover. (#2569)
+Fixed an overlapping/duplicate checkbox on the advanced focus-mode settings screen. (#2569)
+
+Windows & popups:
+Fixed switching to another app and back — or closing a popup — unexpectedly bringing the main window to the front. (#2569)
+
+Settings:
+The "AI accountability buddy when postponing habits" setting now syncs across your devices and is saved per account (so it no longer carries over between accounts), and it now appears when you search Settings. (#2569)
+
+Day Plan:
+"Make today fit" sheet: fixed the title and Done button alignment, and the Done button now matches the app's orange style. (#2569)
+Reschedule-plan sheet: fixed the layout while it's still loading, and added the pointer cursor to the Close and Select-all controls. (#2569)
+
+Onboarding:
+AuDHD retest results now continue from where you left off, so any remaining questions show before the result. (#2569)
+
+Reliability:
+Fixed a spurious "Please log in again" prompt on launch — background sync now starts only after you're signed in. (#2569)
