@@ -84,11 +84,12 @@ struct FocusStartDuration: Equatable {
         return FocusStartDuration(minutes: FocusStartDuration.clamp(raw), isUntimed: isUntimed)
     }
 
-    /// Builds a duration from a slider position, snapped to the stepper's 5-minute grid.
+    /// Builds a duration from a slider position. #2596: the slider is fine-grained (any whole-minute
+    /// value, so 17, 19… are reachable) rather than snapping to the stepper's 5-minute grid — the +/-
+    /// stepper still moves in `stepMinutes` increments for quick coarse changes.
     static func fromSliderFraction(_ fraction: Double, isUntimed: Bool = false) -> FocusStartDuration {
         let raw = Int((Double(maximumMinutes) * min(1, max(0, fraction))).rounded())
-        let snapped = Int((Double(raw) / Double(stepMinutes)).rounded()) * stepMinutes
-        return FocusStartDuration(minutes: clamp(snapped), isUntimed: isUntimed)
+        return FocusStartDuration(minutes: clamp(raw), isUntimed: isUntimed)
     }
 
     static func clamp(_ value: Int) -> Int {

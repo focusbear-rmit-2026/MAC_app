@@ -71,9 +71,12 @@ final class FocusStartTests: XCTestCase {
         XCTAssertEqual(FocusStartDuration(minutes: -60).sliderFraction, 0, accuracy: 0.0001)
     }
 
-    func testDraggingTheSliderSnapsToTheStepperGrid() {
-        // 0.1 of 480 minutes is 48; the nearest five-minute step is 50.
-        XCTAssertEqual(FocusStartDuration.fromSliderFraction(0.1).minutes, 50)
+    func testDraggingTheSliderAllowsAnyWholeMinute() {
+        // #2596: the slider is fine-grained, not snapped to the 5-minute stepper grid — 0.1 of 480
+        // minutes is 48 (was snapped to 50), and non-multiples of five like 17 / 19 are reachable.
+        XCTAssertEqual(FocusStartDuration.fromSliderFraction(0.1).minutes, 48)
+        XCTAssertEqual(FocusStartDuration.fromSliderFraction(17.0 / Double(FocusStartDuration.maximumMinutes)).minutes, 17)
+        XCTAssertEqual(FocusStartDuration.fromSliderFraction(19.0 / Double(FocusStartDuration.maximumMinutes)).minutes, 19)
         XCTAssertEqual(FocusStartDuration.fromSliderFraction(1).minutes, FocusStartDuration.maximumMinutes)
         XCTAssertEqual(FocusStartDuration.fromSliderFraction(0).minutes, FocusStartDuration.minimumMinutes)
     }
