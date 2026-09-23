@@ -1223,7 +1223,18 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             },
             onBack: { [weak self] in
                 guard let self else { return }
-                self.btnBackClicked(self)
+                // When the block list is presented as a SHEET from the blocking-schedule editor, the
+                // storyboard "Back to custom blocking" button is unhidden (blockingScheduleEditorVC sets
+                // it right before presentAsSheet). In that context the SwiftUI back arrow has to DISMISS
+                // the sheet and reload the schedule's block-list list — mirroring the old AppKit
+                // btnBackToCustomBlocking — because btnBackClicked() is a no-op when the Blocks tab
+                // isn't the selected left-menu tab, which left the sheet stuck (#2593). Otherwise use the
+                // normal in-settings back.
+                if !self.btnBackToCustomBlocking.isHidden {
+                    self.btnBackToCustomBlockingClicked(self)
+                } else {
+                    self.btnBackClicked(self)
+                }
             },
             onDuplicate: { [weak self] index in
                 self?.duplicateFocusModeFromRedesign(index: index)
