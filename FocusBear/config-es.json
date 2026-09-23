@@ -4167,7 +4167,9 @@
   "createFirstBlockingScheduleVcInfo": {
     "title": "Configura los detalles del bloqueo",
     "buttonAddBlock": "Agregar bloqueo",
-    "bubbleText": "Por ejemplo, bloquea sitios web que distraen durante tu jornada laboral"
+    "bubbleText": "Por ejemplo, bloquea sitios web que distraen durante tu jornada laboral",
+    "presetsTitle": "Plantillas rápidas",
+    "presetsSubtitle": "Elige una plantilla para empezar; podrás ajustarla en la siguiente pantalla."
   },
   "askPermissionsVcInfo": {
     "title": "¡El horario está configurado! Ahora vamos a organizar los permisos.",

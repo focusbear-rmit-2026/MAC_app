@@ -46,6 +46,7 @@ class onboardingVc: NSViewController {
 
         // 6. Blocking Schedule
         case _ASK_CREATE_BLOCKING_SCHEDULE_
+        case _CHOOSE_BLOCKING_SCHEDULE_PRESET_
         case _CREATE_BLOCKING_SCHEDULE_
 
         // 7. Permissions
@@ -66,6 +67,9 @@ class onboardingVc: NSViewController {
     
     var currentOnboardingState:ONBOARDINGSTATE = ._NOTHING_
     var onboardingStack: [ONBOARDINGSTATE] = []
+    /// The quick-start preset the user picked on the _CHOOSE_BLOCKING_SCHEDULE_PRESET_ step, consumed
+    /// by createFirstBlockingScheduleVc to pre-fill the editor. nil = "Custom Schedule" / blank editor.
+    var chosenSchedulePreset: SchedulePreset?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -222,9 +226,17 @@ class onboardingVc: NSViewController {
             addLog(text: "Showing ask create blocking schedule view.")
             containerView.addSubview(getConfirmBlockingScheduleCreationVcObj().view)
             btnBack.isHidden = false
+        case ._CHOOSE_BLOCKING_SCHEDULE_PRESET_:
+            addLog(text: "Showing blocking schedule presets view.")
+            containerView.addSubview(getOnboardingBlockingSchedulePresetsVcObject().view)
+            btnBack.isHidden = false   // use the onboarding global back (the SwiftUI header is hidden here)
         case ._CREATE_BLOCKING_SCHEDULE_:
             addLog(text: "Showing create blocking schedule view.")
             containerView.addSubview(getCreateFirstBlockingScheduleVcObj().view)
+            // Seed the editor from the preset picked on the previous step (or reset to blank defaults
+            // for "Custom Schedule"). Done here — on every entry — because the schedule VC is a
+            // singleton whose viewDidLoad only runs once.
+            if #available(macOS 11.0, *) { getCreateFirstBlockingScheduleVcObj().applyOnboardingScheduleTemplate() }
             btnBack.isHidden = false
         case ._ASK_PERMISSIONS_:
             addLog(text: "Showing ask permissions view.")

@@ -167,7 +167,7 @@ class createFirstBlockingScheduleVc: NSViewController {
         //progress
         self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
         self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
-        getDistractionBlockingProgressVcObj().setProgress(level: 2, progress: 0.30)
+        getDistractionBlockingProgressVcObj().setProgress(level: 2, progress: 0.70)
 
         setupSwiftUIEditor()
     }
@@ -239,6 +239,26 @@ class createFirstBlockingScheduleVc: NSViewController {
         model.strictness = ._NORMAL_
         model.useAI = true
         model.skipMicroBreaks = true
+    }
+
+    /// Reset the editor to onboarding defaults and, when the user picked a quick-start preset on the
+    /// previous step, overlay that preset's name/emoji/days/time/strictness. "Custom Schedule" leaves
+    /// nil, so the editor stays blank. Called from onboardingVc on every entry to _CREATE_BLOCKING_SCHEDULE_
+    /// (the VC is a singleton, so viewDidLoad — and its one-time configureModel — won't re-run). The
+    /// preset is consumed here so it doesn't leak into a later visit.
+    @available(macOS 11.0, *)
+    func applyOnboardingScheduleTemplate() {
+        guard let model = editorModel as? BlockingScheduleEditorModel else { return }
+        configureModel(model)
+        if let preset = getOnboardingVcObject().chosenSchedulePreset, !preset.isCustom {
+            model.name = preset.name
+            model.emoji = preset.emoji
+            model.selectedDays = Set(preset.days)
+            model.startMinutes = preset.startMinutes
+            model.endMinutes = preset.endMinutes
+            model.strictness = preset.strictness
+        }
+        getOnboardingVcObject().chosenSchedulePreset = nil
     }
 
     private func minutesFromDate(_ date: Date) -> Int {

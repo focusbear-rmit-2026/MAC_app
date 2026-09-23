@@ -148,6 +148,7 @@
 		13DC8AA62FC1DEE40035A7E1 /* routinePostponedInfoVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13DC8AA52FC1DEE40035A7E1 /* routinePostponedInfoVc.swift */; };
 		13E0386F2ED075420097E91C /* focusTimerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13E0386E2ED075420097E91C /* focusTimerManager.swift */; };
 		13E09A3E2F77E44B00E6D3F3 /* createFirstBlockingScheduleVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13E09A3D2F77E44B00E6D3F3 /* createFirstBlockingScheduleVc.swift */; };
+		E9575884EB36C72B7EE93E61 /* onboardingBlockingSchedulePresetsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43239DF7691640DC26E346E5 /* onboardingBlockingSchedulePresetsVc.swift */; };
 		13E09A402F77F38600E6D3F3 /* askPermissionsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13E09A3F2F77F38600E6D3F3 /* askPermissionsVc.swift */; };
 		13E599A82F72B25E00C2B1E0 /* ArrowPopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13E599A72F72B25E00C2B1E0 /* ArrowPopupView.swift */; };
 		13F46AFD2ECB4EAD00BA2F44 /* accountabilityBuddyVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13F46AFC2ECB4EAD00BA2F44 /* accountabilityBuddyVc.swift */; };
@@ -828,6 +829,7 @@
 		13DF413B2E4E1BF3001184FF /* FocusBear.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = FocusBear.xcodeproj; sourceTree = "<group>"; };
 		13E0386E2ED075420097E91C /* focusTimerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusTimerManager.swift; sourceTree = "<group>"; };
 		13E09A3D2F77E44B00E6D3F3 /* createFirstBlockingScheduleVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = createFirstBlockingScheduleVc.swift; sourceTree = "<group>"; };
+		43239DF7691640DC26E346E5 /* onboardingBlockingSchedulePresetsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = onboardingBlockingSchedulePresetsVc.swift; sourceTree = "<group>"; };
 		13E09A3F2F77F38600E6D3F3 /* askPermissionsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = askPermissionsVc.swift; sourceTree = "<group>"; };
 		13E599A72F72B25E00C2B1E0 /* ArrowPopupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrowPopupView.swift; sourceTree = "<group>"; };
 		13F46AFC2ECB4EAD00BA2F44 /* accountabilityBuddyVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = accountabilityBuddyVc.swift; sourceTree = "<group>"; };
@@ -2329,6 +2331,7 @@
 				8FE99DA32CF855EA003BCA3E /* onboardingBlockedAppsVc.swift */,
 				135348032F0D450E00D0D2A6 /* confirmBlockingScheduleCreationVc.swift */,
 				13E09A3D2F77E44B00E6D3F3 /* createFirstBlockingScheduleVc.swift */,
+				43239DF7691640DC26E346E5 /* onboardingBlockingSchedulePresetsVc.swift */,
 				13E09A3F2F77F38600E6D3F3 /* askPermissionsVc.swift */,
 				8F270CB129436D4400E91015 /* tblCellOnboardingBlockedUrls.swift */,
 				13098BC52F7A7B3F00C31540 /* allSetVc.swift */,
@@ -3059,6 +3062,7 @@
 				8F54E92E2785662A00CC4E7B /* selectJsonVc.swift in Sources */,
 				8FBE37A82A8F62060018402A /* settingsSplitViewController.swift in Sources */,
 				13E09A3E2F77E44B00E6D3F3 /* createFirstBlockingScheduleVc.swift in Sources */,
+				E9575884EB36C72B7EE93E61 /* onboardingBlockingSchedulePresetsVc.swift in Sources */,
 				8F7ED7432CC0F1E100AB973D /* taskPlayerWc.swift in Sources */,
 				8FB257872C7DF0EB00794A43 /* askIntentionAllowedFocusModeActivity.swift in Sources */,
 				8F4BD8C827883FBE00ABAEF5 /* HotKey.swift in Sources */,

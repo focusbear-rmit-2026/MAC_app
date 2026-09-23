@@ -4290,7 +4290,9 @@
   "createFirstBlockingScheduleVcInfo": {
     "title": "Set Block Details",
     "buttonAddBlock": "Add Block",
-    "bubbleText": "For example, block distracting websites during work hours"
+    "bubbleText": "For example, block distracting websites during work hours",
+    "presetsTitle": "Quick-Start Presets",
+    "presetsSubtitle": "Pick a template to start with — you can fine-tune it on the next screen."
   },
   "askPermissionsVcInfo": {
     "title": "The schedule is set up! Now let's sort permissions.",

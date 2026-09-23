@@ -2616,7 +2616,9 @@
   "createFirstBlockingScheduleVcInfo": {
     "title": "Blockdetails festlegen",
     "buttonAddBlock": "Block hinzufügen",
-    "bubbleText": "Zum Beispiel ablenkende Websites während der Arbeitszeit blockieren"
+    "bubbleText": "Zum Beispiel ablenkende Websites während der Arbeitszeit blockieren",
+    "presetsTitle": "Schnellstart-Vorlagen",
+    "presetsSubtitle": "Wähle eine Vorlage zum Starten – du kannst sie im nächsten Schritt anpassen."
   },
   "nudgeStartAnotherFocusSessionVcInfo": {
     "title": "Möchtest du eine weitere Fokus-Sitzung starten?",

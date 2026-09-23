@@ -1491,6 +1491,14 @@ func getCreateFirstBlockingScheduleVcObj()->createFirstBlockingScheduleVc{
     return createFirstBlockingScheduleVcObj!
 }
 
+var onboardingBlockingSchedulePresetsVcObj: onboardingBlockingSchedulePresetsVc?
+func getOnboardingBlockingSchedulePresetsVcObject() -> onboardingBlockingSchedulePresetsVc {
+    if onboardingBlockingSchedulePresetsVcObj == nil {
+        onboardingBlockingSchedulePresetsVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("onboardingBlockingSchedulePresetsVc")) as? onboardingBlockingSchedulePresetsVc
+    }
+    return onboardingBlockingSchedulePresetsVcObj!
+}
+
 var askPermissionsVcObj:askPermissionsVc?
 func getAskPermissionsVcObj()->askPermissionsVc{
     if askPermissionsVcObj == nil{

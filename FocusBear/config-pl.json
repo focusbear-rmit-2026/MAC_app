@@ -2178,7 +2178,9 @@
   "createFirstBlockingScheduleVcInfo": {
     "title": "Ustaw szczegóły blokady",
     "buttonAddBlock": "Dodaj blokadę",
-    "bubbleText": "Na przykład blokuj rozpraszające strony w godzinach pracy"
+    "bubbleText": "Na przykład blokuj rozpraszające strony w godzinach pracy",
+    "presetsTitle": "Szablony na start",
+    "presetsSubtitle": "Wybierz szablon na początek — dopracujesz go na następnym ekranie."
   },
   "nudgeStartAnotherFocusSessionVcInfo": {
     "title": "Chcesz rozpocząć kolejną sesję skupienia?",

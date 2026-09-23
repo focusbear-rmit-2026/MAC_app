@@ -238,8 +238,11 @@ class onboardingBlockedAppsVc: NSViewController {
         SettingsManagerObject.arrBlockedApps = arrBlockedApps
         UserDefaults.standard.set(SettingsManagerObject.arrBlockedApps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)//
         UserDefaults.standard.set(true, forKey: kUserdefaultsIsAnyDistractionSetByUser)
-        // Blocking is the first onboarding section now: hand off to the habits intro next.
-        getOnboardingVcObject().navigate(to: ._HOLD_ON_)
+        // After blocked URLs + apps, continue through allowed URLs → blocking schedule → permissions;
+        // the habits intro comes last, after permissions. Jumping straight to _HOLD_ON_ here (added in
+        // #2569) skipped the blocking-schedule and permission screens for users who set up blocking, so
+        // blocking couldn't actually be enforced. (#2599)
+        getOnboardingVcObject().navigateToAllowedUrlsVc()
         
     }
 }
