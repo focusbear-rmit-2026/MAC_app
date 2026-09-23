@@ -713,3 +713,30 @@ AuDHD retest results now continue from where you left off, so any remaining ques
 
 Reliability:
 Fixed a spurious "Please log in again" prompt on launch — background sync now starts only after you're signed in. (#2569)
+
+
+# v3.36.546
+
+Focus Music:
+The play/pause control now correctly switches to "Play" when you pause music during a focus session. (#2608)
+Music you start from the focus session's own controls now stops automatically when the session ends, instead of playing on afterwards. (#2609)
+
+Start a focus session:
+The session-length slider is now fine-grained — pick any number of minutes (like 17 or 19), not just multiples of five. The +/- buttons still step by 5. (#2612)
+The "AI off" tag next to a block list is now higher-contrast and easier to read. (#2608)
+
+Block Lists:
+The pencil on each block list now opens that list in the editor (instead of always the default one), the editor opens as a sheet, each row shows its real apps/websites count, and name or content edits show as soon as you return. (#2610)
+
+Blocking Schedules:
+Fixed the back arrow not closing the block-list editor when it was opened from a blocking schedule. (#2595)
+A blocking schedule now opens the block list you chose to edit, and a renamed block list updates on the schedule. (#2610)
+
+Onboarding:
+Setting up distraction blocking no longer skips the blocking-schedule and permission steps, and there's a new quick-start presets step when you create your first blocking schedule. (#2601)
+
+Notes & To-Do:
+Removed the duplicate close buttons in Notes and the To-Do list — the window's own close control is used instead — and stopped the "Show brain dump" button from running off the right edge. (#2611)
+
+Reliability:
+Fixed a hang (and automatic relaunch) caused by the menu-bar popup repeatedly resizing itself. (#2592)
