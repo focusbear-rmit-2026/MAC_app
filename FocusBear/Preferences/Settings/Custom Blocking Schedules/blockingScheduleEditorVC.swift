@@ -362,6 +362,11 @@ class blockingScheduleEditorVC: NSViewController {
     }
     
     func reloadFocusModeList(){
+        // #2602: refresh the SwiftUI editor's block-list list so a name edited in the block-list sheet
+        // shows on the schedule's selected block list. reloadFocusModes() keeps the current selection.
+        if #available(macOS 11.0, *), let model = editorModel as? BlockingScheduleEditorModel {
+            model.reloadFocusModes()
+        }
         let selectedIndex = popUpBtnFocusMode.indexOfSelectedItem
         if selectedIndex == -1{
             return;

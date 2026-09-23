@@ -297,15 +297,18 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     
     func selectFocusModeWithId(id:String){
         guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
-        for i in 0..<arrFocusType.count{
-            let focusMode = arrFocusType[i]
-            if focusMode["id"] as? String == id{
-                if i != arrFocusType.count - 1{
-                    tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: i), byExtendingSelection: false)
-                    tblViewFocusType.scrollRowToVisible(i)
-                }
-                break;
-            }
+        guard let i = arrFocusType.firstIndex(where: { ($0["id"] as? String) == id }) else { return }
+        // Legacy table (some old code reads its selectedRow).
+        if i < tblViewFocusType.numberOfRows {
+            tblViewFocusType.selectRowIndexes(IndexSet(integer: i), byExtendingSelection: false)
+            tblViewFocusType.scrollRowToVisible(i)
+        }
+        // #2602: the visible editor is the SwiftUI BlockListView, driven by BlockListStore.selectedIndex.
+        // Without setting it, the row selection had no effect and the editor stayed on the default block
+        // list — both from the block-list pencil AND from the blocking-schedule "edit block list" sheet.
+        // (The old `i != count-1` guard also silently skipped the last block list.)
+        if #available(macOS 11.0, *), let store = blockListStore as? BlockListStore {
+            store.selectedIndex = i
         }
     }
     
@@ -1180,7 +1183,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     
     @IBAction func btnBackToCustomBlockingClicked(_ sender: Any) {
         self.dismiss(self)
+        // Refresh whichever screen opened this block-list sheet so name / apps-websites edits show:
+        // the blocking-schedule editor (its dropdown + SwiftUI model) and the Start Focus Session screen
+        // (its block-list rows + counts). Each call is a no-op when that screen isn't the opener. (#2602)
         blockingScheduleEditorVCObj?.reloadFocusModeList()
+        if #available(macOS 11.0, *) { pomodoroVcObj?.reFillFocusTypeList(applyDefaults: false) }
     }
     
     @IBAction func btnBackClicked(_ sender: Any) {

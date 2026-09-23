@@ -346,16 +346,27 @@ final class FocusStartState: ObservableObject {
 
     /// Rebuilds the block-list rows from `arrFocusTypeForPomodoro` (which `pomodoroVc` fills from
     /// `HiddenFocusModeManager.visibleFocusModes`) and keeps the current selection where it can.
+    /// Number of apps/websites a block list actually contains — mirrors BlockListStore.storedUrls/Apps
+    /// so the row count matches the editor: relax modes block nothing; the Default mode uses the app-wide
+    /// "super distracting" list; allow-list modes count allowed_*; everything else counts its own
+    /// blockUrlsArray/blockAppsArray. Previously every blocked list showed the same global count. (#2602)
+    static func blockListItemCount(_ focusMode: [String: Any]) -> Int {
+        if focusMode["isRelaxFocus"] as? Bool == true { return 0 }
+        if focusMode["isDefault"] as? Bool == true {
+            return SettingsManagerObject.arrBlockedUrls.count + SettingsManagerObject.arrBlockedApps.count
+        }
+        if focusMode["isAllowedListApproach"] as? Bool == true {
+            return ((focusMode["allowed_urls"] as? [Any])?.count ?? 0) + ((focusMode["allowed_apps"] as? [Any])?.count ?? 0)
+        }
+        return ((focusMode["blockUrlsArray"] as? [Any])?.count ?? 0) + ((focusMode["blockAppsArray"] as? [Any])?.count ?? 0)
+    }
+
     func reloadBlockLists(selectedId: String?) {
-        let blockedItemCount = SettingsManagerObject.arrBlockedUrls.count + SettingsManagerObject.arrBlockedApps.count
         blockLists = arrFocusTypeForPomodoro.map { focusMode in
-            let isAllowedList = focusMode["isAllowedListApproach"] as? Bool ?? false
-            let allowedCount = (focusMode["allowed_apps"] as? [Any])?.count ?? 0
-                + ((focusMode["allowed_urls"] as? [Any])?.count ?? 0)
             return FocusStartBlockList(
                 id: focusMode["id"] as? String ?? "",
                 name: focusMode["name"] as? String ?? "",
-                itemCount: isAllowedList ? allowedCount : blockedItemCount,
+                itemCount: Self.blockListItemCount(focusMode),
                 focusAlignmentScoreThreshold: focusMode["focusAlignmentScoreThreshold"] as? Int,
                 lastIntentionUsed: focusMode["lastIntentionUsed"] as? String ?? "",
                 lastDurationUsedMinutes: focusMode["lastDurationUsed"] as? Int,

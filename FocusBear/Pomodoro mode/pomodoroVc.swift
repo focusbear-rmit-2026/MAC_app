@@ -377,7 +377,7 @@ class pomodoroVc: NSViewController {
 
     // MARK: - Block list
 
-    func reFillFocusTypeList(restoreLastUsedOnOpen: Bool = false) {
+    func reFillFocusTypeList(restoreLastUsedOnOpen: Bool = false, applyDefaults: Bool = true) {
         arrFocusTypeForPomodoro.removeAll()
         for focusMode in HiddenFocusModeManager.visibleFocusModes(from: arrFocusType) {
             if !(focusMode["isMeetings"] as? Bool ?? false == true) {
@@ -391,7 +391,9 @@ class pomodoroVc: NSViewController {
             ? UserDefaults.standard.string(forKey: kUserdefaultsLastPomodoroFocusModeId)
             : state.selectedBlockList?.id
         state.reloadBlockLists(selectedId: restoredId)
-        applySelectedBlockListDefaults()
+        // #2602: skip re-applying the block list's default duration on a plain refresh (e.g. returning
+        // from the block-list editor), so the user's chosen duration survives.
+        if applyDefaults { applySelectedBlockListDefaults() }
     }
 
     /// Called when the dropdown changes and whenever the list is rebuilt: seed the alignment score,
@@ -483,9 +485,15 @@ class pomodoroVc: NSViewController {
 
     func editBlockListsTapped(focusModeId: String? = nil) {
         guard #available(macOS 11.0, *) else { return }
-        addLog(text: "[user-action] btnEditFocusModeClicked")
-        addLog(text: "Showing preferences from edit focus mode")
-        leftMenuVcObj?.showFocusModeSettingsView()
+        addLog(text: "[user-action] btnEditFocusModeClicked — open block lists as sheet")
+        // #2602: open the Block Lists editor as a SHEET (same as the blocking-schedule "edit block list"
+        // flow) with the tapped row's block list selected — replacing the old full-view navigation that
+        // always showed the default block list. The pencil passes its row's id; the "Edit block lists"
+        // link (no id) falls back to the currently selected block list.
+        if focusPreferencesVcObj == nil { getFocusPreferencesVcObject().loadView() }
+        getFocusPreferencesVcObject().btnBackToCustomBlocking.isHidden = false   // sheet back arrow dismisses (see #2593)
+        getFocusPreferencesVcObject().btnBack.isHidden = true
+        presentAsSheet(getFocusPreferencesVcObject())
         if let focusModeId = focusModeId ?? state.selectedBlockList?.id {
             getFocusPreferencesVcObject().selectFocusModeWithId(id: focusModeId)
         }
