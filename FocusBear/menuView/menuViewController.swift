@@ -204,6 +204,9 @@ class menuViewController: NSViewController {
     /// request, so it has to be held here until it reports back — see `attachPastedImage`.
     var quickAddAttachmentUploads: [ToDoAttachmentsStore] = []
     var menuModelRef: AnyObject?
+    /// Last height applied to the popover/window by `applyMenuHeight`, used to damp a resize→measure→resize
+    /// feedback loop (see `applyMenuHeight`). 0 = nothing applied yet this presentation.
+    var lastAppliedMenuHeight: CGFloat = 0
     var menuRefreshTimer: Timer?
     /// #2025: a device-mic (LISTEN|START) recording is starting — the recorder starts async, so it may
     /// not be `isRecording` yet when the popover appears and refreshSwiftUIMenu() runs. This one-shot flag
@@ -2597,6 +2600,7 @@ extension menuViewController {
         wireMenuModel(model)
         observeVoiceEvents(model)
         menuModelRef = model
+        lastAppliedMenuHeight = 0   // fresh presentation: don't damp against a stale height
 
         // The SwiftUI view reports its own height; we resize the popover to match so nothing clips
         // (incl. when an accordion expands). Pin the host to all four edges and let the reported
@@ -2628,17 +2632,48 @@ extension menuViewController {
 
     private var menuWidth: CGFloat { FocusBearMenuView.width }
 
+    /// Max shrink (points) that `applyMenuHeight` will ignore to break a resize→measure→resize bounce.
+    /// Sized to absorb the observed 15pt bounce with headroom; well below any real content change.
+    private var menuHeightFeedbackTolerance: CGFloat { 24 }
+
     /// Resize the popover/window to the height the SwiftUI view reports (also on accordion expand).
     func applyMenuHeight(_ height: CGFloat) {
-        let size = NSSize(width: menuWidth, height: max(height.rounded(.up), 120))
+        let target = max(height.rounded(.up), 120)
+        // Anti-feedback-loop guard. Resizing the window to the SwiftUI-reported height re-lays out the
+        // hosting view, which can report a slightly different height, which resizes again — an infinite
+        // ping-pong. Seen in the wild (report 2026-09-22, v3.36.545): the reported height bounced
+        // between 698 and 683 (a fixed 15pt gap) 546 times each in ~1s, pegging the main thread until the
+        // app was force-restarted. The exact cause of the 15pt gap is not yet identified — it only
+        // reproduces for some users — so this is a robustness clamp on the resize path, not a fix for
+        // whatever makes the measurement flip: never apply a *shrink* smaller than the tolerance, so we
+        // settle on the taller value (no clipping) and the bounce can't continue. Genuine changes
+        // (accordion expand/collapse, screen switch) are far larger and still apply. lastAppliedMenuHeight
+        // resets to 0 in setupSwiftUIMenu so each presentation starts clean.
+        if lastAppliedMenuHeight > 0,
+           target < lastAppliedMenuHeight,
+           lastAppliedMenuHeight - target <= menuHeightFeedbackTolerance {
+            return
+        }
+        lastAppliedMenuHeight = target
+        let size = NSSize(width: menuWidth, height: target)
         preferredContentSize = size
-        // Popover path: setting contentSize re-anchors + grows the popover automatically.
-        appdelegate?.popover.contentSize = size
-        // Window path: resize and keep the top edge pinned under the status bar.
-        if let win = view.window {
-            // The storyboard window caps its (content) max height, so setContentSize was clamped and the
-            // taller states (blocking-schedule card, wrapped subtitles) clipped. Lift the caps and allow
-            // resizing so the window can actually grow to the reported content height.
+        // Size ONLY the presentation that is actually on screen. Sizing the popover (contentSize) AND the
+        // popover's private backing window (setContentSize) at the same time put two competing sizing
+        // authorities on one window; they fought over the popover's arrow/chrome (~15pt) and could
+        // ping-pong the reported height forever → main-thread hang (report 2026-09-22, v3.36.545). The
+        // window path exists only for the DETACHED standalone-window menu (getMenuWindowObject — used when
+        // the popover is off, or temporarily flipped off to show over another app's full-screen Space); it
+        // must never run against the popover's own window. `isMenuPopoverEnabled` is the same flag
+        // showPopover() uses to choose the presentation, so it always reflects what is currently on screen.
+        if SettingsManagerObject.isMenuPopoverEnabled {
+            // Popover mode: NSPopover owns geometry — setting contentSize re-anchors + grows it. Do NOT
+            // also touch its window.
+            appdelegate?.popover.contentSize = size
+            addLog(text: "[menu-height] popover applied=\(Int(size.height)) popoverContentH=\(Int(appdelegate?.popover.contentSize.height ?? -1))")
+        } else if let win = view.window {
+            // Detached standalone window: the storyboard window caps its (content) max height, so
+            // setContentSize was clamped and taller states clipped. Lift the caps and resize, keeping the
+            // top edge pinned under the status bar.
             win.styleMask.insert(.resizable)
             win.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
             win.contentMaxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
@@ -2647,7 +2682,7 @@ extension menuViewController {
             win.setFrameTopLeftPoint(topLeft)
             addLog(text: "[menu-height] applied=\(Int(size.height)) winAfter=\(Int(win.frame.height)) contentAfter=\(Int(win.contentView?.frame.height ?? -1)) maxH=\(win.maxSize.height > 1_000_000 ? -1 : Int(win.maxSize.height)) contentMaxH=\(win.contentMaxSize.height > 1_000_000 ? -1 : Int(win.contentMaxSize.height)) resizable=\(win.styleMask.contains(.resizable))")
         } else {
-            addLog(text: "[menu-height] popover applied=\(Int(size.height)) popoverContentH=\(Int(appdelegate?.popover.contentSize.height ?? -1))")
+            addLog(text: "[menu-height] no-surface applied=\(Int(size.height))")
         }
     }
 
