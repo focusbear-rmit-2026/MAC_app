@@ -741,10 +741,24 @@ class customNewBadgeBox: NSBox {
     var label:NSTextField!
     override func awakeFromNib() {
         super.awakeFromNib()
+        setupBadge()
+    }
+
+    override func layout() {
+        super.layout()
+        // Keep the pill fully rounded whatever its final height is. Applied in layout() (not once in
+        // awakeFromNib) so it's correct both for storyboard instances and code-created ones whose frame
+        // isn't known at init time. #2622
+        self.cornerRadius = self.frame.height / 2
+    }
+
+    /// Builds the badge's label + styling. Safe to call from a nib (via awakeFromNib) or programmatically
+    /// when reusing this badge on a code-built row; idempotent so repeated calls don't stack labels. #2622
+    func setupBadge() {
+        guard label == nil else { return }
         addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
         self.boxType = .custom
         self.borderWidth = 0
-        self.cornerRadius = self.frame.height / 2
         self.fillColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
         var newBadgeText = "New"
         if let common = configjson.value(forKey: "common") as? NSDictionary{
@@ -761,7 +775,7 @@ class customNewBadgeBox: NSBox {
         self.addSubview(label)
         self.addVerticalCenterConstraints(subView: label)
     }
-    
+
     override func mouseEntered(with event: NSEvent) {
         super.mouseEntered(with: event)
         NSCursor.pointingHand.set()

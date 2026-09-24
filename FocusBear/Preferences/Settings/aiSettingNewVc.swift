@@ -65,7 +65,25 @@ class aiSettingNewVc: NSViewController {
         accountabilityBuddyItemVcObj?.lblSubTitle.stringValue = "When you postpone your habits, an AI buddy checks your reason against your long-term goals and, if it's genuinely urgent, starts a super-strict AI focus session that only unlocks what you need. Your goal and long-term goals are sent to AI; no other identifying details are shared."
         accountabilityBuddyItemVcObj?.delegate = self
         accountabilityBuddyItemVcObj?.lineBottom.isHidden = true
-        
+
+        // #2622: the AI accountability buddy is a newly introduced feature but was shown without the
+        // "NEW" tag used elsewhere in the product. Reuse the shared customNewBadgeBox (same badge as the
+        // rest of the app) right after its title so it follows the existing convention. settingToggleItemVc
+        // has no badge outlet and the row is built in code, so create the badge and insert it into the
+        // title's horizontal stack row (which hugs its content and is leading-aligned).
+        if let titleField = accountabilityBuddyItemVcObj?.lblTitle,
+           let titleRow = titleField.superview as? NSStackView,
+           let titleIndex = titleRow.arrangedSubviews.firstIndex(of: titleField) {
+            let newBadge = customNewBadgeBox(frame: .zero)
+            newBadge.setupBadge()
+            newBadge.translatesAutoresizingMaskIntoConstraints = false
+            newBadge.setContentHuggingPriority(.required, for: .horizontal)
+            newBadge.setContentCompressionResistancePriority(.required, for: .horizontal)
+            newBadge.widthAnchor.constraint(equalToConstant: 50).isActive = true
+            newBadge.heightAnchor.constraint(equalToConstant: 17).isActive = true
+            titleRow.insertArrangedSubview(newBadge, at: titleIndex + 1)
+        }
+
         arrForSearchFromSettings.append(["title": checkBoxMorningMotivationText, "tabId": idAi, "object": enableMotivationalMessageItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": checkBoxWebsiteAllowText, "tabId": idAi, "object": allowSitesByAiItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": accountabilityBuddyTitle, "tabId": idAi, "object": accountabilityBuddyItemVcObj!.bgBox as Any])
