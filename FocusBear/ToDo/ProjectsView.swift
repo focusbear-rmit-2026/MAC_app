@@ -28,6 +28,70 @@ enum ProjectsSectionHeader {
     static let titleColor = Color(NSColor.labelColor)
 }
 
+/// Draws the completion line, saying WHY there is no date rather than showing nothing.
+struct ProjectCompletionLineView: View {
+    @ObservedObject var store: LocalForecastStore
+    let projectID: String
+    let projected: Date?
+
+    var body: some View {
+        let result = store.result?.projects.first { $0.id == projectID }
+        switch ProjectCompletionLine.decide(projected: projected,
+                                            unknownTaskCount: result?.unknownTaskCount ?? 0,
+                                            hasUnallocatedWork: result?.hasUnallocatedWork ?? false,
+                                            hasOutstandingWork: (result?.outstandingTaskCount ?? 0) > 0) {
+        case .date(let finish):
+            Text(ForecastText.format(.completeBy, ["<DATE>": ForecastText.date(finish)]))
+                .font(Font(getRegularFont(size: 12))).foregroundColor(.secondary)
+        case .needsEstimates:
+            Text(ForecastText[.missingEstimate])
+                .font(Font(getRegularFont(size: 12))).foregroundColor(.secondary)
+        case .outsideHorizon:
+            Text(ForecastText[.outsideHorizon])
+                .font(Font(getRegularFont(size: 12))).foregroundColor(.secondary)
+        case .nothing:
+            EmptyView()
+        }
+    }
+}
+
+/// What the completion line on a project card should say.
+///
+/// The card showed "Expected completion: <date>" when a date existed and **nothing at all** when one
+/// did not, so two projects with the same shape looked inconsistent for no visible reason: one read
+/// "93% of remaining work fits by the deadline" with no date under it, the other had a date
+/// (report 2026-09-23_10-46-27).
+///
+/// A date is only projected when every task has an estimate AND all the work could be placed inside
+/// the planning horizon. Both of those are knowable, and both already have strings — they were just
+/// never shown here. Saying which one applies turns an unexplained blank into something the user can
+/// act on: add the estimates, or widen the horizon.
+enum ProjectCompletionLine: Equatable {
+    case date(Date)
+    case needsEstimates
+    case outsideHorizon
+    case nothing
+
+    /// - Parameters:
+    ///   - projected: the projected completion date, when one could be calculated.
+    ///   - unknownTaskCount: tasks with no time estimate.
+    ///   - hasUnallocatedWork: work that could not be placed within the horizon.
+    ///   - hasOutstandingWork: false when the project is finished — nothing to project, and saying
+    ///     so would be noise on a completed project.
+    static func decide(projected: Date?,
+                       unknownTaskCount: Int,
+                       hasUnallocatedWork: Bool,
+                       hasOutstandingWork: Bool) -> ProjectCompletionLine {
+        if let projected { return .date(projected) }
+        guard hasOutstandingWork else { return .nothing }
+        // Missing estimates come first: they are the user's to fix, and while any remain the horizon
+        // question cannot be answered anyway.
+        if unknownTaskCount > 0 { return .needsEstimates }
+        if hasUnallocatedWork { return .outsideHorizon }
+        return .nothing
+    }
+}
+
 struct ProjectsTabView: View {
     @ObservedObject var store: ProjectsStore
     @ObservedObject var todoStore: ToDoStore
@@ -308,10 +372,8 @@ private struct RiskProjectCard: View {
                 Text(strings.projectSyncSource(metadata)).font(.system(size: 12)).foregroundColor(.secondary)
             }
             ForecastProjectEstimate(store: store.forecast, projectID: project.id)
-            if let finish = project.projected_completion_date.flatMap(ToDoDates.parse) {
-                Text(ForecastText.format(.completeBy, ["<DATE>": ForecastText.date(finish)]))
-                    .font(Font(getRegularFont(size: 12))).foregroundColor(.secondary)
-            }
+            ProjectCompletionLineView(store: store.forecast, projectID: project.id,
+                                      projected: project.projected_completion_date.flatMap(ToDoDates.parse))
             ProjectCardFooter(strings: strings, risk: project, memberCount: nil, taskCount: nil, showBadges: true,
                               section: section, riskTint: isAssessed ? nil : ToDoTheme.neutral) {
                 isDuePopoverShown = true

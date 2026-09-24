@@ -107,7 +107,17 @@ final class WiFiMonitorService: NSObject {
     // MARK: - SSID reading
 
     /// Returns the current SSID, or nil when disconnected / permission denied.
+    ///
+    /// **Blocks the calling thread.** `-[CWFInterface SSID]` is a synchronous XPC round-trip to the
+    /// WiFi daemon, so calling this on the main thread parks the UI until the daemon answers. That is
+    /// the cause of two separate "App hanging" issues in Sentry — FOCUS-BEAR-MACOS-11P (the seed read
+    /// during applicationDidFinishLaunching) and -166 (the SSID-change callback, 18 users). Read it
+    /// off the main thread and hop back with the result.
+    ///
+    /// The assertion is Debug-only, so a main-thread caller is caught while developing rather than
+    /// shipping as another hang.
     func readCurrentSSID() -> String? {
+        assert(!Thread.isMainThread, "readCurrentSSID() blocks on XPC — call it off the main thread")
         return wifiClient.interface()?.ssid()
     }
 
@@ -198,12 +208,17 @@ final class WiFiMonitorService: NSObject {
             guard let self = self else { return }
             self.pollingTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
                 guard let self = self else { return }
-                let newSSID = self.readCurrentSSID()
-                // Read currentSSID through stateQueue to avoid a data race with the
-                // CoreWLAN delegate callbacks. handleSSIDChange re-checks under the lock,
-                // so this is purely an optimisation to skip the no-op case safely.
-                let previousSSID = self.stateQueue.sync { self.currentSSID }
-                if newSSID != previousSSID {
+                // The timer fires on the main run loop (it has to, to fire reliably), but the read
+                // itself must not happen there — see readCurrentSSID(). Every 30s forever is exactly
+                // the shape that turns a slow daemon into a recurring beachball.
+                DispatchQueue.global(qos: .utility).async { [weak self] in
+                    guard let self = self else { return }
+                    let newSSID = self.readCurrentSSID()
+                    // Read currentSSID through stateQueue to avoid a data race with the
+                    // CoreWLAN delegate callbacks. handleSSIDChange re-checks under the lock,
+                    // so this is purely an optimisation to skip the no-op case safely.
+                    let previousSSID = self.stateQueue.sync { self.currentSSID }
+                    guard newSSID != previousSSID else { return }
                     self.handleSSIDChange(newSSID: newSSID)
                 }
             }
@@ -215,10 +230,14 @@ final class WiFiMonitorService: NSObject {
 
 extension WiFiMonitorService: CWEventDelegate {
     func ssidDidChangeForWiFiInterface(withName interfaceName: String) {
-        DispatchQueue.main.async { [weak self] in
+        // Read the SSID off the main thread, then hand the RESULT over. This used to hop to main
+        // first and read there, which parked the UI inside a synchronous XPC reply every time the
+        // network changed (Sentry FOCUS-BEAR-MACOS-166: 62 hangs, 18 users). Nothing about reading
+        // an SSID needs the main thread; only handleSSIDChange does, and it gets it below.
+        DispatchQueue.global(qos: .utility).async { [weak self] in
             guard let self = self else { return }
             let newSSID = self.wifiClient.interface(withName: interfaceName)?.ssid()
-            self.handleSSIDChange(newSSID: newSSID)
+            DispatchQueue.main.async { self.handleSSIDChange(newSSID: newSSID) }
         }
     }
 }

@@ -99,6 +99,10 @@ struct FocusStartDurationDial: SwiftUI.View {
     let scale: FocusStartScale
     let isEnabled: Bool
 
+    /// Which half is being typed into, if either. Nil is the ordinary display state.
+    @SwiftUI.State private var editing: FocusStartDuration.Component?
+    @SwiftUI.State private var draft = ""
+
     var body: some SwiftUI.View {
         VStack(spacing: scale.pt(52)) {
             HStack(spacing: scale.pt(42)) {
@@ -116,15 +120,11 @@ struct FocusStartDurationDial: SwiftUI.View {
         Group {
             if let clock = FocusStartDurationFormatter(strings: strings).clockComponents(for: duration) {
                 HStack(alignment: .firstTextBaseline, spacing: scale.pt(16)) {
-                    Text(clock.hours)
-                        .font(scale.font(FocusStartLayout.durationNumberFont, .semibold))
-                        .foregroundColor(FocusStartPalette.accent)
+                    editableNumber(clock.hours, component: .hours)
                     Text(strings.hourUnit)
                         .font(scale.font(FocusStartLayout.durationUnitFont))
                         .foregroundColor(FocusStartPalette.mutedText)
-                    Text(clock.minutes)
-                        .font(scale.font(FocusStartLayout.durationNumberFont, .semibold))
-                        .foregroundColor(FocusStartPalette.accent)
+                    editableNumber(clock.minutes, component: .minutes)
                     Text(strings.minuteUnit)
                         .font(scale.font(FocusStartLayout.durationUnitFont))
                         .foregroundColor(FocusStartPalette.mutedText)
@@ -133,6 +133,160 @@ struct FocusStartDurationDial: SwiftUI.View {
                 Text(strings.untimedGlyph)
                     .font(scale.font(FocusStartLayout.durationNumberFont, .semibold))
                     .foregroundColor(FocusStartPalette.accent)
+            }
+        }
+    }
+
+    /// One half of the readout, typeable.
+    ///
+    /// It stays a plain `Text` until clicked, so the big orange number keeps the design's weight
+    /// instead of sitting in a field the whole time; the field appears on click and commits on
+    /// Return or on losing focus (report 2026-09-23_16-05-55). Setting 55 minutes used to take
+    /// eleven presses of `+`.
+    private func editableNumber(_ shown: String, component: FocusStartDuration.Component) -> some SwiftUI.View {
+        // Stable two-digit box for the display and for 1–2 digit editing (so it neither jumps on click
+        // nor resizes per keystroke), growing only when a value needs a third digit — typing 124 into
+        // minutes is a valid 2h04m. `.clipped()` guarantees the number never draws over the hr/min
+        // labels, whatever is typed. #2617
+        let activeText = (editing == component) ? draft : shown
+        // ≤2 digits: the stable two-digit slot. 3 digits: grow to fit (124 → 2h04m). Beyond that: cap at
+        // the three-digit width and let `.clipped()` handle the rest, so the box never keeps widening.
+        let width = activeText.count <= 2
+            ? durationNumberSlotWidth
+            : min(measuredNumberWidth(activeText), durationNumberMaxWidth)
+        return Group {
+            if editing == component {
+                DurationNumberField(
+                    text: $draft,
+                    font: durationNumberNSFont,
+                    onCommit: { commitDraft(component) },
+                    onCancel: { editing = nil })     // Escape abandons the edit
+            } else {
+                Text(shown)
+                    .font(scale.font(FocusStartLayout.durationNumberFont, .semibold))
+                    .foregroundColor(FocusStartPalette.accent)
+                    .pointingHandCursor()
+                    .onTapGesture {
+                        guard isEnabled else { return }
+                        draft = shown
+                        editing = component
+                    }
+            }
+        }
+        .frame(width: width)
+        .clipped()
+    }
+
+    /// The NSFont the editable field draws with — the same size/weight the displayed number uses.
+    private var durationNumberNSFont: NSFont {
+        getSemiBoldFont(size: scale.pt(FocusStartLayout.durationNumberFont))
+    }
+
+    /// The two-digit floor: 1–2 digit values all sit in this same box, so the readout doesn't dance.
+    private var durationNumberSlotWidth: CGFloat {
+        measuredNumberWidth("00")
+    }
+
+    /// The three-digit ceiling: the box grows to here (fits 124) and no further.
+    private var durationNumberMaxWidth: CGFloat {
+        measuredNumberWidth("000")
+    }
+
+    /// Width of the given digits at the number font, plus a little caret room.
+    private func measuredNumberWidth(_ text: String) -> CGFloat {
+        let sample = text.isEmpty ? "0" : text
+        return (sample as NSString).size(withAttributes: [.font: durationNumberNSFont]).width + scale.pt(18)
+    }
+
+    private func commitDraft(_ component: FocusStartDuration.Component) {
+        guard editing == component else { return }
+        duration = duration.settingComponent(component, fromTyped: draft)
+        editing = nil
+    }
+
+    /// The typeable half of the readout, backed by NSTextField.
+    ///
+    /// #2617 follow-up: the plain SwiftUI `TextField` had two problems the original couldn't verify
+    /// ("how the field looks in place of the number, and whether the caret lands sensibly"):
+    ///   • it wasn't focused on the first click — SwiftUI's own focus API is macOS 12+ and the target is
+    ///     macOS 11 — so the user had to click twice to type;
+    ///   • its fixed `pt(72)` frame was far narrower than the `pt(160)` number font, so a two-digit value
+    ///     like "04" was clipped to roughly half a zero.
+    /// This NSTextField grabs first-responder the moment it appears (selecting all, so a keystroke
+    /// overtypes), sizes itself to its content via `.fixedSize()`, and keeps the big-orange-number look
+    /// (no bezel, centred, accent colour). Return or losing focus commits; Escape abandons.
+    @available(macOS 11.0, *)
+    private struct DurationNumberField: NSViewRepresentable {
+        @SwiftUI.Binding var text: String
+        let font: NSFont
+        let onCommit: () -> Void
+        let onCancel: () -> Void
+
+        func makeNSView(context: Context) -> NSTextField {
+            let field = NSTextField(string: text)
+            field.font = font
+            field.isBezeled = false
+            field.isBordered = false
+            field.drawsBackground = false
+            field.focusRingType = .none
+            field.alignment = .center
+            field.usesSingleLineMode = true
+            field.lineBreakMode = .byClipping
+            field.maximumNumberOfLines = 1
+            field.textColor = NSColor(named: "focusStartAccent") ?? .systemOrange
+            field.delegate = context.coordinator
+            field.cell?.sendsActionOnEndEditing = false
+            field.setContentHuggingPriority(.required, for: .horizontal)
+            // Focus + select-all once the field is in a window (next runloop tick), so the first click
+            // lets the user type immediately and a keystroke replaces the shown value.
+            DispatchQueue.main.async {
+                guard field.window?.firstResponder !== field.currentEditor() else { return }
+                field.window?.makeFirstResponder(field)
+                field.currentEditor()?.selectAll(nil)
+            }
+            return field
+        }
+
+        func updateNSView(_ nsView: NSTextField, context: Context) {
+            if nsView.font != font { nsView.font = font }
+            if nsView.currentEditor() == nil, nsView.stringValue != text {
+                nsView.stringValue = text
+            }
+        }
+
+        func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+        final class Coordinator: NSObject, NSTextFieldDelegate {
+            private let parent: DurationNumberField
+            private var didCancel = false
+            init(_ parent: DurationNumberField) { self.parent = parent }
+
+            func controlTextDidChange(_ obj: Notification) {
+                guard let field = obj.object as? NSTextField else { return }
+                // Digits only — but no length cap: typing 124 into minutes is meant to roll over to
+                // 2h04m, so a third digit is allowed. The field's box grows to fit a 3rd digit and clips
+                // beyond, so it never draws over the hr/min labels. #2617
+                let digits = field.stringValue.filter(\.isNumber)
+                if digits != field.stringValue {
+                    field.stringValue = digits
+                    field.currentEditor()?.selectedRange = NSRange(location: digits.count, length: 0)
+                }
+                parent.text = digits
+            }
+
+            func controlTextDidEndEditing(_ obj: Notification) {
+                if didCancel { didCancel = false; return }   // Escape abandoned the edit — don't commit
+                parent.onCommit()                            // Return or focus-loss commits
+            }
+
+            func control(_ control: NSControl, textView: NSTextView,
+                         doCommandBy commandSelector: Selector) -> Bool {
+                if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
+                    didCancel = true
+                    parent.onCancel()
+                    return true
+                }
+                return false
             }
         }
     }

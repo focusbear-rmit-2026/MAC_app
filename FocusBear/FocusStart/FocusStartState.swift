@@ -197,6 +197,22 @@ final class FocusStartState: ObservableObject {
     var showsProjectSearch: Bool { isEditingGoal || goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     var showsTaskSearch: Bool { selectedTasks.isEmpty || isTaskSearchExpanded }
 
+    /// Whether "no matching unfinished tasks" is an honest thing to say.
+    ///
+    /// The empty message was shown whenever the list was empty and nothing was in flight — which is
+    /// also true BEFORE anything has been asked for. With no project chosen the user saw
+    /// "No matching unfinished tasks" under an empty search box while the request had not gone out
+    /// yet; the log has the unfiltered load arriving a minute after the screenshot
+    /// (report 2026-09-23_16-07-21: "If no project is chosen, it should show all tasks here").
+    ///
+    /// "We asked and there were none" and "we have not asked" are different claims, and only the
+    /// first is worth showing.
+    var hasAskedForTasks: Bool { taskLoadsCompleted > 0 }
+
+    /// Completed task loads for the current account. Reset with the rest of the work state when the
+    /// account changes, so a new sign-in does not inherit the previous user's "we already asked".
+    private(set) var taskLoadsCompleted = 0
+
     func editGoal() { hasChosenGoal = true; isEditingGoal = true; projectQuery = goal }
     func clearGoal() {
         goal = ""; selectedProjectID = nil; selectedTasks = []
@@ -229,6 +245,7 @@ final class FocusStartState: ObservableObject {
         if account != workAccountID {
             if workAccountID != nil {
                 selectedProjectID = nil; selectedTasks = []; projects = []; suggestedTasks = []
+                taskLoadsCompleted = 0
                 isEditingGoal = false; isTaskSearchExpanded = false
                 goal = ""; projectQuery = ""; taskQuery = ""; hasChosenGoal = false
             }
@@ -321,6 +338,7 @@ final class FocusStartState: ObservableObject {
                 self.suggestedTasks = FocusStartWorkSelection.tasks(previous + tasks.filter { !known.contains($0.id) },
                     project: project, dayPlan: self.dayPlanTasks())
                 self.hasMoreTasks = hasMore; self.taskPage = page
+                self.taskLoadsCompleted += 1
             }
         }
         if !query.isEmpty {

@@ -1610,6 +1610,26 @@ final class ForecastReschedulingTests: XCTestCase {
     /// A store with a real snapshot: one project, one overdue one-minute task. Overdue is the point —
     /// its completion date is necessarily later than its due date whatever the machine's own calendar
     /// and routines say, so it is always proposed for a new date until it is pinned.
+    /// The developer's own `locksPlannedDays`, put back after each test. These run in the
+    /// app-hosted target and share its UserDefaults, so without this the suite both READS and
+    /// OVERWRITES a real preference.
+    private var storedPlannedDaysLock: Any?
+
+    override func setUp() {
+        super.setUp()
+        storedPlannedDaysLock = UserDefaults.standard.object(forKey: LocalForecastStore.locksPlannedDaysKey)
+        UserDefaults.standard.set(true, forKey: LocalForecastStore.locksPlannedDaysKey)
+    }
+
+    override func tearDown() {
+        if let stored = storedPlannedDaysLock {
+            UserDefaults.standard.set(stored, forKey: LocalForecastStore.locksPlannedDaysKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: LocalForecastStore.locksPlannedDaysKey)
+        }
+        super.tearDown()
+    }
+
     private func loadedStore(writeOutcome: @escaping LocalForecastStore.OutcomeWriter = { _, _, _, done in done(true) },
                              onProjectsPage: @escaping () -> Void = {}) throws -> LocalForecastStore {
         let projects = try JSONDecoder().decode(ProjectsPage.self, from: Data(
@@ -1625,6 +1645,20 @@ final class ForecastReschedulingTests: XCTestCase {
             readProjects: { page, _, complete in onProjectsPage(); complete(page == 1 ? projects : nil) },
             readTasks: { page, _, complete in complete(page == 1 ? tasks : nil) },
             writeOutcome: writeOutcome, diagnostic: { _ in })
+        // Pin the today/tomorrow lock instead of inheriting it.
+        //
+        // `locksPlannedDays` is read from UserDefaults, and these tests run in the app-hosted test
+        // target — so they were reading the DEVELOPER'S OWN preference. Unticking that checkbox in
+        // the running app (which the user did, and reported) unlocks today, overdue work then earns
+        // a placement correction, and two tests here started failing. The self-hosted CI runner is
+        // the same Mac, so integration's Unit Tests went red because of a checkbox in the UI.
+        //
+        // A test must not depend on a user preference — nor CHANGE one. Assigning
+        // `store.locksPlannedDays` persists through its `didSet`, so the first version of this fix
+        // silently re-ticked the developer's checkbox (verified: the stored value went 0 → 1).
+        // Write the key before the store reads it at init, and put the user's value back afterwards.
+        // The key is already pinned in setUp, so the store read `true` at init; assigning here
+        // would persist through `didSet` and clobber the real preference.
         store.horizonDays = ForecastReschedulingTests.testHorizonDays
         let loaded = expectation(description: "Forecast snapshot")
         store.refresh { success in XCTAssertTrue(success); loaded.fulfill() }
@@ -1641,4 +1675,71 @@ final class ForecastReschedulingTests: XCTestCase {
         DispatchQueue.main.async { drained.fulfill() }
         wait(for: [drained], timeout: 5)
     }
+
+    // MARK: Fixed-order projects due soon come first (report 2026-09-21_07-45-21, follow-up)
+    //
+    // "maybe because they were in the bottom section of tasks that can't be moved? We should bring
+    // those up higher - at least the ones due in the next two weeks."
+    //
+    // They sit at the bottom because they cannot be date-moved, only reordered. That is right for a
+    // project due in three months and wrong for one due next week.
+
+    private typealias Priority = LocalTimeForecast.FixedProjectPriority
+
+    private func group(_ id: String, endingInDays days: Int?, now: Date) -> LocalTimeForecast.FixedProjectOrder {
+        let end = days.map { Calendar.current.date(byAdding: .day, value: $0, to: now)! }
+        return LocalTimeForecast.FixedProjectOrder(projectID: id, endDate: end, taskIDs: [])
+    }
+
+    func testDeadlinesInsideTheFortnightComeFirst() {
+        let now = Date()
+        let groups = [group("far", endingInDays: 60, now: now),
+                      group("soon", endingInDays: 3, now: now)]
+        XCTAssertEqual(Priority.prioritised(groups, now: now).map(\.projectID), ["soon", "far"])
+    }
+
+    func testTheBoundaryIsTwoWeeks() {
+        let now = Date()
+        let groups = [group("justOutside", endingInDays: Priority.soonDays + 1, now: now),
+                      group("justInside", endingInDays: Priority.soonDays, now: now)]
+        XCTAssertEqual(Priority.prioritised(groups, now: now).map(\.projectID),
+                       ["justInside", "justOutside"])
+    }
+
+    /// Overdue is the most pressing case there is; it must not fall through to the bottom for being
+    /// a negative number of days away.
+    func testOverdueProjectsAreTreatedAsSoon() {
+        let now = Date()
+        let groups = [group("later", endingInDays: 30, now: now),
+                      group("overdue", endingInDays: -5, now: now)]
+        XCTAssertEqual(Priority.prioritised(groups, now: now).map(\.projectID), ["overdue", "later"])
+    }
+
+    func testAProjectWithNoEndDateIsNotPressing() {
+        let now = Date()
+        let groups = [group("none", endingInDays: nil, now: now),
+                      group("soon", endingInDays: 2, now: now)]
+        XCTAssertEqual(Priority.prioritised(groups, now: now).map(\.projectID), ["soon", "none"])
+    }
+
+    /// Both halves keep their existing order, so the sequence stays stable across recalculations
+    /// rather than shuffling under the user between renders.
+    func testOrderWithinEachHalfIsPreserved() {
+        let now = Date()
+        let groups = [group("soonA", endingInDays: 1, now: now),
+                      group("farA", endingInDays: 40, now: now),
+                      group("soonB", endingInDays: 5, now: now),
+                      group("farB", endingInDays: 50, now: now)]
+        XCTAssertEqual(Priority.prioritised(groups, now: now).map(\.projectID),
+                       ["soonA", "soonB", "farA", "farB"])
+    }
+
+    func testNothingIsDroppedOrDuplicated() {
+        let now = Date()
+        let groups = (1...6).map { group("p\($0)", endingInDays: $0 * 10, now: now) }
+        let result = Priority.prioritised(groups, now: now)
+        XCTAssertEqual(Set(result.map(\.projectID)), Set(groups.map(\.projectID)))
+        XCTAssertEqual(result.count, groups.count, "ordering only — nothing is hidden")
+    }
+
 }

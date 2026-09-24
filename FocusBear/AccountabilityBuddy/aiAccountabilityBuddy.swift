@@ -384,6 +384,33 @@ private func currentCalendarMeetingTitle() -> String? {
 /// so the buddy can answer "when is my meeting" itself instead of asking (or claiming it can't see the
 /// calendar). A ±30-min window was too narrow: a meeting the user is prepping for is usually further out.
 /// Empty only when calendar access is off or truly nothing is scheduled in that span.
+/// Shapes the calendar lines for the request body.
+///
+/// The DTO bounds both the number of events and each line's length, and a busy or shared calendar
+/// can exceed either. Trimming here means a crowded day degrades to the nearest events rather than
+/// 400ing the whole request — which would put the buddy back to arguing without a calendar, the very
+/// thing this fixes.
+enum AccountabilityCalendarPayload {
+    /// The DTO's own outer bounds (`MAX_CALENDAR_EVENTS_INPUT`, `MAX_CALENDAR_EVENT_LENGTH_INPUT`),
+    /// which are what a request gets 400'd for exceeding — not the tighter limits the service then
+    /// truncates to. Matching the outer bounds rather than guessing something smaller means nothing
+    /// is dropped here that the server would have been happy to receive and curate itself.
+    ///
+    /// In practice the window is about six hours, so neither is reached; these exist so a shared or
+    /// agenda-stuffed calendar degrades instead of failing the request, which would put the buddy
+    /// back to arguing with no calendar at all.
+    static let maximumEvents = 500
+    static let maximumLineLength = 2000
+
+    static func forRequest(_ events: [String]) -> [String] {
+        events
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .prefix(maximumEvents)
+            .map { String($0.prefix(maximumLineLength)) }
+    }
+}
+
 func accountabilityBuddyCalendarContext() -> [String] {
     let now = Date()
     let windowStart = now.addingTimeInterval(-15 * 60)
@@ -454,11 +481,20 @@ extension AllApi {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.timeoutInterval = 30
 
-            // Field names + shape match the backend EvaluateFocusPostponementDto (#2310) EXACTLY —
-            // camelCase, uncompletedHabits/dayPlanTasks required, an optional currentMeetingTitle, and an
-            // optional language. The endpoint doesn't accept long-term goals / a full calendar window / an
-            // is-in-meeting flag, so those params aren't sent (the server owns the prompt) — a backend
-            // coord task tracks having the endpoint take them for parity with the old client prompt.
+            // Field names + shape match the backend EvaluateFocusPostponementDto EXACTLY — camelCase,
+            // uncompletedHabits/dayPlanTasks required, optional currentMeetingTitle, calendarEvents
+            // and language.
+            //
+            // `calendarEvents` USED to be dropped here, under a comment saying the endpoint did not
+            // accept it. It does, and has for a while: the DTO declares it and the prompt interpolates
+            // it with an explicit instruction — "when the calendar events list is non-empty, you can
+            // see the calendar, never claim you cannot". The client computed the list, logged it, and
+            // then left it out of the body, so the buddy answered "I can see your calendar is not
+            // provided here, so I can't verify the meeting" about a meeting ten minutes away and
+            // plainly on the calendar (report 2026-09-23_09-25-08).
+            //
+            // `longTermGoals` and `isInMeeting` genuinely are not in the DTO and are still not sent.
+            // They stay as parameters because callers supply them and the server may take them later.
             let language = BundledConfigLanguage.apiName().capitalized
             let apiMessages = messages.map { ["role": $0.role, "content": AccountabilityRequestText.bounded($0.text, limit: 500)] }
 
@@ -471,6 +507,13 @@ extension AllApi {
             ]
             if let meetingTitle = currentMeetingTitleIfAny() {
                 json["currentMeetingTitle"] = AccountabilityRequestText.bounded(meetingTitle, limit: 500)
+            }
+            // Only when there is something to say: the prompt reads an EMPTY list as "the client did
+            // not send any", which is a different claim from "the calendar is empty" and is the one
+            // it is told not to hold against the user.
+            let calendar = AccountabilityCalendarPayload.forRequest(calendarEvents)
+            if !calendar.isEmpty {
+                json["calendarEvents"] = calendar
             }
             addLog(text: "evaluateAccountabilityConversation: json data for api is:- \(json)")
             request.httpBody = try? JSONSerialization.data(withJSONObject: json)

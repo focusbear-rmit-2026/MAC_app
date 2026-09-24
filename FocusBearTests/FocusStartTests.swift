@@ -532,4 +532,89 @@ final class FocusStartTests: XCTestCase {
         return try JSONDecoder().decode([ToDoTask].self, from: JSONSerialization.data(withJSONObject: rows))
     }
 
+
+    // MARK: Typing a duration (report 2026-09-23_16-05-55)
+    //
+    // "I should be able to click on the number to change the time rather than only using +/-."
+    // The readout was display-only, so 55 minutes meant eleven presses of the stepper.
+
+    func testTypingMinutesSetsThem() {
+        let duration = FocusStartDuration(minutes: 25)
+        XCTAssertEqual(duration.settingComponent(.minutes, fromTyped: "55").minutes, 55)
+    }
+
+    func testTypingHoursKeepsTheMinutes() {
+        let duration = FocusStartDuration(minutes: 55)          // 0h55
+        XCTAssertEqual(duration.settingComponent(.hours, fromTyped: "2").minutes, 2 * 60 + 55)
+    }
+
+    /// 90 typed into the minutes box means 90 minutes, not 30 — rolling it over is what was meant.
+    func testMinutesBeyondAnHourRollOverRatherThanWrapping() {
+        let duration = FocusStartDuration(minutes: 25)
+        XCTAssertEqual(duration.settingComponent(.minutes, fromTyped: "90").minutes, 90)
+    }
+
+    func testValuesAreClampedToTheSliderRange() {
+        let duration = FocusStartDuration(minutes: 25)
+        XCTAssertEqual(duration.settingComponent(.hours, fromTyped: "99").minutes,
+                       FocusStartDuration.maximumMinutes, "the slider stops at 8 hours")
+        XCTAssertEqual(duration.settingComponent(.minutes, fromTyped: "0").minutes,
+                       FocusStartDuration.minimumMinutes, "0 is not a session the app will start")
+    }
+
+    /// A half-typed or mistyped field must not wipe a length the user had already set.
+    func testUnparseableInputLeavesTheDurationAlone() {
+        let duration = FocusStartDuration(minutes: 25)
+        for typed in ["", "   ", "abc", "-"] {
+            XCTAssertEqual(duration.settingComponent(.minutes, fromTyped: typed).minutes, 25, typed)
+        }
+    }
+
+    func testStrayCharactersAroundADigitAreIgnored() {
+        let duration = FocusStartDuration(minutes: 25)
+        XCTAssertEqual(duration.settingComponent(.minutes, fromTyped: " 45 min ").minutes, 45)
+    }
+
+    func testUntimedIsPreservedThroughATypedEdit() {
+        let duration = FocusStartDuration(minutes: 25, isUntimed: true)
+        XCTAssertTrue(duration.settingComponent(.minutes, fromTyped: "45").isUntimed)
+    }
+
+
+    // MARK: Not-asked is not the same as none (report 2026-09-23_16-07-21)
+    //
+    // "If no project is chosen, it should show all tasks here." The list was empty and the screen
+    // said "No matching unfinished tasks" — but the request had not gone out yet. The log has the
+    // unfiltered load arriving a minute after the screenshot.
+
+    func testTheEmptyMessageIsNotEarnedBeforeTheFirstLoad() {
+        let state = FocusStartState()
+        XCTAssertFalse(state.hasAskedForTasks,
+                       "a fresh screen has asked for nothing, so it cannot report nothing")
+    }
+
+    /// With no project chosen the selection rule does not FILTER, it only sorts — so once the load
+    /// lands, every unfinished task is a candidate. That is the behaviour the report expects.
+    private func unfinishedTask(_ id: String, project: String? = nil) -> ToDoTask {
+        var task = ToDoTask(id: id, title: id, status: ToDoStatus.notStarted.rawValue, created_at: "")
+        task.project_id = project
+        return task
+    }
+
+    func testWithNoProjectEveryUnfinishedTaskIsACandidate() {
+        let visible = FocusStartWorkSelection.tasks([unfinishedTask("a"), unfinishedTask("b")],
+                                                    project: nil, dayPlan: [])
+        XCTAssertEqual(visible.count, 2, "no project means no filter, not no tasks")
+    }
+
+    func testChoosingAProjectSortsItsTasksFirstWithoutHidingTheRest() {
+        var project = Project(id: "p1", name: "P1")
+        project.metadata = nil
+        let visible = FocusStartWorkSelection.tasks(
+            [unfinishedTask("other", project: "p2"), unfinishedTask("mine", project: "p1")],
+            project: project, dayPlan: [])
+        XCTAssertEqual(visible.first?.id, "mine", "the chosen project floats to the top")
+        XCTAssertEqual(visible.count, 2, "and the others are still reachable")
+    }
+
 }

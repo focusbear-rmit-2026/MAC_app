@@ -13,6 +13,39 @@ import Combine
 /// its Pep Talk tab. The pep talk used to be the dashboard.focusbear.io/webview/motivational-summary
 /// webview (token bridge + load-failed overlay); the native StatsScreen now streams
 /// /user/motivational-summary and gives the other stats tabs a look while the routine is pending.
+/// How often the routine's pep talk should appear.
+///
+/// It lives on the "visualize" screen, which is shown for EVERY habit — so completing a habit and
+/// coming back brought it round again. On one day 15 of 26 pep-talk requests were immediately
+/// preceded by "Showing morning/evening habits from habit completed back button". The intended
+/// behaviour is once per routine start per day: once in the morning, once in the evening
+/// (report 2026-09-22_07-45-26, follow-up: "How could it be 26 times?").
+///
+/// Keyed by routine AND day, so postponing and resuming the morning routine does not earn a second
+/// one, while the evening routine still gets its own.
+enum PepTalkRoutineDisplay {
+
+    static func shouldShow(routine: CURRENTSTATE,
+                           now: Date = Date(),
+                           lastShown: [CURRENTSTATE: Date],
+                           calendar: Calendar = .current) -> Bool {
+        guard let shown = lastShown[routine] else { return true }
+        return !calendar.isDate(shown, inSameDayAs: now)
+    }
+
+    static func recording(_ routine: CURRENTSTATE,
+                          at now: Date = Date(),
+                          into lastShown: [CURRENTSTATE: Date]) -> [CURRENTSTATE: Date] {
+        var updated = lastShown
+        updated[routine] = now
+        return updated
+    }
+}
+
+/// Per-routine, per-day record of when the pep talk was last shown. A global because the screen it
+/// lives on is rebuilt for every habit — instance state cannot outlive the thing being limited.
+var pepTalkLastShownByRoutine: [CURRENTSTATE: Date] = [:]
+
 class visualizeInstructionsVc: NSViewController {
 
     @IBOutlet weak var boxStarRating: NSBox!
@@ -193,7 +226,15 @@ class visualizeInstructionsVc: NSViewController {
         }
         
         if !isMotivationalMessageShowing{
-            if SettingsManagerObject.isMotivationalMessageEnabled{
+            // #2617: the VISIBLE visualize screen is already shown at most once per routine per day — its
+            // caller (firstViewController) only reaches here when RoutineVisualizePrompt.shouldShow(for:)
+            // is true and calls markShown(for:) immediately after. So the pep talk on this visible path
+            // must NOT add its own PepTalkRoutineDisplay once-per-day check: doing so created a race where
+            // the background pre-load could record the slot first (even into a detached, never-seen view)
+            // and then deny this visible screen its pep talk, leaving the plain 30-second target. When the
+            // screen shows, the pep talk shows. (The PRE-LOAD keeps PepTalkRoutineDisplay to throttle its
+            // own streaming; only the once-a-day visible screen is unconditional here.)
+            if SettingsManagerObject.isMotivationalMessageEnabled {
                 allApiObject.isInternetOn(completionHandler: {isInternetOn in
                     DispatchQueue.main.async {
                         if isInternetOn{
@@ -222,7 +263,19 @@ class visualizeInstructionsVc: NSViewController {
         btnSkipHabit.isHidden = true
         lblTimer.stringValue = ""
         lblVisualizeText.isHidden = false
-        if SettingsManagerObject.isMotivationalMessageEnabled{
+        // The pre-load path has to ask the same question, or it reintroduces the per-habit pep talk
+        // through the back door.
+        //
+        // #2617: it must ALSO honour shouldIgnoreVisualizeInstructions. Returning from a completed habit
+        // sets that flag true and re-runs the morning/evening setup — which calls this pre-load — while
+        // the *visible* visualize screen is deliberately skipped (firstViewController gates it on the
+        // same flag). Without this guard the pre-load still ran, calling showPepTalk() on a screen that
+        // never becomes visible: it streamed into a detached view AND recorded the once-per-day slot, so
+        // the real routine-start visualize screen was then denied the pep talk and fell through to the
+        // 30-second target. Don't pre-load (or consume the slot) when the screen won't be shown.
+        if firstViewControllerObj?.shouldIgnoreVisualizeInstructions == true { return }
+        if SettingsManagerObject.isMotivationalMessageEnabled,
+           PepTalkRoutineDisplay.shouldShow(routine: currentState, lastShown: pepTalkLastShownByRoutine) {
             allApiObject.isInternetOn(completionHandler: {isInternetOn in
                 DispatchQueue.main.async {
                     if isInternetOn{
@@ -237,6 +290,8 @@ class visualizeInstructionsVc: NSViewController {
     /// and start streaming. The container shows straight away; the spinner covers it until text arrives.
     func showPepTalk(){
         isMotivationalMessageShowing = true
+        pepTalkLastShownByRoutine = PepTalkRoutineDisplay.recording(currentState,
+                                                                    into: pepTalkLastShownByRoutine)
         self.boxStarRating.isHidden = true
         self.imgView.isHidden = true
         self.timer?.invalidate()

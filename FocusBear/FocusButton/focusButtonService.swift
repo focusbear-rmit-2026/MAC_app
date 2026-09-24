@@ -117,7 +117,6 @@ class focusButtonService: NSObject {
     // MARK: - Callbacks
     var onStateChanged: ((DeviceState) -> Void)?
     var onRemainingTimeChanged: ((Int64) -> Void)?
-    var onHabitsReceived: (([(id: String, name: String, durationSeconds: Int64)]) -> Void)?
     
     var onError: ((String) -> Void)?
     var onPortDisconnected: (() -> Void)?
@@ -826,8 +825,8 @@ class focusButtonService: NSObject {
     static var defaultFocusEmojiPoolText: String { defaultFocusEmojiPool.joined() }
 
     /// Seconds to wait after a first connect before pushing the default focus emoji, so the connect
-    /// handshake (SET|TIME / GET|HABITCOUNT → GET|HABIT reads) settles first — the emoji uploader is
-    /// ACK-gated lockstep and must not race those command/response round-trips.
+    /// handshake (SET|TIME, and the habit list the routine pushes) settles first — the emoji uploader
+    /// is ACK-gated lockstep and must not race those command/response round-trips.
     private static let defaultFocusIconsSyncDelay: TimeInterval = 2.0
 
     /// On the first connect of an emoji-capable device, push the default FOCUS-mode emoji pool so a
@@ -974,21 +973,6 @@ class focusButtonService: NSObject {
         case "EVENT":
             handleEvent(parts)
             
-        case "HABITCOUNT":
-            if parts.count >= 2, let count = Int(parts[1]), count > 0 {
-                for i in 1...count {
-                    sendCmd("GET|HABIT|h\(i)")
-                }
-            }
-            
-        case "HABIT":
-            if parts.count >= 4, let duration = Int64(parts[3]) {
-                let habitId = parts[1]
-                let habitName = parts[2]
-                // Handle habit received
-                onHabitsReceived?([(id: habitId, name: habitName, durationSeconds: duration)])
-            }
-
         case "EMOJILIST", "EMOJI":
             emojiSync.handleDeviceLine(parts)
 
@@ -1335,7 +1319,6 @@ extension focusButtonService: ORSSerialPortDelegate {
         let timezoneOffset = TimeZone.current.secondsFromGMT()
         let localEpoch = Int64(localDate.timeIntervalSince1970) + Int64(timezoneOffset)
         sendCmd("SET|TIME|\(localEpoch)")
-        sendCmd("GET|HABITCOUNT")
 
         // If we validated via the STATUS→INFO reply (older firmware, or a dropped FIRMWAREVER answer),
         // the version is still unknown here — keep asking until it lands so the emoji/icon features that

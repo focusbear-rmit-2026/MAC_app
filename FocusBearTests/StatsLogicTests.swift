@@ -386,4 +386,57 @@ final class StatsLogicTests: XCTestCase {
         PepTalkCache.clear()
     }
 
+
+    // MARK: Once per routine start per day (report 2026-09-22_07-45-26, follow-up)
+    //
+    // "It's only meant to show the stats view once per routine start per day. Once in the morning and
+    // once in the evening. How could it be 26 times?"
+    //
+    // Because the pep talk lives on the "visualize" screen, which is shown for EVERY habit. On the
+    // reported day, 15 of the 26 requests were immediately preceded by
+    // "Showing morning/evening habits from habit completed back button".
+
+    private typealias Display = PepTalkRoutineDisplay
+
+    func testTheFirstRoutineOfTheDayShowsIt() {
+        XCTAssertTrue(Display.shouldShow(routine: ._MORNING_HABIT_, lastShown: [:]))
+    }
+
+    func testCompletingHabitsDoesNotBringItBack() {
+        // Fixed times of day: offsets from the real clock crossed midnight when the suite ran after
+        // 20:00, and the "same routine, later that day" case became "tomorrow".
+        let calendar = Calendar.current
+        let routineStart = calendar.date(bySettingHour: 7, minute: 0, second: 0, of: Date())!
+        let shown = Display.recording(._MORNING_HABIT_, at: routineStart, into: [:])
+        // Every subsequent habit in the same routine returns to this screen.
+        XCTAssertFalse(Display.shouldShow(routine: ._MORNING_HABIT_,
+                                          now: routineStart.addingTimeInterval(5 * 60), lastShown: shown))
+        XCTAssertFalse(Display.shouldShow(routine: ._MORNING_HABIT_,
+                                          now: routineStart.addingTimeInterval(4 * 60 * 60), lastShown: shown))
+    }
+
+    func testTheEveningRoutineStillGetsItsOwn() {
+        let now = Date()
+        let shown = Display.recording(._MORNING_HABIT_, at: now, into: [:])
+        XCTAssertTrue(Display.shouldShow(routine: ._EVENING_HABIT_, now: now, lastShown: shown),
+                      "once in the morning AND once in the evening")
+    }
+
+    /// Postponing and resuming the morning routine is not a new day, so it does not earn a second one.
+    func testResumingTheSameRoutineDoesNotEarnAnother() {
+        let calendar = Calendar.current
+        let morning = calendar.date(bySettingHour: 7, minute: 0, second: 0, of: Date())!
+        let afternoon = calendar.date(bySettingHour: 15, minute: 0, second: 0, of: Date())!
+        let shown = Display.recording(._MORNING_HABIT_, at: morning, into: [:])
+        XCTAssertFalse(Display.shouldShow(routine: ._MORNING_HABIT_, now: afternoon, lastShown: shown))
+    }
+
+    func testTomorrowStartsAgain() {
+        let now = Date()
+        let shown = Display.recording(._MORNING_HABIT_, at: now, into: [:])
+        XCTAssertTrue(Display.shouldShow(routine: ._MORNING_HABIT_,
+                                         now: now.addingTimeInterval(24 * 60 * 60), lastShown: shown),
+                      "per DAY — a new day gets a fresh one")
+    }
+
 }

@@ -4282,12 +4282,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
 
 
-        focusButtonServiceObject.onHabitsReceived = { habits in
-            for habit in habits {
-                print("Received habit: \(habit.name) (\(habit.durationSeconds)s)")
-            }
-        }
-
         // Persistent restore hook: when the button (re)connects, re-push the currently-running focus
         // session so it reappears on device. Uses a dedicated slot (not onDeviceConnected, which the
         // settings screen reassigns). Fixes: a session that started while the button was disconnected
@@ -10774,12 +10768,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             return;
         }
         if isMainWindowLoaded{
-            if (mainWindowControllerObj?.window!.isVisible)! && (mainWindowControllerObj?.isFullScreenVisible ?? false){
-                let screenList = NSScreen.screens
-                for screen in screenList {  // create the corresponding windows
-                    print("screenFrame is \(screen.frame)")
-                    mainWindowControllerObj!.window?.setFrame(NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), display: true)
-                    break;
+            if let window = mainWindowControllerObj?.window, window.isVisible,
+               mainWindowControllerObj?.isFullScreenVisible == true {
+                // Resize to the screen this window is actually ON. This used to take NSScreen.screens
+                // first entry and place the window at a hardcoded (0, 0) — so on a multi-display setup
+                // a screen reconfiguration gave the window the PRIMARY display's height while it sat on
+                // another one. With a tall external next to a short laptop screen that is exactly the
+                // reported "window suddenly got super tall and I couldn't see the bottom" (report
+                // 2026-06-25_17-24-22): too tall for the display showing it, and its origin dragged to
+                // the primary's. Non-primary screens have non-zero origins, which (0, 0) threw away.
+                let screen = window.screen ?? NSScreen.main ?? NSScreen.screens.first
+                if let screen = screen {
+                    window.setFrame(screen.frame, display: true)
                 }
                 for i in 0..<arrWindows.count{
                     let window = arrWindows[i]

@@ -69,6 +69,33 @@ struct FocusStartDuration: Equatable {
         isUntimed ? FocusStartDuration.untimedSessionMinutes : max(FocusStartDuration.minimumMinutes, minutes)
     }
 
+    /// Apply a typed hours or minutes value, clamped to the slider's range.
+    ///
+    /// The readout was display-only, so setting 55 minutes meant eleven presses of `+`
+    /// (report 2026-09-23_16-05-55: "I should be able to click on the number to change the time
+    /// rather than only using +/-"). Typing is the obvious way to say a number.
+    ///
+    /// Anything unparseable leaves the duration alone rather than resetting it — a half-typed or
+    /// mistyped field must not silently wipe a session length the user had already set.
+    func settingComponent(_ component: Component, fromTyped text: String) -> FocusStartDuration {
+        let digits = text.filter(\.isNumber)
+        guard !digits.isEmpty, let value = Int(digits) else { return self }
+        let combined: Int
+        switch component {
+        case .hours:
+            combined = value * 60 + minutesComponent
+        case .minutes:
+            // 90 minutes typed into the minutes box means 90 minutes, not 30 — rolling it over is
+            // what the user meant, and clamping happens once at the end.
+            combined = hoursComponent * 60 + value
+        }
+        let clamped = min(max(combined, FocusStartDuration.minimumMinutes),
+                          FocusStartDuration.maximumMinutes)
+        return FocusStartDuration(minutes: clamped, isUntimed: isUntimed)
+    }
+
+    enum Component { case hours, minutes }
+
     var hoursComponent: Int { minutes / 60 }
     var minutesComponent: Int { minutes % 60 }
 

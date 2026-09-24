@@ -1070,6 +1070,12 @@ struct ForecastReschedulePlanSheet: View {
                         // is on screen at all. Project grouping still does its job inside each pile.
                         // The day the user asked to fix comes first and open. Its rows are then taken
                         // OUT of the major/minor piles below rather than repeated in them.
+                        // Projects first: "Put projects at risk at the top because if they change,
+                        // tasks will change too" (report 2026-09-21_07-45-21, follow-up). Deciding a
+                        // project's deadline can rewrite every task under it, so reviewing tasks
+                        // first means reviewing work that a later decision may undo.
+                        let plannedSplit = ForecastChangeGrouping.split(plan.changes)
+                        projectDeadlineSection(plannedSplit.projectDeadlines)
                         let focused = store.dayFocusChanges
                         dayFocusSection(focused)
                         let focusedIDs = Set(focused.map(\.id))
@@ -1078,7 +1084,6 @@ struct ForecastReschedulePlanSheet: View {
                         let minor = split.tasks.filter { !ForecastChangeGrouping.isMajor($0, calendar: store.calendar) }
                         changeAccordion(major, titleKey: .majorChanges, isExpanded: $isMajorExpanded)
                         changeAccordion(minor, titleKey: .minorChanges, isExpanded: $isMinorExpanded)
-                        projectDeadlineSection(split.projectDeadlines)
                         conflictsSection(plan.reviewableConflicts)
                         fixedByProjectSection
                     }
@@ -1412,7 +1417,10 @@ struct ForecastReschedulePlanSheet: View {
     /// answer for these is "not the date, only the order" — an answer that belongs beside the dates
     /// it is refusing, not behind another click.
     @ViewBuilder private var fixedByProjectSection: some View {
-        let groups = store.fixedProjectOrders
+        // Deadlines inside the next fortnight first — see `FixedProjectPriority`. These cannot be
+        // date-moved, so they sit at the bottom; that is wrong for a project due next week.
+        let groups = LocalTimeForecast.FixedProjectPriority.prioritised(store.fixedProjectOrders,
+                                                                        calendar: store.calendar)
         if !groups.isEmpty {
             Text(ForecastText[.fixedByProjectHeading]).font(.localForecastSemibold(13)).padding(.top, 8)
             Text(ForecastText[.fixedByProjectExplanation]).font(.localForecastRegular(11)).foregroundColor(.secondary)

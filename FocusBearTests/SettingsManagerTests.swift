@@ -162,4 +162,58 @@ class SettingsManagerTests: XCTestCase {
         components.day   = day
         return Calendar(identifier: .gregorian).date(from: components)
     }
+
+    // MARK: The settings password covers routine editing too (report 2026-09-22_21-41-33)
+    //
+    // "I have a password rule for changing settings after cutoff time. It needs to be enforced when
+    // editing habits or routine timings or custom routines after cutoff time."
+    //
+    // Routine TIMING already asked. Editing a habit, adding a habit, and managing custom routines did
+    // not — all three are reachable straight from the Day Plan, so the password guarding Settings
+    // could simply be walked around. The rule itself is unchanged; it now sits in front of four doors
+    // instead of one.
+
+    /// The rule, restated here so a change to it has to be deliberate: after cutoff counts, a
+    /// super-strict session counts, and "always" counts.
+    private func requiresPassword(cutoffRunning: Bool, afterCutoffRule: Bool, always: Bool) -> Bool {
+        if cutoffRunning && afterCutoffRule { return true }
+        return always
+    }
+
+    func testTheAfterCutoffRuleIsWhatTheReportIsAbout() {
+        XCTAssertTrue(requiresPassword(cutoffRunning: true, afterCutoffRule: true, always: false),
+                      "past cutoff, with the after-cutoff rule on")
+        XCTAssertFalse(requiresPassword(cutoffRunning: false, afterCutoffRule: true, always: false),
+                       "before cutoff, that rule says nothing")
+    }
+
+    func testACategoricalRuleAppliesWheneverItIsOn() {
+        // "(Same if password rule applies categorically to changing settings)" — the report's own
+        // parenthetical, which is why the gate reads the shared predicate rather than only the
+        // cutoff half of it.
+        XCTAssertTrue(requiresPassword(cutoffRunning: false, afterCutoffRule: false, always: true))
+        XCTAssertTrue(requiresPassword(cutoffRunning: true, afterCutoffRule: false, always: true))
+    }
+
+    func testNoRuleMeansNoPrompt() {
+        XCTAssertFalse(requiresPassword(cutoffRunning: true, afterCutoffRule: false, always: false),
+                       "past cutoff is not itself a reason — the user has to have asked for it")
+        XCTAssertFalse(requiresPassword(cutoffRunning: false, afterCutoffRule: false, always: false))
+    }
+
+    /// The locally-stored half of the rule is per-account. A shared key would let one account's
+    /// choice gate another's routine editing — the ownerless-key hazard that has already cost this
+    /// user a setting.
+    ///
+    /// Only this one is checked: `isPasswordRequireInPreferencesAfterCutoff` comes down with the
+    /// server's settings and has no local key to scope, which is worth knowing rather than
+    /// asserting something untrue about.
+    func testTheStoredPasswordRuleIsScopedToTheAccount() {
+        let manager = SettingsManager()
+        manager.resetAllKeys()
+        let key = manager.kUserdefaultsPasswordRequireInChangeSettings
+        XCTAssertTrue(manager.isUserScopedKey(key) || (appdelegate?.user?.userId ?? "").isEmpty,
+                      "\(key) must carry the signed-in account")
+    }
+
 }

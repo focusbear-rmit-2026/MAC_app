@@ -447,7 +447,11 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
                     }
                 }
                 .frame(height: scale.pt(min(4, CGFloat(state.visibleTaskSuggestions.count)) * 120))
-                if !state.isLoadingTasks && state.visibleTaskSuggestions.isEmpty && state.workChoiceError == nil {
+                // `hasAskedForTasks` matters as much as the other three: before the first load
+                // completes the list is empty and nothing is in flight, and saying "no matching
+                // tasks" then is a claim we have not earned.
+                if !state.isLoadingTasks && state.hasAskedForTasks
+                    && state.visibleTaskSuggestions.isEmpty && state.workChoiceError == nil {
                     Text(state.strings.noMatchingTasks).font(scale.font(FocusStartLayout.summaryFont))
                         .foregroundColor(FocusStartPalette.secondaryText)
                 }

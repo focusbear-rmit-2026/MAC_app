@@ -134,7 +134,7 @@ class ViewController: NSViewController {
                     // the window must still fill the visible screen — the previous code centred it at
                     // minSize (900x450), which was too short and clipped the bottom of the break-activity
                     // content. Do NOT shrink this back to a compact size; that reintroduces the clip.
-                    if let screen = NSScreen.screens.first {
+                    if let screen = self.view.window?.screen ?? NSScreen.screens.first {
                         setMainWindowFrame(screen.visibleFrame)
                     }
                 }else{
@@ -190,8 +190,14 @@ class ViewController: NSViewController {
         boxTopButtons.isHidden = true
     }
 
+    /// Size the borderless full-screen window to fill its display.
+    ///
+    /// `frame` rather than `visibleFrame` is deliberate — this is the app's own kiosk full screen, which
+    /// covers the menu bar. What was NOT deliberate was resolving the display as `NSScreen.screens.first`:
+    /// that is the primary display, not the one the window is on, so a second display of a different
+    /// height got the wrong frame (see `screenChanged()` and report 2026-06-25_17-24-22).
     @objc func setframe() {
-        guard let screen = NSScreen.screens.first else { return }
+        guard let screen = view.window?.screen ?? NSScreen.main ?? NSScreen.screens.first else { return }
         setMainWindowFrame(screen.frame)
     }//
     

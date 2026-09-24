@@ -6,24 +6,47 @@ Start with [`ARCHITECTURE.md`](ARCHITECTURE.md) for how the app is structured (s
 flow, the global-singleton/state-machine/view-swapping patterns) and [`TECH_DEBT.md`](TECH_DEBT.md)
 for the known-problems register before "fixing" anything that looks odd.
 
-## Where work goes: the integration branch, NOT a PR per change
+## Where work goes: PRs into `main-human-verified`
 
-**All Mac-App work commits directly to `integration/mac-swiftui-rebuild`** (renamed 2026-09-17 from
-`test/mega-relevance-shadow-webview`). **Do not open a PR for a Mac-App change.** The single review
-PR is [#2569](https://github.com/Focus-Bear/Mac-App/pull/2569), and its head IS that branch, so every
-push updates it.
+**`integration/mac-swiftui-rebuild` was merged on 2026-09-22 (#2569, squash) and is finished.** New
+Mac-App work branches off `main-human-verified` and comes back as its own PR:
 
-This **overrides** the global "always open a PR when finishing a self-contained task" rule for code in
-this repo. It does not override it for other repos — assets, backend and TimeTracker-Mac changes still
-get their own PRs, and a new `config.json` string still needs its assets PR (see the i18n note below).
+```bash
+git fetch origin
+git checkout -b fix/<what-it-is> origin/main-human-verified
+# …work…
+gh pr create --base main-human-verified
+```
 
-**Why:** the per-change PRs were all extractions from this same branch, so each carried the whole
-mega/main divergence. That reached 102 open PRs, sixteen of which (#2528–#2560) were cumulative
-snapshots of one another — the largest +123,291 lines. 77 were closed on 2026-09-17 after verifying by
-content sampling that their added lines were already on the integration branch.
+The global "always open a PR when finishing a self-contained task" rule therefore applies here again,
+like every other repo. The two earlier regimes — commit straight to integration, then stack a PR onto
+it — are both over; they are recorded below only because they explain the repo's history.
 
-Branch protection is on, so pushes report "Bypassed rule violations" — that is expected and is not an
-error. Never force-push it; other agents build on it concurrently.
+### ⚠️ #2569 was a SQUASH merge — ancestry lies
+
+None of integration's ~755 commits are ancestors of `main-human-verified`, even though all of their
+content is in it. So this is **wrong** and will tell you a landed fix is missing:
+
+```bash
+git merge-base --is-ancestor <sha> origin/main-human-verified   # says NO for everything
+```
+
+Check the **content** instead:
+
+```bash
+git show origin/main-human-verified:path/to/File.swift | grep "the line the fix added"
+```
+
+This cost a wrong P1 issue (#2614): a fix that had been on main for two days was reported as unshipped
+because ancestry said so.
+
+### Why integration existed
+
+The per-change PRs were all extractions from that one branch, so each carried the whole mega/main
+divergence. That reached 102 open PRs, sixteen of which (#2528–#2560) were cumulative snapshots of one
+another — the largest +123,291 lines. 77 were closed on 2026-09-17 after verifying by content sampling
+that their added lines were already on the branch. Never force-push a shared branch; other agents build
+on it concurrently.
 
 ## Building
 

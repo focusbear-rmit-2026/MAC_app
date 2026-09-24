@@ -348,6 +348,21 @@ class habitsVc: NSViewController {
     }
     
     func showAskPostponeView(){
+        // A postpone that has already been granted must not be asked for again. The accountability
+        // buddy approves an extension and starts the session; `abortCurrentState()` is then reached
+        // from several routes (the window closing, the small countdown, the main view) and each one
+        // re-entered this flow, so the user was asked for a reason two more times in twelve seconds
+        // after unlocking once (report 2026-09-23_09-25-08):
+        //
+        //   09:23:00  accountability-buddy-session-extended: started super-strict session (15m)
+        //   09:23:03  show AskPostpone View
+        //   09:23:12  show AskPostpone View
+        //
+        // A live buddy session IS the granted postpone, so there is nothing left to ask.
+        if currentAccountabilityBuddySession != nil {
+            addLog(text: "showAskPostponeView: a buddy session is already running, not asking again")
+            return
+        }
         addLog(text: "show AskPostpone View")
         // AI accountability buddy: skip the "minutes to postpone" picker for habit postpones and go
         // straight to the chat (the AI sets the duration). Placeholder minutes here — the real duration
@@ -463,7 +478,20 @@ class habitsVc: NSViewController {
     }
     
     func abortCurrentState(){// added on 10/4/25 in 1.21.356
-        addLog(text: "func abortCurrentState")// added on 10/4/25 in 1.21.356
+        // A state snapshot, the way `btnMinimizeClicked` already logs one.
+        //
+        // "I clicked exit full screen and minimise but nothing happened" has been unanswerable since
+        // June (report 2026-06-24_16-18-08) because this function logs only that it was entered. It
+        // then branches through a dozen paths, several of which return silently — so a click that
+        // does nothing looks identical in the log to a click that did something, and the one detail
+        // that would crack it is which branch was taken in which state.
+        addLog(text: "func abortCurrentState state=\(currentState) action=\(currentAction) "
+             + "playing=\(currentHabitPlaying?.name ?? "none") "
+             + "allowedActivity=\(isAllowedActivityHabitCurrentlyRunning) "
+             + "postponeCount=\(activityPostponeCount) "
+             + "easySkip=\(SettingsManagerObject.isEasySkipEnabled) "
+             + "buddy=\(currentAccountabilityBuddySession != nil) "
+             + "subviews=\(view.subviews.count)")
         if currentState == ._ONBOARDING_ || currentState == ._BREATHING_{
             abortOnboardingWork()
             return;

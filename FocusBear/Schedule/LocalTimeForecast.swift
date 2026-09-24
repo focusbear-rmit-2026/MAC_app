@@ -814,6 +814,41 @@ enum LocalTimeForecast {
 
     /// A project whose tasks have all inherited a fixed date, and the order the forecast will work
     /// them in. Dates are settled for these — the only thing left to decide is which goes first.
+    /// How the fixed-order project groups are stacked in the reschedule sheet.
+    ///
+    /// They sit at the bottom because they cannot be date-moved — only reordered. That is the right
+    /// place for a project due in three months and the wrong place for one due next week: the user
+    /// scrolled past them and concluded the sheet had nothing to offer
+    /// (report 2026-09-21_07-45-21, follow-up: "maybe because they were in the bottom section of
+    /// tasks that can't be moved? We should bring those up higher — at least the ones due in the
+    /// next two weeks").
+    ///
+    /// Ordering only. Nothing is hidden, and nothing that was reorderable stops being so.
+    enum FixedProjectPriority {
+
+        /// "The next two weeks", from the report. A fortnight is far enough ahead to act on and near
+        /// enough that reordering still changes the outcome.
+        static let soonDays = 14
+
+        /// Groups with a deadline inside the window first, each half keeping its existing order so
+        /// the sequence stays stable across recalculations.
+        static func prioritised(_ groups: [FixedProjectOrder],
+                                now: Date = Date(),
+                                calendar: Calendar = .current) -> [FixedProjectOrder] {
+            let today = calendar.startOfDay(for: now)
+            func isSoon(_ group: FixedProjectOrder) -> Bool {
+                guard let end = group.endDate,
+                      let days = calendar.dateComponents([.day], from: today,
+                                                         to: calendar.startOfDay(for: end)).day
+                else { return false }   // no end date: nothing is pressing
+                // Overdue counts as soon — the most pressing case of all.
+                return days <= soonDays
+            }
+            let soon = groups.filter(isSoon)
+            return soon + groups.filter { !isSoon($0) }
+        }
+    }
+
     struct FixedProjectOrder: Equatable {
         let projectID: String
         /// The ceiling every one of these tasks is held under; `nil` when the project has no due date.

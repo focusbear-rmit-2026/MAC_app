@@ -408,13 +408,23 @@ class officeModeSettingsVc: NSViewController {
     }
 
     /// Read the current SSID and open the add-mapping sheet pre-filled with it.
+    ///
+    /// The read is a blocking XPC call (see `readCurrentSSID()`), so it happens off the main thread
+    /// and the sheet opens when the answer arrives. Doing it inline froze the settings window for as
+    /// long as the WiFi daemon took to reply — right after a click, where a freeze reads as a
+    /// dropped click.
     private func useCurrentNetwork() {
-        let currentSSID = WiFiMonitorService.shared.readCurrentSSID() ?? ""
-        if currentSSID.isEmpty {
-            showAlert(title: alertNotConnectedTitle, message: alertNotConnectedMessage)
-            return
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let currentSSID = WiFiMonitorService.shared.readCurrentSSID() ?? ""
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                guard !currentSSID.isEmpty else {
+                    self.showAlert(title: self.alertNotConnectedTitle, message: self.alertNotConnectedMessage)
+                    return
+                }
+                self.showAddMappingSheet(ssid: currentSSID)
+            }
         }
-        showAddMappingSheet(ssid: currentSSID)
     }
 
     @objc private func btnAddClicked(_ sender: Any) {

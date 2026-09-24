@@ -285,4 +285,44 @@ final class AccountabilityPostponeRecoveryTests: XCTestCase {
                        "blank turns must not trip the escape on their own")
     }
 
+
+    // MARK: The calendar actually reaches the request (report 2026-09-23_09-25-08)
+    //
+    // The client built the calendar lines, logged them, and then left them out of the body under a
+    // comment saying the endpoint did not accept them. It does. So the buddy replied "I can see your
+    // calendar is not provided here, so I can't verify the meeting" about a meeting ten minutes away
+    // and plainly on the calendar, and made the user argue for it.
+
+    private typealias Calendar = AccountabilityCalendarPayload
+
+    func testOrdinaryCalendarLinesPassThroughUnchanged() {
+        let events = ["Head to RMIT — ended at 09:15",
+                      "Focusbear app discussion - Deakin DRC — at 09:30 (in 8 min)"]
+        XCTAssertEqual(Calendar.forRequest(events), events)
+    }
+
+    func testBlankLinesAreDroppedRatherThanSent() {
+        XCTAssertEqual(Calendar.forRequest(["", "   ", "Standup — at 10:00"]), ["Standup — at 10:00"])
+        XCTAssertTrue(Calendar.forRequest([]).isEmpty)
+        XCTAssertTrue(Calendar.forRequest(["  "]).isEmpty,
+                      "an all-blank list must come out empty so the caller omits the field entirely")
+    }
+
+    /// The DTO 400s past its outer bounds, and a 400 here means no calendar at all — the exact state
+    /// being fixed. Degrade instead.
+    func testACrowdedCalendarDegradesInsteadOfFailingTheRequest() {
+        let many = (1...Calendar.maximumEvents + 40).map { "Meeting \($0) — at 10:00" }
+        XCTAssertEqual(Calendar.forRequest(many).count, Calendar.maximumEvents)
+
+        let stuffed = String(repeating: "a", count: Calendar.maximumLineLength + 500)
+        XCTAssertEqual(Calendar.forRequest([stuffed]).first?.count, Calendar.maximumLineLength)
+    }
+
+    func testTheNearestEventsAreTheOnesKept() {
+        // The context is built nearest-first, so trimming from the end drops the furthest away.
+        let many = (1...Calendar.maximumEvents + 5).map { "Meeting \($0)" }
+        XCTAssertEqual(Calendar.forRequest(many).first, "Meeting 1")
+        XCTAssertEqual(Calendar.forRequest(many).last, "Meeting \(Calendar.maximumEvents)")
+    }
+
 }

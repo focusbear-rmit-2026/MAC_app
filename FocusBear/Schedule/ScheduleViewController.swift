@@ -4375,7 +4375,10 @@ class scheduleViewController: NSViewController {
 
     /// Opens the SwiftUI habit editor as a sheet. Saving applies the edit live (the arrays' didSet
     /// re-renders every Day Plan host) and parks it in the draft until "Save and restart app".
-    private func openHabitEditor(habitId: String) {
+    private func openHabitEditor(habitId: String, authorized: Bool = false) {
+        if requireSettingsPasswordIfNeeded(authorized: authorized, then: { [weak self] in
+            self?.openHabitEditor(habitId: habitId, authorized: true)
+        }) { return }
         guard #available(macOS 11.0, *) else { return }
         let draft = DayPlanRoutineDraft.shared
         guard let values = draft.habitEditValues(id: habitId), let section = draft.routineSection(forHabitId: habitId) else {
@@ -4406,7 +4409,12 @@ class scheduleViewController: NSViewController {
 
     /// The same editor in "new habit" mode (the routine menu's "Add new habit"): web defaults, no delete.
     /// Saving appends the habit to the routine in the draft — it shows in the Day Plan straight away.
-    private func openNewHabitEditor(section: RoutineSettingsSection) {
+    private func openNewHabitEditor(section: RoutineSettingsSection, authorized: Bool = false) {
+        // Adding a habit IS editing habits — an ungated "Add new habit" would leave the password
+        // guarding the front door while this one stood open.
+        if requireSettingsPasswordIfNeeded(authorized: authorized, then: { [weak self] in
+            self?.openNewHabitEditor(section: section, authorized: true)
+        }) { return }
         guard #available(macOS 11.0, *) else { return }
         let draft = DayPlanRoutineDraft.shared
         DayPlanAnalytics.capture(DayPlanAnalytics.habitAddOpened)
@@ -4427,15 +4435,34 @@ class scheduleViewController: NSViewController {
     }
 
     /// "When do you want <routine> to start?" — a time picker sheet for the routine's start time.
-    private func openRoutineTimingEditor(section: RoutineSettingsSection, authorized: Bool = false) {
-        if !authorized, isPasswordRequireInOpenSettings() {
-            guard let main = mainViewControllerObj else { return }
-            main.askPasswordForSettings()
-            getEnterPasswordVcObjForPreferences().requestAuthorization(action: { [weak self] in
-                self?.openRoutineTimingEditor(section: section, authorized: true)
-            }, onCancel: {})
-            return
+    /// Ask for the settings password before a routine edit, when the settings rule says to.
+    ///
+    /// Routine timing already did this; editing a HABIT and managing CUSTOM ROUTINES did not, so the
+    /// same password that guards Settings could be walked straight around from the Day Plan
+    /// (report 2026-09-22_21-41-33). The rule itself is `isPasswordRequireInOpenSettings()` — which
+    /// already covers "after cutoff", "super-strict session" and "always" — so this deliberately
+    /// adds no policy of its own; it only puts the existing gate in front of two more doors.
+    ///
+    /// Returns true when the caller should stop and wait: the sheet is up, and `authorized` runs
+    /// only if the password is accepted.
+    private func requireSettingsPasswordIfNeeded(authorized alreadyAuthorized: Bool,
+                                                 then authorized: @escaping () -> Void) -> Bool {
+        guard !alreadyAuthorized, isPasswordRequireInOpenSettings() else { return false }
+        guard let main = mainViewControllerObj else {
+            // No way to ask means no way to verify. Refusing is the safe direction — silently
+            // allowing the edit is the hole the password exists to close.
+            addLog(text: "routine edit: cannot present the password view, refusing")
+            return true
         }
+        main.askPasswordForSettings()
+        getEnterPasswordVcObjForPreferences().requestAuthorization(action: authorized, onCancel: {})
+        return true
+    }
+
+    private func openRoutineTimingEditor(section: RoutineSettingsSection, authorized: Bool = false) {
+        if requireSettingsPasswordIfNeeded(authorized: authorized, then: { [weak self] in
+            self?.openRoutineTimingEditor(section: section, authorized: true)
+        }) { return }
         guard #available(macOS 11.0, *) else { return }
         let draft = DayPlanRoutineDraft.shared
         var sheet: DayPlanSheetController!
@@ -4466,7 +4493,10 @@ class scheduleViewController: NSViewController {
     /// The custom-routine manager: list every custom routine, create one, edit or delete one, and add /
     /// remove / reorder its habits. Reuses the same draft store (and the same habit editor) as the
     /// Day Plan's habit editing, so nothing is written to the server until "Save and restart app".
-    private func openCustomRoutineManager(sequenceId: String? = nil) {
+    private func openCustomRoutineManager(sequenceId: String? = nil, authorized: Bool = false) {
+        if requireSettingsPasswordIfNeeded(authorized: authorized, then: { [weak self] in
+            self?.openCustomRoutineManager(sequenceId: sequenceId, authorized: true)
+        }) { return }
         guard #available(macOS 11.0, *) else { return }
         DayPlanAnalytics.capture(DayPlanAnalytics.customRoutineManagerOpened)
         let model = CustomRoutineManagerModel()

@@ -731,6 +731,21 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         }
     }
     
+    /// Forget the task queue remembered against the block list that is now running.
+    ///
+    /// Without this the reset is cosmetic: `lastTaskUsed` is stored per block list and round-trips
+    /// through the server, so the next fetch — or a relaunch — puts the old queue straight back.
+    /// That is why the same completed task returned across DAYS and not merely across sessions.
+    func clearRememberedTaskQueueForCurrentBlockList() {
+        guard let id = currentRunningFocusType["id"] as? String,
+              let index = arrFocusType.firstIndex(where: { $0["id"] as? String == id }) else { return }
+        guard !((arrFocusType[index]["lastTaskUsed"] as? String ?? "").isEmpty) else { return }
+        addLog(text: "blocking schedule: clearing the remembered task queue for this block list")
+        arrFocusType[index]["lastTaskUsed"] = ""
+        currentRunningFocusType["lastTaskUsed"] = ""
+        updateAllFocusModes()
+    }
+
     func startCustomBlockingSchedule(index:Int){
         addLog(text: "Custom blocking schedule started.")
         // Guard a stale index: the array can shrink between when the caller captured `index` and here,
@@ -759,7 +774,17 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         
         let lastIntentionUsed = currentRunningFocusType["lastIntentionUsed"] as? String ?? ""
         whatToAchieveInFocusBlock = lastIntentionUsed
-        focusModeTaskString = currentRunningFocusType["lastTaskUsed"] as? String ?? ""
+        // A blocking schedule turning on never asks what you are working on, so it must not inherit
+        // a task queue. `lastTaskUsed` is a per-block-list snapshot for RESUMING a session, not a
+        // reusable queue — and it round-trips through the server, so a task finished days ago comes
+        // back every time that schedule fires (report 2026-09-18_12-44-51, still reproducing on
+        // 2026-09-22: "Software Development" sat in that block list's lastTaskUsed unchanged for
+        // over 24 hours and was re-seeded on every schedule start).
+        //
+        // The earlier fix for this covered the focus-mode start paths in AppDelegate and never
+        // reached here — git shows this line untouched since the feature was written.
+        focusModeTaskString = "[]"
+        clearRememberedTaskQueueForCurrentBlockList()
         taskCreatedByBlockPopup = ""
         currentFocusModeStrictness = arrBlockingSchedule[index].blockLevel
         startFocusModeTime = Date()

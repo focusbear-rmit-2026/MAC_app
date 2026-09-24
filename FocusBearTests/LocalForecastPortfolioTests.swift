@@ -438,4 +438,53 @@ final class LocalForecastPortfolioTests: XCTestCase {
         XCTAssertTrue(row.badgeList.contains(.startNow), "Habit-absorbed task work still counts as today's work")
         XCTAssertNil(row.scheduled_hours, "Forecast allocation must not be presented as an already-saved schedule")
     }
+
+    // MARK: Why a project card has no completion date (report 2026-09-23_10-46-27)
+    //
+    // "why doesn't it show expected completion date?" — two cards, same shape, one with a date and
+    // one with nothing under it. A date is only projected when every task has an estimate AND all
+    // the work fits inside the horizon; when it cannot be, the card said nothing at all.
+
+    private typealias Line = ProjectCompletionLine
+
+    func testADateIsShownWhenThereIsOne() {
+        let day = Date()
+        XCTAssertEqual(Line.decide(projected: day, unknownTaskCount: 0,
+                                   hasUnallocatedWork: false, hasOutstandingWork: true), .date(day))
+    }
+
+    func testMissingEstimatesAreNamedRatherThanLeavingItBlank() {
+        XCTAssertEqual(Line.decide(projected: nil, unknownTaskCount: 3,
+                                   hasUnallocatedWork: false, hasOutstandingWork: true),
+                       .needsEstimates)
+    }
+
+    func testWorkBeyondTheHorizonIsNamedToo() {
+        XCTAssertEqual(Line.decide(projected: nil, unknownTaskCount: 0,
+                                   hasUnallocatedWork: true, hasOutstandingWork: true),
+                       .outsideHorizon)
+    }
+
+    /// Both causes at once: the estimates are the user's to fix, and until they are there the
+    /// horizon question cannot be answered anyway.
+    func testMissingEstimatesWinWhenBothApply() {
+        XCTAssertEqual(Line.decide(projected: nil, unknownTaskCount: 2,
+                                   hasUnallocatedWork: true, hasOutstandingWork: true),
+                       .needsEstimates)
+    }
+
+    func testAFinishedProjectSaysNothing() {
+        XCTAssertEqual(Line.decide(projected: nil, unknownTaskCount: 0,
+                                   hasUnallocatedWork: false, hasOutstandingWork: false), .nothing)
+        XCTAssertEqual(Line.decide(projected: nil, unknownTaskCount: 5,
+                                   hasUnallocatedWork: true, hasOutstandingWork: false), .nothing,
+                       "a completed project has nothing to project — the reasons would be noise")
+    }
+
+    func testNoDateAndNoReasonStaysSilent() {
+        XCTAssertEqual(Line.decide(projected: nil, unknownTaskCount: 0,
+                                   hasUnallocatedWork: false, hasOutstandingWork: true), .nothing,
+                       "never invent a reason we cannot evidence")
+    }
+
 }
