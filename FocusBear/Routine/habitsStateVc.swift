@@ -217,7 +217,17 @@ class habitsStateVc: NSViewController {
             let currentDate = Date()
             let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
             let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
-            if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_  && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil{
+            // #2442: whenever there are no local Focus Bear UserDefaults for this device (a fresh install /
+            // new machine on first run, or after a ⌘⌃K data-clear) and the user signs in with an EXISTING
+            // account, kUserdefaultsStartRoutineButtonClicked/firstRunDate are absent so this looks brand-new
+            // — but the server reports today's morning routine as already completed. routinePostponedInfoVc's
+            // getLastActivityInfo sets isHabitAlreadyShowed=true from that server state, then re-navigates,
+            // re-entering reloadData; without the isHabitAlreadyShowed guard this block treats the returning
+            // user as fresh and re-shows routinePostponedInfoVc, whose viewDidAppear re-fires
+            // getMorningHabitsListAgain → tight infinite loop (loader flashes, app unresponsive). Skip the
+            // fresh-user routing once the routine is already done today: isHabitAlreadyShowed is the one
+            // flag sourced from the server rather than the (absent) local UserDefaults.
+            if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_ && !isHabitAlreadyShowed && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil{
                 lblTitle.stringValue = ""
                 if sameDay || !shouldDoHabits(){
                     btnResumeHabits.isHidden = false
