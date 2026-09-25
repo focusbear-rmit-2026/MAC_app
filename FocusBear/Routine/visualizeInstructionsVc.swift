@@ -274,6 +274,12 @@ class visualizeInstructionsVc: NSViewController {
         // the real routine-start visualize screen was then denied the pep talk and fell through to the
         // 30-second target. Don't pre-load (or consume the slot) when the screen won't be shown.
         if firstViewControllerObj?.shouldIgnoreVisualizeInstructions == true { return }
+        // Nor when this routine's visualize screen has already had today's showing, so it will not appear
+        // again. `pepTalkLastShownByRoutine` below is in memory, so after a relaunch into such a routine
+        // the pre-load streamed a pep talk nobody could see (2026-09-24 19:46). The screen's own record is
+        // persisted, and it is the one that decides whether the screen shows at all.
+        if let routine = RoutineVisualizePrompt.Routine.current(state: currentState, customRoutineIndex: currentRoutineIndex),
+           !RoutineVisualizePrompt.shouldShow(for: routine) { return }
         if SettingsManagerObject.isMotivationalMessageEnabled,
            PepTalkRoutineDisplay.shouldShow(routine: currentState, lastShown: pepTalkLastShownByRoutine) {
             allApiObject.isInternetOn(completionHandler: {isInternetOn in

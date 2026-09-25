@@ -831,9 +831,7 @@ class firstViewController: NSViewController {
                     }
                 }
                 currentHabitIndex = -1
-                let routine = RoutineVisualizePrompt.Routine.custom(arrAllCustomRoutine.indices.contains(currentRoutineIndex)
-                                                                   ? arrAllCustomRoutine[currentRoutineIndex].sequenceId
-                                                                   : "\(currentRoutineIndex)")
+                let routine = RoutineVisualizePrompt.Routine.custom(at: currentRoutineIndex)
                 if shouldIgnoreVisualizeInstructions || !RoutineVisualizePrompt.shouldShow(for: routine) {
                     getHabitsVcObject().startFirstCustomRoutineHabit()
                 } else {

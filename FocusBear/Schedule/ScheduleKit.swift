@@ -612,6 +612,22 @@ enum RoutineVisualizePrompt {
             case .custom(let id): return "routineVisualizeShownDay.custom.\(id)"
             }
         }
+
+        /// The custom routine at `index` in `arrAllCustomRoutine`, keyed by its sequence id when there
+        /// is one. Shared by everything that asks about a custom routine's prompt, so they agree.
+        static func custom(at index: Int) -> Routine {
+            .custom(arrAllCustomRoutine.indices.contains(index) ? arrAllCustomRoutine[index].sequenceId : "\(index)")
+        }
+
+        /// The routine being played in `state`, or nil outside a routine.
+        static func current(state: CURRENTSTATE, customRoutineIndex: Int) -> Routine? {
+            switch state {
+            case ._MORNING_HABIT_: return .morning
+            case ._EVENING_HABIT_: return .evening
+            case ._CUSTOM_ROUTINE_: return custom(at: customRoutineIndex)
+            default: return nil
+            }
+        }
     }
 
     /// Pure rule: show it unless it has already been shown on this day.

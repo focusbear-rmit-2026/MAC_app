@@ -440,3 +440,31 @@ final class StatsLogicTests: XCTestCase {
     }
 
 }
+
+// MARK: - Which routine's visualize prompt the pep-talk pre-load asks about (report 2026-09-22_07-45-26)
+//
+// The pre-load skips a routine whose visualize screen already had today's showing. It must ask about the
+// same routine key the screen itself records under, or a relaunch fetches a pep talk nobody sees.
+// An extension of StatsLogicTests rather than its own class: CI selects test classes by name.
+extension StatsLogicTests {
+    func testEachRoutineStateMapsToItsOwnPrompt() {
+        typealias Routine = RoutineVisualizePrompt.Routine
+        XCTAssertEqual(Routine.current(state: ._MORNING_HABIT_, customRoutineIndex: 0), .morning)
+        XCTAssertEqual(Routine.current(state: ._EVENING_HABIT_, customRoutineIndex: 0), .evening)
+        XCTAssertNil(Routine.current(state: ._NOTHING_, customRoutineIndex: 0), "outside a routine there is no prompt")
+    }
+
+    func testACustomRoutineWithoutASequenceIdFallsBackToItsIndex() {
+        typealias Routine = RoutineVisualizePrompt.Routine
+        // The same fallback firstViewController used inline before this was shared.
+        XCTAssertEqual(Routine.custom(at: 9_999), .custom("9999"))
+    }
+
+    func testThePromptsStoredKeysAreUnchanged() {
+        typealias Routine = RoutineVisualizePrompt.Routine
+        // Renaming these would re-show the prompt to everyone who already saw it today.
+        XCTAssertEqual(Routine.morning.storageKey, "routineVisualizeShownDay.morning")
+        XCTAssertEqual(Routine.evening.storageKey, "routineVisualizeShownDay.evening")
+        XCTAssertEqual(Routine.custom("x").storageKey, "routineVisualizeShownDay.custom.x")
+    }
+}
