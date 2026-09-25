@@ -3067,6 +3067,7 @@
     "noTasks": "Aucune tâche estimée pour l'instant",
     "completeBy": "Achèvement prévu : <DATE>",
     "outsideHorizon": "Ce travail ne tient pas dans l'horizon de planification sélectionné.",
+    "completeAfter": "Achèvement prévu : après le <DATE>",
     "calendarMissing": "L'accès au calendrier n'est pas disponible. Le temps de réunion manque, donc ces estimations sont incomplètes et les modifications du plan de travail ne peuvent pas être appliquées.",
     "loadFailed": "La prévision complète n'a pas pu être chargée. Actualise pour réessayer.",
     "generatePlan": "Générer un plan de travail",

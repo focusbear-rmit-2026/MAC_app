@@ -487,4 +487,21 @@ final class LocalForecastPortfolioTests: XCTestCase {
                        "never invent a reason we cannot evidence")
     }
 
+
+    // MARK: Work past the planning horizon says WHEN (report 2026-09-23_10-46-27, follow-up)
+    //
+    // "instead of doesn't fit into the planning horizon put 'After {endofplanninghorizon}'"
+
+    func testWorkPastTheHorizonSaysWhenRatherThanNamingTheSetting() {
+        let lastDay = Calendar.current.date(from: DateComponents(year: 2026, month: 12, day: 22))!
+        let text = ForecastText.completionAfterHorizon(lastDay: lastDay)
+        XCTAssertTrue(text.contains(ForecastText.date(lastDay)), "names the horizon's last day: \(text)")
+        XCTAssertNotEqual(text, ForecastText[.outsideHorizon])
+        XCTAssertFalse(text.contains("<DATE>"), "the placeholder is filled")
+    }
+
+    func testWithNoHorizonBuiltItFallsBackToTheSentence() {
+        XCTAssertEqual(ForecastText.completionAfterHorizon(lastDay: nil), ForecastText[.outsideHorizon])
+    }
+
 }

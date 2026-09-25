@@ -3067,6 +3067,7 @@
     "noTasks": "Brak jeszcze oszacowanych zadań",
     "completeBy": "Przewidywane ukończenie: <DATE>",
     "outsideHorizon": "Ta praca nie mieści się w wybranym horyzoncie planowania.",
+    "completeAfter": "Przewidywane ukończenie: po <DATE>",
     "calendarMissing": "Dostęp do kalendarza jest niedostępny. Brakuje czasu spotkań, więc te szacunki są niepełne i zmian w planie pracy nie można zastosować.",
     "loadFailed": "Nie udało się wczytać pełnej prognozy. Odśwież, aby spróbować ponownie.",
     "generatePlan": "Utwórz plan pracy",

@@ -4921,6 +4921,7 @@
     "allWorkComplete": "Todas las tareas de este proyecto están completadas",
     "completeBy": "Finalización prevista: <DATE>",
     "outsideHorizon": "Este trabajo no cabe en el periodo de planificación seleccionado.",
+    "completeAfter": "Finalización prevista: después del <DATE>",
     "calendarMissing": "No hay acceso al calendario. Falta el tiempo de reuniones, por lo que estas estimaciones están incompletas y no se puede aplicar la reprogramación.",
     "loadFailed": "No se pudo cargar la previsión completa. Actualiza para volver a intentarlo.",
     "generatePlan": "Reprogramar tareas",

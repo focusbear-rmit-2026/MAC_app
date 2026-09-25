@@ -3067,6 +3067,7 @@
     "noTasks": "Noch keine geschätzten Aufgaben",
     "completeBy": "Voraussichtlicher Abschluss: <DATE>",
     "outsideHorizon": "Diese Arbeit passt nicht in den ausgewählten Planungshorizont.",
+    "completeAfter": "Voraussichtlicher Abschluss: nach dem <DATE>",
     "calendarMissing": "Kalenderzugriff ist nicht verfügbar. Die Besprechungszeit fehlt, daher sind diese Schätzungen unvollständig und Änderungen am Arbeitsplan können nicht übernommen werden.",
     "loadFailed": "Die vollständige Prognose konnte nicht geladen werden. Aktualisiere, um es erneut zu versuchen.",
     "generatePlan": "Arbeitsplan erstellen",

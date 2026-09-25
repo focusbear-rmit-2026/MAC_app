@@ -8,7 +8,7 @@ enum ForecastText {
         case loadingProjects, loadingTasks, loadingCalendar, preparingDays, calculating, progressCount
         case capacitySettings, sleep, sleepStarts, sleepEnds, additionalSelfCare, settingsExplanation, settingsInvalid, saveSettings
         case remainingLikelihood, remainingLikelihoodInHorizon
-        case meetingTimeOnce, dayPlan, projectWork, blockAbsorbed, likelihood, missingEstimate, noTasks, allWorkComplete, completeBy, outsideHorizon
+        case meetingTimeOnce, dayPlan, projectWork, blockAbsorbed, likelihood, missingEstimate, noTasks, allWorkComplete, completeBy, completeAfter, outsideHorizon
         case calendarMissing, loadFailed, generatePlan, reviewPlan, reviewExplanation, applySelected, selectAll
         case conflictsHeading, conflictsExplanation, projectEndDate, projectEndDateNoProject
         case keepPlannedDays, plannedDaysLocked, dayPlanFollowsTheDates
@@ -52,6 +52,14 @@ enum ForecastText {
     }()
     static func format(_ key: Key, _ replacements: [String: String]) -> String {
         replacements.reduce(self[key]) { $0.replacingOccurrences(of: $1.key, with: $1.value) }
+    }
+    /// A project's completion line when its work runs past the planning horizon: "Expected completion:
+    /// after <the horizon's last day>" — a date the user can read, rather than "This work does not fit
+    /// within the selected planning horizon", which named a setting instead of saying when (report
+    /// 2026-09-23_10-46-27, follow-up). Falls back to that sentence only when no horizon was built.
+    static func completionAfterHorizon(lastDay: Date?) -> String {
+        guard let lastDay = lastDay else { return self[.outsideHorizon] }
+        return format(.completeAfter, ["<DATE>": date(lastDay)])
     }
     static func date(_ date: Date?) -> String {
         guard let date = date else { return self[.noDeadline] }

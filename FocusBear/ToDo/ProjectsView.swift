@@ -47,7 +47,7 @@ struct ProjectCompletionLineView: View {
             Text(ForecastText[.missingEstimate])
                 .font(Font(getRegularFont(size: 12))).foregroundColor(.secondary)
         case .outsideHorizon:
-            Text(ForecastText[.outsideHorizon])
+            Text(ForecastText.completionAfterHorizon(lastDay: store.result?.days.last?.date))
                 .font(Font(getRegularFont(size: 12))).foregroundColor(.secondary)
         case .nothing:
             EmptyView()

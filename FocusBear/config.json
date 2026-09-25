@@ -5071,6 +5071,7 @@
     "allWorkComplete": "All tasks in this project are complete",
     "completeBy": "Expected completion: <DATE>",
     "outsideHorizon": "This work does not fit within the selected planning horizon.",
+    "completeAfter": "Expected completion: after <DATE>",
     "calendarMissing": "Calendar access is unavailable. Meeting time is missing, so these estimates are incomplete and rescheduling cannot be applied.",
     "loadFailed": "The complete forecast could not be loaded. Refresh to try again.",
     "generatePlan": "Reschedule tasks",
