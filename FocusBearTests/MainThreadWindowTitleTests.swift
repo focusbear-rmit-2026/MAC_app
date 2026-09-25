@@ -116,6 +116,24 @@ final class MainThreadWindowTitleTests: XCTestCase {
                        "Sharing library files in ChatGPT business workspace")
     }
 
+    /// Live test 2026-09-25: a screen-reader-only hint (1×1, clipped) sat above the header in the
+    /// content pane and was sent to the AI as the chat title.
+    func testAHiddenScreenReaderHintIsNeverTheTitle() {
+        var texts = Self.reportedWindowTexts
+        texts.append(Placed(text: "Arrow keys move the tile. Perpendicular arrows preview a split; press Enter to commit or Escape to cancel.",
+                            frame: CGRect(x: 478, y: 5, width: 1, height: 1)))
+        XCTAssertEqual(Picker.pick(from: texts, windowFrame: Self.window),
+                       "Sharing library files in ChatGPT business workspace")
+    }
+
+    func testTextParkedOutsideTheWindowIsNeverTheTitle() {
+        var texts = Self.reportedWindowTexts
+        texts.append(Placed(text: "Off-screen live region announcement",
+                            frame: CGRect(x: 700, y: -10_000, width: 300, height: 20)))
+        XCTAssertEqual(Picker.pick(from: texts, windowFrame: Self.window),
+                       "Sharing library files in ChatGPT business workspace")
+    }
+
     func testAPinnedSidebarChatIsNeverMistakenForTheActiveOne() {
         let picked = Picker.pick(from: Self.reportedWindowTexts, windowFrame: Self.window)
         XCTAssertNotEqual(picked, "Shui cao Chinese translation",

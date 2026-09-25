@@ -231,18 +231,35 @@ final class claudeTitleReader {
         /// what the user is doing is exactly what caused this report.
         static let minimumTitleLength = 4
 
+        /// Smaller than this in either dimension is text nobody can see. Screen-reader-only hints are
+        /// rendered 1×1 and clipped (Tailwind's `sr-only`, which Claude's UI uses), yet they are still
+        /// static text in the tree — and one sat above the conversation header, so the highest-text rule
+        /// picked "Arrow keys move the tile. Perpendicular arrows preview a split…" as the chat title
+        /// (live test 2026-09-25 10:29). A real title line is ~20pt tall.
+        static let minimumVisibleSide: CGFloat = 8
+
         static func pick(from texts: [PlacedText], windowFrame: CGRect) -> String? {
+            pickPlaced(from: texts, windowFrame: windowFrame)?.text
+        }
+
+        static func pickPlaced(from texts: [PlacedText], windowFrame: CGRect) -> PlacedText? {
             guard windowFrame.width > 0 else { return nil }
             let contentBegins = windowFrame.minX + windowFrame.width * sidebarWidthFraction
             let candidates = texts.filter { placed in
                 placed.frame.minX >= contentBegins
                     && placed.text.count >= minimumTitleLength
+                    && isVisible(placed.frame, in: windowFrame)
             }
             // AX y grows downward, so the smallest minY is the highest on screen. Ties broken by x so
             // the result cannot depend on tree-walk order.
             return candidates
-                .min { ($0.frame.minY, $0.frame.minX) < ($1.frame.minY, $1.frame.minX) }?
-                .text
+                .min { ($0.frame.minY, $0.frame.minX) < ($1.frame.minY, $1.frame.minX) }
+        }
+
+        /// Drawn at a readable size, and inside the window rather than parked off it.
+        static func isVisible(_ frame: CGRect, in windowFrame: CGRect) -> Bool {
+            frame.width >= minimumVisibleSide && frame.height >= minimumVisibleSide
+                && windowFrame.contains(CGPoint(x: frame.midX, y: frame.midY))
         }
     }
 
@@ -306,6 +323,9 @@ final class claudeTitleReader {
 
         collectTexts(window)
         guard let windowFrame = Self.frame(of: window) else { return nil }
-        return ChatTitlePicker.pick(from: texts, windowFrame: windowFrame)
+        let picked = ChatTitlePicker.pickPlaced(from: texts, windowFrame: windowFrame)
+        // The frame is what tells a real header from a hidden hint, so it is logged with the pick.
+        addLog(text: "claude chat title: '\(picked?.text ?? "")' frame=\(picked.map { NSStringFromRect($0.frame) } ?? "none") of \(texts.count) texts")
+        return picked?.text
     }
 }
