@@ -23,6 +23,24 @@ final class LogicTestHostTests: XCTestCase {
             hasXCTest: true, isDebug: true))
     }
 
+    /// The host must not read the developer's login keychain: on the self-hosted runner that is the
+    /// person's real account, and every ad-hoc CI build prompted them for it.
+    func testTheHostHasNoCredentialsBecauseItNeverReadsTheKeychain() throws {
+        XCTAssertTrue(LogicTestHost.isEnabled)
+        let delegate = try XCTUnwrap(appdelegate)
+        XCTAssertFalse(delegate.credentialsManager.hasValid(),
+                       "an isolated host starts logged out; true here means it read the real keychain")
+    }
+
+    func testTheHostsCredentialsStoreKeepsWhatItIsGiven() {
+        let store = LogicTestHost.CredentialsStore()
+        XCTAssertNil(store.getEntry(forKey: "credentials"))
+        XCTAssertTrue(store.setEntry(Data([1]), forKey: "credentials"))
+        XCTAssertEqual(store.getEntry(forKey: "credentials"), Data([1]))
+        XCTAssertTrue(store.deleteEntry(forKey: "credentials"))
+        XCTAssertNil(store.getEntry(forKey: "credentials"))
+    }
+
     func testSchemeActuallyStartsAnIsolatedHostWithBundledConfiguration() throws {
         XCTAssertTrue(LogicTestHost.isEnabled, "The TestAction must explicitly opt in to the logic host")
         let delegate = try XCTUnwrap(appdelegate)

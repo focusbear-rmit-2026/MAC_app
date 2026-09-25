@@ -41,6 +41,27 @@ enum LogicTestHost {
         configjson = configuration
         readConfigFile()
     }
+
+    /// Credentials storage for the logic test host: in memory, never the login keychain.
+    ///
+    /// Every `AllApi` call asks `credentialsManager` for a token, and some test reaches one of them.
+    /// The host is an ad-hoc build, and its designated requirement is a bare cdhash, so every CI run is
+    /// a new binary to macOS: the developer got a "Focus Bear wants to use your confidential
+    /// information" prompt per run on their own Mac (the self-hosted runner). Each "Always Allow" added
+    /// another ACL entry — 24 CI cdhashes on the item by 2026-09-24. Tests have no business reading a
+    /// person's real login.
+    final class CredentialsStore: CredentialsStorage {
+        private var entries: [String: Data] = [:]
+        func getEntry(forKey key: String) -> Data? { entries[key] }
+        func setEntry(_ data: Data, forKey key: String) -> Bool { entries[key] = data; return true }
+        func deleteEntry(forKey key: String) -> Bool { entries[key] = nil; return true }
+    }
+
+    static func makeCredentialsManager() -> CredentialsManager {
+        isEnabled
+            ? CredentialsManager(authentication: Auth0.authentication(), storage: CredentialsStore())
+            : CredentialsManager(authentication: Auth0.authentication())
+    }
 }
 
 @NSApplicationMain
@@ -186,7 +207,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     // login looped every session (#2588). The legacy keychain already works for signed builds
     // (certificate-based, no re-prompt), so we ship that and can revisit data-protection as a separate,
     // properly-tested change.
-    let credentialsManager = CredentialsManager(authentication: Auth0.authentication())
+    let credentialsManager = LogicTestHost.makeCredentialsManager()
     
     // Renew credentials
     var renewCredentialsLastDate:Date?
