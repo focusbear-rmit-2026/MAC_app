@@ -1656,7 +1656,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if #available(macOS 13.0, *) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 MenuSnapshot.renderIfRequested()
-                if ProcessInfo.processInfo.environment["FB_SNAPSHOT_MENU"] == "1" { NSApp.terminate(nil) }
+                if OffscreenRenderLaunch.isMenuSnapshot { NSApp.terminate(nil) }
             }
         }
         // "Create Claude debug task…" Help-menu item (one user only). The user loads asynchronously after

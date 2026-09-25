@@ -1688,7 +1688,32 @@ enum HelperLaunchAgent {
     }
 }
 
+/// A throwaway launch that renders a PNG offscreen and quits: `scripts/mockups/render-mockup.sh`
+/// (DayPlanMockup) or the SwiftUI menu snapshot (MenuSnapshot). Debug builds only.
+enum OffscreenRenderLaunch {
+    static let dayPlanMockupFileVariable = "FB_MOCKUP_FILE"
+    static let menuSnapshotVariable = "FB_SNAPSHOT_MENU"
+    static let menuSnapshotEnabledValue = "1"
+
+    static var isMenuSnapshot: Bool {
+        ProcessInfo.processInfo.environment[menuSnapshotVariable] == menuSnapshotEnabledValue
+    }
+
+    static var isActive: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.environment[dayPlanMockupFileVariable] != nil || isMenuSnapshot
+        #else
+        return false
+        #endif
+    }
+}
+
 func createLaunchAgentForHelperApp(){
+    // The agent is written with THIS process's bundle path into the user's real ~/Library, so a
+    // render launched from build/ repointed the user's helper at that dev build — which then launched
+    // it, and the installed app lost its bundle id (keychain prompt, accessibility=false). A launch
+    // that exists only to draw a PNG must not register anything.
+    guard !OffscreenRenderLaunch.isActive else { return }
     //Background process "open" modified when Focus Bear opened?  #409 It shouldn't appear every time the app is restarted
     let helperBundleID = HelperLaunchAgent.label
     let userLaunchAgentsPath = "/Users/\(NSUserName())/Library/LaunchAgents/\(helperBundleID).plist"

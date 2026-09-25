@@ -2556,7 +2556,7 @@ private struct IconButton: View {
 @MainActor
 enum MenuSnapshot {
     static func renderIfRequested() {
-        guard ProcessInfo.processInfo.environment["FB_SNAPSHOT_MENU"] == "1" else { return }
+        guard OffscreenRenderLaunch.isMenuSnapshot else { return }
         let dir = ProcessInfo.processInfo.environment["FB_SNAPSHOT_DIR"] ?? NSTemporaryDirectory()
         render(running(), expand: .focus, to: dir + "/menu_running.png")
         render(idle(), expand: nil, to: dir + "/menu_idle.png")

@@ -5533,7 +5533,7 @@ enum DayPlanMockup {
     /// Called from applicationDidFinishLaunching. No-op unless FB_MOCKUP_FILE is set.
     static func runIfRequested() {
         let env = ProcessInfo.processInfo.environment
-        guard let file = env["FB_MOCKUP_FILE"], let out = env["FB_MOCKUP_OUT"] else { return }
+        guard let file = env[OffscreenRenderLaunch.dayPlanMockupFileVariable], let out = env["FB_MOCKUP_OUT"] else { return }
         let size = parseSize(env["FB_MOCKUP_SIZE"]) ?? NSSize(width: 1280, height: 1000)
         // This window is never placed on an actual screen, so its backingScaleFactor (and thus
         // bitmapImageRepForCachingDisplay's default pixel density) is 1x regardless of the Retina
