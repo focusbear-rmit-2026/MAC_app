@@ -4028,8 +4028,9 @@ class scheduleViewController: NSViewController {
     /// A rounded, optionally-bordered card sized to its content and the stack width. It's a
     /// DropTargetView so the caller can accept a dragged task (set its `onDrop`).
     ///
-    /// `minimumHeight` reserves duration space and centres content within it.
-    /// Zero keeps a content-sized card.
+    /// `minimumHeight` reserves duration space; zero keeps a content-sized card. Content is pinned to
+    /// the TOP, as a calendar does it: a long event's title sits where the event starts rather than
+    /// floating in the middle of its block (#2606 follow-up — "that's how Google Calendar does it").
     private func styledCard(fill: NSColor, border: NSColor, hasBorder: Bool, content: NSView,
                             minimumHeight: CGFloat = 0) -> DropTargetView {
         let card = DropTargetView()
@@ -4044,12 +4045,11 @@ class scheduleViewController: NSViewController {
         NSLayoutConstraint.activate([
             content.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 12),
             content.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -12),
-            content.centerYAnchor.constraint(equalTo: card.centerYAnchor),
-            content.topAnchor.constraint(greaterThanOrEqualTo: card.topAnchor, constant: 8),
+            content.topAnchor.constraint(equalTo: card.topAnchor, constant: 8),
             card.bottomAnchor.constraint(greaterThanOrEqualTo: content.bottomAnchor, constant: 8),
         ])
-        // A weak preferred height lets intrinsic content grow while keeping unused space
-        // symmetric above and below the title and its time range.
+        // A weak preferred height lets a content-sized card shrink to its content, while a duration
+        // height leaves the unused space below the title.
         let preferredHeight = card.heightAnchor.constraint(equalToConstant: minimumHeight)
         preferredHeight.priority = NSLayoutConstraint.Priority(249)
         preferredHeight.isActive = true
