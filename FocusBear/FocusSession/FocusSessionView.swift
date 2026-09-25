@@ -411,6 +411,10 @@ private struct FocusSessionGoalCard: SwiftUI.View {
     /// Enough room for a sentence or two without dominating the column.
     private static let editorHeightDesignPixels: CGFloat = 260
 
+    /// NSTextView's default line-fragment padding, which TextEditor keeps: the placeholder is inset by
+    /// the same amount so it sits exactly where the typed text will start.
+    private static let textViewLineFragmentPadding: CGFloat = 5
+
     var body: some SwiftUI.View {
         DisclosureGroup(isExpanded: $isExpanded) {
             VStack(alignment: .leading, spacing: scale.pt(FocusSessionLayout.inlineGap)) {
@@ -422,17 +426,25 @@ private struct FocusSessionGoalCard: SwiftUI.View {
                 }
             }.padding(.top, scale.pt(FocusSessionLayout.inlineGap))
         } label: {
-            VStack(alignment: .leading, spacing: scale.pt(FocusSessionLayout.tightGap)) {
-                Text(store.strings.focusGoalLabel)
-                    .font(scale.font(FocusSessionLayout.rowTitleFont, .semibold))
-                    .foregroundColor(FocusSessionPalette.primaryText)
-                if !isExpanded, !store.focusGoal.isEmpty {
-                    Text(store.focusGoal)
-                        .font(scale.font(FocusSessionLayout.badgeFont))
-                        .foregroundColor(FocusSessionPalette.secondaryText)
-                        .lineLimit(2)
+            // On macOS only a DisclosureGroup's chevron toggles it — a target a few points wide that
+            // people missed (#2604). The whole label row toggles too.
+            SwiftUI.Button(action: { withAnimation { isExpanded.toggle() } }) {
+                VStack(alignment: .leading, spacing: scale.pt(FocusSessionLayout.tightGap)) {
+                    Text(store.strings.focusGoalLabel)
+                        .font(scale.font(FocusSessionLayout.rowTitleFont, .semibold))
+                        .foregroundColor(FocusSessionPalette.primaryText)
+                    if !isExpanded, !store.focusGoal.isEmpty {
+                        Text(store.focusGoal)
+                            .font(scale.font(FocusSessionLayout.badgeFont))
+                            .foregroundColor(FocusSessionPalette.secondaryText)
+                            .lineLimit(2)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(PlainButtonStyle())
+            .pointingHandCursor()   // the whole row is actionable, so show the hand cursor over it
         }
         .padding(scale.pt(FocusSessionLayout.cardPadding))
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -447,9 +459,27 @@ private struct FocusSessionGoalCard: SwiftUI.View {
                 .foregroundColor(FocusSessionPalette.secondaryText)
                 .frame(maxWidth: .infinity, alignment: .leading)
         } else {
-            TextEditor(text: $store.focusGoal)
-                .font(scale.font(FocusSessionLayout.bodyFont))
-                .frame(height: scale.pt(Self.editorHeightDesignPixels))
+            // An empty TextEditor is just a blank area with no sign it takes typing (#2604), and macOS
+            // 11's TextEditor has no placeholder of its own — so draw one, and outline the field.
+            ZStack(alignment: .topLeading) {
+                TextEditor(text: $store.focusGoal)
+                    .font(scale.font(FocusSessionLayout.bodyFont))
+                if store.focusGoal.isEmpty {
+                    Text(store.strings.focusGoalPlaceholder)
+                        .font(scale.font(FocusSessionLayout.bodyFont))
+                        .foregroundColor(FocusSessionPalette.secondaryText)
+                        .padding(.leading, Self.textViewLineFragmentPadding)
+                        .allowsHitTesting(false)
+                }
+            }
+            // Inset the editor content from the border so neither the placeholder nor typed text is
+            // jammed against the top/left edge (the placeholder used to touch the top border).
+            .padding(scale.pt(FocusSessionLayout.inlineGap))
+            .frame(height: scale.pt(Self.editorHeightDesignPixels))
+            .overlay(
+                RoundedRectangle(cornerRadius: scale.pt(FocusSessionLayout.cardCornerRadius))
+                    .strokeBorder(FocusSessionPalette.border, lineWidth: scale.pt(FocusSessionLayout.panelHairline))
+            )
         }
     }
 }
