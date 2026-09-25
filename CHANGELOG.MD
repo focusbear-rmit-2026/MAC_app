@@ -740,3 +740,36 @@ Removed the duplicate close buttons in Notes and the To-Do list — the window's
 
 Reliability:
 Fixed a hang (and automatic relaunch) caused by the menu-bar popup repeatedly resizing itself. (#2592)
+
+
+# v3.36.547
+
+Routine:
+The morning/evening pep talk now shows once per routine start, and reliably appears on the "Get Focused" screen instead of sometimes being skipped. (#2617)
+Fixed the routine screen showing an endless loader and going unresponsive after clearing app data and signing back in with an existing account whose routine was already done for the day. (#2623)
+The AI accountability buddy no longer asks you for a postpone reason again after it has already approved one. (#2617)
+
+Settings:
+The "AI accountability buddy when postponing habits" setting now shows a "New" tag. (#2626)
+Editing habits, routine timings and custom routines now asks for your settings password when your strictness settings require it — previously only routine timing did. (#2617)
+
+AI accountability buddy:
+The buddy now receives your calendar, so it can see your meetings instead of claiming it can't. (#2617)
+
+Start a focus session:
+You can now click the session length and type an exact number of minutes, not just use +/−. (#2617)
+The screen no longer says "No matching unfinished tasks" before your tasks have finished loading. (#2617)
+
+Projects & To-Do:
+A project card with no expected completion date now explains why (add estimates, or the work doesn't fit the planning horizon) instead of showing a blank. (#2617)
+Reschedule plan: projects at risk now appear at the top, and fixed-date work due within the next two weeks is surfaced higher instead of buried at the bottom. (#2617)
+
+Focus & Blocking:
+A blocking schedule no longer starts with tasks left over from a previous focus session. (#2617)
+
+Full screen:
+On a multi-monitor setup, the full-screen window now sizes to the display it's actually on, so it no longer becomes too tall and cuts off the bottom of the screen. (#2617)
+
+Reliability:
+Fixed occasional app hangs when your Wi-Fi network changed or when using "Use current network" in Office Mode settings (the Wi-Fi lookup now runs off the main thread). (#2617)
+Behind-the-scenes: removed unnecessary Focus Button connection traffic, and added more detailed logging to help diagnose the "Exit full screen did nothing" report. (#2617)
