@@ -606,11 +606,17 @@ enum RoutineVisualizePrompt {
         case morning, evening, custom(String)
 
         var storageKey: String {
+            // Per-account, suffixed with the user id like SettingsManager's own keys. A device-level key
+            // let one account's "shown today" silently skip a *second* account's routine visualize screen
+            // (and its pep talk) on a shared Mac. The suffix is empty in the logic-test host (no logged-in
+            // user), so the stored keys there are unchanged.
+            let base: String
             switch self {
-            case .morning: return "routineVisualizeShownDay.morning"
-            case .evening: return "routineVisualizeShownDay.evening"
-            case .custom(let id): return "routineVisualizeShownDay.custom.\(id)"
+            case .morning: base = "routineVisualizeShownDay.morning"
+            case .evening: base = "routineVisualizeShownDay.evening"
+            case .custom(let id): base = "routineVisualizeShownDay.custom.\(id)"
             }
+            return base + (appdelegate?.user?.userId ?? "")
         }
 
         /// The custom routine at `index` in `arrAllCustomRoutine`, keyed by its sequence id when there
