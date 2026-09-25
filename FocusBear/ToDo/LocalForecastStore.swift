@@ -62,7 +62,7 @@ final class LocalForecastStore: ObservableObject {
     @Published var locksPlannedDays: Bool {
         didSet {
             guard locksPlannedDays != oldValue else { return }
-            UserDefaults.standard.set(locksPlannedDays, forKey: LocalForecastStore.locksPlannedDaysKey)
+            defaults.set(locksPlannedDays, forKey: LocalForecastStore.locksPlannedDaysKey)
             relockPlannedDays()
         }
     }
@@ -127,6 +127,11 @@ final class LocalForecastStore: ObservableObject {
     private let readTasks: TaskReader
     private let writeOutcome: OutcomeWriter
     private let diagnostic: (String) -> Void
+    /// Where the store's own preferences live. Injected because the app-hosted test runs under the
+    /// app's bundle id, so `.standard` is the developer's real preferences.
+    private let defaults: UserDefaults
+    /// The work already placed on the Day Plan, which the forecast has to fit around.
+    private let readPlanned: () -> [(date: Date, task: DayPlanTask)]
     var onApplied: (() -> Void)?
     var calendar: Calendar { Calendar.current }
     var settingsAccount: String { currentAccount() }
@@ -144,6 +149,8 @@ final class LocalForecastStore: ObservableObject {
          }, writeOutcome: @escaping OutcomeWriter = LocalForecastStore.writeTaskOutcome,
          diagnostic: @escaping (String) -> Void = { addLog(text: $0) },
          now: @escaping () -> Date = Date.init,
+         defaults: UserDefaults = .standard,
+         readPlanned: @escaping () -> [(date: Date, task: DayPlanTask)] = { DayPlanTaskStore.shared.forecastSnapshot() },
          scheduleRefresh: @escaping RefreshScheduler = { delay, action in
              let work = DispatchWorkItem(block: action)
              DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
@@ -153,9 +160,10 @@ final class LocalForecastStore: ObservableObject {
         self.readProjects = readProjects; self.readTasks = readTasks; self.writeOutcome = writeOutcome
         self.diagnostic = diagnostic
         self.now = now; self.scheduleRefresh = scheduleRefresh
+        self.defaults = defaults; self.readPlanned = readPlanned
         capacitySettings = LocalForecastPreferences.load(account: currentAccount())
         // Absent means "never answered", which is the default answer rather than `false`.
-        locksPlannedDays = UserDefaults.standard.object(forKey: LocalForecastStore.locksPlannedDaysKey) as? Bool ?? true
+        locksPlannedDays = defaults.object(forKey: LocalForecastStore.locksPlannedDaysKey) as? Bool ?? true
         calendarAvailable = calendarPermission()
         for name in [DayPlanTaskStore.forecastSnapshotDidChange, Notification.Name.EKEventStoreChanged, CalendarManager.dismissedEventsDidChange, LocalForecastPreferences.didChange] {
             observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] notification in
@@ -365,7 +373,7 @@ final class LocalForecastStore: ObservableObject {
         // other stores — the portfolio forecast used to ignore it entirely, which is why a day the
         // Day Plan called an hour over capacity looked perfectly fine to the reschedule plan
         // (report 2026-09-17_09-04-13).
-        let plannedSnapshot = DayPlanTaskStore.shared.forecastSnapshot()
+        let plannedSnapshot = readPlanned()
         loadProgress = .init(stage: .calendar)
         LocalForecastCalendarReader.read(from: start, to: end, authorized: calendarAvailable,
                                          meetingLabel: ScheduleText.meetingDefaultTitle, dismissals: CalendarManager.shared.dismissalSnapshot) { [weak self] meetings in

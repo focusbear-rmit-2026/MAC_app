@@ -673,14 +673,9 @@ final class ForecastReschedulingTests: XCTestCase {
     /// unticking it would surface nothing but the work that was already planned there.
     func testTheCheckboxDecidesWhetherTheNextTwoDaysAreSettled() throws {
         let key = LocalForecastStore.locksPlannedDaysKey
-        let original = UserDefaults.standard.object(forKey: key)
-        defer {
-            if let original = original { UserDefaults.standard.set(original, forKey: key) }
-            else { UserDefaults.standard.removeObject(forKey: key) }
-        }
-        UserDefaults.standard.removeObject(forKey: key)
+        let defaults = Self.isolatedDefaults()
 
-        let store = try loadedStore()
+        let store = try loadedStore(defaults: defaults)
         XCTAssertTrue(store.locksPlannedDays, "Unanswered means the behaviour nobody asked to change")
         store.prepareWorkPlan()
         let settled = try XCTUnwrap(store.result).days
@@ -691,7 +686,7 @@ final class ForecastReschedulingTests: XCTestCase {
         store.locksPlannedDays = false
         XCTAssertTrue(try XCTUnwrap(store.result).days.allSatisfy { !$0.isLocked })
         XCTAssertNotNil(store.workPlan, "the sheet that is open re-flows rather than emptying")
-        XCTAssertEqual(UserDefaults.standard.object(forKey: key) as? Bool, false,
+        XCTAssertEqual(defaults.object(forKey: key) as? Bool, false,
                        "…and the answer survives the sheet being closed")
     }
 
@@ -1610,31 +1605,13 @@ final class ForecastReschedulingTests: XCTestCase {
     /// A store with a real snapshot: one project, one overdue one-minute task. Overdue is the point —
     /// its completion date is necessarily later than its due date whatever the machine's own calendar
     /// and routines say, so it is always proposed for a new date until it is pinned.
-    /// The developer's own `locksPlannedDays`, put back after each test. These run in the
-    /// app-hosted target and share its UserDefaults, so without this the suite both READS and
-    /// OVERWRITES a real preference.
-    private var storedPlannedDaysLock: Any?
-
-    override func setUp() {
-        super.setUp()
-        storedPlannedDaysLock = UserDefaults.standard.object(forKey: LocalForecastStore.locksPlannedDaysKey)
-        UserDefaults.standard.set(true, forKey: LocalForecastStore.locksPlannedDaysKey)
-    }
-
-    override func tearDown() {
-        if let stored = storedPlannedDaysLock {
-            UserDefaults.standard.set(stored, forKey: LocalForecastStore.locksPlannedDaysKey)
-        } else {
-            UserDefaults.standard.removeObject(forKey: LocalForecastStore.locksPlannedDaysKey)
-        }
-        super.tearDown()
-    }
-
     private func loadedStore(writeOutcome: @escaping LocalForecastStore.OutcomeWriter = { _, _, _, done in done(true) },
+                             defaults: UserDefaults = ForecastReschedulingTests.isolatedDefaults(),
                              onProjectsPage: @escaping () -> Void = {}) throws -> LocalForecastStore {
         let projects = try JSONDecoder().decode(ProjectsPage.self, from: Data(
             #"{"data":[{"id":"alpha","name":"Alpha"}],"meta":{"page":1,"itemCount":1,"hasNextPage":false}}"#.utf8))
-        let yesterday = ToDoDates.ymd(Calendar.current.date(byAdding: .day, value: -1, to: Date())!)
+        let now = Self.workingMorning()
+        let yesterday = ToDoDates.ymd(Calendar.current.date(byAdding: .day, value: -1, to: now)!)
         let tasksJSON = """
         {"data":[{"id":"overdue","title":"Overdue task","status":"NOT_STARTED","eisenhower_quadrant":1,\
         "duration":60,"outcome":4,"project_id":"alpha","due_date":"\(yesterday)"}],\
@@ -1644,21 +1621,8 @@ final class ForecastReschedulingTests: XCTestCase {
         let store = LocalForecastStore(currentAccount: { "test-account" }, calendarPermission: { false },
             readProjects: { page, _, complete in onProjectsPage(); complete(page == 1 ? projects : nil) },
             readTasks: { page, _, complete in complete(page == 1 ? tasks : nil) },
-            writeOutcome: writeOutcome, diagnostic: { _ in })
-        // Pin the today/tomorrow lock instead of inheriting it.
-        //
-        // `locksPlannedDays` is read from UserDefaults, and these tests run in the app-hosted test
-        // target — so they were reading the DEVELOPER'S OWN preference. Unticking that checkbox in
-        // the running app (which the user did, and reported) unlocks today, overdue work then earns
-        // a placement correction, and two tests here started failing. The self-hosted CI runner is
-        // the same Mac, so integration's Unit Tests went red because of a checkbox in the UI.
-        //
-        // A test must not depend on a user preference — nor CHANGE one. Assigning
-        // `store.locksPlannedDays` persists through its `didSet`, so the first version of this fix
-        // silently re-ticked the developer's checkbox (verified: the stored value went 0 → 1).
-        // Write the key before the store reads it at init, and put the user's value back afterwards.
-        // The key is already pinned in setUp, so the store read `true` at init; assigning here
-        // would persist through `didSet` and clobber the real preference.
+            writeOutcome: writeOutcome, diagnostic: { _ in }, now: { now },
+            defaults: defaults, readPlanned: { [] })
         store.horizonDays = ForecastReschedulingTests.testHorizonDays
         let loaded = expectation(description: "Forecast snapshot")
         store.refresh { success in XCTAssertTrue(success); loaded.fulfill() }
@@ -1669,6 +1633,31 @@ final class ForecastReschedulingTests: XCTestCase {
     /// The smallest horizon `buildDays` will build, so the fixture does not price ninety days of
     /// routines to answer a question about one overdue task.
     private static let testHorizonDays = 7
+
+    /// The store's preferences for one test, starting empty — "keep planned days" unanswered, i.e. on.
+    ///
+    /// These run in the app-hosted target under the app's own bundle id, so `UserDefaults.standard`
+    /// is the developer's real preferences — on the self-hosted runner, the person using that Mac. The
+    /// fixture used to read their "keep planned days" answer and their real Day Plan: with the box
+    /// unticked (which the user did, and reported) today is unlocked, the overdue task earns a
+    /// correction, and two tests failed on every run on that Mac. Pinning the real key in setUp and
+    /// restoring it in tearDown fixed the reading but not the writing: the person's running app saw
+    /// the value flip for the length of the run, and a test host killed in between left it flipped.
+    /// Injected storage touches neither.
+    private static let isolatedDefaultsSuite = "ForecastReschedulingTests"
+    private static func isolatedDefaults() -> UserDefaults {
+        let defaults = UserDefaults(suiteName: isolatedDefaultsSuite)!
+        defaults.removePersistentDomain(forName: isolatedDefaultsSuite)
+        return defaults
+    }
+
+    /// The fixture's clock: 09:00 today, a working day with its hours still ahead. The store only
+    /// counts today's capacity from `now` onwards, so on the real clock the fixture meant something
+    /// different depending on when it ran.
+    private static let workingMorningHour = 9
+    private static func workingMorning() -> Date {
+        Calendar.current.date(bySettingHour: workingMorningHour, minute: 0, second: 0, of: Date())!
+    }
 
     private func drainCallbacks() {
         let drained = expectation(description: "Outcome write callback")
