@@ -773,6 +773,26 @@ func extractProjectToken(_ raw: String, known: [String]) -> (title: String, proj
     return (title, project)
 }
 
+/// Whether a Day Plan task's importance has to be written to its backing to-do. Pure, so the rule is
+/// testable without the store or the network — see `DayPlanOutcomeSyncTests`.
+///
+/// Only a CHANGE is written, only for a task that has a to-do, and never for a task with no name yet:
+/// the upsert echoes the title back, so an empty one would blank the to-do on every device (the same
+/// guard `syncProject` has, report 2026-09-09_20-38-22).
+enum DayPlanOutcomeSync {
+    struct Write: Equatable {
+        let todoID: String
+        let outcome: Int?
+    }
+
+    static func write(previousOutcome: Int?, task: DayPlanTask) -> Write? {
+        guard task.outcome != previousOutcome,
+              let todoID = task.sourceTaskId,
+              !task.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        return Write(todoID: todoID, outcome: task.outcome)
+    }
+}
+
 /// Pull a `!N` priority token (N = 1...5, the displayed outcome) out of a typed task title and
 /// strip it: "draft report !4" → ("draft report", 8 on the wire). Only a standalone `!N` in range counts — a bare
 /// `!`, `!0`, or `!6` is left untouched in the title. The last such token wins.
@@ -974,6 +994,7 @@ final class DayPlanTaskStore {
         let wasDone = byDay[k]![i].done
         let oldSubtasks = byDay[k]![i].subtasks
         let oldProject = byDay[k]![i].project
+        let oldOutcome = byDay[k]![i].outcome
         var task = task
         if k != dayKey(date) { task.blockKey = byDay[k]?[i].blockKey }
         // (main's AppleScript `source` stamping of `lastUserModifiedAt` has no equivalent on this
@@ -1024,6 +1045,14 @@ final class DayPlanTaskStore {
         // `project_id` never changed, so web/mobile never saw the project. Push it (creating the
         // backend project when the name is new); from-scratch tasks get it at mint time instead.
         if projectChanged { syncProject(of: task) }
+        // Importance was local-only: a typed `!5` (or the editor's importance menu) tinted the row, and
+        // the next to-do refresh (`mergeDueTodos`) copied the server's untouched `outcome` back over it,
+        // so the row went white again (report 2026-09-24_20-33-35).
+        if let write = DayPlanOutcomeSync.write(previousOutcome: oldOutcome, task: task) {
+            DayPlanSync.shared.setTodoOutcome(todoID: write.todoID, title: task.title,
+                                              quadrant: task.eisenhowerQuadrant ?? kDayPlanNeutralQuadrant,
+                                              outcome: write.outcome)
+        }
     }
 
     /// The ONE route by which a task's `project` reaches its backing to-do. Every entry path — a typed
@@ -1167,6 +1196,11 @@ final class DayPlanTaskStore {
                 if !planned.subtaskList.isEmpty {
                     DayPlanSync.shared.setTodoSubtasks(todoID: newId, title: planned.title,
                                                        quadrant: quadrant, subtasks: planned.subtaskList)
+                }
+                // …and so can an importance (`!5` typed with the name): the create DTO has no outcome.
+                if let write = DayPlanOutcomeSync.write(previousOutcome: nil, task: planned) {
+                    DayPlanSync.shared.setTodoOutcome(todoID: write.todoID, title: planned.title,
+                                                      quadrant: quadrant, outcome: write.outcome)
                 }
                 // Last, so nothing a waiter does can invalidate the row this block is still reading.
                 self.announceMint(localId: localId, todoId: newId)

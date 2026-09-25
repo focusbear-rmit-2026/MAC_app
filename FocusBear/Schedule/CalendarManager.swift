@@ -804,6 +804,8 @@ final class DayPlanSync {
     #if DEBUG
     /// The last `PUT /to-do` status write this process attempted — see `setTodoStatus`. DEBUG only.
     static var lastTodoStatusWrite: (todoID: String, completed: Bool)?
+    /// The last `PUT /to-do` importance write this process attempted — see `setTodoOutcome`. DEBUG only.
+    static var lastTodoOutcomeWrite: (todoID: String, outcome: Int?)?
     #endif
 
     /// `true` only with a logged-in user + token — guests / logged-out skip all sync.
@@ -1110,6 +1112,23 @@ final class DayPlanSync {
             DispatchQueue.main.async { completion(false) }; return
         }
         send(req, label: "setTodoAssignee", completion: completion)
+    }
+
+    /// Push a Day Plan task's importance (`outcome`, the /10 wire scale) onto its backend to-do. A nil
+    /// outcome is sent as JSON null — "unrated" — so clearing importance in the Day Plan clears it
+    /// everywhere rather than leaving the old value to come back on the next refresh.
+    func setTodoOutcome(todoID: String, title: String, quadrant: Int, outcome: Int?) {
+        #if DEBUG
+        Self.lastTodoOutcomeWrite = (todoID: todoID, outcome: outcome)
+        #endif
+        let body: [String: Any] = [
+            "id": todoID,
+            "title": title,
+            "eisenhower_quadrant": quadrant,
+            "outcome": outcome.map { $0 as Any } ?? NSNull(),
+        ]
+        guard let req = request("/to-do", method: "PUT", body: body) else { return }
+        send(req, label: "setTodoOutcome")
     }
 
     func setTodoTitle(todoID: String, title: String, quadrant: Int) {

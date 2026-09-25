@@ -319,3 +319,49 @@ final class TaskNameCommitTests: XCTestCase {
     }
 
 }
+
+// MARK: - A typed `!N` reaches the to-do (report 2026-09-24_20-33-35)
+//
+// "I typed !5 and it went red but it seems like it didn't persist because when I go back to day plan
+// it's white background again." The importance was saved locally only, and the next to-do refresh
+// copied the server's untouched `outcome` back over it. `DayPlanOutcomeSync` decides when the store
+// must write it to the backing to-do.
+
+extension TaskNameCommitTests {
+
+    private func synced(_ title: String = "3MT", outcome: Int?) -> DayPlanTask {
+        var task = DayPlanTask(title: title, sourceTaskId: "todo-3mt")
+        task.outcome = outcome
+        return task
+    }
+
+    func testATypedImportanceOnASyncedTaskIsWrittenToItsToDo() {
+        guard case .save(let parsed) = TaskNameCommit.forDayPlanRow("3MT !5", knownProjects: []) else {
+            return XCTFail("a named task with a token should save")
+        }
+        let edited = synced(outcome: parsed.outcome)
+        XCTAssertEqual(DayPlanOutcomeSync.write(previousOutcome: nil, task: edited),
+                       .init(todoID: "todo-3mt", outcome: 10), "!5 is 10 on the wire")
+    }
+
+    func testAnUnchangedImportanceWritesNothing() {
+        XCTAssertNil(DayPlanOutcomeSync.write(previousOutcome: 6, task: synced(outcome: 6)))
+    }
+
+    func testClearingImportanceIsWrittenAsUnrated() {
+        XCTAssertEqual(DayPlanOutcomeSync.write(previousOutcome: 8, task: synced(outcome: nil)),
+                       .init(todoID: "todo-3mt", outcome: nil),
+                       "clearing must reach the server, or the old value comes back on the next refresh")
+    }
+
+    func testATaskWithNoToDoYetIsLeftToTheMint() {
+        var local = DayPlanTask(title: "3MT", sourceTaskId: nil)
+        local.outcome = 10
+        XCTAssertNil(DayPlanOutcomeSync.write(previousOutcome: nil, task: local))
+    }
+
+    func testANamelessTaskIsNeverWritten() {
+        // The upsert echoes the title back; an empty one would blank the to-do on every device.
+        XCTAssertNil(DayPlanOutcomeSync.write(previousOutcome: nil, task: synced("  ", outcome: 10)))
+    }
+}
