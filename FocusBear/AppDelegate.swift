@@ -6867,6 +6867,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             alertHighPriorityHabitTime.runModal()
                             //                            currentState = ._NOTHING_
                             isHighPrioritySequenceGoing = true
+                            releaseFullScreenAfterCutoffSkip()
                             mainWindowControllerObj?.showWindow(self)
                             showBlankWindowInSecondaryMonitor()
                             leftMenuVcObj?.showHabitsView()
@@ -6897,6 +6898,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     self.startTimerAlertHighPriorityHabit(durationSeconds: 5)
                                     alertHighPriorityHabitTime.runModal()
                                     isHighPrioritySequenceGoing = true
+                                    releaseFullScreenAfterCutoffSkip()
                                     mainWindowControllerObj?.showWindow(self)
                                     showBlankWindowInSecondaryMonitor()
                                     leftMenuVcObj?.showHabitsView()
@@ -7564,6 +7566,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
+    /// A cutoff time just ended the running evening habit — the automatic twin of the user pressing
+    /// Skip, which calls this same lifecycle point (`skipHabitVc`). Without it an ALLOWED-ACTIVITY habit
+    /// ended this way is still "holding the screen" as far as window routing knows, so the
+    /// `showHabitsView()` that follows shrinks the window again and the rest of the routine runs
+    /// windowed instead of in borderless full screen (2026-09-24 17:37: the "Life Admin" habit hit its
+    /// cutoff, then `leaveFullScreen (routing … holding=true leftForHabit=true)` and nothing restored it).
+    /// Must run before the window is re-routed. A no-op when the skipped habit was an ordinary one.
+    private func releaseFullScreenAfterCutoffSkip() {
+        applyFullScreen(forAllowedActivityHabit: false)
+    }
+
     func abortAllProcess(){// do not change current state and current action inside this function
         addLog(text: "call abort all process.")
         // Only forget the step-aside when the routine is genuinely over. This function is NOT only
