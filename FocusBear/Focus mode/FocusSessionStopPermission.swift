@@ -112,4 +112,35 @@ enum FocusSessionStopPermission {
         }
         return storedFlag
     }
+
+    /// What to do with a focus-session change that arrived from ANOTHER device — a Pusher
+    /// `focus-mode-finished` or `focus-mode-paused`.
+    enum RemoteSessionChange: Equatable {
+        case apply
+        /// This Mac's own change, echoed back by the server.
+        case ownEcho
+        /// A teacher-controlled class session only ends via class-session-ended or its scheduled finish.
+        case teacherSession
+        /// An AI-approved postpone's accountability-buddy session.
+        case accountabilityBuddySession
+    }
+
+    /// Whether another device may finish or pause the session running on this Mac.
+    ///
+    /// A buddy session is the price of an approved postpone, and it is THIS Mac's to end: the user can
+    /// stop it here at any time without a password (see above), but another device must not. Nothing in
+    /// the event says whether a person pressed Stop or a device ended the session on its own, and the
+    /// latter is what happened (report 2026-09-25_09-50-57): 84 s into an approved postpone's 15-minute
+    /// session another device finished it — most likely its own morning routine coming due, which
+    /// force-stops any running session and cannot know the routine was postponed on this Mac — and the
+    /// user was left with the rest of the postpone and no session at all.
+    static func remoteChange(eventDeviceId: String?,
+                             thisDeviceId: String,
+                             isTeacherSessionActive: Bool,
+                             hasLiveBuddySession: Bool) -> RemoteSessionChange {
+        if eventDeviceId == thisDeviceId { return .ownEcho }
+        if isTeacherSessionActive { return .teacherSession }
+        if hasLiveBuddySession { return .accountabilityBuddySession }
+        return .apply
+    }
 }

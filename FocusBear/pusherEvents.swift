@@ -15,6 +15,20 @@ func focusModePayload(from event: PusherEvent) -> [String: Any]? {
     return (try? JSONSerialization.jsonObject(with: data, options: [])) as? [String: Any]
 }
 
+/// Whether a finish/pause from another device may be applied to this Mac's session, logging the
+/// sender and the answer either way. The finish path used to log nothing at all, so a session ended from
+/// another device looked, in the log, exactly like one that simply ended.
+func applyRemoteSessionChange(named eventName: String, event: PusherEvent) -> Bool {
+    let senderDeviceId = focusModePayload(from: event)?["device_id"] as? String
+    let decision = FocusSessionStopPermission.remoteChange(
+        eventDeviceId: senderDeviceId,
+        thisDeviceId: currentDeviceId,
+        isTeacherSessionActive: teacherSessionManagerObject.isTeacherSessionActive(),
+        hasLiveBuddySession: currentAccountabilityBuddySession != nil)
+    addLog(text: "Pusher \(eventName) from device \(senderDeviceId ?? "nil"): \(decision)")
+    return decision == .apply
+}
+
 /// Map the session's `block_level` to the Mac's strictness enum. Previously every remotely-started
 /// session was hardcoded to `._NORMAL_`, so a strict session started on the phone was enforced
 /// leniently on the Mac.
@@ -192,23 +206,8 @@ class pusherEvents:NSObject, PusherDelegate {
         })
         
         _ = channel.bind(eventName: "focus-mode-finished", eventCallback: { (event: PusherEvent) in
-            if let data = event.data {
-                print(data)
-                if let data = data.data(using: .utf8) {
-                    do {
-                        if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]{
-                            print(dictionary)
-                            if dictionary["device_id"] as? String == currentDeviceId{
-                                return;
-                            }
-                        }
-                    }catch{
-                        
-                    }
-                }
-                if teacherSessionManagerObject.isTeacherSessionActive(){// a teacher controlled class session only ends via class-session-ended or its scheduled finish time
-                    return;
-                }
+            if event.data != nil {
+                guard applyRemoteSessionChange(named: "focus-mode-finished", event: event) else { return }
                 if isFocusModeOnOrPaused() == false{
                     return;
                 }
@@ -312,9 +311,8 @@ class pusherEvents:NSObject, PusherDelegate {
         // arithmetic, focus-button and UI all behave exactly as a local pause — but with
         // shouldSyncToServer:false, otherwise applying the event would POST it straight back.
         _ = channel.bind(eventName: "focus-mode-paused", eventCallback: { (event: PusherEvent) in
-            guard let dictionary = focusModePayload(from: event) else { return }
-            if dictionary["device_id"] as? String == currentDeviceId{ return }        // our own echo
-            if teacherSessionManagerObject.isTeacherSessionActive(){ return }         // teacher-controlled, not user-controlled
+            guard focusModePayload(from: event) != nil,
+                  applyRemoteSessionChange(named: "focus-mode-paused", event: event) else { return }
             guard isFocusModeOn() else { return }                                     // nothing running to pause
             addLog(text: "Pause focus mode from pusher event")
             for i in 0..<arrFocusType.count{

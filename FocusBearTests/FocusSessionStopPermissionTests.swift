@@ -197,4 +197,35 @@ final class FocusSessionStopPermissionTests: XCTestCase {
                                                                   flag: isFocusSessionAutoStarted,
                                                                   hasLiveBuddySession: false))
     }
+
+    // MARK: A change from another device (report 2026-09-25_09-50-57)
+    //
+    // "why did it just cancel the focus session? I had postponed via AI - it shouldn't let me have
+    // free reign". 84 s into an approved postpone's buddy session, another device finished it.
+
+    private typealias Remote = FocusSessionStopPermission.RemoteSessionChange
+    private let thisMac = "mac-device"
+
+    private func remote(from sender: String?, teacher: Bool = false, buddy: Bool = false) -> Remote {
+        FocusSessionStopPermission.remoteChange(eventDeviceId: sender, thisDeviceId: thisMac,
+                                                isTeacherSessionActive: teacher, hasLiveBuddySession: buddy)
+    }
+
+    func testAnotherDeviceCannotEndAnApprovedPostponesBuddySession() {
+        XCTAssertEqual(remote(from: "windows-pc", buddy: true), .accountabilityBuddySession)
+    }
+
+    func testAnOrdinarySessionStillFollowsTheOtherDevices() {
+        XCTAssertEqual(remote(from: "windows-pc"), .apply)
+        XCTAssertEqual(remote(from: nil), .apply, "an event with no sender is not our echo")
+    }
+
+    func testOurOwnEchoIsNeverReapplied() {
+        XCTAssertEqual(remote(from: thisMac, buddy: true), .ownEcho)
+    }
+
+    func testATeacherSessionKeepsItsOwnRule() {
+        XCTAssertEqual(remote(from: "phone", teacher: true, buddy: true), .teacherSession)
+    }
+
 }
