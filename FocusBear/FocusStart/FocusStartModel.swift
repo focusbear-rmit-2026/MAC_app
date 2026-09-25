@@ -299,6 +299,21 @@ enum FocusStartWorkSelection {
     /// ties, which put a 4.6 above a 20.2 and made the scores on the rows look meaningless
     /// (report 2026-09-11_09-27-50). The Day Plan's own order stays where the user arranged it —
     /// on the Day Plan.
+    /// The page of task suggestions to fetch when nothing has been typed.
+    ///
+    /// Asks the SERVER for unfinished tasks only. The list used to fetch 50 tasks by SMART score and
+    /// then drop the completed ones here — but the score does not care whether a task is done, so for
+    /// someone with a long history a whole page could be completed tasks, leaving nothing, and "Show
+    /// more tasks" fetched another page of the same (report 2026-09-23_16-07-21, follow-up
+    /// 2026-09-25 15:37: "No matching unfinished tasks" under an empty search box, no project chosen,
+    /// after two completed SMART loads). The server filters before paging, so every page is usable.
+    static func suggestionQuery(page: Int, project: Project?) -> ToDoListQuery {
+        ToDoListQuery(page: page, status: nil, sortMode: .smart,
+                      projectId: project?.isSynced == true ? nil : project?.id,
+                      syncedProjectId: project?.synced_project_id,
+                      excludeCompleted: true)
+    }
+
     static func tasks(_ tasks: [ToDoTask], project: Project?, dayPlan: [DayPlanTask]) -> [ToDoTask] {
         func belongs(_ task: ToDoTask) -> Bool {
             guard let project = project else { return false }

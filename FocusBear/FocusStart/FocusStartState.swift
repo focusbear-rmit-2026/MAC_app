@@ -345,9 +345,7 @@ final class FocusStartState: ObservableObject {
             // Search the to-do catalogue, keeping selected-project matches at the top.
             allApiObject.searchToDoTasks(title: query) { receive($0, false) }
         } else {
-            let request = ToDoListQuery(page: page, status: nil, sortMode: .smart,
-                projectId: project?.isSynced == true ? nil : project?.id,
-                syncedProjectId: project?.synced_project_id)
+            let request = FocusStartWorkSelection.suggestionQuery(page: page, project: project)
             allApiObject.getToDoPage(request) { receive($0?.data, $0?.meta?.hasNextPage ?? false) }
         }
     }

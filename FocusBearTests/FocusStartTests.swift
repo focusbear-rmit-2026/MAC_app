@@ -618,3 +618,37 @@ final class FocusStartTests: XCTestCase {
     }
 
 }
+
+// MARK: - Task suggestions ask the server for unfinished tasks (report 2026-09-23_16-07-21, follow-up)
+//
+// "same issue": with no project chosen, the list loaded (two SMART pages) and still said "No matching
+// unfinished tasks". Completed tasks keep their score, so a page fetched by score could be all completed,
+// and filtering them out afterwards left nothing. An extension, not a new class: CI selects by class name.
+extension FocusStartTests {
+    func testSuggestionsAskTheServerForUnfinishedTasksOnly() {
+        let query = FocusStartWorkSelection.suggestionQuery(page: 1, project: nil)
+        XCTAssertTrue(query.excludeCompleted)
+        XCTAssertTrue(query.path.contains("exclude_completed=true"), query.path)
+        XCTAssertTrue(query.path.contains("sort_mode=SMART"), query.path)
+    }
+
+    func testNoProjectMeansNoProjectFilter() {
+        let path = FocusStartWorkSelection.suggestionQuery(page: 1, project: nil).path
+        XCTAssertFalse(path.contains("project_id="), "no project chosen shows every unfinished task: \(path)")
+    }
+
+    func testAChosenProjectFiltersByItsId() {
+        let path = FocusStartWorkSelection.suggestionQuery(page: 2, project: Project(id: "p1", name: "P1")).path
+        XCTAssertTrue(path.contains("project_id=p1"), path)
+        XCTAssertTrue(path.contains("page=2"), path)
+        XCTAssertTrue(path.contains("exclude_completed=true"), "every page, not just the first: \(path)")
+    }
+
+    func testASyncedProjectFiltersByItsSyncedId() {
+        var synced = Project(id: "tag-1", name: "Zoho")
+        synced.synced_project_id = "zoho-42"
+        let path = FocusStartWorkSelection.suggestionQuery(page: 1, project: synced).path
+        XCTAssertTrue(path.contains("synced_project_id=zoho-42"), path)
+        XCTAssertFalse(path.contains("&project_id="), "a synced project's id is a tag id, not a project id: \(path)")
+    }
+}
