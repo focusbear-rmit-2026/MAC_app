@@ -773,3 +773,35 @@ On a multi-monitor setup, the full-screen window now sizes to the display it's a
 Reliability:
 Fixed occasional app hangs when your Wi-Fi network changed or when using "Use current network" in Office Mode settings (the Wi-Fi lookup now runs off the main thread). (#2617)
 Behind-the-scenes: removed unnecessary Focus Button connection traffic, and added more detailed logging to help diagnose the "Exit full screen did nothing" report. (#2617)
+
+
+# v3.36.548
+
+Routine:
+The morning/evening pep talk no longer goes missing after relaunching straight into a routine whose "Get Focused" screen had already shown earlier that day. (#2634)
+On a shared Mac, the "Get Focused" screen (and its pep talk) now shows for each account — previously, once one account had seen it for the day, another account signing in on the same computer wouldn't. (#2652)
+
+Start a focus session:
+"Add tasks to focus on" no longer shows "No matching unfinished tasks" for people with a long history of completed tasks — it now asks the server for unfinished tasks so the list is never empty. (#2650)
+You can now click anywhere on the "Focus Goal" row to expand it, not just the small arrow, and an empty goal shows a hint of what to type. (#2630)
+
+Day Plan:
+Event titles now sit at the top of their block (like Google Calendar) instead of floating in the middle of a tall meeting or deep-work block. (#2629)
+Setting a task's importance in the Day Plan (for example typing "!5") now saves to the to-do and sticks, instead of reverting on the next refresh. (#2639)
+
+Projects & To-Do:
+A project whose work runs past your planning horizon now shows "Expected completion: after <date>" instead of a "doesn't fit within the planning horizon" message. (#2635)
+
+AI accountability buddy:
+A "focus mode finished" signal from another device no longer ends a focus session you started by postponing through the AI buddy. (#2640)
+
+Focus & Blocking:
+When checking whether the app you're using is relevant to your focus, the Claude chat title now ignores hidden screen-reader-only text, so the AI sees the real conversation title. (#2642)
+
+Full screen:
+When a habit auto-skips because its cutoff time passed, the routine now stays in full screen (like a manual skip) instead of dropping to a small window that could get stranded off-screen. (#2628)
+
+Behind-the-scenes:
+Rendering a developer mockup no longer repoints the installed app's background helper at the dev build. (#2631)
+The CI test host no longer reads the login keychain, so automated runs stop triggering repeated keychain/certificate prompts. (#2641)
+The reschedule tests no longer read or write the developer's real preferences and Day Plan, fixing spurious failures on shared machines. (#2633)
