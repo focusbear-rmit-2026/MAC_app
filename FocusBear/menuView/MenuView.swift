@@ -784,6 +784,16 @@ struct BlockListComboBox: NSViewRepresentable {
             commit(text: picked, in: box)
         }
 
+        /// A row chosen from the open dropdown (mouse click or arrow keys) fires this — commit it
+        /// immediately. Without it, picking a block list from the menu overlay never wrote the binding,
+        /// so `comboCommitted`/`itemSelectedByUser` only ran on Return or when field editing ended — and
+        /// a SwiftUI "TAP TO START" click doesn't end AppKit field editing first. The binding stayed on
+        /// the pre-selected default, so a session started from the menu always used "Block super
+        /// distracting sites" regardless of the pick (#2657). Mirrors searchableComboBox's own coordinator.
+        func listSelectionChangedByUser(comboBox: searchableComboBox) {
+            comboCommitted(comboBox)
+        }
+
         /// Editing finished without a pick (the user clicked away). Their text is what they meant.
         func itemSelectedByUser(comboBox: searchableComboBox) {
             commit(text: comboBox.stringValue, in: comboBox)
