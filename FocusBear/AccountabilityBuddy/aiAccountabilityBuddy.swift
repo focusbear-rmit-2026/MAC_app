@@ -116,19 +116,22 @@ struct AccountabilityBuddyStrings {
     var deniedTitle = ""
     var buttonDoHabit = ""
     var buttonTryAgain = ""
-    var errorMessage = ""
     var inputPlaceholder = ""
     var buttonSend = ""
 
     var recoveryTitle = ""
-    var recoveryExplanation = ""
     var recoveryDuration = ""
-    var recoveryChooseDuration = ""
     var recoveryMinutes = ""
     var recoveryHold = ""
     var recoveryHolding = ""
     var recoveryHoldHelp = ""
-    var recoveryRetry = ""
+    var recoveryClose = ""
+    var annoyingPrompt = ""
+    var annoyingYes = ""
+    var offlineTitle = ""
+    var offlineExplanation = ""
+    var unavailableTitle = ""
+    var unavailableExplanation = ""
     var startForMinutes = ""
 
     /// Old downloaded configs can lack newly shipped keys. Fall back to the bundled config for the
@@ -165,16 +168,19 @@ struct AccountabilityBuddyStrings {
         s.deniedTitle = str("aiBuddyDeniedTitle")
         s.buttonDoHabit = str("aiBuddyButtonDoHabit")
         s.buttonTryAgain = str("aiBuddyButtonTryAgain")
-        s.errorMessage = str("aiBuddyRecoveryExplanation")
         s.recoveryTitle = str("aiBuddyRecoveryTitle")
-        s.recoveryExplanation = str("aiBuddyRecoveryExplanation")
         s.recoveryDuration = str("aiBuddyRecoveryDuration")
-        s.recoveryChooseDuration = str("aiBuddyRecoveryChooseDuration")
         s.recoveryMinutes = str("aiBuddyRecoveryMinutes")
         s.recoveryHold = str("aiBuddyRecoveryHold")
         s.recoveryHolding = str("aiBuddyRecoveryHolding")
         s.recoveryHoldHelp = str("aiBuddyRecoveryHoldHelp")
-        s.recoveryRetry = str("aiBuddyRecoveryRetry")
+        s.recoveryClose = str("aiBuddyRecoveryClose")
+        s.annoyingPrompt = str("aiBuddyAnnoyingPrompt")
+        s.annoyingYes = str("aiBuddyAnnoyingYes")
+        s.offlineTitle = str("aiBuddyOfflineTitle")
+        s.offlineExplanation = str("aiBuddyOfflineExplanation")
+        s.unavailableTitle = str("aiBuddyUnavailableTitle")
+        s.unavailableExplanation = str("aiBuddyUnavailableExplanation")
         s.startForMinutes = str("aiBuddyStartForMinutes")
         s.inputPlaceholder = str("aiBuddyInputPlaceholder")
         s.buttonSend = str("aiBuddyButtonSend")
@@ -319,17 +325,33 @@ func restoreAccountabilityBuddySessionIfNeeded() {
 /// Names + rough durations of the healthy habits the user still has to do today (morning + evening),
 /// so the buddy can weigh them against the urgent thing (e.g. "meditate before emails", or scale one
 /// back). Uses the same source + per-day completion logic as the Day Plan schedule.
-func accountabilityBuddyUncompletedHabits() -> [String] {
-    // Only the routine the user is ACTUALLY in — otherwise the buddy suggested evening habits during
-    // a morning routine (and vice versa).
-    let source: [habit]
+/// The habits of the routine the user is ACTUALLY in — otherwise the buddy suggested evening habits
+/// during a morning routine (and vice versa).
+private func accountabilityBuddyRoutineHabits() -> [habit] {
     switch currentState {
     case ._EVENING_HABIT_, ._POSTPONE_EVENING_HABIT_, ._FOCUS_SUMMARY_, ._POSTPONE_FOCUS_SUMMARY_:
-        source = arrAllDaysEveningHabits
+        return arrAllDaysEveningHabits
     default:
-        source = arrAllDaysMorningHabits
+        return arrAllDaysMorningHabits
     }
-    let habits = ScheduleTab.habitInputs(from: source, now: Date(), dropCompleted: true)
+}
+
+/// How much of the current routine is done, 0...100, or nil when it has no habits today.
+func accountabilityBuddyRoutineCompletionPercent() -> Int? {
+    let source = accountabilityBuddyRoutineHabits()
+    let now = Date()
+    return AccountabilityDayContext.routineCompletionPercent(
+        totalHabits: ScheduleTab.habitInputs(from: source, now: now, dropCompleted: false).count,
+        remainingHabits: ScheduleTab.habitInputs(from: source, now: now, dropCompleted: true).count)
+}
+
+/// Minutes left before the user's shutdown time, or nil when they haven't set one.
+func accountabilityBuddyMinutesLeftInDay() -> Int? {
+    AccountabilityDayContext.minutesLeftInDay(now: Date(), shutOff: shutOffTime, isShutOffTime: isShutOffTimeGoing())
+}
+
+func accountabilityBuddyUncompletedHabits() -> [String] {
+    let habits = ScheduleTab.habitInputs(from: accountabilityBuddyRoutineHabits(), now: Date(), dropCompleted: true)
         .map { "\($0.title) (~\(max(1, $0.durationSeconds / 60)) min)" }
     addLog(text: "accountability buddy: \(habits.count) uncompleted habits for state \(currentState): \(habits)")
     return habits
@@ -458,6 +480,8 @@ extension AllApi {
                                             dayPlanTaskCandidates: [AccountabilityTaskCandidate] = [],
                                             calendarEvents: [String] = [],
                                             isInMeeting: Bool = false,
+                                            routineCompletionPercent: Int? = nil,
+                                            minutesLeftInDay: Int? = nil,
                                             completion: @escaping (Result<AccountabilityVerdict, Error>) -> Void) {
         appdelegate!.credentialsManager.credentials { credentialsInfo in
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
@@ -514,6 +538,14 @@ extension AllApi {
             let calendar = AccountabilityCalendarPayload.forRequest(calendarEvents)
             if !calendar.isEmpty {
                 json["calendarEvents"] = calendar
+            }
+            // Optional, so a server that predates them ignores them. Sent only when known: "no habits
+            // today" and "no shutdown time set" must not read as "0% done" or "no time left".
+            if let percent = routineCompletionPercent {
+                json["routineCompletionPercent"] = percent
+            }
+            if let minutes = minutesLeftInDay {
+                json["minutesLeftInDay"] = minutes
             }
             addLog(text: "evaluateAccountabilityConversation: json data for api is:- \(json)")
             request.httpBody = try? JSONSerialization.data(withJSONObject: json)
@@ -1053,6 +1085,8 @@ final class AccountabilityBuddyChatViewController: NSViewController {
                                                                 dayPlanTaskCandidates: self?.taskCandidates ?? [],
                                                                 calendarEvents: accountabilityBuddyCalendarContext(),
                                                                 isInMeeting: appdelegate?.isUserOnMeeting ?? false,
+                                                                routineCompletionPercent: accountabilityBuddyRoutineCompletionPercent(),
+                                                                minutesLeftInDay: accountabilityBuddyMinutesLeftInDay(),
                                                                 completion: done)
             },
             onStart: { [weak self] verdict, goalText in
@@ -1196,7 +1230,9 @@ struct AccountabilityChatView: View {
     @SwiftUI.State private var isThinking = false
     @SwiftUI.State private var approvedVerdict: AccountabilityVerdict?
     @SwiftUI.State private var hasBackendError = false
-    @SwiftUI.State private var selectedRecoveryMinutes = 0
+    @SwiftUI.State private var recoveryReason: AccountabilityRecoveryReason = .unavailable
+    @SwiftUI.State private var isRecoveryExpanded = false
+    @SwiftUI.State private var selectedRecoveryMinutes = AccountabilityPostponeRecovery.defaultMinutes
     @SwiftUI.State private var holdProgress: Double = 0
     @SwiftUI.State private var activeRequest: UUID?
     @SwiftUI.State private var isVisible = false
@@ -1311,17 +1347,61 @@ struct AccountabilityChatView: View {
         .background(Color.green.opacity(0.08))
     }
 
+    /// Report 2026-09-25_15-40-49. A stuck conversation gets one quiet question first; an outage says
+    /// plainly what happened. "Try my buddy again" and "Do my habit" are gone: sending another message
+    /// already retries, and the X closes the card. The ten-second hold is unchanged, so this is no
+    /// easier to use as an escape hatch than before.
     private var recoveryBar: some View {
         VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                recoveryHeading
+                Spacer(minLength: 8)
+                SwiftUI.Button(action: dismissRecovery) {
+                    Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help(strings.recoveryClose)
+                .accessibilityLabel(Text(strings.recoveryClose))
+            }
+            if isRecoveryExpanded { recoveryControls }
+        }
+        .padding(.horizontal, 16).padding(.vertical, isRecoveryExpanded ? 16 : 8)
+        .background(Color.orange.opacity(isRecoveryExpanded ? 0.08 : 0.04))
+    }
+
+    @ViewBuilder
+    private var recoveryHeading: some View {
+        switch recoveryReason {
+        case .stuck where !isRecoveryExpanded:
+            HStack(spacing: 8) {
+                Text(strings.annoyingPrompt).font(.callout).foregroundColor(.secondary)
+                SwiftUI.Button(strings.annoyingYes) { isRecoveryExpanded = true }.controlSize(.small)
+            }
+        case .stuck:
             Text(strings.recoveryTitle).font(.headline)
+        case .offline:
+            recoveryExplanation(title: strings.offlineTitle, body: strings.offlineExplanation)
+        case .unavailable:
+            recoveryExplanation(title: strings.unavailableTitle, body: strings.unavailableExplanation)
+        }
+    }
+
+    private func recoveryExplanation(title: String, body: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.headline)
+            Text(body).font(.callout).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var recoveryControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
             Picker(strings.recoveryDuration, selection: $selectedRecoveryMinutes) {
-                Text(strings.recoveryChooseDuration).tag(0)
                 ForEach(AccountabilityPostponeRecovery.durations, id: \.self) { minutes in
                     Text(strings.recoveryMinutes.replacingOccurrences(of: "{minutes}", with: "\(minutes)")).tag(minutes)
                 }
             }
             AccountabilityHoldButton(
-                minutes: selectedRecoveryMinutes == 0 ? nil : selectedRecoveryMinutes,
+                minutes: selectedRecoveryMinutes,
                 title: holdProgress > 0
                     ? strings.recoveryHolding.replacingOccurrences(of: "{seconds}", with: "\(max(1, Int(ceil((1 - holdProgress) * AccountabilityPostponeRecovery.requiredHoldSeconds))))")
                     : strings.recoveryHold,
@@ -1337,14 +1417,15 @@ struct AccountabilityChatView: View {
             ProgressView(value: holdProgress).accessibilityLabel(Text(strings.recoveryHold))
             Text(strings.recoveryHoldHelp).font(.caption).foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            HStack {
-                SwiftUI.Button(strings.recoveryRetry, action: evaluate)
-                Spacer()
-                SwiftUI.Button(strings.buttonDoHabit, action: giveUp)
-            }
         }
-        .padding(16)
-        .background(Color.orange.opacity(0.08))
+    }
+
+    /// Hides the card; the conversation stays open. A stuck conversation brings it back on the next
+    /// repeated denial, an outage on the next failed send.
+    private func dismissRecovery() {
+        hasBackendError = false
+        isRecoveryExpanded = false
+        holdProgress = 0
     }
 
     private func giveUp() {
@@ -1392,11 +1473,18 @@ struct AccountabilityChatView: View {
         evaluate()
     }
 
+    private func showRecovery(_ reason: AccountabilityRecoveryReason) {
+        recoveryReason = reason
+        isRecoveryExpanded = !reason.startsCollapsed
+        hasBackendError = true
+    }
+
     private func evaluate() {
         guard !isThinking, !didResolve, isVisible else { return }
         let requestID = UUID()
         activeRequest = requestID
         hasBackendError = false
+        isRecoveryExpanded = false
         holdProgress = 0
         approvedVerdict = nil
         isThinking = true
@@ -1415,13 +1503,12 @@ struct AccountabilityChatView: View {
                        AccountabilityLoopGuard.isStuck(buddyMessages: messages
                                                         .filter { $0.role == .buddy }
                                                         .map { $0.text }) {
-                        hasBackendError = true
+                        showRecovery(.stuck)
                     }
-                case .failure:
-                    // All transport, authentication, invalid-payload and server errors take the same
-                    // deliberate fallback. Errors and retries never invoke the postpone callback.
-                    messages.append(AccountabilityChatMessage(role: .buddy, text: strings.errorMessage))
-                    hasBackendError = true
+                case .failure(let error):
+                    // Every failure takes the same deliberate, held fallback, and errors never invoke the
+                    // postpone callback. The card says which kind of failure it was, so no chat bubble.
+                    showRecovery(AccountabilityRecoveryReason.from(error: error))
                 }
             }
         }

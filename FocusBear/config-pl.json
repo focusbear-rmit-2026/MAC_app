@@ -3536,6 +3536,13 @@
   },
   "accountabilityBuddyInfo": {
     "aiBuddyRecoveryTitle": "Chcesz przesunąć swoje nawyki?",
+    "aiBuddyAnnoyingPrompt": "Czy kumpel odpowiedzialności AI zaczyna cię irytować?",
+    "aiBuddyAnnoyingYes": "Tak",
+    "aiBuddyRecoveryClose": "Zamknij",
+    "aiBuddyOfflineTitle": "Jesteś offline",
+    "aiBuddyOfflineExplanation": "Twój kumpel potrzebuje internetu, żeby odpowiedzieć. Połącz się ponownie i wyślij wiadomość jeszcze raz albo przełóż nawyki poniżej.",
+    "aiBuddyUnavailableTitle": "Twój kumpel nie odpowiada",
+    "aiBuddyUnavailableExplanation": "Nie udało nam się połączyć z twoim kumplem odpowiedzialności. To problem po naszej stronie, nie twojej. Wyślij wiadomość ponownie za minutę albo przełóż nawyki poniżej.",
     "aiBuddyRecoveryExplanation": "Twój kumpel nie odpowiedział, więc nic jeszcze nie zostało przełożone. Spróbuj ponownie, zrób nawyk teraz albo wybierz, ile czasu potrzebujesz, i przytrzymaj przycisk, aby go przełożyć.",
     "aiBuddyRecoveryDuration": "Przełóż o",
     "aiBuddyRecoveryChooseDuration": "Wybierz, na jak długo",

@@ -326,3 +326,88 @@ final class AccountabilityPostponeRecoveryTests: XCTestCase {
     }
 
 }
+
+// MARK: - Recovery card: which situation it is explaining (report 2026-09-25_15-40-49)
+
+extension AccountabilityPostponeRecoveryTests {
+    private typealias Reason = AccountabilityRecoveryReason
+
+    func testNoConnectionReadsAsOffline() {
+        for code in [NSURLErrorNotConnectedToInternet, NSURLErrorNetworkConnectionLost, NSURLErrorCannotFindHost,
+                     NSURLErrorCannotConnectToHost, NSURLErrorDNSLookupFailed] {
+            XCTAssertEqual(Reason.from(error: NSError(domain: NSURLErrorDomain, code: code)), .offline, "\(code)")
+        }
+    }
+
+    func testAServerSideFailureReadsAsUnavailableNotOffline() {
+        // A timeout means the network worked and the server was slow: telling the user they're offline
+        // would send them to fix the wrong thing.
+        XCTAssertEqual(Reason.from(error: NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)), .unavailable)
+        XCTAssertEqual(Reason.from(error: NSError(domain: "AccountabilityBuddy", code: 500)), .unavailable)
+    }
+
+    func testOnlyAStuckConversationStartsAsTheSubtleQuestion() {
+        XCTAssertTrue(Reason.stuck.startsCollapsed)
+        XCTAssertFalse(Reason.offline.startsCollapsed)
+        XCTAssertFalse(Reason.unavailable.startsCollapsed)
+    }
+
+    func testTheDefaultDurationIsOneTheCardOffers() {
+        XCTAssertEqual(AccountabilityPostponeRecovery.defaultMinutes, 15)
+        XCTAssertTrue(AccountabilityPostponeRecovery.durations.contains(AccountabilityPostponeRecovery.defaultMinutes))
+    }
+}
+
+// MARK: - Day context sent to the buddy (report 2026-09-25_16-00-37)
+
+extension AccountabilityPostponeRecoveryTests {
+    private typealias Day = AccountabilityDayContext
+
+    private var fixedCalendar: Foundation.Calendar {
+        var calendar = Foundation.Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Australia/Melbourne")!
+        return calendar
+    }
+
+    private func at(_ hour: Int, _ minute: Int) -> Date {
+        fixedCalendar.date(from: DateComponents(year: 2026, month: 9, day: 25, hour: hour, minute: minute))!
+    }
+
+    func testRoutineCompletionIsTheShareOfHabitsDone() {
+        XCTAssertEqual(Day.routineCompletionPercent(totalHabits: 10, remainingHabits: 4), 60)
+        XCTAssertEqual(Day.routineCompletionPercent(totalHabits: 6, remainingHabits: 6), 0)
+        XCTAssertEqual(Day.routineCompletionPercent(totalHabits: 3, remainingHabits: 0), 100)
+        XCTAssertEqual(Day.routineCompletionPercent(totalHabits: 3, remainingHabits: 1), 67)
+    }
+
+    func testARoutineWithNoHabitsSendsNothingRatherThanZero() {
+        XCTAssertNil(Day.routineCompletionPercent(totalHabits: 0, remainingHabits: 0))
+    }
+
+    func testImpossibleCountsStayInRange() {
+        XCTAssertEqual(Day.routineCompletionPercent(totalHabits: 4, remainingHabits: 9), 0)
+        XCTAssertEqual(Day.routineCompletionPercent(totalHabits: 4, remainingHabits: -2), 100)
+    }
+
+    func testMinutesLeftCountDownToTheShutdownTime() {
+        // The reported case: 45 minutes before shutdown.
+        let left = Day.minutesLeftInDay(now: at(16, 15), shutOff: Time(hour: 17, minute: 0, second: 0),
+                                        isShutOffTime: false, calendar: fixedCalendar)
+        XCTAssertEqual(left, 45)
+    }
+
+    func testAShutdownAfterMidnightIsTomorrows() {
+        let left = Day.minutesLeftInDay(now: at(23, 0), shutOff: Time(hour: 1, minute: 0, second: 0),
+                                        isShutOffTime: false, calendar: fixedCalendar)
+        XCTAssertEqual(left, 120)
+    }
+
+    func testOnceShutdownHasBegunNoTimeIsLeft() {
+        XCTAssertEqual(Day.minutesLeftInDay(now: at(21, 0), shutOff: Time(hour: 17, minute: 0, second: 0),
+                                            isShutOffTime: true, calendar: fixedCalendar), 0)
+    }
+
+    func testNoShutdownTimeSendsNothing() {
+        XCTAssertNil(Day.minutesLeftInDay(now: at(12, 0), shutOff: nil, isShutOffTime: false, calendar: fixedCalendar))
+    }
+}

@@ -3536,6 +3536,13 @@
   },
   "accountabilityBuddyInfo": {
     "aiBuddyRecoveryTitle": "Besoin de repousser tes habitudes ?",
+    "aiBuddyAnnoyingPrompt": "Le buddy de responsabilisation IA devient pénible ?",
+    "aiBuddyAnnoyingYes": "Oui",
+    "aiBuddyRecoveryClose": "Fermer",
+    "aiBuddyOfflineTitle": "Tu es hors ligne",
+    "aiBuddyOfflineExplanation": "Ton buddy a besoin d'internet pour répondre. Reconnecte-toi et renvoie ton message, ou repousse tes habitudes ci-dessous.",
+    "aiBuddyUnavailableTitle": "Ton buddy ne répond pas",
+    "aiBuddyUnavailableExplanation": "Nous n'avons pas pu joindre ton buddy de responsabilisation. Le problème vient de nous, pas de toi. Renvoie ton message dans une minute, ou repousse tes habitudes ci-dessous.",
     "aiBuddyRecoveryExplanation": "Ton buddy n'a pas répondu, donc rien n'a encore été reporté. Réessaie, fais l'habitude maintenant, ou choisis combien de temps il te faut et maintiens le bouton enfoncé pour la reporter.",
     "aiBuddyRecoveryDuration": "Reporter de",
     "aiBuddyRecoveryChooseDuration": "Choisis la durée",
