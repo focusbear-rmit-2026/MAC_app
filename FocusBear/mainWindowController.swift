@@ -323,6 +323,15 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
 
     var isFullScreenVisible = false
 
+    /// The display chosen when the borderless window was last shown; the window's frame and the blank
+    /// covers both read it, so they cannot pick different displays. See `FullScreenDisplays`.
+    var fullScreenHostScreen: NSScreen?
+
+    /// The display the routine goes full screen on: the one chosen at entry, else the window's own.
+    var fullScreenDisplay: NSScreen? {
+        FullScreenDisplays.host(preferred: [fullScreenHostScreen, window?.screen], all: NSScreen.screens)
+    }
+
     /// A saved fullscreen preference alone must not cover other displays while Help or another
     /// ordinary titled window is open, or after the main window has been hidden.
     var shouldCoverSecondaryScreens: Bool {
@@ -377,6 +386,12 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     
     
     func showFullSizeWindow(){
+        // Chosen once, before anything is framed or covered. ENTERING full screen goes to the display
+        // with keyboard focus — where the user is working, e.g. the menu they just clicked Skip in — so
+        // the routine and its skip question appear there, not wherever the window was left. A
+        // re-assert of a window that is already full screen keeps its display rather than jumping.
+        let preferred = isFullScreenVisible ? [window?.screen, NSScreen.main] : [NSScreen.main, window?.screen]
+        fullScreenHostScreen = FullScreenDisplays.host(preferred: preferred, all: NSScreen.screens)
         isFullScreenVisible = true
         // However the window got back to full screen — this restore, or a route that bypasses
         // `checkIsFullScreenNeeded()` entirely such as `endFullScreenCalendarGrant()` — we no longer owe

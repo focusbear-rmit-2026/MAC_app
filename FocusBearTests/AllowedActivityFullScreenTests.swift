@@ -423,3 +423,43 @@ final class AllowedActivityFullScreenCoordinatorSequenceTests: XCTestCase {
         XCTAssertEqual(window.habitLifecycle(isAllowedActivityHabit: false), .doNothing)
     }
 }
+
+// MARK: - Which display the routine takes, and which get covered (report 2026-09-25_14-51-33)
+//
+// Skipping an allowed-app habit from the menu restored full screen on the display the window had
+// been left on, while the blank covers went on every display except the primary. With the window on
+// the secondary display, a cover landed on top of it and hid the "Why do you want to skip?" question.
+// An extension of the CI-selected class rather than its own, because CI selects classes by name.
+extension AllowedActivityFullScreenTests {
+    private static let primary = CGRect(x: 0, y: 0, width: 1600, height: 900)
+    private static let left = CGRect(x: -1024, y: 234, width: 1024, height: 666)
+
+    func testTheFocusedDisplayWinsSoTheQuestionAppearsWhereTheUserClicked() {
+        // The menu was on the primary display; the window had been left on the left one.
+        let host = FullScreenDisplays.host(preferred: [Self.primary, Self.left], all: [Self.primary, Self.left])
+        XCTAssertEqual(host, Self.primary)
+    }
+
+    func testTheRoutinesDisplayIsNeverCovered() {
+        for host in [Self.primary, Self.left] {
+            let covered = FullScreenDisplays.screensToCover(all: [Self.primary, Self.left], host: host)
+            XCTAssertFalse(covered.contains(host), "the routine's own display must stay uncovered")
+            XCTAssertEqual(covered.count, 1, "every other display is covered")
+        }
+    }
+
+    func testTheSecondaryDisplayCanHostTheRoutine() {
+        // The old rule covered every display but the primary, whichever one the window was on.
+        XCTAssertEqual(FullScreenDisplays.screensToCover(all: [Self.primary, Self.left], host: Self.left), [Self.primary])
+    }
+
+    func testADisconnectedDisplayFallsBackToThePrimary() {
+        let unplugged = CGRect(x: 1600, y: 0, width: 2560, height: 1440)
+        XCTAssertEqual(FullScreenDisplays.host(preferred: [unplugged, nil], all: [Self.primary, Self.left]), Self.primary)
+        XCTAssertEqual(FullScreenDisplays.screensToCover(all: [Self.primary, Self.left], host: unplugged), [Self.left])
+    }
+
+    func testASingleDisplayGetsNoCovers() {
+        XCTAssertEqual(FullScreenDisplays.screensToCover(all: [Self.primary], host: Self.primary), [])
+    }
+}

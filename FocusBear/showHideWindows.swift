@@ -1525,6 +1525,27 @@ func closeSplashWindow(){
 }
 
 
+/// Which display the routine's borderless full-screen window takes, and which displays get the blank
+/// covers. One rule for both, so a cover can never land on the display the routine is on.
+///
+/// They used to disagree: the covers went on every display except `NSScreen.screens[0]`, while the
+/// window sized itself to whatever display it was on. With the window on a secondary display, a cover
+/// at `.maximumWindow` level went over it — and over the "Why do you want to skip?" sheet in it — so
+/// skipping from the menu blanked the left screen and hid the question (report 2026-09-25_14-51-33).
+enum FullScreenDisplays {
+    /// The first of `preferred` that is still connected, else the primary display. Callers pass the
+    /// display to use in priority order — e.g. the one with keyboard focus, then the window's own.
+    static func host<Screen: Equatable>(preferred: [Screen?], all: [Screen]) -> Screen? {
+        preferred.compactMap { $0 }.first(where: { all.contains($0) }) ?? all.first
+    }
+
+    /// Every display except the host. A host that is no longer connected falls back to the primary.
+    static func screensToCover<Screen: Equatable>(all: [Screen], host: Screen?) -> [Screen] {
+        guard let host = host, all.contains(host) else { return Array(all.dropFirst()) }
+        return all.filter { $0 != host }
+    }
+}
+
 var arrWindows = [NSWindow]()
 func showBlankWindowInSecondaryMonitor(){
     addLog(text: "func:- showBlankWindowInSecondaryMonitor")

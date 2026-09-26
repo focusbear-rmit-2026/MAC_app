@@ -10760,21 +10760,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             return
         }
         if arrWindows.count == 0{
-            
-            for i in 0..<screenList.count {  // create the corresponding windows
-                let screen = screenList[i]
-                //                let  mainWindowControllerObj  = mainstoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("mainWindowController")) as! mainWindowController
-                if i != 0{//if screen != mainWindowControllerObj?.window?.screen{
-                    let window = NSWindow(contentRect: NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), styleMask: .borderless, backing: .buffered, defer: true, screen: screen)
-                    
-                    if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                        if state{
-                            window.sharingType = .none
-                        }
+            // Cover every display except the one the routine is on — the same choice its frame uses.
+            let host = mainWindowControllerObj?.fullScreenDisplay
+            for screen in FullScreenDisplays.screensToCover(all: screenList, host: host) {
+                let window = NSWindow(contentRect: NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), styleMask: .borderless, backing: .buffered, defer: true, screen: screen)
+                
+                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                    if state{
+                        window.sharingType = .none
                     }
-                    window.contentViewController = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("blankController")) as! blankController
-                    arrWindows.append(resetWin(window))
                 }
+                window.contentViewController = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("blankController")) as! blankController
+                arrWindows.append(resetWin(window))
             }
             
         }

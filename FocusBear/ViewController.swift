@@ -197,7 +197,7 @@ class ViewController: NSViewController {
     /// that is the primary display, not the one the window is on, so a second display of a different
     /// height got the wrong frame (see `screenChanged()` and report 2026-06-25_17-24-22).
     @objc func setframe() {
-        guard let screen = view.window?.screen ?? NSScreen.main ?? NSScreen.screens.first else { return }
+        guard let screen = mainWindowControllerObj?.fullScreenDisplay ?? view.window?.screen ?? NSScreen.screens.first else { return }
         setMainWindowFrame(screen.frame)
     }//
     
