@@ -2845,7 +2845,7 @@ class habitsVc: NSViewController {
                                 pomodoroVcObj?.showPostponeTitle()
                             }
                         },
-                        onCancel: { })   // gave up — habit not postponed, routine continues
+                        onCancel: { [weak self] in self?.showCloseButtons() })   // gave up — habit not postponed, routine continues; restore the exit/close button abortCurrentState() hid
                 }else{
                     addLog(text: "postponeMorningHabitFor:- askPostponeIntention")// added in 2.28.444
                     presenter.presentAsSheet(getAskPostponeIntentionVcObject())
@@ -3071,7 +3071,7 @@ class habitsVc: NSViewController {
                                 pomodoroVcObj?.showPostponeTitle()
                             }
                         },
-                        onCancel: { })
+                        onCancel: { [weak self] in self?.showCloseButtons() })   // gave up — restore the exit/close button abortCurrentState() hid
                 }else{
                     addLog(text: "postponeEveningHabitFor:- askPostponeIntention")// added in 2.28.444
                     presenter.presentAsSheet(getAskPostponeIntentionVcObject())
@@ -3239,7 +3239,7 @@ class habitsVc: NSViewController {
                         onApproved: { [weak self] _, duration in
                             self?.postponeFocusSummaryFor(minutes: duration, showAskIntention: false)
                         },
-                        onCancel: { })
+                        onCancel: { [weak self] in self?.showCloseButtons() })   // gave up — restore the exit/close button abortCurrentState() hid
                 }else{
                     addLog(text: "postponeFocusSummaryFor:- askPostponeIntention")// added in 2.28.444
                     presenter.presentAsSheet(getAskPostponeIntentionVcObject())
