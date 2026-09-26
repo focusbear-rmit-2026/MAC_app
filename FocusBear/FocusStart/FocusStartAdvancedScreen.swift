@@ -676,8 +676,12 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
             }
             .frame(width: scale.pt(48), height: scale.pt(48))
             .opacity(isSelected ? 1 : 0)
-            iconButton("pencil", label: state.strings.editBlockListsButton + ": " + item.name, scale: scale) {
-                state.onEditBlockList(item.id)
+            // "Locked Focus" has no editable block-list config and is hidden from the Block Lists editor,
+            // so showing a pencil that opens an editor without it is misleading — omit it. (#2644)
+            if !item.isLockedFocus {
+                iconButton("pencil", label: state.strings.editBlockListsButton + ": " + item.name, scale: scale) {
+                    state.onEditBlockList(item.id)
+                }
             }
         }
         .font(scale.font(FocusStartLayout.summaryFont))

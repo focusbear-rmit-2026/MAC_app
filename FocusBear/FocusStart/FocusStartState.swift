@@ -27,6 +27,9 @@ struct FocusStartBlockList: Identifiable, Equatable {
     let isDefault: Bool
     let isRelaxFocus: Bool
     var isAIEnabled: Bool = true
+    /// The "Locked Focus" pseudo-mode has no editable block-list configuration and is hidden from the
+    /// Block Lists editor (BlockListStore.visibleFocusModeIndices), so its row shows no edit pencil. (#2644)
+    var isLockedFocus: Bool = false
 }
 
 /// Observable state shared by the simple and advanced start screens and their hosting controllers.
@@ -388,7 +391,8 @@ final class FocusStartState: ObservableObject {
                 lastDurationUsedMinutes: focusMode["lastDurationUsed"] as? Int,
                 isDefault: focusMode["isDefault"] as? Bool ?? false,
                 isRelaxFocus: focusMode["isRelaxFocus"] as? Bool ?? false,
-                isAIEnabled: focusMode["is_ai_enabled"] as? Bool ?? true
+                isAIEnabled: focusMode["is_ai_enabled"] as? Bool ?? true,
+                isLockedFocus: focusMode["isLockedFocus"] as? Bool ?? false
             )
         }
         if let selectedId = selectedId,
