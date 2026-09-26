@@ -2825,7 +2825,11 @@ class habitsVc: NSViewController {
     func postponeMorningHabitFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool, showAskIntention:Bool, isExtendingPostponeFromAppStart:Bool = false){
         var showAskIntention = showAskIntention
         
-        if SettingsManagerObject.isStrictnessLevelSuperGentle(){
+        // Super-gentle drops the postpone-intention prompt — but NOT when the AI accountability buddy is
+        // on. That setting is an explicit "gate my postpones through the buddy", so it must always show the
+        // chat, even if the aggregate strictness vote lands on super-gentle (e.g. full-screen off tips the
+        // tie-break there). Without the buddy setting, behaviour is unchanged. (#2636)
+        if SettingsManagerObject.isStrictnessLevelSuperGentle() && !SettingsManagerObject.isAccountabilityBuddyActive{
             addLog(text: "postponeMorningHabitFor:- strictness level is super gentle so don't show postpone Intention view")
             showAskIntention = false
         }
@@ -3052,7 +3056,9 @@ class habitsVc: NSViewController {
     func postponeEveningHabitFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool, showAskIntention:Bool, isExtendingPostponeFromAppStart:Bool = false){
         var showAskIntention = showAskIntention
         
-        if SettingsManagerObject.isStrictnessLevelSuperGentle(){
+        // Super-gentle drops the intention prompt — but not when the AI accountability buddy is on, which
+        // must always gate the postpone through its chat regardless of the strictness vote. (#2636)
+        if SettingsManagerObject.isStrictnessLevelSuperGentle() && !SettingsManagerObject.isAccountabilityBuddyActive{
             addLog(text: "postponeEveningHabitFor:- strictness level is super gentle so don't show postpone Intention view")// log was postponeMorningHabitFor before 2.27.428
             showAskIntention = false
         }
@@ -3227,7 +3233,9 @@ class habitsVc: NSViewController {
 
         var showAskIntention = showAskIntention
         
-        if SettingsManagerObject.isStrictnessLevelSuperGentle(){
+        // Super-gentle drops the intention prompt — but not when the AI accountability buddy is on, which
+        // must always gate the postpone through its chat regardless of the strictness vote. (#2636)
+        if SettingsManagerObject.isStrictnessLevelSuperGentle() && !SettingsManagerObject.isAccountabilityBuddyActive{
             addLog(text: "postponeFocusSummaryFor:- strictness level is super gentle so don't show postpone Intention view")
             showAskIntention = false
         }
