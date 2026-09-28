@@ -805,3 +805,21 @@ Behind-the-scenes:
 Rendering a developer mockup no longer repoints the installed app's background helper at the dev build. (#2631)
 The CI test host no longer reads the login keychain, so automated runs stop triggering repeated keychain/certificate prompts. (#2641)
 The reschedule tests no longer read or write the developer's real preferences and Day Plan, fixing spurious failures on shared machines. (#2633)
+
+
+# v3.36.549
+
+Full screen:
+On a multi-monitor setup, the dimming cover no longer lands on top of the routine's own display, so a skip/postpone dialog is no longer blacked out — the covers go on the other screens, and full screen follows the display you're actually on. (#2647)
+The "Exit full screen" button now comes back after you cancel the AI accountability buddy chat, instead of staying hidden with no way to leave full screen. (#2666)
+
+AI accountability buddy:
+When postponing a habit, the buddy chat now always appears if you've enabled it — previously it could be silently skipped (a one-click postpone) when full-screen mode was off. (#2668)
+The recovery card is quieter and clearer: a subtle "Is the buddy getting annoying?" prompt when it's going in circles, distinct messages for being offline vs. the server being down, an X to close it, and the buddy now gets day context (how much of your routine is done, minutes left in the day). (#2649)
+
+Start a focus session:
+Starting a focus session from the menu overlay now uses the block list you selected in the dropdown, instead of always using "Block super distracting sites". (#2667)
+"Locked Focus" no longer shows an edit pencil in the block-list picker — it has no separately editable block list (its blocking follows your session's goal and tasks). (#2669)
+
+Tools:
+The hidden "Notes" tool now shows as "Notes" in the restore-hidden list, instead of the outdated name "Brain Dump". (#2670)
