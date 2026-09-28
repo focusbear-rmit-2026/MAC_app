@@ -2691,6 +2691,7 @@
     "titleEveningRoutinePostponed": "Wieczorna rutyna odłożona. Rozpocznij nawyk, aby wznowić wieczorną rutynę."
   },
   "localReportStatus": {
+    "showAllReports": "Pokaż wszystkie (<COUNT>)",
     "title": "Twoje lokalne raporty",
     "explanation": "Postęp raportów zapisanych na tym Macu.",
     "refresh": "Odśwież",

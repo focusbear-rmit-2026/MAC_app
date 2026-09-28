@@ -2691,6 +2691,7 @@
     "titleEveningRoutinePostponed": "Abendroutine verschoben. Starte eine Gewohnheit, um die Abendroutine fortzusetzen."
   },
   "localReportStatus": {
+    "showAllReports": "Alle <COUNT> anzeigen",
     "title": "Deine lokalen Berichte",
     "explanation": "Fortschritt der auf diesem Mac gespeicherten Berichte.",
     "refresh": "Aktualisieren",

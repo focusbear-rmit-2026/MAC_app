@@ -1,5 +1,6 @@
 {
   "localReportStatus": {
+    "showAllReports": "Mostrar todos (<COUNT>)",
     "title": "Tus informes locales",
     "explanation": "El progreso de los informes guardados en este Mac.",
     "refresh": "Actualizar",

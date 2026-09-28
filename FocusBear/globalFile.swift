@@ -1177,8 +1177,13 @@ let daysFreeTrial  = 31
 
 
 
-var focusDefaultAllowApps = ["finder", "universalaccessauthwarn", "system preferences", "loginwindow", "screensaverengine", "osascript", "late no more", "focus bear time tracker"]
-var arrExcludeAppsInBreaksBrainDumpLastActivateApp = ["finder", "universalaccessauthwarn", "system preferences", "loginwindow", "screensaverengine", "osascript", "late no more", "focus bear time tracker"]
+// "securityagent" draws macOS's own password and keychain prompts. Blocking it put the AI check-in
+// over a keychain prompt mid-session (2026-09-25 10:29, Sentry FOCUS-BEAR-MACOS-1K8): the prompt is
+// the system asking the user something, never a distraction. "system settings" is System
+// Preferences' name since macOS 13 — without it the screen where Focus Bear's own permissions are
+// granted could be blocked.
+var focusDefaultAllowApps = ["finder", "universalaccessauthwarn", "system preferences", "system settings", "securityagent", "loginwindow", "screensaverengine", "osascript", "late no more", "focus bear time tracker"]
+var arrExcludeAppsInBreaksBrainDumpLastActivateApp = ["finder", "universalaccessauthwarn", "system preferences", "system settings", "securityagent", "loginwindow", "screensaverengine", "osascript", "late no more", "focus bear time tracker"]
 
 let focusBearTimeTrackerAppName = "focus bear time tracker"
 

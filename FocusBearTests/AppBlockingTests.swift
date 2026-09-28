@@ -9,6 +9,15 @@
 import XCTest
 
 class AppBlockingTests: XCTestCase {
+
+    /// macOS's own prompts are the system asking the user something, never a distraction. The AI
+    /// check-in was put over a keychain prompt mid-session (Sentry FOCUS-BEAR-MACOS-1K8, 2026-09-25).
+    func testSystemPromptsAndSettingsAreNeverBlocked() {
+        for app in ["securityagent", "system settings", "system preferences", "loginwindow", "universalaccessauthwarn"] {
+            XCTAssertTrue(focusDefaultAllowApps.contains(app), app)
+        }
+    }
+
     
     override func setUp() {
         super.setUp()

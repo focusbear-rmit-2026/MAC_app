@@ -162,7 +162,14 @@ detail in `README.md` and `docs/local-development-setup-v2.md`. Build fixes live
 ## Debug-report workflow (~/FocusBear-Claude-Tasks)
 
 The in-app "report problem" feature (`helpVc.swift` / `AppDelegate.swift`) writes a folder with
-`TASK.md`, `logs/`, `screenshots/` to `~/FocusBear-Claude-Tasks/`. A `/loop` watches for new folders
+`TASK.md`, `logs/`, `screenshots/` to `~/FocusBear-Claude-Tasks/`.
+
+**`logs/` is an extract, not a copy.** It holds `recent.log` — the 5 minutes of app log before the
+report, oldest first — and `SOURCES.md`, which names each real log file it came from, its size at the
+time, and the byte offset where the extract begins. For anything older, read the real Logs folder
+(`~/Library/Application Support/<bundle id>/Logs/`: `Debug_Logs.txt` plus rotated
+`Debug_Logs - <date>.txt`) from that offset backwards. Reports used to copy every log (~230 MB each,
+57 GB in total). A report's `logs/` is deleted when it is confirmed fixed; screenshots and notes stay. A `/loop` watches for new folders
 and works them. Workflow rules (also in agent memory): after 8pm don't ask the user questions — act
 at ≥90% confidence else move the folder to `Needs Clarification/` with a `CLAUDE-NOTES.md`; finished
 reports go to `Ready for Human QA/` renamed `descriptive-hyphenated-<timestamp>` with notes. Don't

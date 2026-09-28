@@ -1111,6 +1111,253 @@ final class LocalReportStatusTests: XCTestCase {
         XCTAssertEqual(store.reports.count, snapshot.reports.count)
     }
 
+    // MARK: The parsed folders persist across launches (SQLite index)
+
+    private var indexURL: URL { root.appendingPathComponent("index/LocalReportIndex.sqlite") }
+
+    /// A cache as a fresh launch has it: empty memory, the index on disk.
+    private func launchedCache() -> LocalReportFolderCache {
+        let url = indexURL
+        return LocalReportFolderCache(openIndex: { LocalReportIndex(url: url) })
+    }
+
+    func testARelaunchReadsNoFolderThatHasNotChanged() throws {
+        try folder("2026-09-10_17-51-34", notes: "## Update\nFirst diagnosis.")
+        var opened: [String] = []
+        let reader = countingReader { opened.append($0) }
+        let first = try LocalReportStatusReader.scan(root: root, accountID: account, cache: launchedCache(), files: reader)
+        XCTAssertEqual(opened.sorted(), ["CLAUDE-NOTES.md", "TASK.md"])
+        opened.removeAll()
+        let afterRelaunch = try LocalReportStatusReader.scan(root: root, accountID: account, cache: launchedCache(), files: reader)
+        XCTAssertEqual(opened, [], "parsed once, remembered across the relaunch")
+        XCTAssertEqual(afterRelaunch.reports.map(\.title), first.reports.map(\.title))
+        XCTAssertEqual(afterRelaunch.reports.first?.latestUpdate?.lead, first.reports.first?.latestUpdate?.lead)
+    }
+
+    func testAFolderEditedWhileTheAppWasClosedIsReadAgain() throws {
+        let url = try folder("2026-09-10_17-51-34", notes: "## Update\nFirst diagnosis.")
+        _ = try LocalReportStatusReader.scan(root: root, accountID: account, cache: launchedCache())
+        try "## Update\nFirst diagnosis.\n\n## Update — 2026-09-25 10:00 — second\nFixed it.".write(
+            to: url.appendingPathComponent("CLAUDE-NOTES.md"), atomically: true, encoding: .utf8)
+        try touch(url.appendingPathComponent("CLAUDE-NOTES.md"), Date().addingTimeInterval(60))
+        var opened: [String] = []
+        let snapshot = try LocalReportStatusReader.scan(root: root, accountID: account, cache: launchedCache(),
+                                                        files: countingReader { opened.append($0) })
+        XCTAssertTrue(opened.contains("CLAUDE-NOTES.md"))
+        XCTAssertEqual(snapshot.reports.first?.latestUpdate?.lead, "Fixed it.")
+    }
+
+    func testAMovedFolderIsReadAtItsNewPlaceAndItsOldRowIsDropped() throws {
+        let url = try folder("2026-09-10_17-51-34")
+        _ = try LocalReportStatusReader.scan(root: root, accountID: account, cache: launchedCache())
+        XCTAssertEqual(LocalReportIndex(url: indexURL)?.count, 1)
+        let ready = root.appendingPathComponent(LocalReportFolders.readyForQA, isDirectory: true)
+        try FileManager.default.createDirectory(at: ready, withIntermediateDirectories: true)
+        try FileManager.default.moveItem(at: url, to: ready.appendingPathComponent(url.lastPathComponent))
+        let snapshot = try LocalReportStatusReader.scan(root: root, accountID: account, cache: launchedCache())
+        XCTAssertEqual(snapshot.reports.first?.state, .readyForQA, "the state of where it now lives")
+        XCTAssertEqual(LocalReportIndex(url: indexURL)?.count, 1, "the old path's row is gone")
+    }
+
+    func testAnUnreadableIndexLeavesTheListWorking() throws {
+        try folder("2026-09-10_17-51-34")
+        try FileManager.default.createDirectory(at: indexURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "this is not a database file, only some text".write(to: indexURL, atomically: true, encoding: .utf8)
+        XCTAssertNil(LocalReportIndex(url: indexURL))
+        XCTAssertEqual(try LocalReportStatusReader.scan(root: root, accountID: account, cache: launchedCache()).reports.count, 1)
+    }
+
+    // MARK: Logs leave a report once it is confirmed fixed
+
+    private func reportWithLogs(_ created: String, in location: String? = nil) throws -> (LocalReportStatus, URL) {
+        let owner = LocalReportCapability.accountID
+        let root = try XCTUnwrap(self.root)
+        let parent = location.map { root.appendingPathComponent($0, isDirectory: true) } ?? root
+        try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+        let url = parent.appendingPathComponent(created, isDirectory: true)
+        try FileManager.default.createDirectory(at: url.appendingPathComponent("logs"), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: url.appendingPathComponent("screenshots"), withIntermediateDirectories: true)
+        try "log".write(to: url.appendingPathComponent("logs/Debug_Logs.txt"), atomically: true, encoding: .utf8)
+        try "png".write(to: url.appendingPathComponent("screenshots/shot.png"), atomically: true, encoding: .utf8)
+        try task(owner: owner, created: created).write(to: url.appendingPathComponent("TASK.md"), atomically: true, encoding: .utf8)
+        let report = try XCTUnwrap(try LocalReportStatusReader.scan(root: root, accountID: owner).reports.first { $0.reportCreated == created })
+        return (report, url)
+    }
+
+    func testConfirmingAReportFixedRemovesItsLogsButKeepsItsRecord() throws {
+        let (report, url) = try reportWithLogs("2026-09-20_09-00-00", in: LocalReportFolders.readyForQA)
+        try LocalReportConfirmationWriter.setConfirmedFixed(true, for: report, root: root,
+                                                            accountID: { LocalReportCapability.accountID })
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.appendingPathComponent("logs").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.appendingPathComponent("screenshots/shot.png").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.appendingPathComponent("TASK.md").path))
+    }
+
+    func testRefreshPrunesOnlyReportsStillConfirmedFixed() throws {
+        let owner = LocalReportCapability.accountID
+        let (fixed, fixedURL) = try reportWithLogs("2026-09-20_09-00-00")
+        try LocalReportConfirmationWriter.setConfirmedFixed(true, for: fixed, root: root, accountID: { owner })
+        try FileManager.default.createDirectory(at: fixedURL.appendingPathComponent("logs"), withIntermediateDirectories: true)
+        let (_, openURL) = try reportWithLogs("2026-09-21_09-00-00")
+        let reports = try LocalReportStatusReader.scan(root: root, accountID: owner).reports
+        XCTAssertEqual(LocalReportLogPruner.prune(reports, root: root), 1)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixedURL.appendingPathComponent("logs").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: openURL.appendingPathComponent("logs").path),
+                      "an unconfirmed report keeps its logs")
+    }
+
+    func testFeedbackAfterConfirmingKeepsTheLogs() throws {
+        let owner = LocalReportCapability.accountID, created = "2026-09-20_09-00-00"
+        let (report, url) = try reportWithLogs(created)
+        try LocalReportConfirmationWriter.setConfirmedFixed(true, for: report, root: root, accountID: { owner },
+                                                            now: Date(timeIntervalSince1970: 1_790_000_000))
+        try FileManager.default.createDirectory(at: url.appendingPathComponent("logs"), withIntermediateDirectories: true)
+        let reopened = task(owner: owner, created: created) + "\n## Additional instructions\n\n- Added: 2099-01-01T00:00:00Z\n\nstill broken\n"
+        try reopened.write(to: url.appendingPathComponent("TASK.md"), atomically: true, encoding: .utf8)
+        let reports = try LocalReportStatusReader.scan(root: root, accountID: owner).reports
+        XCTAssertEqual(reports.first?.state, .reworkNeeded)
+        XCTAssertEqual(LocalReportLogPruner.prune(reports, root: root), 0)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.appendingPathComponent("logs").path))
+    }
+
+    func testALinkedLogsFolderIsNeverFollowedOrDeleted() throws {
+        let owner = LocalReportCapability.accountID
+        let (report, url) = try reportWithLogs("2026-09-20_09-00-00")
+        let elsewhere = root.appendingPathComponent("elsewhere", isDirectory: true)
+        try FileManager.default.createDirectory(at: elsewhere, withIntermediateDirectories: true)
+        try FileManager.default.removeItem(at: url.appendingPathComponent("logs"))
+        try FileManager.default.createSymbolicLink(at: url.appendingPathComponent("logs"), withDestinationURL: elsewhere)
+        try LocalReportConfirmationWriter.setConfirmedFixed(true, for: report, root: root, accountID: { owner })
+        XCTAssertTrue(FileManager.default.fileExists(atPath: elsewhere.path))
+    }
+
+    // MARK: A report carries the last minutes of log, not the log files
+
+    private static let logStampFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = ReportLogExtract.timestampFormat
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter
+    }()
+    private let reportTime = LocalReportStatusTests.logStampFormatter.date(from: "2026-09-25 10:30:00")!
+
+    private func logLine(minutesBefore minutes: Double, _ text: String) -> String {
+        "\(Self.logStampFormatter.string(from: reportTime.addingTimeInterval(-minutes * 60))) - \(text)\n"
+    }
+
+    private func logsFolder(current: String, rotated: String? = nil) throws -> URL {
+        let folder = root.appendingPathComponent("Logs", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try current.write(to: folder.appendingPathComponent(ReportLogExtract.currentLogName), atomically: true, encoding: .utf8)
+        if let rotated = rotated {
+            try rotated.write(to: folder.appendingPathComponent(ReportLogExtract.rotatedLogPrefix + "2026-09-25.txt"),
+                              atomically: true, encoding: .utf8)
+        }
+        return folder
+    }
+
+    private func extractedText(_ folder: URL) -> String {
+        ReportLogExtract.extract(sources: ReportLogExtract.sources(in: folder), reportTime: reportTime).map(\.text).joined()
+    }
+
+    func testTheExtractStartsExactlyAtTheWindow() throws {
+        let folder = try logsFolder(current: logLine(minutesBefore: 6, "too old") + logLine(minutesBefore: 5, "edge")
+                                    + logLine(minutesBefore: 1, "recent"))
+        XCTAssertEqual(extractedText(folder), logLine(minutesBefore: 5, "edge") + logLine(minutesBefore: 1, "recent"),
+                       "exactly five minutes back is inside; anything older is not")
+    }
+
+    func testAnOldEntrysContinuationLinesStayOutWithIt() throws {
+        let folder = try logsFolder(current: logLine(minutesBefore: 9, "old") + "  old continuation\n"
+                                    + logLine(minutesBefore: 2, "new") + "  new continuation\n")
+        XCTAssertEqual(extractedText(folder), logLine(minutesBefore: 2, "new") + "  new continuation\n")
+    }
+
+    func testTheExtractCrossesIntoTheRotatedLogWhenTheWindowStartsThere() throws {
+        let rotated = logLine(minutesBefore: 8, "before window") + logLine(minutesBefore: 4, "rotated in window")
+            + "  continues across the rotation\n"
+        let folder = try logsFolder(current: logLine(minutesBefore: 3, "current"), rotated: rotated)
+        let portions = ReportLogExtract.extract(sources: ReportLogExtract.sources(in: folder), reportTime: reportTime)
+        XCTAssertEqual(portions.map { $0.source.lastPathComponent },
+                       [ReportLogExtract.rotatedLogPrefix + "2026-09-25.txt", ReportLogExtract.currentLogName],
+                       "oldest first")
+        XCTAssertEqual(portions.map(\.text).joined(),
+                       logLine(minutesBefore: 4, "rotated in window") + "  continues across the rotation\n"
+                       + logLine(minutesBefore: 3, "current"))
+        XCTAssertEqual(portions[0].startOffset, UInt64(logLine(minutesBefore: 8, "before window").utf8.count),
+                       "SOURCES.md can send an agent back to exactly this byte")
+    }
+
+    func testTheRotatedLogIsNotReadWhenTheCurrentOneCoversTheWindow() throws {
+        let folder = try logsFolder(current: logLine(minutesBefore: 20, "old") + logLine(minutesBefore: 1, "new"),
+                                    rotated: logLine(minutesBefore: 2, "should not appear"))
+        XCTAssertEqual(extractedText(folder), logLine(minutesBefore: 1, "new"))
+    }
+
+    func testOnlyTheTailOfALongLogIsRead() throws {
+        var text = ""
+        for index in 0..<20_000 { text += logLine(minutesBefore: 120 - Double(index) * 0.006, "entry \(index) with some padding") }
+        let folder = try logsFolder(current: text)
+        let log = folder.appendingPathComponent(ReportLogExtract.currentLogName)
+        var bytesRead = 0
+        var reader = ReportLogExtract.Reader.live
+        let read = reader.read
+        reader.read = { url, offset, length in
+            let data = read(url, offset, length)
+            bytesRead += data?.count ?? 0
+            return data
+        }
+        let result = try XCTUnwrap(ReportLogExtract.tail(of: log, since: reportTime.addingTimeInterval(-ReportLogExtract.window), reader: reader))
+        XCTAssertFalse(result.wholeFileInWindow)
+        XCTAssertLessThan(bytesRead, text.utf8.count / 5, "reads backwards from the end and stops at the window")
+    }
+
+    func testEmptyAndMissingLogsExtractNothing() throws {
+        let folder = try logsFolder(current: "")
+        XCTAssertEqual(extractedText(folder), "")
+        XCTAssertNil(ReportLogExtract.tail(of: root.appendingPathComponent("missing.txt"), since: reportTime, reader: .live))
+    }
+
+    func testAReportWritesTheExtractAndItsSourcesInsteadOfCopyingLogs() throws {
+        let logs = try logsFolder(current: logLine(minutesBefore: 30, "old") + logLine(minutesBefore: 1, "recent"),
+                                  rotated: logLine(minutesBefore: 900, "yesterday"))
+        let reports = root.appendingPathComponent("reports", isDirectory: true)
+        let folder = try XCTUnwrap(writeFocusBearClaudeTask(note: "It froze", screenshots: [], root: reports,
+                                                            logsFolder: logs, now: reportTime,
+                                                            accountID: { LocalReportCapability.accountID }))
+        let written = try FileManager.default.contentsOfDirectory(atPath: folder.appendingPathComponent("logs").path).sorted()
+        XCTAssertEqual(written, [ReportLogExtract.extractFileName, ReportLogExtract.sourcesFileName].sorted(),
+                       "no log file is copied")
+        let extract = try String(contentsOf: folder.appendingPathComponent("logs/\(ReportLogExtract.extractFileName)"))
+        XCTAssertEqual(extract, logLine(minutesBefore: 1, "recent"))
+        let sources = try String(contentsOf: folder.appendingPathComponent("logs/\(ReportLogExtract.sourcesFileName)"))
+        XCTAssertTrue(sources.contains(logs.path), "points back to the real Logs folder")
+        let task = try String(contentsOf: folder.appendingPathComponent("TASK.md"))
+        XCTAssertTrue(task.contains("logs/\(ReportLogExtract.extractFileName)"))
+        XCTAssertTrue(task.contains("logs/\(ReportLogExtract.sourcesFileName)"))
+    }
+
+    // MARK: How many rows an open group draws (Sentry FOCUS-BEAR-MACOS-1K7)
+
+    func testAnOpenGroupDrawsOnlyTheFirstRowsUntilAskedForAll() {
+        let rows = Array(1...57)
+        let capped = LocalReportGrouping.visible(rows, showingAll: false, limit: 20)
+        XCTAssertEqual(capped.rows, Array(1...20), "newest first, exactly the limit")
+        XCTAssertEqual(capped.hiddenCount, 37)
+        let all = LocalReportGrouping.visible(rows, showingAll: true, limit: 20)
+        XCTAssertEqual(all.rows.count, 57)
+        XCTAssertEqual(all.hiddenCount, 0)
+    }
+
+    func testAGroupAtOrUnderTheLimitOffersNothingMore() {
+        XCTAssertEqual(LocalReportGrouping.visible(Array(1...20), showingAll: false, limit: 20).hiddenCount, 0)
+        XCTAssertEqual(LocalReportGrouping.visible([Int](), showingAll: false, limit: 20).rows, [])
+    }
+
+    func testTheShowAllLinkHasWordsAndACount() {
+        XCTAssertTrue(LocalReportStatusStrings()["showAllReports"].contains("<COUNT>"))
+    }
+
     // MARK: Re-reading only the folders that changed
 
     /// A `LocalReportFileReader` that records the name of every file whose text a scan actually reads.

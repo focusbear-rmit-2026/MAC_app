@@ -399,11 +399,176 @@ enum ReportProblemSubmission {
     }
 }
 
-/// Bundle the current logs + this feedback (+ screenshots) into ~/FocusBear-Claude-Tasks/<timestamp>/
-/// with a TASK.md, ready to hand to Claude. Returns the folder.
+/// The part of the app's log a report carries: the last `window` before the report, extracted from
+/// the log files rather than copying them.
+///
+/// Reports used to copy every log file in the Logs folder — about 230 MB each, 57 GB across the local
+/// reports by 2026-09-25 — although an investigation starts from the minutes before the report and
+/// goes back to the real Logs folder for anything older. `SOURCES.md` says exactly where to go.
+enum ReportLogExtract {
+    /// How far back from the report the extract reaches.
+    static let window: TimeInterval = 5 * 60
+    /// How much of a file one backwards read takes. Only the tail of a file is ever read.
+    static let chunkSize = 64 * 1024
+    static let currentLogName = "Debug_Logs.txt"
+    /// Rotated files are `Debug_Logs - <date>.txt` beside the current one (`checkLogFileRotation`).
+    static let rotatedLogPrefix = "Debug_Logs - "
+    static let logExtension = "txt"
+    static let extractFileName = "recent.log"
+    static let sourcesFileName = "SOURCES.md"
+    /// `addLog` writes `yyyy-MM-dd HH:mm:ss - <text>`; a line without that prefix continues the entry above.
+    static let timestampFormat = "yyyy-MM-dd HH:mm:ss"
+    static let timestampSeparator = " - "
+    private static let newline = UInt8(ascii: "\n")
+
+    /// File access, injectable so a test can count the bytes an extraction reads.
+    struct Reader {
+        var size: (URL) -> UInt64?
+        var read: (URL, _ offset: UInt64, _ length: Int) -> Data?
+
+        static let live = Reader(
+            size: { url in
+                ((try? FileManager.default.attributesOfItem(atPath: url.path))?[.size] as? NSNumber)?.uint64Value
+            },
+            read: { url, offset, length in
+                guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
+                defer { try? handle.close() }
+                guard (try? handle.seek(toOffset: offset)) != nil else { return nil }
+                return try? handle.read(upToCount: length)
+            })
+    }
+
+    /// What one log file contributed: where the extract starts in it, so an agent can read further back.
+    struct Portion: Equatable {
+        let source: URL
+        let sourceSize: UInt64
+        /// Byte offset of the first extracted line; 0 means the whole file is inside the window.
+        let startOffset: UInt64
+        let firstTimestamp: String?
+        let text: String
+    }
+
+    private static let formatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = timestampFormat
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter
+    }()
+
+    /// The timestamp a log line starts with, or nil for a continuation line.
+    static func timestamp(of line: String) -> (text: String, date: Date)? {
+        let length = timestampFormat.count
+        guard line.count >= length + timestampSeparator.count else { return nil }
+        let prefix = String(line.prefix(length))
+        guard line.dropFirst(length).hasPrefix(timestampSeparator), let date = formatter.date(from: prefix) else { return nil }
+        return (prefix, date)
+    }
+
+    /// The log files to read, newest first: the current log, then rotated ones by modification date.
+    static func sources(in folder: URL) -> [URL] {
+        let files = FileManager.default
+        let current = folder.appendingPathComponent(currentLogName)
+        let rotated = ((try? files.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.contentModificationDateKey])) ?? [])
+            .filter { $0.lastPathComponent.hasPrefix(rotatedLogPrefix) && $0.pathExtension == logExtension }
+            .sorted { modified($0) > modified($1) }
+        return (files.fileExists(atPath: current.path) ? [current] : []) + rotated
+    }
+
+    private static func modified(_ url: URL) -> Date {
+        (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+    }
+
+    /// The entries logged in `[reportTime - window, ∞)`, oldest source first. Moves on to the next
+    /// (older) file only while the current one is entirely inside the window.
+    static func extract(sources: [URL], reportTime: Date, reader: Reader = .live) -> [Portion] {
+        let cutoff = reportTime.addingTimeInterval(-window)
+        var portions: [Portion] = []
+        for source in sources {
+            guard let result = tail(of: source, since: cutoff, reader: reader) else { continue }
+            if let portion = result.portion { portions.append(portion) }
+            if !result.wholeFileInWindow { break }
+        }
+        return portions.reversed()
+    }
+
+    /// Reads `url` backwards from its end until it meets an entry older than `cutoff`, then returns the
+    /// entries after that point. Continuation lines travel with the entry above them, so an old entry's
+    /// continuation is never mistaken for a new one.
+    static func tail(of url: URL, since cutoff: Date, reader: Reader) -> (portion: Portion?, wholeFileInWindow: Bool)? {
+        guard let size = reader.size(url) else { return nil }
+        guard size > 0 else { return (nil, true) }
+        var position = size
+        // The start of the line that began before the chunk just read: it is only complete once the
+        // chunk before it has been read too.
+        var partial = Data()
+        var earliestKept: UInt64?          // start of the earliest timestamped line inside the window
+        var foundOlder = false
+
+        /// Judges one complete line. Returns false once an entry older than the window is met.
+        func judge(_ bytes: Data, startingAt offset: UInt64) -> Bool {
+            guard let stamp = timestamp(of: String(decoding: bytes, as: UTF8.self)) else { return true }
+            if stamp.date < cutoff { foundOlder = true; return false }
+            earliestKept = offset
+            return true
+        }
+
+        scanning: while position > 0 {
+            let length = Int(min(UInt64(chunkSize), position))
+            let chunkStart = position - UInt64(length)
+            guard let chunk = reader.read(url, chunkStart, length) else { return nil }
+            let buffer = [UInt8](chunk) + [UInt8](partial)
+            position = chunkStart
+            // Every newline closes the line before the next one; walk them from the end.
+            var lineEnd = buffer.count
+            var index = buffer.count - 1
+            while index >= 0 {
+                if buffer[index] == newline {
+                    if index + 1 < lineEnd,
+                       !judge(Data(buffer[(index + 1)..<lineEnd]), startingAt: chunkStart + UInt64(index + 1)) {
+                        break scanning
+                    }
+                    lineEnd = index
+                }
+                index -= 1
+            }
+            partial = Data(buffer[0..<lineEnd])
+            // The file's own first line has no newline before it.
+            if position == 0, !partial.isEmpty, !judge(partial, startingAt: 0) { break scanning }
+        }
+        // Reaching the start with nothing older means the whole file is inside the window, leading
+        // continuation lines included (they continue an entry at the end of the previous file).
+        let start: UInt64? = foundOlder ? earliestKept : 0
+        guard let from = start, from < size, let data = reader.read(url, from, Int(size - from)), !data.isEmpty else {
+            return (nil, !foundOlder)
+        }
+        let text = String(decoding: data, as: UTF8.self)
+        let first = text.split(separator: "\n", maxSplits: 1).first.flatMap { timestamp(of: String($0))?.text }
+        return (Portion(source: url, sourceSize: size, startOffset: from, firstTimestamp: first, text: text), !foundOlder)
+    }
+
+    /// `SOURCES.md`: where each part of `recent.log` came from, and where the rest of the log lives.
+    static func sourcesDescription(_ portions: [Portion], logsFolder: URL, reportTime: Date) -> String {
+        let minutes = Int(window / 60)
+        var lines = ["# Log sources", "",
+                     "`\(extractFileName)` holds the \(minutes) minutes of app log before this report (\(formatter.string(from: reportTime))), oldest first.",
+                     "Anything older is still in the real Logs folder: `\(logsFolder.path)`", ""]
+        if portions.isEmpty { lines.append("_No log lines fell inside the window._") }
+        for portion in portions {
+            let begins = portion.startOffset == 0 ? "the start of the file" : "byte \(portion.startOffset)"
+            lines.append("- `\(portion.source.path)` — \(portion.sourceSize) bytes at extraction; extract starts at \(begins)"
+                         + (portion.firstTimestamp.map { " (\($0))" } ?? ""))
+        }
+        return lines.joined(separator: "\n") + "\n"
+    }
+}
+
+/// Bundle this feedback, the last few minutes of logs (+ screenshots) into
+/// ~/FocusBear-Claude-Tasks/<timestamp>/ with a TASK.md, ready to hand to Claude. Returns the folder.
 @discardableResult
 func writeFocusBearClaudeTask(note: String, screenshots: [URL],
                              root: URL = LocalReportStatusReader.defaultRoot,
+                             logsFolder: URL? = DebugLogsFolderURL,
+                             now: Date = Date(),
                              accountID: () -> String = { LocalReportCapability.currentAccount }) -> URL? {
     // Reject stray/default-button submissions before looking up identity or touching the filesystem.
     guard ReportProblemSubmission.hasContent(note: note, screenshots: screenshots) else { return nil }
@@ -411,16 +576,20 @@ func writeFocusBearClaudeTask(note: String, screenshots: [URL],
     guard LocalReportCapability.isEnabled(for: account) else { return nil }
     let fm = FileManager.default
     let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-    let stamp = f.string(from: Date())
+    let stamp = f.string(from: now)
     let folder = root.appendingPathComponent(stamp, isDirectory: true)
     try? fm.createDirectory(at: folder, withIntermediateDirectories: true)
 
-    var copied: [String] = []
-    if let logsURL = DebugLogsFolderURL, let items = try? fm.contentsOfDirectory(at: logsURL, includingPropertiesForKeys: nil) {
+    var logLines: [String] = []
+    if let logsFolder = logsFolder {
+        let portions = ReportLogExtract.extract(sources: ReportLogExtract.sources(in: logsFolder), reportTime: now)
         let dst = folder.appendingPathComponent("logs"); try? fm.createDirectory(at: dst, withIntermediateDirectories: true)
-        for src in items where src.pathExtension == "txt" {
-            try? fm.copyItem(at: src, to: dst.appendingPathComponent(src.lastPathComponent)); copied.append("logs/\(src.lastPathComponent)")
-        }
+        try? portions.map(\.text).joined().write(to: dst.appendingPathComponent(ReportLogExtract.extractFileName),
+                                                 atomically: true, encoding: .utf8)
+        try? ReportLogExtract.sourcesDescription(portions, logsFolder: logsFolder, reportTime: now)
+            .write(to: dst.appendingPathComponent(ReportLogExtract.sourcesFileName), atomically: true, encoding: .utf8)
+        logLines = ["- logs/\(ReportLogExtract.extractFileName) — the \(Int(ReportLogExtract.window / 60)) minutes of app log before this report",
+                    "- logs/\(ReportLogExtract.sourcesFileName) — which files it came from and where; older context is in \(logsFolder.path)"]
     }
     var shots: [String] = []
     if !screenshots.isEmpty {
@@ -441,7 +610,7 @@ func writeFocusBearClaudeTask(note: String, screenshots: [URL],
     \(note.isEmpty ? "_(no description provided)_" : note)
 
     ## Logs
-    \(copied.isEmpty ? "_(none found)_" : copied.map { "- \($0)" }.joined(separator: "\n"))
+    \(logLines.isEmpty ? "_(none found)_" : logLines.joined(separator: "\n"))
 
     ## Screenshots
     \(shots.isEmpty ? "_(none)_" : shots.map { "- \($0)" }.joined(separator: "\n"))

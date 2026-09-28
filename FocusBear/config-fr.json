@@ -2691,6 +2691,7 @@
     "titleEveningRoutinePostponed": "Routine du soir reportée. Commence une habitude pour reprendre la routine du soir."
   },
   "localReportStatus": {
+    "showAllReports": "Tout afficher (<COUNT>)",
     "title": "Tes rapports locaux",
     "explanation": "Progression des rapports enregistrés sur ce Mac.",
     "refresh": "Actualiser",

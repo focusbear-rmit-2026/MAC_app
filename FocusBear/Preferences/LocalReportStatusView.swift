@@ -39,7 +39,8 @@ struct LocalReportStatusStrings {
         "noteOriginal": "Original note", "noteUpdate": "Update",
         "noteUpdateHeading": "Update <NUMBER> of <COUNT>", "noteUpdateCount": "<COUNT> updates",
         "noteLatest": "Latest", "noteNewestFirst": "Newest update first.",
-        "latestUpdate": "Latest update", "lastAIUpdate": "Last update from AI"
+        "latestUpdate": "Latest update", "lastAIUpdate": "Last update from AI",
+        "showAllReports": "Show all <COUNT>"
     ]
     let values: [String: String]
     init() {
@@ -78,6 +79,8 @@ struct LocalReportStatusView: View {
     @SwiftUI.State private var pasteError = false
     @SwiftUI.State private var lightbox: LocalReportLightboxImage?
     @SwiftUI.State private var expandedGroups: [String: Bool] = [:]
+    /// Open groups the user asked to see in full; the rest draw `collapsedRowLimit` rows.
+    @SwiftUI.State private var fullyShownGroups: Set<String> = []
     @SwiftUI.State private var areaFilter: LocalReportArea?
     let refreshToken: Int
     private let strings = LocalReportStatusStrings()
@@ -154,9 +157,16 @@ struct LocalReportStatusView: View {
                 return expandedGroups[key] ?? LocalReportGrouping.expandedByDefault.contains(state)
             },
             set: { expandedGroups[key] = $0 })
+        // Searching shows every match: a capped group would hide the thing being searched for.
+        let shown = LocalReportGrouping.visible(reports, showingAll: isSearching || fullyShownGroups.contains(key))
         DisclosureGroup(isExpanded: binding) {
             LazyVStack(alignment: .leading, spacing: 12) {
-                ForEach(reports) { report in reportRow(report) }
+                ForEach(shown.rows) { report in reportRow(report) }
+                if shown.hiddenCount > 0 {
+                    SwiftUI.Button(strings["showAllReports"].replacingOccurrences(of: "<COUNT>", with: "\(reports.count)")) {
+                        fullyShownGroups.insert(key)
+                    }.buttonStyle(.link).font(.system(size: 12))
+                }
             }
             .padding(.top, 6)
         } label: {

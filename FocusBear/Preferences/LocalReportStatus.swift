@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Foundation
+import SQLite3
 
 enum LocalReportCapability {
     static let accountID = "9884b0af-dc9f-4207-964e-e4db537a2234"
@@ -225,6 +226,22 @@ enum LocalReportGrouping {
     static let expandedByDefault: Set<LocalReportReviewState> = [
         .reworkNeeded, .needsClarification, .readyForQA, .investigating,
     ]
+
+    /// Rows an open group draws before offering "Show all".
+    ///
+    /// Every row is a stack of text plus several link buttons, and SwiftUI builds all of them — with
+    /// their pointer regions — on the main thread the moment the Help screen joins its window. With
+    /// the list's 100 reports mostly in open groups that took over two seconds on a busy Mac
+    /// (Sentry FOCUS-BEAR-MACOS-1K7, 2026-09-25: Help clicked, app frozen). Twenty is more than a
+    /// review session gets through, and the rest are one click away.
+    static let collapsedRowLimit = 20
+
+    /// The rows a group draws, and how many it is holding back.
+    static func visible<Row>(_ rows: [Row], showingAll: Bool,
+                             limit: Int = collapsedRowLimit) -> (rows: [Row], hiddenCount: Int) {
+        guard !showingAll, rows.count > limit else { return (rows, 0) }
+        return (Array(rows.prefix(limit)), rows.count - limit)
+    }
 
     /// Non-empty groups in display order, each with its reports in the order given.
     static func groups(_ reports: [LocalReportStatus]) -> [(state: LocalReportReviewState, reports: [LocalReportStatus])] {
@@ -536,30 +553,183 @@ struct LocalReportFolderRecord {
 /// Keyed on the folder's full path. A report moved between state folders — `Ready for Human QA/`
 /// back to the top level, which this workflow does constantly — is a different key, so it is re-read
 /// and shows the state of where it now lives instead of the state it had where it used to be.
+///
+/// Backed by an optional `LocalReportIndex`, so the first scan after a launch reads only folders that
+/// changed while the app was closed rather than every report on disk. The folders stay the source of
+/// truth — agents and scripts move them and append to their files — and the index is only a cache of
+/// what was parsed from them, checked against the same stamp on every use.
 final class LocalReportFolderCache {
     private var records: [String: LocalReportFolderRecord] = [:]
     private let lock = NSLock()
+    /// Opened on first use, so a cache that is never scanned with never touches the disk.
+    private let openIndex: () -> LocalReportIndex?
+    private var index: LocalReportIndex??
+    private let indexLock = NSLock()
+
+    init(openIndex: @escaping () -> LocalReportIndex? = { nil }) { self.openIndex = openIndex }
 
     static func key(for folder: URL) -> String { folder.standardizedFileURL.path }
+
+    private var persistent: LocalReportIndex? {
+        indexLock.lock(); defer { indexLock.unlock() }
+        if index == nil { index = .some(openIndex()) }
+        return index ?? nil
+    }
+
+    /// Whether `record` still answers for this folder: nothing it was parsed from has changed, and it
+    /// was read for this account (a record read for someone else stopped at the ownership check).
+    private static func isCurrent(_ record: LocalReportFolderRecord, stamp: LocalReportFolderStamp, account: String) -> Bool {
+        record.stamp == stamp && (record.readFor == account || record.owner != account)
+    }
 
     func record(for folder: URL, stamp: LocalReportFolderStamp, account: String,
                 fill: () -> LocalReportFolderRecord) -> LocalReportFolderRecord {
         let key = Self.key(for: folder)
         lock.lock(); let cached = records[key]; lock.unlock()
-        if let cached = cached, cached.stamp == stamp,
-           cached.readFor == account || cached.owner != account { return cached }
+        if let cached = cached, Self.isCurrent(cached, stamp: stamp, account: account) { return cached }
+        if cached == nil, let stored = persistent?.record(forKey: key), Self.isCurrent(stored, stamp: stamp, account: account) {
+            lock.lock(); records[key] = stored; lock.unlock()
+            return stored
+        }
         let fresh = fill()
         lock.lock(); records[key] = fresh; lock.unlock()
+        persistent?.store(fresh, forKey: key)
         return fresh
     }
 
     /// Forget folders this scan no longer saw, so deleted or renamed reports cannot grow the cache
-    /// without bound.
+    /// without bound — in memory and in the index.
     func retain(_ keys: Set<String>) {
         lock.lock(); records = records.filter { keys.contains($0.key) }; lock.unlock()
+        persistent?.retain(keys)
     }
 
     var count: Int { lock.lock(); defer { lock.unlock() }; return records.count }
+}
+
+// MARK: - The persistent index
+
+extension LocalReportReviewState: Codable {}
+extension LocalReportNoteUpdate: Codable {
+    private enum CodingKeys: String, CodingKey { case number, summary, date, body, lead }
+}
+extension LocalReportFolderContent: Codable {}
+extension LocalReportFolderStamp: Codable {}
+extension LocalReportFolderRecord: Codable {}
+extension LocalReportFileStat: Codable {
+    private enum CodingKeys: String, CodingKey { case type, modified, size }
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(type: try container.decodeIfPresent(String.self, forKey: .type).map(FileAttributeType.init(rawValue:)),
+                  modified: try container.decodeIfPresent(Date.self, forKey: .modified),
+                  size: try container.decode(UInt64.self, forKey: .size))
+    }
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(type?.rawValue, forKey: .type)
+        try container.encodeIfPresent(modified, forKey: .modified)
+        try container.encode(size, forKey: .size)
+    }
+}
+
+/// What the report list parsed from each folder, kept between launches in SQLite.
+///
+/// With ~390 report folders, the first scan after every launch re-read and re-parsed every TASK.md
+/// and every notes file. This keeps each folder's parsed record keyed by its path; a record is only
+/// used while its stamp (the TASK.md and notes files' modification dates and sizes, and the
+/// screenshots folder's date) still matches, so an edited or moved folder is always re-read. Lives in
+/// the app's Application Support folder, never among the reports.
+final class LocalReportIndex {
+    static let fileName = "LocalReportIndex.sqlite"
+    /// Bumped when the stored record's shape changes; rows of any other version are ignored.
+    static let schemaVersion: Int32 = 1
+    private static let table = "folder_records"
+    /// SQLite copies bound text/blobs before the call returns.
+    private static let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+
+    private var db: OpaquePointer?
+    private let lock = NSLock()
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
+
+    /// Nil when the file cannot be opened as a database — the list then simply works without it.
+    init?(url: URL) {
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        guard sqlite3_open_v2(url.path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nil) == SQLITE_OK,
+              sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS \(Self.table) (path TEXT PRIMARY KEY NOT NULL, schema INTEGER NOT NULL, record BLOB NOT NULL)",
+                           nil, nil, nil) == SQLITE_OK else {
+            sqlite3_close(db); db = nil
+            return nil
+        }
+    }
+
+    deinit { sqlite3_close(db) }
+
+    static var defaultURL: URL? {
+        guard let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
+              let bundle = Bundle.main.bundleIdentifier else { return nil }
+        return support.appendingPathComponent(bundle, isDirectory: true).appendingPathComponent(fileName)
+    }
+
+    static func openDefault() -> LocalReportIndex? { defaultURL.flatMap(LocalReportIndex.init(url:)) }
+
+    func record(forKey key: String) -> LocalReportFolderRecord? {
+        lock.lock(); defer { lock.unlock() }
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, "SELECT record FROM \(Self.table) WHERE path = ? AND schema = ?", -1, &statement, nil) == SQLITE_OK else { return nil }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_text(statement, 1, key, -1, Self.transient)
+        sqlite3_bind_int(statement, 2, Self.schemaVersion)
+        guard sqlite3_step(statement) == SQLITE_ROW, let bytes = sqlite3_column_blob(statement, 0) else { return nil }
+        let data = Data(bytes: bytes, count: Int(sqlite3_column_bytes(statement, 0)))
+        return try? decoder.decode(LocalReportFolderRecord.self, from: data)
+    }
+
+    func store(_ record: LocalReportFolderRecord, forKey key: String) {
+        guard let data = try? encoder.encode(record) else { return }
+        lock.lock(); defer { lock.unlock() }
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, "INSERT OR REPLACE INTO \(Self.table) (path, schema, record) VALUES (?, ?, ?)", -1, &statement, nil) == SQLITE_OK else { return }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_text(statement, 1, key, -1, Self.transient)
+        sqlite3_bind_int(statement, 2, Self.schemaVersion)
+        _ = data.withUnsafeBytes { sqlite3_bind_blob(statement, 3, $0.baseAddress, Int32(data.count), Self.transient) }
+        sqlite3_step(statement)
+    }
+
+    /// Deletes rows for folders that no longer exist (or moved: a move is a new path).
+    func retain(_ keys: Set<String>) {
+        lock.lock(); defer { lock.unlock() }
+        let stale = allKeys().subtracting(keys)
+        guard !stale.isEmpty else { return }
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, "DELETE FROM \(Self.table) WHERE path = ?", -1, &statement, nil) == SQLITE_OK else { return }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_exec(db, "BEGIN", nil, nil, nil)
+        for key in stale {
+            sqlite3_reset(statement)
+            sqlite3_bind_text(statement, 1, key, -1, Self.transient)
+            sqlite3_step(statement)
+        }
+        sqlite3_exec(db, "COMMIT", nil, nil, nil)
+    }
+
+    var count: Int {
+        lock.lock(); defer { lock.unlock() }
+        return allKeys().count
+    }
+
+    /// Callers hold `lock`.
+    private func allKeys() -> Set<String> {
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, "SELECT path FROM \(Self.table)", -1, &statement, nil) == SQLITE_OK else { return [] }
+        defer { sqlite3_finalize(statement) }
+        var keys = Set<String>()
+        while sqlite3_step(statement) == SQLITE_ROW {
+            if let text = sqlite3_column_text(statement, 0) { keys.insert(String(cString: text)) }
+        }
+        return keys
+    }
 }
 
 /// Reads only bounded TASK/notes text in the three documented local review locations. Logs,
@@ -823,7 +993,7 @@ enum LocalReportStatusReader {
             .joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
         return text.isEmpty ? nil : String(text.prefix(600))
     }
-    fileprivate static func isRealDirectory(_ url: URL) -> Bool {
+    static func isRealDirectory(_ url: URL) -> Bool {
         // URL resource values may retain the old file type after an item is replaced with a link.
         // FileManager reads fresh attributes of the item itself, without following the link.
         let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
@@ -954,6 +1124,36 @@ enum LocalReportImageWriter {
     }
 }
 
+/// Removes the log copies of reports the user has confirmed fixed.
+///
+/// Reports used to carry every log file (about 230 MB each); once the user has confirmed the fix,
+/// nothing will read them again. Screenshots, the task and the notes stay — they are the record.
+/// A report with feedback newer than its confirmation is `.reworkNeeded`, not `.confirmedFixed`, so
+/// it keeps its logs.
+enum LocalReportLogPruner {
+    static let logsFolderName = "logs"
+
+    /// Deletes `<report>/logs` when it is a real directory inside one of the report locations under
+    /// `root`. Anything else — a link, a folder outside the reports, a missing folder — is left alone.
+    @discardableResult
+    static func removeLogs(of report: LocalReportStatus, root: URL = LocalReportStatusReader.defaultRoot,
+                           files: FileManager = .default) -> Bool {
+        let folder = URL(fileURLWithPath: report.id, isDirectory: true).standardizedFileURL
+        let locations = ([root] + LocalReportFolders.all.map(root.appendingPathComponent)).map(\.standardizedFileURL)
+        guard locations.contains(folder.deletingLastPathComponent().standardizedFileURL),
+              LocalReportStatusReader.isRealDirectory(folder) else { return false }
+        let logs = folder.appendingPathComponent(logsFolderName, isDirectory: true)
+        guard LocalReportStatusReader.isRealDirectory(logs) else { return false }
+        return (try? files.removeItem(at: logs)) != nil
+    }
+
+    /// The confirmed-fixed reports in `reports` that still carry logs are pruned; returns how many.
+    @discardableResult
+    static func prune(_ reports: [LocalReportStatus], root: URL = LocalReportStatusReader.defaultRoot) -> Int {
+        reports.filter { $0.state == .confirmedFixed }.filter { removeLogs(of: $0, root: root) }.count
+    }
+}
+
 enum LocalReportConfirmationWriter {
     static func setConfirmedFixed(_ confirmed: Bool, for report: LocalReportStatus,
                                   root: URL = LocalReportStatusReader.defaultRoot,
@@ -993,6 +1193,7 @@ enum LocalReportConfirmationWriter {
         }
         if let error = coordinationError { throw error }
         if let error = writeError { throw error }
+        if confirmed { LocalReportLogPruner.removeLogs(of: report, root: root) }
     }
 }
 
@@ -1053,12 +1254,16 @@ final class LocalReportStatusStore: ObservableObject {
             try LocalReportConfirmationWriter.setConfirmedFixed(confirmed, for: report, accountID: { account })
         }
         // One cache for the life of the store: it is what makes the repeated timer refresh cost a
-        // directory listing and a stat per folder instead of re-reading every report on disk.
-        let cache = LocalReportFolderCache()
+        // directory listing and a stat per folder instead of re-reading every report on disk. Its
+        // SQLite index (opened on the first scan, off the main thread) does the same across launches.
+        let cache = LocalReportFolderCache(openIndex: LocalReportIndex.openDefault)
         self.loader = loader ?? { account, includeConfirmedFixed, done in
             DispatchQueue.global(qos: .utility).async {
-                done(Result { try LocalReportStatusReader.scan(root: LocalReportStatusReader.defaultRoot, accountID: account,
-                                                              includeConfirmedFixed: includeConfirmedFixed, cache: cache) })
+                let result = Result { try LocalReportStatusReader.scan(root: LocalReportStatusReader.defaultRoot, accountID: account,
+                                                                       includeConfirmedFixed: includeConfirmedFixed, cache: cache) }
+                // Reports confirmed before logs were pruned at confirmation still carry them.
+                if case .success(let snapshot) = result { LocalReportLogPruner.prune(snapshot.reports) }
+                done(result)
             }
         }
     }

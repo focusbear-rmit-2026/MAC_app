@@ -19,6 +19,7 @@
     "cancel": "Cancel"
   },
   "localReportStatus": {
+    "showAllReports": "Show all <COUNT>",
     "title": "Your local reports",
     "explanation": "Progress from the reports saved on this Mac.",
     "refresh": "Refresh",
