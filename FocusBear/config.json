@@ -1269,7 +1269,8 @@
     "titleSetPasswordOnboarding": "Set a password to unlock the computer",
     "descriptionSetPasswordOnboarding": "To make it harder to impulsively use your computer late at night or before you've done your morning routine, you can set a password. This is not the same as your login password. We recommend that you get an accountability partner to set the password. That way, you have to ask them to use your computer at a time you probably shouldn't be using it.",
     "buttonCircumventingBlocksText": "Changing settings that allow circumventing blocks",
-    "buttonOpenPreferencesAfterCutOffText": "Require password for opening Preferences after cutoff time"
+    "buttonOpenPreferencesAfterCutOffText": "Require password for opening Preferences after cutoff time",
+    "buttonShortenHabitsText": "Shortening habits on the Day Plan"
   },
   "blockedUrlsViewInfo": {
     "title": "Super Distracting Sites",
@@ -2708,6 +2709,7 @@
     "strictness_Password_PostponeMorningHabit": "Enable this to require your password when postponing your morning routine, so the choice stays intentional.",
     "strictness_Password_PostponeEveningHabit": "Enable this to require your password when postponing your evening routine, so the choice stays intentional.",
     "strictness_Password_PostponeEveningHabitAfterCutOffTime": "Enable this to require your password when postponing your evening routine after the cutoff time, so the choice stays intentional.",
+    "strictness_Password_ShortenHabits": "Enable this to require your password when shortening a habit from the Day Plan, so the choice stays intentional.",
     "ui_ActivitiesFullScreen": "Minimize distractions by doing your habits in full screen mode so you can’t see notifications or other apps while you’re doing your routines. If you enable this setting, you won’t be able to switch to other apps via cmd-tab. You can still deactivate Focus Bear if you have an emergency.",
     "ui_ShowDockIcon": "Enable this setting to show the Focus Bear app icon in your Dock. If you click on the dock icon, it will open the Focus Bear menu.",
     "ui_SelectLanguage": "We’ve translated the app into a few languages. Choose your preferred language here. Let us know if you need a different language by emailing support@focusbear.io",

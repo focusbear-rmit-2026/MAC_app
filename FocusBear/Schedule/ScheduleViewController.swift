@@ -4306,8 +4306,22 @@ class scheduleViewController: NSViewController {
     /// Opens the "Shorten" sheet for the habit and the day currently being viewed. The chosen length is
     /// stored locally against that day only (`DayPlanHabitDurations`); the habit itself is untouched, so
     /// Settings › Edit habits still shows the real duration (report 2026-09-15_20-29-02).
-    private func openShortenHabitSheet(habitId: String) {
+    ///
+    /// Settings › Password › "Shortening habits on the Day Plan" (only that rule, not the change-settings
+    /// or after-cutoff rules) gates this behind the password, like the routine-timing editor. Cancelling or failing the prompt aborts the
+    /// shorten; `authorized` is the re-entry after a successful unlock.
+    private func openShortenHabitSheet(habitId: String, authorized: Bool = false) {
         guard #available(macOS 11.0, *), !habitId.isEmpty else { return }
+        if !authorized, isPasswordRequireInShortenHabit() {
+            guard let main = mainViewControllerObj else { return }
+            main.askPasswordForSettings()
+            getEnterPasswordVcObjForPreferences().requestAuthorization(action: { [weak self] in
+                self?.openShortenHabitSheet(habitId: habitId, authorized: true)
+            }, onCancel: {
+                addLog(text: "[user-action] day plan: habit shorten cancelled at password prompt")
+            })
+            return
+        }
         guard let model = ScheduleTab.routineHabit(withId: habitId) else {
             showDraftAlert(title: ScheduleText.habitEditUnavailable, message: "")
             return

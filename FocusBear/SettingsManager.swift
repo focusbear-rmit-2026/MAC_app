@@ -58,6 +58,9 @@ class SettingsManager:NSObject{
     var isPasswordRequireInPostponeMorning = false
     var isPasswordRequireInPostponeEvening = false
     var isPasswordRequireInPostponeEveningAfterCutOff = false
+    // Password rule for SHORTENING a habit from the Day Plan (its one-day "Shorten" trim). Default OFF.
+    // Synced under kIsPasswordRequireInShortenHabits — the Windows app reads/writes that exact key.
+    var isPasswordRequireInShortenHabits = false
     var isPasswordRequireInAbortShutoff = true
     var isPasswordRequireInStopPomodoro = true
     var isPasswordRequireInQuitApp = true
@@ -180,6 +183,7 @@ class SettingsManager:NSObject{
     var kUserdefaultsPasswordRequireInPostponeMorning = "kUserdefaultsPasswordRequireInPostponeMorning"
     var kUserdefaultsPasswordRequireInPostponeEvening = "kUserdefaultsPasswordRequireInPostponeEvening"
     var kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff = "kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff"
+    var kUserdefaultsPasswordRequireInShortenHabits = "kUserdefaultsPasswordRequireInShortenHabits"
     var kUserdefaultsPasswordRequireInAbortShutoff = "kUserdefaultsPasswordRequireInAbortShutoff"
     var kUserdefaultsPasswordRequireInStopPomodoro = "kUserdefaultsPasswordRequireInStopPomodoro"
     var kUserdefaultsPasswordRequireInQuitApp = "kUserdefaultsPasswordRequireInQuitApp"
@@ -320,6 +324,7 @@ class SettingsManager:NSObject{
         kUserdefaultsPasswordRequireInPostponeMorning = kUserdefaultsPasswordRequireInPostponeMorning + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInPostponeEvening = kUserdefaultsPasswordRequireInPostponeEvening + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff = kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsPasswordRequireInShortenHabits = kUserdefaultsPasswordRequireInShortenHabits + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInAbortShutoff = kUserdefaultsPasswordRequireInAbortShutoff + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInStopPomodoro = kUserdefaultsPasswordRequireInStopPomodoro + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInQuitApp = kUserdefaultsPasswordRequireInQuitApp + (appdelegate?.user?.userId ?? "")
@@ -476,6 +481,7 @@ class SettingsManager:NSObject{
                 let kIsPasswordRequireInPostponeMorning = "kIsPasswordRequireInPostponeMorning"
                 let kIsPasswordRequireInPostponeEvening = "kIsPasswordRequireInPostponeEvening"
                 let kIsPasswordRequireInPostponeEveningAfterCutOff = "kIsPasswordRequireInPostponeEveningAfterCutOff"
+                let kIsPasswordRequireInShortenHabits = "kIsPasswordRequireInShortenHabits"
                 let kIsPasswordRequireInAbortShutoff = "kIsPasswordRequireInAbortShutoff"
                 let kIsPasswordRequireInStopPomodoro = "kIsPasswordRequireInStopPomodoro"
                 let kIsPasswordRequireInQuitApp = "kIsPasswordRequireInQuitApp"
@@ -612,6 +618,9 @@ class SettingsManager:NSObject{
                 }
                 if let val = settings.value(forKey: kIsPasswordRequireInPostponeEveningAfterCutOff) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff)
+                }
+                if let val = settings.value(forKey: kIsPasswordRequireInShortenHabits) as? Bool{
+                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInShortenHabits)
                 }
 
                 if let val = settings.value(forKey: kIsPasswordRequireInAbortShutoff) as? Bool{
@@ -1041,6 +1050,12 @@ class SettingsManager:NSObject{
             } else {
                 UserDefaults.standard.set(isPasswordRequireInPostponeEveningAfterCutOff, forKey: kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff)
             }
+            // Day Plan "Shorten" password rule (default OFF), same local-device-setting pattern.
+            if let v = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInShortenHabits) as? Bool {
+                isPasswordRequireInShortenHabits = v
+            } else {
+                UserDefaults.standard.set(isPasswordRequireInShortenHabits, forKey: kUserdefaultsPasswordRequireInShortenHabits)
+            }
 
             
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInAbortShutoff) as? Bool{
@@ -1446,6 +1461,7 @@ class SettingsManager:NSObject{
         let kIsPasswordRequireInPostponeMorning = "kIsPasswordRequireInPostponeMorning"
         let kIsPasswordRequireInPostponeEvening = "kIsPasswordRequireInPostponeEvening"
         let kIsPasswordRequireInPostponeEveningAfterCutOff = "kIsPasswordRequireInPostponeEveningAfterCutOff"
+        let kIsPasswordRequireInShortenHabits = "kIsPasswordRequireInShortenHabits"
         let kIsPasswordRequireInAbortShutoff = "kIsPasswordRequireInAbortShutoff"
         let kIsPasswordRequireInStopPomodoro = "kIsPasswordRequireInStopPomodoro"
         let kIsPasswordRequireInQuitApp = "kIsPasswordRequireInQuitApp"
@@ -1546,6 +1562,7 @@ class SettingsManager:NSObject{
             kIsPasswordRequireInPostponeMorning:isPasswordRequireInPostponeMorning,
             kIsPasswordRequireInPostponeEvening:isPasswordRequireInPostponeEvening,
             kIsPasswordRequireInPostponeEveningAfterCutOff:isPasswordRequireInPostponeEveningAfterCutOff,
+            kIsPasswordRequireInShortenHabits:isPasswordRequireInShortenHabits,
             kIsPasswordRequireInAbortShutoff:isPasswordRequireInAbortShutoff,
             kIsPasswordRequireInStopPomodoro:isPasswordRequireInStopPomodoro,
             kIsPasswordRequireInQuitApp:isPasswordRequireInQuitApp,
@@ -1638,6 +1655,7 @@ class SettingsManager:NSObject{
         UserDefaults.standard.set(isPasswordRequireInStopPomodoro, forKey: kUserdefaultsPasswordRequireInStopPomodoro)
         UserDefaults.standard.set(isPasswordRequireInQuitApp, forKey: kUserdefaultsPasswordRequireInQuitApp)
         UserDefaults.standard.set(isPasswordRequireInUseRelaxFocusMode, forKey: kUserdefaultsPasswordRequireInUseRelaxFocusMode)
+        UserDefaults.standard.set(isPasswordRequireInShortenHabits, forKey: kUserdefaultsPasswordRequireInShortenHabits)
         
         UserDefaults.standard.set(isMotivationalMessageEnabled, forKey: kUserdefaultsMotivationalMessageEnabled)
         UserDefaults.standard.set(isAiCheckUrlEnabled, forKey: kUserdefaultsAiCheckUrlEnabled)

@@ -1226,7 +1226,8 @@
     "titleSetPasswordOnboarding": "Establecer una contraseña para desbloquear el equipo",
     "descriptionSetPasswordOnboarding": "Para que sea más difícil usar impulsivamente tu computador tarde en la noche o antes de hacer tu rutina matutina, puedes establecer una contraseña. No es la misma que tu contraseña de acceso. Te recomendamos que consigas un compañero de responsabilidad para establecer la contraseña. Así, tendrás que pedirle autorización para usar tu computador en un momento en que probablemente no deberías estar usándolo.",
     "buttonCircumventingBlocksText": "Cambiar la configuración que permite eludir los bloqueos",
-    "buttonOpenPreferencesAfterCutOffText": "Requerir contraseña para abrir Preferencias después de la hora límite"
+    "buttonOpenPreferencesAfterCutOffText": "Requerir contraseña para abrir Preferencias después de la hora límite",
+    "buttonShortenHabitsText": "Acortar hábitos en el Plan del día"
   },
   "blockedUrlsViewInfo": {
     "title": "Sitios Super Distractores",
@@ -2664,6 +2665,7 @@
     "strictness_Password_PostponeMorningHabit": "Actívalo para pedir tu contraseña al posponer tu rutina matutina, para que la decisión siga siendo intencionada.",
     "strictness_Password_PostponeEveningHabit": "Actívalo para pedir tu contraseña al posponer tu rutina nocturna, para que la decisión siga siendo intencionada.",
     "strictness_Password_PostponeEveningHabitAfterCutOffTime": "Actívalo para pedir tu contraseña al posponer tu rutina nocturna después de la hora límite, para que la decisión siga siendo intencionada.",
+    "strictness_Password_ShortenHabits": "Actívalo para pedir tu contraseña al acortar un hábito desde el Plan del día, para que la decisión siga siendo intencionada.",
     "ui_ActivitiesFullScreen": "Minimiza las distracciones haciendo tus hábitos en modo pantalla completa para no ver notificaciones ni otras apps mientras haces tus rutinas. Si activas esta opción, no podrás cambiar a otras apps con cmd-tab. Puedes desactivar Focus Bear en caso de emergencia.",
     "ui_ShowDockIcon": "Activa esta opción para mostrar el icono de Focus Bear en tu Dock. Si haces clic en el icono del Dock, se abrirá el menú de Focus Bear.",
     "ui_SelectLanguage": "Hemos traducido la app a algunos idiomas. Elige aquí el idioma que prefieras. Si necesitas otro idioma, escríbenos a support@focusbear.io.",

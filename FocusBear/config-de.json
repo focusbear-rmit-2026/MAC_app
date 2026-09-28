@@ -3878,7 +3878,8 @@
     "titleSetPasswordOnboarding": "Lege ein Passwort fest, um den Computer zu entsperren",
     "descriptionSetPasswordOnboarding": "Um es dir schwerer zu machen, deinen Computer impulsiv spät in der Nacht oder vor deiner Morgenroutine zu nutzen, kannst du ein Passwort festlegen. Das ist nicht dasselbe wie dein Anmeldepasswort. Wir empfehlen, dass ein Accountability-Partner das Passwort festlegt. So musst du ihn fragen, wenn du den Computer zu einer Zeit nutzen willst, zu der du es wahrscheinlich nicht solltest.",
     "buttonCircumventingBlocksText": "Einstellungen ändern, die das Umgehen von Blockierungen ermöglichen",
-    "buttonOpenPreferencesAfterCutOffText": "Passwort verlangen, um die Einstellungen nach der Grenzzeit zu öffnen"
+    "buttonOpenPreferencesAfterCutOffText": "Passwort verlangen, um die Einstellungen nach der Grenzzeit zu öffnen",
+    "buttonShortenHabitsText": "Gewohnheiten im Tagesplan verkürzen"
   },
   "teacherSessionInfo": {
     "invitePromptTitle": "Dein Lehrer hat eine Klassen-Fokus-Sitzung gestartet",
@@ -4189,6 +4190,7 @@
     "strictness_Password_PostponeMorningHabit": "Aktiviere dies, damit dein Passwort verlangt wird, wenn du deine Morgenroutine verschiebst – so bleibt die Entscheidung bewusst.",
     "strictness_Password_PostponeEveningHabit": "Aktiviere dies, damit dein Passwort verlangt wird, wenn du deine Abendroutine verschiebst – so bleibt die Entscheidung bewusst.",
     "strictness_Password_PostponeEveningHabitAfterCutOffTime": "Aktiviere dies, damit dein Passwort verlangt wird, wenn du deine Abendroutine nach der Grenzzeit verschiebst – so bleibt die Entscheidung bewusst.",
+    "strictness_Password_ShortenHabits": "Aktiviere dies, damit dein Passwort verlangt wird, wenn du eine Gewohnheit im Tagesplan verkürzt – so bleibt die Entscheidung bewusst.",
     "ui_ActivitiesFullScreen": "Minimiere Ablenkungen, indem du deine Gewohnheiten im Vollbildmodus erledigst, sodass du während deiner Routinen keine Benachrichtigungen oder anderen Apps siehst. Wenn du diese Einstellung aktivierst, kannst du nicht mehr per cmd-tab zu anderen Apps wechseln. Du kannst Focus Bear im Notfall trotzdem deaktivieren.",
     "ui_ShowDockIcon": "Aktiviere diese Einstellung, um das Focus-Bear-App-Symbol in deinem Dock anzuzeigen. Ein Klick auf das Dock-Symbol öffnet das Focus-Bear-Menü.",
     "ui_SelectLanguage": "Wir haben die App in mehrere Sprachen übersetzt. Wähle hier deine bevorzugte Sprache aus. Schreib uns an support@focusbear.io, wenn du eine andere Sprache brauchst.",

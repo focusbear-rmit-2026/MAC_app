@@ -3580,6 +3580,43 @@ func isPasswordRequireInOpenSettingsEnabled() -> Bool{
     return SettingsManagerObject.isPasswordRequireInChangeSettings
 }
 
+/// Whether shortening a habit from the Day Plan (its one-day "Shorten" trim) must ask for the password,
+/// reading the app's live state. Honours the same recent-unlock grace (~2 min) and accountability-buddy
+/// unlock as `isPasswordRequireInOpenSettings()`.
+func isPasswordRequireInShortenHabit() -> Bool {
+    var withinUnlockGrace = false
+    if let lastAppUnlockTime = lastAppUnlockTime {
+        let diffSeconds = Calendar.current.dateComponents([.second], from: lastAppUnlockTime, to: Date()).second ?? 0
+        withinUnlockGrace = diffSeconds <= ShortenHabitPasswordPolicy.unlockGraceSeconds
+    }
+    let unlockedByBuddy = lastUnlockTimeByAccountabilityBuddy.map { Date() < $0 } ?? false
+    return ShortenHabitPasswordPolicy.requiresPassword(
+        isPasswordSet: UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil,
+        isWithinUnlockGrace: withinUnlockGrace,
+        isUnlockedByAccountabilityBuddy: unlockedByBuddy,
+        isShortenRuleOn: SettingsManagerObject.isPasswordRequireInShortenHabits)
+}
+
+/// The pure decision behind `isPasswordRequireInShortenHabit()`, kept free of globals so it is unit-tested.
+/// Mirrors the Windows app's rule (settings key `kIsPasswordRequireInShortenHabits`). Only this rule gates
+/// Shorten: "Changing settings", "opening Preferences after cutoff" and super-strict focus deliberately do
+/// NOT, so with the Shorten rule off the prompt never appears (e.g. after cutoff).
+enum ShortenHabitPasswordPolicy {
+    /// Same window `isPasswordRequireInOpenSettings()` / `shouldAskPassword()` use after a successful unlock.
+    static let unlockGraceSeconds = 120
+
+    /// True when the Shorten sheet must be gated behind the password prompt: a password is set, the user
+    /// hasn't just unlocked (recent-unlock grace or an accountability-buddy unlock), and the
+    /// "Shortening habits on the Day Plan" rule is on.
+    static func requiresPassword(isPasswordSet: Bool,
+                                 isWithinUnlockGrace: Bool,
+                                 isUnlockedByAccountabilityBuddy: Bool,
+                                 isShortenRuleOn: Bool) -> Bool {
+        guard isPasswordSet, isShortenRuleOn else { return false }
+        return !(isUnlockedByAccountabilityBuddy || isWithinUnlockGrace)
+    }
+}
+
 
 
 

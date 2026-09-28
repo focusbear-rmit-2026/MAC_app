@@ -3878,7 +3878,8 @@
     "titleSetPasswordOnboarding": "Ustaw hasło, aby odblokować komputer",
     "descriptionSetPasswordOnboarding": "Aby utrudnić sobie impulsywne korzystanie z komputera późną nocą lub przed wykonaniem porannej rutyny, możesz ustawić hasło. To nie to samo co Twoje hasło logowania. Zalecamy, aby hasło ustawiła osoba, która będzie Cię rozliczać. Dzięki temu będziesz musiał ją poprosić o dostęp, gdy zechcesz użyć komputera w porze, w której prawdopodobnie nie powinieneś.",
     "buttonCircumventingBlocksText": "Zmiana ustawień umożliwiających obejście blokad",
-    "buttonOpenPreferencesAfterCutOffText": "Wymagaj hasła, aby otworzyć Preferencje po godzinie granicznej"
+    "buttonOpenPreferencesAfterCutOffText": "Wymagaj hasła, aby otworzyć Preferencje po godzinie granicznej",
+    "buttonShortenHabitsText": "Skracanie nawyków w Planie dnia"
   },
   "teacherSessionInfo": {
     "invitePromptTitle": "Twój nauczyciel rozpoczął sesję skupienia klasy",
@@ -4189,6 +4190,7 @@
     "strictness_Password_PostponeMorningHabit": "Włącz tę opcję, aby wymagać hasła przy odkładaniu porannej rutyny — dzięki temu decyzja pozostaje świadoma.",
     "strictness_Password_PostponeEveningHabit": "Włącz tę opcję, aby wymagać hasła przy odkładaniu wieczornej rutyny — dzięki temu decyzja pozostaje świadoma.",
     "strictness_Password_PostponeEveningHabitAfterCutOffTime": "Włącz tę opcję, aby wymagać hasła przy odkładaniu wieczornej rutyny po godzinie granicznej — dzięki temu decyzja pozostaje świadoma.",
+    "strictness_Password_ShortenHabits": "Włącz tę opcję, aby wymagać hasła przy skracaniu nawyku w Planie dnia — dzięki temu decyzja pozostaje świadoma.",
     "ui_ActivitiesFullScreen": "Ogranicz rozpraszacze, wykonując swoje nawyki w trybie pełnoekranowym, dzięki czemu podczas rutyn nie zobaczysz powiadomień ani innych aplikacji. Po włączeniu tego ustawienia nie będziesz mógł przełączać się do innych aplikacji za pomocą cmd-tab. W razie nagłej sytuacji nadal możesz wyłączyć Focus Bear.",
     "ui_ShowDockIcon": "Włącz to ustawienie, aby wyświetlić ikonę Focus Bear w Docku. Kliknięcie ikony w Docku otworzy menu Focus Bear.",
     "ui_SelectLanguage": "Przetłumaczyliśmy aplikację na kilka języków. Wybierz tutaj preferowany język. Jeśli potrzebujesz innego języka, napisz do nas na support@focusbear.io",

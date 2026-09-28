@@ -3878,7 +3878,8 @@
     "titleSetPasswordOnboarding": "Définis un mot de passe pour déverrouiller l'ordinateur",
     "descriptionSetPasswordOnboarding": "Pour te rendre plus difficile l'utilisation impulsive de ton ordinateur tard le soir ou avant d'avoir terminé ta routine matinale, tu peux définir un mot de passe. Ce n'est pas le même que ton mot de passe de connexion. Nous te recommandons de demander à un partenaire de responsabilisation de définir le mot de passe. Ainsi, tu devras lui demander si tu veux utiliser ton ordinateur à un moment où tu ne devrais probablement pas le faire.",
     "buttonCircumventingBlocksText": "Modifier des paramètres permettant de contourner les blocages",
-    "buttonOpenPreferencesAfterCutOffText": "Exiger un mot de passe pour ouvrir les Préférences après l'heure limite"
+    "buttonOpenPreferencesAfterCutOffText": "Exiger un mot de passe pour ouvrir les Préférences après l'heure limite",
+    "buttonShortenHabitsText": "Raccourcir des habitudes dans le Plan de la journée"
   },
   "teacherSessionInfo": {
     "invitePromptTitle": "Ton enseignant a démarré une session de concentration de classe",
@@ -4189,6 +4190,7 @@
     "strictness_Password_PostponeMorningHabit": "Active cette option pour exiger ton mot de passe lorsque tu reportes ta routine matinale, afin que ce choix reste intentionnel.",
     "strictness_Password_PostponeEveningHabit": "Active cette option pour exiger ton mot de passe lorsque tu reportes ta routine du soir, afin que ce choix reste intentionnel.",
     "strictness_Password_PostponeEveningHabitAfterCutOffTime": "Active cette option pour exiger ton mot de passe lorsque tu reportes ta routine du soir après l'heure limite, afin que ce choix reste intentionnel.",
+    "strictness_Password_ShortenHabits": "Active cette option pour exiger ton mot de passe lorsque tu raccourcis une habitude depuis le Plan de la journée, afin que ce choix reste intentionnel.",
     "ui_ActivitiesFullScreen": "Réduis les distractions en effectuant tes habitudes en mode plein écran, pour ne voir ni notifications ni autres applications pendant tes routines. Si tu actives ce paramètre, tu ne pourras plus passer à d'autres applications via cmd-tab. Tu peux toujours désactiver Focus Bear en cas d'urgence.",
     "ui_ShowDockIcon": "Active ce paramètre pour afficher l'icône de Focus Bear dans ton Dock. Cliquer sur l'icône du Dock ouvre le menu Focus Bear.",
     "ui_SelectLanguage": "Nous avons traduit l'application dans plusieurs langues. Choisis ta langue préférée ici. Écris-nous à support@focusbear.io si tu as besoin d'une autre langue.",

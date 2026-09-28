@@ -217,3 +217,57 @@ class SettingsManagerTests: XCTestCase {
     }
 
 }
+
+// MARK: - Password rule: shortening habits on the Day Plan
+
+/// Covers Settings › Password › "Shortening habits on the Day Plan": only when it is on does the Day Plan's
+/// Shorten action ask for the password, honouring the usual recent-unlock grace. The change-settings /
+/// after-cutoff / super-strict rules do not gate Shorten (matches Windows). The setting syncs under
+/// `kIsPasswordRequireInShortenHabits`, the exact key the Windows app uses.
+final class ShortenHabitPasswordPolicyTests: XCTestCase {
+
+    private func requires(passwordSet: Bool = true,
+                          withinGrace: Bool = false,
+                          buddyUnlocked: Bool = false,
+                          shortenRuleOn: Bool = false) -> Bool {
+        ShortenHabitPasswordPolicy.requiresPassword(isPasswordSet: passwordSet,
+                                                    isWithinUnlockGrace: withinGrace,
+                                                    isUnlockedByAccountabilityBuddy: buddyUnlocked,
+                                                    isShortenRuleOn: shortenRuleOn)
+    }
+
+    func testShortenRuleOnAsksForPassword() {
+        XCTAssertTrue(requires(shortenRuleOn: true))
+    }
+
+    /// Regression: with the Shorten rule off, Shorten asked after cutoff because "opening Preferences
+    /// after cutoff" was on. The policy no longer takes any change-settings input, so rule off = no prompt.
+    func testShortenRuleOffNeverAsks() {
+        XCTAssertFalse(requires(shortenRuleOn: false))
+    }
+
+    func testNoPasswordSetNeverAsks() {
+        XCTAssertFalse(requires(passwordSet: false, shortenRuleOn: true))
+    }
+
+    func testRecentUnlockGraceSkipsThePrompt() {
+        XCTAssertFalse(requires(withinGrace: true, shortenRuleOn: true))
+    }
+
+    func testAccountabilityBuddyUnlockSkipsThePrompt() {
+        XCTAssertFalse(requires(buddyUnlocked: true, shortenRuleOn: true))
+    }
+
+    func testGraceMatchesTheOtherPasswordGates() {
+        XCTAssertEqual(ShortenHabitPasswordPolicy.unlockGraceSeconds, 120)
+    }
+
+    func testRuleDefaultsOffAndSyncsUnderTheWindowsKey() {
+        let settings = SettingsManager()
+        XCTAssertFalse(settings.isPasswordRequireInShortenHabits)
+        XCTAssertEqual(settings.getLocalJsonToUpload()["kIsPasswordRequireInShortenHabits"] as? Bool, false)
+
+        settings.isPasswordRequireInShortenHabits = true
+        XCTAssertEqual(settings.getLocalJsonToUpload()["kIsPasswordRequireInShortenHabits"] as? Bool, true)
+    }
+}
