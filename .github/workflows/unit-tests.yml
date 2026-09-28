@@ -111,6 +111,8 @@ jobs:
             -only-testing:"Focus BearTests/MainWindowContentLayoutTests" \
             -only-testing:"Focus BearTests/MainThreadWindowTitleTests" \
             -only-testing:"Focus BearTests/AllowedActivityFullScreenTests" \
+
+            -only-testing:"Focus BearTests/ShutdownNagPolicyTests" \
             -only-testing:"Focus BearTests/LeftMenuAvailabilityTests" \
             -only-testing:"Focus BearTests/BlockListComboBoxTextTests" \
             -only-testing:"Focus BearTests/EventCalendarPickerTests" \

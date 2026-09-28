@@ -5318,6 +5318,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
                     self.abortAllProcess()
                     currentState = ._NOTHING_
+                    routineTornDownForWakeAt = Date()
                     leftMenuVcObj?.habitOver()
                     backgroundThread()
                     if self.isUserOnMeeting && currentState == ._NOTHING_{
@@ -5334,6 +5335,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         leftMenuVcObj?.microBreaksOver()
                     }
                     currentState = ._NOTHING_
+                    routineTornDownForWakeAt = Date()
                     if mainWindowControllerObj?.window?.isVisible ?? false{
                         mainWindowControllerObj?.window?.close()
                         hideBlankWindowInSecondaryMonitor()
@@ -6727,6 +6729,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     /// The shutdown nag that last ran, so the five-second check can tell a new situation from the
     /// same one polled again.
     var lastShutOffNag: ShutdownNagRecord?
+    /// When `returnFromSystemSleepCheckAppStateAgain` last ended the running routine so the shutdown
+    /// check could rebuild it. See `ShutdownNagPolicy.decide`.
+    var routineTornDownForWakeAt: Date?
 
     /// When a shutdown prompt first wanted focus and found the user in a menu. Bounds how long the
     /// shutdown itself will hold back.
@@ -6760,7 +6765,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         let isAborted = ShutdownNagPolicy.isAborted(abortedUntil: abortedUntil, now: now)
 
         switch ShutdownNagPolicy.decide(isShutdownAborted: isAborted, situation: situation,
-                                        lastNag: lastShutOffNag, now: now) {
+                                        lastNag: lastShutOffNag, now: now,
+                                        routineTornDownForWakeAt: routineTornDownForWakeAt) {
         case .stayQuiet:
             return
         case .fire:

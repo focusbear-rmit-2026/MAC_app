@@ -56,13 +56,21 @@ enum ShutdownNagDecision: Equatable {
 /// one prompt per situation, with a slow backstop repeat for the case where the user walked away.
 enum ShutdownNagPolicy {
 
+    /// - Parameter routineTornDownForWakeAt: when the wake/unlock handler last ended the running routine
+    ///   so this check could rebuild it (`returnFromSystemSleepCheckAppStateAgain`).
     static func decide(isShutdownAborted: Bool,
                        situation: ShutdownNagSituation,
                        lastNag: ShutdownNagRecord?,
-                       now: Date) -> ShutdownNagDecision {
+                       now: Date,
+                       routineTornDownForWakeAt: Date? = nil) -> ShutdownNagDecision {
         // The user explicitly cancelled tonight's shutdown. Nothing below may overrule that.
         if isShutdownAborted { return .stayQuiet }
         guard let lastNag else { return .fire }
+        // Waking the Mac ends the evening routine on purpose, relying on this check to put it back.
+        // The state it leaves behind can look exactly like the one the last prompt saw, so without
+        // this the routine stayed away until the ten-minute backstop: on 2026-09-25 the Mac woke at
+        // 22:31:07, the routine was torn down, and nothing came back until 22:36:18.
+        if let tornDown = routineTornDownForWakeAt, tornDown > lastNag.firedAt { return .fire }
         // Something actually changed — a habit finished, the cut-off passed, the routine moved state.
         if lastNag.situation != situation { return .fire }
         guard now.timeIntervalSince(lastNag.firedAt) >= kShutdownNagRepeatSeconds else { return .stayQuiet }

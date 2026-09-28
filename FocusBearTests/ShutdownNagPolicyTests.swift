@@ -204,3 +204,43 @@ final class ShutdownNagPolicyTests: XCTestCase {
                        .takeFocus)
     }
 }
+
+// MARK: - Waking the Mac brings the evening routine straight back (report 2026-09-25_22-31-53)
+//
+// "why is it not in full screen mode currently?" The Mac woke at 22:31:07; the wake handler ended the
+// running evening routine so the shutdown check could rebuild it, and that check stayed quiet because
+// the state looked the same as the one it last prompted about. The routine (and full screen) only came
+// back at 22:36:18, on the ten-minute backstop. Lives here rather than in ShutdownNagPolicyTests because
+// CI selects test classes by name and this one is on the list.
+extension ShutdownNagPolicyTests {
+    private var nagAt: Date { Date(timeIntervalSince1970: 1_790_000_000) }
+
+    private func idleAfterTeardown() -> ShutdownNagSituation {
+        ShutdownNagSituation(state: ._NOTHING_, action: Focus_Bear.ACTION._START_, habitIndex: -1, isCutOffPassed: true)
+    }
+
+    func testAWakeAfterTheLastPromptBringsTheRoutineBackImmediately() {
+        let last = ShutdownNagRecord(situation: idleAfterTeardown(), firedAt: nagAt)
+        let fiveMinutesLater = nagAt.addingTimeInterval(293)
+        XCTAssertEqual(ShutdownNagPolicy.decide(isShutdownAborted: false, situation: idleAfterTeardown(),
+                                                lastNag: last, now: fiveMinutesLater,
+                                                routineTornDownForWakeAt: fiveMinutesLater),
+                       .fire, "same-looking situation, but the wake ended the routine after the last prompt")
+    }
+
+    func testAWakeBeforeTheLastPromptDoesNotBringBackTheFiveSecondNag() {
+        let last = ShutdownNagRecord(situation: idleAfterTeardown(), firedAt: nagAt)
+        XCTAssertEqual(ShutdownNagPolicy.decide(isShutdownAborted: false, situation: idleAfterTeardown(),
+                                                lastNag: last, now: nagAt.addingTimeInterval(5),
+                                                routineTornDownForWakeAt: nagAt.addingTimeInterval(-60)),
+                       .stayQuiet, "the prompt already answered that wake; one prompt per situation still holds")
+    }
+
+    func testCancellingTonightsShutdownStillWinsOverAWake() {
+        let last = ShutdownNagRecord(situation: idleAfterTeardown(), firedAt: nagAt)
+        let later = nagAt.addingTimeInterval(120)
+        XCTAssertEqual(ShutdownNagPolicy.decide(isShutdownAborted: true, situation: idleAfterTeardown(),
+                                                lastNag: last, now: later, routineTornDownForWakeAt: later),
+                       .stayQuiet)
+    }
+}
