@@ -246,6 +246,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
 
         installToolsAddOnItems()
         ensureMenuScrolls()
+        sidebarHeaderToggle = SidebarHeaderToggle(toggle: btnExpandLeftMenu)
 
         // Custom Routine is removed from the menu (now lives in the Day Plan's Custom Routines
         // panel); hide it explicitly here.
@@ -1288,8 +1289,181 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         applyTodoToolTitle()
     }
 
+    private var sidebarHeaderToggle: SidebarHeaderToggle?
+
+    // viewWillLayout, not viewDidLayout: the sidebar's width is already final here (its parent laid
+    // it out), and constraints changed before this view's own pass take effect in that same pass.
+    override func viewWillLayout() {
+        super.viewWillLayout()
+        sidebarHeaderToggle?.update(sidebarWidth: view.bounds.width,
+                                    isSidebarCollapsed: mainViewControllerObj?.isLeftPanelCollapsed ?? false)
+    }
+
     @IBAction func btnExpandLeftMenuClicked(_ sender: Any) {
         mainViewControllerObj?.toggleLeftPaneWidth()
+    }
+}
+
+/// The sidebar header's collapse/expand toggle: a double chevron pointing the way the sidebar will
+/// move, on the logo's row rather than on a line of its own beneath it (report 2026-09-26_20-15-15).
+/// The header drops that line, so the menu moves up.
+///
+/// A collapsed sidebar is no wider than the logo, so there the toggle goes back under the logo, as it
+/// always was.
+///
+/// Repositioned in code rather than in Main.storyboard because hand-edited storyboard XML conflicts
+/// with every other change to the scene. That means taking over some of the scene's constraints,
+/// found by what they join, since storyboard constraints carry no identifier.
+final class SidebarHeaderToggle {
+
+    private enum Symbol {
+        static let collapse = "chevron.left.2"
+        static let expand = "chevron.right.2"
+        static let configuration = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
+    }
+
+    private enum ConfigKey {
+        static let section = "leftMenuVcInfo"
+        static let collapseLabel = "collapseMenuTooltip"
+        static let expandLabel = "expandMenuTooltip"
+    }
+
+    private enum FallbackLabel {
+        static let collapse = "Collapse menu"   // i18n-ignore: last-resort default; the real string comes from config (collapseMenuTooltip)
+        static let expand = "Expand menu"       // i18n-ignore: last-resort default; the real string comes from config (expandMenuTooltip)
+    }
+
+    private enum Metric {
+        /// Where the storyboard's vertically centred logo sat in its 80pt header. The window has a
+        /// full-size content view, so this is also what keeps the logo clear of the traffic lights.
+        static let logoTopInset: CGFloat = 23
+        /// The storyboard's 80pt header less the toggle's own line (14pt button + 4pt gap).
+        static let headerHeightWithToggleBesideLogo: CGFloat = 62
+        static let titleToToggleSpacing: CGFloat = 8
+        /// The storyboard's inset from the toggle to the sidebar's trailing edge.
+        static let toggleTrailingInset: CGFloat = 8
+    }
+
+    private let toggle: NSButton
+    private let logo: NSView?
+    private let title: NSView?
+    private let headerHeight: NSLayoutConstraint?
+    private let stackedHeaderHeight: CGFloat
+    /// The storyboard's "separator sits 4pt below the toggle", which is what gives the toggle its line.
+    private let toggleLineBelowLogo: NSLayoutConstraint?
+    private var toggleBesideLogoConstraints: [NSLayoutConstraint] = []
+    /// The logo's right edge and the toggle's width, read once from the storyboard constraints rather
+    /// than from live frames. Frames are zero before the first layout, so `logo.frame.maxX` was 0 on
+    /// that pass and a 50pt collapsed sidebar looked wide enough for the toggle beside the logo — which
+    /// activated the beside-logo constraints at 50pt and logged conflicting constraints. Constraint
+    /// constants are stable on every pass. Left at 0 when init bails (then `update()` no-ops anyway).
+    private var logoRightEdge: CGFloat = 0
+    private var toggleWidth: CGFloat = 0
+
+    private var isToggleBesideLogo: Bool?
+    private var isPointingToExpand: Bool?
+
+    init(toggle: NSButton) {
+        self.toggle = toggle
+        // The storyboard scales its image up to fill the button, which suited the wide sidebar glyph
+        // but makes a chevron outweigh the title beside it; the symbol's point size sets it instead.
+        toggle.imageScaling = .scaleProportionallyDown
+        let headerContent = toggle.superview
+        let headerBox = headerContent?.superview
+        logo = headerContent?.subviews.first { $0 is NSImageView }
+        title = headerContent?.subviews.first { $0 is NSTextField }
+        headerHeight = headerBox?.constraints.first {
+            $0.firstItem === headerBox && $0.firstAttribute == .height && $0.secondItem == nil
+        }
+        stackedHeaderHeight = headerHeight?.constant ?? 0
+        toggleLineBelowLogo = headerContent?.constraints.first { $0.secondItem === toggle && $0.secondAttribute == .bottom }
+
+        guard let header = headerContent, let logo = logo, let title = title,
+              headerHeight != nil, toggleLineBelowLogo != nil else {
+            addLog(text: "SidebarHeaderToggle: the sidebar header's storyboard constraints have changed; the toggle stays where the storyboard puts it")
+            return
+        }
+        pinLogoToTop(logo, in: header)
+        releaseTitleTrailing(title, in: header)
+        toggleBesideLogoConstraints = [
+            toggle.centerYAnchor.constraint(equalTo: logo.centerYAnchor),
+            title.trailingAnchor.constraint(lessThanOrEqualTo: toggle.leadingAnchor, constant: -Metric.titleToToggleSpacing),
+        ]
+        // Just under required, so any transient that activates these before the placement decision has
+        // run breaks them gracefully instead of logging a hard conflict. In steady state (beside-logo)
+        // there is room, so they hold; when collapsed they are deactivated entirely.
+        toggleBesideLogoConstraints.forEach { $0.priority = NSLayoutConstraint.Priority(999) }
+        // Fixed geometry from the constraints, not live frames (see `logoRightEdge`).
+        let logoWidth = logo.constraints.first { $0.firstItem === logo && $0.firstAttribute == .width && $0.secondItem == nil }?.constant ?? logo.frame.width
+        let logoLeading = header.constraints.first {
+            ($0.firstItem === logo && $0.firstAttribute == .leading && $0.secondItem === header) ||
+            ($0.firstItem === header && $0.firstAttribute == .leading && $0.secondItem === logo)
+        }.map { abs($0.constant) } ?? logo.frame.minX
+        logoRightEdge = logoLeading + logoWidth
+        toggleWidth = toggle.constraints.first { $0.firstItem === toggle && $0.firstAttribute == .width && $0.secondItem == nil }?.constant ?? toggle.frame.width
+    }
+
+    func update(sidebarWidth: CGFloat, isSidebarCollapsed: Bool) {
+        updateDirection(isSidebarCollapsed: isSidebarCollapsed)
+        updatePlacement(isToggleBesideLogo: hasRoomBesideLogo(sidebarWidth: sidebarWidth))
+    }
+
+    private func hasRoomBesideLogo(sidebarWidth: CGFloat) -> Bool {
+        // Use the constraint-derived geometry, never the live frames: on the first layout pass they are
+        // zero, which used to make a collapsed sidebar report room for the toggle beside the logo.
+        guard logoRightEdge > 0 else { return false }
+        let widthNeeded = logoRightEdge + Metric.titleToToggleSpacing + toggleWidth + Metric.toggleTrailingInset
+        return sidebarWidth >= widthNeeded
+    }
+
+    /// The storyboard centres the logo in the header. Once the header can shrink, that would drag the
+    /// logo up under the traffic lights, so it stays where it was.
+    private func pinLogoToTop(_ logo: NSView, in header: NSView) {
+        header.constraints.first { $0.firstItem === logo && $0.firstAttribute == .centerY }?.isActive = false
+        logo.topAnchor.constraint(equalTo: header.topAnchor, constant: Metric.logoTopInset).isActive = true
+    }
+
+    /// The storyboard pins the title's trailing edge to the header's, which would run it under a toggle
+    /// beside it. It ends before the toggle instead (see `toggleBesideLogoConstraints`).
+    private func releaseTitleTrailing(_ title: NSView, in header: NSView) {
+        header.constraints.first { $0.secondItem === title && $0.firstAttribute == .trailing }?.isActive = false
+    }
+
+    private func updatePlacement(isToggleBesideLogo: Bool) {
+        guard !toggleBesideLogoConstraints.isEmpty, isToggleBesideLogo != self.isToggleBesideLogo else { return }
+        self.isToggleBesideLogo = isToggleBesideLogo
+        if isToggleBesideLogo {
+            toggleLineBelowLogo?.isActive = false
+            NSLayoutConstraint.activate(toggleBesideLogoConstraints)
+            headerHeight?.constant = Metric.headerHeightWithToggleBesideLogo
+        } else {
+            NSLayoutConstraint.deactivate(toggleBesideLogoConstraints)
+            toggleLineBelowLogo?.isActive = true
+            headerHeight?.constant = stackedHeaderHeight
+        }
+        // With no toggle to stop at, the title would draw past a collapsed sidebar's edge into the page
+        // beside it: views don't clip to their bounds by default.
+        title?.isHidden = !isToggleBesideLogo
+    }
+
+    private func updateDirection(isSidebarCollapsed: Bool) {
+        guard isSidebarCollapsed != isPointingToExpand else { return }
+        isPointingToExpand = isSidebarCollapsed
+        let label = isSidebarCollapsed
+            ? localizedLabel(ConfigKey.expandLabel, fallback: FallbackLabel.expand)
+            : localizedLabel(ConfigKey.collapseLabel, fallback: FallbackLabel.collapse)
+        let symbol = isSidebarCollapsed ? Symbol.expand : Symbol.collapse
+        if let image = NSImage(systemSymbolName: symbol, accessibilityDescription: label)?
+            .withSymbolConfiguration(Symbol.configuration) {
+            toggle.image = image
+        }
+        toggle.toolTip = label
+        toggle.setAccessibilityLabel(label)
+    }
+
+    private func localizedLabel(_ key: String, fallback: String) -> String {
+        let section = configjson.value(forKey: ConfigKey.section) as? NSDictionary
+        return section?.value(forKey: key) as? String ?? fallback
     }
 }
 

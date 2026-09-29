@@ -3842,6 +3842,8 @@
     "restoreHiddenToolsEmpty": "Nothing hidden — hover a tool and click ✕ to hide it.",
     "restoreButton": "Restore",
     "hideToolTooltip": "Hide this tool",
+    "collapseMenuTooltip": "Collapse menu",
+    "expandMenuTooltip": "Expand menu",
     "titleMain": "MAIN",
     "titleTools": "TOOLS",
     "titlePreferences": "PREFERENCES",
