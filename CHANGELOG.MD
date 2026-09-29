@@ -823,3 +823,16 @@ Starting a focus session from the menu overlay now uses the block list you selec
 
 Tools:
 The hidden "Notes" tool now shows as "Notes" in the restore-hidden list, instead of the outdated name "Brain Dump". (#2670)
+
+
+# v3.36.550
+
+Settings:
+New "Shortening habits on the Day Plan" option under Settings → Password: when set, shortening a habit from the Day Plan asks for your password first (off by default, and matching the Windows app). (#2651)
+
+Full screen:
+Waking your Mac now brings the evening routine straight back in full screen, instead of occasionally leaving it as a small Day Plan window for several minutes after wake. (#2654)
+
+Focus & Blocking:
+During a focus session, the AI check-in no longer tries to block macOS's own keychain prompt or System Settings, so unlocking your saved passwords and changing system settings keep working. (#2643)
+Fixed a slowdown when opening the Help screen, and reports now keep only the last few minutes of logs instead of copying everything. (#2643)
