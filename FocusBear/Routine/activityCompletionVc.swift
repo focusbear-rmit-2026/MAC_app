@@ -4042,13 +4042,18 @@ class activityCompletionVc: NSViewController {
         lastActivityIndex = -1
         
         var seconds: Int = 0
-        let currentActivity = arrFinalBreakActivities[0].activity
+        // Callers refill first (habitsVc.hasBreakActivityToPlay); never index an empty list.
+        guard let firstBreakActivity = arrFinalBreakActivities.first else {
+            addLog(text: "startBreakActivity:- no break activity to show")
+            return
+        }
+        let currentActivity = firstBreakActivity.activity
 
         if currentActivity!.choiceType != ._RANDOM_{
             activityName = currentActivity!.name
         }else{//random choice
             currentActivityChoice = nil
-            currentActivityChoice = arrFinalBreakActivities[0].randomChoice
+            currentActivityChoice = firstBreakActivity.randomChoice
             activityName = currentActivityChoice?.name ?? ""
         }
         

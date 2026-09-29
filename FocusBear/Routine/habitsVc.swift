@@ -4152,6 +4152,7 @@ class habitsVc: NSViewController {
     
     func performBreakActivities(){
         addLog(text: "perform Break Activities")
+        guard hasBreakActivityToPlay() else { return }
         self.showCloseButtons()
         postponeBreaksFromBreaksWarningCount = 0
         if !(activityCompletionVcObj?.isViewLoaded ?? false){
@@ -4177,6 +4178,19 @@ class habitsVc: NSViewController {
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
     
+    /// The break-warning "Start" path reaches here without the refill the timed trigger does, so the
+    /// list can be empty (every activity excluded or already played) — and `startBreakActivity()` used
+    /// to crash subscripting it. Refill once; if there is still nothing to play, drop the break the way
+    /// the timed trigger does and schedule the next one.
+    private func hasBreakActivityToPlay() -> Bool {
+        if arrFinalBreakActivities.isEmpty { reFillBreakActivitiesArray() }
+        guard arrFinalBreakActivities.isEmpty else { return true }
+        addLog(text: "performBreakActivities:- no break activity to play, cancelling this break")
+        if currentState == ._MICRO_BREAK_ { currentState = ._NOTHING_ }
+        setActivityTimer()
+        return false
+    }
+
     func showBreakActivityListView(){
         addLog(text: "showBreakActivityListView")
         currentAction = ._START_//new work #502
