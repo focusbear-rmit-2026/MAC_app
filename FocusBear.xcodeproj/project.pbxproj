@@ -140,6 +140,7 @@
 		13C6BF0B2FB19D750074DD63 /* ORSSerial in Frameworks */ = {isa = PBXBuildFile; productRef = 13C6BF0A2FB19D750074DD63 /* ORSSerial */; };
 		LOT00003 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = LOT00002 /* Lottie */; };
 		13C6BF0E2FB211CA0074DD63 /* audioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */; };
+		VCA00001 /* VoiceCommandApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = VCA00002 /* VoiceCommandApi.swift */; };
 		13C6C2A22FE2615E00B1F278 /* BreakWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */; };
 		13CBE7652F07E9660025544E /* enableAIBlockingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */; };
 		13D5D0112FD0396E00AB474C /* micMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D5D0102FD0396E00AB474C /* micMonitor.swift */; };
@@ -502,6 +503,7 @@
 		TSC00001 /* TaskShortcutCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TSC00002 /* TaskShortcutCardTests.swift */; };
 		ABH00030 /* FocusMusicMediaKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00031 /* FocusMusicMediaKeyTests.swift */; };
 		LNM00010 /* LateNoMoreEventMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LNM00011 /* LateNoMoreEventMatcherTests.swift */; };
+		VCT00001 /* VoiceCommandTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = VCT00002 /* VoiceCommandTests.swift */; };
 		ABH00020 /* DaysOfWeekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00021 /* DaysOfWeekTests.swift */; };
 		B9E5CE9C47907EAB2CF6BB48 /* libonnxruntime.1.19.2.dylib in Embed ORT */ = {isa = PBXBuildFile; fileRef = 9E77B89BB3F9938EEBB5BC80 /* libonnxruntime.1.19.2.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		BEAR0001 /* blocking_bear.png in Resources */ = {isa = PBXBuildFile; fileRef = BEARF001 /* blocking_bear.png */; };
@@ -820,6 +822,7 @@
 		13C6BF072FB199E70074DD63 /* focusButtonService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusButtonService.swift; sourceTree = "<group>"; };
 		13C6BF0A2FB199E70074DD63 /* EmojiSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiSync.swift; sourceTree = "<group>"; };
 		13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = audioRecorder.swift; sourceTree = "<group>"; };
+		VCA00002 /* VoiceCommandApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCommandApi.swift; sourceTree = "<group>"; };
 		13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakWarningView.swift; sourceTree = "<group>"; };
 		13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = enableAIBlockingVc.swift; sourceTree = "<group>"; };
 		13D5D0102FD0396E00AB474C /* micMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = micMonitor.swift; sourceTree = "<group>"; };
@@ -1187,6 +1190,7 @@
 		TSC00002 /* TaskShortcutCardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskShortcutCardTests.swift; sourceTree = "<group>"; };
 		ABH00031 /* FocusMusicMediaKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusMusicMediaKeyTests.swift; sourceTree = "<group>"; };
 		LNM00011 /* LateNoMoreEventMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LateNoMoreEventMatcherTests.swift; sourceTree = "<group>"; };
+		VCT00002 /* VoiceCommandTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCommandTests.swift; sourceTree = "<group>"; };
 		ABH00021 /* DaysOfWeekTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaysOfWeekTests.swift; sourceTree = "<group>"; };
 		B1946472169EA35218827571 /* DayPlanAnalytics.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DayPlanAnalytics.swift; sourceTree = "<group>"; };
 		B215C30047E6A2A37A923150 /* ScheduleViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScheduleViewController.swift; sourceTree = "<group>"; };
@@ -1477,6 +1481,7 @@
 				13C6BF0A2FB199E70074DD63 /* EmojiSync.swift */,
 				FBC00002 /* FocusButtonCommandChannel.swift */,
 				13C6BF0D2FB211CA0074DD63 /* audioRecorder.swift */,
+				VCA00002 /* VoiceCommandApi.swift */,
 			);
 			path = FocusButton;
 			sourceTree = "<group>";
@@ -2225,6 +2230,7 @@
 				TSC00002 /* TaskShortcutCardTests.swift */,
 				ABH00031 /* FocusMusicMediaKeyTests.swift */,
 				LNM00011 /* LateNoMoreEventMatcherTests.swift */,
+				VCT00002 /* VoiceCommandTests.swift */,
 				ABH00021 /* DaysOfWeekTests.swift */,
 				UBT00002 /* URLBlockingTests.swift */,
 				TODOT0002 /* ToDoLogicTests.swift */,
@@ -2566,6 +2572,7 @@
 				137CD6052D9D4ACC00A8385A /* Embed Frameworks */,
 				FBE57001FBE57001FBE57001 /* Embed esptool */,
 				5E71D5F0000000005E71D5F0 /* [Sentry] Upload Debug Symbols */,
+				F0C0D3A00000000000000001 /* Strip isolated test URL schemes */,
 				511B1AF418874EC559B3C970 /* Embed ORT */,
 			);
 			buildRules = (
@@ -2821,6 +2828,22 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		F0C0D3A00000000000000001 /* Strip isolated test URL schemes */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = (
+				"$(SRCROOT)/scripts/strip-isolated-test-url-schemes.sh",
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "Strip isolated test URL schemes";
+			outputPaths = ();
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "bash \"${SRCROOT}/scripts/strip-isolated-test-url-schemes.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -3253,6 +3276,7 @@
 				FB0000000000000000000008 /* BlockingScheduleHomeView.swift in Sources */,
 				8F36D517297AB32800A7E4AD /* addFocusTempUrlsOrAppsVc.swift in Sources */,
 				13C6BF0E2FB211CA0074DD63 /* audioRecorder.swift in Sources */,
+				VCA00001 /* VoiceCommandApi.swift in Sources */,
 				8F19BCA5293F360D00F70544 /* whySkipHabitVc.swift in Sources */,
 				8F8C3FE12A8CFFEE005CAF96 /* uIVc.swift in Sources */,
 				8F8FDA152B3C582D0067B0A0 /* firefoxPermissionsVc.swift in Sources */,
@@ -3343,6 +3367,7 @@
 				TSC00001 /* TaskShortcutCardTests.swift in Sources */,
 				ABH00030 /* FocusMusicMediaKeyTests.swift in Sources */,
 				LNM00010 /* LateNoMoreEventMatcherTests.swift in Sources */,
+				VCT00001 /* VoiceCommandTests.swift in Sources */,
 				ABH00020 /* DaysOfWeekTests.swift in Sources */,
 				UBT00001 /* URLBlockingTests.swift in Sources */,
 				TODOT0001 /* ToDoLogicTests.swift in Sources */,
@@ -3681,7 +3706,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11;
 				MARKETING_VERSION = 3.36;
-				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.App.EarnYourScreentime$(FB_BUNDLE_ID_SUFFIX)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "FocusBear/FocusBear-Bridging-Header.h";

@@ -20,6 +20,7 @@ class audioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate{
     var audioFilename: URL?
     var isPermissionGiven = false
     var isFloatingBarVisibleBeforeShowingGif = false
+    private let voicePipeline = VoiceCommandPipeline.live
     
     override init() {
         super.init()
@@ -109,7 +110,7 @@ class audioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate{
             isRecording = false
             DispatchQueue.main.async {
                 NotificationCenter.default.post(name: VoiceEvents.error, object: nil,
-                                                userInfo: ["text": "No microphone found. Connect a microphone and try again."])
+                                                userInfo: ["text": VoiceCommandMessage.noMicrophone])
             }
             return
         }
@@ -252,26 +253,19 @@ class audioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate{
             audioFile = nil
             
             if let audioFilename = audioFilename{
-                let url = audioFilename//URL(fileURLWithPath: path)
                 NotificationCenter.default.post(name: VoiceEvents.processing, object: nil)
-                allApiObject.transcribeAudio(fileURL: url, completion: {result in
-                    print("transcribeAudio is \(result)")
-                    DispatchQueue.main.async { [self] in
-                        switch result {
-                        case .success(let transcription):
-                            addLog(text: "Transcription text is:- \(transcription)")
-                            NotificationCenter.default.post(name: VoiceEvents.transcript, object: nil,
-                                                            userInfo: ["text": transcription])
-
-                            let habitsString = isShutOffTimeGoing() ? sendEveningHabitsToFocusDevice() : sendMorningHabitsToFocusDevice()
-                            getIntentFromOpenAIAndPerformTask(transcription: transcription, habits: habitsString)
-                        case .failure(let error):
-                            print("Error: \(error)")
-                            NotificationCenter.default.post(name: VoiceEvents.error, object: nil,
-                                                            userInfo: ["text": "Couldn't transcribe audio"])
-                        }
-                    }
-                })
+                voicePipeline.run(recording: audioFilename,
+                                  habits: currentRoutineHabitNames(),
+                                  onTranscript: { transcript in
+                                      addLog(text: "Transcription text is:- \(transcript)")
+                                      DispatchQueue.main.async {
+                                          NotificationCenter.default.post(name: VoiceEvents.transcript, object: nil,
+                                                                          userInfo: ["text": transcript])
+                                      }
+                                  },
+                                  completion: { [weak self] outcome in
+                                      DispatchQueue.main.async { self?.handleVoiceCommand(outcome) }
+                                  })
             }
         }
     }
@@ -291,118 +285,81 @@ class audioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate{
         audioFile = nil
     }
 
-    func sendMorningHabitsToFocusDevice()-> String{
-        var arrHabits = [String]()
-        for i in 0..<arrFilteredMorningHabits.count{
-            arrHabits.append(arrFilteredMorningHabits[i].name)
-        }
-        return getHabitsString(habits: arrHabits)
+    /// Names of the habits in the routine that's active now, so "start my X habit" can match one.
+    private func currentRoutineHabitNames() -> [String] {
+        let habits = isShutOffTimeGoing() ? arrFilteredEveningHabits : arrFilteredMorningHabits
+        return habits.map { $0.name }
     }
-    
-    func sendEveningHabitsToFocusDevice()-> String{
-        var arrHabits = [String]()
-        for i in 0..<arrFilteredEveningHabits.count{
-            arrHabits.append(arrFilteredEveningHabits[i].name)
-        }
-        return getHabitsString(habits: arrHabits)
-    }
-    
-    func getHabitsString(habits: [String])-> String {
-        habits.map { "- \($0)" }.joined(separator: "\n")
-    }
-    
-    func getIntentFromOpenAIAndPerformTask(transcription:String, habits:String){
-        allApiObject.getIntentFromOpenAI(userMessage: transcription, habits: habits) { intentResult in
-            DispatchQueue.main.async {
-                switch intentResult {
-                case .success(let response):
-                    addLog(text: "🎯 Action: \(response.action), Confidence: \(response.confidence)")
-                    print("🎯 Action: \(response.action), Confidence: \(response.confidence)")
-                    if response.confidence == "low"{
-                        addLog(text: "🎯 Low confidence level detected — ignoring intent from OpenAI")
-                        NotificationCenter.default.post(name: VoiceEvents.error, object: nil,
-                                                        userInfo: ["text": "Sorry, I didn't catch that. Try again."])
-                        return;
-                    }
-                    let knownActions = ["start_focus", "stop_focus", "pause_focus", "resume_focus", "create_task", "start_habit", "get_focus_stats"]
-                    if knownActions.contains(response.action) {
-                        NotificationCenter.default.post(name: VoiceEvents.actionDone, object: nil,
-                                                        userInfo: ["text": self.voiceActionDescription(response)])
-                    } else {
-                        NotificationCenter.default.post(name: VoiceEvents.error, object: nil,
-                                                        userInfo: ["text": "Sorry, I can't do that one yet."])
-                    }
-                    switch response.action {
-                    case "start_focus":
-                        let duration = response.parameters.duration_minutes ?? 25
-                        let goal = response.parameters.goal
-                        startFocusModeFromFocusDeviceButton(diffMinutes: duration, shouldUpdateFocusButton: true, goal: goal, initiatedByRecording: true)
-                        
-                    case "stop_focus":
-                        addLog(text: "Stopping focus session")
-                        finishFocusModeFromFocusDeviceButton(shouldUpdateFocusButton: true)
-                        
-                    case "pause_focus":
-                        addLog(text: "Pausing focus session")
-                        pauseFocusModeFromFocusDeviceButton(shouldUpdateFocusButton: true)
-                        
-                    case "resume_focus":
-                        addLog(text: "Resuming focus session")
-                        _ = resumeFocusModeFromFocusDeviceButton(shouldUpdateFocusButton: true)
-                        
-                    case "create_task":
-                        let taskName = response.parameters.task ?? "Untitled Task"
-                        let timeString = response.parameters.time ?? self.getTomorrowISOString()
-                        
-                        addLog(text: "Creating task: \(taskName) for \(timeString)")
-                        createTask(with: taskName, dateString: timeString, shouldShowNotification: true)
-                        
-                    case "start_habit":
-                        let habitName = response.parameters.habit_name ?? "Unknown habit"
-                        addLog(text: "Starting habit: \(habitName)")
-                    
-                        let name = habitName.lowercased()
-                        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
-                            
-                            if currentAction != ._INPROGRESS_{
-                                if currentState == ._MORNING_HABIT_{
-                                    getHabitsVcObject().startMorningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
-                                }else if currentState == ._EVENING_HABIT_{
-                                    getHabitsVcObject().startEveningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
-                                }
-                            }
-                        }else {
-                            if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_{
-                                getHabitsVcObject().stopPostponeEndTimer()
-                                closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
-                                if currentState == ._POSTPONE_MORNING_HABIT_{
-                                    getHabitsVcObject().startMorningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
-                                }else if currentState == ._POSTPONE_EVENING_HABIT_{
-                                    getHabitsVcObject().startEveningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
-                                }
-                            }
-                            
-                        }
-                        
-                    case "get_focus_stats":
-                        addLog(text: "Voice query: focus stats")   // informational only; answer shown via actionDone
 
-                    default:
-                        addLog(text: "Unknown action: \(response.action)")
-                        
-                        // Handle low confidence
-                        if response.confidence == "low", let clarification = response.clarification_needed {
-                            addLog(text: "Clarification needed: \(clarification)")
-                        }
-                    }
-                    
-                case .failure(let error):
-                    addLog(text: "Intent classification failed: \(error.localizedDescription)")
-                    NotificationCenter.default.post(name: VoiceEvents.error, object: nil,
-                                                    userInfo: ["text": "Couldn't understand that. Try again."])
-                    //handleWithPatternMatching(transcription)
-                }
+    private func handleVoiceCommand(_ outcome: VoiceCommandOutcome) {
+        switch outcome {
+        case .perform(let action, let intent):
+            addLog(text: "🎯 Action: \(intent.action), Confidence: \(intent.confidence)")
+            // Describe before performing: the description reads the state the action is about to change.
+            NotificationCenter.default.post(name: VoiceEvents.actionDone, object: nil,
+                                            userInfo: ["text": voiceActionDescription(intent)])
+            perform(action)
+        case .notUnderstood:
+            addLog(text: "🎯 Nothing heard, low confidence or missing details — ignoring the voice command")
+            postVoiceError(VoiceCommandMessage.notUnderstood)
+        case .unsupported(let action):
+            addLog(text: "Unknown voice action: \(action)")
+            postVoiceError(VoiceCommandMessage.unsupported)
+        case .transcriptionFailed(let error):
+            addLog(text: "Transcription failed: \(error)")
+            postVoiceError(VoiceCommandMessage.transcriptionFailed(error))
+        case .classificationFailed(let error):
+            addLog(text: "Intent classification failed: \(error)")
+            postVoiceError(VoiceCommandMessage.classificationFailed(error))
+        }
+    }
+
+    private func postVoiceError(_ message: String) {
+        NotificationCenter.default.post(name: VoiceEvents.error, object: nil, userInfo: ["text": message])
+    }
+
+    private func perform(_ action: VoiceCommandAction) {
+        switch action {
+        case .startFocus(let minutes, let goal):
+            startFocusModeFromFocusDeviceButton(diffMinutes: minutes, shouldUpdateFocusButton: true, goal: goal, initiatedByRecording: true)
+        case .stopFocus:
+            addLog(text: "Stopping focus session")
+            finishFocusModeFromFocusDeviceButton(shouldUpdateFocusButton: true)
+        case .pauseFocus:
+            addLog(text: "Pausing focus session")
+            pauseFocusModeFromFocusDeviceButton(shouldUpdateFocusButton: true)
+        case .resumeFocus:
+            addLog(text: "Resuming focus session")
+            _ = resumeFocusModeFromFocusDeviceButton(shouldUpdateFocusButton: true)
+        case .createTask(let name, let time):
+            let timeString = time ?? getTomorrowISOString()
+            addLog(text: "Creating task: \(name) for \(timeString)")
+            createTask(with: name, dateString: timeString, shouldShowNotification: true)
+        case .startHabit(let name):
+            addLog(text: "Starting habit: \(name)")
+            startRoutineHabit(named: name.lowercased())
+        case .focusStats:
+            addLog(text: "Voice query: focus stats")   // informational only; answer shown via actionDone
+        }
+    }
+
+    private func startRoutineHabit(named name: String) {
+        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+            guard currentAction != ._INPROGRESS_ else { return }
+            if currentState == ._MORNING_HABIT_{
+                getHabitsVcObject().startMorningRoutineHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
+            }else{
+                getHabitsVcObject().startEveningRoutineHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
             }
+            return
+        }
+        guard currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_ else { return }
+        getHabitsVcObject().stopPostponeEndTimer()
+        closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
+        if currentState == ._POSTPONE_MORNING_HABIT_{
+            getHabitsVcObject().startMorningRoutineHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
+        }else{
+            getHabitsVcObject().startEveningRoutineHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
         }
     }
 

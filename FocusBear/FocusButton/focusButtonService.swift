@@ -1086,9 +1086,9 @@ class focusButtonService: NSObject {
                     
                     if currentAction != ._INPROGRESS_{
                         if currentState == ._MORNING_HABIT_{
-                            getHabitsVcObject().startMorningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
+                            getHabitsVcObject().startMorningRoutineHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
                         }else if currentState == ._EVENING_HABIT_{
-                            getHabitsVcObject().startEveningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
+                            getHabitsVcObject().startEveningRoutineHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
                         }
                     }
                 }else {
@@ -1096,9 +1096,9 @@ class focusButtonService: NSObject {
                         getHabitsVcObject().stopPostponeEndTimer()
                         closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
                         if currentState == ._POSTPONE_MORNING_HABIT_{
-                            getHabitsVcObject().startMorningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
+                            getHabitsVcObject().startMorningRoutineHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
                         }else if currentState == ._POSTPONE_EVENING_HABIT_{
-                            getHabitsVcObject().startEveningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
+                            getHabitsVcObject().startEveningRoutineHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
                         }
                     }
                     

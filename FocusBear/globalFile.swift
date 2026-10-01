@@ -21,11 +21,14 @@ let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height
 // Suite name shared with FBHelper — must derive identically in both targets.
 // The team prefix comes from the build's DEVELOPMENT_TEAM (via FBTeamIdentifierPrefix in
 // Info.plist) so a contributor building under their own team still gets a matching suite.
+private let focusBearTeamIdentifier = "TCUD568B3U" // i18n-ignore: Apple team id, not UI text
+
 let fbSharedDefaultsSuiteName: String = {
-    if let team = Bundle.main.object(forInfoDictionaryKey: "FBTeamIdentifierPrefix") as? String, !team.isEmpty {
-        return "\(team).group.com.focusbear.fbmac"
-    }
-    return "TCUD568B3U.group.com.focusbear.fbmac"
+    let team = (Bundle.main.object(forInfoDictionaryKey: "FBTeamIdentifierPrefix") as? String)
+        .flatMap { $0.isEmpty ? nil : $0 } ?? focusBearTeamIdentifier
+    // The test bundle also needs a separate helper suite before the app delegate initializes it.
+    return LogicTestHost.sharedDefaultsSuiteName(
+        productionSuiteName: "\(team).group.com.focusbear.fbmac", bundleIdentifier: Bundle.main.bundleIdentifier)
 }()
 
 /// Recursively strip anything that is not a property-list type so a value is always safe to hand

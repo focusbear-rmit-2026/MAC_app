@@ -1413,14 +1413,14 @@ class habitsVc: NSViewController {
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
     
-    func startMorningRouintHabitFromDeviceButton(name:String, shouldUpdateDeviceButton:Bool){
-        addLog(text: "Start Morning Rouint Habit From Device Button.")
+    func startMorningRoutineHabitFromDeviceButton(name:String, shouldUpdateDeviceButton:Bool){
+        addLog(text: "Start Morning Routine Habit From Device Button.")
         if let mainWindowControllerObj = mainWindowControllerObj, !(mainWindowControllerObj.window?.isVisible ?? false){
             mainWindowControllerObj.showWindow(self)
         }
         removeCompletedHabitsForMorningEveningRoutine()
         for i in 0..<arrFilteredMorningHabits.count{
-            if arrFilteredMorningHabits[i].fakeIdForDevice == name || arrFilteredMorningHabits[i].name.lowercased() == name{
+            if arrFilteredMorningHabits[i].fakeIdForDevice == name || arrFilteredMorningHabits[i].name.lowercased() == name || arrFilteredMorningHabits[i].nameWithoutIcon.lowercased() == name{
                 let habit = arrFilteredMorningHabits[i]
                 arrFilteredMorningHabits.remove(at: i)
                 arrFilteredMorningHabits.insert(habit, at: 0)
@@ -1435,14 +1435,14 @@ class habitsVc: NSViewController {
         }
     }
     
-    func startEveningRouintHabitFromDeviceButton(name:String, shouldUpdateDeviceButton:Bool){
-        addLog(text: "Start Evening Rouint Habit From Device Button.")
+    func startEveningRoutineHabitFromDeviceButton(name:String, shouldUpdateDeviceButton:Bool){
+        addLog(text: "Start Evening Routine Habit From Device Button.")
         if let mainWindowControllerObj = mainWindowControllerObj, !(mainWindowControllerObj.window?.isVisible ?? false){
             mainWindowControllerObj.showWindow(self)
         }
         removeCompletedHabitsForMorningEveningRoutine()
         for i in 0..<arrFilteredEveningHabits.count{
-            if arrFilteredEveningHabits[i].fakeIdForDevice == name || arrFilteredEveningHabits[i].name.lowercased() == name{
+            if arrFilteredEveningHabits[i].fakeIdForDevice == name || arrFilteredEveningHabits[i].name.lowercased() == name || arrFilteredEveningHabits[i].nameWithoutIcon.lowercased() == name{
                 let habit = arrFilteredEveningHabits[i]
                 arrFilteredEveningHabits.remove(at: i)
                 arrFilteredEveningHabits.insert(habit, at: 0)

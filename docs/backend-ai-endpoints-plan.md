@@ -2,6 +2,13 @@
 
 **Status:** Proposed · **Owners:** Backend, Mac, Windows · **Shared via:** cross-agent coordination board
 
+> **Update 2026-09-28: voice endpoints implemented** (backend PR #2470, Mac-App #2732). `POST /voice/intent` matches
+> Endpoint 2 below exactly. **Transcription shipped as one synchronous `POST /voice/transcribe` multipart upload**
+> (part `file`, audio MIME type, ≤ 10 MB, returns `{ "text": "…" }`), not the async R2 + job flow in Endpoint 1.
+> A voice command is a few seconds of audio the user is waiting on, so one request with no Pusher event or polling
+> is simpler for every client. The final wire contract is in the "Client contract" section of backend PR #2470.
+> The committed `sk-proj-…` key is already revoked.
+
 ## Why
 
 Two AI features currently call `https://api.openai.com` **directly from the client** with an OpenAI
@@ -386,7 +393,7 @@ matching the existing pattern.
 
 | Feature | Old direct call | New backend call |
 |---------|-----------------|------------------|
-| Voice transcription | `POST api.openai.com/v1/audio/transcriptions` (whisper-1) | **async R2 flow:** `POST {baseUrl}/voice/generate-upload-url` → PUT bytes to R2 → `POST {baseUrl}/voice/transcribe` `{ audioKey }` → `{ jobId }` → `voice-transcription.completed` on `private-<userId>` → `GET {baseUrl}/voice/transcribe/:jobId` → `{ status, text }` |
+| Voice transcription | `POST api.openai.com/v1/audio/transcriptions` (whisper-1) | **as shipped:** `POST {baseUrl}/voice/transcribe` (multipart, part `file`) → `{ text }` |
 | Voice intent | `POST api.openai.com/v1/chat/completions` (gpt-4o-mini) | `POST {baseUrl}/voice/intent` (JSON) |
 | Accountability buddy | `POST api.openai.com/v1/chat/completions` (gpt-4.1-mini) | `POST {baseUrl}/ai/accountability-buddy/evaluate` (JSON) |
 

@@ -2834,7 +2834,7 @@ extension menuViewController {
             // Safety net: if transcription/intent never returns, don't hang on "Thinking…".
             DispatchQueue.main.asyncAfter(deadline: .now() + 25) {
                 if model.voiceStatus == .processing {
-                    model.voiceResult = "Timed out. Please try again."
+                    model.voiceResult = VoiceCommandMessage.timedOut
                     model.voiceStatus = .error
                 }
             }
@@ -2843,11 +2843,11 @@ extension menuViewController {
             model.voiceTranscript = note.userInfo?["text"] as? String ?? ""
         }
         nc.addObserver(forName: VoiceEvents.actionDone, object: nil, queue: .main) { note in
-            model.voiceResult = note.userInfo?["text"] as? String ?? "Done"
+            model.voiceResult = note.userInfo?["text"] as? String ?? menuLocalized("voiceDone", "Done")
             model.voiceStatus = .done
         }
         nc.addObserver(forName: VoiceEvents.error, object: nil, queue: .main) { note in
-            model.voiceResult = note.userInfo?["text"] as? String ?? "Something went wrong"
+            model.voiceResult = note.userInfo?["text"] as? String ?? VoiceCommandMessage.generic
             model.voiceStatus = .error
         }
         nc.addObserver(forName: VoiceEvents.deviceListening, object: nil, queue: .main) { [weak self] _ in
@@ -3478,9 +3478,9 @@ extension menuViewController {
         }
         switch currentState {
         case ._MORNING_HABIT_, ._POSTPONE_MORNING_HABIT_:
-            getHabitsVcObject().startMorningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
+            getHabitsVcObject().startMorningRoutineHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
         case ._EVENING_HABIT_, ._POSTPONE_EVENING_HABIT_:
-            getHabitsVcObject().startEveningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
+            getHabitsVcObject().startEveningRoutineHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
         default:
             btnEditHabitsClicked(self as Any)
             return

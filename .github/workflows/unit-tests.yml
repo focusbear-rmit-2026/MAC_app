@@ -16,6 +16,11 @@ on:
       - 'Podfile.lock'
       - 'scripts/fetch-sparkle.sh'
       - 'scripts/check-managed-blocking-translations.py'
+      - 'scripts/wait-for-build-capacity.py'
+      - 'scripts/test-build-capacity.py'
+      - 'scripts/verify-logic-test-host.py'
+      - 'scripts/test-logic-test-host-isolation.py'
+      - 'scripts/strip-isolated-test-url-schemes.sh'
       - '.github/workflows/unit-tests.yml'
   push:
     branches:
@@ -34,6 +39,8 @@ jobs:
     permissions:
       contents: read
     timeout-minutes: 40
+    env:
+      XCODE_BUILD_JOBS: '2'
 
     steps:
       - name: Checkout
@@ -57,17 +64,58 @@ jobs:
       - name: Fetch ONNX Runtime
         run: ./scripts/fetch-onnxruntime.sh
 
+      - name: Test logic-host preflight
+        run: python3 scripts/test-logic-test-host-isolation.py
+
+      - name: Test capacity gate
+        run: python3 scripts/test-build-capacity.py
+
+      - name: Build isolated logic-test host
+        env:
+          LOGIC_DERIVED_DATA: ${{ runner.temp }}/logic-tests-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          python3 scripts/wait-for-build-capacity.py
+          xcodebuild build-for-testing \
+            -jobs "$XCODE_BUILD_JOBS" \
+            -workspace FocusBear.xcworkspace \
+            -scheme "Focus Bear" \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$LOGIC_DERIVED_DATA" \
+            FB_BUNDLE_ID_SUFFIX=.logictests \
+            CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION=YES \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            DEVELOPMENT_TEAM="" \
+            SWIFT_ENABLE_EXPLICIT_MODULES=NO \
+            | tee xcodebuild-build.log
+
       - name: Run logic unit tests
         env:
+          LOGIC_DERIVED_DATA: ${{ runner.temp }}/logic-tests-${{ github.run_id }}-${{ github.run_attempt }}
           TEST_RUNNER_FOCUS_START_VISUAL_QA: '1'
           TEST_RUNNER_FOCUSBEAR_CAPTURE_ONGOING: '1'
           TEST_RUNNER_FOCUSBEAR_CAPTURE_DIRECTORY: ${{ runner.temp }}/ongoing-visuals-${{ github.sha }}
         run: |
-          set -o pipefail
+          set -euo pipefail
+          python3 scripts/verify-logic-test-host.py --products-directory "$LOGIC_DERIVED_DATA/Build/Products"
+          # The trusted runner also verifies source and requires a build-capable test action.
+          python3 scripts/wait-for-build-capacity.py
           xcodebuild test \
+            -jobs "$XCODE_BUILD_JOBS" \
             -workspace FocusBear.xcworkspace \
             -scheme "Focus Bear" \
             -configuration Debug \
+            -derivedDataPath "$LOGIC_DERIVED_DATA" \
+            FB_BUNDLE_ID_SUFFIX=.logictests \
+            CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION=YES \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            DEVELOPMENT_TEAM="" \
+            SWIFT_ENABLE_EXPLICIT_MODULES=NO \
             -destination 'platform=macOS' \
             -parallel-testing-enabled NO \
             -resultBundlePath TestResults.xcresult \
@@ -111,7 +159,6 @@ jobs:
             -only-testing:"Focus BearTests/MainWindowContentLayoutTests" \
             -only-testing:"Focus BearTests/MainThreadWindowTitleTests" \
             -only-testing:"Focus BearTests/AllowedActivityFullScreenTests" \
-
             -only-testing:"Focus BearTests/ShutdownNagPolicyTests" \
             -only-testing:"Focus BearTests/LeftMenuAvailabilityTests" \
             -only-testing:"Focus BearTests/BlockListComboBoxTextTests" \
@@ -139,7 +186,6 @@ jobs:
             -only-testing:"Focus BearTests/LocalForecastPortfolioTests" \
             -only-testing:"Focus BearTests/ForecastReschedulingTests" \
             -only-testing:"Focus BearTests/LegacySettingsMutationTests" \
-            CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION=YES \
             -only-testing:"Focus BearTests/FocusStartVisualTests" \
             -only-testing:"Focus BearTests/EventCancellationTests" \
             -only-testing:"Focus BearTests/ToDoAttachmentsTests" \
@@ -153,11 +199,9 @@ jobs:
             -only-testing:"Focus BearTests/PostponeGateTests" \
             -only-testing:"Focus BearTests/DayPlanDestinationTests" \
             -only-testing:"Focus BearTests/BlockingScheduleDefaultsTests" \
-            CODE_SIGN_IDENTITY="-" \
-            CODE_SIGN_STYLE=Manual \
-            PROVISIONING_PROFILE_SPECIFIER="" \
-            DEVELOPMENT_TEAM="" \
-            SWIFT_ENABLE_EXPLICIT_MODULES=NO \
+            -only-testing:"Focus BearTests/VoiceCommandRequestTests" \
+            -only-testing:"Focus BearTests/VoiceCommandPipelineTests" \
+            -only-testing:"Focus BearTests/SourceSecretsTests" \
             | tee xcodebuild.log
 
       - name: Export visual QA captures
@@ -185,6 +229,7 @@ jobs:
           path: |
             TestResults.xcresult
             xcodebuild.log
+            xcodebuild-build.log
           if-no-files-found: ignore
           retention-days: 7
 

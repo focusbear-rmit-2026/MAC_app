@@ -18,8 +18,27 @@ import CoreMedia
 /// Logic tests use the app as a bundle host, without starting a signed-in desktop session.
 /// The dedicated scheme flag alone cannot change a normal app launch or a Release build.
 enum LogicTestHost {
+    static let HOST_ENVIRONMENT_KEY = "FOCUSBEAR_LOGIC_TEST_HOST"
+    static let ENABLED_ENVIRONMENT_VALUE = "1"
+    static let BUNDLE_IDENTIFIER_SUFFIX = ".logictests"
+    static let SHIPPING_BUNDLE_IDENTIFIER = "com.App.EarnYourScreentime"
+    static let BUNDLE_IDENTIFIER = SHIPPING_BUNDLE_IDENTIFIER + BUNDLE_IDENTIFIER_SUFFIX
+
+    static func sharedDefaultsSuiteName(productionSuiteName: String, bundleIdentifier: String?) -> String {
+        bundleIdentifier == BUNDLE_IDENTIFIER ? productionSuiteName + BUNDLE_IDENTIFIER_SUFFIX : productionSuiteName
+    }
+
     static func shouldIsolate(environment: [String: String], hasXCTest: Bool, isDebug: Bool) -> Bool {
+        // The independently installed runner preflight verifies this exact expression.
         isDebug && hasXCTest && environment["FOCUSBEAR_LOGIC_TEST_HOST"] == "1"
+    }
+
+    static func shouldPermitLaunch(environment: [String: String], bundleIdentifier: String?,
+                                   hasXCTest: Bool, isDebug: Bool) -> Bool {
+        let isIsolatedBundle = bundleIdentifier == BUNDLE_IDENTIFIER
+        let requestsLogicHost = environment[HOST_ENVIRONMENT_KEY] == ENABLED_ENVIRONMENT_VALUE
+        guard isIsolatedBundle || requestsLogicHost else { return true }
+        return isIsolatedBundle && shouldIsolate(environment: environment, hasXCTest: hasXCTest, isDebug: isDebug)
     }
 
     static var isEnabled: Bool {
@@ -64,8 +83,23 @@ enum LogicTestHost {
     }
 }
 
-@NSApplicationMain
+@main
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDelegate, SPUUpdaterDelegate {
+    static func main() {
+#if DEBUG
+        let isDebug = true
+#else
+        let isDebug = false
+#endif
+        // Refuse unsafe test launches before AppKit creates the delegate or loads the storyboard.
+        guard LogicTestHost.shouldPermitLaunch(
+            environment: ProcessInfo.processInfo.environment,
+            bundleIdentifier: Bundle.main.bundleIdentifier,
+            hasXCTest: NSClassFromString("XCTestCase") != nil, isDebug: isDebug) else {
+            fatalError("Logic tests require an isolated Debug bundle, the logic-host flag, and XCTest")
+        }
+        _ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)
+    }
     
     let sharedDefaults = UserDefaults(suiteName: fbSharedDefaultsSuiteName)
     @IBOutlet weak var menuItemUninstall: NSMenuItem!
