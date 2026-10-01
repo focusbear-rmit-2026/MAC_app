@@ -651,9 +651,11 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         }
         
         if let finishTime = endFocusModeTime{
-            allApiObject.extendFocusMode(id: arrFocusType[currentFocusModeIndex]["id"] as? String ?? "", finish_time: finishTime, completionHandler: {dic in
-                
-            })
+            // The server was told the session finished when it ended (#2678), so the extra minutes may
+            // need a new session there rather than an extension of the finished one; the reporter knows.
+            FocusSessionFinishReporter.shared.sessionExtended(
+                focusModeId: arrFocusType[currentFocusModeIndex]["id"] as? String ?? "",
+                from: Date(), until: finishTime)
         }
         updateAllFocusModes()
     }

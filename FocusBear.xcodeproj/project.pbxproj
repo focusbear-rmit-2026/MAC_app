@@ -522,6 +522,7 @@
 		E8856235EAE1570EE7E26EF1 /* ORTBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = 276F8B5EEE7EC9C4B2DA2895 /* ORTBridge.mm */; };
 		E8F2E77638719E0C61AFC6A9 /* TaskDeduplicationHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD4B08AEBA86C6C7E5F11357 /* TaskDeduplicationHelper.swift */; };
 		FBEXT00001 /* focusSessionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBEXT00002 /* focusSessionExtension.swift */; };
+		FBFIN00001 /* focusSessionFinishReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBFIN00002 /* focusSessionFinishReport.swift */; };
 		ESD00001 /* EveningShutdownScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = ESD00002 /* EveningShutdownScreen.swift */; };
 		F8D86C780DCCA30475AF0CCF /* libonnxruntime.1.19.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 9E77B89BB3F9938EEBB5BC80 /* libonnxruntime.1.19.2.dylib */; };
 		FB0000000000000000000002 /* BlockingScheduleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0000000000000000000001 /* BlockingScheduleStore.swift */; };
@@ -1215,6 +1216,7 @@
 		STT00004 /* StatsLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsLogicTests.swift; sourceTree = "<group>"; };
 		CD4B08AEBA86C6C7E5F11357 /* TaskDeduplicationHelper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TaskDeduplicationHelper.swift; sourceTree = "<group>"; };
 		FBEXT00002 /* focusSessionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusSessionExtension.swift; sourceTree = "<group>"; };
+		FBFIN00002 /* focusSessionFinishReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusSessionFinishReport.swift; sourceTree = "<group>"; };
 		D0C7037C21AF4BA7BFAD7BC0 /* YouTubeMusicPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeMusicPlayerView.swift; sourceTree = "<group>"; };
 		D37822C4312A41568B0E8AE0 /* YouTubeMusicTrackStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeMusicTrackStore.swift; sourceTree = "<group>"; };
 		E2AFF50781FF64A00B0C9A64 /* TalkingClockManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkingClockManager.swift; sourceTree = "<group>"; };
@@ -1861,6 +1863,7 @@
 				DNDCP002 /* DNDClickPolicy.swift */,
 				CD4B08AEBA86C6C7E5F11357 /* TaskDeduplicationHelper.swift */,
 				FBEXT00002 /* focusSessionExtension.swift */,
+				FBFIN00002 /* focusSessionFinishReport.swift */,
 			);
 			path = "Focus mode";
 			sourceTree = "<group>";
@@ -3329,6 +3332,7 @@
 				A44105267F38DD863D1F446C /* RelevanceShadowNativeModel.swift in Sources */,
 				4EF24A882110645D3DEDB2E9 /* DayPlanAnalytics.swift in Sources */,
 				FBEXT00001 /* focusSessionExtension.swift in Sources */,
+				FBFIN00001 /* focusSessionFinishReport.swift in Sources */,
 				7F9BA16602335B11CA55F1DA /* AudhdResultsWebViewVc.swift in Sources */,
 				BHR00001 /* BusyHoursCalculator.swift in Sources */,
 				BHR00003 /* BusyHoursReporter.swift in Sources */,

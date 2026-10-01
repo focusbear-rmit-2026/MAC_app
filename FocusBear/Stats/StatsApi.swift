@@ -121,6 +121,14 @@ extension AllApi {
         }
     }
 
+    /// Adds the achievements written on the end screen to a session that is already finished (#2678).
+    func attachFocusBlockAchievements(id: String, achievements: String, completionHandler: @escaping (Bool) -> ()) {
+        let body = try? StatsJSON.encoder.encode(FocusBlockAchievementsPayload(achievements: achievements))
+        performStatsRequest(path: "\(StatsEndpoint.focusLog)/\(id)", method: HTTPMethod.patch, body: body) { _, status in
+            completionHandler(AllApi.isSuccess(status))
+        }
+    }
+
     func deleteFocusBlock(id: String, completionHandler: @escaping (Bool) -> ()) {
         performStatsRequest(path: "\(StatsEndpoint.focusLog)/\(id)", method: HTTPMethod.delete, body: nil) { _, status in
             completionHandler(AllApi.isSuccess(status))

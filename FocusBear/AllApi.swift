@@ -3455,7 +3455,10 @@ class AllApi:NSObject {
         }
     }
     
-    func finishFocusMode(id:String,achievements:String, distractions:String, finish_time:Date, rating:Int?, completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
+    /// `sessionTasks`, when given, is the task queue to log against the session instead of the live
+    /// `focusModeTaskString`, which is then left alone. The finish sent the moment a session ends uses
+    /// it, because the end screen goes on showing those tasks (#2678).
+    func finishFocusMode(id:String,achievements:String, distractions:String, finish_time:Date, rating:Int?, sessionTasks: String? = nil, completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
         addLog(text: "func call:-  finishFocusMode:- focus-mode/id/finish")
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
@@ -3475,7 +3478,7 @@ class AllApi:NSObject {
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                     
                     var to_dos:[[String: Any]] = []
-                    if let data = focusModeTaskString.data(using: String.Encoding.utf8) {
+                    if let data = (sessionTasks ?? focusModeTaskString).data(using: String.Encoding.utf8) {
                         do {
                             let jsonResult:[[String: Any]] = try (JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]] ?? [])
                             print(jsonResult)
@@ -3484,15 +3487,9 @@ class AllApi:NSObject {
                             print(error)
                         }
                     }
-                    var achievements = achievements.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? achievements
-                    if achievements.count > 250{// api was not accepting more than 255 charcters so i truncate to 254 characters
-                        let index = achievements.index(achievements.startIndex, offsetBy: 250)
-                        achievements = String(achievements.prefix(upTo: index))
-                    }
-                    
                     
                     var json: [String: Any] = [
-                        "achievements": achievements,
+                        "achievements": encodedFocusSessionAchievements(achievements),
                         "distractions": distractions,
                         "finish_time": getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
                         "focus_duration_seconds": focusModeActualDurationPerformed,
@@ -3508,7 +3505,9 @@ class AllApi:NSObject {
                     }
                     json["metadata"] = metadata
                     
-                    focusModeTaskString = ""
+                    if sessionTasks == nil{
+                        focusModeTaskString = ""
+                    }
                     
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)
                     request.httpBody = jsonData
@@ -3565,7 +3564,7 @@ class AllApi:NSObject {
                                     self.isApiFinishFocusModeErrorFound = true
                                     addLog(text: "error finishFocusMode:- try second time")
                                     
-                                    allApiObject.finishFocusMode(id: id, achievements: achievements, distractions: distractions, finish_time: finish_time, rating:rating, completionHandler: {newDic in
+                                    allApiObject.finishFocusMode(id: id, achievements: achievements, distractions: distractions, finish_time: finish_time, rating:rating, sessionTasks: sessionTasks, completionHandler: {newDic in
                                         completionHandler(newDic)
                                         return
                                     })

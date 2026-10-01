@@ -328,14 +328,7 @@ class focusCompletedVc: NSViewController {
                 addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
 
                 isFinishFocusModeApiCalled = true
-                allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), rating:currentRatingCount, completionHandler: {newDic in
-                    DispatchQueue.main.async {
-                        if self.isShutOffTime{
-                            currentState = ._NOTHING_
-                            appdelegate?.shutOffMac()
-                        }
-                    }
-                })
+                reportEndScreenClosed(completion: shutOffMacIfShutOffTime)
                 addEntryInUsageTimingsExplanationCsv()
                 
                 focusModeFinishedResetAllData()
@@ -774,11 +767,7 @@ class focusCompletedVc: NSViewController {
         addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
 
         
-        allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), rating:currentRatingCount, completionHandler: {newDic in
-            DispatchQueue.main.async {
-                
-            }
-        })
+        reportEndScreenClosed()
         addEntryInUsageTimingsExplanationCsv()
         focusModeFinishedResetAllData()
         nextFocusSessionIntention = textFieldNextSessionIntention.stringValue
@@ -828,14 +817,7 @@ class focusCompletedVc: NSViewController {
         addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
 
         
-        allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), rating:currentRatingCount, completionHandler: {newDic in
-            DispatchQueue.main.async {
-                if self.isShutOffTime{
-                    currentState = ._NOTHING_
-                    appdelegate?.shutOffMac()
-                }
-            }
-        })
+        reportEndScreenClosed(completion: shutOffMacIfShutOffTime)
         
         
         addEntryInUsageTimingsExplanationCsv()
@@ -881,6 +863,37 @@ class focusCompletedVc: NSViewController {
     }
     
 
+    /// Sends what closing the end screen owes the server and clears the session's task queue. The
+    /// session itself was finished when it ended (#2678), so normally this only attaches the
+    /// achievements; the full finish with the end screen's details is sent only if that one failed.
+    private func reportEndScreenClosed(completion: @escaping () -> Void = {}) {
+        let achievements = textFieldAchieve.stringValue
+        let distractions = textFieldDistractions.stringValue
+        let rating = currentRatingCount
+        let focusModeId = currentFocusModeId
+        let finishTime = finish_time ?? Date()
+        let sessionTasks = focusModeTaskString
+        focusModeTaskString = ""
+        FocusSessionFinishReporter.shared.endScreenClosed(
+            achievements: achievements,
+            finishWithDetails: { done in
+                allApiObject.finishFocusMode(id: focusModeId, achievements: achievements, distractions: distractions,
+                                             finish_time: finishTime, rating: rating, sessionTasks: sessionTasks) { _ in
+                    done()
+                }
+            },
+            completion: completion)
+    }
+
+    /// The shut-off end screen turns the Mac off once its session report has been answered.
+    private func shutOffMacIfShutOffTime() {
+        DispatchQueue.main.async {
+            guard self.isShutOffTime else { return }
+            currentState = ._NOTHING_
+            appdelegate?.shutOffMac()
+        }
+    }
+
     @IBAction func btnDoBreakActivityClicked(_ sender: Any) {
         addLog(text: "[user-action] focusCompletedVc - btnDoBreakActivityClicked")
         workDone()
@@ -922,11 +935,7 @@ class focusCompletedVc: NSViewController {
             updateAllFocusModeTags()
             addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
 
-            allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), rating:currentRatingCount, completionHandler: {newDic in
-                DispatchQueue.main.async {
-
-                }
-            })
+            reportEndScreenClosed()
             addEntryInUsageTimingsExplanationCsv()
             
             focusModeFinishedResetAllData()

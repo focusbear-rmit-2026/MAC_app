@@ -1642,3 +1642,202 @@ private final class FocusSessionVisualNetworkGuard: URLProtocol {
     override func stopLoading() {}
 }
 #endif
+
+// MARK: - Reporting the finish when the session ends (#2678)
+
+/// Records the server calls the finish flow makes, and lets a test settle the finish when it chooses.
+private final class RecordingFinishTransport: FocusSessionFinishTransport {
+    var finishedSessions: [EndedFocusSession] = []
+    var attachedAchievements: [(text: String, session: EndedFocusSession)] = []
+    var extendedFocusModeIds: [String] = []
+    var startedSessions: [(focusModeId: String, start: Date, finish: Date)] = []
+    private var pendingFinishCompletions: [(FocusSessionFinishOutcome) -> Void] = []
+
+    func finish(_ session: EndedFocusSession, completion: @escaping (FocusSessionFinishOutcome) -> Void) {
+        finishedSessions.append(session)
+        pendingFinishCompletions.append(completion)
+    }
+
+    func attachAchievements(_ achievements: String, to session: EndedFocusSession, completion: @escaping () -> Void) {
+        attachedAchievements.append((achievements, session))
+        completion()
+    }
+
+    func extendOpenSession(focusModeId: String, until finishTime: Date) {
+        extendedFocusModeIds.append(focusModeId)
+    }
+
+    func startSession(focusModeId: String, from startTime: Date, until finishTime: Date) {
+        startedSessions.append((focusModeId, startTime, finishTime))
+    }
+
+    /// Answers the oldest finish still waiting for the server.
+    func settleFinish(_ outcome: FocusSessionFinishOutcome) {
+        guard !pendingFinishCompletions.isEmpty else { return XCTFail("No finish is waiting to settle") }
+        pendingFinishCompletions.removeFirst()(outcome)
+    }
+}
+
+extension FocusSessionTests {
+
+    private static let focusModeId = "deep-work"
+    private static let sessionEnd = Date(timeIntervalSince1970: 1_790_000_000)
+
+    private func makeReporter() -> (FocusSessionFinishReporter, RecordingFinishTransport) {
+        let transport = RecordingFinishTransport()
+        return (FocusSessionFinishReporter(transport: transport, deliver: { $0() }), transport)
+    }
+
+    /// Closes the end screen and returns how many times the legacy full finish was sent.
+    @discardableResult
+    private func closeEndScreen(_ reporter: FocusSessionFinishReporter, achievements: String) -> Int {
+        var legacyFinishCount = 0
+        reporter.endScreenClosed(achievements: achievements,
+                                 finishWithDetails: { done in legacyFinishCount += 1; done() },
+                                 completion: {})
+        return legacyFinishCount
+    }
+
+    func test_finishReport_isSentTheMomentTheSessionEnds() {
+        let (reporter, transport) = makeReporter()
+
+        reporter.sessionEnded(focusModeId: Self.focusModeId, finishTime: Self.sessionEnd)
+
+        XCTAssertEqual(transport.finishedSessions,
+                       [EndedFocusSession(focusModeId: Self.focusModeId, finishTime: Self.sessionEnd)],
+                       "A quit while the end screen is up must not leave the session running on the server")
+    }
+
+    func test_finishReport_closingAfterAFinishAttachesTheAchievementsWithoutFinishingAgain() {
+        let (reporter, transport) = makeReporter()
+        reporter.sessionEnded(focusModeId: Self.focusModeId, finishTime: Self.sessionEnd)
+        transport.settleFinish(.succeeded)
+
+        let legacyFinishes = closeEndScreen(reporter, achievements: "Shipped the fix")
+
+        XCTAssertEqual(legacyFinishes, 0, "The server rejects a second finish of a completed session")
+        XCTAssertEqual(transport.finishedSessions.count, 1)
+        XCTAssertEqual(transport.attachedAchievements.map { $0.text }, ["Shipped the fix"])
+    }
+
+    func test_finishReport_closingWithNothingWrittenSendsNothing() {
+        let (reporter, transport) = makeReporter()
+        reporter.sessionEnded(focusModeId: Self.focusModeId, finishTime: Self.sessionEnd)
+        transport.settleFinish(.succeeded)
+
+        let legacyFinishes = closeEndScreen(reporter, achievements: "  \n")
+
+        XCTAssertEqual(legacyFinishes, 0)
+        XCTAssertTrue(transport.attachedAchievements.isEmpty)
+    }
+
+    func test_finishReport_closingTwiceActsOnce() {
+        let (reporter, transport) = makeReporter()
+        reporter.sessionEnded(focusModeId: Self.focusModeId, finishTime: Self.sessionEnd)
+        transport.settleFinish(.succeeded)
+
+        closeEndScreen(reporter, achievements: "Shipped the fix")
+        let secondLegacyFinishes = closeEndScreen(reporter, achievements: "Shipped the fix")
+
+        XCTAssertEqual(secondLegacyFinishes, 0, "Leaving the end screen again must not finish it again")
+        XCTAssertEqual(transport.attachedAchievements.count, 1)
+    }
+
+    func test_finishReport_closingWhileTheFinishIsInFlightWaitsForIt() {
+        let (reporter, transport) = makeReporter()
+        reporter.sessionEnded(focusModeId: Self.focusModeId, finishTime: Self.sessionEnd)
+
+        closeEndScreen(reporter, achievements: "Shipped the fix")
+        XCTAssertTrue(transport.attachedAchievements.isEmpty, "Nothing to attach to until the finish lands")
+
+        transport.settleFinish(.succeeded)
+        XCTAssertEqual(transport.attachedAchievements.map { $0.text }, ["Shipped the fix"])
+    }
+
+    func test_finishReport_aFailedFinishFallsBackToTheFullFinishOnClose() {
+        let (reporter, transport) = makeReporter()
+        reporter.sessionEnded(focusModeId: Self.focusModeId, finishTime: Self.sessionEnd)
+        transport.settleFinish(.failed)
+
+        let legacyFinishes = closeEndScreen(reporter, achievements: "Shipped the fix")
+
+        XCTAssertEqual(legacyFinishes, 1, "The session is still open on the server, so finish it with the details")
+        XCTAssertTrue(transport.attachedAchievements.isEmpty)
+    }
+
+    func test_finishReport_aSessionThatWasNeverReportedKeepsTheLegacyFinish() {
+        let (reporter, transport) = makeReporter()
+        reporter.sessionEnded(focusModeId: "", finishTime: Self.sessionEnd)
+
+        let legacyFinishes = closeEndScreen(reporter, achievements: "")
+
+        XCTAssertTrue(transport.finishedSessions.isEmpty, "No block list, no finish to send")
+        XCTAssertEqual(legacyFinishes, 1)
+    }
+
+    func test_finishReport_extendingAFinishedSessionStartsANewOneOnTheServer() {
+        let (reporter, transport) = makeReporter()
+        reporter.sessionEnded(focusModeId: Self.focusModeId, finishTime: Self.sessionEnd)
+        transport.settleFinish(.succeeded)
+        let extensionStart = Self.sessionEnd.addingTimeInterval(30)
+        let extensionEnd = extensionStart.addingTimeInterval(10 * 60)
+
+        reporter.sessionExtended(focusModeId: Self.focusModeId, from: extensionStart, until: extensionEnd)
+
+        XCTAssertTrue(transport.extendedFocusModeIds.isEmpty, "A finished session can't be extended on the server")
+        XCTAssertEqual(transport.startedSessions.map { $0.focusModeId }, [Self.focusModeId])
+        XCTAssertEqual(transport.startedSessions.first?.start, extensionStart)
+        XCTAssertEqual(transport.startedSessions.first?.finish, extensionEnd)
+        XCTAssertEqual(closeEndScreen(reporter, achievements: "Shipped the fix"), 0)
+        XCTAssertTrue(transport.attachedAchievements.isEmpty, "An extended session has nothing to close")
+    }
+
+    func test_finishReport_extendingAfterAFailedFinishExtendsTheOpenSession() {
+        let (reporter, transport) = makeReporter()
+        reporter.sessionEnded(focusModeId: Self.focusModeId, finishTime: Self.sessionEnd)
+        transport.settleFinish(.failed)
+
+        reporter.sessionExtended(focusModeId: Self.focusModeId, from: Self.sessionEnd,
+                                 until: Self.sessionEnd.addingTimeInterval(600))
+
+        XCTAssertEqual(transport.extendedFocusModeIds, [Self.focusModeId])
+        XCTAssertTrue(transport.startedSessions.isEmpty)
+    }
+
+    func test_finishReport_aLateAnswerForASupersededSessionIsIgnored() {
+        let (reporter, transport) = makeReporter()
+        reporter.sessionEnded(focusModeId: Self.focusModeId, finishTime: Self.sessionEnd)
+        reporter.sessionEnded(focusModeId: "reading", finishTime: Self.sessionEnd.addingTimeInterval(3600))
+
+        transport.settleFinish(.succeeded)
+
+        XCTAssertNil(reporter.finishOutcome, "The first session's answer says nothing about the second")
+        XCTAssertEqual(reporter.endedSession?.focusModeId, "reading")
+    }
+
+    func test_endScreenCloseReport_followsTheFinishOutcome() {
+        XCTAssertEqual(EndScreenCloseReport.after(nil, achievements: "Shipped"), .finishWithDetails)
+        XCTAssertEqual(EndScreenCloseReport.after(.failed, achievements: "Shipped"), .finishWithDetails)
+        XCTAssertEqual(EndScreenCloseReport.after(.succeeded, achievements: "Shipped"), .attachAchievements("Shipped"))
+        XCTAssertEqual(EndScreenCloseReport.after(.succeeded, achievements: ""), .nothing)
+    }
+
+    func test_justFinishedSessionId_isTheNewestRowOfThatBlockListThatIsNotManual() {
+        let entries = [
+            FocusLogEntry(id: "manual", metadata: FocusSessionMetadata(isManual: true),
+                          focusMode: FocusLogFocusMode(id: Self.focusModeId, name: "Deep Work")),
+            FocusLogEntry(id: "other-list", focusMode: FocusLogFocusMode(id: "reading", name: "Reading")),
+            FocusLogEntry(id: "just-finished", focusMode: FocusLogFocusMode(id: Self.focusModeId, name: "Deep Work")),
+            FocusLogEntry(id: "older", focusMode: FocusLogFocusMode(id: Self.focusModeId, name: "Deep Work")),
+        ]
+
+        XCTAssertEqual(FocusLogEntry.justFinishedSessionId(focusModeId: Self.focusModeId, in: entries), "just-finished")
+        XCTAssertNil(FocusLogEntry.justFinishedSessionId(focusModeId: "missing", in: entries))
+    }
+
+    func test_encodedFocusSessionAchievements_keepsTheFinishCallsEncodingAndLimit() {
+        XCTAssertEqual(encodedFocusSessionAchievements("Fixed bug"), "Fixed%20bug")
+        XCTAssertEqual(encodedFocusSessionAchievements(String(repeating: "a", count: 300)).count, 250,
+                       "The server rejects achievements over 255 characters")
+    }
+}

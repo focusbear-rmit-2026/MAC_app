@@ -8623,6 +8623,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             })
             focusModeFinishedResetAllData()
         }else{
+            let finishTime = Date()
+            if !isSilent{
+                // Every other branch shows the end screen. The finish goes to the server now, not when
+                // that screen closes: a quit or crash while it was up left the session running on the
+                // server, and the next launch restored it (#2678). Queued ahead of the end screen's
+                // resetData below, so a close always finds this session.
+                DispatchQueue.main.async {
+                    FocusSessionFinishReporter.shared.sessionEnded(focusModeId: currentFocusModeId, finishTime: finishTime)
+                }
+            }
             if isSilent{
                 let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
                 addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
@@ -8650,7 +8660,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     focusCompletedFullScreenVcObj?.allowExtend = allowExtend
                     
                     getHabitsVcObject().showDayEndFocusCompletedView()
-                    focusCompletedFullScreenVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: Date(), isShutOffTime: isShutOffTime)
+                    focusCompletedFullScreenVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: finishTime, isShutOffTime: isShutOffTime)
                 }
             }else if isMorningRoutineTime || isCustomRoutineTime{
                 lastFocusModeTempInfo = nil
@@ -8673,7 +8683,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }else{
                         getHabitsVcObject().showCustomRoutineFocusCompletedView()
                     }
-                    focusCompletedFullScreenVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: Date(), isShutOffTime: isShutOffTime)
+                    focusCompletedFullScreenVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: finishTime, isShutOffTime: isShutOffTime)
                 }
             }else{
                 if arrAllowedAppsInCuddlyModeCurrentFocus.count != 0 || arrAllowedUrlsInCuddlyModeCurrentFocus.count != 0{
@@ -8691,7 +8701,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     focusCompletedVcObj?.allowExtend = allowExtend
                     focusCompletedVcObj?.currentFocusModeId = currentFocusModeId
                     self.showFocusCompletedView()
-                    focusCompletedVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: Date(), isShutOffTime: false)
+                    focusCompletedVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: finishTime, isShutOffTime: false)
                     NSApplication.shared.activate(ignoringOtherApps: true)
                     DispatchQueue.global().async {
                         DispatchQueue.main.async {

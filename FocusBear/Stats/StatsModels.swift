@@ -199,6 +199,11 @@ struct UpdateFocusBlockPayload: Encodable {
     var distractions: String
 }
 
+/// PATCH body that sets only the achievements, leaving the session's other fields as they are.
+struct FocusBlockAchievementsPayload: Encodable {
+    var achievements: String
+}
+
 /// GET /user/focus-modes — only what manual-session creation needs.
 struct FocusModeSummary: Codable {
     struct Metadata: Codable {
