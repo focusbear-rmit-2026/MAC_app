@@ -1114,6 +1114,28 @@ final class DayPlanTaskStore {
         save()
     }
 
+    /// Projects this user deleted. Remembered across launches because the backend only soft-deletes:
+    /// the project's to-dos keep pointing at it, so every later hydrate would bring its name back and
+    /// the repair pass would create it again (#2680).
+    private(set) var deletedProjectIDs: Set<String> = DayPlanTaskStore.mockMode ? []
+        : Set(UserDefaults.standard.stringArray(forKey: DayPlanTaskStore.deletedProjectIDsKey) ?? [])
+    private static let deletedProjectIDsKey = "dayPlanDeletedProjectIDs"
+
+    /// A project was deleted (`DELETE /projects/:id` succeeded): forget it, and take it off every Day
+    /// Plan task still naming it. See `DayPlanProjectSyncRules.followingDeletion`.
+    func followProjectDeletion(id: String, name: String) {
+        remoteProjectsByID[id] = nil
+        deletedProjectIDs.insert(id)
+        if !Self.mockMode {
+            UserDefaults.standard.set(Array(deletedProjectIDs), forKey: Self.deletedProjectIDsKey)
+        }
+        let updated = DayPlanProjectSyncRules.followingDeletion(byDay, projectID: id, name: name)
+        guard updated != byDay else { return }
+        byDay = updated
+        save()
+        NotificationCenter.default.post(name: Self.tasksDidChangeExternally, object: nil)
+    }
+
     /// Call when a task's name is FINALIZED (Enter/blur), not on every keystroke. For a from-scratch
     /// task this mints a backend to-do (named after the whole title, not the first character typed);
     /// for an already-synced task it pushes the renamed title to its to-do so the new name syncs to
@@ -1651,9 +1673,13 @@ final class DayPlanTaskStore {
 
     /// The project name a backend to-do belongs to: its `project_id` resolved against the fetched
     /// projects, else the first tag's text (the backend mirrors a native project as a tag, and
-    /// ClickUp-synced to-dos only carry the tag).
+    /// ClickUp-synced to-dos only carry the tag). None for a project the user deleted — its to-dos
+    /// still carry its id and tag, and naming it again is what brought it back (#2680).
     func projectName(for fields: TodoProjectFields) -> String? {
-        if let id = fields.projectID, let name = remoteProjectsByID[id] { return name }
+        if let id = fields.projectID {
+            if deletedProjectIDs.contains(id) { return nil }
+            if let name = remoteProjectsByID[id] { return name }
+        }
         return fields.tags.first?.text
     }
 

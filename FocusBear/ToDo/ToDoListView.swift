@@ -643,6 +643,10 @@ struct ToDoTaskRow: View {
         var seen = Set<String>()
         return ids.compactMap { id -> String? in
             guard seen.insert(id).inserted else { return nil }
+            // A project deleted on this Mac is soft-deleted on the backend, so the task keeps its tag.
+            // store.project(id:) is already nil, but the tag fallback below would resurrect the old
+            // name — skip it, the same way the Day Plan does (DayPlanTaskStore.projectName). (#2680)
+            if DayPlanTaskStore.shared.deletedProjectIDs.contains(id) { return nil }
             let raw = store.project(id: id)?.name ?? task.tagList.first { $0.id == id }?.text
             guard let name = raw, !name.isEmpty else { return nil }
             return strings.projectName(name)

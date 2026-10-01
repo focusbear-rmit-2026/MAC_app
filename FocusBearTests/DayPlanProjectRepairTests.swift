@@ -299,6 +299,65 @@ final class DayPlanProjectRepairTests: XCTestCase {
         let labels = [DayPlanTaskTag(id: "tag-urgent", text: "urgent")]
         XCTAssertEqual(DayPlanProjectSyncRules.ensureProjectTag(labels, projectID: nil, projectName: nil), labels)
     }
+
+    // MARK: - A deleted project stays deleted (#2680)
+
+    /// The backend soft-deletes a project, so its to-dos keep the id and `GET /projects` stops
+    /// returning it. Ten seconds after the delete the repair pass saw a "local-only" project and
+    /// created it again.
+    func testATaskLinkedToADeletedProjectIsNotRepaired() {
+        let linked = task(project: "Launch", projectID: "proj-deleted")
+        XCTAssertTrue(DayPlanProjectSyncRules.needsRepair(linked, remoteProjectIDs: knownProjects),
+                      "Control: an unknown id alone still reads as local-only")
+        XCTAssertFalse(DayPlanProjectSyncRules.needsRepair(linked, remoteProjectIDs: knownProjects,
+                                                           deletedProjectIDs: ["proj-deleted"]))
+        XCTAssertTrue(DayPlanProjectSyncRules.candidates(in: ["d": [linked]], remoteProjectIDs: knownProjects,
+                                                         deletedProjectIDs: ["proj-deleted"]).isEmpty)
+    }
+
+    func testDeletingAProjectTakesItOffTheTasksThatNameIt() {
+        let tags = [DayPlanTaskTag(id: "proj-deleted", text: "Launch"), DayPlanTaskTag(id: "label-1", text: "urgent")]
+        var linked = task("Linked", project: "Launch", projectID: "proj-deleted")
+        linked.tags = tags
+        let unlinked = task("Named only", project: "  launch ")
+        let before = ["d": [linked, unlinked, task("Other", project: "Thesis", projectID: "proj-thesis")]]
+
+        let after = DayPlanProjectSyncRules.followingDeletion(before, projectID: "proj-deleted", name: "Launch")
+
+        XCTAssertEqual(after["d"]?.map(\.project), [nil, nil, "Thesis"])
+        XCTAssertEqual(after["d"]?.map(\.projectID), [nil, nil, "proj-thesis"])
+        XCTAssertEqual(after["d"]?[0].tags, [DayPlanTaskTag(id: "label-1", text: "urgent")],
+                       "The project's own tag goes; ordinary labels stay")
+    }
+
+    func testDeletingAProjectLeavesAnotherProjectWithTheSameName() {
+        let sameName = task(project: "Launch", projectID: "proj-other")
+        let external = task(project: "Launch", hasSyncedExternalProject: true)
+        let before = ["d": [sameName, external]]
+        XCTAssertEqual(DayPlanProjectSyncRules.followingDeletion(before, projectID: "proj-deleted", name: "Launch"),
+                       before)
+    }
+
+    /// The store end: once deleted, a hydrate that still carries the project's id and tag must not
+    /// put its name back on the task — that name is what the repair pass would create.
+    func testTheStoreForgetsADeletedProjectAndStopsNamingIt() {
+        let previousMockMode = DayPlanTaskStore.mockMode
+        DayPlanTaskStore.mockMode = true
+        defer { DayPlanTaskStore.mockMode = previousMockMode }
+        let linked = task(project: "Launch", projectID: "proj-deleted")
+        let store = DayPlanTaskStore(mockTasks: ["2060-01-01": [linked]])
+        store.registerRemoteProject(id: "proj-deleted", name: "Launch")
+        let hydrated = TodoProjectFields(todo: ["project_id": "proj-deleted",
+                                                "tags": [["id": "proj-deleted", "text": "Launch"]]])
+        XCTAssertEqual(store.projectName(for: hydrated), "Launch", "Control: a live project resolves")
+
+        store.followProjectDeletion(id: "proj-deleted", name: "Launch")
+
+        XCTAssertNil(store.projectName(for: hydrated))
+        XCTAssertFalse(store.remoteProjectIDs.contains("proj-deleted"))
+        XCTAssertEqual(store.deletedProjectIDs, ["proj-deleted"])
+        XCTAssertNil(store.tasksByDay["2060-01-01"]?.first?.project)
+    }
 }
 
 /// Merging a duplicate project archived the source, and the Day Plan kept naming it. Because

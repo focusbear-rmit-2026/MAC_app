@@ -1570,6 +1570,30 @@ extension ToDoLogicTests {
     }
 }
 
+// MARK: - A deleted project leaves All projects (#2680)
+
+extension ToDoLogicTests {
+    /// A project created this session is pinned so it stays listed until the server's pages include
+    /// it, and a pinned project the server stops returning is kept. So a deleted one stayed in All
+    /// projects and opened as "Project not found".
+    func testADeletedProjectLeavesAllProjectsEvenThoughItWasPinned() {
+        let suiteName = "ToDoLogicTests.deletedProject"
+        guard let defaults = UserDefaults(suiteName: suiteName) else { return XCTFail("No test defaults") }
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = ProjectsStore(strings: ToDoStrings(), defaults: defaults)
+        let created = Project(id: "proj-new", name: "Launch plan")
+        store.insertProject(created)
+        XCTAssertTrue(store.sortedProjects.contains { $0.id == created.id }, "Control: a new project is listed")
+
+        store.forgetDeletedProject(id: created.id)
+
+        XCTAssertFalse(store.sortedProjects.contains { $0.id == created.id })
+        XCTAssertEqual(store.totalCount, 0)
+        store.forgetDeletedProject(id: created.id)
+        XCTAssertEqual(store.totalCount, 0, "Forgetting twice must not count it twice")
+    }
+}
+
 // MARK: - Task editor Save
 
 final class ToDoEditorSaveTests: XCTestCase {

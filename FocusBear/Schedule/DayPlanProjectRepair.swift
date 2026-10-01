@@ -27,12 +27,44 @@ enum DayPlanProjectSyncRules {
     /// project that exists on the backend. A task without a to-do can't be repaired here (the mint path
     /// pushes its project once it has one); an externally synced to-do's project belongs to ClickUp /
     /// Trello, and the backend nulls `project_id` for those anyway.
-    static func needsRepair(_ task: DayPlanTask, remoteProjectIDs: Set<String>) -> Bool {
+    ///
+    /// A link to a project the user DELETED is not local-only either. The backend soft-deletes, so the
+    /// to-do keeps its `project_id` and project tag, `GET /projects` stops returning the id, and this
+    /// rule would otherwise re-create the project ten seconds after the delete (#2680).
+    static func needsRepair(_ task: DayPlanTask, remoteProjectIDs: Set<String>,
+                            deletedProjectIDs: Set<String> = []) -> Bool {
         guard task.sourceTaskId != nil,
               let project = task.project, !project.trimmingCharacters(in: .whitespaces).isEmpty,
               task.hasSyncedExternalProject != true else { return false }
         guard let linkedID = task.projectID else { return true }
-        return !remoteProjectIDs.contains(linkedID)
+        return !remoteProjectIDs.contains(linkedID) && !deletedProjectIDs.contains(linkedID)
+    }
+
+    /// Takes a deleted project off every Day Plan task that still names it — by its id, or by name for
+    /// a task that was never linked — so the task stops being grouped under it and stops asking the
+    /// repair pass to create it again (#2680). A task linked to a DIFFERENT project that happens to
+    /// share the name is left alone: that project still exists. ClickUp/Trello projects are not ours
+    /// to delete, so those tasks are untouched too.
+    static func followingDeletion(_ tasksByDay: [String: [DayPlanTask]], projectID: String,
+                                  name: String) -> [String: [DayPlanTask]] {
+        let deletedName = name.trimmingCharacters(in: .whitespaces)
+        return tasksByDay.mapValues { tasks in
+            tasks.map { task -> DayPlanTask in
+                guard task.hasSyncedExternalProject != true,
+                      names(task, deletedProjectID: projectID, deletedName: deletedName) else { return task }
+                var cleared = task
+                cleared.project = nil
+                cleared.projectID = nil
+                cleared.tags = task.tags?.filter { $0.id != projectID }
+                return cleared
+            }
+        }
+    }
+
+    private static func names(_ task: DayPlanTask, deletedProjectID: String, deletedName: String) -> Bool {
+        if let linkedID = task.projectID { return linkedID == deletedProjectID }
+        guard !deletedName.isEmpty, let named = task.project?.trimmingCharacters(in: .whitespaces) else { return false }
+        return named.caseInsensitiveCompare(deletedName) == .orderedSame
     }
 
     /// Follows a finished project merge into the Day Plan's own copy of the data.
@@ -73,10 +105,11 @@ enum DayPlanProjectSyncRules {
     }
 
     /// Every task needing repair, by day then stored order, so passes are predictable.
-    static func candidates(in tasksByDay: [String: [DayPlanTask]], remoteProjectIDs: Set<String>) -> [Candidate] {
+    static func candidates(in tasksByDay: [String: [DayPlanTask]], remoteProjectIDs: Set<String>,
+                           deletedProjectIDs: Set<String> = []) -> [Candidate] {
         tasksByDay.keys.sorted().flatMap { day -> [Candidate] in
             (tasksByDay[day] ?? [])
-                .filter { needsRepair($0, remoteProjectIDs: remoteProjectIDs) }
+                .filter { needsRepair($0, remoteProjectIDs: remoteProjectIDs, deletedProjectIDs: deletedProjectIDs) }
                 .map { Candidate(dayKey: day, task: $0) }
         }
     }
@@ -163,7 +196,8 @@ final class DayPlanProjectRepair {
         guard !isRunning else { return }
         let store = DayPlanTaskStore.shared
         let knownProjectIDs = store.remoteProjectsLoaded ? store.remoteProjectIDs : []
-        guard !DayPlanProjectSyncRules.candidates(in: store.tasksByDay, remoteProjectIDs: knownProjectIDs).isEmpty,
+        guard !DayPlanProjectSyncRules.candidates(in: store.tasksByDay, remoteProjectIDs: knownProjectIDs,
+                                                  deletedProjectIDs: store.deletedProjectIDs).isEmpty,
               DayPlanProjectSyncRules.isDue(now: Date(), lastRun: lastRun) else { return }
         lastRun = Date()
         isRunning = true
@@ -178,7 +212,8 @@ final class DayPlanProjectRepair {
 
     private func run(trigger: DayPlanProjectRepairTrigger) {
         let store = DayPlanTaskStore.shared
-        let candidates = DayPlanProjectSyncRules.candidates(in: store.tasksByDay, remoteProjectIDs: store.remoteProjectIDs)
+        let candidates = DayPlanProjectSyncRules.candidates(in: store.tasksByDay, remoteProjectIDs: store.remoteProjectIDs,
+                                                            deletedProjectIDs: store.deletedProjectIDs)
         guard !candidates.isEmpty else { isRunning = false; return }
         let (linkable, missingQuadrant) = DayPlanProjectSyncRules.split(candidates)
         let names = DayPlanProjectSyncRules.distinctProjectNames(candidates)

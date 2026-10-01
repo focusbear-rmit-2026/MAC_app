@@ -20,6 +20,7 @@ final class ProjectsStore: ObservableObject {
     private static let viewModeKey = "kUserdefaultsProjectsListViewMode"
 
     private var forecastObservation: AnyCancellable?
+    private let defaults: UserDefaults
     let forecast: LocalForecastStore
     let strings: ToDoStrings
     /// "Show in task list": filters the Tasks tab to the project (the host switches tabs).
@@ -31,7 +32,7 @@ final class ProjectsStore: ObservableObject {
 
     @Published var viewMode: ViewMode {
         didSet {
-            UserDefaults.standard.set(viewMode.rawValue, forKey: ProjectsStore.viewModeKey)
+            defaults.set(viewMode.rawValue, forKey: ProjectsStore.viewModeKey)
             // Both list modes search now, so a query typed in one carries into the other rather
             // than being wiped on the way to "What matters" (report 2026-09-11_21-39-35).
         }
@@ -94,10 +95,11 @@ final class ProjectsStore: ObservableObject {
     @Published private(set) var statusMessage: String? = nil
     private var pendingStatusClear: DispatchWorkItem?
 
-    init(strings: ToDoStrings, forecast: LocalForecastStore = LocalForecastStore()) {
+    init(strings: ToDoStrings, forecast: LocalForecastStore = LocalForecastStore(), defaults: UserDefaults = .standard) {
         self.forecast = forecast
         self.strings = strings
-        viewMode = ViewMode(rawValue: UserDefaults.standard.string(forKey: ProjectsStore.viewModeKey) ?? "") ?? .focus
+        self.defaults = defaults
+        viewMode = ViewMode(rawValue: defaults.string(forKey: ProjectsStore.viewModeKey) ?? "") ?? .focus
         forecastObservation = forecast.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
     }
 
@@ -408,6 +410,15 @@ final class ProjectsStore: ObservableObject {
             self?.loadPortfolio()
             self?.loadProjects()
         }
+        store.onProjectDeleted = { [weak self] deleted in
+            guard !account.isEmpty, appdelegate?.user?.userId == account else { return }
+            // The Day Plan stores a project by NAME and would otherwise create it again (#2680).
+            DayPlanTaskStore.shared.followProjectDeletion(id: deleted.id, name: deleted.name)
+            self?.forgetDeletedProject(id: deleted.id)
+            self?.forecast.refresh()
+            self?.loadPortfolio()
+            self?.loadProjects()
+        }
         store.onClose = { [weak self] in self?.closeDetail() }
         detail = store
         store.screenAppeared()
@@ -463,6 +474,19 @@ final class ProjectsStore: ObservableObject {
         guard !projects.contains(where: { $0.id == project.id }) else { return }
         projects.insert(project, at: 0)
         totalCount += 1
+    }
+
+    /// Drops a deleted project from every copy this store keeps. A project created this session is
+    /// pinned so it stays listed until the server's pages include it — and a pinned project the server
+    /// no longer returns is kept by `fetchProjects`, so without unpinning it a deleted one stayed in
+    /// All projects and opened as "Project not found" (#2680).
+    func forgetDeletedProject(id: String) {
+        pinnedProjectIds.removeAll { $0 == id }
+        let countBefore = projects.count
+        projects.removeAll { $0.id == id }
+        if projects.count < countBefore { totalCount = max(0, totalCount - 1) }
+        savedProjects[id] = nil
+        resolvedProjectMetadata[id] = nil
     }
 
     /// An explicit project edit bypasses the automatic forecast cache after the API acknowledges it.

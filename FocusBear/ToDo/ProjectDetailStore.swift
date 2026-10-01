@@ -38,9 +38,11 @@ final class ProjectDetailStore: ObservableObject {
     private static let iconField = "icon"
 
     let strings: ToDoStrings
-    /// Fires when the project changed in a way the list / portfolio should reflect (settings, delete,
-    /// leave, lifecycle) — the parent store re-fetches.
+    /// Fires when the project changed in a way the list / portfolio should reflect (settings, leave,
+    /// lifecycle) — the parent store re-fetches.
     var onProjectChanged: (() -> Void)?
+    /// Fires after a successful `DELETE /projects/:id`, with the project that is gone.
+    var onProjectDeleted: ((Project) -> Void)?
     var onProjectLoaded: ((Project) -> Void)?
     /// The parent pops the detail (delete / leave / not found).
     var onClose: (() -> Void)?
@@ -358,7 +360,7 @@ final class ProjectDetailStore: ObservableObject {
                     self.showStatus(self.strings[.couldNotDeleteProject])
                     return
                 }
-                self.onProjectChanged?()
+                self.onProjectDeleted?(self.project)
                 self.onClose?()
             }
         }
