@@ -5,7 +5,8 @@
 //  Covers the block-list category taxonomy: that a selection round-trips through the focus-mode
 //  store, that it encodes to the exact wire shape the backend expects, and that categories ride
 //  top-level on a focus-mode write rather than inside the `metadata` blob (which every save
-//  replaces wholesale, and which an older client would therefore wipe).
+//  replaces wholesale, and which an older client would therefore wipe). The per-block-list "Use AI"
+//  switch (`is_ai_enabled`) is a top-level column too, and must win over a stale `metadata` copy on read.
 //
 //  Copyright © 2026 Focus Bear. All rights reserved.
 //
@@ -164,6 +165,78 @@ final class BlockListCategoryTests: XCTestCase {
         applyFocusModeCategories(from: focusType, to: &json, metadata: &metadata)
 
         XCTAssertEqual(json["categories"] as? [[String: String]], [])
+    }
+
+    // MARK: - "Use AI" column (#2677)
+
+    func testUseAiIsSentTopLevelAndStrippedFromMetadata() {
+        // The server reads only its top-level `is_ai_enabled` column; a copy inside `metadata` left the
+        // column `true`, so "Use AI" off reverted on the next launch.
+        var focusType = blockListFocusMode()
+        focusType["is_ai_enabled"] = false
+        var json: [String: Any] = ["name": "Deep Work", "metadata": [:]]
+        var metadata: [String: Any] = focusType
+
+        applyFocusModeTopLevelColumns(from: focusType, to: &json, metadata: &metadata)
+
+        XCTAssertEqual(json["is_ai_enabled"] as? Bool, false)
+        XCTAssertNil(metadata["is_ai_enabled"], "is_ai_enabled must not also ride inside the metadata blob")
+        XCTAssertNotNil(json["categories"], "the combined helper still promotes categories")
+    }
+
+    func testAFocusModeWithoutUseAiOmitsTheFieldSoTheServerKeepsItsValue() {
+        // Absent means "leave the stored column alone"; inventing a default here would clobber it.
+        let focusType = blockListFocusMode()
+        var json: [String: Any] = ["name": "Deep Work", "metadata": [:]]
+        var metadata: [String: Any] = focusType
+
+        applyFocusModeTopLevelColumns(from: focusType, to: &json, metadata: &metadata)
+
+        XCTAssertNil(json["is_ai_enabled"])
+    }
+
+    func testTheServerColumnWinsOverAStaleMetadataCopyWhenFlattening() {
+        let serverFocusMode: [String: Any] = [
+            "id": "block-list-under-test",
+            "name": "Deep Work",
+            "is_ai_enabled": false,
+            "metadata": ["is_ai_enabled": true, "name": "Stale name", "isAllowedListApproach": true],
+        ]
+
+        let flattened = flattenServerFocusMode(serverFocusMode)
+
+        XCTAssertEqual(flattened["is_ai_enabled"] as? Bool, false)
+        XCTAssertEqual(flattened["name"] as? String, "Deep Work")
+        XCTAssertEqual(flattened["isAllowedListApproach"] as? Bool, true, "metadata-only keys are still lifted")
+        XCTAssertNil(flattened["metadata"])
+    }
+
+    func testFlatteningTurnsTagObjectsIntoTextAndDropsServerOnlyKeys() {
+        let serverFocusMode: [String: Any] = [
+            "id": "block-list-under-test",
+            "tags": [["id": "tag-1", "text": "work"] as NSDictionary],
+            "created_at": "2026-09-27T00:00:00.000Z",
+            "updated_at": "2026-09-27T00:00:00.000Z",
+            "user_id": "user-1",
+            "metadata": ["doNotSuggestAnyMore": true],
+        ]
+
+        let flattened = flattenServerFocusMode(serverFocusMode)
+
+        XCTAssertEqual(flattened["tags"] as? [String], ["work"])
+        for serverOnlyKey in ["created_at", "updated_at", "user_id", "doNotSuggestAnyMore"] {
+            XCTAssertNil(flattened[serverOnlyKey], "\(serverOnlyKey) is not kept locally")
+        }
+    }
+
+    func testAFlattenedModeRoundTripsItsUseAiValueBackToTheColumn() {
+        let flattened = flattenServerFocusMode(["id": "block-list-under-test", "is_ai_enabled": false, "metadata": [:]])
+        var json: [String: Any] = ["metadata": [:]]
+        var metadata = flattened
+
+        applyFocusModeTopLevelColumns(from: flattened, to: &json, metadata: &metadata)
+
+        XCTAssertEqual(json["is_ai_enabled"] as? Bool, false)
     }
 
     // MARK: - Catalog

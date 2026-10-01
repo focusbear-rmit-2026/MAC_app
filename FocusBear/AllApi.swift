@@ -3053,7 +3053,7 @@ class AllApi:NSObject {
                     dic.removeValue(forKey: "allowed_urls")
                     dic.removeValue(forKey: "allowed_apps")
                     dic.removeValue(forKey: "tags")
-                    applyFocusModeCategories(from: focusType, to: &json, metadata: &dic)
+                    applyFocusModeTopLevelColumns(from: focusType, to: &json, metadata: &dic)
                     json["metadata"] = dic
                     
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)
@@ -3181,7 +3181,7 @@ class AllApi:NSObject {
                     dic.removeValue(forKey: "allowed_urls")
                     dic.removeValue(forKey: "allowed_apps")
                     dic.removeValue(forKey: "tags")
-                    applyFocusModeCategories(from: focusType, to: &json, metadata: &dic)
+                    applyFocusModeTopLevelColumns(from: focusType, to: &json, metadata: &dic)
                     json["metadata"] = dic
                     
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)

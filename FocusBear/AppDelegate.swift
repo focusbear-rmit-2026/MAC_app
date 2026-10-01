@@ -1559,42 +1559,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 addLog(text: "get user Details Info")
                 allApiObject.getAllFocusModes(completionHandler: {dic in
                     if let arrFocusModes = dic as? [[String:Any]]{
-                        var newArr = [[String:Any]]()
-                        
-                        for i in 0..<arrFocusModes.count{
-                            var focusDic = arrFocusModes[i]
-                            focusDic.removeValue(forKey: "created_at")
-                            focusDic.removeValue(forKey: "updated_at")
-                            focusDic.removeValue(forKey: "user_id")
-                            focusDic.removeValue(forKey: "deleted_at")
-                            focusDic.removeValue(forKey: "doNotSuggestAnyMore")
-                            var newDic = [String:Any]()
-                            for key in focusDic.keys{
-                                if key == "metadata"{
-                                    if let metaDataDic = focusDic["metadata"] as? [String:Any]{
-                                        for key in metaDataDic.keys{
-                                            newDic[key] = metaDataDic[key]
-                                        }
-                                    }
-                                }else if key == "tags"{
-                                    if let arrTags = focusDic["tags"] as? [NSDictionary]{
-                                        var arrtags = [String]()
-                                        for tagInfo in arrTags{
-                                            arrtags.append(tagInfo["text"] as? String ?? "")
-                                        }
-                                        newDic["tags"] = arrtags
-                                    }
-                                }else{
-                                    newDic[key] = focusDic[key]
-                                }
-                            }
-                            newDic.removeValue(forKey: "doNotSuggestAnyMore")
-                            print(newDic)
-                            print("////////\(newArr.count)")
-                            newArr.append(newDic)
-                            
-                        }
-                        
+                        let newArr = arrFocusModes.map(flattenServerFocusMode)
                         UserDefaults.standard.set(plistSafeFocusModes(newArr), forKey: kUserdefaultsArrFocusTypes)
                     }
                     
@@ -4213,37 +4178,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func refreshFocusModesFromServer(completion: (() -> Void)? = nil) {
         allApiObject.getAllFocusModes(completionHandler: { dic in
             if let arrFocusModes = dic as? [[String:Any]]{
-                var newArr = [[String:Any]]()
-                for i in 0..<arrFocusModes.count{
-                    var focusDic = arrFocusModes[i]
-                    focusDic.removeValue(forKey: "created_at")
-                    focusDic.removeValue(forKey: "updated_at")
-                    focusDic.removeValue(forKey: "user_id")
-                    focusDic.removeValue(forKey: "deleted_at")
-                    focusDic.removeValue(forKey: "doNotSuggestAnyMore")
-                    var newDic = [String:Any]()
-                    for key in focusDic.keys{
-                        if key == "metadata"{
-                            if let metaDataDic = focusDic["metadata"] as? [String:Any]{
-                                for key in metaDataDic.keys{
-                                    newDic[key] = metaDataDic[key]
-                                }
-                            }
-                        }else if key == "tags"{
-                            if let arrTags = focusDic["tags"] as? [NSDictionary]{
-                                var arrtags = [String]()
-                                for tagInfo in arrTags{
-                                    arrtags.append(tagInfo["text"] as? String ?? "")
-                                }
-                                newDic["tags"] = arrtags
-                            }
-                        }else{
-                            newDic[key] = focusDic[key]
-                        }
-                    }
-                    newDic.removeValue(forKey: "doNotSuggestAnyMore")
-                    newArr.append(newDic)
-                }
+                let newArr = arrFocusModes.map(flattenServerFocusMode)
                 UserDefaults.standard.set(plistSafeFocusModes(newArr), forKey: kUserdefaultsArrFocusTypes)
             }
             checkAllFocusModes()

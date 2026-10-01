@@ -202,8 +202,8 @@ class focusPreferencesAdvancedVc: NSViewController {
         allApiObject.capturePosthog(
             event: enabled ? "settings-changed-enable-ai-for-block-list" : "settings-changed-disable-ai-for-block-list",
             metadata: [:])
-        // Persist to the server so the choice follows the user across devices (per-mode fields round-trip
-        // through the focus mode's metadata — see CLAUDE.md).
+        // Persist to the server so the choice follows the user across devices. `editFocusMode` sends it as
+        // the top-level `is_ai_enabled` column, which is what the server stores and returns (#2677).
         allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: { _ in })
     }
     

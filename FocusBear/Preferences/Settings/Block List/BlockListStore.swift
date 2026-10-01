@@ -26,7 +26,17 @@ enum FocusModeKey {
     /// Per-entry categories, `[["entry": …, "category": …]]`. Mirrors the backend's `categories`
     /// column (backend#2400) and is sent top-level, NOT inside `metadata`.
     static let categories = "categories"
+    /// Per-block-list "Use AI" switch. A top-level column on the server (`BOOLEAN NOT NULL DEFAULT
+    /// true`), so it is sent top-level, NOT inside `metadata` (#2677).
+    static let isAiEnabled = FocusModeDictionaryKey.isAiEnabled
+    static let tags = "tags"
+    static let metadata = "metadata"
 }
+
+/// Keys the server returns on a focus mode that the app does not keep locally.
+private let serverOnlyFocusModeKeys = ["created_at", "updated_at", "user_id", "deleted_at", "doNotSuggestAnyMore"]
+/// The field inside one server tag object that holds its display text.
+private let serverFocusModeTagTextKey = "text"
 
 /// Field names inside one `categories` element. These are the wire format shared with the backend.
 enum FocusModeCategoryKey {
@@ -48,6 +58,49 @@ func applyFocusModeCategories(
 ) {
     metadata.removeValue(forKey: FocusModeKey.categories)
     json[FocusModeKey.categories] = focusType[FocusModeKey.categories] as? [[String: String]] ?? []
+}
+
+/// Promotes the per-block-list "Use AI" switch out of `metadata` onto the top-level `is_ai_enabled`
+/// column, the only place the server reads it (#2677). Sent only when the mode has a value: an
+/// omitted field leaves the stored column alone, where an invented default would clobber it.
+func applyFocusModeAiEnabled(
+    from focusType: [String: Any],
+    to json: inout [String: Any],
+    metadata: inout [String: Any]
+) {
+    metadata.removeValue(forKey: FocusModeKey.isAiEnabled)
+    guard let isAiEnabled = focusType[FocusModeKey.isAiEnabled] as? Bool else { return }
+    json[FocusModeKey.isAiEnabled] = isAiEnabled
+}
+
+/// Moves every field the server stores as its own column out of the `metadata` catch-all and onto
+/// the top level of a focus-mode request body. Every focus-mode write goes through this.
+func applyFocusModeTopLevelColumns(
+    from focusType: [String: Any],
+    to json: inout [String: Any],
+    metadata: inout [String: Any]
+) {
+    applyFocusModeCategories(from: focusType, to: &json, metadata: &metadata)
+    applyFocusModeAiEnabled(from: focusType, to: &json, metadata: &metadata)
+}
+
+/// Turns one server focus mode into the flat dictionary `arrFocusType` stores: `metadata`'s keys are
+/// lifted to the top level and tag objects become their text.
+///
+/// Top-level columns win over a same-named `metadata` key. Older builds echoed every key they had
+/// back into `metadata`, so a copy there is stale by construction; when the two were merged in
+/// dictionary order, whichever was visited last won, and a server `is_ai_enabled` of `true` could
+/// silently undo a block list's "Use AI" off (#2677).
+func flattenServerFocusMode(_ serverFocusMode: [String: Any]) -> [String: Any] {
+    var flattened = serverFocusMode[FocusModeKey.metadata] as? [String: Any] ?? [:]
+    for (key, value) in serverFocusMode where key != FocusModeKey.metadata && key != FocusModeKey.tags {
+        flattened[key] = value
+    }
+    if let serverTags = serverFocusMode[FocusModeKey.tags] as? [NSDictionary] {
+        flattened[FocusModeKey.tags] = serverTags.map { $0[serverFocusModeTagTextKey] as? String ?? "" }
+    }
+    serverOnlyFocusModeKeys.forEach { flattened.removeValue(forKey: $0) }
+    return flattened
 }
 
 /// Whether a blocked entry is a website or an application.

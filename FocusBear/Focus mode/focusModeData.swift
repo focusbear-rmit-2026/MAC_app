@@ -473,7 +473,7 @@ func updateAllFocusModes(){
         dic.removeValue(forKey: "allowed_urls")
         dic.removeValue(forKey: "allowed_apps")
         dic.removeValue(forKey: "tags")
-        applyFocusModeCategories(from: focusType, to: &json, metadata: &dic)
+        applyFocusModeTopLevelColumns(from: focusType, to: &json, metadata: &dic)
         json["metadata"] = dic
         arrJson.append(json)
     }

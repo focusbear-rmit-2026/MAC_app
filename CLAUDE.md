@@ -263,6 +263,9 @@ schedules. Custom blocking schedules must NOT expose their own "Use AI" option â
 just activates a block list, and the block list's `is_ai_enabled` governs AI relevance
 checking. When adding/moving AI-related toggles, keep them on the focus-mode settings screen
 (`focusPreferencesAdvancedVc`), read/write `arrFocusType[row]["is_ai_enabled"]`, and **sync to
-the server** via `editFocusMode` â€” per-mode fields round-trip through the focus mode's
-`metadata` (write: `editFocusMode` nests the dict under `metadata`; read: AppDelegate flattens
-`metadata` back onto the focus dict, so `focusType["is_ai_enabled"]` is available).
+the server** via `editFocusMode`. `is_ai_enabled` is a **top-level column** on the server, not a
+`metadata` key: every focus-mode write promotes it with `applyFocusModeTopLevelColumns` (as it does
+`categories`), and the read side (`flattenServerFocusMode`) lets top-level columns win over a stale
+`metadata` copy. Sending it only inside `metadata` left the column `true`, so "Use AI" came back on
+after a relaunch (#2677). Other per-mode fields with no column of their own still round-trip via
+`metadata`.
