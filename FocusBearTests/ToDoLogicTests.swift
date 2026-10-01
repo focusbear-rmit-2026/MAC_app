@@ -417,6 +417,33 @@ final class ToDoLogicTests: XCTestCase {
         XCTAssertEqual(sections[3].title, "Review")
     }
 
+    // MARK: - Row identity across sections (#2681)
+
+    /// Completing a to-do moves it from Doing to Done. Keyed by task id alone the lazy list reused the
+    /// row it had cached, so the task was drawn unfinished under Done. The row must be a new one.
+    func testACompletedTaskBecomesANewRowUnderDone() {
+        let titles: [ToDoStatus: String] = [.inProgress: "Doing", .notStarted: "To do", .completed: "Done"]
+        let open = task("a", status: .inProgress)
+        let completed = ToDoStatusToggle.apply(to: open, completed: true, customStatuses: [])
+        func row(of task: ToDoTask) -> ToDoSectionRow? {
+            ToDoSectioning.build(tasks: [task], projects: [], sortMode: .smart, sectionTitles: titles)
+                .flatMap(\.rows).first { $0.task.id == task.id }
+        }
+        guard let before = row(of: open), let after = row(of: completed) else { return XCTFail("Row missing") }
+
+        XCTAssertEqual(after.sectionId, ToDoStatus.completed.rawValue)
+        XCTAssertNotEqual(before.id, after.id, "A task that changed section must not reuse its old row")
+        XCTAssertTrue(after.task.isCompleted, "The Done row draws the completed task")
+    }
+
+    func testRowIdentitiesAreUniqueAcrossSections() {
+        let sections = ToDoSectioning.build(tasks: [task("a", status: .inProgress), task("b"), task("c", status: .completed)],
+                                            projects: [], sortMode: .smart, sectionTitles: [:])
+        let ids = sections.flatMap(\.rows).map(\.id)
+        XCTAssertEqual(Set(ids).count, ids.count)
+        XCTAssertEqual(sections.first { $0.status == .completed }?.rows.map(\.id), ["COMPLETED/c"])
+    }
+
     // MARK: - Section header counts
 
     func testHeaderCountKeepsTheServerTotalForRowsStillBehindPaging() {

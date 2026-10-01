@@ -597,6 +597,23 @@ struct ToDoSection: Identifiable, Equatable {
     var title: String
     var status: ToDoStatus?
     var tasks: [ToDoTask]
+
+    /// The section's tasks as list rows, each identified by section AND task.
+    var rows: [ToDoSectionRow] { tasks.map { ToDoSectionRow(sectionId: id, task: $0) } }
+}
+
+/// One task drawn as a row of one section.
+///
+/// The list is a `LazyVStack` of sections, each an optional nested `ForEach`. Keyed by the task id
+/// alone, a task that moved section kept its identity, and the lazy stack reused the row it had
+/// cached for it: a to-do completed from Doing showed under Done with an empty circle, no
+/// strike-through and its TOP score, and neither its checkbox nor selecting it acted on the
+/// completed task (#2681). Scoping the identity to the section makes a moved task a new row.
+struct ToDoSectionRow: Identifiable, Equatable {
+    let sectionId: String
+    let task: ToDoTask
+
+    var id: String { "\(sectionId)/\(task.id)" }
 }
 
 enum ToDoSectioning {

@@ -590,10 +590,10 @@ private struct ToDoSectionsList: View {
         if section.tasks.isEmpty {
             Text(strings[.sectionEmpty]).font(.system(size: 12)).foregroundColor(.secondary).padding(.horizontal, 12).padding(.vertical, 6)
         } else {
-            ForEach(section.tasks) { task in
-                ToDoTaskRow(store: store, task: task)
+            ForEach(section.rows) { row in
+                ToDoTaskRow(store: store, task: row.task)
                     .onAppear {
-                        if task.id == section.tasks.last?.id { store.loadNextPage(for: section) }
+                        if row.task.id == section.tasks.last?.id { store.loadNextPage(for: section) }
                     }
             }
             if store.loadingMoreStatus == section.status && section.status != nil {
