@@ -354,6 +354,8 @@
 		8F7C2BB92B50026A0003824A /* frictionSetPasswordVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7C2BB82B50026A0003824A /* frictionSetPasswordVc.swift */; };
 		8F7DA75E2B1B412000B2E1CC /* pusherEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7DA75D2B1B412000B2E1CC /* pusherEvents.swift */; };
 		8F7DCC002796B55800EE3282 /* config.json in Resources */ = {isa = PBXBuildFile; fileRef = 8F7DCBFF2796B55800EE3282 /* config.json */; };
+		SDEF0002 /* FocusBear.sdef in Resources */ = {isa = PBXBuildFile; fileRef = SDEF0001 /* FocusBear.sdef */; };
+		SDEF0004 /* AppleScriptScripting.swift in Sources */ = {isa = PBXBuildFile; fileRef = SDEF0003 /* AppleScriptScripting.swift */; };
 		8F7ED7432CC0F1E100AB973D /* taskPlayerWc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7ED7422CC0F1E100AB973D /* taskPlayerWc.swift */; };
 		8F7FD6092AA9B2B200E14257 /* addTaskVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7FD6082AA9B2B200E14257 /* addTaskVc.swift */; };
 		8F8073812B3D3F2E004935B5 /* CollectionViewItem.xib in Resources */ = {isa = PBXBuildFile; fileRef = 8F80737F2B3D3F2E004935B5 /* CollectionViewItem.xib */; };
@@ -1028,6 +1030,8 @@
 		8F7C2BB82B50026A0003824A /* frictionSetPasswordVc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = frictionSetPasswordVc.swift; sourceTree = "<group>"; };
 		8F7DA75D2B1B412000B2E1CC /* pusherEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = pusherEvents.swift; sourceTree = "<group>"; };
 		8F7DCBFF2796B55800EE3282 /* config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = config.json; sourceTree = "<group>"; };
+		SDEF0001 /* FocusBear.sdef */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = FocusBear.sdef; sourceTree = "<group>"; };
+		SDEF0003 /* AppleScriptScripting.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppleScriptScripting.swift; sourceTree = "<group>"; };
 		8F7DCC022796E8D200EE3282 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		8F7ED7422CC0F1E100AB973D /* taskPlayerWc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = taskPlayerWc.swift; sourceTree = "<group>"; };
 		8F7FD6082AA9B2B200E14257 /* addTaskVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = addTaskVc.swift; sourceTree = "<group>"; };
@@ -2082,6 +2086,8 @@
 				A1C0F00200000000000000F0 /* config-fr.json */,
 				A1C0DE0200000000000000DE /* config-de.json */,
 				8F7DCBFF2796B55800EE3282 /* config.json */,
+				SDEF0001 /* FocusBear.sdef */,
+				SDEF0003 /* AppleScriptScripting.swift */,
 				8F1333912A443857004EDE65 /* Fonts */,
 				8FAC6C8F27805F70008A4180 /* Info.plist */,
 				8FA62B1128603B380075D545 /* TextFieldNumberFormatter.swift */,
@@ -2727,6 +2733,7 @@
 				8FABDDD127D9E2D900F6A58C /* Whistle-bear-250-px.gif in Resources */,
 				8FAC6C8E27805F70008A4180 /* Main.storyboard in Resources */,
 				8F7DCC002796B55800EE3282 /* config.json in Resources */,
+				SDEF0002 /* FocusBear.sdef in Resources */,
 				PNRS0001 /* ProjectNoteEditorWeb in Resources */,
 				8FB84AF2284DE2550075180B /* config-es.json in Resources */,
 				A1C0B00100000000000000B0 /* config-pl.json in Resources */,

@@ -49,7 +49,7 @@ final class FBScriptTask: NSObject {
 
     private var storeTask: DayPlanTask? {
         guard let id = boundID else { return nil }
-        return DayPlanTaskStore.shared.task(withID: id, on: day)
+        return DayPlanTaskStore.shared.task(withID: id, for: day)
     }
 
     /// Called when `make new task` inserts this staged object: create the backing store task as an
@@ -161,7 +161,7 @@ extension AppDelegate {
     func valueInTasks(withUniqueID id: Any) -> FBScriptTask? {
         fbNoteScriptingCommand()
         guard let idStr = id as? String,
-              DayPlanTaskStore.shared.task(withID: idStr, on: Date()) != nil else { return nil }
+              DayPlanTaskStore.shared.task(withID: idStr, for: Date()) != nil else { return nil }
         return FBScriptTask(taskID: idStr)
     }
 
@@ -304,7 +304,7 @@ final class FBRecentlyModifiedTasksCommand: NSScriptCommand {
         return runWhenAppReady {
             // Return the scriptable objects; with the sdef result declared as a nested <type … list="yes"/>,
             // Foundation packages the AEList and calls each object's objectSpecifier.
-            DayPlanTaskStore.shared.userModifiedTasks(since: since, on: Date())
+            DayPlanTaskStore.shared.recentlyUserModifiedTasks(since: since, for: Date())
                 .map { FBScriptTask(taskID: $0.id) }
         }
     }

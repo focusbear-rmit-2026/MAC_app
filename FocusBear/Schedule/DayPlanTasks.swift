@@ -831,6 +831,14 @@ func prepopulateDayPlanTasks(for habit: habit?) {
     taskPlayerVcObj?.prepopulateTasks(payload)
 }
 
+/// Who originated a task write. `.user` stamps `DayPlanTask.lastUserModifiedAt`; `.appleScript`
+/// deliberately does not, so an external automation polling `recently modified tasks` (the AppleScript
+/// scripting command) never loops on its own writes. See `DayPlanTask.lastUserModifiedAt`.
+enum TaskEditSource {
+    case user
+    case appleScript
+}
+
 /// Per-day local store for Day Plan tasks, persisted in UserDefaults as `{ "yyyy-MM-dd": [task] }`.
 final class DayPlanTaskStore {
     static let shared = DayPlanTaskStore()
@@ -967,7 +975,11 @@ final class DayPlanTaskStore {
         if changed { save() }
     }
 
-    func add(_ task: DayPlanTask, for date: Date) {
+    func add(_ task: DayPlanTask, for date: Date, source: TaskEditSource = .user) {
+        var task = task
+        // A user-made add counts as a user modification; an AppleScript-made one deliberately does not,
+        // so `recently modified tasks` never surfaces the automation's own creations.
+        if source == .user { task.lastUserModifiedAt = Date() }
         // Never add the same imported to-do twice on a day.
         if let sid = task.sourceTaskId, contains(sourceTaskId: sid, for: date) { return }
         byDay[dayKey(date), default: []].append(task); save()
@@ -988,7 +1000,7 @@ final class DayPlanTaskStore {
                                                customStatuses: columns)
     }
 
-    func update(_ task: DayPlanTask, for date: Date) {
+    func update(_ task: DayPlanTask, for date: Date, source: TaskEditSource = .user) {
         let k = storageDay(for: task.id, preferred: date)
         guard let i = byDay[k]?.firstIndex(where: { $0.id == task.id }) else { return }
         let wasDone = byDay[k]![i].done
@@ -997,8 +1009,9 @@ final class DayPlanTaskStore {
         let oldOutcome = byDay[k]![i].outcome
         var task = task
         if k != dayKey(date) { task.blockKey = byDay[k]?[i].blockKey }
-        // (main's AppleScript `source` stamping of `lastUserModifiedAt` has no equivalent on this
-        // branch — the scripting feature isn't here, so nothing reads the field.)
+        // Stamp the user's edit time so `recently modified tasks` can report it; AppleScript-sourced
+        // writes leave it untouched so the automation never sees its own changes.
+        if source == .user { task.lastUserModifiedAt = Date() }
         // The recorded link (and its mirrored tag) are for the OLD project; drop them so a failed push
         // below leaves the task eligible for `DayPlanProjectRepair` instead of looking synced.
         let projectChanged = task.project != oldProject
@@ -1529,6 +1542,20 @@ final class DayPlanTaskStore {
     /// when it needs to put a refused write back.
     func task(withID id: String, for date: Date) -> DayPlanTask? {
         allTasks(for: date).first { $0.id == id }
+    }
+
+    /// Tasks the USER changed on `date` (never AppleScript-driven changes), newest first. With `since`
+    /// nil, every task that carries a user-edit stamp; otherwise only those edited strictly after it.
+    /// Backs the `recently modified tasks` AppleScript command (see `AppleScriptScripting.swift`).
+    func recentlyUserModifiedTasks(since: Date?, for date: Date) -> [DayPlanTask] {
+        tasks(for: date)
+            .compactMap { task -> (DayPlanTask, Date)? in
+                guard let at = task.lastUserModifiedAt else { return nil }
+                if let since = since, at <= since { return nil }
+                return (task, at)
+            }
+            .sorted { $0.1 > $1.1 }
+            .map { $0.0 }
     }
     /// Nest a task under a block (key) or pull it back to the panel (nil).
     func setBlockKey(_ key: String?, forTaskID id: String, date: Date) {
