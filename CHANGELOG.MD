@@ -836,3 +836,28 @@ Waking your Mac now brings the evening routine straight back in full screen, ins
 Focus & Blocking:
 During a focus session, the AI check-in no longer tries to block macOS's own keychain prompt or System Settings, so unlocking your saved passwords and changing system settings keep working. (#2643)
 Fixed a slowdown when opening the Help screen, and reports now keep only the last few minutes of logs instead of copying everything. (#2643)
+
+
+# v3.36.551
+
+Voice commands:
+Voice commands now go through Focus Bear's own backend for transcription and understanding, so they work again, with clearer messages when you're offline or the service is unavailable. (#2733)
+
+Focus & Blocking:
+The "Use AI" toggle on a block list now sticks after a relaunch, instead of switching back on. (#2686)
+
+Focus session:
+A focus session is now recorded as finished the moment it ends, so quitting on the "You did it!" screen no longer leaves the session open or brings it back on the next launch. (#2687)
+
+Projects & To-Do:
+A project you delete now stays deleted — it leaves "All projects" and the Day Plan no longer re-creates it. (#2684)
+A task you complete is now drawn as completed when it moves to Done, instead of briefly showing the old, uncompleted row. (#2685)
+
+Breaks:
+Starting a break when there are no break activities left no longer crashes the app. (#2674)
+
+Menu:
+The sidebar collapse control is now a double chevron next to the logo, and the menu sits a little higher. (#2672)
+
+Reliability:
+AppleScript automation (used for website blocking) works again — the app now bundles its scripting definition. (#2797)
