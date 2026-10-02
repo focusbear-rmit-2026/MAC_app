@@ -33,8 +33,10 @@ func applyRemoteSessionChange(named eventName: String, event: PusherEvent) -> Bo
 /// session was hardcoded to `._NORMAL_`, so a strict session started on the phone was enforced
 /// leniently on the Mac.
 func focusModeStrictness(fromBlockLevel blockLevel: String?) -> FOCUSMODESTRICTNESS {
+    // The backend's block_level enum is `gentle | strict | super-strict` (hyphen); the underscore form is
+    // kept in case an older payload still sends it.
     switch blockLevel?.lowercased() {
-    case "super_strict": return ._SUPER_STRICT_
+    case "super-strict", "super_strict": return ._SUPER_STRICT_
     case "strict":       return ._STRICT_
     default:             return ._NORMAL_   // "gentle" / null / unknown
     }

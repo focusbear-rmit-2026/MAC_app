@@ -228,4 +228,14 @@ final class FocusSessionStopPermissionTests: XCTestCase {
         XCTAssertEqual(remote(from: "phone", teacher: true, buddy: true), .teacherSession)
     }
 
+    // Remote sessions carry the backend's block_level (`gentle | strict | super-strict`); a hyphen the
+    // Mac didn't recognise ran a phone-started super-strict session as a normal one (mobile-app#3206).
+    func testRemoteBlockLevelsMapToTheirStrictness() {
+        XCTAssertEqual(focusModeStrictness(fromBlockLevel: "super-strict"), ._SUPER_STRICT_)
+        XCTAssertEqual(focusModeStrictness(fromBlockLevel: "super_strict"), ._SUPER_STRICT_)
+        XCTAssertEqual(focusModeStrictness(fromBlockLevel: "strict"), ._STRICT_)
+        XCTAssertEqual(focusModeStrictness(fromBlockLevel: "gentle"), ._NORMAL_)
+        XCTAssertEqual(focusModeStrictness(fromBlockLevel: nil), ._NORMAL_)
+    }
+
 }
