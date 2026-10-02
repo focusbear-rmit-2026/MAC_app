@@ -20,6 +20,20 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
         self.window?.appearance = getAppAppearance()
     }
 
+    // #2795: dragging the floating top bar to reposition it was popping the main window to the front.
+    // Moving a borderless window activates the app, and applicationDidBecomeActive then schedules the
+    // "restore the main window on activation" decision (the ⌘-Tab-back-to-Focus-Bear feature). The user
+    // grabbing the floating bar to move it is not a request for the main window, so declare it a
+    // self-activation — the same contract togglePopover() uses for a bar click — which cancels that
+    // pending restore. Scoped to the floating bar only; every other commonWindowController window is
+    // unaffected. (This also fires for the one programmatic setFrameOrigin when the bar is first shown,
+    // which is harmless — there is no user-requested main window to suppress at that moment.)
+    func windowDidMove(_ notification: Notification) {
+        if self === floatingTopBarWcObj {
+            appdelegate?.noteSelfActivation()
+        }
+    }
+
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         // #2577: closing the AI block popup blocks the caught app/site (the check-in has no direct block on
         // its primary/argue screens). aiBlockBuddyCloseButtonBlocks() fires the block and closes the window
