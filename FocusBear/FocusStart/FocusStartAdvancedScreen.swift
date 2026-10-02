@@ -515,6 +515,11 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
                         .font(scale.font(FocusStartLayout.summaryFont))
                         .foregroundColor(FocusStartPalette.warning)
                         .multilineTextAlignment(.center)
+                        // Fill the card width and wrap: without a width bound this Text sized to its
+                        // single-line ideal width, widening the column past the window so the message was
+                        // clipped (#2791). fixedSize lets it grow vertically for the extra lines.
+                        .frame(maxWidth: .infinity)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 // A running blocking schedule is not a session, so this screen stays available — it
                 // just says what is already being blocked, in the secondary colour so it reads as
@@ -524,6 +529,8 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
                         .font(scale.font(FocusStartLayout.summaryFont))
                         .foregroundColor(FocusStartPalette.secondaryText)
                         .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 SwiftUI.Button(action: state.onEditBlockLists) {
                     Text(state.strings.editBlockListsButton)

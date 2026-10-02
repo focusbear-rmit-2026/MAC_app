@@ -54,6 +54,8 @@ struct FocusStartSimpleScreen: SwiftUI.View {
                             .foregroundColor(FocusStartPalette.warning)
                             .multilineTextAlignment(.center)
                             .frame(maxWidth: scale.pt(1191))
+                            // Let the wrapped notice grow vertically rather than clip (#2791).
+                            .fixedSize(horizontal: false, vertical: true)
                             .padding(.top, scale.pt(24))
                     }
                     // A running blocking schedule is not a session, so this screen stays available —
@@ -65,6 +67,7 @@ struct FocusStartSimpleScreen: SwiftUI.View {
                             .foregroundColor(FocusStartPalette.secondaryText)
                             .multilineTextAlignment(.center)
                             .frame(maxWidth: scale.pt(1191))
+                            .fixedSize(horizontal: false, vertical: true)
                             .padding(.top, scale.pt(24))
                     }
                 }
