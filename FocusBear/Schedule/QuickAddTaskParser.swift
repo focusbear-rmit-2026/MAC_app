@@ -81,6 +81,13 @@ extension TaskNameCommit {
         decide(raw) { QuickAddTaskParser.parse($0, knownProjects: knownProjects) }
     }
 
+    /// Whether a committed title has to be pushed to the backend. A task with no backing to-do is
+    /// always offered for minting (idempotent); a backed one only when the title really changed. An
+    /// unknown original (the begin-edit was never seen) counts as a change, so a rename is never lost.
+    static func needsSync(originalTitle: String?, committedTitle: String, isBackedByTodo: Bool) -> Bool {
+        !isBackedByTodo || originalTitle != committedTitle
+    }
+
     private static func decide(_ raw: String, parse: (String) -> ParsedQuickAddTask) -> TaskNameCommit {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return .discard }

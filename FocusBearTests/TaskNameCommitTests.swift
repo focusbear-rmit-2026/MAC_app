@@ -141,6 +141,74 @@ final class TaskNameCommitTests: XCTestCase {
         XCTAssertNil(nameField(in: panel), "Snoozed row must disappear immediately, even while it had keyboard focus")
     }
 
+    /// #2679: clicking a task's name to reach Expand leaves that row's name field focused. Saving the
+    /// details then left the row showing the old title and duration (the redraw was deferred behind
+    /// the focus), and the field's later blur wrote the old title back over the saved one.
+    @MainActor
+    func testSavingDetailsWhileTheRowNameIsFocusedRedrawsTheRowAndKeepsTheNewTitle() {
+        let previousMock = DayPlanTaskStore.mockMode
+        DayPlanTaskStore.mockMode = true
+        let store = DayPlanTaskStore.shared
+        let day = Calendar.current.date(from: DateComponents(year: 2060, month: 9, day: 16))!
+        let previousTasks = store.allTasks(for: day)
+        let task = DayPlanTask(title: "Old title", durationMinutes: 15)
+        store.loadMock([task], for: day)
+        let panel = DayPlanTasksPanel(frame: NSRect(x: 0, y: 0, width: 600, height: 500))
+        let window = NSWindow(contentRect: panel.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = panel
+        panel.date = day
+        defer {
+            window.makeFirstResponder(nil)
+            window.close()
+            store.loadMock(previousTasks, for: day)
+            DayPlanTaskStore.mockMode = previousMock
+        }
+        func field(_ identifier: String, in view: NSView) -> NSTextField? {
+            if let field = view as? NSTextField, field.identifier?.rawValue == identifier { return field }
+            return view.subviews.lazy.compactMap { field(identifier, in: $0) }.first
+        }
+        guard let rowName = field("name:" + task.id, in: panel) else { return XCTFail("Task row missing") }
+        XCTAssertTrue(window.makeFirstResponder(rowName))
+
+        var edited = task
+        edited.title = "New title"
+        edited.durationMinutes = 45
+        edited.notes = "Some notes"
+        panel.commitTaskDetails(edited)
+
+        XCTAssertEqual(field("name:" + task.id, in: panel)?.stringValue, "New title",
+                       "The row must be redrawn with the saved title straight away")
+        XCTAssertEqual(field("dur:" + task.id, in: panel)?.stringValue, "45m")
+        window.makeFirstResponder(nil)
+        let saved = store.allTasks(for: day).first { $0.id == task.id }
+        XCTAssertEqual(saved?.title, "New title", "A later blur of the row must not restore the old title")
+        XCTAssertEqual(saved?.durationMinutes, 45)
+        XCTAssertEqual(saved?.notes, "Some notes")
+    }
+
+    // MARK: Syncing a committed title
+
+    func testAnUnchangedTitleOnABackedTaskIsNotPushed() {
+        XCTAssertFalse(TaskNameCommit.needsSync(originalTitle: "Write spec", committedTitle: "Write spec",
+                                                isBackedByTodo: true))
+    }
+
+    func testAChangedTitleOnABackedTaskIsPushed() {
+        XCTAssertTrue(TaskNameCommit.needsSync(originalTitle: "Old title", committedTitle: "New title",
+                                               isBackedByTodo: true))
+    }
+
+    func testAnUnknownOriginalTitleCountsAsAChange() {
+        XCTAssertTrue(TaskNameCommit.needsSync(originalTitle: nil, committedTitle: "Write spec",
+                                               isBackedByTodo: true))
+    }
+
+    func testATaskWithNoBackingToDoIsAlwaysOfferedForMinting() {
+        XCTAssertTrue(TaskNameCommit.needsSync(originalTitle: "Write spec", committedTitle: "Write spec",
+                                               isBackedByTodo: false))
+    }
+
     private let known = ["Focus Bear", "class"]
 
     private func savedTask(_ commit: TaskNameCommit,

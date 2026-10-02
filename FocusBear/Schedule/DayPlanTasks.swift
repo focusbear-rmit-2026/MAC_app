@@ -1154,7 +1154,8 @@ final class DayPlanTaskStore {
     /// for an already-synced task it pushes the renamed title to its to-do so the new name syncs to
     /// other devices too.
     func syncNameOnCommit(_ task: DayPlanTask, on date: Date) {
-        guard !task.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        guard !Self.mockMode,
+              !task.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         if let sid = task.sourceTaskId {
             DayPlanSync.shared.setTodoTitle(todoID: sid, title: task.title, quadrant: task.eisenhowerQuadrant ?? kDayPlanNeutralQuadrant)
         } else {
@@ -3626,6 +3627,8 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate, 
     }
 
     @objc private func saveTaskModal() {
+        // Before reading the task: the row's own blur commit writes to the store (see commitTaskDetails).
+        endNameEditing()
         guard let id = modalTaskID, var t = task(for: id) else { dismissTaskModal(); return }
         syncSubtasksFromFields()
         let newTitle = (modalTitleField?.stringValue ?? t.title).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -3643,8 +3646,26 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate, 
             .map { DayPlanSubtask(id: $0.id, title: $0.title.trimmingCharacters(in: .whitespacesAndNewlines), done: $0.done) }
             .filter { !$0.title.isEmpty }
         t.subtasks = cleaned.isEmpty ? nil : cleaned
-        DayPlanTaskStore.shared.update(t, for: date)
         dismissTaskModal()
+        commitTaskDetails(t)
+    }
+
+    /// Store what the details popover saved, push a changed title to the backing to-do, and redraw.
+    ///
+    /// Clicking a task's name to reach Expand leaves that row's name field holding the field editor.
+    /// With it still focused, `reload()` defers the redraw — so the row kept its old title, duration
+    /// and planned total — and the eventual blur ran `saveName` on the field's OLD text, writing the
+    /// old title back over the one just saved (#2679). Editing is ended first, so that blur commits
+    /// before this write rather than after it. The title also has to reach the to-do: the next to-do
+    /// refresh (`mergeDueTodos`) copies the server's title onto the row.
+    func commitTaskDetails(_ edited: DayPlanTask) {
+        endNameEditing()
+        let titleBeforeSave = task(for: edited.id)?.title
+        DayPlanTaskStore.shared.update(edited, for: date)
+        if TaskNameCommit.needsSync(originalTitle: titleBeforeSave, committedTitle: edited.title,
+                                    isBackedByTodo: edited.sourceTaskId != nil) {
+            DayPlanTaskStore.shared.syncNameOnCommit(edited, on: date)
+        }
         reload(); onChange?()
     }
 
@@ -3972,8 +3993,8 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate, 
             // attempts to mint (idempotent) since it may not be synced yet. `nil` original (begin-edit not
             // seen) is treated as "changed" so a genuine rename is never missed.
             let original = titleBeforeEdit.removeValue(forKey: id)
-            let titleChanged = (original == nil) || (original != parsed.title)
-            if t.sourceTaskId == nil || titleChanged {
+            if TaskNameCommit.needsSync(originalTitle: original, committedTitle: parsed.title,
+                                        isBackedByTodo: t.sourceTaskId != nil) {
                 DayPlanTaskStore.shared.syncNameOnCommit(t, on: date)
             }
             let changedShape = (t.project != oldProject) || (t.outcome != oldOutcome) || (parsed.title != trimmed)
