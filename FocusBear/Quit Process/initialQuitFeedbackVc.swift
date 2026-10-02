@@ -45,9 +45,20 @@ class initialQuitFeedbackVc: NSViewController {
             onSnoozeFeatures: { [weak self] features, hours in
                 self?.snoozeFeatures(features, hours: hours)
             })
+        // Wrap the SwiftUI hosting view in a plain container rather than making it the content view
+        // directly: when NSHostingView IS the titled window's content view, AppKit applies the title-bar
+        // safe-area inset to it and pushes the SwiftUI content down, leaving a gap below the title bar.
+        // Pinning it inside a plain NSView defeats that, so the content fills flush to the top.
         let hosting = NSHostingView(rootView: root)
-        hosting.frame = NSRect(x: 0, y: 0, width: QuitPopupLayout.width, height: QuitPopupLayout.height)
-        self.view = hosting
+        hosting.translatesAutoresizingMaskIntoConstraints = false
+        view = NSView(frame: NSRect(x: 0, y: 0, width: QuitPopupLayout.width, height: QuitPopupLayout.height))
+        view.addSubview(hosting)
+        NSLayoutConstraint.activate([
+            hosting.topAnchor.constraint(equalTo: view.topAnchor),
+            hosting.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            hosting.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hosting.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+        ])
     }
 
     // MARK: Report a bug → existing in-app "Report Problem" flow
