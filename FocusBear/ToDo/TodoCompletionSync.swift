@@ -25,11 +25,40 @@ enum TodoCompletionBus {
 
     /// Announce a completion the user just made. Only the screen the change ORIGINATED on posts;
     /// appliers must not, or the two stores would answer each other forever.
+    ///
+    /// Stamped on `echoGuard` as this Mac's newest change to the to-do, so the server's late echo of
+    /// an earlier one can be told apart (#2690).
     static func post(todoID: String, completed: Bool) {
         guard !todoID.isEmpty else { return }
+        onMain {
+            echoGuard.recordLocalChange(todoID: todoID, completed: completed)
+            broadcast(todoID: todoID, completed: completed)
+        }
+    }
+
+    /// Announce a completion the server broadcast (`todo-completed`), unless it is out of date: an
+    /// echo of an earlier change this Mac has since reversed. `persistedAt` is when the server saved it.
+    static func postRemote(todoID: String, completed: Bool, persistedAt: Date?) {
+        guard !todoID.isEmpty else { return }
+        onMain {
+            guard echoGuard.shouldApplyRemote(todoID: todoID, completed: completed, persistedAt: persistedAt) else {
+                addLog(text: "\(TodoCompletedPusherEvent.eventName) for \(todoID) (completed=\(completed)) is older than this Mac's own change to it — ignored")
+                return
+            }
+            broadcast(todoID: todoID, completed: completed)
+        }
+    }
+
+    /// Only touched on the main thread (see `onMain`), so a record and a check can't interleave.
+    static let echoGuard = TodoCompletionEchoGuard()
+
+    private static func broadcast(todoID: String, completed: Bool) {
         let userInfo: [String: Any] = [todoIDKey: todoID, completedKey: completed]
-        let send = { NotificationCenter.default.post(name: notificationName, object: nil, userInfo: userInfo) }
-        if Thread.isMainThread { send() } else { DispatchQueue.main.async(execute: send) }
+        NotificationCenter.default.post(name: notificationName, object: nil, userInfo: userInfo)
+    }
+
+    private static func onMain(_ work: @escaping () -> Void) {
+        if Thread.isMainThread { work() } else { DispatchQueue.main.async(execute: work) }
     }
 
     static func change(in notification: Notification) -> Change? {
@@ -46,6 +75,44 @@ enum TodoCompletionBus {
             guard let change = change(in: notification) else { return }
             handler(change)
         }
+    }
+}
+
+/// Tells the server's late echo of this Mac's own completion from a real change made elsewhere.
+///
+/// This Mac's tick comes back to it as the backend's `todo-completed` event a moment later. Tick and
+/// untick within that moment and the echo of the tick lands after the untick and re-ticks the task
+/// (#2690). So each local change is recorded per to-do, and a remote event is dropped when it
+/// disagrees with the newest local change and is not newer than it: saved on the server before that
+/// change, or arriving within `echoWindow` of it. A remote event for a to-do this Mac hasn't touched,
+/// or one that agrees with the local state, always goes through — so completions from the phone or
+/// the web are never held back.
+final class TodoCompletionEchoGuard {
+    /// How long after a local change an echo of an earlier one can still turn up. It also covers a
+    /// payload with no `completed_at`, and a server clock running ahead of this Mac's.
+    static let echoWindow: TimeInterval = 5
+
+    private struct LocalChange {
+        let completed: Bool
+        let at: Date
+    }
+
+    private var newestLocalChange: [String: LocalChange] = [:]
+    private let now: () -> Date
+
+    init(now: @escaping () -> Date = Date.init) {
+        self.now = now
+    }
+
+    func recordLocalChange(todoID: String, completed: Bool) {
+        newestLocalChange[todoID] = LocalChange(completed: completed, at: now())
+    }
+
+    func shouldApplyRemote(todoID: String, completed: Bool, persistedAt: Date?) -> Bool {
+        guard let local = newestLocalChange[todoID], local.completed != completed else { return true }
+        let wasSavedBeforeLocalChange = persistedAt.map { $0 < local.at } ?? false
+        let isWithinEchoWindow = now().timeIntervalSince(local.at) < Self.echoWindow
+        return !wasSavedBeforeLocalChange && !isWithinEchoWindow
     }
 }
 
@@ -86,9 +153,11 @@ enum TodoCompletedPusherEvent {
     struct Payload: Equatable {
         let todoID: String
         let isCompleted: Bool
-        /// ISO-8601 instant the backend persisted the completion. Carried for logging/diagnostics —
-        /// the app has nowhere to show it yet.
+        /// ISO-8601 instant the backend persisted the completion — what tells a late echo of this
+        /// Mac's own change from a newer one made elsewhere.
         let completedAt: String?
+
+        var persistedAt: Date? { ToDoDates.parse(completedAt) }
     }
 
     /// Decode an event body. Returns nil for anything without a usable to-do id, so a malformed or
@@ -108,12 +177,18 @@ enum TodoCompletedPusherEvent {
     /// effect: both `DayPlanTaskStore` and `ToDoStore` apply a bus change straight to their own caches
     /// and never write it back, so a completion that arrived FROM the server can't echo a `PUT /to-do`
     /// at it — which is what would loop. Anything that needs the server told must not be wired here.
+    /// The bus drops an event that is older than this Mac's own newest change to the to-do.
     /// Returns whether the event was understood, for the caller's log line and for tests.
     @discardableResult
     static func handle(eventData: String?,
-                       announce: (String, Bool) -> Void = TodoCompletionBus.post) -> Bool {
+                       announce: (Payload) -> Void = announceOnBus) -> Bool {
         guard let payload = payload(fromJSON: eventData) else { return false }
-        announce(payload.todoID, payload.isCompleted)
+        announce(payload)
         return true
+    }
+
+    static func announceOnBus(_ payload: Payload) {
+        TodoCompletionBus.postRemote(todoID: payload.todoID, completed: payload.isCompleted,
+                                     persistedAt: payload.persistedAt)
     }
 }

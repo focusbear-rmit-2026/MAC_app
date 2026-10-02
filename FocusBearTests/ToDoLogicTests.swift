@@ -1551,14 +1551,14 @@ extension ToDoLogicTests {
     }
 
     func testRemoteCompletionEventAnnouncesTheChangeExactlyOnce() {
-        var announced: [(String, Bool)] = []
-        let record: (String, Bool) -> Void = { id, done in announced.append((id, done)) }
+        var announced: [TodoCompletedPusherEvent.Payload] = []
+        let record: (TodoCompletedPusherEvent.Payload) -> Void = { announced.append($0) }
 
         let understood = TodoCompletedPusherEvent.handle(eventData: todoCompletedEventJSON(), announce: record)
         XCTAssertTrue(understood)
         XCTAssertEqual(announced.count, 1)
-        XCTAssertEqual(announced.first?.0, "todo-1")
-        XCTAssertEqual(announced.first?.1, true)
+        XCTAssertEqual(announced.first?.todoID, "todo-1")
+        XCTAssertEqual(announced.first?.isCompleted, true)
 
         announced.removeAll()
         let garbage = TodoCompletedPusherEvent.handle(eventData: "not json", announce: record)
@@ -1584,6 +1584,105 @@ extension ToDoLogicTests {
         TodoCompletedPusherEvent.handle(eventData: todoCompletedEventJSON(todoID: "todo-remote"))
         RunLoop.current.run(until: Date().addingTimeInterval(0.2))
         XCTAssertNil(DayPlanSync.lastTodoStatusWrite, "a remote completion must not write back")
+    }
+
+    // MARK: - Late echo of this Mac's own completion (#2690)
+
+    /// A clock the test moves by hand, so "0.7 s later" means exactly that.
+    private final class ManualClock {
+        var now = Date(timeIntervalSince1970: 1_790_000_000)
+        func advance(by seconds: TimeInterval) { now = now.addingTimeInterval(seconds) }
+    }
+
+    /// The regression suite's order: tick at 47.6, untick at 48.3, then the echo of the tick.
+    func testEchoGuardDropsTheEchoOfATickThatWasUntickedSince() {
+        let clock = ManualClock()
+        let guardUnderTest = TodoCompletionEchoGuard(now: { clock.now })
+        let tickedAt = clock.now
+        guardUnderTest.recordLocalChange(todoID: "todo-1", completed: true)
+        clock.advance(by: 0.7)
+        guardUnderTest.recordLocalChange(todoID: "todo-1", completed: false)
+        clock.advance(by: 0.3)
+        XCTAssertFalse(guardUnderTest.shouldApplyRemote(todoID: "todo-1", completed: true,
+                                                        persistedAt: tickedAt.addingTimeInterval(0.1)),
+                       "the echo of the tick must not re-tick a task the user has just unticked")
+    }
+
+    func testEchoGuardDropsAnEchoWithNoTimestampThatArrivesRightAfterTheLocalChange() {
+        let clock = ManualClock()
+        let guardUnderTest = TodoCompletionEchoGuard(now: { clock.now })
+        guardUnderTest.recordLocalChange(todoID: "todo-1", completed: false)
+        clock.advance(by: 1)
+        XCTAssertFalse(guardUnderTest.shouldApplyRemote(todoID: "todo-1", completed: true, persistedAt: nil))
+    }
+
+    func testEchoGuardDropsAnEchoFromAServerClockRunningAhead() {
+        let clock = ManualClock()
+        let guardUnderTest = TodoCompletionEchoGuard(now: { clock.now })
+        guardUnderTest.recordLocalChange(todoID: "todo-1", completed: false)
+        clock.advance(by: 1)
+        XCTAssertFalse(guardUnderTest.shouldApplyRemote(todoID: "todo-1", completed: true,
+                                                        persistedAt: clock.now.addingTimeInterval(2)),
+                       "a server stamp a little after the untick is still the tick's echo while inside the window")
+    }
+
+    func testEchoGuardDropsALateEchoSavedBeforeTheLocalChange() {
+        let clock = ManualClock()
+        let guardUnderTest = TodoCompletionEchoGuard(now: { clock.now })
+        let tickedAt = clock.now
+        guardUnderTest.recordLocalChange(todoID: "todo-1", completed: true)
+        clock.advance(by: 0.7)
+        guardUnderTest.recordLocalChange(todoID: "todo-1", completed: false)
+        clock.advance(by: TodoCompletionEchoGuard.echoWindow * 4)
+        XCTAssertFalse(guardUnderTest.shouldApplyRemote(todoID: "todo-1", completed: true, persistedAt: tickedAt),
+                       "however late it arrives, a completion saved before the untick is older than it")
+    }
+
+    func testEchoGuardAppliesACompletionFromAnotherDeviceForAToDoThisMacHasNotTouched() {
+        let clock = ManualClock()
+        let guardUnderTest = TodoCompletionEchoGuard(now: { clock.now })
+        guardUnderTest.recordLocalChange(todoID: "todo-mac", completed: false)
+        XCTAssertTrue(guardUnderTest.shouldApplyRemote(todoID: "todo-phone", completed: true, persistedAt: clock.now))
+        XCTAssertTrue(guardUnderTest.shouldApplyRemote(todoID: "todo-phone", completed: true, persistedAt: nil))
+    }
+
+    func testEchoGuardAppliesACompletionMadeElsewhereAfterTheLocalChange() {
+        let clock = ManualClock()
+        let guardUnderTest = TodoCompletionEchoGuard(now: { clock.now })
+        guardUnderTest.recordLocalChange(todoID: "todo-1", completed: false)
+        clock.advance(by: 60)
+        XCTAssertTrue(guardUnderTest.shouldApplyRemote(todoID: "todo-1", completed: true, persistedAt: clock.now),
+                      "ticked on the phone a minute after this Mac unticked it — a real change")
+    }
+
+    func testEchoGuardAppliesAnEventThatAgreesWithTheLocalChange() {
+        let clock = ManualClock()
+        let guardUnderTest = TodoCompletionEchoGuard(now: { clock.now })
+        guardUnderTest.recordLocalChange(todoID: "todo-1", completed: true)
+        XCTAssertTrue(guardUnderTest.shouldApplyRemote(todoID: "todo-1", completed: true, persistedAt: clock.now),
+                      "the echo of the newest change is harmless — the stores no-op on it")
+    }
+
+    func testRemoteCompletionEventParsesItsPersistedTime() {
+        let payload = TodoCompletedPusherEvent.payload(fromJSON: todoCompletedEventJSON())
+        XCTAssertEqual(payload?.persistedAt, ISO8601DateFormatter().date(from: "2026-09-14T09:37:51Z"))
+    }
+
+    /// End to end through the real bus: the untick is announced, the echo of the earlier tick is not.
+    func testCompletionBusDoesNotAnnounceTheEchoOfAReversedTick() {
+        let todoID = "todo-echo-\(UUID().uuidString)"
+        var announced: [Bool] = []
+        let token = TodoCompletionBus.observe { change in
+            if change.todoID == todoID { announced.append(change.completed) }
+        }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        TodoCompletionBus.post(todoID: todoID, completed: true)
+        TodoCompletionBus.post(todoID: todoID, completed: false)
+        TodoCompletedPusherEvent.handle(eventData: todoCompletedEventJSON(todoID: todoID))
+        RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+
+        XCTAssertEqual(announced, [true, false], "the late echo of the tick must not re-tick it")
     }
 
     func testRemoteCompletionTicksTheDayPlanCopyOfTheToDo() {
