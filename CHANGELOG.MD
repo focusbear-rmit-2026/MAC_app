@@ -861,3 +861,24 @@ The sidebar collapse control is now a double chevron next to the logo, and the m
 
 Reliability:
 AppleScript automation (used for website blocking) works again — the app now bundles its scripting definition. (#2797)
+
+
+# v3.36.552
+
+Quitting:
+"Require password to quit" works again — the quit dialog asks for your password when that setting is on, instead of letting anyone quit. (#2695)
+The quit dialog's content now sits flush under the title bar, with no empty gap above it. (#2822)
+
+Focus session:
+A running session's +5 / −5 buttons now keep the time you've already spent, instead of resetting the total. (#2692)
+The block-list information message on the Start Focus screen now wraps fully, instead of being cut off mid-sentence. (#2823)
+
+Focus & Blocking:
+A super-strict focus session started from your phone is now enforced as super-strict on the Mac, instead of as a normal one. (#2696)
+
+Focus bar:
+Dragging the floating focus bar to reposition it no longer pops the main Focus Bear window to the front. (#2824)
+
+Projects & To-Do:
+Editing a task's details now updates the task row and keeps your new title. (#2683)
+A task you just unticked stays unticked — a late update from the server can no longer re-tick it. (#2693)
