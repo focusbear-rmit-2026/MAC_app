@@ -20,10 +20,6 @@ import SwiftUI
 //       `kUserdefaults4HourReActivateTime` deactivate-for-a-duration mechanism).
 //     • "Pause blocking for N hr" (+/- stepper, matches the menu's focus-session duration control) →
 //       disable the app for N hours via the same mechanism.
-/// TEMP (debug — remove before shipping): when true, the quit dialog's password gate is skipped so the
-/// redesigned quit UI can be tested without entering a password. Requested for live testing.
-var debugBypassQuitPasswordForTesting = true
-
 class initialQuitFeedbackVc: NSViewController {
 
     var enterPasswordVcObj: enterPasswordVc?
@@ -161,9 +157,7 @@ class initialQuitFeedbackVc: NSViewController {
         // when the password gate isn't needed — so every open starts interactive instead of coming back
         // with everything disabled and the spinner stuck.
         quitModel.isBusy = false
-        // TEMP (debug — remove before shipping): skip the quit password gate so the redesigned quit
-        // dialog can be tested unobstructed. Set debugBypassQuitPasswordForTesting = false to restore.
-        guard !debugBypassQuitPasswordForTesting, shouldAskPassword(), SettingsManagerObject.isPasswordRequireInQuitApp else { return }
+        guard shouldAskPassword(), SettingsManagerObject.isPasswordRequireInQuitApp else { return }
         if enterPasswordVcObj == nil {
             enterPasswordVcObj = mainStoryboard.instantiateController(
                 withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as? enterPasswordVc
