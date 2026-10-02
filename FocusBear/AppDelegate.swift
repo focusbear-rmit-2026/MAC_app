@@ -2053,6 +2053,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         
                         startFocusModeTimeForPauseAndResume = now
                         focusModeSecondsToPerform = max(0, Int(grantedEnd.timeIntervalSince(now)))
+                        focusModeMinutesToPerform = FocusSessionClock.plannedMinutes(focusModeMinutesToPerform, changedBy: grantedMinutes)
                         endFocusModeTime = grantedEnd
                         timerForFocusMode = Timer(fireAt: grantedEnd, interval: 0, target: self, selector: #selector(self.focusModeTimerFinished), userInfo: nil, repeats: false)
                         RunLoop.main.add((timerForFocusMode!), forMode: RunLoop.Mode.common)
@@ -2126,6 +2127,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         
                         startFocusModeTimeForPauseAndResume = Date()
                         focusModeSecondsToPerform = newRemainingSeconds
+                        focusModeMinutesToPerform = FocusSessionClock.plannedMinutes(focusModeMinutesToPerform, changedBy: -minutes)
                         endFocusModeTime = Calendar.current.date(byAdding: .second, value: focusModeSecondsToPerform, to: Date())
                         timerForFocusMode = Timer.scheduledTimer(timeInterval: TimeInterval(focusModeSecondsToPerform), target: self, selector: #selector(self.focusModeTimerFinished), userInfo: nil, repeats: false)
                         RunLoop.main.add((timerForFocusMode!), forMode: RunLoop.Mode.common)

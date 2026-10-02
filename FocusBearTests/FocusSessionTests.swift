@@ -1280,34 +1280,84 @@ class FocusSessionTests: XCTestCase {
     /// one starts. Reading it alone gave a total shorter than the time remaining, so elapsed clamped
     /// to zero — the bar sat at 00:00 and the total disagreed with the countdown.
     func test_sessionTotal_isNeverShorterThanTheTimeRemaining() {
-        let total = FocusSessionClock.sessionTotalSeconds(plannedMinutes: 0, liveSeconds: 270,
-                                                          remainingSeconds: 1192)
+        let total = FocusSessionClock.sessionTotalSeconds(plannedMinutes: 0, performedSeconds: 0,
+                                                          segmentSeconds: 270, remainingSeconds: 1192)
         XCTAssertGreaterThanOrEqual(total, 1192,
                                     "A stale live length must not make the total shorter than what is left")
         XCTAssertGreaterThan(total - 1192, -1, "…so elapsed can never be negative")
     }
 
     func test_sessionTotal_prefersThePlannedLength() {
-        XCTAssertEqual(FocusSessionClock.sessionTotalSeconds(plannedMinutes: 30, liveSeconds: 0,
-                                                             remainingSeconds: 1200),
+        XCTAssertEqual(FocusSessionClock.sessionTotalSeconds(plannedMinutes: 30, performedSeconds: 0,
+                                                             segmentSeconds: 0, remainingSeconds: 1200),
                        1800, "A 30-minute session totals 30 minutes")
     }
 
     func test_sessionTotal_followsAnExtendedSession() {
-        XCTAssertEqual(FocusSessionClock.sessionTotalSeconds(plannedMinutes: 30, liveSeconds: 2400,
-                                                             remainingSeconds: 2300),
+        XCTAssertEqual(FocusSessionClock.sessionTotalSeconds(plannedMinutes: 30, performedSeconds: 0,
+                                                             segmentSeconds: 2400, remainingSeconds: 2300),
                        2400, "Extending the session grows the total the bar measures against")
     }
 
     func test_progress_advancesAsTheSessionRuns() {
-        let total = FocusSessionClock.sessionTotalSeconds(plannedMinutes: 30, liveSeconds: 0,
-                                                           remainingSeconds: 1800)
+        let total = FocusSessionClock.sessionTotalSeconds(plannedMinutes: 30, performedSeconds: 0,
+                                                          segmentSeconds: 0, remainingSeconds: 1800)
         let atStart = FocusSessionClock.progress(elapsedSeconds: total - 1800, totalSeconds: total)
-        let laterTotal = FocusSessionClock.sessionTotalSeconds(plannedMinutes: 30, liveSeconds: 0,
-                                                               remainingSeconds: 900)
+        let laterTotal = FocusSessionClock.sessionTotalSeconds(plannedMinutes: 30, performedSeconds: 0,
+                                                               segmentSeconds: 0, remainingSeconds: 900)
         let halfway = FocusSessionClock.progress(elapsedSeconds: laterTotal - 900, totalSeconds: laterTotal)
         XCTAssertEqual(atStart, 0, accuracy: 0.0001, "Nothing elapsed at the start")
         XCTAssertEqual(halfway, 0.5, accuracy: 0.0001, "Half the session gone is half the bar")
+    }
+
+    /// #2689: +5 re-bases the countdown — the second already spent moves into
+    /// `focusModeActualDurationPerformed` and `focusModeSecondsToPerform` becomes the 599 s left. The
+    /// total used to be read off the stretch alone: "0 sec of 9 min" and an empty bar.
+    func test_sessionTotal_afterExtending_keepsTheTimeAlreadySpent() {
+        let secondsIn = 1
+        let remaining = 10 * FocusSessionClock.secondsPerMinute - secondsIn
+        let total = FocusSessionClock.sessionTotalSeconds(plannedMinutes: 5, performedSeconds: secondsIn,
+                                                          segmentSeconds: remaining, remainingSeconds: remaining)
+        XCTAssertEqual(total, 10 * FocusSessionClock.secondsPerMinute, "5 minutes +5 is a 10-minute session")
+        XCTAssertEqual(total - remaining, secondsIn, "The second already spent is still elapsed, not 0")
+        XCTAssertEqual(FocusSessionClock.progress(elapsedSeconds: total - remaining, totalSeconds: total),
+                       Double(secondsIn) / Double(total), accuracy: 0.0001,
+                       "The bar measures elapsed against the new total rather than restarting")
+    }
+
+    /// −5 re-bases the same way and must shrink the total — the planned length can't hold it at the
+    /// originally requested 30 minutes.
+    func test_sessionTotal_afterReducing_shrinksAndKeepsTheTimeAlreadySpent() {
+        let secondsIn = 60
+        let reducedPlan = FocusSessionClock.plannedMinutes(30, changedBy: -5)
+        let remaining = reducedPlan * FocusSessionClock.secondsPerMinute - secondsIn
+        let total = FocusSessionClock.sessionTotalSeconds(plannedMinutes: reducedPlan, performedSeconds: secondsIn,
+                                                          segmentSeconds: remaining, remainingSeconds: remaining)
+        XCTAssertEqual(total, 25 * FocusSessionClock.secondsPerMinute, "30 minutes −5 is a 25-minute session")
+        XCTAssertEqual(total - remaining, secondsIn, "The minute already spent is still elapsed")
+    }
+
+    /// Pausing banks the spent part of the stretch without shortening the stretch, so the store passes
+    /// no stretch while paused — otherwise the spent time would count twice.
+    func test_sessionTotal_whilePaused_countsTheBankedTimeOnce() {
+        let total = FocusSessionClock.sessionTotalSeconds(plannedMinutes: 10, performedSeconds: 240,
+                                                          segmentSeconds: 0, remainingSeconds: 360)
+        XCTAssertEqual(total, 600, "4 minutes spent and 6 left of a 10-minute session")
+    }
+
+    /// A relaunch mid-session sets the planned length to what is left, and banks the time since the
+    /// session started — the total is still the whole session.
+    func test_sessionTotal_afterARelaunch_includesTheTimeBeforeIt() {
+        let total = FocusSessionClock.sessionTotalSeconds(plannedMinutes: 15, performedSeconds: 600,
+                                                          segmentSeconds: 900, remainingSeconds: 900)
+        XCTAssertEqual(total, 1500, "10 minutes before the relaunch and 15 after is a 25-minute session")
+    }
+
+    func test_plannedMinutes_followsExtendAndReduce_neverBelowZero() {
+        XCTAssertEqual(FocusSessionClock.plannedMinutes(5, changedBy: 5), 10, "+5")
+        XCTAssertEqual(FocusSessionClock.plannedMinutes(25, changedBy: -5), 20, "−5")
+        XCTAssertEqual(FocusSessionClock.plannedMinutes(3, changedBy: -5), 0,
+                       "Reducing past the end finishes the session; the plan never goes negative")
     }
 
     // MARK: - Time on the current task

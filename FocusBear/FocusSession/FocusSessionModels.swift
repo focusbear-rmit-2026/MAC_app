@@ -445,12 +445,30 @@ enum FocusSessionClock {
 
     /// How long the session runs in total, for the progress bar.
     ///
-    /// Takes the largest of the planned length, the live length and the time actually remaining. The
-    /// last term is what makes it safe: a stale `focusModeSecondsToPerform` left over from a previous
-    /// session can be *shorter* than the time remaining, and a total below `remaining` makes elapsed
-    /// clamp to zero — a bar that never advances and a total that contradicts the countdown.
-    static func sessionTotalSeconds(plannedMinutes: Int, liveSeconds: Int, remainingSeconds: Int) -> Int {
-        max(max(plannedMinutes * secondsPerMinute, liveSeconds), remainingSeconds)
+    /// Extend, reduce, pause and resume all re-base the countdown: the time spent so far is banked in
+    /// `performedSeconds` (`focusModeActualDurationPerformed`) and `segmentSeconds`
+    /// (`focusModeSecondsToPerform`) restarts as the length of the stretch from then on. The total is
+    /// the banked time plus that stretch. Reading the stretch alone dropped the time already spent, so
+    /// after +5 the bar restarted at zero and the total came up short by exactly that much (#2689).
+    ///
+    /// Pass `segmentSeconds` as 0 while paused: pausing banks the spent part of the stretch without
+    /// shortening it, so the stretch would count that time twice — `remainingSeconds` is the rest.
+    ///
+    /// `remainingSeconds` also guards the stretch: a stale `focusModeSecondsToPerform` left over from a
+    /// previous session can be *shorter* than the time remaining, and a total below `remaining` makes
+    /// elapsed clamp to zero — a bar that never advances and a total that contradicts the countdown.
+    /// `plannedMinutes` is the requested length, kept current by extend and reduce, and is the floor
+    /// for a session whose stretch isn't known.
+    static func sessionTotalSeconds(plannedMinutes: Int, performedSeconds: Int, segmentSeconds: Int,
+                                    remainingSeconds: Int) -> Int {
+        let timerTotal = max(0, performedSeconds) + max(segmentSeconds, remainingSeconds)
+        return max(plannedMinutes * secondsPerMinute, timerTotal)
+    }
+
+    /// The requested length after +N / −N minutes. Never negative: reducing past the end finishes the
+    /// session instead.
+    static func plannedMinutes(_ plannedMinutes: Int, changedBy deltaMinutes: Int) -> Int {
+        max(0, plannedMinutes + deltaMinutes)
     }
 
     /// A short elapsed reading for the active-task card: seconds in the first minute, then whole

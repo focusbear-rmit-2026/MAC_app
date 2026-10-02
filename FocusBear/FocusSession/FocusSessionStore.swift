@@ -529,16 +529,15 @@ final class FocusSessionStore: ObservableObject {
 
     /// The session length the progress bar measures against.
     ///
-    /// Both globals can be wrong on their own: `focusModeSecondsToPerform` is rewritten by
-    /// extend/reduce and pause/resume and can still hold a *previous* session's value at the moment a
-    /// new one starts, while `focusModeMinutesToPerform` is only the originally requested length.
-    /// Reading the stale one produced a total shorter than the time actually remaining, which made
-    /// elapsed clamp to zero — a progress bar that never moved and a total that disagreed with the
-    /// countdown.
+    /// `focusModeSecondsToPerform` is only the stretch since the last extend/reduce/pause re-based the
+    /// countdown, and can still hold a *previous* session's value at the moment a new one starts — see
+    /// `FocusSessionClock.sessionTotalSeconds` for how the banked time and the guards combine.
     private func currentTotalSeconds() -> Int {
-        FocusSessionClock.sessionTotalSeconds(plannedMinutes: focusModeMinutesToPerform,
-                                              liveSeconds: focusModeSecondsToPerform,
-                                              remainingSeconds: remainingSeconds)
+        let isCountingDown = phase == .running
+        return FocusSessionClock.sessionTotalSeconds(plannedMinutes: focusModeMinutesToPerform,
+                                                     performedSeconds: focusModeActualDurationPerformed,
+                                                     segmentSeconds: isCountingDown ? focusModeSecondsToPerform : 0,
+                                                     remainingSeconds: remainingSeconds)
     }
 
     // MARK: - Clock
