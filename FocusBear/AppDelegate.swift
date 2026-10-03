@@ -453,18 +453,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
 
-        let fontFamilies = NSFontManager.shared.availableFontFamilies.sorted()
-        for family in fontFamilies {
-            print(family)
-            let familyFonts = NSFontManager.shared.availableMembers(ofFontFamily: family)
-            if let fonts = familyFonts {
-                for font in fonts {
-                    print("\t\(font)")
-                }
-            }
-        }
-        
-        
         menuItemUninstall.isHidden = true
         client.start()// for getting true time
 
