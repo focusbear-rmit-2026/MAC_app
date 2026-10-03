@@ -551,15 +551,18 @@ private struct FocusSessionTaskPanel: SwiftUI.View {
                                                lineLimit: isCompact ? 3 : nil)
                         .foregroundColor(FocusSessionPalette.primaryText)
                     Spacer(minLength: 0)
-                    SwiftUI.Button(action: { store.editTask(id: active.id) }) {
-                        Image(systemName: "square.and.pencil")
-                            .font(scale.font(FocusSessionLayout.rowTitleFont))
-                            .foregroundColor(FocusSessionPalette.secondaryText)
+                    // The class checklist is teacher-owned, so there's no edit affordance (#2786).
+                    if !store.isClassChecklist {
+                        SwiftUI.Button(action: { store.editTask(id: active.id) }) {
+                            Image(systemName: "square.and.pencil")
+                                .font(scale.font(FocusSessionLayout.rowTitleFont))
+                                .foregroundColor(FocusSessionPalette.secondaryText)
+                        }
+                        .buttonStyle(FBButtonStyle())
+                        .disabled(store.isTaskEditingLocked)
+                        .opacity(store.isTaskEditingLocked ? 0.4 : 1)
+                        .help(store.strings.editTaskMenuItem)
                     }
-                    .buttonStyle(FBButtonStyle())
-                    .disabled(store.isTaskEditingLocked)
-                    .opacity(store.isTaskEditingLocked ? 0.4 : 1)
-                    .help(store.strings.editTaskMenuItem)
                 }
                 HStack(spacing: scale.pt(FocusSessionLayout.inlineGap)) {
                     if let project = active.projectName, !project.isEmpty, project != store.workTitle {
@@ -584,9 +587,13 @@ private struct FocusSessionTaskPanel: SwiftUI.View {
                                                lineLimit: isCompact ? 3 : nil)
                         .foregroundColor(FocusSessionPalette.primaryText)
                 }
-                FocusSessionAttachmentsView(taskID: active.id, scale: scale)
-                    .id(active.id)
-                FocusSessionSubtasksView(store: store, scale: scale)
+                // #2786: a class-checklist task is teacher-owned and not a personal to-do, so it has no
+                // attachments or editable subtasks — both fetch by task id and would error here.
+                if !store.isClassChecklist {
+                    FocusSessionAttachmentsView(taskID: active.id, scale: scale)
+                        .id(active.id)
+                    FocusSessionSubtasksView(store: store, scale: scale)
+                }
                 // Sized to its label rather than the design's full-width bar: completing the task is
                 // one of several things you can do here and shouldn't be the loudest thing on screen.
                 HStack {
@@ -606,8 +613,10 @@ private struct FocusSessionTaskPanel: SwiftUI.View {
                         )
                     }
                     .buttonStyle(FBButtonStyle())
-                    .disabled(store.isTaskEditingLocked || store.isSavingSubtask)
-                    .opacity(store.isTaskEditingLocked || store.isSavingSubtask ? 0.5 : 1)
+                    // A class checklist locks editing but still lets the student tick the active (first
+                    // incomplete) task, so the complete button stays live during a class session (#2786).
+                    .disabled((store.isTaskEditingLocked && !store.isClassChecklist) || store.isSavingSubtask)
+                    .opacity((store.isTaskEditingLocked && !store.isClassChecklist) || store.isSavingSubtask ? 0.5 : 1)
                     Spacer(minLength: 0)
                 }
             }
@@ -661,21 +670,30 @@ private struct FocusSessionTaskPanel: SwiftUI.View {
                     .font(scale.font(FocusSessionLayout.sectionFont))
                     .foregroundColor(FocusSessionPalette.primaryText)
                 Spacer()
-                SwiftUI.Button(action: store.presentTaskPicker) {
-                    Image(systemName: "plus")
-                        .font(scale.font(FocusSessionLayout.rowTitleFont, .semibold))
-                        .foregroundColor(FocusSessionPalette.invertedText)
-                        .frame(width: scale.pt(FocusSessionLayout.timerControlDiameter / 3),
-                               height: scale.pt(FocusSessionLayout.timerControlDiameter / 3))
-                        .background(
-                            RoundedRectangle(cornerRadius: scale.pt(FocusSessionLayout.cardCornerRadius))
-                                .fill(FocusSessionPalette.primaryText)
-                        )
+                // A class checklist is teacher-owned, so there's no "add task" affordance (#2786).
+                if !store.isClassChecklist {
+                    SwiftUI.Button(action: store.presentTaskPicker) {
+                        Image(systemName: "plus")
+                            .font(scale.font(FocusSessionLayout.rowTitleFont, .semibold))
+                            .foregroundColor(FocusSessionPalette.invertedText)
+                            .frame(width: scale.pt(FocusSessionLayout.timerControlDiameter / 3),
+                                   height: scale.pt(FocusSessionLayout.timerControlDiameter / 3))
+                            .background(
+                                RoundedRectangle(cornerRadius: scale.pt(FocusSessionLayout.cardCornerRadius))
+                                    .fill(FocusSessionPalette.primaryText)
+                            )
+                    }
+                    .buttonStyle(FBButtonStyle())
+                    .disabled(store.isTaskEditingLocked)
+                    .opacity(store.isTaskEditingLocked ? 0.5 : 1)
+                    .help(store.strings.addTasksTooltip)
                 }
-                .buttonStyle(FBButtonStyle())
-                .disabled(store.isTaskEditingLocked)
-                .opacity(store.isTaskEditingLocked ? 0.5 : 1)
-                .help(store.strings.addTasksTooltip)
+            }
+            if let error = store.classChecklistError {
+                Text(error)
+                    .font(scale.font(FocusSessionLayout.bodyFont))
+                    .foregroundColor(FocusSessionPalette.destructive)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             if store.queuedTasks.isEmpty {
                 Text(store.strings.emptyQueueLabel)
@@ -787,7 +805,13 @@ private struct FocusSessionQueueRow: SwiftUI.View {
                 }
             }
             Spacer(minLength: scale.pt(FocusSessionLayout.inlineGap))
-            rowMenu
+            // A class checklist can't be edited or reordered, so the row's overflow menu is replaced by
+            // a status control: the latest completed row is un-tickable, the rest are static (#2786).
+            if store.isClassChecklist {
+                classChecklistRowControl
+            } else {
+                rowMenu
+            }
         }
         .padding(.vertical, scale.pt(FocusSessionLayout.cardPadding))
         .padding(.leading, scale.pt(FocusSessionLayout.cardPaddingLeading))
@@ -807,6 +831,26 @@ private struct FocusSessionQueueRow: SwiftUI.View {
             Text(task.title)
                 .font(scale.font(FocusSessionLayout.rowTitleFont, .semibold))
                 .foregroundColor(FocusSessionPalette.primaryText)
+        }
+    }
+
+    /// The class-checklist stand-in for the overflow menu (#2786): the latest completed task shows an
+    /// un-tick button (the only queued row a student may change); every other completed row shows a
+    /// static tick, and a not-yet-reachable task an empty circle.
+    @ViewBuilder
+    private var classChecklistRowControl: some SwiftUI.View {
+        if store.canUntickClassTask(id: task.id) {
+            SwiftUI.Button(action: { store.untickClassTask(id: task.id) }) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(scale.font(FocusSessionLayout.rowTitleFont))
+                    .foregroundColor(FocusSessionPalette.accent)
+            }
+            .buttonStyle(FBButtonStyle())
+        } else {
+            Image(systemName: task.status.isCompleted ? "checkmark.circle.fill" : "circle")
+                .font(scale.font(FocusSessionLayout.rowTitleFont))
+                .foregroundColor(FocusSessionPalette.secondaryText)
+                .frame(width: scale.pt(FocusSessionLayout.menuButtonWidth), alignment: .trailing)
         }
     }
 

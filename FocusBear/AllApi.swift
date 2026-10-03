@@ -6822,6 +6822,60 @@ class AllApi:NSObject {
         }
     }
 
+    /// Tick (`complete: true`) or un-tick (`complete: false`) a class-session checklist task for the
+    /// signed-in student. POST …/complete to tick, DELETE …/complete to un-tick; both idempotent. The
+    /// backend upserts/removes the per-student completion and pushes the teacher's roster — no event
+    /// comes back to the student, so the UI updates optimistically and reverts on a false here.
+    func setClassSessionTaskCompleted(sessionId: String, taskId: String, complete: Bool,
+                                      completionHandler: @escaping(_ success: Bool) -> ()){
+        addLog(text: "func call:- setClassSessionTaskCompleted complete=\(complete) task=\(taskId)")
+
+        appdelegate!.credentialsManager.credentials { credentialsInfo in
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+
+            guard appdelegate!.credential != nil else { completionHandler(false); return }
+            let responsePath = "\(baseUrl)/class-session/\(sessionId)/tasks/\(taskId)/complete"
+            guard let responsePathUrl = NSURL(string: responsePath) else { completionHandler(false); return }
+            addLog(text: "api call setClassSessionTaskCompleted \(responsePathUrl)")
+            let token = appdelegate!.credential!.accessToken
+
+            let request = makeRequest(responsePathUrl: responsePathUrl)
+            request.httpMethod = complete ? "POST" : "DELETE"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            // The server rejects an empty body when Content-Type is application/json, so send `{}`.
+            request.httpBody = "{}".data(using: .utf8)
+
+            let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
+                if let httpResponse = response as? HTTPURLResponse {
+                    if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 || httpResponse.statusCode == 204 {
+                        if let data = data,
+                           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                            let done = json["tasks_completed"] ?? "?"
+                            let total = json["tasks_total"] ?? "?"
+                            addLog(text: "api call setClassSessionTaskCompleted success (\(done)/\(total))")
+                        } else {
+                            addLog(text: "api call setClassSessionTaskCompleted success")
+                        }
+                        completionHandler(true)
+                        return
+                    } else {
+                        // 400 session ended / not joined, 404 task not in session — revert the row.
+                        addLog(text: "api call setClassSessionTaskCompleted error:- statusCode is \(httpResponse.statusCode)")
+                        self.writeJsonInLog(data: data)
+                        addLog(text: "accessToken is:- \(token)")
+                        completionHandler(false)
+                        return
+                    }
+                }
+                if error != nil {
+                    addLog(text: "api call setClassSessionTaskCompleted error:- \(error!.localizedDescription)")
+                }
+                completionHandler(false)
+            }
+            task.resume()
+        }
+    }
+
     func getCurrentClassSession(completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
         addLog(text: "func call:- getCurrentClassSession")
 

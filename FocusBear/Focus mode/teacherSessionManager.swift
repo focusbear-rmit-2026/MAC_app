@@ -464,15 +464,16 @@ class teacherSessionManager: NSObject {
         sendTeacherSessionHeartbeat()// immediate first beat so the teacher roster updates right away
         appdelegate?.checkFcousAllowedApp()
 
-        // #2216: hand the TodoPlayer off to the frontend-owned class checklist (parity with windows#1393).
-        // Back up the student's personal focus tasks, remember the class_session_id, and force the
-        // player-facing task list empty so loadMetaDataForToDoPlayer emits tasks:[] + class_session_id (the
-        // frontend loads/completes the class checklist itself). Only on this committed start path, so an
-        // aborted start (the early-returns above) never strands the personal tasks.
+        // #2786: render the teacher's checklist natively in the Focus Session tab (parity with
+        // windows#1611), instead of handing it to the webview. Back up the student's personal queue,
+        // remember the class_session_id, and load the checklist from the join payload into
+        // focusModeTaskString — the native ongoing-session screen reads that global. The TodoPlayer
+        // webview stays headless and still receives tasks:[] + class_session_id for its blocking role.
+        // Only on this committed start path, so an aborted start never strands the personal tasks.
         personalFocusTaskStringBackup = focusModeTaskString
         classSessionTodoSessionId = sessionId
-        focusModeTaskString = "[]"
         arrCurrentFocusTasks = []
+        applyClassChecklistPayload(sessionDic)
 
         // #2216: force a fresh TodoPlayer load so it re-reads the class-session metadata (class_session_id
         // + empty tasks) even when its tab was ALREADY selected — an already-loaded webview otherwise
@@ -497,6 +498,60 @@ class teacherSessionManager: NSObject {
             taskPlayerVcObj?.reloadData(totalDuration: diffMinutes, intention: whatToAchieveInFocusBlock)
             shouldReloadTaskPlayer = false
             mainWindowControllerObj?.window?.close()
+        }
+    }
+
+    //***********Class checklist (native, #2786)***************//
+
+    /// Loads the teacher's checklist from a class-session payload (the join response or
+    /// `GET /class-session/current`) into the native focus-session queue and remembers its
+    /// `tasks_version`. The native ongoing-session screen renders `focusModeTaskString`, so this is what
+    /// makes the checklist visible — and tickable — instead of the removed webview checklist.
+    func applyClassChecklistPayload(_ payload: [String: Any]){
+        if let parsed = ClassSessionChecklistParser.parse(payload){
+            focusModeTaskString = FocusSessionTaskQueue.encode(parsed.tasks)
+            classSessionTasksVersion = parsed.version
+            addLog(text: "teacher session:- loaded \(parsed.tasks.count) class checklist task(s), version \(parsed.version)")
+        }else{
+            focusModeTaskString = "[]"
+            addLog(text: "teacher session:- class checklist payload carried no tasks array")
+        }
+        refreshFocusSessionScreenIfVisible()
+    }
+
+    /// Pusher `class-session-tasks-updated`: the teacher amended the checklist. Refetch the
+    /// authoritative list + this student's ticks when the event's `tasks_version` is newer than held.
+    func handleClassTasksUpdated(dictionary: [String: Any]){
+        guard isTeacherSessionActive() else { return }
+        let incoming = (dictionary["tasks_version"] as? Int)
+            ?? Int((dictionary["tasks_version"] as? String) ?? "")
+            ?? 0
+        if incoming > classSessionTasksVersion{
+            addLog(text: "teacher session:- class-session-tasks-updated v\(incoming) > held v\(classSessionTasksVersion), refetching")
+            refetchClassChecklist()
+        }else{
+            addLog(text: "teacher session:- class-session-tasks-updated v\(incoming) not newer than held v\(classSessionTasksVersion), ignoring")
+        }
+    }
+
+    /// Refetch the authoritative checklist + this student's ticks after a `class-session-tasks-updated`
+    /// Pusher event whose `tasks_version` is newer than the one held. Ignored when no class session is
+    /// active (a stale event after the session ended).
+    func refetchClassChecklist(){
+        guard isTeacherSessionActive(), !classSessionTodoSessionId.isEmpty else { return }
+        allApiObject.getCurrentClassSession(completionHandler: { newDic in
+            DispatchQueue.main.async {
+                guard let dict = newDic as? [String: Any], self.isTeacherSessionActive() else { return }
+                self.applyClassChecklistPayload(dict)
+            }
+        })
+    }
+
+    /// Re-render the native ongoing-session screen if it's on screen, so a checklist load or a teacher
+    /// amendment appears immediately.
+    private func refreshFocusSessionScreenIfVisible(){
+        if focusModeStateVcObj?.isViewVisible ?? false{
+            focusModeStateVcObj?.reloadData()
         }
     }
 
@@ -553,15 +608,16 @@ class teacherSessionManager: NSObject {
         closeTeacherUnlockRequestWindowIfVisible()
 
         // local cleanup mirrors the pusher focus-mode-finished handler (the server already finished the block, no api call here)
-        // #2216: during a class session the TodoPlayer holds the FE-owned class checklist (not the
-        // student's personal tasks) — do NOT sync it back into focusModeTaskString. Skip the player
-        // read-back and restore the personal tasks captured at session start (guaranteed finish path).
+        // #2786: during a class session focusModeTaskString held the teacher's checklist (not the
+        // student's personal tasks) — do NOT sync it back as personal work. Restore the personal tasks
+        // captured at session start and clear the class-session state (guaranteed finish path).
         if classSessionTodoSessionId.isEmpty{
             taskPlayerVcObj?.getToDosFromPlayer()
         }else{
             focusModeTaskString = personalFocusTaskStringBackup
             classSessionTodoSessionId = ""
             personalFocusTaskStringBackup = ""
+            classSessionTasksVersion = 0
         }
         setAppIconForFocusModeScore(probability: nil)
         isSkipBreakActivityDuringFocus = false

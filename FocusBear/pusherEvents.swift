@@ -452,6 +452,26 @@ class pusherEvents:NSObject, PusherDelegate {
             }
         })
 
+        // #2786: the teacher amended the class checklist. Carries class_session_id, tasks_version and
+        // tasks; the Mac refetches the authoritative list + this student's ticks when the version is newer.
+        _ = channel.bind(eventName: "class-session-tasks-updated", eventCallback: { (event: PusherEvent) in
+            if let data = event.data {
+                print(data)
+                if let data = data.data(using: .utf8) {
+                    do {
+                        if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]{
+                            print(dictionary)
+                            DispatchQueue.main.async {
+                                teacherSessionManagerObject.handleClassTasksUpdated(dictionary: dictionary)
+                            }
+                        }
+                    } catch {
+                        print(error.localizedDescription)
+                    }
+                }
+            }
+        })
+
         // approvals arrive as class-allowlist-changed; this one only carries denials/expiries back to the requesting student
         _ = channel.bind(eventName: "class-unlock-resolved", eventCallback: { (event: PusherEvent) in
             if let data = event.data {

@@ -17,6 +17,10 @@ var taskCreatedByBlockPopup = ""
 // captured at session start, restored when the session ends. In-memory only (not persisted).
 var classSessionTodoSessionId = ""
 var personalFocusTaskStringBackup = ""
+// #2786: the teacher's checklist is now rendered natively in the Focus Session tab (parity with
+// windows#1611) rather than handed to the webview. `classSessionTasksVersion` is the `tasks_version`
+// currently held; a `class-session-tasks-updated` Pusher event with a newer version triggers a refetch.
+var classSessionTasksVersion = 0
 
 var arrCurrentFocusTasks = [[String:Any]]()
 var arrFocusType = [[String:Any]]()

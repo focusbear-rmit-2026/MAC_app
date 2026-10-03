@@ -494,6 +494,7 @@
 		ABH00003 /* AppBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00004 /* AppBlockingTests.swift */; };
 		ABP00001 /* AiBlockBuddyTaskPickerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABP00002 /* AiBlockBuddyTaskPickerTests.swift */; };
 		FSP0000000000000000000004 /* FocusSessionStopPermissionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FSP0000000000000000000003 /* FocusSessionStopPermissionTests.swift */; };
+		FSC0000000000000000000002 /* ClassSessionChecklistTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FSC0000000000000000000001 /* ClassSessionChecklistTests.swift */; };
 		EDHT0003 /* EventDescriptionHTMLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDHT0004 /* EventDescriptionHTMLTests.swift */; };
 		BLCB0001 /* BlockListComboBoxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLCB0002 /* BlockListComboBoxTests.swift */; };
 		ABH00010 /* ScheduleKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00011 /* ScheduleKitTests.swift */; };
@@ -560,6 +561,7 @@
 		FS00003 /* FocusSessionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FS00004 /* FocusSessionModels.swift */; };
 		FS00005 /* FocusSessionStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = FS00006 /* FocusSessionStrings.swift */; };
 		FS00007 /* FocusSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FS00008 /* FocusSessionStore.swift */; };
+		FS00021 /* ClassSessionChecklist.swift in Sources */ = {isa = PBXBuildFile; fileRef = FS00022 /* ClassSessionChecklist.swift */; };
 		FS00009 /* FocusSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FS00010 /* FocusSessionView.swift */; };
 		FS00011 /* FocusSessionSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = FS00012 /* FocusSessionSheets.swift */; };
 		FS00013 /* FocusSessionApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = FS00014 /* FocusSessionApi.swift */; };
@@ -1184,6 +1186,7 @@
 		ABH00004 /* AppBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingTests.swift; sourceTree = "<group>"; };
 		ABP00002 /* AiBlockBuddyTaskPickerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AiBlockBuddyTaskPickerTests.swift; sourceTree = "<group>"; };
 		FSP0000000000000000000003 /* FocusSessionStopPermissionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionStopPermissionTests.swift; sourceTree = "<group>"; };
+		FSC0000000000000000000001 /* ClassSessionChecklistTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassSessionChecklistTests.swift; sourceTree = "<group>"; };
 		EDHT0004 /* EventDescriptionHTMLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventDescriptionHTMLTests.swift; sourceTree = "<group>"; };
 		BLCB0002 /* BlockListComboBoxTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockListComboBoxTests.swift; sourceTree = "<group>"; };
 		ABH00011 /* ScheduleKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleKitTests.swift; sourceTree = "<group>"; };
@@ -1267,6 +1270,7 @@
 		FS00004 /* FocusSessionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionModels.swift; sourceTree = "<group>"; };
 		FS00006 /* FocusSessionStrings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionStrings.swift; sourceTree = "<group>"; };
 		FS00008 /* FocusSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionStore.swift; sourceTree = "<group>"; };
+		FS00022 /* ClassSessionChecklist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassSessionChecklist.swift; sourceTree = "<group>"; };
 		FS00010 /* FocusSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionView.swift; sourceTree = "<group>"; };
 		FS00012 /* FocusSessionSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionSheets.swift; sourceTree = "<group>"; };
 		FS00014 /* FocusSessionApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionApi.swift; sourceTree = "<group>"; };
@@ -2228,6 +2232,7 @@
 				ABH00004 /* AppBlockingTests.swift */,
 				ABP00002 /* AiBlockBuddyTaskPickerTests.swift */,
 				FSP0000000000000000000003 /* FocusSessionStopPermissionTests.swift */,
+				FSC0000000000000000000001 /* ClassSessionChecklistTests.swift */,
 				EDHT0004 /* EventDescriptionHTMLTests.swift */,
 				BLCB0002 /* BlockListComboBoxTests.swift */,
 				ABH00011 /* ScheduleKitTests.swift */,
@@ -2437,6 +2442,7 @@
 				FS00004 /* FocusSessionModels.swift */,
 				FS00006 /* FocusSessionStrings.swift */,
 				FS00008 /* FocusSessionStore.swift */,
+				FS00022 /* ClassSessionChecklist.swift */,
 				FS00010 /* FocusSessionView.swift */,
 				FS00012 /* FocusSessionSheets.swift */,
 				FS00014 /* FocusSessionApi.swift */,
@@ -3146,6 +3152,7 @@
 				FS00003 /* FocusSessionModels.swift in Sources */,
 				FS00005 /* FocusSessionStrings.swift in Sources */,
 				FS00007 /* FocusSessionStore.swift in Sources */,
+				FS00021 /* ClassSessionChecklist.swift in Sources */,
 				FS00009 /* FocusSessionView.swift in Sources */,
 				FS00011 /* FocusSessionSheets.swift in Sources */,
 				FS00013 /* FocusSessionApi.swift in Sources */,
@@ -3367,6 +3374,7 @@
 				ABH00003 /* AppBlockingTests.swift in Sources */,
 				ABP00001 /* AiBlockBuddyTaskPickerTests.swift in Sources */,
 				FSP0000000000000000000004 /* FocusSessionStopPermissionTests.swift in Sources */,
+				FSC0000000000000000000002 /* ClassSessionChecklistTests.swift in Sources */,
 				EDHT0003 /* EventDescriptionHTMLTests.swift in Sources */,
 				BLCB0001 /* BlockListComboBoxTests.swift in Sources */,
 				ABH00010 /* ScheduleKitTests.swift in Sources */,

@@ -140,6 +140,13 @@ final class FocusSessionStore: ObservableObject {
     @Published private(set) var isDurationLocked = false
     @Published private(set) var isGoalLocked = false
     @Published private(set) var isTaskEditingLocked = false
+    /// #2786: true while this is a teacher-owned class checklist. The queue is the teacher's checklist
+    /// (tasks can't be added/edited/reordered — `isTaskEditingLocked` is also true), but the student may
+    /// still tick the first incomplete task and un-tick the latest completed one, routed to the
+    /// class-session endpoints.
+    @Published private(set) var isClassChecklist = false
+    /// Set when a class-session tick/un-tick failed and the row was reverted; shown under the queue.
+    @Published private(set) var classChecklistError: String?
     /// Whether the block list this session enforces may be changed from here.
     @Published private(set) var canChangeBlockList = false
 
@@ -401,6 +408,7 @@ final class FocusSessionStore: ObservableObject {
         // #2216: during a class session the frontend owns the checklist — the student must not
         // reshuffle it from here (the combo box this screen replaces was disabled for the same reason).
         isTaskEditingLocked = FocusSessionQueueWriter.isTaskEditingLocked
+        isClassChecklist = !classSessionTodoSessionId.isEmpty && teacherSessionManagerObject.isTeacherSessionActive()
         canChangeBlockList = FocusSessionBlockListSwitch.isAllowed(
             isSessionRunning: isFocusModeRunning, strictness: currentFocusModeStrictness,
             isClassSession: teacherSessionManagerObject.isTeacherSessionActive())
@@ -422,6 +430,15 @@ final class FocusSessionStore: ObservableObject {
     }
 
     func loadActiveSubtasks(force: Bool = false) {
+        // #2786: a class-checklist task is not a personal to-do, so it has no editable subtasks. Don't
+        // look it up (the fetch would fail and surface a "couldn't load this task" error with a Retry),
+        // and clear any state so a personal task that becomes active after the class session reloads.
+        if isClassChecklist {
+            isLoadingSubtasks = false; activeSubtasks = []; subtaskName = ""
+            subtaskError = nil; subtasksNeedServerUpdate = false; subtaskSnapshot = nil
+            subtaskIdentity = ""
+            return
+        }
         let account = appdelegate?.user?.userId ?? "", id = activeTask?.id ?? ""
         let identity = account + ":" + id
         guard force || identity != subtaskIdentity else { return }
@@ -698,15 +715,67 @@ final class FocusSessionStore: ObservableObject {
     // MARK: - Task queue
 
     func markActiveTaskComplete() {
-        guard let active = activeTask, !isTaskEditingLocked else { return }
+        guard let active = activeTask else { return }
+        if isClassChecklist { tickClassTask(id: active.id); return }
+        guard !isTaskEditingLocked else { return }
         completeTask(id: active.id)
     }
 
     func completeTask(id: String) {
+        if isClassChecklist { tickClassTask(id: id); return }
         guard !isTaskEditingLocked else { return }
         let updated = FocusSessionQueueWriter.complete(id: id, in: tasks)
         guard updated != tasks else { return }
         tasks = updated
+        syncTaskTimer()
+    }
+
+    // MARK: - Class checklist tick / un-tick (#2786)
+
+    /// Whether the student may tick `id` now — only the first incomplete task, per the class rules.
+    func canTickClassTask(id: String) -> Bool {
+        isClassChecklist && ClassSessionChecklistRules.canTick(id: id, in: tasks)
+    }
+
+    /// Whether the student may un-tick `id` now — only the latest completed task.
+    func canUntickClassTask(id: String) -> Bool {
+        isClassChecklist && ClassSessionChecklistRules.canUntick(id: id, in: tasks)
+    }
+
+    func tickClassTask(id: String) { setClassTask(id: id, complete: true) }
+    func untickClassTask(id: String) { setClassTask(id: id, complete: false) }
+
+    /// Optimistically tick/un-tick a class checklist row, then report it to the class session. On
+    /// failure the row is reverted and an error is surfaced. Writes `focusModeTaskString` directly
+    /// because `updateFocusModeTask` deliberately no-ops during a class session.
+    private func setClassTask(id: String, complete: Bool) {
+        guard isClassChecklist else { return }
+        let sessionId = classSessionTodoSessionId
+        guard !sessionId.isEmpty else { return }
+        let proposed = complete
+            ? ClassSessionChecklistRules.ticking(tasks, id: id)
+            : ClassSessionChecklistRules.unticking(tasks, id: id)
+        guard proposed != tasks else { return }   // not an allowed move (gating rejected it)
+        let snapshot = tasks
+        classChecklistError = nil
+        applyClassTasks(proposed)
+        allApiObject.setClassSessionTaskCompleted(sessionId: sessionId, taskId: id, complete: complete) { [weak self] success in
+            DispatchQueue.main.async {
+                guard let self = self, self.isClassChecklist else { return }
+                // Only revert if nothing else moved the queue on in the meantime (a refetch, a later tick).
+                guard !success, self.tasks == proposed else { return }
+                self.applyClassTasks(snapshot)
+                self.classChecklistError = "Couldn't update the task — check your connection and try again."   // i18n-ignore: transient toast
+            }
+        }
+    }
+
+    /// Writes a class checklist queue to the store and the global the screen reads, without the
+    /// personal-to-do side effects of `FocusSessionQueueWriter` (class tasks are not personal to-dos,
+    /// and `updateFocusModeTask` no-ops mid-class-session anyway).
+    private func applyClassTasks(_ updated: [FocusSessionTask]) {
+        tasks = updated
+        focusModeTaskString = FocusSessionTaskQueue.encode(updated)
         syncTaskTimer()
     }
 
