@@ -4045,7 +4045,7 @@
     "aiBuddyGoalPrompt": "What do you want to achieve on the computer instead?",
     "aiBuddyGoalHelp": "Your buddy will unlock only the apps and sites this needs, then block everything else.",
     "aiBuddyButtonNotNow": "Not now",
-    "aiBuddyButtonAsk": "Ask my buddy",
+    "aiBuddyButtonAsk": "Reply",
     "aiBuddyApprovedTitle": "Approved",
     "aiBuddyAppsUnlocked": "Apps unlocked",
     "aiBuddySitesUnlocked": "Sites unlocked",
