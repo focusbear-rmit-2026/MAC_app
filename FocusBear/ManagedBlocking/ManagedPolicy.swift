@@ -154,18 +154,25 @@ struct ManagedSettingsRequest: Codable, Identifiable {
 }
 
 enum ManagedDate {
+    /// Built once: `persist()` parses every queued event's timestamp on the main thread, and a new
+    /// formatter per call is what Sentry FOCUS-BEAR-MACOS-1JX caught hanging (`ManagedBlockingRuntime.apply`
+    /// → `-[NSISO8601DateFormatter init]`). ISO8601DateFormatter is thread-safe and always GMT, so
+    /// sharing it changes no result.
+    private static let fractionalSecondsFormatter = makeFormatter([.withInternetDateTime, .withFractionalSeconds])
+    private static let wholeSecondsFormatter = makeFormatter([.withInternetDateTime])
+
     static func parse(_ value: String) -> Date? {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = formatter.date(from: value) { return date }
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter.date(from: value)
+        fractionalSecondsFormatter.date(from: value) ?? wholeSecondsFormatter.date(from: value)
     }
 
     static func string(_ date: Date) -> String {
+        fractionalSecondsFormatter.string(from: date)
+    }
+
+    private static func makeFormatter(_ options: ISO8601DateFormatter.Options) -> ISO8601DateFormatter {
         let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter.string(from: date)
+        formatter.formatOptions = options
+        return formatter
     }
 }
 

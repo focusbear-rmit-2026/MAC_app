@@ -324,6 +324,14 @@ final class ManagedPolicyTests: XCTestCase {
         XCTAssertTrue(gate.deniesMalformedWebsite("https://example.org/invalid%"))
     }
 
+    func testManagedDateReadsBothServerTimestampShapesAndWritesFractionalSeconds() throws {
+        let whole = try XCTUnwrap(ManagedDate.parse("2026-09-09T10:05:00Z"))
+        let fractional = try XCTUnwrap(ManagedDate.parse("2026-09-09T10:05:00.250Z"))
+        XCTAssertEqual(fractional.timeIntervalSince(whole), 0.25, accuracy: 0.0001)
+        XCTAssertEqual(ManagedDate.string(fractional), "2026-09-09T10:05:00.250Z")
+        XCTAssertNil(ManagedDate.parse("not a date"))
+    }
+
 }
 
 final class ManagedSafetyPrecedenceTests: XCTestCase {

@@ -1083,38 +1083,93 @@ func getSystemTimeFormat()->String{
     return timeFormat
 }
 
+/// One configured `DateFormatter` per format and time zone, shared by the helpers below.
+///
+/// Building a `DateFormatter` loads ICU calendar and locale data, and these helpers run per habit on
+/// every Day Plan rebuild, on the main thread (`DayPlanHabitSkips.dayKey`,
+/// `DayPlanHabitDurations.dayKey`, `isHabitDoneForDay`). Sentry FOCUS-BEAR-MACOS-1HT, -1HV, -1H6 and
+/// -1GR are "App hanging" samples caught inside one of those constructions. A configured formatter is
+/// thread-safe to format and parse with (macOS 10.9+), so building each one once is enough.
+///
+/// A formatter captures the time zone and locale it was built in, so the cache is emptied when either
+/// changes; the next call builds a formatter for the new one, exactly as a fresh formatter would.
+enum CachedDateFormatters {
+    enum Zone: Hashable {
+        case local
+        case utc
+    }
+
+    private struct Key: Hashable {
+        let format: String
+        let zone: Zone
+    }
+
+    private static let lock = NSLock()
+    private static var formatters: [Key: DateFormatter] = [:]
+    private static let utcTimeZone = TimeZone(abbreviation: "UTC")
+
+    private static let invalidatingNotifications: [Notification.Name] = [
+        .NSSystemTimeZoneDidChange,
+        NSLocale.currentLocaleDidChangeNotification,
+    ]
+
+    /// Registered on first use; the observers live as long as the process, like the cache.
+    private static let invalidationObservers: [NSObjectProtocol] = invalidatingNotifications.map {
+        NotificationCenter.default.addObserver(forName: $0, object: nil, queue: nil) { _ in removeAll() }
+    }
+
+    static func formatter(format: String, zone: Zone) -> DateFormatter {
+        _ = invalidationObservers
+        let key = Key(format: format, zone: zone)
+        if let cached = cachedFormatter(for: key) { return cached }
+        // Built outside the lock: the lock is not re-entrant, and the invalidation observers take it
+        // on whichever thread posts the time-zone/locale notification.
+        return store(makeFormatter(format: format, zone: zone), for: key)
+    }
+
+    static func removeAll() {
+        lock.lock()
+        defer { lock.unlock() }
+        formatters.removeAll()
+    }
+
+    private static func cachedFormatter(for key: Key) -> DateFormatter? {
+        lock.lock()
+        defer { lock.unlock() }
+        return formatters[key]
+    }
+
+    /// Keeps the first formatter stored for `key`, so two threads racing to build one share it.
+    private static func store(_ formatter: DateFormatter, for key: Key) -> DateFormatter {
+        lock.lock()
+        defer { lock.unlock() }
+        if let stored = formatters[key] { return stored }
+        formatters[key] = formatter
+        return formatter
+    }
+
+    private static func makeFormatter(format: String, zone: Zone) -> DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = format
+        if zone == .utc { formatter.timeZone = utcTimeZone }
+        return formatter
+    }
+}
+
 func getStringFromDate(date:Date, dateFormat:String)->String{
-    let df = DateFormatter()
-    df.dateFormat = dateFormat
-    let now = df.string(from: date)
-    return now
+    CachedDateFormatters.formatter(format: dateFormat, zone: .local).string(from: date)
 }
 
 func getStringFromDateInUtc(date:Date, dateFormat:String)->String{
-    let df = DateFormatter()
-    df.dateFormat = dateFormat
-    df.timeZone = TimeZone(abbreviation: "UTC")
-    let now = df.string(from: date)
-    return now
+    CachedDateFormatters.formatter(format: dateFormat, zone: .utc).string(from: date)
 }
+
 func getDateFromString(date:String, dateFormat:String)->Date?{
-    let string = date
-    // Create Date Formatter
-    let dateFormatter = DateFormatter()
-    dateFormatter.dateFormat = dateFormat
-    
-    return dateFormatter.date(from: string)
+    CachedDateFormatters.formatter(format: dateFormat, zone: .local).date(from: date)
 }
 
 func getDateFromStringInUtc(date:String, dateFormat:String)->Date?{
-    let string = date
-    // Create Date Formatter
-    let dateFormatter = DateFormatter()
-    // Set Date Format
-    dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
-    dateFormatter.dateFormat = dateFormat
-    // Convert String to Date
-    return dateFormatter.date(from: string)
+    CachedDateFormatters.formatter(format: dateFormat, zone: .utc).date(from: date)
 }
 
 func getFirstRunDateString()->String{
