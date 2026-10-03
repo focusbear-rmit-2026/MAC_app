@@ -666,6 +666,7 @@ class menuViewController: NSViewController {
     
     
     override func viewWillAppear() {//will not call if view is inside nsmenu but noe using popover so view will appear will work
+        showFocusModeCountDownIfNeeded()
         if floatingTopBarWcObj != nil{
             if getFloatingTopBarWObject().window?.isVisible ?? false{
                 getFloatingTopBarVObject().boxMain.isHidden = true
@@ -1329,6 +1330,10 @@ class menuViewController: NSViewController {
     }
     
     func showFocusModeCountDownIfNeeded(){
+        // A session that starts before the popover's view has loaded (a class session already running
+        // at launch) reached the outlets below while they were still nil and crashed. The countdown is
+        // brought up to date in viewWillAppear instead.
+        guard isViewLoaded else { return }
         if (isFocusModeRunning || isAnyAllowedFocusModeActivityRunning) && endFocusModeTime != nil{
             setFocusModeCoundDownTimer()
         }else{
@@ -1350,6 +1355,7 @@ class menuViewController: NSViewController {
     func stopFocusModeCountDownTimer(){
         self.timerFocusModeCoundDown?.invalidate()
         self.timerFocusModeCoundDown = nil
+        guard isViewLoaded else { return }
         boxFocusModeRemainingTime.isHidden = true
     }
     
