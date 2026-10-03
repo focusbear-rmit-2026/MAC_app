@@ -1477,11 +1477,19 @@ class habitsVc: NSViewController {
         self.showCloseButtons()
         removeSubViews()
         currentHabitIndex = 0
+        // #2794: flip the routine state BEFORE presenting the habit's timer/intention UI. The
+        // `currentState` didSet re-shows the habits view (removeSubViews → re-add), which fires
+        // `timerViewcontroller.viewWillDisappear` and dismisses the focus-mode "what's your intention?"
+        // sheet. When this ran AFTER `tryStartTimerHabit`, that teardown tore down the just-presented
+        // sheet (~1s later) whenever the routine was started from an idle Day Plan (currentState was
+        // ._NOTHING_, so the transition really fired). Setting state first means the teardown happens
+        // before the sheet exists — the same order the menu-bar start path
+        // (startMorningRoutineHabitFromDeviceButton) already uses safely.
+        currentState = ._MORNING_HABIT_
+        currentAction = ._INPROGRESS_
         habitsView.addSubview(timerViewcontrollerObj!.view)
         habitsView.addConstraints(subView: timerViewcontrollerObj!.view)
         timerViewcontrollerObj?.tryStartTimerHabit(durationSeconds: arrFilteredMorningHabits[currentHabitIndex].durationSeconds, name: arrFilteredMorningHabits[currentHabitIndex].name!, currentHabit: arrFilteredMorningHabits[currentHabitIndex], currentTimerValue:0, shouldUpdateDeviceButton: shouldUpdateDeviceButton)
-        currentState = ._MORNING_HABIT_
-        currentAction = ._INPROGRESS_
 
         // #1982 follow-up: the user is starting the morning routine now — clear any saved
         // postponed-routine state so a stale postpone isn't restored as a postponed habit list on the
@@ -1517,11 +1525,12 @@ class habitsVc: NSViewController {
             currentHabitIndex = 0
         }
         
+        // #2794: set state before presenting the sheet — see startFirstMorningHabit for why.
+        currentState = ._EVENING_HABIT_
+        currentAction = ._INPROGRESS_
         habitsView.addSubview(timerViewcontrollerObj!.view)
         habitsView.addConstraints(subView: timerViewcontrollerObj!.view)
         timerViewcontrollerObj?.tryStartTimerHabit(durationSeconds: arrFilteredEveningHabits[currentHabitIndex].durationSeconds, name: arrFilteredEveningHabits[currentHabitIndex].name!, currentHabit: arrFilteredEveningHabits[currentHabitIndex], currentTimerValue:0, shouldUpdateDeviceButton: shouldUpdateDeviceButton)
-        currentState = ._EVENING_HABIT_
-        currentAction = ._INPROGRESS_
 
         // #1982 follow-up: the user is starting the evening routine now — clear any saved
         // postponed-routine state so a stale postpone isn't restored as a postponed habit list on the
@@ -1537,12 +1546,13 @@ class habitsVc: NSViewController {
         self.showCloseButtons()
         removeSubViews()
         currentHabitIndex = 0
+        // #2794: set state before presenting the sheet — see startFirstMorningHabit for why.
+        currentState = ._CUSTOM_ROUTINE_
+        currentAction = ._INPROGRESS_
         habitsView.addSubview(timerViewcontrollerObj!.view)
         habitsView.addConstraints(subView: timerViewcontrollerObj!.view)
         let arrHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits
         timerViewcontrollerObj?.tryStartTimerHabit(durationSeconds: arrHabits[currentHabitIndex].durationSeconds, name: arrHabits[currentHabitIndex].name!, currentHabit: arrHabits[currentHabitIndex], currentTimerValue:0)
-        currentState = ._CUSTOM_ROUTINE_
-        currentAction = ._INPROGRESS_
         allApiObject.capturePosthog(event: "start-custom-routine", metadata: ["routine-type":"custom_routine"])
     }
     
