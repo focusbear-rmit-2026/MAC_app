@@ -3472,6 +3472,15 @@ extension menuViewController {
 
     /// Start the Day Plan "next habit" from its play button (mirrors the device-button habit start).
     func startNextDayPlanHabit() {
+        // #2787: a class session is in control — the routine is blocked/postponed for its duration, so the
+        // student must not start a morning/evening habit from the popover (parity with Start break / Pause
+        // / Stop, which all route to the locked alert instead of acting).
+        if teacherSessionManagerObject.isTeacherSessionActive(){
+            addLog(text: "start day-plan habit blocked:- teacher session is active")
+            teacherSessionManagerObject.showTeacherSessionLockedAlert()
+            closeMenuWindowIsVisible()
+            return
+        }
         guard let name = nextDayPlanHabitName?.lowercased(), !name.isEmpty else {
             btnEditHabitsClicked(self as Any)   // no startable habit — open the full Day Plan instead
             return
