@@ -72,6 +72,17 @@ enum LeftMenuAvailability {
         default:             return false
         }
     }
+
+    /// As above, but with the live-session carve-out: a habit-attached focus session
+    /// (`isAllowedActivityRunning`) runs in a routine state, so the base rule disables the Focus Session
+    /// tab — yet the user was just dropped into a LIVE session and must be able to return to it. Keep that
+    /// one tab reachable while such a session is running (#2793). Disabling Focus Session during a plain
+    /// routine stays correct; this only carves out the case where a session is actually live.
+    static func isEnabled(_ item: LeftMenuRoutineItem, during state: CURRENTSTATE,
+                          isAllowedActivityRunning: Bool) -> Bool {
+        if item == .focusSession && isAllowedActivityRunning { return true }
+        return isEnabled(item, during: state)
+    }
 }
 
 class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
@@ -392,6 +403,13 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
                 boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuStopSuperFocusSession") as? String ?? boxFocusSession.title
             }
+        }else if isAnyAllowedFocusModeActivityRunning{
+            // A habit with a focus mode attached is a LIVE session even though isFocusModeOn() is false
+            // for it (it sets isAnyAllowedFocusModeActivityRunning, not arrFocusType[...].isOn). Show the
+            // same "Focusing (Xm left)" row and keep the countdown ticking, instead of "Start Focus
+            // Session" — which wrongly implied no session was running (#2793).
+            boxFocusSession.title = focusingRowTitle()
+            startFocusMinutesTicker()
         }else{
             stopFocusMinutesTicker()
             boxFocusSession.title = "Start Focus Session"
@@ -944,7 +962,10 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         let toolTipDisableReason = localizedDisableReason(LeftMenuAvailability.disableReason(for: currentState))
         for item in LeftMenuRoutineItem.allCases {
             let box = boxFor(item)
-            if LeftMenuAvailability.isEnabled(item, during: currentState) {
+            // The live-session carve-out (#2793) keeps the Focus Session tab reachable while a
+            // habit-attached session is running; the global is read here and passed into the pure helper.
+            if LeftMenuAvailability.isEnabled(item, during: currentState,
+                                              isAllowedActivityRunning: isAnyAllowedFocusModeActivityRunning) {
                 box.isEnabled = true
             } else {
                 box.setDisableWithRaason(reason: toolTipDisableReason)
@@ -1245,9 +1266,23 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
             template = leftMenuVcInfo.value(forKey: "menuFocusingTimeLeft") as? String ?? template
         }
-        guard let end = endFocusModeTime else { return template.replacingOccurrences(of: "<MINUTES>", with: "0") }
-        let minutes = FocusSessionClock.minutesRemaining(until: end)
-        return template.replacingOccurrences(of: "<MINUTES>", with: "\(minutes)")
+        return template.replacingOccurrences(of: "<MINUTES>", with: "\(focusingRowMinutesRemaining())")
+    }
+
+    /// Minutes left for the focusing row. A real focus session counts down `endFocusModeTime`; a
+    /// habit-attached activity has no focus-session clock (endFocusModeTime is deliberately nil — the
+    /// habit finishes on the routine's own timer), so fall back to that timer's remaining time
+    /// (totalDuration − currentTimer) rounded the same way, so the row reads "Focusing (Xm left)"
+    /// identically for both (#2793).
+    private func focusingRowMinutesRemaining() -> Int {
+        if let end = endFocusModeTime {
+            return FocusSessionClock.minutesRemaining(until: end)
+        }
+        if isAnyAllowedFocusModeActivityRunning, let timer = timerViewcontrollerObj {
+            let remainingSeconds = max(0, timer.totalDuration - timer.currentTimer)
+            return FocusSessionClock.minutesRemaining(until: Date().addingTimeInterval(TimeInterval(remainingSeconds)))
+        }
+        return 0
     }
 
     /// Keeps the countdown in the row's title honest while a session runs. Deliberately re-enters

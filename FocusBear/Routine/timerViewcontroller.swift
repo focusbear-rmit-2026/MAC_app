@@ -867,9 +867,17 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 endFocusModeTime = nil
             }
         }
-       
+        // Re-apply the left-menu availability now that this habit has (re)decided
+        // isAnyAllowedFocusModeActivityRunning above: habitStarted() runs applyRoutineMenuAvailability once
+        // at routine start, while the flag is still false, so without this the Focus Session tab stays
+        // disabled for the whole focus-mode-attached habit and the live session is unreachable (#2793).
+        // Called for every timer habit (the flag is reset false at the top), so a following non-focus habit
+        // re-disables the tab correctly. resetFocusModeTitle() for the same reason gives the tab its
+        // "Focusing (Xm left)" label instead of "Start Focus Session" while the habit session is live.
+        leftMenuVcObj?.applyRoutineMenuAvailability()
+        leftMenuVcObj?.resetFocusModeTitle()
     }
-    
+
     var videoUrlsArray = [String]()
     var currentActivityIdForVideo = ""
     func getRandomVideoUrl(activityId:String, urlsArray: [String])->String?{

@@ -54,6 +54,36 @@ final class LeftMenuAvailabilityTests: XCTestCase {
         XCTAssertFalse(LeftMenuAvailability.isEnabled(.focusSession, during: ._CUSTOM_ROUTINE_))
     }
 
+    // MARK: - Live habit-attached focus session carve-out (#2793)
+
+    func testALiveHabitSessionKeepsTheFocusSessionTabReachableDuringARoutine() {
+        // A habit with a focus mode attached runs in a routine state, but the user was dropped into a
+        // live session they must be able to return to — so Focus Session stays clickable while one runs.
+        for state in activeRoutineStates {
+            XCTAssertTrue(LeftMenuAvailability.isEnabled(.focusSession, during: state,
+                                                         isAllowedActivityRunning: true), "\(state)")
+        }
+    }
+
+    func testWithNoLiveSessionTheCarveOutMatchesTheBaseRule() {
+        // The carve-out must not loosen anything else: with no live session every item matches the
+        // base (item, state) rule, so Focus Session is still disabled during a routine.
+        for state in activeRoutineStates + postponedStates + [._NOTHING_] {
+            for item in LeftMenuRoutineItem.allCases {
+                XCTAssertEqual(LeftMenuAvailability.isEnabled(item, during: state, isAllowedActivityRunning: false),
+                               LeftMenuAvailability.isEnabled(item, during: state), "\(item) in \(state)")
+            }
+        }
+    }
+
+    func testTheCarveOutOnlyAffectsTheFocusSessionTab() {
+        // A live session must not re-enable the OTHER routine tabs (e.g. the other routine's tab).
+        XCTAssertFalse(LeftMenuAvailability.isEnabled(.customRoutine, during: ._MORNING_HABIT_,
+                                                      isAllowedActivityRunning: true))
+        XCTAssertFalse(LeftMenuAvailability.isEnabled(.microBreaks, during: ._MORNING_HABIT_,
+                                                      isAllowedActivityRunning: true))
+    }
+
     // MARK: - Postponed is not active
 
     func testEveryPostponedStateLeavesTheWholeMenuEnabled() {

@@ -1890,4 +1890,14 @@ extension FocusSessionTests {
         XCTAssertEqual(encodedFocusSessionAchievements(String(repeating: "a", count: 300)).count, 250,
                        "The server rejects achievements over 255 characters")
     }
+
+    // The Focus Session screen may only END a real focus session. A habit-attached activity is ended by
+    // finishing/skipping the habit, and a custom blocking schedule runs on its own timetable — showing a
+    // Stop for either ran the wrong teardown and stranded the routine (#2793).
+    func test_canEndSession_onlyWhenNoHabitActivityOrCustomScheduleIsRunning() {
+        XCTAssertTrue(FocusSessionStore.canEndSession(isAllowedActivityRunning: false, isCustomScheduleOn: false))
+        XCTAssertFalse(FocusSessionStore.canEndSession(isAllowedActivityRunning: true, isCustomScheduleOn: false))
+        XCTAssertFalse(FocusSessionStore.canEndSession(isAllowedActivityRunning: false, isCustomScheduleOn: true))
+        XCTAssertFalse(FocusSessionStore.canEndSession(isAllowedActivityRunning: true, isCustomScheduleOn: true))
+    }
 }

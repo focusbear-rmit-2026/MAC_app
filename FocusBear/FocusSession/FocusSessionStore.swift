@@ -667,6 +667,23 @@ final class FocusSessionStore: ObservableObject {
         menuViewControllerObj?.stopFocusMode()
     }
 
+    /// Whether this screen may END what it is showing. A habit-attached focus activity
+    /// (`isAnyAllowedFocusModeActivityRunning`) is ended by finishing/skipping the habit, not from here,
+    /// and a custom blocking schedule runs on its own timetable with no clock to stop — the old To-Do
+    /// player gated its end button exactly this way (see `taskPlayerVc.viewWillAppear`). Without this the
+    /// habit-attached screen (phase `.idle`, since `isFocusModeOn()` is false for a habit activity) showed
+    /// a Stop that ran the focus-mode finisher — the wrong teardown — and left the routine stranded (#2793).
+    ///
+    /// Pure so it can be unit-tested without the app's globals; the instance property reads them.
+    static func canEndSession(isAllowedActivityRunning: Bool, isCustomScheduleOn: Bool) -> Bool {
+        !(isAllowedActivityRunning || isCustomScheduleOn)
+    }
+
+    var canEndFromThisScreen: Bool {
+        Self.canEndSession(isAllowedActivityRunning: isAnyAllowedFocusModeActivityRunning,
+                           isCustomScheduleOn: customBlockingScheduleManagerObj.isAnyCustomScheduleOn)
+    }
+
     /// A teacher-run session can't be stopped early — surface the unlock-request alert rather than
     /// showing a confirmation the user can't act on.
     func requestEndSession() {
@@ -674,6 +691,9 @@ final class FocusSessionStore: ObservableObject {
             teacherSessionManagerObject.showTeacherSessionLockedAlert()
             return
         }
+        // Defense in depth: the end controls are hidden when this is false, but never run the focus-mode
+        // teardown for a habit-attached activity / custom schedule even if a path reaches here (#2793).
+        guard canEndFromThisScreen else { return }
         activeSheet = .endSessionConfirm
     }
 

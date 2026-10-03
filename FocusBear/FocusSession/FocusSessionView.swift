@@ -297,16 +297,22 @@ private struct FocusSessionTimerPanel: SwiftUI.View {
 
     @ViewBuilder
     private var primaryControls: some SwiftUI.View {
+        // A habit-attached activity / custom schedule can't be ended from here, so hide the Stop control
+        // (the habit is ended from the routine) — matching the old To-Do player's end-button gate (#2793).
         switch store.phase {
         case .paused:
             HStack(spacing: scale.pt(FocusSessionLayout.cardGap)) {
                 circleControl(symbol: "play.fill", tooltip: store.strings.resumeTooltip, action: store.resumeSession)
-                circleControl(symbol: "stop.fill", tooltip: store.strings.endSessionTooltip, action: store.requestEndSession)
+                if store.canEndFromThisScreen {
+                    circleControl(symbol: "stop.fill", tooltip: store.strings.endSessionTooltip, action: store.requestEndSession)
+                }
             }
         case .running:
             circleControl(symbol: "pause.fill", tooltip: store.strings.pauseTooltip, action: store.pauseSession)
         case .superFocus, .idle:
-            circleControl(symbol: "stop.fill", tooltip: store.strings.endSessionTooltip, action: store.requestEndSession)
+            if store.canEndFromThisScreen {
+                circleControl(symbol: "stop.fill", tooltip: store.strings.endSessionTooltip, action: store.requestEndSession)
+            }
         }
     }
 
@@ -315,7 +321,7 @@ private struct FocusSessionTimerPanel: SwiftUI.View {
     /// rather than dropping the behaviour.
     @ViewBuilder
     private var endSessionLink: some SwiftUI.View {
-        if store.phase == .running {
+        if store.phase == .running && store.canEndFromThisScreen {
             SwiftUI.Button(action: store.requestEndSession) {
                 Text(store.strings.endSessionTooltip)
                     .font(scale.font(FocusSessionLayout.rowTitleFont))
