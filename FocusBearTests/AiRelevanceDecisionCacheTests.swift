@@ -195,4 +195,16 @@ final class AiRelevanceDecisionCacheTests: XCTestCase {
         XCTAssertFalse(request.matchesURLObservation(url: nil, title: "Inbox", bundleIdentifier: "browser-1"))
     }
 
+
+    // Sentry BACKEND-HC: a long Claude chat title pushed appName past the backend's limit.
+    func testAppSafeAppNameKeepsShortTitlesWhole() {
+        XCTAssertEqual(AppSafeRequestAppName.withWindowTitle("Claude", "Plan the week"), "Claude - Plan the week")
+    }
+
+    func testAppSafeAppNameTrimsLongTitlesToTheLimit() {
+        let name = AppSafeRequestAppName.withWindowTitle("Claude", String(repeating: "x", count: 3_000))
+        XCTAssertEqual(name.count, AppSafeRequestAppName.maximumLength)
+        XCTAssertTrue(name.hasPrefix("Claude - "))
+        XCTAssertTrue(name.hasSuffix(AppSafeRequestAppName.truncationMarker))
+    }
 }

@@ -4280,15 +4280,9 @@ class AllApi:NSObject {
     func chatGPTIsAppSafe(appName: String, focus_mode: String, intention:String, other_explanations_including_apps:[String], currentTaskInToDoPlayer:String?, currentHabitName:String?, completionHandler: @escaping(_ newDic:NSDictionary?, _ appName:String?, _ payload: [String: Any]?) -> ()){
         addLog(text: "func call:- chatGPTIsAppSafe")
         var appName = appName
-        //var tabTitle:String?
-        if appName == "Claude"{
-            if let runningApp = NSWorkspace.shared.frontmostApplication{
-                if let title = claudeTitleReader.shared.chatTitle(for: runningApp){
-                    print(title)
-                    //tabTitle = title
-                    appName = appName + " - " + title
-                }
-            }
+        if appName == "Claude", let runningApp = NSWorkspace.shared.frontmostApplication,
+           let title = claudeTitleReader.shared.chatTitle(for: runningApp) {
+            appName = AppSafeRequestAppName.withWindowTitle(appName, title)
         }
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
@@ -7359,3 +7353,20 @@ struct IntentResponse: Codable {
     }
 }
 
+
+/// `appName` for `POST /user/is-app-safe-to-use`. The backend rejects names over its column limit,
+/// and a Claude chat title appended to "Claude" reached 3,102 characters (Sentry BACKEND-HC,
+/// backend#2460) — every check for that app then failed. Keep the app name and trim the title.
+enum AppSafeRequestAppName {
+    static let maximumLength = 200
+    static let titleSeparator = " - "
+    static let truncationMarker = "…"
+
+    static func withWindowTitle(_ appName: String, _ title: String) -> String {
+        let combined = appName + titleSeparator + title
+        guard combined.count > maximumLength else { return combined }
+        let titleBudget = maximumLength - appName.count - titleSeparator.count - truncationMarker.count
+        guard titleBudget > 0 else { return String(appName.prefix(maximumLength)) }
+        return appName + titleSeparator + String(title.prefix(titleBudget)) + truncationMarker
+    }
+}
