@@ -3894,9 +3894,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             showSplashWindow()
         }
         let task = Process()
+        let myPID = ProcessInfo.processInfo.processIdentifier
         var args: [AnyHashable] = []
         args.append("-c")
-        args.append("sleep \(1); open \"\(Bundle.main.bundlePath)\"")
+        // #2784: wait for THIS instance to fully exit before relaunching, instead of a fixed `sleep 1`.
+        // In a Teacher/Student focus session, applicationWillTerminate blocks the main thread up to ~2s
+        // on the final teacher heartbeat, so the old process outlived the 1s sleep — `open` then fired
+        // while the dying instance was still alive and LaunchServices just re-activated it instead of
+        // launching a fresh one, so the app never reopened (reliably, 3/3). Poll until the old PID is
+        // gone (0.2s steps, ~10s cap so a hung process still relaunches), then open a guaranteed-fresh
+        // instance. This hardens every quitAndRestartApp caller, not just the teacher-session path.
+        args.append("for i in $(seq 1 50); do kill -0 \(myPID) 2>/dev/null || break; sleep 0.2; done; open \"\(Bundle.main.bundlePath)\"")
         task.launchPath = "/bin/sh"
         task.arguments = args as? [String]
         task.launch()
