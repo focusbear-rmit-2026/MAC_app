@@ -748,6 +748,10 @@ struct FocusStartPermissionsBanner: SwiftUI.View {
     let tip: String
     let buttonTitle: String
     let scale: FocusStartScale
+    /// When true the strip stretches to fill its container's width (tip pushed left, button right), so the
+    /// Simple screen can size it to match the Start Session button (#2770). Off by default — the Advanced
+    /// screen keeps the content-sized banner.
+    var fillsWidth: Bool = false
     let action: () -> Void
 
     var body: some SwiftUI.View {
@@ -756,6 +760,7 @@ struct FocusStartPermissionsBanner: SwiftUI.View {
                 .font(scale.font(FocusStartLayout.summaryFont))
                 .foregroundColor(FocusStartPalette.primaryText)
                 .multilineTextAlignment(.leading)
+            if fillsWidth { Spacer(minLength: scale.pt(FocusStartLayout.rowGap)) }
             SwiftUI.Button(action: action) {
                 Text(buttonTitle)
                     .font(scale.font(FocusStartLayout.summaryFont, .medium))
@@ -769,6 +774,7 @@ struct FocusStartPermissionsBanner: SwiftUI.View {
             }
             .buttonStyle(FBButtonStyle())
         }
+        .frame(maxWidth: fillsWidth ? .infinity : nil, alignment: .leading)
         .padding(scale.pt(28))
         .background(
             RoundedRectangle(cornerRadius: scale.pt(FocusStartLayout.fieldCornerRadius))

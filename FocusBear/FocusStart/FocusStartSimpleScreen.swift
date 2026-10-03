@@ -18,6 +18,31 @@ struct FocusStartSimpleScreen: SwiftUI.View {
             let scale = FocusStartScale(contentWidth: proxy.size.width)
             ScrollView(.vertical, showsIndicators: true) {
                 VStack(spacing: 0) {
+                    // #2770: match the Advanced screen. The mode link is an in-flow row at the top (its top
+                    // now lines up with Advanced's "go back" link), and the blocking-permission warning
+                    // sits in its own strip below it, above the heading. Previously the link + warning were
+                    // overlaid on the title, so the warning looked cramped and level with the link.
+                    HStack {
+                        Spacer(minLength: 0)
+                        FocusStartModeLink(topLine: state.strings.goAdvancedLinkTop,
+                                           bottomLine: state.strings.goAdvancedLinkBottom,
+                                           pointsBack: false,
+                                           scale: scale,
+                                           action: state.onSwitchMode)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, scale.pt(64))
+                    .padding(.bottom, scale.pt(24))
+                    if let tip = state.permissionsTip {
+                        FocusStartPermissionsBanner(tip: tip,
+                                                    buttonTitle: state.strings.fixPermissionsButton,
+                                                    scale: scale,
+                                                    fillsWidth: true,
+                                                    action: state.onFixPermissions)
+                            // Same width as the Start Session button below, so the strip lines up with it.
+                            .frame(width: scale.pt(1191))
+                            .padding(.bottom, scale.pt(FocusStartLayout.cardStackGap))
+                    }
                     Text(state.postponeTitle ?? state.strings.simpleTitle)
                         .font(scale.font(FocusStartLayout.headlineFont, .semibold))
                         .foregroundColor(FocusStartPalette.primaryText)
@@ -72,9 +97,11 @@ struct FocusStartSimpleScreen: SwiftUI.View {
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.top, scale.pt(FocusStartLayout.titleTopInset))
+                // #2770: the mode link is now an in-flow top row (first element of the VStack above), so
+                // the content starts just below it like the Advanced screen, instead of being inset to
+                // clear an overlaid link.
+                .padding(.top, scale.pt(48))
                 .padding(.bottom, scale.pt(FocusStartLayout.screenBottomInset))
-                .overlay(header(scale), alignment: .top)
             }
             .background(FocusStartPalette.screenBackground)
         }
@@ -84,28 +111,6 @@ struct FocusStartSimpleScreen: SwiftUI.View {
     private func titleWidth(in width: CGFloat, scale: FocusStartScale) -> CGFloat {
         max(scale.pt(FocusStartLayout.contentColumnWidth) / 2,
             width - 2 * scale.pt(FocusStartLayout.modeLinkColumnWidth))
-    }
-
-    /// The permissions banner (when there is one) on the left, the mode link on the right. Overlaid
-    /// on the column so it sits level with the title, the way the design draws it.
-    private func header(_ scale: FocusStartScale) -> some SwiftUI.View {
-        HStack(alignment: .top, spacing: scale.pt(48)) {
-            if let tip = state.permissionsTip {
-                FocusStartPermissionsBanner(tip: tip,
-                                            buttonTitle: state.strings.fixPermissionsButton,
-                                            scale: scale,
-                                            action: state.onFixPermissions)
-                    .frame(maxWidth: scale.pt(1000), alignment: .leading)
-            }
-            Spacer(minLength: 0)
-            FocusStartModeLink(topLine: state.strings.goAdvancedLinkTop,
-                               bottomLine: state.strings.goAdvancedLinkBottom,
-                               pointsBack: false,
-                               scale: scale,
-                               action: state.onSwitchMode)
-        }
-        .padding(.horizontal, scale.pt(64))
-        .padding(.top, scale.pt(123))
     }
 
     /// The bear in its cream disc with "Ready to focus?" tucked in on the left, as the design draws it.
