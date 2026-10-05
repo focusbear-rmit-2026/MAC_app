@@ -904,3 +904,9 @@ AI relevance checks no longer fail for apps with very long names. (#2710)
 
 Accountability buddy:
 The buddy chat button now reads "Reply". (#2716)
+
+
+# v3.36.554
+
+Focus & Blocking:
+Adding to a block list is now driven by the search box — start typing and tap a card to add it as a URL, a keyword, or an app (with the best-matching installed app suggested). The separate add buttons at the bottom are gone. (#2865)
