@@ -882,3 +882,25 @@ Dragging the floating focus bar to reposition it no longer pops the main Focus B
 Projects & To-Do:
 Editing a task's details now updates the task row and keeps your new title. (#2683)
 A task you just unticked stays unticked — a late update from the server can no longer re-tick it. (#2693)
+
+
+# v3.36.553
+
+Teacher/Student mode:
+In a class session, your teacher's task checklist now appears natively in the Focus Session tab. (#2834)
+Opening the app while a class session is already running no longer crashes it. (#2711)
+You can no longer start a routine habit from the menu bar during a class session, so it doesn't interrupt the class. (#2835)
+Saving habit changes during a class session now restarts and reliably reopens the app, instead of leaving it closed. (#2842)
+
+Focus session:
+Starting a focus-mode habit from the Day Plan now keeps the "What's your intention?" popup open until you fill it in, instead of closing on its own after about a second. (#2839)
+A focus session attached to a routine habit now follows the routine's rules — the Focus Session tab stays reachable and shows the right controls. (#2825)
+On the Start Focus screen, the permissions banner now sits above the heading, so it reads in the right order. (#2846)
+
+Reliability:
+Fixed the app sometimes hanging on launch. (#2708)
+Fixed several intermittent app freezes. (#2709)
+AI relevance checks no longer fail for apps with very long names. (#2710)
+
+Accountability buddy:
+The buddy chat button now reads "Reply". (#2716)
