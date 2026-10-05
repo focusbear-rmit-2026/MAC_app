@@ -88,6 +88,17 @@ enum BlockListStyle {
 // MARK: - Screen
 
 @available(macOS 11.0, *)
+/// Classifies a typed block-list entry as a URL or a keyword, matching the blocking engine's rule
+/// (`urlValidation.isUrlAlwaysBlocked`): a value with a dot and no whitespace is treated as a
+/// domain/URL; anything else is a keyword. Pure, so it's unit-tested.
+enum BlockListEntryClassifier {
+    static func looksLikeURL(_ rawValue: String) -> Bool {
+        let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return false }
+        return value.contains(".") && !value.contains(where: { $0.isWhitespace })
+    }
+}
+
 struct BlockListView: View {
     @ObservedObject var store: BlockListStore
 
@@ -117,6 +128,8 @@ struct BlockListView: View {
     /// a time, so a single flag + draft is enough.
     @SwiftUI.State private var isEditingName = false
     @SwiftUI.State private var nameDraft = ""
+    /// Installed apps (from the Applications folders) — the source for the search-driven "Add app" card.
+    @SwiftUI.State private var installedApps: [InstalledApp] = []
 
     var body: some View {
         // The screen sizes itself from the width it is handed rather than from fixed columns, so it
@@ -129,6 +142,7 @@ struct BlockListView: View {
         .background(Color(NSColor.textBackgroundColor))
         // Draw hover tooltips at the root so they float above the clipped panel, not inside it (#2571).
         .fastTooltipLayer()
+        .onAppear { InstalledApps.shared.load { self.installedApps = $0 } }
     }
 
     private func screen(_ metrics: BlockListLayout.Metrics) -> some View {
@@ -350,8 +364,11 @@ struct BlockListView: View {
         VStack(alignment: .leading, spacing: 14) {
             if let selected = store.selectedBlockList {
                 panelHeader(selected, titleFontSize: metrics.titleFontSize)
-                // #2571 (NEW-A): the top field only searches/filters now.
+                // The field still searches/filters the existing entries (unchanged). While it has text it
+                // also offers quick-add cards (URL/keyword/app) just beneath it — replacing the old
+                // bottom add bar.
                 searchRow
+                addResults
                 categoryChips
                 Divider().background(BlockListStyle.hairline)
                 if selected.usesAllowList {
@@ -362,9 +379,6 @@ struct BlockListView: View {
                 }
                 suggestionChips
                 entryTable(metrics)
-                // #2571 (NEW-A / 11): adding lives at the bottom, separate from the search field.
-                Divider().background(BlockListStyle.hairline)
-                addEntryRow(metrics)
             } else {
                 Text(BlockListText.noBlockListSelected)
                     .font(BlockListStyle.bodyFont)
@@ -483,78 +497,129 @@ struct BlockListView: View {
         .frame(minWidth: 0, maxWidth: .infinity)
     }
 
-    /// #2571 (NEW-A / 11): the add controls, at the bottom and separate from search. A single row —
-    /// URL field (with a globe icon), a "+" button to add it, and an "Add App" file-picker button.
-    /// The category picker is hidden for now; everything is filed under "Others" (`draftCategory`
-    /// defaults to `.other`). All three controls match the "Create New Block" button's height.
-    private func addEntryRow(_ metrics: BlockListLayout.Metrics) -> some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 6) {
-                Image(systemName: "globe")
-                    .foregroundColor(BlockListStyle.mutedText)
-                TextField(BlockListText.addUrlPlaceholder, text: $store.draftEntry, onCommit: addDraftEntry)
-                    .textFieldStyle(PlainTextFieldStyle())
-                    .font(BlockListStyle.bodyFont)
-                    .frame(maxWidth: .infinity)
+    // MARK: Quick-add cards (search-driven)
+
+    /// While the search field has text, quick-add cards sit beneath it: a URL/keyword card for the typed
+    /// text (a URL once it looks like a domain, otherwise a keyword), and the single best-matching
+    /// installed app — or "Add app manually" when nothing matches. Tapping a card adds the entry and
+    /// clears the search. With an empty field there are no cards; the field just filters the list as before.
+    @ViewBuilder
+    private var addResults: some View {
+        let query = store.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !query.isEmpty {
+            // Cards hug their content but stay inside the panel: the trailing spacer absorbs slack while
+            // there's room, and when the two cards would exceed the width their labels truncate instead
+            // of overflowing the frame.
+            HStack(alignment: .top, spacing: 10) {
+                websiteAddCard(query)
+                appAddCard(query)
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// The typed text offered as a URL (once it looks like a domain) or otherwise as a keyword.
+    private func websiteAddCard(_ query: String) -> some View {
+        let isURL = BlockListEntryClassifier.looksLikeURL(query)
+        let shown = cardTitle(query)
+        return addCard(
+            eyebrow: isURL ? BlockListText.addUrlEyebrow : BlockListText.addKeywordEyebrow,
+            title: isURL ? shown : "\u{201C}\(shown)\u{201D}",
+            icon: .symbol(isURL ? "link" : "keyboard"),
+            action: { addWebsiteFromSearch(query) })
+    }
+
+    /// Caps an over-long typed entry for the card label; the full value is still what gets added.
+    private func cardTitle(_ text: String) -> String {
+        let maxChars = 44
+        return text.count > maxChars ? String(text.prefix(maxChars)) + "\u{2026}" : text
+    }
+
+    /// The single best-matching installed app, or the manual file-picker fallback when nothing matches.
+    @ViewBuilder
+    private func appAddCard(_ query: String) -> some View {
+        if let app = bestAppMatch(for: query) {
+            addCard(eyebrow: BlockListText.addAppEyebrow,
+                    title: InstalledApps.shared.distinctDisplayName(for: app) ?? app.name,
+                    icon: .app(app),
+                    action: { addAppFromSearch(app) })
+        } else {
+            addCard(eyebrow: BlockListText.addAppManuallyEyebrow,
+                    title: BlockListText.addAppManually,
+                    icon: .emoji("🤔"),
+                    action: openAppPicker)
+        }
+    }
+
+    /// Best installed-app match for the query: a prefix hit if any, otherwise the first substring hit.
+    private func bestAppMatch(for query: String) -> InstalledApp? {
+        installedApps.first { $0.hasPrefix(query) } ?? installedApps.first { $0.matches(query) }
+    }
+
+    private enum AddCardIcon { case symbol(String); case emoji(String); case app(InstalledApp) }
+
+    /// One quick-add card: leading icon, a small eyebrow label, the entry title, and a trailing arrow —
+    /// the layout from the design. Tapping runs `action`.
+    private func addCard(eyebrow: String, title: String, icon: AddCardIcon,
+                         action: @escaping () -> Void) -> some View {
+        SwiftUI.Button(action: action) {
+            HStack(spacing: 8) {
+                switch icon {
+                case .app(let app):
+                    Image(nsImage: InstalledApps.shared.icon(for: app))
+                        .resizable().frame(width: 24, height: 24)
+                case .symbol(let name):
+                    Image(systemName: name)
+                        .font(.system(size: 18))
+                        .foregroundColor(BlockListStyle.mutedText)
+                        .frame(width: 24, height: 24)
+                case .emoji(let glyph):
+                    Text(glyph)
+                        .font(.system(size: 18))
+                        .frame(width: 24, height: 24)
+                }
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(eyebrow)
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundColor(BlockListStyle.mutedText)
+                        .lineLimit(1)
+                    Text(title)
+                        .font(BlockListStyle.bodyFont)
+                        .foregroundColor(Color(NSColor.labelColor))
+                        .lineLimit(1)
+                }
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(BlockListStyle.primaryOrange)
+                    .padding(.leading, 4)
             }
             .padding(.horizontal, 12)
-            .frame(height: BlockListStyle.controlHeight)
-            .background(BlockListStyle.searchFill)
-            .overlay(
-                RoundedRectangle(cornerRadius: BlockListStyle.cardRadius)
-                    .stroke(BlockListStyle.hairline, lineWidth: BlockListStyle.cardStroke))
+            .frame(height: BlockListStyle.controlHeight + 12)
+            // No fixedSize: the card hugs its content while there's room, but can shrink (labels
+            // truncate) so the two cards always stay inside the panel instead of overflowing.
+            .overlay(RoundedRectangle(cornerRadius: BlockListStyle.cardRadius)
+                .stroke(BlockListStyle.hairline, lineWidth: BlockListStyle.cardStroke))
             .cornerRadius(BlockListStyle.cardRadius)
-            .frame(minWidth: 0, maxWidth: .infinity)
-
-            addButton
-            addAppButton
-        }
-    }
-
-    /// The "+" button that adds the typed URL — a square matching the control height. Disabled state
-    /// uses a muted fill with a still-legible glyph (fading the whole orange button to 0.3 left the
-    /// white "+" almost invisible against it).
-    private var addButton: some View {
-        let isEnabled = !store.draftEntry.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        return SwiftUI.Button(action: addDraftEntry) {
-            Image(systemName: "plus")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(isEnabled ? .white : Color(NSColor.secondaryLabelColor))
-                .frame(width: BlockListStyle.controlHeight, height: BlockListStyle.controlHeight)
-                .contentShape(Rectangle())
+            .contentShape(Rectangle())
         }
         .buttonStyle(FBButtonStyle())
-        .background(isEnabled ? BlockListStyle.primaryOrange : Color(NSColor.systemGray).opacity(0.22))
-        .cornerRadius(BlockListStyle.cardRadius)
-        .fixedSize()
-        .disabled(!isEnabled)
-        // A fast custom hover tooltip — the native `.help()` one is slow to appear (#2571).
-        .fastTooltip(BlockListText.addUrl)
-        .accessibility(label: Text(BlockListText.addUrl))
     }
 
-    /// #2571 (11): apps can't be typed as a path, so they're added via a file picker (host-owned).
-    private var addAppButton: some View {
-        SwiftUI.Button(action: onAddApp) {
-            Text(BlockListText.addApp)
-                .font(BlockListStyle.buttonFont)
-                .foregroundColor(BlockListStyle.primaryOrange)
-                .padding(.horizontal, 16)
-                .frame(height: BlockListStyle.controlHeight)
-                .overlay(RoundedRectangle(cornerRadius: BlockListStyle.cardRadius)
-                    .stroke(BlockListStyle.primaryOrange, lineWidth: BlockListStyle.cardStroke))
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(FBButtonStyle())
-        .cornerRadius(BlockListStyle.cardRadius)
-        .fixedSize()
+    private func addWebsiteFromSearch(_ query: String) {
+        _ = store.addWebsite(query)
+        DispatchQueue.main.async { store.searchText = "" }
     }
 
-    private func addDraftEntry() {
-        guard store.addWebsite(store.draftEntry) else { return }
-        // Clear on the next runloop tick: clearing the bound value inside the TextField's own commit
-        // (Enter) cycle is ignored by the field editor, so the text would otherwise stay behind.
-        DispatchQueue.main.async { store.draftEntry = "" }
+    private func addAppFromSearch(_ app: InstalledApp) {
+        _ = store.addApp(app.url.path)
+        DispatchQueue.main.async { store.searchText = "" }
+    }
+
+    /// "Add app manually": opens the host's file picker and clears the search, like the other cards.
+    private func openAppPicker() {
+        onAddApp()
+        DispatchQueue.main.async { store.searchText = "" }
     }
 
     /// There are ten chips, so they scroll horizontally at any realistic panel width. The trailing

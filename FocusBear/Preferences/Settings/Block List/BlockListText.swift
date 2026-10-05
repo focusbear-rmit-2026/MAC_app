@@ -41,6 +41,12 @@ enum BlockListText {
     static var addUrlPlaceholder: String { t("addUrlPlaceholder", "Add a new URL") }
     static var addUrl: String { t("addUrl", "Add URL") }
     static var addApp: String { t("addApp", "Add App") }
+    // Search-driven quick-add cards (eyebrow labels + the manual-app fallback).
+    static var addUrlEyebrow: String { t("addUrlEyebrow", "ADD URL") }
+    static var addKeywordEyebrow: String { t("addKeywordEyebrow", "ADD KEYWORD") }
+    static var addAppEyebrow: String { t("addAppEyebrow", "ADD APP") }
+    static var addAppManuallyEyebrow: String { t("addAppManuallyEyebrow", "LOOKING FOR SOMETHING ELSE?") }
+    static var addAppManually: String { t("addAppManually", "Add app manually") }
 
     // Per-mode actions shown on the selected card (#2571 14).
     static var deleteBlockList: String { t("deleteBlockList", "Delete") }
