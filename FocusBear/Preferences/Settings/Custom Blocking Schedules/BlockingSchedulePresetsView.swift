@@ -9,6 +9,8 @@
 
 import SwiftUI
 
+private typealias SettingsUITestIdentifier = UITestContract.Identifier.SettingsRegression
+
 /// A starter template for a blocking schedule. Client-side only — picking one
 /// just pre-fills the editor, so there's no persistence/backend involvement.
 struct SchedulePreset: Identifiable {
@@ -64,12 +66,16 @@ struct BlockingSchedulePresetsView: View {
                             presetCard(preset)
                         }
                         .buttonStyle(FBButtonStyle())
+                        .accessibilityIdentifier(SettingsUITestIdentifier.schedulePresetPrefix
+                                                 + String(SchedulePreset.all.firstIndex { $0.id == preset.id } ?? 0))
                     }
                 }
                 .padding(20)
             }
         }
         .background(FBColor.background)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(SettingsUITestIdentifier.schedulePresets)
     }
 
     private func presetCard(_ preset: SchedulePreset) -> some View {

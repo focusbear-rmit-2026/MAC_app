@@ -71,7 +71,7 @@ let maxAIBlockingLogEntries = 50
 private let aiBlockingLogQueue = DispatchQueue(label: "com.focusbear.aiBlockingLog")
 var arrAIBlockingLogEntries = [AIBlockingLogEntry]()
 
-private let aiBlockingLogDefaultsKey = "aiBlockingLogEntries"
+private let aiBlockingLogDefaultsKey = kUserdefaultsAiBlockingLogEntries
 private var didLoadPersistedAiBlockingLog = false
 
 /// Hydrate the in-memory log from disk once per launch — the store used to be memory-only, so it was
@@ -80,7 +80,7 @@ private var didLoadPersistedAiBlockingLog = false
 private func loadPersistedAiBlockingLogIfNeeded() {
     guard !didLoadPersistedAiBlockingLog else { return }
     didLoadPersistedAiBlockingLog = true
-    if let data = UserDefaults.standard.data(forKey: aiBlockingLogDefaultsKey),
+    if let data = SensitiveDefaults.data(forKey: aiBlockingLogDefaultsKey),
        let entries = try? JSONDecoder().decode([AIBlockingLogEntry].self, from: data) {
         arrAIBlockingLogEntries = entries
     }
@@ -89,7 +89,7 @@ private func loadPersistedAiBlockingLogIfNeeded() {
 /// Persist the (trimmed) log so it survives a restart. MUST be called on `aiBlockingLogQueue`.
 private func persistAiBlockingLog() {
     if let data = try? JSONEncoder().encode(arrAIBlockingLogEntries) {
-        UserDefaults.standard.set(data, forKey: aiBlockingLogDefaultsKey)
+        SensitiveDefaults.set(data, forKey: aiBlockingLogDefaultsKey)
     }
 }
 

@@ -37,7 +37,44 @@ class floatingTopBarVc: NSViewController {
         normalWidth = self.view.frame.width
         
         imgViewSmallAppIcon.image = NSImage(named: "Bear-Small")
+        describeControlsForAccessibility()
     }
+
+    /// The bar's buttons come from the storyboard with no titles, so VoiceOver announced them only as
+    /// "button". The whole bar and the round bear-icon group both open the menu, and each is named:
+    /// the accessibility audit still reached the icon group's button, unnamed, when it was only
+    /// excluded. The bear image under it is decoration — VoiceOver read its asset name — and the
+    /// "↓" is drawing only (it has no action).
+    private func describeControlsForAccessibility() {
+        hideFromAccessibility(imgViewSmallAppIcon)
+        for button in buttons(in: view) {
+            switch button.action {
+            case #selector(btnBarClicked(_:)):
+                button.setAccessibilityLabel(menuLocalized(Self.openMenuLabelKey, Self.openMenuLabelFallback))
+            case #selector(btnCloseClicked(_:)):
+                button.setAccessibilityLabel(menuLocalized(Self.hideBarLabelKey, Self.hideBarLabelFallback))
+            case nil:
+                hideFromAccessibility(button)
+            default:
+                break
+            }
+        }
+    }
+
+    /// AppKit can expose a storyboard control through its cell as well as the view, so both are excluded.
+    private func hideFromAccessibility(_ control: NSControl) {
+        control.setAccessibilityElement(false)
+        control.cell?.setAccessibilityElement(false)
+    }
+
+    private func buttons(in root: NSView) -> [NSButton] {
+        root.subviews.flatMap { ([$0 as? NSButton].compactMap { $0 }) + buttons(in: $0) }
+    }
+
+    private static let openMenuLabelKey = "a11yOpenFocusBearMenu"
+    private static let openMenuLabelFallback = "Open Focus Bear menu"   // i18n-ignore: last-resort default; the real string comes from config
+    private static let hideBarLabelKey = "a11yHideFloatingBar"
+    private static let hideBarLabelFallback = "Hide this bar"   // i18n-ignore: last-resort default; the real string comes from config
     
     @IBAction func btnBarClicked(_ sender: Any) {
         appdelegate!.togglePopover(false)

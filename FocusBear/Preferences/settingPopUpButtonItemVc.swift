@@ -21,10 +21,11 @@ class settingPopUpButtonItemVc: NSViewController {
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var popUpBtn: NSPopUpButton!
     var delegate: SettingPopUpButtonItemDelegate?
+    private var popUpNameObservation: NSKeyValueObservation?
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        popUpNameObservation = popUpBtn.keepAccessibilityName(matching: lblTitle)
     }
     
     var toolTip = ""{

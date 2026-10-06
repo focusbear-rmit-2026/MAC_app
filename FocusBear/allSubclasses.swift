@@ -1091,6 +1091,12 @@ class GeekModeSegmentedControl: NSSegmentedControl {
         })
     }
 
+    /// Highlights the mode the app is actually in — after a click that was refused (a managed student's
+    /// settings are locked), which has already moved the highlight.
+    func showCurrentMode() {
+        setSelected(true, forSegment: SettingsManagerObject.isGeekModeEnabled ? geekModeIndex : simpleModeIndex)
+    }
+
 }
 
 /// Switches the app between Simple and Geek mode, with the freemium gate and the follow-up reload in

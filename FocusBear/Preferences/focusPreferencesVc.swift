@@ -343,7 +343,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: tblViewFocusType.selectedRow), byExtendingSelection: false)
         tblViewFocusType.scrollRowToVisible(tblViewFocusType.selectedRow)
         checkState()
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         allApiObject.capturePosthog(event: "edit-focus-mode-colour", metadata: [:])
     }
     
@@ -408,7 +408,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             }
         }
 
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         
         allApiObject.addFocusMode(focusType: item, completionHandler: {success in
         })
@@ -554,7 +554,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         let selectedRow = tblViewFocusType.selectedRow
         if selectedRow != -1{
             arrFocusType[selectedRow]["isAllowedAllApps"] = true
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         }
 
         reSetCurrentFocusMode(focusType:arrFocusType[selectedRow])
@@ -578,7 +578,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         let selectedRow = tblViewFocusType.selectedRow
         if selectedRow != -1{
             arrFocusType[selectedRow]["isAllowedAllApps"] = false
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         }
 
         reSetCurrentFocusMode(focusType:arrFocusType[selectedRow])
@@ -845,7 +845,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                     arrFocusType.remove(at: index)
                     self.tblViewFocusType.reloadData()
                     self.checkState()
-                    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                    SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                     resetPomodoroVcFocusListIfNeeded()
                     HiddenFocusModeManager.reconcile(against: arrFocusType)
                     // #2571 (14): keep the SwiftUI block-list rail in step when the delete came from it.
@@ -939,7 +939,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                 self.tblViewAllowedApps.reloadData()
                 self.tblViewAllowedApps.selectRowIndexes(IndexSet(arrayLiteral: (appsArray.count - 1)), byExtendingSelection: false)
                 self.tblViewAllowedApps.scrollRowToVisible(appsArray.count - 1)
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 reSetCurrentFocusMode(focusType:arrFocusType[self.tblViewFocusType.selectedRow])
                 if isContainAlready{
                     self.showAlertAppAlreadyAdded()
@@ -989,7 +989,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
 //                }
                 if selectedAppsRow < SettingsManagerObject.arrBlockedApps.count{
                     SettingsManagerObject.arrBlockedApps.remove(at: selectedAppsRow)
-                    UserDefaults.standard.set(SettingsManagerObject.arrBlockedApps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)
+                    SensitiveDefaults.set(SettingsManagerObject.arrBlockedApps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)
                 }
                 SettingsManagerObject.isSettingsChanged = true 
                 allApiObject.capturePosthog(event: "remove-always-blocked-app", metadata: [:])//#490
@@ -1000,7 +1000,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                     }
                     arrFocusType[selectedFocusTypeRow]["allowed_apps"] = arr
                 }
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 reSetCurrentFocusMode(focusType:arrFocusType[selectedFocusTypeRow])
                 allApiObject.capturePosthog(event: "remove-allowed-app-in-focus-mode", metadata: [:])//#490
             }
@@ -1039,7 +1039,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             if selectedUrlsRow < SettingsManagerObject.arrBlockedUrls.count{
                 SettingsManagerObject.arrBlockedUrls.remove(at: selectedUrlsRow)
                 tblViewAllowedUrls.reloadData()
-                UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
+                SensitiveDefaults.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
             }
             SettingsManagerObject.isSettingsChanged = true
             UserDefaults.standard.set(true, forKey: kUserdefaultsEditBlockedUrlsOnce)
@@ -1066,7 +1066,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                 
                 self.tblViewAllowedUrls.reloadData()
             }
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
             reSetCurrentFocusMode(focusType:arrFocusType[selectedFocusTypeRow])
         }
 
@@ -1106,7 +1106,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         let selectedRow = tblViewFocusType.selectedRow
         if selectedRow != -1{
             arrFocusType[selectedRow]["isAllowedListApproach"] = true
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         }
         reSetCurrentFocusMode(focusType:arrFocusType[selectedRow])
 
@@ -1143,7 +1143,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         let selectedRow = tblViewFocusType.selectedRow
         if selectedRow != -1{
             arrFocusType[selectedRow]["isAllowedListApproach"] = false
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         }
         reSetCurrentFocusMode(focusType:arrFocusType[selectedRow])
         
@@ -1992,7 +1992,7 @@ extension focusPreferencesVc:NSTextFieldDelegate{
                 }
                 checkState()
                 
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 
                 textFieldSelectedFocusType.isEnabled = true
                 allApiObject.capturePosthog(event: "change-focus-mode-name", metadata: [:])

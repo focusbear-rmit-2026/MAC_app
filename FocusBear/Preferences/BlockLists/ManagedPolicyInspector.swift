@@ -35,6 +35,7 @@ struct ManagedPolicyInspector: View {
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .accessibilityIdentifier(Ids.inspector)
         .sheet(isPresented: $showingHomeEditor) {
             if let home = runtime.effectivePolicy?.home {
                 ManagedHomePolicyEditor(runtime: runtime, policy: home)
@@ -52,15 +53,19 @@ struct ManagedPolicyInspector: View {
                 Label(text("checkingControls", "Checking school and parent controls…"), systemImage: "arrow.triangle.2.circlepath")
             } else if let policy = runtime.activePolicy {
                 Label(text("activePolicy", "Active now: <POLICY>").replacingOccurrences(of: "<POLICY>", with: policy.name), systemImage: "clock.fill")
+                    .accessibilityIdentifier(Ids.statusActive)
             } else {
                 Label(text("noActivePolicy", "No school or home safety window is active now."), systemImage: "clock")
+                    .accessibilityIdentifier(Ids.statusNoActiveWindow)
             }
             if runtime.syncState == .offline {
                 Text(text("offlineStatus", "Offline: your saved school and home timetable still applies."))
                     .font(.footnote).foregroundColor(.secondary)
+                    .accessibilityIdentifier(Ids.statusOffline)
             }
             if runtime.isSettingsLocked {
                 Label(text("settingsLocked", "Settings are locked. A parent must approve home schedule changes."), systemImage: "lock.fill")
+                    .accessibilityIdentifier(Ids.statusSettingsLocked)
             }
             if runtime.isSignedInAsWrongAccount {
                 Text(text("accountMismatch", "This device is still supervised by its previous school account. Sign back in to that account to restore verified controls."))
@@ -108,9 +113,11 @@ struct ManagedPolicyInspector: View {
                         .foregroundColor(.secondary)
                 }
                 Spacer()
-                Text(policy.isEnabled ? (runtime.activePolicy?.id == policy.id ? text("active", "Active") : text("scheduled", "Scheduled")) : text("disabled", "Disabled"))
+                let state = cardState(of: policy)
+                Text(badgeText(state))
                     .font(.caption).padding(6)
                     .background(Color(NSColor.controlBackgroundColor)).cornerRadius(6)
+                    .accessibilityIdentifier(Ids.cardState(kind: policy.kind, state))
             }
             Text(text("policyRevision", "Revision <REVISION> · <ZONE>")
                 .replacingOccurrences(of: "<REVISION>", with: String(policy.revision))
@@ -189,13 +196,31 @@ struct ManagedPolicyInspector: View {
             }
             if policy.kind == "home" {
                 SwiftUI.Button(text("requestHomeChanges", "Request parent-approved changes")) { showingHomeEditor = true }
+                    .accessibilityIdentifier(Ids.requestHomeChangesButton)
             } else {
                 Text(text("schoolChanges", "Contact your school to change this schedule or request a lasting website exception."))
                     .font(.footnote).foregroundColor(.secondary)
+                    .accessibilityIdentifier(Ids.schoolContactNote)
             }
         }
         .padding(16)
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(NSColor.separatorColor)))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(Ids.card(kind: policy.kind))
+    }
+
+    /// Active now, waiting for its window, or switched off.
+    private func cardState(of policy: ManagedPolicy) -> Ids.CardState {
+        guard policy.isEnabled else { return .disabled }
+        return runtime.activePolicy?.id == policy.id ? .active : .scheduled
+    }
+
+    private func badgeText(_ state: Ids.CardState) -> String {
+        switch state {
+        case .active: return text("active", "Active")
+        case .scheduled: return text("scheduled", "Scheduled")
+        case .disabled: return text("disabled", "Disabled")
+        }
     }
 
     private func fallbackRow(_ title: String, blocks: Bool) -> some View {
@@ -209,6 +234,8 @@ struct ManagedPolicyInspector: View {
     private func text(_ key: String, _ fallback: String) -> String {
         ManagedBlockingText.value(key, fallback: fallback)
     }
+
+    private typealias Ids = UITestContract.Identifier.ManagedSafety
 }
 
 enum ManagedPolicyPresentation {

@@ -86,6 +86,27 @@
             </result>
         </command>
 
+        <!-- Read-only and answered with the app's own credentials, so local tools (e.g. the
+             focusbear-tasks skill) can read the to-do list without the access token ever leaving
+             the keychain. Sending Apple events here needs the caller's macOS Automation consent. -->
+        <command name="list to dos" code="FBarLsTd"
+            description="The signed-in account's to-do list from the Focus Bear server, as JSON text (an array of to-dos in the server's order).">
+            <cocoa class="FBListToDosCommand"/>
+            <parameter name="status" code="TdSt" type="text" optional="yes"
+                description="NOT_STARTED (default), IN_PROGRESS, COMPLETED, or ALL.">
+                <cocoa key="status"/>
+            </parameter>
+            <parameter name="sort mode" code="TdSm" type="text" optional="yes"
+                description="SMART (default), CHRONOLOGICAL or DUE_DATE.">
+                <cocoa key="sortMode"/>
+            </parameter>
+            <parameter name="take" code="TdTk" type="integer" optional="yes"
+                description="How many to-dos to return, 1 to 50 (default 50).">
+                <cocoa key="take"/>
+            </parameter>
+            <result type="text" description="JSON array of to-dos."/>
+        </command>
+
         <!-- An object-targeting verb: the task itself handles it (see the task class's <responds-to>).
              A "complete task" name would also collide with the `task` class in the direct-object slot. -->
         <command name="complete" code="FBarCmTk"

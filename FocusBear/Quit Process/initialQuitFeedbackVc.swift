@@ -105,7 +105,7 @@ class initialQuitFeedbackVc: NSViewController {
             "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled(),
             "feedback": feedback,
         ])
-        UserDefaults.standard.set(reason, forKey: kUserDefaultsLastQuitReason)
+        SensitiveDefaults.set(reason, forKey: kUserDefaultsLastQuitReason)
         Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { _ in
             appdelegate?.quitAppForUser()
         }
@@ -427,6 +427,8 @@ struct QuitPopupView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .frame(width: QuitPopupLayout.width, height: QuitPopupLayout.height)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(UITestContract.Identifier.SettingsRegression.quitPopup)
     }
 
     // "Report a bug" sits at the very top so a frustrated user can always reach the existing Report

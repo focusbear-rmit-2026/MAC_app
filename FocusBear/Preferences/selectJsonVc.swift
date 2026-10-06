@@ -120,7 +120,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
     func jsonReceivedFromWebView(jsonResult: NSDictionary){
         isGettingSchema = true
         addLog(text: "func jsonReceivedFromWebView")
-        addLog(text: "settings json is:- \(jsonResult)")
+        addLog(text: "settings json is:- \(LogPrivacy.structure(jsonResult))")
 
         allApiObject.isSettingsValid(settings: jsonResult, isOnboarding:false, completionHandler: {dic,statusCode  in
             DispatchQueue.main.async {
@@ -140,7 +140,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                             
                             if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
                                 print()
-                                UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                SensitiveDefaults.set(backToString, forKey: kUserdefaultsSelectedJson)
                                 
                             }
                             
@@ -321,7 +321,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
         }else if message.name == "send_brain_dump_content"{
             print(message.body) 
             let brainDump = message.body as? String ?? ""
-            UserDefaults.standard.set(brainDump, forKey: kUserdefaultsFocusModeNotes)
+            SensitiveDefaults.set(brainDump, forKey: kUserdefaultsFocusModeNotes)
         }else if message.name == "close_focus_player_ui"{
             print(message.body)
         }else if message.name == "open_marketplace"{

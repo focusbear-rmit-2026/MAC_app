@@ -24,6 +24,7 @@ class settingsContainerVc: NSViewController {
         super.viewDidLoad()
         addLog(text: "settingsContainerVc viewdidload start")        
         settingsContainerVcObj = self
+        segmentControlGeekMode.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.geekModeControl)
         
         getUIVcObject().loadView()
         
@@ -61,7 +62,7 @@ class settingsContainerVc: NSViewController {
         addLog(text: "settingsContainerVc viewdidload end")
     }
     @IBAction func btnSegmentControlGeekModeClicked(_ sender: Any) {
-        guard ManagedBlockingRuntime.shared.allowLegacySettingsMutation() else { return }
+        guard ManagedBlockingRuntime.shared.allowLegacySettingsMutation() else { return segmentControlGeekMode.showCurrentMode() }
         if segmentControlGeekMode.selectedSegment == 0{
             if SettingsManagerObject.isGeekModeEnabled{
                 return;
@@ -84,6 +85,13 @@ class settingsContainerVc: NSViewController {
         }
         containerView.addSubview(inspector)
         containerView.addConstraints(subView: inspector)
+    }
+
+    /// Names the pane area after the sidebar row that filled it (`settingsPane_<row id>`), so a UI test
+    /// can tell every pane opened. Test build only, like the main window's content area.
+    func markPaneForUITests(settingsId: String) {
+        guard UITestHost.isEnabled else { return }
+        containerView.setUITestLandmark(UITestContract.Identifier.Settings.panePrefix + settingsId)
     }
 
     func removeSubViews(){
@@ -132,6 +140,7 @@ class settingsContainerVc: NSViewController {
         removeSubViews()
         self.containerView.addSubview(getStrictnessVcObject().view)
         self.containerView.addConstraints(subView: getStrictnessVcObject().view)
+        markPaneForUITests(settingsId: idStrictness)
     }
     
     func showPasswordView(){
@@ -139,6 +148,7 @@ class settingsContainerVc: NSViewController {
         removeSubViews()
         self.containerView.addSubview(getPasswordVcObject().view)
         self.containerView.addConstraints(subView: getPasswordVcObject().view)
+        markPaneForUITests(settingsId: idPassword)
     }
     
     func showFrictionView(){
@@ -146,6 +156,7 @@ class settingsContainerVc: NSViewController {
         removeSubViews()
         self.containerView.addSubview(getFrictionVcObject().view)
         self.containerView.addConstraints(subView: getFrictionVcObject().view)
+        markPaneForUITests(settingsId: idFriction)
     }
     
     func showFocusBearModeView(){
@@ -153,6 +164,7 @@ class settingsContainerVc: NSViewController {
         removeSubViews()
         self.containerView.addSubview(getfocusBearModeVcObject().view)
         self.containerView.addConstraints(subView: getfocusBearModeVcObject().view)
+        markPaneForUITests(settingsId: idFocusBearMode)
     }
     
     
@@ -161,6 +173,7 @@ class settingsContainerVc: NSViewController {
         removeSubViews()
         self.containerView.addSubview(getBrowserTabLimiterVcObject().view)
         self.containerView.addConstraints(subView: getBrowserTabLimiterVcObject().view)
+        markPaneForUITests(settingsId: idBrowserTabLimiter)
     }
     
     func showBlockedUrlsView(){
@@ -182,6 +195,7 @@ class settingsContainerVc: NSViewController {
         removeSubViews()
         self.containerView.addSubview(getAlwaysAllowedAppsVcObject().view)
         self.containerView.addConstraints(subView: getAlwaysAllowedAppsVcObject().view)
+        markPaneForUITests(settingsId: idAlwaysAllowedApps)
     }
     
     func showAiView(){
@@ -214,6 +228,7 @@ class settingsContainerVc: NSViewController {
         removeSubViews()
         self.containerView.addSubview(getAdvancedVcObject().view)
         self.containerView.addConstraints(subView: getAdvancedVcObject().view)
+        markPaneForUITests(settingsId: idAdvanced)
     }
 
     func showMeetingDetactionView(){
@@ -221,6 +236,7 @@ class settingsContainerVc: NSViewController {
         removeSubViews()
         self.containerView.addSubview(getMeetingDetactionVcObject().view)
         self.containerView.addConstraints(subView: getMeetingDetactionVcObject().view)
+        markPaneForUITests(settingsId: idMeetings)
     }
 
     func showPrivacyView(){
@@ -228,6 +244,7 @@ class settingsContainerVc: NSViewController {
         removeSubViews()
         self.containerView.addSubview(getPrivacyVcObject().view)
         self.containerView.addConstraints(subView: getPrivacyVcObject().view)
+        markPaneForUITests(settingsId: idPrivacy)
     }
     
     
@@ -243,6 +260,7 @@ class settingsContainerVc: NSViewController {
         removeSubViews()
         self.containerView.addSubview(getAddOnsVcObject().view)
         self.containerView.addConstraints(subView: getAddOnsVcObject().view)
+        markPaneForUITests(settingsId: idAddOns)
     }
     
     func showTodoListSettingView(){
@@ -257,6 +275,7 @@ class settingsContainerVc: NSViewController {
         removeSubViews()
         self.containerView.addSubview(getResearchVcObject().view)
         self.containerView.addConstraints(subView: getResearchVcObject().view)
+        markPaneForUITests(settingsId: idResearch)
     }
 
     func showTalkingClockView(){
@@ -264,6 +283,7 @@ class settingsContainerVc: NSViewController {
         removeSubViews()
         self.containerView.addSubview(getTalkingClockSettingsVcObject().view)
         self.containerView.addConstraints(subView: getTalkingClockSettingsVcObject().view)
+        markPaneForUITests(settingsId: idTalkingClock)
     }
 
     func showKeyboardShortcutsView() {

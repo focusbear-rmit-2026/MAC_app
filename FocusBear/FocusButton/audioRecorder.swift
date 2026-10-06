@@ -11,6 +11,10 @@ import AVFAudio
 import AVFoundation
 import CoreAudio
 
+private func discardVoiceRecording(at url: URL) {
+    try? FileManager.default.removeItem(at: url)
+}
+
 class audioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate{
     private var audioEngine: AVAudioEngine?
     private var audioFile: AVAudioFile?
@@ -257,13 +261,16 @@ class audioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate{
                 voicePipeline.run(recording: audioFilename,
                                   habits: currentRoutineHabitNames(),
                                   onTranscript: { transcript in
-                                      addLog(text: "Transcription text is:- \(transcript)")
+                                      addLog(text: "Transcription text is:- \(LogPrivacy.text(transcript))")
                                       DispatchQueue.main.async {
                                           NotificationCenter.default.post(name: VoiceEvents.transcript, object: nil,
                                                                           userInfo: ["text": transcript])
                                       }
                                   },
                                   completion: { [weak self] outcome in
+                                      // The transcript is all the app needs; the audio of the user's voice
+                                      // must not stay on disk until the next recording replaces it.
+                                      discardVoiceRecording(at: audioFilename)
                                       DispatchQueue.main.async { self?.handleVoiceCommand(outcome) }
                                   })
             }
@@ -283,6 +290,7 @@ class audioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate{
         isRecording = false
         finalizeAudioFile()
         audioFile = nil
+        if let audioFilename { discardVoiceRecording(at: audioFilename) }
     }
 
     /// Names of the habits in the routine that's active now, so "start my X habit" can match one.
@@ -333,10 +341,10 @@ class audioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate{
             _ = resumeFocusModeFromFocusDeviceButton(shouldUpdateFocusButton: true)
         case .createTask(let name, let time):
             let timeString = time ?? getTomorrowISOString()
-            addLog(text: "Creating task: \(name) for \(timeString)")
+            addLog(text: "Creating task: \(LogPrivacy.text(name)) for \(timeString)")
             createTask(with: name, dateString: timeString, shouldShowNotification: true)
         case .startHabit(let name):
-            addLog(text: "Starting habit: \(name)")
+            addLog(text: "Starting habit: \(LogPrivacy.text(name))")
             startRoutineHabit(named: name.lowercased())
         case .focusStats:
             addLog(text: "Voice query: focus stats")   // informational only; answer shown via actionDone

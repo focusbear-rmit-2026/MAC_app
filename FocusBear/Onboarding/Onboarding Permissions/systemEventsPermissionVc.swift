@@ -47,6 +47,7 @@ class systemEventsPermissionVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        btnGrantPermission.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.systemEventsOpenSettingsButton)
         // Do view setup here.
         if #available(macOS 13.0, *) {
             lblDescription.stringValue = "If you've previously denied permission for system events, please open System Preferences, locate the Focus Bear icon under System Preferences > Privacy & Security > Automation, and toggle its checkbox on."

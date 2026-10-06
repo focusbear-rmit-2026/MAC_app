@@ -137,6 +137,8 @@
     "trayIconBalloonText": "Focus Bear"
   },
   "menuView": {
+    "a11yOpenFocusBearMenu": "Ouvrir le menu Focus Bear",
+    "a11yHideFloatingBar": "Masquer cette barre",
     "blockingOffTitle": "Le blocage est désactivé",
     "blockingAttentionTitle": "Le blocage demande ton attention",
     "blockingPermissionsLimited": "Certaines fonctions de blocage peuvent être indisponibles car une autorisation macOS manque. Le reste du blocage continue.",
@@ -564,6 +566,7 @@
     "addNewHabit": "Ajouter une habitude",
     "newHabitTitle": "Nouvelle habitude",
     "habitPickEmoji": "Choisir un emoji",
+    "habitFieldIcon": "Icône de l'habitude",
     "routineTimingQuestion": "Quand veux-tu que %@ commence ?",
     "routineTimingHint": "Cela décale la routine tous les jours où elle est prévue.",
     "eventScopeTitle": "C'est un événement récurrent",
@@ -630,6 +633,7 @@
     "requestFailedText": "Impossible de traiter la demande",
     "newTaskText": "Nouvelle tâche",
     "searchPlaceholder": "Rechercher…",
+    "searchTasksText": "Rechercher des tâches",
     "filterText": "Filtrer",
     "moreOptionsText": "Plus d'options",
     "sortSmartText": "Intelligent",
@@ -1727,6 +1731,10 @@
     "buttonOwnUrlBrainDumpText": "Utilise ton propre système pour le brain dump"
   },
   "focusMusicInfo": {
+    "a11yDownloadTrack": "Télécharger %@",
+    "a11yPlayTrack": "Lire %@",
+    "a11yStopTrack": "Arrêter %@",
+    "a11yRemoveTrack": "Retirer %@",
     "nowPlayingLabelText": "En cours de lecture",
     "sectionTitleSpotify": "Spotify",
     "sectionTitleYouTubeMusic": "YouTube Music",
@@ -1840,6 +1848,8 @@
     "buttonAbortFocus": "Mettre en pause le planning personnalisé"
   },
   "preferencesInfo": {
+    "workRatioFieldLabel": "Minutes de concentration",
+    "breakRatioFieldLabel": "Minutes de pause",
     "checkBoxFocusMusicText": "Jouer automatiquement la musique de concentration au début d'une session",
     "switchButtonFocusGlowBorderText": "Afficher une bordure lumineuse pendant les sessions de concentration",
     "descriptionFocusGlowBorderText": "Affiche une douce bordure lumineuse autour de ton écran pendant qu'une session de concentration est en cours.",
@@ -3127,6 +3137,7 @@
   },
   "settingsNew": {
     "uiSettingTitle": "Interface",
+    "searchSettingsLabel": "Rechercher dans les réglages",
     "accessibilitySettingTitle": "Accessibilité",
     "aISettingTitle": "Fonctionnalités IA",
     "pomodoroSettingTitle": "Sessions de concentration",

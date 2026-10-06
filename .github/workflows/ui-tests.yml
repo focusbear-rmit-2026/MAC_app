@@ -1,0 +1,135 @@
+name: UI Tests
+
+# The XCUITest suite (FocusBearUITests). It drives a real desktop — it moves the pointer and types —
+# so it runs ONLY on a dedicated Mac registered with the `focusbear-mac-ui` label, never on a
+# workstation someone is using (the unit-test runner, `focusbear-mac-local`, is one). Setting that
+# Mac up is in docs/ui-tests.md.
+#
+# The app under test is built as com.App.EarnYourScreentime.uitests (scripts/run-ui-tests.sh), so it
+# cannot reach a real Focus Bear's preferences or login even if one is installed.
+#
+# Manual and label-triggered for now: until the runner exists, a push trigger would only queue jobs
+# nobody can pick up. Add `push: branches: [main-human-verified]` once it is online.
+
+# Which tests: a PR labelled `ui-tests` runs Smoke plus the Regression tests for the areas it touched,
+# chosen from its diff by scripts/select-ui-tests.py with .github/ui-test-impact.json. Shared code, a
+# path the map doesn't know, or the `full-ui-tests` label runs the whole Regression plan; so does a
+# push or a scheduled run, once those triggers exist. The job summary says why each test was chosen.
+# A manual run picks smoke (default) or the full regression plan.
+# Keyboard: the runner's own Full Keyboard Access setting decides which keyboard class runs —
+# KeyboardAccessibilityUITests with it on, KeyboardDefaultsUITests with it off (docs/ui-tests.md).
+on:
+  workflow_dispatch:
+    inputs:
+      plan:
+        description: Test plan to run
+        type: choice
+        options: [smoke, regression]
+        default: smoke
+  pull_request:
+    types: [labeled, synchronize]
+
+concurrency:
+  group: ui-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ui-tests:
+    name: XCUITest suite (macOS, ${{ inputs.plan || 'regression' }})
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.pull_request.labels.*.name, 'ui-tests') ||
+      contains(github.event.pull_request.labels.*.name, 'full-ui-tests')
+    runs-on: [self-hosted, macOS, focusbear-mac-ui]
+    permissions:
+      contents: read
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # The selection diffs against the merge-base with the PR's base branch.
+          fetch-depth: 0
+
+      - name: Choose the tests this change needs
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          python3 scripts/select-ui-tests.py check
+          python3 scripts/select-ui-tests.py select --base "origin/$BASE_REF" --event "$GITHUB_EVENT_NAME" \
+            --labels "$LABELS" --args-file ui-test-selection.txt --summary "$GITHUB_STEP_SUMMARY"
+
+      # The suite takes over the pointer and keyboard. If someone's own Focus Bear is running here,
+      # this is a workstation, not the UI-test runner.
+      - name: Refuse to run on a machine someone is using
+        run: |
+          if pgrep -fl "Focus Bear.app/Contents/MacOS/Focus Bear" | grep -v "/build-ui/"; then
+            echo "::error::Focus Bear is running on this runner. UI tests need a dedicated Mac (docs/ui-tests.md)."
+            exit 1
+          fi
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          automationmodetool
+
+      - name: Fetch Sparkle.framework
+        run: ./scripts/fetch-sparkle.sh
+
+      - name: Fetch ONNX Runtime
+        run: ./scripts/fetch-onnxruntime.sh
+
+      # The blocking tests need the test app's Accessibility and Automation grants to survive from
+      # one build to the next. macOS ties a grant to the signature, and an ad-hoc build is a new app
+      # every time, so the runner signs with a certificate in its own keychain, named by the
+      # UI_TESTS_CODE_SIGN_IDENTITY repository variable. Without it the build is ad hoc and blocking
+      # stays off (the rest of the suite does not need it).
+      - name: Run UI tests
+        env:
+          FOCUSBEAR_UITEST_EMAIL: ${{ secrets.FOCUSBEAR_UITEST_EMAIL }}
+          FOCUSBEAR_UITEST_PASSWORD: ${{ secrets.FOCUSBEAR_UITEST_PASSWORD }}
+          SIGNING_IDENTITY: ${{ vars.UI_TESTS_CODE_SIGN_IDENTITY }}
+          SIGNING_TEAM: ${{ vars.UI_TESTS_DEVELOPMENT_TEAM }}
+          TEST_PLAN: ${{ inputs.plan || 'regression' }}
+        run: |
+          set -o pipefail
+          # One -only-testing argument per line; none (or no file) runs the whole plan.
+          SELECTION=()
+          if [ -f ui-test-selection.txt ]; then
+            while IFS= read -r argument; do SELECTION+=("$argument"); done < ui-test-selection.txt
+          fi
+          if [ -n "$SIGNING_IDENTITY" ]; then
+            export FOCUSBEAR_UITEST_ENABLE_BLOCKING=1
+          else
+            echo "::warning::UI_TESTS_CODE_SIGN_IDENTITY is not set: building ad hoc, blocking tests will skip."
+          fi
+          ./scripts/run-ui-tests.sh --plan "$TEST_PLAN" "${SELECTION[@]}" \
+            CODE_SIGN_IDENTITY="${SIGNING_IDENTITY:--}" \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            DEVELOPMENT_TEAM="${SIGNING_TEAM}" \
+            SWIFT_ENABLE_EXPLICIT_MODULES=NO \
+            CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION=YES \
+            | tee xcodebuild-ui.log
+
+      - name: Export screenshots
+        if: always()
+        run: |
+          if [ -d UITestResults.xcresult ]; then
+            xcrun xcresulttool export attachments --path UITestResults.xcresult --output-path UITestScreenshots
+          fi
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-results
+          path: |
+            UITestResults.xcresult
+            UITestScreenshots
+            xcodebuild-ui.log
+          if-no-files-found: ignore
+          retention-days: 14

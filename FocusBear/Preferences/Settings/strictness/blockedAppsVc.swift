@@ -134,7 +134,7 @@ class blockedAppsVc: NSViewController {
             self.tblView.reloadData()
             self.tblView.selectRowIndexes(IndexSet(arrayLiteral: (SettingsManagerObject.arrBlockedApps.count - 1)), byExtendingSelection: false)
             self.tblView.scrollRowToVisible(SettingsManagerObject.arrBlockedApps.count - 1)
-            UserDefaults.standard.set(SettingsManagerObject.arrBlockedApps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)
+            SensitiveDefaults.set(SettingsManagerObject.arrBlockedApps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)
             if isContainAlready{
                 self.showAlertAppAlreadyAdded()
             }
@@ -188,7 +188,7 @@ class blockedAppsVc: NSViewController {
         if selectedAppsRow < SettingsManagerObject.arrBlockedApps.count{
             SettingsManagerObject.arrBlockedApps.remove(at: selectedAppsRow)
             tblView.reloadData()
-            UserDefaults.standard.set(SettingsManagerObject.arrBlockedApps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)
+            SensitiveDefaults.set(SettingsManagerObject.arrBlockedApps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)
         }
         SettingsManagerObject.isSettingsChanged = true
         allApiObject.capturePosthog(event: "remove-always-blocked-app", metadata: [:])//#490

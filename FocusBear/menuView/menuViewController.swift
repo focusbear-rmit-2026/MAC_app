@@ -225,6 +225,9 @@ class menuViewController: NSViewController {
         // Do view setup here.
         addLog(text: "menuViewController viewdidload start")
         if #available(macOS 11.0, *) { setupSwiftUIMenu() }
+        view.setAccessibilityIdentifier(UITestContract.Identifier.MenuBar.popover)
+        btnPreferences.setAccessibilityIdentifier(UITestContract.Identifier.MenuBar.preferencesButton)
+        btnQuit.setAccessibilityIdentifier(UITestContract.Identifier.MenuBar.quitButton)
         
         lblTitleHabitStatus.stringValue = "✋Postponed"
         
@@ -1773,7 +1776,7 @@ class menuViewController: NSViewController {
             return;
         }
         if currentFocusModeStrictness == ._SUPER_STRICT_{
-            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+            if SettingsManagerObject.isAppPasswordSet{
                 if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{// if no password is set  then chance of getting lastUnlockTimeByAccountabilityBuddy is 0% but if password is set then check this
                     if Date() < lastUnlockTimeByAccountabilityBuddy{
                         pauseFocusMode()
@@ -1848,7 +1851,7 @@ class menuViewController: NSViewController {
         var needToShowPassword = false
         if currentFocusModeStrictness == ._SUPER_STRICT_{
             needToShowPassword = true// show without checking . if password not there then show enter random characters view
-            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+            if SettingsManagerObject.isAppPasswordSet{
                 if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{// if no password is set  then chance of getting lastUnlockTimeByAccountabilityBuddy is 0% but if password is set then check this
                     if Date() < lastUnlockTimeByAccountabilityBuddy{
                         needToShowPassword = false
@@ -1967,7 +1970,7 @@ class menuViewController: NSViewController {
     func addOfficeFriendlyActivityInSettings(){
         addLog(text: "addOfficeFriendlyActivityInSettings")//
         var jsonResult = NSDictionary()
-        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+        if let stringDic = SensitiveDefaults.object(forKey: kUserdefaultsSelectedJson) as? String {
             //            jsonResult = dic
             if let data = stringDic.data(using: String.Encoding.utf8) {
                 
@@ -2036,7 +2039,7 @@ class menuViewController: NSViewController {
                                 print(jsonResultData)
                                 
                                 if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
-                                    UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                    SensitiveDefaults.set(backToString, forKey: kUserdefaultsSelectedJson)
                                     
                                 }
                                 
@@ -2419,7 +2422,7 @@ class menuViewController: NSViewController {
                         btnCustomBlocking.state = .on
                     }else if customBlockingScheduleManagerObj.arrBlockingSchedule[i].blockLevel == ._SUPER_STRICT_{
                         
-                        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                        if SettingsManagerObject.isAppPasswordSet{
                             if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{// if no password is set  then chance of getting lastUnlockTimeByAccountabilityBuddy is 0% but if password is set then check this
                                 if Date() < lastUnlockTimeByAccountabilityBuddy{
                                     customBlockingScheduleManagerObj.customBlockingSchedulePaused()
@@ -2990,7 +2993,7 @@ extension menuViewController {
     private func menuDefaultDurationMinutes(forFocusModeId id: String) -> Int {
         var focusTypes = arrFocusType
         if focusTypes.isEmpty {
-            focusTypes = (UserDefaults.standard.object(forKey: kUserdefaultsArrFocusTypes) as? [[String: Any]]) ?? []
+            focusTypes = (SensitiveDefaults.object(forKey: kUserdefaultsArrFocusTypes) as? [[String: Any]]) ?? []
         }
         if let ft = focusTypes.first(where: { ($0["id"] as? String) == id }),
            let perMode = ft["lastDurationUsed"] as? Int, perMode > 0 {
@@ -3042,7 +3045,7 @@ extension menuViewController {
         // pomodoro screen appears), so fall back to UserDefaults — otherwise the dropdown is empty.
         var focusTypes = arrFocusType
         if focusTypes.isEmpty {
-            focusTypes = (UserDefaults.standard.object(forKey: kUserdefaultsArrFocusTypes) as? [[String: Any]]) ?? []
+            focusTypes = (SensitiveDefaults.object(forKey: kUserdefaultsArrFocusTypes) as? [[String: Any]]) ?? []
         }
         model.focusBlockLists = focusTypes.compactMap { ft in
             guard let id = ft["id"] as? String, let name = ft["name"] as? String, !name.isEmpty else { return nil }

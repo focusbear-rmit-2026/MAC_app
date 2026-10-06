@@ -87,6 +87,8 @@ enum BlockListStyle {
 
 // MARK: - Screen
 
+private typealias SettingsUITestIdentifier = UITestContract.Identifier.SettingsRegression
+
 @available(macOS 11.0, *)
 /// Classifies a typed block-list entry as a URL or a keyword, matching the blocking engine's rule
 /// (`urlValidation.isUrlAlwaysBlocked`): a value with a dot and no whitespace is treated as a
@@ -143,6 +145,8 @@ struct BlockListView: View {
         // Draw hover tooltips at the root so they float above the clipped panel, not inside it (#2571).
         .fastTooltipLayer()
         .onAppear { InstalledApps.shared.load { self.installedApps = $0 } }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(UITestContract.Identifier.Blocking.blockListsEditor)
     }
 
     private func screen(_ metrics: BlockListLayout.Metrics) -> some View {
@@ -234,6 +238,7 @@ struct BlockListView: View {
                     .frame(height: BlockListStyle.controlHeight)
             }
             .buttonStyle(FBButtonStyle())
+            .accessibilityIdentifier(SettingsUITestIdentifier.blockListCreateButton)
             .background(BlockListStyle.primaryOrange)
             .overlay(
                 RoundedRectangle(cornerRadius: BlockListStyle.cardRadius)
@@ -271,6 +276,8 @@ struct BlockListView: View {
         }
         .pointingHandCursor()
         .accessibility(addTraits: isSelected ? .isSelected : [])
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(SettingsUITestIdentifier.blockListCardPrefix + summary.title)
     }
 
     /// The delete / duplicate / hide icon buttons shown on the selected card, mirroring the legacy
@@ -279,7 +286,8 @@ struct BlockListView: View {
         HStack(spacing: 8) {
             Spacer(minLength: 0)
             if summary.canDelete {
-                cardActionButton("trash", help: BlockListText.deleteBlockList) { onDelete(summary.index) }
+                cardActionButton("trash", help: BlockListText.deleteBlockList,
+                                 identifier: SettingsUITestIdentifier.blockListDeleteButton) { onDelete(summary.index) }
             }
             if summary.canDuplicate {
                 cardActionButton("plus.square.on.square", help: BlockListText.duplicateBlockList) {
@@ -297,6 +305,7 @@ struct BlockListView: View {
 
     private func cardActionButton(_ systemName: String,
                                   help: String,
+                                  identifier: String = "",
                                   action: @escaping () -> Void) -> some View {
         SwiftUI.Button(action: action) {
             Image(systemName: systemName)
@@ -311,6 +320,7 @@ struct BlockListView: View {
         .buttonStyle(FBButtonStyle())
         .fastTooltip(help)
         .accessibility(label: Text(help))
+        .accessibilityIdentifier(identifier)
     }
 
     private func cardContent(_ summary: BlockListSummary, isSelected: Bool) -> some View {
@@ -425,6 +435,7 @@ struct BlockListView: View {
                     .buttonStyle(FBButtonStyle())
                     .fastTooltip(BlockListText.renameBlockList)
                     .accessibility(label: Text(BlockListText.renameBlockList))
+                    .accessibilityIdentifier(SettingsUITestIdentifier.blockListRenameButton)
                 }
             }
 
@@ -450,6 +461,7 @@ struct BlockListView: View {
             .buttonStyle(FBButtonStyle())
             .fastTooltip(BlockListText.editBlockList)
             .accessibility(label: Text(BlockListText.editBlockList))
+            .accessibilityIdentifier(SettingsUITestIdentifier.blockListEditButton)
         }
     }
 
@@ -486,6 +498,7 @@ struct BlockListView: View {
                 .textFieldStyle(PlainTextFieldStyle())
                 .font(BlockListStyle.bodyFont)
                 .frame(maxWidth: .infinity)
+                .accessibilityIdentifier(SettingsUITestIdentifier.blockListSearchField)
         }
         .padding(.horizontal, 12)
         .frame(height: BlockListStyle.controlHeight)
@@ -527,6 +540,7 @@ struct BlockListView: View {
             eyebrow: isURL ? BlockListText.addUrlEyebrow : BlockListText.addKeywordEyebrow,
             title: isURL ? shown : "\u{201C}\(shown)\u{201D}",
             icon: .symbol(isURL ? "link" : "keyboard"),
+            identifier: SettingsUITestIdentifier.blockListAddWebsiteCard,
             action: { addWebsiteFromSearch(query) })
     }
 
@@ -543,11 +557,13 @@ struct BlockListView: View {
             addCard(eyebrow: BlockListText.addAppEyebrow,
                     title: InstalledApps.shared.distinctDisplayName(for: app) ?? app.name,
                     icon: .app(app),
+                    identifier: SettingsUITestIdentifier.blockListAddAppCard,
                     action: { addAppFromSearch(app) })
         } else {
             addCard(eyebrow: BlockListText.addAppManuallyEyebrow,
                     title: BlockListText.addAppManually,
                     icon: .emoji("🤔"),
+                    identifier: SettingsUITestIdentifier.blockListAddAppManuallyCard,
                     action: openAppPicker)
         }
     }
@@ -561,7 +577,7 @@ struct BlockListView: View {
 
     /// One quick-add card: leading icon, a small eyebrow label, the entry title, and a trailing arrow —
     /// the layout from the design. Tapping runs `action`.
-    private func addCard(eyebrow: String, title: String, icon: AddCardIcon,
+    private func addCard(eyebrow: String, title: String, icon: AddCardIcon, identifier: String,
                          action: @escaping () -> Void) -> some View {
         SwiftUI.Button(action: action) {
             HStack(spacing: 8) {
@@ -604,6 +620,7 @@ struct BlockListView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(FBButtonStyle())
+        .accessibilityIdentifier(identifier)
     }
 
     private func addWebsiteFromSearch(_ query: String) {
@@ -785,9 +802,12 @@ struct BlockListView: View {
             .frame(width: BlockListLayout.removeButtonWidth)
             .fastTooltip(BlockListText.removeEntry)
             .accessibility(label: Text(BlockListText.removeEntry))
+            .accessibilityIdentifier(SettingsUITestIdentifier.blockListRemoveEntryButton)
         }
         .frame(width: rowWidth, alignment: .leading)
         .padding(.vertical, BlockListStyle.rowSpacing)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(SettingsUITestIdentifier.blockListEntryPrefix + entry.value)
     }
 
     /// The category cell is the design's pill, made editable — it is how a user files an entry.
@@ -843,6 +863,7 @@ private struct InlineNameField: NSViewRepresentable {
         field.maximumNumberOfLines = 1
         field.delegate = context.coordinator
         field.cell?.sendsActionOnEndEditing = false
+        field.setAccessibilityIdentifier(SettingsUITestIdentifier.blockListNameField)
         // Focus and select all on the next runloop tick, once the field is in a window.
         DispatchQueue.main.async {
             guard field.window?.firstResponder !== field.currentEditor() else { return }

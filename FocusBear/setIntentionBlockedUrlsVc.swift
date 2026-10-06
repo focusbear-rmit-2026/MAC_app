@@ -59,6 +59,7 @@ class setIntentionBlockedUrlsVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.setUITestLandmark(UITestContract.Identifier.Blocking.intentionPrompt)
         
         btnAllow.title = "Allow"
         lblTitleSetIntention.stringValue = "What do you want to achieve during your time here?"

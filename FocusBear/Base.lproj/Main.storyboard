@@ -4122,7 +4122,7 @@ Feel free to write an explanation here:</string>
                                     <rect key="frame" x="0.0" y="0.0" width="1114" height="775"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <imageView horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="PJn-1b-1eq">
+                                        <imageView hidden="YES" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="PJn-1b-1eq">
                                             <rect key="frame" x="0.0" y="0.0" width="1114" height="775"/>
                                             <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="axesIndependently" id="G16-dN-vVp"/>
                                         </imageView>

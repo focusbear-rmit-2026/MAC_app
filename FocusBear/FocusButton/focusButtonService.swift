@@ -10,6 +10,36 @@
 import Foundation
 import ORSSerial
 
+/// Focus Button protocol lines carry the focus goal (`SET|START|1500|<goal>`), habit names
+/// (`SET|HABITS|<id>,<name>,<seconds>|…`) and Late No More notification text (`SET|NOTIFY|<text>`).
+/// The log keeps the verbs, numbers, ids and error codes, which is what debugging the device needs,
+/// and describes every other field with `LogPrivacy`.
+enum FocusButtonLogFormat {
+    static let fieldSeparator: Character = "|"
+    static let entrySeparator: Character = ","
+    /// Verbs, states and firmware versions (`SET`, `RUNNING`, `M50-1.5.0`), numbers, emoji code points
+    /// (`1f4de`, `1f9d1-200d-1f4bb`: hex with at least one digit) and snake_case error codes.
+    private static let protocolToken = try! NSRegularExpression(
+        pattern: #"^(?:[A-Z0-9_.:+\-]*|(?=[0-9a-f-]*[0-9])[0-9a-f]+(?:-[0-9a-f]+)*|[a-z]+(?:_[a-z]+)+)$"#)
+
+    static func describe(_ line: String) -> String {
+        let fields = line.split(separator: fieldSeparator, omittingEmptySubsequences: false)
+        // Only protocol lines (an upper-case verb first) carry user text; anything else is the
+        // firmware's own diagnostic prose.
+        guard let verb = fields.first, isProtocolToken(String(verb)), !verb.isEmpty else { return line }
+        return fields.map { field in
+            field.split(separator: entrySeparator, omittingEmptySubsequences: false)
+                .map { token in isProtocolToken(String(token)) ? String(token) : LogPrivacy.text(String(token)) }
+                .joined(separator: String(entrySeparator))
+        }.joined(separator: String(fieldSeparator))
+    }
+
+    private static func isProtocolToken(_ token: String) -> Bool {
+        LogPrivacy.isDescription(token)
+            || protocolToken.firstMatch(in: token, range: NSRange(token.startIndex..., in: token)) != nil
+    }
+}
+
 
 class focusButtonService: NSObject {
     
@@ -160,6 +190,8 @@ class focusButtonService: NSObject {
     // MARK: - Public Methods
     
     func start() -> Bool {
+        // The device on the desk belongs to the person's own app, not a UI-test app.
+        if UITestHost.isEnabled { return false }
         log("FocusButton: Start()")
         userRequestedStayDisconnected = false   // an explicit start/connect clears a prior manual disconnect
         startReconnectMonitor()   // keep trying in the background even if this attempt finds no port
@@ -199,6 +231,7 @@ class focusButtonService: NSObject {
     /// More device countdowns and habit signals (they only send when connected). Idempotent; the tick
     /// is a cheap no-op while connected/connecting.
     func startReconnectMonitor() {
+        if UITestHost.isEnabled { return }
         DispatchQueue.main.async { [weak self] in
             guard let self = self, self.reconnectPollTimer == nil else { return }
             self.log("FocusButton: reconnect monitor armed (every \(Int(self.reconnectPollInterval))s)")
@@ -291,7 +324,7 @@ class focusButtonService: NSObject {
 
     func updateFocusGoal(goal: String) {
         guard isRunning, serialPort?.isOpen == true else { return }
-        log("FocusButton: UpdateFocusGoal() - \(goal)")
+        log("FocusButton: UpdateFocusGoal() - \(LogPrivacy.text(goal))")
         let sanitized = sanitizeForCommand(goal)
         sendCmd("SET|GOAL|\(sanitized)")
     }
@@ -439,7 +472,7 @@ class focusButtonService: NSObject {
     }
     
     func sendHabits(habits: [(id: String, name: String, durationSeconds: Int)]) {
-        log("FocusButton: sendHabits(): \(habits)")
+        log("FocusButton: sendHabits(): \(habits.count) habits")
         if habits.isEmpty {
             log("FocusButton: !! No habits to send.")
             return
@@ -497,7 +530,7 @@ class focusButtonService: NSObject {
     func showNotification(text: String, countdownSeconds: Int = 120) {
         let sanitized = sanitizeForCommand(text)
         guard !sanitized.isEmpty else { return }
-        log("FocusButton: showNotification() - \(sanitized) (\(countdownSeconds)s)")
+        log("FocusButton: showNotification() - \(LogPrivacy.text(sanitized)) (\(countdownSeconds)s)")
         // A Late No More notification takes over the device screen (firmware saves the prior state).
         // Mark it so the focus resync pauses — otherwise its periodic SET|START would switch the
         // device back to the focus countdown and the notification would never stick.
@@ -888,7 +921,7 @@ class focusButtonService: NSObject {
         }
         
         let command = cmd + "\n"
-        log("FocusButton: SendCmd >> \(cmd)")
+        log("FocusButton: SendCmd >> \(FocusButtonLogFormat.describe(cmd))")
         
         // ORSSerialPort can block while the USB device is wedged. Never perform this write on
         // the main thread: the response timer and UI must remain responsive while the queue
@@ -906,7 +939,7 @@ class focusButtonService: NSObject {
         guard pendingResponse else { return }
         pendingResponse = false
         
-        log("FocusButton: ?? No response to '\(lastSentCmd)' — querying STATUS")
+        log("FocusButton: ?? No response to '\(FocusButtonLogFormat.describe(lastSentCmd))' — querying STATUS")
         
         if let port = serialPort, port.isOpen {
             sendCmd("STATUS")
@@ -944,7 +977,7 @@ class focusButtonService: NSObject {
         responseCheckTimer?.invalidate()
         
         let line = stripTimestamp(from: raw)
-        log("FocusButton: HandleLine << \(line)")
+        log("FocusButton: HandleLine << \(FocusButtonLogFormat.describe(line))")
         
         let parts = line.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
         guard parts.count > 0 else { return }

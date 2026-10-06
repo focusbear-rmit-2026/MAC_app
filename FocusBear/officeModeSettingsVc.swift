@@ -155,6 +155,7 @@ class officeModeSettingsVc: NSViewController {
         rOffice.font = getRegularFont(size: 13)
         view.addSubview(rOffice)
         radioOffice = rOffice
+        rOffice.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.officeModeRadio)
 
         let rWFH = NSButton(radioButtonWithTitle: wfhModeOptionText, target: self,
                             action: #selector(modeRadioChanged(_:)))
@@ -162,6 +163,7 @@ class officeModeSettingsVc: NSViewController {
         rWFH.font = getRegularFont(size: 13)
         view.addSubview(rWFH)
         radioWFH = rWFH
+        rWFH.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.workFromHomeRadio)
 
         // ── Auto-switch sub-section header ────────────────────────────────────
         let autoHeader = NSTextField(labelWithString: autoSwitchSectionTitle)
@@ -202,6 +204,8 @@ class officeModeSettingsVc: NSViewController {
         colProfile.minWidth = 80
         tv.addTableColumn(colProfile)
         tv.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
+        // The auto-switch header above the table is the only text that says what it lists.
+        tv.setAccessibilityLabel(autoSwitchSectionTitle)
         scrollView.documentView = tv
         view.addSubview(scrollView)
         tableView = tv
@@ -367,6 +371,7 @@ class officeModeSettingsVc: NSViewController {
         alert.messageText = text
         alert.addButton(withTitle: firstBtn)
         alert.addButton(withTitle: secondBtn)
+        alert.buttons.last?.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.officeModeDeclineButton)
         NSApplication.shared.activate(ignoringOtherApps: true)
         guard let window = self.view.window else { refreshModeSelection(); return }
         alert.beginSheetModal(for: window) { [weak self] result in

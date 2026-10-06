@@ -52,6 +52,7 @@ struct FocusMusicView: View {
                     Text(volumeLabelText)
                     Slider(value: Binding(get: { Double(model.volume) }, set: { model.setVolume(Float($0)) }), in: 0...1)
                         .frame(maxWidth: 220)
+                        .accessibilityLabel(volumeLabelText)
                 }
 
                 if !model.spotifyTracks.isEmpty {
@@ -67,6 +68,7 @@ struct FocusMusicView: View {
                 } else {
                     SwiftUI.Button(addOwnMusicButtonText) { showAddOwnMusic = true }
                         .pointingHandCursor()
+                        .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.musicAddOwnButton)
                 }
 
                 librarySection
@@ -87,12 +89,16 @@ struct FocusMusicView: View {
                 nowPlayingArtwork(for: info.source)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(info.title).font(.headline).lineLimit(1)
+                        // On the title, not the section: a container's identifier would replace its buttons' own.
+                        .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.musicNowPlaying)
                     Text(info.subtitle).font(.caption).foregroundColor(.secondary).lineLimit(1)
                 }
                 Spacer()
                 SwiftUI.Button(action: { stop(info.source) }) {
                     Image(systemName: "stop.circle.fill").font(.system(size: 20))
                 }.buttonStyle(FBButtonStyle())
+                .accessibilityLabel(FocusMusicAccessibilityText.stop(info.title))
+                .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.musicNowPlayingStopButton)
             }
         }
         .padding(10)
@@ -109,6 +115,7 @@ struct FocusMusicView: View {
             }
         case .spotify:
             Image(systemName: "music.note").font(.system(size: 18)).frame(width: 32, height: 32)
+                .accessibilityHidden(true)
         case .youtube:
             // The actual (tiny, non-watchable-sized) video player lives here — it must only ever be
             // instantiated once, so it moved out of the YouTube track list below when playing.
@@ -155,11 +162,13 @@ struct FocusMusicView: View {
                     SwiftUI.Button(action: { model.toggleSpotifyTrack(track) }) {
                         Image(systemName: isPlaying ? "stop.circle.fill" : "play.circle.fill")
                     }.buttonStyle(FBButtonStyle())
+                    .accessibilityLabel(FocusMusicAccessibilityText.playOrStop(track.name, isPlaying: isPlaying))
                     Text(track.name).lineLimit(1).font(.body.weight(isPlaying ? .semibold : .regular))
                     Spacer()
                     SwiftUI.Button(action: { model.removeSpotifyTrack(track) }) {
                         Image(systemName: "trash")
                     }.buttonStyle(FBButtonStyle())
+                    .accessibilityLabel(FocusMusicAccessibilityText.remove(track.name))
                 }
                 .padding(.vertical, 3).padding(.horizontal, 5)
                 .background(isPlaying ? Color.accentColor.opacity(0.12) : Color.clear)
@@ -178,12 +187,15 @@ struct FocusMusicView: View {
                 // change stole focus). Adding is the Add button's job only. (.onSubmit is macOS 12+.)
                 TextField(spotifyPlaceholder, text: $model.spotifyUrlInput)
                     .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.musicSpotifyField)
                 SwiftUI.Button(addButtonText, action: model.addSpotifyTrack)
                     .pointingHandCursor()
+                    .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.musicSpotifyAddButton)
                     .disabled(model.spotifyUrlInput.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             if let error = model.spotifyError {
                 Text(error).font(.caption).foregroundColor(.red)
+                    .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.musicSpotifyError)
             }
         }
     }
@@ -199,6 +211,7 @@ struct FocusMusicView: View {
                     SwiftUI.Button(action: { model.toggleYouTubeTrack(track) }) {
                         Image(systemName: isPlaying ? "stop.circle.fill" : "play.circle.fill")
                     }.buttonStyle(FBButtonStyle())
+                    .accessibilityLabel(FocusMusicAccessibilityText.playOrStop(track.name, isPlaying: isPlaying))
                     VStack(alignment: .leading, spacing: 1) {
                         Text(track.name).lineLimit(1).font(.body.weight(isPlaying ? .semibold : .regular))
                         // Show the pasted link too, so the source is identifiable even when the title is
@@ -210,6 +223,7 @@ struct FocusMusicView: View {
                     SwiftUI.Button(action: { model.removeYouTubeTrack(track) }) {
                         Image(systemName: "trash")
                     }.buttonStyle(FBButtonStyle())
+                    .accessibilityLabel(FocusMusicAccessibilityText.remove(track.name))
                 }
                 .padding(.vertical, 3).padding(.horizontal, 5)
                 .background(isPlaying ? Color.accentColor.opacity(0.12) : Color.clear)
@@ -228,12 +242,15 @@ struct FocusMusicView: View {
                 // See addSpotifySection: no commit handler — the Add button is the only way to add.
                 TextField(youtubePlaceholder, text: $model.youtubeUrlInput)
                     .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.musicYouTubeField)
                 SwiftUI.Button(addButtonText, action: model.addYouTubeTrack)
                     .pointingHandCursor()
+                    .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.musicYouTubeAddButton)
                     .disabled(model.youtubeUrlInput.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             if let error = model.youtubeError {
                 Text(error).font(.caption).foregroundColor(.red)
+                    .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.musicYouTubeError)
             }
         }
     }
@@ -252,13 +269,44 @@ struct FocusMusicView: View {
     }
 }
 
+/// VoiceOver names for the per-track icon buttons. Each carries the track's name: a column of
+/// identical icons was read as a run of "Arrow Down Circle"s, with nothing to say which track each fetches.
+private enum FocusMusicAccessibilityText {
+    private static let configBlockKey = "focusMusicInfo"
+
+    private static let downloadKey = "a11yDownloadTrack"
+    private static let playKey = "a11yPlayTrack"
+    private static let stopKey = "a11yStopTrack"
+    private static let removeKey = "a11yRemoveTrack"
+
+    private static let downloadFallback = "Download %@"   // i18n-ignore: last-resort default; the real string comes from config
+    private static let playFallback = "Play %@"   // i18n-ignore: last-resort default; the real string comes from config
+    private static let stopFallback = "Stop %@"   // i18n-ignore: last-resort default; the real string comes from config
+    private static let removeFallback = "Remove %@"   // i18n-ignore: last-resort default; the real string comes from config
+
+    static func download(_ trackName: String) -> String { label(downloadKey, downloadFallback, trackName) }
+    static func stop(_ trackName: String) -> String { label(stopKey, stopFallback, trackName) }
+    static func remove(_ trackName: String) -> String { label(removeKey, removeFallback, trackName) }
+
+    static func playOrStop(_ trackName: String, isPlaying: Bool) -> String {
+        isPlaying ? stop(trackName) : label(playKey, playFallback, trackName)
+    }
+
+    private static func label(_ key: String, _ fallback: String, _ trackName: String) -> String {
+        let info = configjson.value(forKey: configBlockKey) as? NSDictionary
+        let configured = info?.value(forKey: key) as? String ?? ""
+        return String(format: configured.isEmpty ? fallback : configured, trackName)
+    }
+}
+
 private struct LocalTrackRow: View {
     let track: LocalTrackDisplay
     @SwiftUI.ObservedObject var model: FocusMusicViewModel
 
     var body: some View {
         HStack(spacing: 10) {
-            thumbnail
+            // The track's name sits right beside it, so the artwork adds nothing for VoiceOver.
+            thumbnail.accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(track.name).lineLimit(1).font(.body.weight(track.isPlaying ? .semibold : .regular))
                 if !track.subtitle.isEmpty {
@@ -275,11 +323,15 @@ private struct LocalTrackRow: View {
                 SwiftUI.Button(action: { model.downloadTrack(atIndex: track.index) }) {
                     Image(systemName: "arrow.down.circle")
                 }.buttonStyle(FBButtonStyle())
+                .accessibilityLabel(FocusMusicAccessibilityText.download(track.name))
+                .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.musicTrackDownloadPrefix + "\(track.index)")
             }
             if track.isFileDownloaded {
                 SwiftUI.Button(action: { model.toggleLocalTrack(atIndex: track.index) }) {
                     Image(systemName: track.isPlaying ? "stop.circle.fill" : "play.circle.fill")
                 }.buttonStyle(FBButtonStyle())
+                .accessibilityLabel(FocusMusicAccessibilityText.playOrStop(track.name, isPlaying: track.isPlaying))
+                .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.musicTrackPlayPrefix + "\(track.index)")
             }
         }
         .padding(.vertical, 4).padding(.horizontal, 5)
@@ -310,6 +362,9 @@ struct AnimatedGIFView: NSViewRepresentable {
         imageView.image = image
         imageView.animates = true
         imageView.imageScaling = .scaleProportionallyUpOrDown
+        // Only ever the "now playing" wave beside a named track and its Stop button — decoration.
+        imageView.setAccessibilityElement(false)
+        imageView.cell?.setAccessibilityElement(false)
         // The GIF's natural size is much larger than the 32pt slot it's shown in. Hug tightly and
         // allow compression so the caller's .frame() wins, instead of the intrinsic size inflating it.
         imageView.setContentHuggingPriority(.defaultHigh, for: .horizontal)

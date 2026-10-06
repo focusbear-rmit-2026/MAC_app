@@ -26,9 +26,14 @@ private let focusBearTeamIdentifier = "TCUD568B3U" // i18n-ignore: Apple team id
 let fbSharedDefaultsSuiteName: String = {
     let team = (Bundle.main.object(forInfoDictionaryKey: "FBTeamIdentifierPrefix") as? String)
         .flatMap { $0.isEmpty ? nil : $0 } ?? focusBearTeamIdentifier
-    // The test bundle also needs a separate helper suite before the app delegate initializes it.
+    let productionSuite = "\(team).group.com.focusbear.fbmac"
+    // Both test hosts must isolate the helper suite before the app delegate initializes it: a
+    // UI-test build would otherwise read and write the installed app's suite.
+    if UITestHost.hasIsolatedBundleIdentifier {
+        return productionSuite + UITestContract.bundleIdentifierSuffix
+    }
     return LogicTestHost.sharedDefaultsSuiteName(
-        productionSuiteName: "\(team).group.com.focusbear.fbmac", bundleIdentifier: Bundle.main.bundleIdentifier)
+        productionSuiteName: productionSuite, bundleIdentifier: Bundle.main.bundleIdentifier)
 }()
 
 /// Recursively strip anything that is not a property-list type so a value is always safe to hand
@@ -325,7 +330,7 @@ func offlineActivityLocalDayKey(_ timestampUtc: String) -> String? {
 /// yet. Folding these in keeps the Day Plan correct for offline completions until they sync.
 func offlineCompletedHabitIds() -> Set<String> {
     guard let url = offlineActivitiesCsvURL,
-          let content = try? String(contentsOf: url, encoding: .utf8) else { return [] }
+          let content = try? SecureFiles.shared.readText(url) else { return [] }
     // CSV: activity_id,duration_logged,device_id,activity_sequence_id,start_time,finish_time,…
     let today = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd")
     var ids = Set<String>()
@@ -1083,7 +1088,7 @@ func getSystemTimeFormat()->String{
     return timeFormat
 }
 
-/// One configured `DateFormatter` per format and time zone, shared by the helpers below.
+/// One configured `DateFormatter` per format, time zone and style, shared by the helpers below.
 ///
 /// Building a `DateFormatter` loads ICU calendar and locale data, and these helpers run per habit on
 /// every Day Plan rebuild, on the main thread (`DayPlanHabitSkips.dayKey`,
@@ -1099,9 +1104,17 @@ enum CachedDateFormatters {
         case utc
     }
 
+    enum Style: Hashable {
+        /// Gregorian calendar, POSIX locale: anything a machine reads (see `MachineDateFormat`).
+        case machine
+        /// The user's own calendar and locale: text a person reads.
+        case display
+    }
+
     private struct Key: Hashable {
         let format: String
         let zone: Zone
+        let style: Style
     }
 
     private static let lock = NSLock()
@@ -1118,13 +1131,13 @@ enum CachedDateFormatters {
         NotificationCenter.default.addObserver(forName: $0, object: nil, queue: nil) { _ in removeAll() }
     }
 
-    static func formatter(format: String, zone: Zone) -> DateFormatter {
+    static func formatter(format: String, zone: Zone, style: Style = .machine) -> DateFormatter {
         _ = invalidationObservers
-        let key = Key(format: format, zone: zone)
+        let key = Key(format: format, zone: zone, style: style)
         if let cached = cachedFormatter(for: key) { return cached }
         // Built outside the lock: the lock is not re-entrant, and the invalidation observers take it
         // on whichever thread posts the time-zone/locale notification.
-        return store(makeFormatter(format: format, zone: zone), for: key)
+        return store(makeFormatter(format: format, zone: zone, style: style), for: key)
     }
 
     static func removeAll() {
@@ -1146,6 +1159,16 @@ enum CachedDateFormatters {
         if let stored = formatters[key] { return stored }
         formatters[key] = formatter
         return formatter
+    }
+
+    /// `makeFormatter(format:zone:)` builds the user-calendar formatter and owns the zone rules; a
+    /// machine formatter takes its time zone from that and pins everything else.
+    private static func makeFormatter(format: String, zone: Zone, style: Style) -> DateFormatter {
+        let display = makeFormatter(format: format, zone: zone)
+        switch style {
+        case .display: return display
+        case .machine: return MachineDateFormat.formatter(format, timeZone: display.timeZone)
+        }
     }
 
     private static func makeFormatter(format: String, zone: Zone) -> DateFormatter {
@@ -1172,12 +1195,15 @@ func getDateFromStringInUtc(date:String, dateFormat:String)->Date?{
     CachedDateFormatters.formatter(format: dateFormat, zone: .utc).date(from: date)
 }
 
+/// Local time in the user's own calendar and locale, for labels — never for the API or storage, which
+/// take the Gregorian `getStringFromDate`.
+func getDisplayStringFromDate(date: Date, dateFormat: String) -> String {
+    CachedDateFormatters.formatter(format: dateFormat, zone: .local, style: .display).string(from: date)
+}
+
 func getFirstRunDateString()->String{
     let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? Date()
-    let formatter = DateFormatter()
-    formatter.dateFormat = "yyyy-MM-dd"
-    let myDateString = formatter.string(from: firstRunDate)
-    return myDateString
+    return MachineDateFormat.string(from: firstRunDate, format: MachineDateFormat.dayKey)
 }
 func getDaysSinceAppInstalled()->Int{
     let currentDate = Date()
@@ -1198,8 +1224,9 @@ let isRunningInCIOrAutomatedTest: Bool = {
                 "XCTestConfigurationFilePath", "XCTestSessionIdentifier"] {
         if let value = env[key], !value.isEmpty { return true }
     }
-    // A unit/UI-test bundle injects XCTest into the running process.
-    return NSClassFromString("XCTestCase") != nil
+    // A unit/UI-test bundle injects XCTest into the running process. A UI-test app does not: the
+    // runner drives it from outside, so it is recognised by its isolated bundle id instead.
+    return NSClassFromString("XCTestCase") != nil || UITestHost.isEnabled
 }()
 
 func isAppInstalledWithinLast3Days() -> Bool {
@@ -1751,6 +1778,69 @@ enum HelperLaunchAgent {
     }
 }
 
+/// The app launched by the XCUITest suite (`Focus BearUITests`).
+///
+/// The suite runs on a developer's own Mac and on a CI Mac. Launched under the shipping bundle id, the
+/// test app would share the installed app's keychain item, preferences, shared-defaults suite, TCC
+/// grants and running instance: XCTest terminates the person's app, the tests log it out, and
+/// enforcement from the test app hides the person's apps and closes their tabs. So UI tests build the
+/// app as `com.App.EarnYourScreentime.uitests` (see docs/ui-tests.md), which isolates all of that, and
+/// a build carrying that id additionally keeps its hands off the rest of the machine: no permission
+/// prompts, no helper LaunchAgent, no updater, no Focus Button, no telemetry, no global shortcuts —
+/// and, unless the blocking tests opt in (`isBlockingEnabled`), no enforcement or AppleScript either.
+enum UITestHost {
+    static var hasIsolatedBundleIdentifier: Bool {
+        Bundle.main.bundleIdentifier == UITestContract.bundleIdentifier
+    }
+
+    /// Debug builds with the isolated id only. Deliberately not tied to the launch argument: a stray
+    /// launch of the test build must not start enforcing either.
+    static var isEnabled: Bool {
+        #if DEBUG
+        return hasIsolatedBundleIdentifier
+        #else
+        return false
+        #endif
+    }
+
+    /// The blocking tests' opt-in: enforce blocking even though this is the test build. Only ever set
+    /// by the CI workflow on the dedicated UI-test Mac, where hiding apps and redirecting browser tabs
+    /// is the point. The flag is honoured only under the isolated bundle id, so it can never change
+    /// what the installed app does.
+    static var isBlockingEnabled: Bool {
+        isEnabled && ProcessInfo.processInfo.environment[UITestContract.Environment.enableBlocking] == UITestContract.Environment.enabledValue
+    }
+
+    /// The test build is running and has not opted in to blocking: leave other apps and browsers alone.
+    static var suppressesEnforcement: Bool { isEnabled && !isBlockingEnabled }
+
+    static func has(_ argument: String) -> Bool { ProcessInfo.processInfo.arguments.contains(argument) }
+
+    /// A UI test driving the SHIPPING bundle id would run against the person's own login and data.
+    /// Quit before touching any of it; the suite then fails with the reason in the log.
+    static func refuseUnisolatedLaunch() {
+        if ProcessInfo.processInfo.environment[UITestContract.Environment.enableBlocking] != nil, !isEnabled {
+            NSLog("UITestHost: ignoring %@ — it applies only to the isolated UI-test build",
+                  UITestContract.Environment.enableBlocking)
+        }
+        guard has(UITestContract.LaunchArgument.uiTest), !hasIsolatedBundleIdentifier else { return }
+        NSLog("UITestHost: refusing a UI-test launch under %@ — build with FB_BUNDLE_ID_SUFFIX=%@ (docs/ui-tests.md)",
+              Bundle.main.bundleIdentifier ?? "?", UITestContract.bundleIdentifierSuffix)
+        exit(EXIT_FAILURE)
+    }
+}
+
+extension NSView {
+    /// Makes this view a named group a UI test can find, with its children still reachable inside it.
+    /// Test builds only: to VoiceOver it is one more unnamed group to step through.
+    func setUITestLandmark(_ identifier: String) {
+        guard UITestHost.isEnabled else { return }
+        setAccessibilityElement(true)
+        setAccessibilityRole(.group)
+        setAccessibilityIdentifier(identifier)
+    }
+}
+
 /// A throwaway launch that renders a PNG offscreen and quits: `scripts/mockups/render-mockup.sh`
 /// (DayPlanMockup) or the SwiftUI menu snapshot (MenuSnapshot). Debug builds only.
 enum OffscreenRenderLaunch {
@@ -1776,7 +1866,7 @@ func createLaunchAgentForHelperApp(){
     // render launched from build/ repointed the user's helper at that dev build — which then launched
     // it, and the installed app lost its bundle id (keychain prompt, accessibility=false). A launch
     // that exists only to draw a PNG must not register anything.
-    guard !OffscreenRenderLaunch.isActive else { return }
+    guard !OffscreenRenderLaunch.isActive, !UITestHost.isEnabled else { return }
     //Background process "open" modified when Focus Bear opened?  #409 It shouldn't appear every time the app is restarted
     let helperBundleID = HelperLaunchAgent.label
     let userLaunchAgentsPath = "/Users/\(NSUserName())/Library/LaunchAgents/\(helperBundleID).plist"
@@ -1910,6 +2000,8 @@ func getBlurFrameForBrowser(x:Int, y:Int, width:Int, height:Int, browser:BROWSER
 
 
 func runAppleScriptFile(path:String){
+    // A focus mode's own scripts act on the whole Mac; UI-test builds must not run them there.
+    if UITestHost.isEnabled { return }
     let task = Process()
     task.launchPath = "/usr/bin/osascript"
     task.arguments = [path]
@@ -1918,6 +2010,8 @@ func runAppleScriptFile(path:String){
 }
 
 func runShellCommand(command:String){
+    // A focus mode's own scripts act on the whole Mac; UI-test builds must not run them there.
+    if UITestHost.isEnabled { return }
     let task = Process()
     var args: [AnyHashable] = []
     args.append("-c")
@@ -2042,7 +2136,7 @@ func workAfterFocusBegin(index:Int){
 //*****************************Read data from csv******************************//
 func readDataFromCSV(url:URL)-> [[String]]{
     var arrItems = [[String]]()
-    if let string = try? String(contentsOf: url){
+    if let string = try? SecureFiles.shared.readText(url){
         let arrCsv = csv(data: string)
         for item in arrCsv{
             if let row = item.first{
@@ -2489,7 +2583,8 @@ func checkLogFileRotation(){
 
 func isAccessibilityEnabled(isPrompt: Bool) -> Bool {// if  isPrompt is true it means setting prompt will be visible
     if #available(OSX 12.0, *) {
-        if isPrompt{
+        // A UI-test app never raises the system prompt: nobody is there to answer it.
+        if isPrompt, !UITestHost.isEnabled {
             let checkOptionPromptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
             let opts = [checkOptionPromptKey: isPrompt] as CFDictionary
             return AXIsProcessTrustedWithOptions(opts)
@@ -2857,6 +2952,8 @@ private func installMainThreadAppleScriptBudgetResetIfNeeded() {
 /// wedge the queue or block the caller indefinitely.
 @discardableResult
 func runAppleScriptSafely(_ source: String, timeoutSeconds: Int = 5, errors: inout NSDictionary?, authorization: @escaping () -> Bool = { true }) -> NSAppleEventDescriptor? {
+    // A UI-test app must not script the machine's browsers or apps (and would raise Automation prompts).
+    if UITestHost.suppressesEnforcement { return nil }
     // The script runs on `appleScriptSerialQueue`, but the semaphore wait below blocks the *caller*.
     // On the MAIN thread that means a frozen UI, so cap the main-thread wait hard: browser/URL and
     // focus-timer scripts return in well under 100 ms normally, and only a hung target app would ever
@@ -3582,7 +3679,7 @@ func shouldAskPassword(forPostpone:Bool = false)->Bool{
             }
         }
     }
-    if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+    if SettingsManagerObject.isAppPasswordSet{
         if bypassGrace{
             return true
         }
@@ -3606,7 +3703,7 @@ func isPasswordRequireInOpenSettings() -> Bool{
             return false
         }
     }
-    if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+    if SettingsManagerObject.isAppPasswordSet{
         if let lastAppUnlockTime = lastAppUnlockTime{
             let diffSeconds = Calendar.current.dateComponents([.second], from: lastAppUnlockTime, to: Date()).second ?? 0
             if diffSeconds > 120{
@@ -3649,7 +3746,7 @@ func isPasswordRequireInShortenHabit() -> Bool {
     }
     let unlockedByBuddy = lastUnlockTimeByAccountabilityBuddy.map { Date() < $0 } ?? false
     return ShortenHabitPasswordPolicy.requiresPassword(
-        isPasswordSet: UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil,
+        isPasswordSet: SettingsManagerObject.isAppPasswordSet,
         isWithinUnlockGrace: withinUnlockGrace,
         isUnlockedByAccountabilityBuddy: unlockedByBuddy,
         isShortenRuleOn: SettingsManagerObject.isPasswordRequireInShortenHabits)

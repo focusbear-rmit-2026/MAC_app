@@ -325,7 +325,8 @@ final class claudeTitleReader {
         guard let windowFrame = Self.frame(of: window) else { return nil }
         let picked = ChatTitlePicker.pickPlaced(from: texts, windowFrame: windowFrame)
         // The frame is what tells a real header from a hidden hint, so it is logged with the pick.
-        addLog(text: "claude chat title: '\(picked?.text ?? "")' frame=\(picked.map { NSStringFromRect($0.frame) } ?? "none") of \(texts.count) texts")
+        addLog(text: "claude chat title: \(LogPrivacy.text(picked?.text)) frame=\(picked.map { NSStringFromRect($0.frame) } ?? "none") of \(texts.count) texts")
+        BrowsingHistory.shared.record(.seen, title: picked?.text, app: chatTitleAppName, reason: BrowsingReason.claudeChatTitle)
         return picked?.text
     }
 }

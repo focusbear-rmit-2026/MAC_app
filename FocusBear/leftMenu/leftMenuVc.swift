@@ -195,6 +195,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         
         boxBrowsersTabAudit.imageIcon = NSImage(named: "NSTouchBarOpenInBrowserTemplate")
         boxBrowsersTabAudit.title = "Tab Audit"
+        boxBrowsersTabAudit.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.tabAuditMenuItem)
         boxBrowsersTabAudit.imageView?.contentTintColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
         
         boxFocusMusic.imageIcon = NSImage(named: "music_albums_fill")
@@ -314,6 +315,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxHabits.delegate = self
         boxCustomRoutine.delegate = self
         boxUpgradeNow.delegate = self
+        setUITestIdentifiers()
         
         if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
             boxToolsItems.title = leftMenuVcInfo.value(forKey: "titleTools") as? String ?? boxToolsItems.title
@@ -487,6 +489,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxFocusButtonTool = focusBtn
         boxTimeTrackerTool = timeTracker
         boxLateNoMoreTool = lateNoMore
+        timeTracker.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.timeTrackerMenuItem)
+        lateNoMore.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.lateNoMoreMenuItem)
 
         let addOnHideableTools: [(mainWindowListBox, ToolID)] = [
             (focusBtn, .focusButton), (timeTracker, .timeTracker), (lateNoMore, .lateNoMore)
@@ -503,12 +507,20 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         stack.insertArrangedSubview(focusBtn, at: after + 1)
         stack.insertArrangedSubview(timeTracker, at: after + 2)
         stack.insertArrangedSubview(lateNoMore, at: after + 3)
+        matchSubviewOrderToArrangement(of: stack)
         for box in [focusBtn, timeTracker, lateNoMore] {
             box.heightAnchor.constraint(equalToConstant: 32).isActive = true
             // Pin leading/trailing to an existing item so the row lines up exactly with it.
             box.leadingAnchor.constraint(equalTo: boxMotivation.leadingAnchor).isActive = true
             box.trailingAnchor.constraint(equalTo: boxMotivation.trailingAnchor).isActive = true
         }
+    }
+
+    /// A stack view adds inserted rows to the END of its subviews, and VoiceOver reads subviews in
+    /// order — so these rows were read after "Upgrade Now", at the bottom of the menu.
+    private func matchSubviewOrderToArrangement(of stack: NSStackView) {
+        let arranged = stack.arrangedSubviews
+        stack.subviews = arranged + stack.subviews.filter { !arranged.contains($0) }
     }
 
     /// Make the menu scroll when its items are taller than the window (the document view already grows
@@ -620,6 +632,10 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     }
 
     func selectableListBoxDidChangeSelectionByUser(_ box: mainWindowListBox) {
+        defer {
+            mainViewControllerObj?.namePageForVoiceOver(box.spokenTitle)
+            mainViewControllerObj?.markContentForUITests(shownBy: box.accessibilityIdentifier())
+        }
         if box == boxFocusButtonTool { mainViewControllerObj?.showFocusButtonToolView(); return }
         if box == boxTimeTrackerTool { mainViewControllerObj?.showTimeTrackerToolView(); return }
         if box == boxLateNoMoreTool { mainViewControllerObj?.showLateNoMoreToolView(); return }
@@ -1109,6 +1125,26 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     }
     
     
+    /// Language-independent handles for the UI tests (the titles come from translated config).
+    private func setUITestIdentifiers() {
+        let identifiers: [(mainWindowListBox, String)] = [
+            (boxHabits, UITestContract.Identifier.Menu.dayPlan),
+            (boxFocusSession, UITestContract.Identifier.Menu.focusSession),
+            (boxTodoPlayer, UITestContract.Identifier.Menu.todo),
+            (boxSettings, UITestContract.Identifier.Menu.settings),
+            (boxBlocks, UITestContract.Identifier.Menu.blocks),
+            (boxHelpAndSupport, UITestContract.Identifier.Menu.help),
+            (boxBrainDump, UITestContract.Identifier.Tools.notes),
+            (boxMotivation, UITestContract.Identifier.Tools.stats),
+            (boxFocusMusic, UITestContract.Identifier.Tools.focusMusic),
+            (boxEditHabits, UITestContract.Identifier.Tools.editHabits),
+        ]
+        for (box, identifier) in identifiers { box.setAccessibilityIdentifier(identifier) }
+        boxFocusButtonTool?.setAccessibilityIdentifier(UITestContract.Identifier.Tools.focusButton)
+        boxToolsItems.setAccessibilityIdentifier(UITestContract.Identifier.Tools.section)
+        boxPreferences.setAccessibilityIdentifier(UITestContract.Identifier.Tools.preferencesSection)
+    }
+
     func showHabitsView(){
         boxHabits.isSelected = true
         mainViewControllerObj?.showHabitsView()

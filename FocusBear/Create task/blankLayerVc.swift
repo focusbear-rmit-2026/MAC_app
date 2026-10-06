@@ -98,6 +98,9 @@ var leadingStatusBarBox:CGFloat = 8
 
 
 class draggableView:NSView{
+    /// The due date shown while dragging; a label, so it keeps the user's calendar and digits.
+    private static let dueDateLabelFormat = "yyyy-MM-dd"
+
     var isMouseDown = false
     var isMouseDraged = false
     var mouseDownLocation:NSPoint?
@@ -200,7 +203,7 @@ class draggableView:NSView{
         }
         let currentDate = Date()
         lastDate = currentDate.addingTimeInterval(TimeInterval(duration))
-        blankLayerVcObj?.lblDuration.stringValue = getStringFromDate(date: lastDate, dateFormat: "yyyy-MM-dd")
+        blankLayerVcObj?.lblDuration.stringValue = getDisplayStringFromDate(date: lastDate, dateFormat: Self.dueDateLabelFormat)
         let morningTime = Calendar.current.date(bySettingHour: 0, minute: 0, second: 0, of: currentDate) ?? currentDate
         let diffDays = Calendar.current.dateComponents([.day], from: morningTime, to: lastDate).day ?? 0
         if diffDays == 1{

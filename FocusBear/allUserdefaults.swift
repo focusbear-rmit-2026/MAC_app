@@ -94,7 +94,9 @@ var kUserdefaultsEditBlockedUrlsOnce = "kUserdefaultsEditBlockedUrlsOnce"
 var kUserdefaultsShutOffCancelledForEveningRoutine = "kUserdefaultsShutOffCancelledForEveningRoutine"
 var kUserdefaultsLastFocusSavedIntention = "kUserdefaultsLastFocusSavedIntention"
 
-var kUserdefaultsAllFocusModesTags = "kUserdefaultsAllFocusModesTags"
+/// The unsuffixed key: sign-in appends the user id to `kUserdefaultsAllFocusModesTags` (SecureStore registers the base).
+let kUserdefaultsAllFocusModesTagsBase = "kUserdefaultsAllFocusModesTags"
+var kUserdefaultsAllFocusModesTags = kUserdefaultsAllFocusModesTagsBase
 var kUserdefaultsIsAppEnabled = "kUserdefaultsIsAppEnabled"
 var kUserdefaultsLastAppAbortedDate = "kUserdefaultsLastAppAbortedDate"
 var kUserdefaultsLastFocusModeDoneDate = "kUserdefaultsLastFocusModeDoneDate"
@@ -128,7 +130,9 @@ var kUserdefaultsBlockedAppsFromOnboarding = "kUserdefaultsBlockedAppsFromOnboar
 
 //var kUserdefaultsSelectedFolder = "kUserdefaultsSelectedFolder"
 
-var kUserdefaultsArrFocusTypes = "kUserdefaultsArrFocusTypes"
+/// The unsuffixed key: sign-in appends the user id to `kUserdefaultsArrFocusTypes` (SecureStore registers the base).
+let kUserdefaultsArrFocusTypesBase = "kUserdefaultsArrFocusTypes"
+var kUserdefaultsArrFocusTypes = kUserdefaultsArrFocusTypesBase
 var kUserdefaults24HoursClearPasswordTime = "kUserdefaults24HoursClearPasswordTime"
 var kUserdefaultsSelectedLanguage = "kUserdefaultsSelectedLanguage"
 var kUserdefaultsScreenTimeEnabled = "kUserdefaultsScreenTimeEnabled"
@@ -137,7 +141,9 @@ let kUserdefaultsFocusAddedFromFirstHabit = "kUserdefaultsFocusAddedFromFirstHab
 //var kUserdefaultsDontShowToolBoxAutomatically = "kUserdefaultsShowToolBoxAutomatically"
 //var kUserdefaultsDontShowToolBoxAutomaticallyForActivity = "kUserdefaultsDontShowToolBoxAutomaticallyForActivity"
 
-var kUserdefaultsFocusModeNotes = "kUserdefaultsFocusModeNotes"
+/// The unsuffixed key: sign-in appends the user id to `kUserdefaultsFocusModeNotes` (SecureStore registers the base).
+let kUserdefaultsFocusModeNotesBase = "kUserdefaultsFocusModeNotes"
+var kUserdefaultsFocusModeNotes = kUserdefaultsFocusModeNotesBase
 
 // #2142: set once the saved local brain dump has been migrated to the backend (PUT /note). After that
 // the native Notes view (FocusBear/Notes) loads the brain dump from the API, so we never re-seed it.
@@ -166,9 +172,15 @@ var kUserdefaultsDisableBreaksForToday = "kUserdefaultsDisableBreaksForToday"
 
 var kUserdefaultsIsHabitsDisabledFromOnboarding = "kUserdefaultsIsHabitsDisabledFromOnboarding"
 
-var kUserdefaultsLastHabitSavedNotes = "kUserdefaultsLastHabitSavedNotes"
-var kUserdefaultsLastActivitySavedNotes = "kUserdefaultsLastActivitySavedNotes"
-var kUserdefaultsLastCustomRoutineHabitSavedNotes = "kUserdefaultsLastCustomRoutineHabitSavedNotes"
+/// The unsuffixed key: sign-in appends the user id to `kUserdefaultsLastHabitSavedNotes` (SecureStore registers the base).
+let kUserdefaultsLastHabitSavedNotesBase = "kUserdefaultsLastHabitSavedNotes"
+var kUserdefaultsLastHabitSavedNotes = kUserdefaultsLastHabitSavedNotesBase
+/// The unsuffixed key: sign-in appends the user id to `kUserdefaultsLastActivitySavedNotes` (SecureStore registers the base).
+let kUserdefaultsLastActivitySavedNotesBase = "kUserdefaultsLastActivitySavedNotes"
+var kUserdefaultsLastActivitySavedNotes = kUserdefaultsLastActivitySavedNotesBase
+/// The unsuffixed key: sign-in appends the user id to `kUserdefaultsLastCustomRoutineHabitSavedNotes` (SecureStore registers the base).
+let kUserdefaultsLastCustomRoutineHabitSavedNotesBase = "kUserdefaultsLastCustomRoutineHabitSavedNotes"
+var kUserdefaultsLastCustomRoutineHabitSavedNotes = kUserdefaultsLastCustomRoutineHabitSavedNotesBase
 
 
 var kUserdefaultsLastSpecaialActivitySavedNotes = "kUserdefaultsLastSpecaialActivitySavedNotes"
@@ -209,7 +221,9 @@ var kUserDefaultsBlockPageTourShowed = "kUserDefaultsBlockPageTourShowed"
 
 var kUserDefaultsHowHeardAboutApp = "kUserDefaultsHowHeardAboutApp"
 
-var kUserDefaultsLastQuitReason = "kUserDefaultsLastQuitReason"
+/// The unsuffixed key: sign-in appends the user id to `kUserDefaultsLastQuitReason` (SecureStore registers the base).
+let kUserDefaultsLastQuitReasonBase = "kUserDefaultsLastQuitReason"
+var kUserDefaultsLastQuitReason = kUserDefaultsLastQuitReasonBase
 var kUserdefaultsManageTaskFirstTime = "kUserdefaultsManageTaskFirstTime"
 
 
@@ -280,6 +294,18 @@ var kUserdefaultsIsGuestAccount = "kUserdefaultsIsGuestAccount"
 
 // WiFi profile auto-switching (#1000)
 let kUserdefaultsWiFiProfileMappings = "kFBWiFiProfileMappings"
+
+// Personal data SecureStore keeps encrypted (FocusBear/Security/SensitiveKeyRegistry.swift).
+let kUserdefaultsDayPlanTasksByDay = "dayPlanTasksByDay"
+let kUserdefaultsScheduleEventPrivateNotes = "scheduleEventPrivateNotes"
+let kUserdefaultsScheduleEventLocalOverrides = "scheduleEventLocalOverrides"
+let kUserdefaultsAiBlockingLogEntries = "aiBlockingLogEntries"
+let kAccountabilityBuddySessionPersistKey = "kAccountabilityBuddySessionPersist"
+/// SettingsManager appends the user id to its copies of these at sign-in.
+let kUserdefaultsArrBlockedUrlsBase = "kUserdefaultsArrBlockedUrls"
+let kUserdefaultsArrBlockedAppsBase = "kUserdefaultsArrBlockedApps"
+let kUserdefaultsArrAlwaysAllowedAppsBase = "kUserdefaultsArrAlwaysAllowedApps"
+let kUserdefaultsLocalDeviceSettingsBase = "kUserdefaultsLocalDeviceSettings"
 
 
 // Talking clock (#1674)

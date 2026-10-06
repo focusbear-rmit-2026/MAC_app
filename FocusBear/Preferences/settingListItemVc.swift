@@ -15,6 +15,8 @@ protocol SettingListItemDelegate {
 class settingListItemVc: NSViewController {
 
     @IBOutlet weak var btnInfo: hoverInfoButton!
+    @IBOutlet weak var btnRow: settingsMouseDownEffectButton!
+    @IBOutlet weak var imgViewChevron: NSImageView!
     @IBOutlet weak var boxNewBadge: customNewBadgeBox!
     @IBOutlet weak var bgBox: NSBox!
     @IBOutlet weak var lblDescription: NSTextField!
@@ -32,10 +34,16 @@ class settingListItemVc: NSViewController {
         }
     }
     var delegate: SettingListItemDelegate?
+    private var rowNameObservation: NSKeyValueObservation?
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        // The row is one untitled button laid over its icon, title and chevron: the button reads the
+        // title, so the label itself would be read twice.
+        rowNameObservation = btnRow.keepAccessibilityName(matching: lblTitle)
+        lblTitle.setAccessibilityElement(false)
+        imgViewIcon.hideDecorativeIconFromVoiceOver()
+        imgViewChevron.hideDecorativeIconFromVoiceOver()
     }
     
     @IBAction func btnClicked(_ sender: Any) {

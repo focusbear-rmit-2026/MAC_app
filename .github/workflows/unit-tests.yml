@@ -9,7 +9,15 @@ on:
   pull_request:
     paths:
       - 'FocusBear/**'
+      - 'FBHelper/**'
       - 'FocusBearTests/**'
+      - 'FocusBearUITests/UITestSupport.swift'
+      - 'scripts/run-ui-tests.sh'
+      - 'scripts/ui-test-runner-lease.sh'
+      - 'scripts/test-ui-runner-safety.py'
+      - 'scripts/ui-test-and-publish.sh'
+      - 'scripts/build-release-dmg.sh'
+      - 'scripts/test-ui-test-and-publish.py'
       - 'FocusBear.xcodeproj/**'
       - 'FocusBear.xcworkspace/**'
       - 'Podfile'
@@ -18,9 +26,15 @@ on:
       - 'scripts/check-managed-blocking-translations.py'
       - 'scripts/wait-for-build-capacity.py'
       - 'scripts/test-build-capacity.py'
+      - 'scripts/cleanup-logic-test-build.py'
+      - 'scripts/test-logic-test-build-cleanup.py'
       - 'scripts/verify-logic-test-host.py'
       - 'scripts/test-logic-test-host-isolation.py'
       - 'scripts/strip-isolated-test-url-schemes.sh'
+      - 'scripts/check-sensitive-defaults.sh'
+      - 'scripts/check_sensitive_defaults.py'
+      - 'scripts/scan-logs-for-sensitive-data.py'
+      - 'scripts/test-scan-logs-for-sensitive-data.py'
       - '.github/workflows/unit-tests.yml'
   push:
     branches:
@@ -46,13 +60,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Configure isolated build directory
+        run: |
+          set -euo pipefail
+          build_directory=$(python3 scripts/cleanup-logic-test-build.py --print-path)
+          printf 'LOGIC_DERIVED_DATA=%s\n' "$build_directory" >> "$GITHUB_ENV"
+
       - name: Show toolchain
         run: |
           xcodebuild -version
           swift --version
 
+      - name: Check UI runner account and cleanup safety
+        run: |
+          python3 scripts/test-ui-runner-safety.py
+          bash -n scripts/run-ui-tests.sh
+          bash -n scripts/ui-test-runner-lease.sh
+          python3 scripts/test-ui-test-and-publish.py
+
       - name: Check managed safety translations
         run: python3 scripts/check-managed-blocking-translations.py
+
+      - name: Check personal data stays out of plaintext defaults and files
+        run: ./scripts/check-sensitive-defaults.sh
+
+      - name: Test the log scanner
+        run: python3 scripts/test-scan-logs-for-sensitive-data.py
 
       # Sparkle.framework is not committed to the repo; fetch the pinned,
       # checksum-verified build the project links/embeds.
@@ -70,9 +103,10 @@ jobs:
       - name: Test capacity gate
         run: python3 scripts/test-build-capacity.py
 
+      - name: Test generated-build cleanup
+        run: python3 scripts/test-logic-test-build-cleanup.py
+
       - name: Build isolated logic-test host
-        env:
-          LOGIC_DERIVED_DATA: ${{ runner.temp }}/logic-tests-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           set -euo pipefail
           python3 scripts/wait-for-build-capacity.py
@@ -94,7 +128,6 @@ jobs:
 
       - name: Run logic unit tests
         env:
-          LOGIC_DERIVED_DATA: ${{ runner.temp }}/logic-tests-${{ github.run_id }}-${{ github.run_attempt }}
           TEST_RUNNER_FOCUS_START_VISUAL_QA: '1'
           TEST_RUNNER_FOCUSBEAR_CAPTURE_ONGOING: '1'
           TEST_RUNNER_FOCUSBEAR_CAPTURE_DIRECTORY: ${{ runner.temp }}/ongoing-visuals-${{ github.sha }}
@@ -148,7 +181,6 @@ jobs:
             -only-testing:"Focus BearTests/ImagePreviewSizingTests" \
             -only-testing:"Focus BearTests/ProjectNotesFeedTests" \
             -only-testing:"Focus BearTests/SmartSnoozeTests" \
-            -only-testing:"Focus BearTests/BrowserMeetingUrlTests" \
             -only-testing:"Focus BearTests/AiBlockBuddyTaskPickerTests" \
             -only-testing:"Focus BearTests/CredentialsKeychainStorageTests" \
             -only-testing:"Focus BearTests/FocusSessionTests" \
@@ -177,6 +209,8 @@ jobs:
             -only-testing:"Focus BearTests/RoutineSchedulingTests" \
             -only-testing:"Focus BearTests/SettingsManagerTests" \
             -only-testing:"Focus BearTests/TimeParsingTests" \
+            -only-testing:"Focus BearTests/MachineDateFormatTests" \
+            -only-testing:"Focus BearTests/LegacyCalendarDateMigrationTests" \
             -only-testing:"Focus BearTests/ManagedHomeDraftTests" \
             -only-testing:"Focus BearTests/ManagedPolicyTests" \
             -only-testing:"Focus BearTests/ManagedPolicyStoreAccessTests" \
@@ -202,6 +236,25 @@ jobs:
             -only-testing:"Focus BearTests/VoiceCommandRequestTests" \
             -only-testing:"Focus BearTests/VoiceCommandPipelineTests" \
             -only-testing:"Focus BearTests/SourceSecretsTests" \
+            -only-testing:"Focus BearTests/EventsServiceTests" \
+            -only-testing:"Focus BearTests/LogRedactorTests" \
+            -only-testing:"Focus BearTests/SharedSuiteHygieneTests" \
+            -only-testing:"Focus BearTests/AppPasswordStoreTests" \
+            -only-testing:"Focus BearTests/ScriptToDoListTests" \
+            -only-testing:"Focus BearTests/ScriptingInterfaceWiringTests" \
+            -only-testing:"Focus BearTests/LegacyLogScrubberTests" \
+            -only-testing:"Focus BearTests/LogContentScrubberTests" \
+            -only-testing:"Focus BearTests/LogRedactorURLSecretTests" \
+            -only-testing:"Focus BearTests/LogPrivacyTests" \
+            -only-testing:"Focus BearTests/FocusButtonLogFormatTests" \
+            -only-testing:"Focus BearTests/ScriptingEncryptedDataPathTests" \
+            -only-testing:"Focus BearTests/PlaintextSecretSourceTests" \
+            -only-testing:"Focus BearTests/SecureStoreTests" \
+            -only-testing:"Focus BearTests/DataKeyProviderTests" \
+            -only-testing:"Focus BearTests/SecureFileStoreTests" \
+            -only-testing:"Focus BearTests/BrowsingHistoryTests" \
+            -only-testing:"Focus BearTests/BrowsingLogPrivacyTests" \
+            -only-testing:"Focus BearTests/ProjectNoteDraftSealingTests" \
             | tee xcodebuild.log
 
       - name: Export visual QA captures
@@ -209,7 +262,9 @@ jobs:
         run: |
           if [ -d TestResults.xcresult ]; then
             xcrun xcresulttool export attachments --path TestResults.xcresult --output-path VisualEvidence
-            python3 -c 'from pathlib import Path; count = len(list(Path("VisualEvidence").rglob("*.png"))); assert count == 46, f"Expected 32 start and 14 ongoing visual fixtures, received {count}"'
+            # At least the 32 start + 14 ongoing focus fixtures; clusters add their own captures on top,
+            # so an exact count failed every branch that added a visual test.
+            MINIMUM_FOCUS_VISUAL_FIXTURES=46 python3 -c 'import os; from pathlib import Path; minimum = int(os.environ["MINIMUM_FOCUS_VISUAL_FIXTURES"]); count = len(list(Path("VisualEvidence").rglob("*.png"))); assert count >= minimum, f"Expected at least {minimum} visual fixtures (32 start, 14 ongoing), received {count}"'
           fi
 
       - name: Upload visual QA captures
@@ -241,3 +296,7 @@ jobs:
           path: ${{ runner.temp }}/ongoing-visuals-${{ github.sha }}
           if-no-files-found: error
           retention-days: 7
+
+      - name: Remove this run's derived data
+        if: always()
+        run: python3 scripts/cleanup-logic-test-build.py

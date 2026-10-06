@@ -46,7 +46,7 @@ class startAnotherHabitVc: NSViewController {
                             let currentDate = Date()
                             if currentDate > cutOffDate{
                                 addLog(text: "file startAnotherHabitVc :- func viewWillAppear")// remove this
-                                addLog(text: "evening habit ignored:- this habit is high priority habit and cutoff time has passed:- \(arrFilteredEveningHabits[i].name)  \(arrFilteredEveningHabits[i].id)") // remove this
+                                addLog(text: "evening habit ignored:- this habit is high priority habit and cutoff time has passed:- \(LogPrivacy.text(arrFilteredEveningHabits[i].name))  \(arrFilteredEveningHabits[i].id)") // remove this
                                 continue;
                             }
                         }

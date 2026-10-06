@@ -48,6 +48,8 @@ class habitBlockTimerManager {
 
     
     @objc func checkInBackgroundForActivity(){
+        // Enforcement acts on the whole machine (hides apps, redirects tabs); a UI-test app never enforces.
+        if UITestHost.suppressesEnforcement { return }
         ManagedBlockingRuntime.shared.checkCurrentBrowserNow()
         addLog(text:"func call:- checkInBackgroundForActivity")
         
@@ -753,7 +755,9 @@ class habitBlockTimerManager {
                 }
             }else{
                 currentBrowserUrlForAi = ""
-                addLog(text:"blockActivityBlockedUrl:- \(tabUrl)")
+                addLog(text:"blockActivityBlockedUrl:- \(LogPrivacy.site(tabUrl))")
+                BrowsingHistory.shared.record(.blocked, url: tabUrl, title: tabTitle, app: runningApp.bundleIdentifier,
+                                              reason: BrowsingReason.blockedDuringHabit)
                 if currentBrowser == ._GOOGLE_CHROME_ {
                     // Name-addressed AppleScript can redirect an unrelated headless Chrome process.
                     // Bind the redirect to the exact foreground tab and discard stale observations.

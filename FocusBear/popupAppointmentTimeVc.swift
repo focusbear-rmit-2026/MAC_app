@@ -310,7 +310,7 @@ class popupAppointmentTimeVc: NSViewController {
             second = "0\(s)"
         }
        
-        let stringDate = getStringFromDate(date: endTime!, dateFormat: "hh:mm a")
+        let stringDate = getDisplayStringFromDate(date: endTime!, dateFormat: "hh:mm a")
         var subTitleText = subTitle.replacingOccurrences(of: "<TIMELEFT>", with: "\(minute):\(second)")
         subTitleText = subTitleText.replacingOccurrences(of: "<TIME>", with: stringDate)
         lblSubTitle.stringValue =  subTitleText
@@ -334,7 +334,7 @@ class popupAppointmentTimeVc: NSViewController {
         }
         
         DispatchQueue.main.async {
-            let stringDate = getStringFromDate(date: self.endTime!, dateFormat: "hh:mm a")
+            let stringDate = getDisplayStringFromDate(date: self.endTime!, dateFormat: "hh:mm a")
             var subTitleText = self.subTitle.replacingOccurrences(of: "<TIMELEFT>", with: "\(minute):\(second)")
             subTitleText = subTitleText.replacingOccurrences(of: "<TIME>", with: stringDate)
             self.lblSubTitle.stringValue =  subTitleText

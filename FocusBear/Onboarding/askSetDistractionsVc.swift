@@ -22,7 +22,8 @@ class askSetDistractionsVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        btnContinue.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.helpPickDistractionsButton)
+        btnNoThanks.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.pickDistractionsMyselfButton)
         
         lblTitle.stringValue = "Not sure which distractions to block?"
         lblSubTitle.stringValue = "We can suggest distractions based on your job - so you can stay in the zone."

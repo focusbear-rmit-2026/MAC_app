@@ -55,6 +55,8 @@ class activityCompletionVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        view.setUITestLandmark(UITestContract.Identifier.SessionsRegression.habitFinishedScreen)
+        btnMain.setAccessibilityIdentifier(UITestContract.Identifier.SessionsRegression.habitFinishedMainButton)
         btnSkipHabit.isHidden = true
         
         let orangeColor = NSColor(named: "dark_OrangeColor") ?? NSColor.orange
@@ -1411,7 +1413,7 @@ class activityCompletionVc: NSViewController {
             var notes = ""
             
             if arrHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
-                notes = UserDefaults.standard.object(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes) as? String ?? ""
+                notes = SensitiveDefaults.object(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes) as? String ?? ""
             }
             
             logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(duration)", logQuantityQuestion: arrHabits[lastHabitIndex].logQuantityQuestion, currentState: ._CUSTOM_ROUTINE_, logQuantityType: "", activity_id: arrHabits[lastHabitIndex].id, activity_sequence_id: arrHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrHabits[lastHabitIndex].take_notes, notes: notes, logQuantityQuestions: arrHabits[lastHabitIndex].logQuantityQuestions)
@@ -1434,7 +1436,7 @@ class activityCompletionVc: NSViewController {
                 var notes = ""
                 
                 if arrHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
-                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes) as? String ?? ""
+                    notes = SensitiveDefaults.object(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes) as? String ?? ""
                 }
                 getHabitsVcObject().showFocusCompletedView()
                 focusModeActualDurationPerformed = duration
@@ -1444,7 +1446,7 @@ class activityCompletionVc: NSViewController {
                 var notes = ""
                 
                 if arrHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
-                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes) as? String ?? ""
+                    notes = SensitiveDefaults.object(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes) as? String ?? ""
                 }
                 
                 
@@ -1461,7 +1463,7 @@ class activityCompletionVc: NSViewController {
 
         setProgress()
         addLog(text:"setProgress passed")
-        addLog(text:"\(lastHabit!) finished")
+        addLog(text:"habit \(LogPrivacy.text(lastHabit)) finished")
         var nextActivityName = ""
         if index < arrHabits.count-1 {
             isSequenceFinished = false
@@ -1551,10 +1553,10 @@ class activityCompletionVc: NSViewController {
             isSequenceFinished = false
             imgViewGif.isHidden = true
             if !isLastActivitySkipped{
-                addLog(text:"\(lastHabit!) Finished")
+                addLog(text:"habit \(LogPrivacy.text(lastHabit)) Finished")
                 lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"//
             }else{
-                addLog(text:"\(lastHabit!) Skipped")
+                addLog(text:"habit \(LogPrivacy.text(lastHabit)) Skipped")
                 lblTitle.stringValue = getActivitySkippedText(isLast: false, activityName: lastHabit!)
             }
             isPromptToRememberHabitShowedInLastHabit = false
@@ -1570,10 +1572,10 @@ class activityCompletionVc: NSViewController {
             }
             isSequenceFinished = true
             if !isLastActivitySkipped{
-                addLog(text:"\(lastHabit!) Finished")
+                addLog(text:"habit \(LogPrivacy.text(lastHabit)) Finished")
                 lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
             }else{
-                addLog(text:"\(lastHabit!) Skipped")
+                addLog(text:"habit \(LogPrivacy.text(lastHabit)) Skipped")
                 lblTitle.stringValue = getActivitySkippedText(isLast: true, activityName: lastHabit!)
             }
             btnMain.title = unlockMachineButtonText
@@ -1633,7 +1635,7 @@ class activityCompletionVc: NSViewController {
         
         setProgress()
 
-        addLog(text:"\(lastHabit!) Skipped")
+        addLog(text:"habit \(LogPrivacy.text(lastHabit)) Skipped")
         var nextActivityName = ""
         if index < arrHabits.count-1 {
             isSequenceFinished = false
@@ -1740,7 +1742,7 @@ class activityCompletionVc: NSViewController {
         }
         setProgress()
         
-        addLog(text:"\(lastHabit!) skipped")
+        addLog(text:"habit \(LogPrivacy.text(lastHabit)) skipped")
         var nextActivityName = ""
         if lastHabitIndex < arrHabits.count-1 {
             isSequenceFinished = false
@@ -1908,7 +1910,7 @@ class activityCompletionVc: NSViewController {
             var notes = ""
             
             if arrFilteredMorningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
-                notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
+                notes = SensitiveDefaults.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
             }
             
             logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(duration)", logQuantityQuestion: arrFilteredMorningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._MORNING_HABIT_, logQuantityType: "", activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrFilteredMorningHabits[lastHabitIndex].take_notes, notes: notes, logQuantityQuestions: arrFilteredMorningHabits[lastHabitIndex].logQuantityQuestions)
@@ -1931,7 +1933,7 @@ class activityCompletionVc: NSViewController {
                 var notes = ""
                 
                 if arrFilteredMorningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
-                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
+                    notes = SensitiveDefaults.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
                 }
                 getHabitsVcObject().showFocusCompletedView()
                 focusModeActualDurationPerformed = duration
@@ -1941,7 +1943,7 @@ class activityCompletionVc: NSViewController {
                 var notes = ""
                 
                 if arrFilteredMorningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
-                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
+                    notes = SensitiveDefaults.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
                 }
                 
                 
@@ -1963,7 +1965,7 @@ class activityCompletionVc: NSViewController {
         
         setProgress()
         addLog(text:"setProgress passed")
-        addLog(text:"\(lastHabit!) finished")
+        addLog(text:"habit \(LogPrivacy.text(lastHabit)) finished")
         var nextActivityName = ""
         if index < arrFilteredMorningHabits.count-1 {
             isSequenceFinished = false
@@ -2149,7 +2151,7 @@ class activityCompletionVc: NSViewController {
         refreshFocusModeData()
         leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+        SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         
         btnSkipHabit.title = buttonMoreActionsText
@@ -2221,7 +2223,7 @@ class activityCompletionVc: NSViewController {
         
         setProgress()
         
-        addLog(text:"\(lastHabit!) skipped")
+        addLog(text:"habit \(LogPrivacy.text(lastHabit)) skipped")
         var nextActivityName = ""
         if lastHabitIndex < arrFilteredMorningHabits.count-1 {
             isSequenceFinished = false
@@ -2303,7 +2305,7 @@ class activityCompletionVc: NSViewController {
         currentGraphIndex = 0
         btnNextGraph.isHidden = true
         btnPreviousGraph.isHidden = true
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+        SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         randomIntToRememberNextHabit = 0
 
@@ -2347,10 +2349,10 @@ class activityCompletionVc: NSViewController {
             isSequenceFinished = false
             imgViewGif.isHidden = true
             if !isLastActivitySkipped{
-                addLog(text:"\(lastHabit!) Finished")
+                addLog(text:"habit \(LogPrivacy.text(lastHabit)) Finished")
                 lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"//
             }else{
-                addLog(text:"\(lastHabit!) Skipped")
+                addLog(text:"habit \(LogPrivacy.text(lastHabit)) Skipped")
                 lblTitle.stringValue = getActivitySkippedText(isLast: false, activityName: lastHabit!)
             }
             isPromptToRememberHabitShowedInLastHabit = false
@@ -2366,10 +2368,10 @@ class activityCompletionVc: NSViewController {
             }
             isSequenceFinished = true
             if !isLastActivitySkipped{
-                addLog(text:"\(lastHabit!) Finished")
+                addLog(text:"habit \(LogPrivacy.text(lastHabit)) Finished")
                 lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
             }else{
-                addLog(text:"\(lastHabit!) Skipped")
+                addLog(text:"habit \(LogPrivacy.text(lastHabit)) Skipped")
                 lblTitle.stringValue = getActivitySkippedText(isLast: true, activityName: lastHabit!)
             }
             btnMain.title = unlockMachineButtonText
@@ -2403,7 +2405,7 @@ class activityCompletionVc: NSViewController {
         leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         
         btnSkipHabit.title = buttonMoreActionsText
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+        SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         if currentAction != ._INPROGRESS_{// if inprogess it means already updated cutrrenthabitindex
             currentHabitIndex += 1
@@ -2444,7 +2446,7 @@ class activityCompletionVc: NSViewController {
         setProgress()
         
         
-        addLog(text:"\(lastHabit!) Skipped")
+        addLog(text:"habit \(LogPrivacy.text(lastHabit)) Skipped")
         var nextActivityName = ""
         if index < arrFilteredMorningHabits.count-1 {
             isSequenceFinished = false
@@ -2546,7 +2548,7 @@ class activityCompletionVc: NSViewController {
             var notes = ""
             
             if arrFilteredEveningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
-                notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
+                notes = SensitiveDefaults.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
             }
             
             logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(duration)", logQuantityQuestion: arrFilteredEveningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._EVENING_HABIT_, logQuantityType: "", activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrFilteredEveningHabits[lastHabitIndex].take_notes, notes: notes, logQuantityQuestions: arrFilteredEveningHabits[lastHabitIndex].logQuantityQuestions)
@@ -2565,7 +2567,7 @@ class activityCompletionVc: NSViewController {
                 var notes = ""
                 
                 if arrFilteredEveningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
-                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
+                    notes = SensitiveDefaults.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
                 }
                 getHabitsVcObject().showFocusCompletedView()
                 focusModeActualDurationPerformed = duration
@@ -2575,7 +2577,7 @@ class activityCompletionVc: NSViewController {
                 var notes = ""
                 
                 if arrFilteredEveningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
-                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
+                    notes = SensitiveDefaults.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
                 }
                 
                 
@@ -2592,7 +2594,7 @@ class activityCompletionVc: NSViewController {
         }
         
         
-        addLog(text:"\(lastHabit!) Finished")
+        addLog(text:"habit \(LogPrivacy.text(lastHabit)) Finished")
         
         
         isSequenceFinished = false
@@ -2608,7 +2610,7 @@ class activityCompletionVc: NSViewController {
                                 newIndexFound = true
                             }else{
                                 addLog(text: "func eveningHabitFinished")// remove this
-                                addLog(text: "evening habit skipped:- this habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
+                                addLog(text: "evening habit skipped:- this habit is high priority habit but cutoff time of this habit has passed:- \(LogPrivacy.text(arrFilteredEveningHabits[newHabitIndex].name))  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
                                 newHabitIndex += 1
                             }
                         }else{
@@ -2620,7 +2622,7 @@ class activityCompletionVc: NSViewController {
                             newIndexFound = true
                         }else{
                             addLog(text: "func eveningHabitFinished")// remove this
-                            addLog(text: "evening habit skipped:- this habit is not High Priority habit and it has no cutoff time:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
+                            addLog(text: "evening habit skipped:- this habit is not High Priority habit and it has no cutoff time:- \(LogPrivacy.text(arrFilteredEveningHabits[newHabitIndex].name))  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
                             newHabitIndex += 1
                         }
                         
@@ -2785,7 +2787,7 @@ class activityCompletionVc: NSViewController {
         currentGraphIndex = 0
         btnNextGraph.isHidden = true
         btnPreviousGraph.isHidden = true
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+        SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         lastActivityPerformedTime = Date()
         randomIntToRememberNextHabit = 0
@@ -2848,7 +2850,7 @@ class activityCompletionVc: NSViewController {
         }
         
         
-        addLog(text:"\(lastHabit!) skipped")
+        addLog(text:"habit \(LogPrivacy.text(lastHabit)) skipped")
         
         isSequenceFinished = false
         var newHabitIndex = lastHabitIndex+1
@@ -2863,7 +2865,7 @@ class activityCompletionVc: NSViewController {
                                 newIndexFound = true
                             }else{
                                 addLog(text: "func eveningHabitSkippedAndDoneAlready")// remove this
-                                addLog(text: "evening habit skipped:- this habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
+                                addLog(text: "evening habit skipped:- this habit is high priority habit but cutoff time of this habit has passed:- \(LogPrivacy.text(arrFilteredEveningHabits[newHabitIndex].name))  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
                                 newHabitIndex += 1
                             }
                         }else{
@@ -2875,7 +2877,7 @@ class activityCompletionVc: NSViewController {
                             newIndexFound = true
                         }else{
                             addLog(text: "func eveningHabitSkippedAndDoneAlready")// remove this
-                            addLog(text: "evening habit skipped:- this habit is not High Priority habit and it has no cutoff time:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
+                            addLog(text: "evening habit skipped:- this habit is not High Priority habit and it has no cutoff time:- \(LogPrivacy.text(arrFilteredEveningHabits[newHabitIndex].name))  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
                             newHabitIndex += 1
                         }
                         
@@ -3083,7 +3085,7 @@ class activityCompletionVc: NSViewController {
         currentGraphIndex = 0
         btnNextGraph.isHidden = true
         btnPreviousGraph.isHidden = true
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+        SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         randomIntToRememberNextHabit = 0
         btnReviseQuantity.isHidden = true
@@ -3126,7 +3128,7 @@ class activityCompletionVc: NSViewController {
                                 newIndexFound = true
                             }else{
                                 addLog(text: "func eveningHabitFinishedAndStartIncompleteNew")// remove this
-                                addLog(text: "evening habit skipped:- this habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
+                                addLog(text: "evening habit skipped:- this habit is high priority habit but cutoff time of this habit has passed:- \(LogPrivacy.text(arrFilteredEveningHabits[newHabitIndex].name))  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
                                 newHabitIndex += 1
                             }
                         }else{
@@ -3138,7 +3140,7 @@ class activityCompletionVc: NSViewController {
                             newIndexFound = true
                         }else{
                             addLog(text: "func eveningHabitFinishedAndStartIncompleteNew")// remove this
-                            addLog(text: "evening habit skipped:- this habit is not High Priority habit and it has no cutoff time:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
+                            addLog(text: "evening habit skipped:- this habit is not High Priority habit and it has no cutoff time:- \(LogPrivacy.text(arrFilteredEveningHabits[newHabitIndex].name))  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
                             newHabitIndex += 1
                         }
                         
@@ -3157,10 +3159,10 @@ class activityCompletionVc: NSViewController {
         if !isSequenceFinished {
             
             if !isLastActivitySkipped{
-                addLog(text:"\(lastHabit!) Finished")
+                addLog(text:"habit \(LogPrivacy.text(lastHabit)) Finished")
                 lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"
             }else{
-                addLog(text:"\(lastHabit!) Skipped")
+                addLog(text:"habit \(LogPrivacy.text(lastHabit)) Skipped")
                 lblTitle.stringValue = getActivitySkippedText(isLast: false, activityName: lastHabit!)
             }
             imgViewGif.isHidden = true
@@ -3182,10 +3184,10 @@ class activityCompletionVc: NSViewController {
                 imgViewGif.isHidden = false
             }
             if !isLastActivitySkipped{
-                addLog(text:"\(lastHabit!) Finished")
+                addLog(text:"habit \(LogPrivacy.text(lastHabit)) Finished")
                 lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
             }else{
-                addLog(text:"\(lastHabit!) Skipped")
+                addLog(text:"habit \(LogPrivacy.text(lastHabit)) Skipped")
                 lblTitle.stringValue = getActivitySkippedText(isLast: true, activityName: lastHabit!)
             }
             showWindDownUiIfNeeded()
@@ -3235,7 +3237,7 @@ class activityCompletionVc: NSViewController {
         
         lblCreateAccount.isHidden = true
         lblDescriptionHabits.isHidden = true
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+        SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         if currentAction != ._INPROGRESS_{// if inprogess it means already updated cutrrenthabitindex
             currentHabitIndex += 1
@@ -3289,7 +3291,7 @@ class activityCompletionVc: NSViewController {
                                 newIndexFound = true
                             }else{
                                 addLog(text: "func eveningHabitSkipped")// remove this
-                                addLog(text: "evening habit skipped:- this habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
+                                addLog(text: "evening habit skipped:- this habit is high priority habit but cutoff time of this habit has passed:- \(LogPrivacy.text(arrFilteredEveningHabits[newHabitIndex].name))  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
                                 newHabitIndex += 1
                             }
                         }else{
@@ -3301,7 +3303,7 @@ class activityCompletionVc: NSViewController {
                             newIndexFound = true
                         }else{
                             addLog(text: "func eveningHabitSkipped")// remove this
-                            addLog(text: "evening habit skipped:- this habit is not High Priority habit and it has no cutoff time:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
+                            addLog(text: "evening habit skipped:- this habit is not High Priority habit and it has no cutoff time:- \(LogPrivacy.text(arrFilteredEveningHabits[newHabitIndex].name))  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
                             newHabitIndex += 1
                         }
                         
@@ -3317,7 +3319,7 @@ class activityCompletionVc: NSViewController {
         }
         setProgress()
         currentHabitIndex = newHabitIndex - 1
-        addLog(text:"\(lastHabit!) Skipped")
+        addLog(text:"habit \(LogPrivacy.text(lastHabit)) Skipped")
         var nextActivityName = ""
         if !isSequenceFinished {
             lblTitle.stringValue = getActivitySkippedText(isLast: false, activityName: lastHabit!)
@@ -3556,7 +3558,7 @@ class activityCompletionVc: NSViewController {
             var notes = ""
             
             if take_notes == DURING_ACTIVITY{
-                notes = UserDefaults.standard.object(forKey: kUserdefaultsLastActivitySavedNotes) as? String ?? ""
+                notes = SensitiveDefaults.object(forKey: kUserdefaultsLastActivitySavedNotes) as? String ?? ""
             }
             
             logQuantityVcObj?.resetData(name: lastActivity, durationInSeconds: "\(durationInSeconds)", logQuantityQuestion: nil, currentState: ._MICRO_BREAK_, logQuantityType: logQuantityType ?? "", activity_id: activity_id, activity_sequence_id: activity_sequence_id,activityChoiceId:activityChoiceId, take_notes:take_notes, notes:notes, logQuantityQuestions: logQuantityQuestions)
@@ -3574,7 +3576,7 @@ class activityCompletionVc: NSViewController {
                 var notes = ""
                 
                 if take_notes == DURING_ACTIVITY{
-                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastActivitySavedNotes) as? String ?? ""
+                    notes = SensitiveDefaults.object(forKey: kUserdefaultsLastActivitySavedNotes) as? String ?? ""
                 }
                 
                 allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:durationInSeconds, choice_id: activityChoiceId, is_skipped: false, notes: notes, should_not_update_current_activity: false, log_quantity_answers: [], completionHandler: {dic  in
@@ -3704,7 +3706,7 @@ class activityCompletionVc: NSViewController {
             var notes = ""
 
             if take_notes == DURING_ACTIVITY{
-                notes = UserDefaults.standard.object(forKey: kUserdefaultsLastActivitySavedNotes) as? String ?? ""
+                notes = SensitiveDefaults.object(forKey: kUserdefaultsLastActivitySavedNotes) as? String ?? ""
             }
 
             logQuantityVcObj?.resetData(name: lastActivity, durationInSeconds: "\(durationInSeconds)", logQuantityQuestion: nil, currentState: ._MICRO_BREAK_, logQuantityType: logQuantityType ?? "", activity_id: activity_id, activity_sequence_id: activity_sequence_id,activityChoiceId:activityChoiceId, take_notes:take_notes, notes:notes, logQuantityQuestions: logQuantityQuestions)
@@ -3722,7 +3724,7 @@ class activityCompletionVc: NSViewController {
                 var notes = ""
 
                 if take_notes == DURING_ACTIVITY{
-                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastActivitySavedNotes) as? String ?? ""
+                    notes = SensitiveDefaults.object(forKey: kUserdefaultsLastActivitySavedNotes) as? String ?? ""
                 }
 
                 allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:durationInSeconds, choice_id: activityChoiceId, is_skipped: false, notes: notes, should_not_update_current_activity: false, log_quantity_answers: [], completionHandler: {dic  in
@@ -3947,7 +3949,7 @@ class activityCompletionVc: NSViewController {
             var notes = ""
             
             if take_notes == DURING_ACTIVITY{
-                notes = UserDefaults.standard.object(forKey: kUserdefaultsLastSpecaialActivitySavedNotes) as? String ?? ""
+                notes = SensitiveDefaults.object(forKey: kUserdefaultsLastSpecaialActivitySavedNotes) as? String ?? ""
             }
             
             logQuantityVcObj?.resetData(name: lastActivity, durationInSeconds: "\(durationInSeconds)", logQuantityQuestion: logQuantityQuestion, currentState: ._SPECIAL_ACTIVITY_, logQuantityType: logQuantityType ?? "", activity_id: activity_id, activity_sequence_id: activity_sequence_id,activityChoiceId:activityChoiceId, take_notes:take_notes, notes:notes, logQuantityQuestions:logQuantityQuestions)
@@ -3965,7 +3967,7 @@ class activityCompletionVc: NSViewController {
                 var notes = ""
                 
                 if take_notes == DURING_ACTIVITY{
-                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastSpecaialActivitySavedNotes) as? String ?? ""
+                    notes = SensitiveDefaults.object(forKey: kUserdefaultsLastSpecaialActivitySavedNotes) as? String ?? ""
                 }
                 
                 allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:durationInSeconds, choice_id: activityChoiceId, is_skipped: false, notes: notes, should_not_update_current_activity: true, log_quantity_answers: [], completionHandler: {dic  in
@@ -4087,7 +4089,7 @@ class activityCompletionVc: NSViewController {
         lblDescriptionHabits.isHidden = true
         addLog(text:"[user-action]thirdvc-btnMainClicked :- \(btnMain.title)")
         btnReviseQuantity.isHidden = true
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{//qki enter per ye button handle hai  or jha se handle h vha condition lganase accha yahi lagadi (enterv  password per bhi default enter key code h button per )
+        if SettingsManagerObject.isAppPasswordSet{//qki enter per ye button handle hai  or jha se handle h vha condition lganase accha yahi lagadi (enterv  password per bhi default enter key code h button per )
             if enterPasswordVcObj != nil{
                 if getHabitsVcObject().view.subviews.contains(enterPasswordVcObj!.view){
                     addLog(text:"[user-action]thirdvc-return:- password view is visible")

@@ -19,6 +19,13 @@ class tblCellLogQuantity: NSTableCellView {
     @IBOutlet weak var textFieldCount: NSTextField!
     @IBOutlet weak var lblSliderValue: NSTextField!
     @IBOutlet weak var sliderQuantity: NSSlider!
+
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        textFieldCount.setAccessibilityIdentifier(UITestContract.Identifier.SessionsRegression.logQuantityField)
+        lblSliderValue.setAccessibilityIdentifier(UITestContract.Identifier.SessionsRegression.logQuantitySliderValue)
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
 

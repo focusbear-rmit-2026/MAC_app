@@ -6,6 +6,8 @@
 //    2. `make new task` / `set …` / `complete task` — create and edit Day Plan tasks.
 //    3. `recently modified tasks` — poll tasks the USER changed (never AppleScript-driven changes),
 //       so a third-party system can watch for real user activity without looping on its own writes.
+//    4. `list to dos` — the signed-in account's to-do list from the server, fetched with the app's own
+//       credentials, so local tools never need the access token itself.
 //
 //  The app is an LSUIElement agent, but Cocoa scripting still works: Apple events are delivered on
 //  the main thread and routed through this file. Task writes coming through here are tagged
@@ -193,22 +195,31 @@ extension NSScriptCommand {
     /// the flag also runs there, so a blocking wait would deadlock; use Cocoa's suspend/resume and poll
     /// the runloop instead. Falls back to running after `timeout` so a never-ready app (e.g. logged out)
     /// still gets a reply rather than hanging forever.
-    func runWhenAppReady(timeout: TimeInterval = 30, _ work: @escaping () -> Any?) -> Any? {
+    func runWhenAppReady(timeout: TimeInterval = NSScriptCommand.appReadyTimeout, _ work: @escaping () -> Any?) -> Any? {
         // Note that a script drove us so the app foregrounds itself out of a background cold launch
         // (AppDelegate.fbNoteScriptingCommand / checkWindowState handle the actual activation + splash).
         appdelegate?.fbNoteScriptingCommand()
         if appdelegate?.isCheckWindowStateDone == true { return work() }
         suspendExecution()
+        NSScriptCommand.afterAppReady(timeout: timeout) { self.resumeExecution(withResult: work()) }
+        return nil   // result delivered later via resumeExecution
+    }
+
+    static let appReadyTimeout: TimeInterval = 30
+    static let appReadyPollInterval: TimeInterval = 0.3
+
+    /// Calls `body` on the main thread once initial state setup is done, or after `timeout`. Unlike
+    /// `runWhenAppReady` it neither suspends the command nor brings the app forward.
+    static func afterAppReady(timeout: TimeInterval = appReadyTimeout, _ body: @escaping () -> Void) {
         let deadline = Date().addingTimeInterval(timeout)
         func poll() {
             if appdelegate?.isCheckWindowStateDone == true || Date() >= deadline {
-                self.resumeExecution(withResult: work())
+                body()
             } else {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: poll)
+                DispatchQueue.main.asyncAfter(deadline: .now() + appReadyPollInterval, execute: poll)
             }
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: poll)
-        return nil   // result delivered later via resumeExecution
+        poll()
     }
 }
 
@@ -229,13 +240,17 @@ final class FBStartFocusSessionCommand: NSScriptCommand {
         }
     }
 
+    /// Cold launch: the focus modes may not be in the in-memory global yet. Hydrate them from the store
+    /// they are sealed in (mirrors startFocusFromMenu), so a session started right after launch still
+    /// finds the mode.
+    static func hydrateFocusModesIfNeeded() {
+        guard arrFocusType.isEmpty,
+              let stored = SensitiveDefaults.object(forKey: kUserdefaultsArrFocusTypes) as? [[String: Any]] else { return }
+        arrFocusType = stored
+    }
+
     private func start(modeArg: String, intention: String, durationMinutes: Int) -> Any? {
-        // Cold launch: the focus modes may not be in the in-memory global yet — hydrate from UserDefaults
-        // (mirrors startFocusFromMenu), so a session started right after launch still finds the mode.
-        if arrFocusType.isEmpty,
-           let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrFocusTypes) as? [[String: Any]] {
-            arrFocusType = arr
-        }
+        Self.hydrateFocusModesIfNeeded()
 
         guard !modeArg.isEmpty else {
             fail(880, "Specify the name or id of the focus mode to start.")
@@ -246,7 +261,7 @@ final class FBStartFocusSessionCommand: NSScriptCommand {
             return nil
         }
 
-        guard let index = focusModeIndex(matching: modeArg) else {
+        guard let index = Self.focusModeIndex(matching: modeArg) else {
             fail(882, "No focus mode named or with id \"\(modeArg)\" was found.")
             return nil
         }
@@ -279,7 +294,7 @@ final class FBStartFocusSessionCommand: NSScriptCommand {
     }
 
     /// Match a focus mode by exact id or case-insensitive name.
-    private func focusModeIndex(matching arg: String) -> Int? {
+    static func focusModeIndex(matching arg: String) -> Int? {
         for i in 0..<arrFocusType.count {
             let id = arrFocusType[i]["id"] as? String ?? ""
             let name = arrFocusType[i]["name"] as? String ?? ""
@@ -312,3 +327,158 @@ final class FBRecentlyModifiedTasksCommand: NSScriptCommand {
 
 // (The `complete` verb is handled by FBScriptTask.handleCompleteScriptCommand: via the sdef
 //  <responds-to>, not an app-level NSScriptCommand — see AppleScript object-targeting dispatch.)
+
+// MARK: - list to dos
+
+/// Why `list to dos` could not answer. Numbers continue the 88x range `start focus session` uses.
+enum ScriptToDoListError: Error, Equatable {
+    case invalidStatus(String)
+    case invalidSortMode(String)
+    case notSignedIn
+    case requestFailed(statusCode: Int)
+    case unreadableResponse
+
+    var number: Int {
+        switch self {
+        case .invalidStatus: return 890
+        case .invalidSortMode: return 891
+        case .notSignedIn: return 892
+        case .requestFailed: return 893
+        case .unreadableResponse: return 894
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .invalidStatus(let value):
+            let accepted = (ToDoStatus.allCases.map(\.rawValue) + [ScriptToDoListRequest.allStatuses]).joined(separator: ", ")
+            return "Unknown status \"\(value)\". Use one of: \(accepted)."
+        case .invalidSortMode(let value):
+            return "Unknown sort mode \"\(value)\". Use one of: \(ToDoSortMode.allCases.map(\.rawValue).joined(separator: ", "))."
+        case .notSignedIn:
+            return "Focus Bear is not signed in."
+        case .requestFailed(let statusCode):
+            return statusCode == 0 ? "Focus Bear could not reach the server." : "The server returned HTTP \(statusCode)."
+        case .unreadableResponse:
+            return "The server's to-do list could not be read."
+        }
+    }
+}
+
+/// The validated arguments of `list to dos`.
+struct ScriptToDoListRequest: Equatable {
+    /// Omits the status filter.
+    static let allStatuses = "ALL"
+
+    let status: ToDoStatus?
+    let sortMode: ToDoSortMode
+    let take: Int
+
+    static func parse(status: String?, sortMode: String?, take: Int?) -> Result<ScriptToDoListRequest, ScriptToDoListError> {
+        let statusText = (status ?? ToDoStatus.notStarted.rawValue).trimmingCharacters(in: .whitespaces).uppercased()
+        let parsedStatus: ToDoStatus?
+        if statusText == allStatuses {
+            parsedStatus = nil
+        } else if let known = ToDoStatus(rawValue: statusText) {
+            parsedStatus = known
+        } else {
+            return .failure(.invalidStatus(status ?? ""))
+        }
+        let sortText = (sortMode ?? ToDoSortMode.smart.rawValue).trimmingCharacters(in: .whitespaces).uppercased()
+        guard let parsedSort = ToDoSortMode(rawValue: sortText) else { return .failure(.invalidSortMode(sortMode ?? "")) }
+        let clampedTake = min(max(take ?? ToDoPaging.tasksPerPage, 1), ToDoPaging.tasksPerPage)
+        return .success(ScriptToDoListRequest(status: parsedStatus, sortMode: parsedSort, take: clampedTake))
+    }
+
+    var query: ToDoListQuery {
+        ToDoListQuery(page: ToDoPaging.firstPage, take: take, status: status, sortMode: sortMode)
+    }
+}
+
+/// Answers `list to dos` with the app's own credentials. The caller gets the to-do JSON in the
+/// server's order; the token never leaves the app, and the request is pinned to the signed-in account.
+struct ScriptToDoListResponder {
+    typealias Fetch = (_ path: String, _ accountID: String, _ completion: @escaping (Data?, Int) -> Void) -> Void
+
+    let accountID: () -> String?
+    let fetch: Fetch
+
+    static let live = ScriptToDoListResponder(
+        accountID: { appdelegate?.user?.userId },
+        fetch: { path, accountID, completion in
+            allApiObject.getTaskSnapshotData(path: path, expectedAccountID: accountID, completion: completion)
+        })
+
+    func respond(to request: ScriptToDoListRequest, completion: @escaping (Result<String, ScriptToDoListError>) -> Void) {
+        guard let account = accountID(), !account.isEmpty else {
+            completion(.failure(.notSignedIn))
+            return
+        }
+        fetch(request.query.path, account) { data, statusCode in
+            guard (200..<300).contains(statusCode), let data else {
+                completion(.failure(.requestFailed(statusCode: statusCode)))
+                return
+            }
+            guard let json = Self.tasksJSON(from: data) else {
+                completion(.failure(.unreadableResponse))
+                return
+            }
+            completion(.success(json))
+        }
+    }
+
+    /// The `data` array of a `GET /to-do` page (or a bare array), re-serialised as JSON text.
+    static func tasksJSON(from data: Data) -> String? {
+        guard let object = try? JSONSerialization.jsonObject(with: data) else { return nil }
+        let tasks = (object as? [String: Any])?["data"] ?? object
+        guard tasks is [Any], let encoded = try? JSONSerialization.data(withJSONObject: tasks) else { return nil }
+        return String(data: encoded, encoding: .utf8)
+    }
+}
+
+@objc(FBListToDosCommand)
+final class FBListToDosCommand: NSScriptCommand {
+    private enum Argument {
+        static let status = "status"
+        static let sortMode = "sortMode"
+        static let take = "take"
+    }
+
+    override func performDefaultImplementation() -> Any? {
+        let args = evaluatedArguments ?? [:]
+        let parsed = ScriptToDoListRequest.parse(status: args[Argument.status] as? String,
+                                                 sortMode: args[Argument.sortMode] as? String,
+                                                 take: args[Argument.take] as? Int)
+        let request: ScriptToDoListRequest
+        switch parsed {
+        case .failure(let error):
+            fail(error)
+            return nil
+        case .success(let value):
+            request = value
+        }
+        // A read-only query: answer without bringing the app forward (no fbNoteScriptingCommand).
+        suspendExecution()
+        NSScriptCommand.afterAppReady {
+            ScriptToDoListResponder.live.respond(to: request) { result in
+                DispatchQueue.main.async { self.finish(with: result) }
+            }
+        }
+        return nil
+    }
+
+    private func finish(with result: Result<String, ScriptToDoListError>) {
+        switch result {
+        case .success(let json):
+            resumeExecution(withResult: json)
+        case .failure(let error):
+            fail(error)
+            resumeExecution(withResult: nil)
+        }
+    }
+
+    private func fail(_ error: ScriptToDoListError) {
+        scriptErrorNumber = error.number
+        scriptErrorString = error.message
+    }
+}

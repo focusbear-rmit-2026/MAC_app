@@ -34,6 +34,14 @@ var idOfficeMode = "officeMode"
 
 import Cocoa
 
+/// Config keys for the names VoiceOver gives the sidebar's search field and category list.
+private enum SidebarAccessibilityConfigKey {
+    static let settingsBlock = "settingsNew"
+    static let searchLabel = "searchSettingsLabel"
+    static let commonBlock = "common"
+    static let categoryListLabel = "tabSettingsText"
+}
+
 class settingsSideBarVc: NSViewController {
     
     @IBOutlet weak var btnReleaseNotes: underLineButton!
@@ -171,6 +179,7 @@ class settingsSideBarVc: NSViewController {
         arrSettingsList = arrSettingsListForGeekMode
         
         self.searchField.delegate = self
+        nameSidebarForAccessibility()
         
         let popoverViewControllerObj = PopoverViewControllerForSearch()
         searchField.popoverViewControllerObj = popoverViewControllerObj
@@ -178,6 +187,7 @@ class settingsSideBarVc: NSViewController {
         self.customViewForSearchList.addConstraints(subView: popoverViewControllerObj.view)
         searchField.popoverViewControllerObj?.view.isHidden = true
         searchField.parentVcObj = self
+        identifySidebarForUITests(searchResults: popoverViewControllerObj.tblView)
         
         
         btnExportStatistics.title = "Export Statistics"
@@ -209,6 +219,29 @@ class settingsSideBarVc: NSViewController {
     }
     override func viewWillAppear() {
         reloadDataForAppMode()
+    }
+
+    private func identifySidebarForUITests(searchResults: NSTableView?) {
+        typealias Identifier = UITestContract.Identifier.SettingsRegression
+        searchField.setAccessibilityIdentifier(Identifier.searchField)
+        searchResults?.setAccessibilityIdentifier(Identifier.searchResults)
+        btnExportStatistics.setAccessibilityIdentifier(Identifier.exportDataButton)
+        btnCheckForUpdates.setAccessibilityIdentifier(Identifier.checkForUpdatesButton)
+        btnReleaseNotes.setAccessibilityIdentifier(Identifier.releaseNotesButton)
+        lblVersion.setAccessibilityIdentifier(Identifier.versionLabel)
+    }
+
+    /// Neither the search field nor the category list draws text that could name it, so VoiceOver
+    /// would announce just "search field" and "table".
+    private func nameSidebarForAccessibility() {
+        let settingsNew = configjson.value(forKey: SidebarAccessibilityConfigKey.settingsBlock) as? NSDictionary
+        let common = configjson.value(forKey: SidebarAccessibilityConfigKey.commonBlock) as? NSDictionary
+        let searchLabel = settingsNew?.value(forKey: SidebarAccessibilityConfigKey.searchLabel) as? String
+            ?? "Search settings" // i18n-ignore: last-resort default; the real string comes from config
+        let categoryListLabel = common?.value(forKey: SidebarAccessibilityConfigKey.categoryListLabel) as? String
+            ?? "Settings" // i18n-ignore: last-resort default; the real string comes from config
+        searchField.setAccessibilityLabel(searchLabel)
+        tblView.setAccessibilityLabel(categoryListLabel)
     }
     
     func reloadDataForAppMode(){
@@ -407,7 +440,8 @@ class settingsSideBarVc: NSViewController {
                     // stats
                     let destCsvUrl = destUrl.appendingPathComponent("Stats.csv")
                     do{
-                        try FileManager.default.copyItem(at: quantityCsvURL, to: destCsvUrl)
+                        // The export the user asked for is a readable copy; the app's own copy stays sealed.
+                        try SecureFiles.shared.readData(quantityCsvURL).write(to: destCsvUrl)
                     }catch{
                         print(error)
                     }
@@ -417,7 +451,7 @@ class settingsSideBarVc: NSViewController {
                     
                     let destSettingsUrl = destUrl.appendingPathComponent("Habit settings.json")
                     var jsonString = ""
-                    if let text = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+                    if let text = SensitiveDefaults.object(forKey: kUserdefaultsSelectedJson) as? String {
                         jsonString = text
                     }
                     if let data = jsonString.data(using: String.Encoding.utf8) {
@@ -495,8 +529,10 @@ extension settingsSideBarVc: NSTableViewDelegate, NSTableViewDataSource{
         
         if tableView == self.tblView {
             let title = arrSettingsList[row]["title"] as? String ?? ""
+            let settingsId = arrSettingsList[row]["id"] as? String ?? ""
             let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier("tblCellSettingsSideBar"), owner: nil) as? tblCellSettingsSideBar
             cell?.lblTitle.stringValue = title
+            cell?.lblTitle.setAccessibilityIdentifier(UITestContract.Identifier.Settings.tabPrefix + settingsId)
             cell?.imgView.image = arrSettingsList[row]["icon"] as? NSImage ?? NSImage(named: NSImage.preferencesGeneralName)
             
             cell?.boxNewBadge.isHidden = true
@@ -555,6 +591,7 @@ extension settingsSideBarVc: NSTableViewDelegate, NSTableViewDataSource{
             default:
                 break;
             }
+            settingsContainerVcObj.markPaneForUITests(settingsId: id)
         }
         
         

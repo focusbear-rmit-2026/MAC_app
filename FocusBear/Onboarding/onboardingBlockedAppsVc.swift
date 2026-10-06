@@ -27,6 +27,11 @@ class onboardingBlockedAppsVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        tblView.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedAppsTable)
+        btnAdd.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedAppsAddButton)
+        btnRemove.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedAppsRemoveButton)
+        lblBlockedCount.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedAppsCount)
+        btnContinue.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedAppsProceedButton)
         // Do view setup here.
         lblTitle.stringValue = "Choose apps to block"
         btnContinue.title = "Proceed"
@@ -236,7 +241,7 @@ class onboardingBlockedAppsVc: NSViewController {
         UserDefaults.standard.set(arrBlockedApps, forKey: kUserdefaultsBlockedAppsFromOnboarding)
 
         SettingsManagerObject.arrBlockedApps = arrBlockedApps
-        UserDefaults.standard.set(SettingsManagerObject.arrBlockedApps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)//
+        SensitiveDefaults.set(SettingsManagerObject.arrBlockedApps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)//
         UserDefaults.standard.set(true, forKey: kUserdefaultsIsAnyDistractionSetByUser)
         // After blocked URLs + apps, continue through allowed URLs → blocking schedule → permissions;
         // the habits intro comes last, after permissions. Jumping straight to _HOLD_ON_ here (added in

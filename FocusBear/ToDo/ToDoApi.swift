@@ -638,7 +638,7 @@ extension AllApi {
                                     expectedAccountID: String? = nil,
                                     logErrorBody: Bool = true,
                                     completionHandler: @escaping (_ data: Data?, _ statusCode: Int) -> ()) {
-        addLog(text: "func call:- api todo \(method) \(path)")
+        addLog(text: "func call:- api todo \(method) \(LogPrivacy.url(path))")
         func accountMatches() -> Bool {
             guard let expected = expectedAccountID else { return true }
             return !expected.isEmpty && appdelegate?.user?.userId == expected
@@ -671,12 +671,12 @@ extension AllApi {
             let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
                 guard accountMatches() else { completionHandler(nil, 0); return }
                 guard let httpResponse = response as? HTTPURLResponse else {
-                    addLog(text: "api todo \(method) \(path) error:- \(error?.localizedDescription ?? "no response")")
+                    addLog(text: "api todo \(method) \(LogPrivacy.url(path)) error:- \(error?.localizedDescription ?? "no response")")
                     completionHandler(nil, 0)
                     return
                 }
                 if !(200..<300).contains(httpResponse.statusCode) {
-                    addLog(text: "api todo \(method) \(path) Api error:- statusCode is \(httpResponse.statusCode)")
+                    addLog(text: "api todo \(method) \(LogPrivacy.url(path)) Api error:- statusCode is \(httpResponse.statusCode)")
                     if logErrorBody { self.logToDoErrorBody(data) }
                 }
                 completionHandler(data, httpResponse.statusCode)

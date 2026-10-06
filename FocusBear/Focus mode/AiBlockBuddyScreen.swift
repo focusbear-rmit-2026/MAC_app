@@ -358,9 +358,18 @@ let kAiBlockBuddyCompactAfterPickSeconds: TimeInterval = 15
 /// it) and the duplicate-present guard, so both agree on what "the same item" means.
 func aiBlockBuddyItemKey(for context: AiBlockContext) -> String {
     if context.isAppBlocking {
-        return "app:" + (context.currentApp?.bundleIdentifier ?? context.blockedAppName)
+        return aiBlockBuddyAppKeyPrefix + (context.currentApp?.bundleIdentifier ?? context.blockedAppName)
     }
-    return "url:" + (context.url.isEmpty ? context.fullUrl : context.url)
+    return aiBlockBuddyURLKeyPrefix + (context.url.isEmpty ? context.fullUrl : context.url)
+}
+
+let aiBlockBuddyAppKeyPrefix = "app:"
+let aiBlockBuddyURLKeyPrefix = "url:"
+
+/// An item key as the log may show it: a site block names only its site (`LogPrivacy.site`).
+func loggableAiBlockBuddyItemKey(_ itemKey: String) -> String {
+    guard itemKey.hasPrefix(aiBlockBuddyURLKeyPrefix) else { return itemKey }
+    return aiBlockBuddyURLKeyPrefix + LogPrivacy.site(String(itemKey.dropFirst(aiBlockBuddyURLKeyPrefix.count)))
 }
 
 /// The buddy window/view height: the desired height, but never dominating a short screen. On a 13" laptop
@@ -383,7 +392,13 @@ private func aiBlockBuddyBackdrop() -> AiBlockBuddyBackdrop {
 /// Present the SwiftUI AI-block buddy screen centered over the (already shown) blur backdrop, replacing
 /// the legacy popup for the not-relevant AI decision. Mirrors the legacy window's level/centering.
 func showAiBlockBuddyWindow(context: AiBlockContext) {
-    addLog(text: "func:- showAiBlockBuddyWindow item=\(context.itemLabel) isApp=\(context.isAppBlocking)")
+    // An app's name is safe to log; a site is described, its full URL kept in the browsing history.
+    let loggedItem = context.isAppBlocking ? context.itemLabel : LogPrivacy.site(context.itemLabel)
+    addLog(text: "func:- showAiBlockBuddyWindow item=\(loggedItem) isApp=\(context.isAppBlocking)")
+    BrowsingHistory.shared.record(.checkInShown, url: context.isAppBlocking ? nil : context.itemLabel,
+                                  app: context.currentApp?.bundleIdentifier ?? (context.isAppBlocking ? context.blockedAppName : nil),
+                                  reason: BrowsingReason.aiBlockBuddy, focusMode: runningFocusModeName,
+                                  aiScore: context.scoreForThisSiteApp, aiReason: context.aiBlockReason)
 
     // The focus block loop re-detects the still-caught app/site ~once a second and calls this again. If the
     // buddy is already on screen for the SAME item, rebuilding the hosting controller / re-framing the
@@ -850,7 +865,7 @@ final class AiBlockRepromptScheduler {
         }
         RunLoop.main.add(timer, forMode: .common)
         timers[itemKey] = timer
-        addLog(text: "ai-block reprompt scheduled for \(itemKey) in \(clamped)m")
+        addLog(text: "ai-block reprompt scheduled for \(loggableAiBlockBuddyItemKey(itemKey)) in \(clamped)m")
     }
 
     private func fire(itemKey: String, context: AiBlockContext) {
@@ -1098,7 +1113,7 @@ private func aiBlockBuddyAdoptPickedTask(_ picked: DayPlanTask) {
 func aiBlockBuddySetCurrentFocusTask(title: String, id: String, durationSeconds: Int) {
     let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty else { return }
-    addLog(text: "aiBlockBuddySetCurrentFocusTask: \(trimmed)")
+    addLog(text: "aiBlockBuddySetCurrentFocusTask: \(LogPrivacy.text(trimmed))")
     taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: trimmed, id: id,
                                                  duration: durationSeconds,
                                                  shouldCompleteCurrentTask: false)

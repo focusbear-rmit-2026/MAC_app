@@ -52,6 +52,7 @@ class accessibilityVc: NSViewController {
         reduceMotionItemVcObj?.lblTitle.stringValue = checkBoxReduceMotionText
         reduceMotionItemVcObj?.lblSubTitle.isHidden = true
         reduceMotionItemVcObj?.delegate = self
+        reduceMotionItemVcObj?.btnSwitch.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.reduceMotionSwitch)
         reduceMotionItemVcObj?.toolTip = accessibility_ReduceMotion
 
         stackView.addView(soundItemVcObj!.view, in: .bottom)

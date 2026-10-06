@@ -300,18 +300,24 @@ final class ToDoStore: ObservableObject {
         }
     }
 
-    /// Web accordion: open Doing when it has tasks, else To do — once.
+    /// Web accordion: open Doing when it has tasks, else To do — once. Not used up by an empty list,
+    /// or a new account's first task landed in a collapsed "To do 1" and seemed not to have saved.
     private func autoExpandIfNeeded() {
         guard !hasAutoExpanded else { return }
-        hasAutoExpanded = true
         if !(tasksByStatus[.inProgress] ?? []).isEmpty {
             expandedSectionId = ToDoStatus.inProgress.rawValue
         } else if !(tasksByStatus[.notStarted] ?? []).isEmpty {
             expandedSectionId = ToDoStatus.notStarted.rawValue
+        } else {
+            return
         }
+        hasAutoExpanded = true
     }
 
     func toggleSection(_ section: ToDoSection) {
+        // Opening a section yourself ends the automatic choice; a fetch landing a moment later used
+        // to switch the list to Doing under you.
+        hasAutoExpanded = true
         expandedSectionId = expandedSectionId == section.id ? nil : section.id
         selectedTaskId = nil
     }

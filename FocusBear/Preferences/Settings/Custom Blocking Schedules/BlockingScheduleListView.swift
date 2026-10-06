@@ -9,6 +9,8 @@
 
 import SwiftUI
 
+private typealias SettingsUITestIdentifier = UITestContract.Identifier.SettingsRegression
+
 @available(macOS 11.0, *)
 struct BlockingScheduleListView: View {
     @ObservedObject var store: BlockingScheduleStore
@@ -24,6 +26,7 @@ struct BlockingScheduleListView: View {
                         ScheduleCard(store: store, schedule: schedule, colorIndex: index)
                     }
                     .buttonStyle(FBButtonStyle())
+                    .accessibilityIdentifier(SettingsUITestIdentifier.scheduleCardPrefix + schedule.name)
                 }
 
                 addButton
@@ -49,6 +52,7 @@ struct BlockingScheduleListView: View {
             )
         }
         .buttonStyle(FBButtonStyle())
+        .accessibilityIdentifier(SettingsUITestIdentifier.scheduleAddButton)
         .padding(.top, 4)
     }
 }

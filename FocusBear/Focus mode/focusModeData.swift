@@ -44,6 +44,8 @@ var arrConvinceAiAppsInCurrentFocus = [[String:String]]()
 
 var arrKeywordsToAllowInFocus = [String]()
 var currentRunningFocusType = [String:Any]()
+/// The running focus mode's name, for the browsing history.
+var runningFocusModeName: String? { currentRunningFocusType[FocusModeDictionaryKey.name] as? String }
 var lastRunningFocusModeId = ""
 //var dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus = [String:[String:Any]]()
 let dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus = SafeDict()
@@ -767,19 +769,23 @@ private func urlRelevanceTargetIsCurrent(_ key: AiRelevanceDecisionKey, url: Str
         // Name the field that failed. "superseded" alone collapses two very different causes — a
         // newer check replacing this one, versus the tab genuinely reading differently — and the
         // second is usually a comparison mismatch rather than the user moving on.
+        // The pages and titles are described, not written: the full values go to the browsing history.
         var detail = ""
         if freshness == .superseded {
             let liveURL = readLiveURL()
             let liveTitle = readLiveTitle()
+            let keyTitle = key.content.count > 1 ? key.content[1] : nil
             let keyStillLive = currentUrlRelevanceKey == key
             detail = " keyLive=\(keyStillLive)"
-                + " urlMatch=\(liveURL == key.target) liveURL=\(liveURL ?? "nil") keyTarget=\(key.target)"
-                + " titleMatch=\(liveTitle == (key.content.count > 1 ? key.content[1] : nil))"
-                + " liveTitle=\(liveTitle ?? "nil") keyTitle=\(key.content.count > 1 ? key.content[1] : "nil")"
+                + " urlMatch=\(liveURL == key.target) liveURL=\(liveURL.map(LogPrivacy.site) ?? "nil") keyTarget=\(LogPrivacy.site(key.target))"
+                + " titleMatch=\(liveTitle == keyTitle)"
+                + " liveTitle=\(liveTitle.map(LogPrivacy.text) ?? "nil") keyTitle=\(keyTitle.map(LogPrivacy.text) ?? "nil")"
         }
-        addLog(text: "relevance verdict discarded for \(url): \(freshness)\(detail)")
+        addLog(text: "relevance verdict discarded for \(LogPrivacy.site(url)): \(freshness)\(detail)")
+        BrowsingHistory.shared.record(.verdictDiscarded, url: url, title: title, app: runningApp.bundleIdentifier,
+                                      reason: "\(freshness)")
     } else if freshness == .unverifiable {
-        addLog(text: "relevance verdict applied for \(url) without re-reading the tab (browser read failed)")
+        addLog(text: "relevance verdict applied for \(LogPrivacy.site(url)) without re-reading the tab (browser read failed)")
     }
     return freshness.shouldApplyVerdict
 }
@@ -977,7 +983,7 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
     // }
     let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
     print("********** checkUrlFromAi ************")
-    addLog(text: "currentTask in is URL Safe to use:\(currentTaskInToDoPlayer)")//2.27.427
+    addLog(text: "currentTask in is URL Safe to use:\(LogPrivacy.text(currentTaskInToDoPlayer))")
     
     let arrayOfLast5Domain = getArrayOfLast5UrlJustifications()
     
@@ -997,14 +1003,16 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                     // flight, the relevance score was computed for a now-stale task — ignore it so we
                     // don't show a wrong "have you changed focus?" prompt (mirrors the URL guard above).
                     if getCurrentTaskInFocusMode() != currentTaskInToDoPlayer {
-                        addLog(text: "checkUrlFromAi: To-Do task changed during request (\(currentTaskInToDoPlayer ?? "nil") -> \(getCurrentTaskInFocusMode() ?? "nil")); ignoring stale relevance result.")
+                        addLog(text: "checkUrlFromAi: To-Do task changed during request (\(LogPrivacy.text(currentTaskInToDoPlayer)) -> \(LogPrivacy.text(getCurrentTaskInFocusMode()))); ignoring stale relevance result.")
                         setFocusBearIconToNormal()
                         return
                     }
                     let reason = dic?.value(forKey: "reason") as? String ?? ""
                     setFocusBearIconToNormal()
                     if var dProbability = dic?.value(forKey: "allowed_probability") as? Double{
-                        addLog(text: "checked chatGPTIsURLSafe:- \(url), dProbability:\(dProbability)")
+                        addLog(text: "checked chatGPTIsURLSafe:- \(LogPrivacy.site(url)), dProbability:\(dProbability)")
+                        BrowsingHistory.shared.record(.aiVerdict, url: url, title: tab_title, app: runningApp.bundleIdentifier,
+                                                      focusMode: currentRunningFocusModeName, aiScore: dProbability, aiReason: reason)
                         let currentTaskName = currentTaskInToDoPlayer ?? ""
                         let suggested_task = dic?.value(forKey: "suggested_task") as? String
                         let suggested_task_id = dic?.value(forKey: "suggested_task_id") as? String
@@ -1070,6 +1078,8 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                             if(dProbability >= 0.70){
                                 // Safe URL
                                 addLog(text: "url is safe according to chat gpt")
+                                BrowsingHistory.shared.record(.allowed, url: url, title: tab_title, app: runningApp.bundleIdentifier,
+                                                              reason: BrowsingReason.aiRelevant, focusMode: currentRunningFocusModeName, aiScore: dProbability)
                                 allApiObject.capturePosthog(event: "block-popup-allow-automatically", metadata: [:])
                                 
                                 
@@ -1112,6 +1122,8 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                             if(dProbability >= 0.70){
                                 // Safe URL
                                 addLog(text: "url is safe according to chat gpt")
+                                BrowsingHistory.shared.record(.allowed, url: url, title: tab_title, app: runningApp.bundleIdentifier,
+                                                              reason: BrowsingReason.aiRelevant, focusMode: currentRunningFocusModeName, aiScore: dProbability)
                                 allApiObject.capturePosthog(event: "block-popup-allow-automatically", metadata: [:])
                                 
                                 // Allowed for this exact request key; reused by the relevance cache.
@@ -1137,7 +1149,9 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                 // The front tab moved on while the check was in flight, so the verdict is dropped.
                 // Log it: the check cost an API call, and a silently discarded decision is otherwise
                 // indistinguishable in the logs from one that never ran.
-                addLog(text: "relevance verdict dropped: checked \(checkedUrl ?? "nil") but current page is \(currentBrowserUrlForAi)")
+                addLog(text: "relevance verdict dropped: checked \(checkedUrl.map(LogPrivacy.site) ?? "nil") but current page is \(LogPrivacy.site(currentBrowserUrlForAi))")
+                BrowsingHistory.shared.record(.verdictDiscarded, url: checkedUrl, title: tab_title, app: runningApp.bundleIdentifier,
+                                              reason: BrowsingReason.pageChanged)
                 isGettingResponseFromAi = false
             }
         }else{
@@ -1161,6 +1175,8 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                             calculateFocusAlignmentScore()
                             
                             addLog(text: "The status of this url could not be verified. so we are marking it allowed")
+                            BrowsingHistory.shared.record(.allowed, url: url, title: tab_title, app: runningApp.bundleIdentifier,
+                                                          reason: BrowsingReason.aiUnverified, focusMode: currentRunningFocusModeName)
                             allApiObject.capturePosthog(event: "ai-endpoint-timed-out-three-times", metadata: [:])
                             
                             arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
@@ -1176,6 +1192,8 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                             
                         }else{
                             addLog(text: "The status of this url could not be verified. so we are marking it allowed")
+                            BrowsingHistory.shared.record(.allowed, url: url, title: tab_title, app: runningApp.bundleIdentifier,
+                                                          reason: BrowsingReason.aiUnverified, focusMode: currentRunningFocusModeName)
                             allApiObject.capturePosthog(event: "ai-endpoint-timed-out-three-times", metadata: [:])
                             
                             arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
@@ -1216,7 +1234,7 @@ func checkUrlFromAiWithNewIntention(url:String, domain:String, tab_title:String,
     
     arrConvinceAiUrlsInCurrentFocus.append(["url":url, "intentionForSite":intentionForThisSite, "pageTitle":tab_title])
     let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
-    addLog(text: "currentTask in is URL with New Intention Safe to use:\(currentTaskInToDoPlayer)")
+    addLog(text: "currentTask in is URL with New Intention Safe to use:\(LogPrivacy.text(currentTaskInToDoPlayer))")
     allApiObject.chatGPTIsURLSafeWithNewIntention(url: url, tab_title: tab_title, focus_mode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, intentionForThisSite: intentionForThisSite, other_explanations_including_domains: arrayOfLast5Domain, currentTaskInToDoPlayer: currentTaskInToDoPlayer, currentHabitName: currentHabitName, completionHandler: {dic, checkedUrl, payload  in
         if dic != nil{
             DispatchQueue.main.async{
@@ -1226,7 +1244,9 @@ func checkUrlFromAiWithNewIntention(url:String, domain:String, tab_title:String,
                 dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["intentionForSite"] = intentionForThisSite
                 if let dProbability = dic?.value(forKey: "allowed_probability") as? Double{
                     
-                    addLog(text: "checked checkUrlFromAiWithNewIntention:- \(url), dProbability:\(dProbability)")
+                    addLog(text: "checked checkUrlFromAiWithNewIntention:- \(LogPrivacy.site(url)), dProbability:\(dProbability)")
+                    BrowsingHistory.shared.record(.aiVerdict, url: url, title: tab_title, focusMode: currentRunningFocusModeName,
+                                                  aiScore: dProbability, aiReason: reason)
                     addEntryInfocusAlignmentScoreCsv(url: url, tabTitle: tab_title, focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
                     
                     let suggested_task = dic?.value(forKey: "suggested_task") as? String
@@ -1261,6 +1281,8 @@ func checkUrlFromAiWithNewIntention(url:String, domain:String, tab_title:String,
                     if(dProbability >= 0.60){
                         // Safe URL
                         addLog(text: "url is safe according to chat gpt")
+                        BrowsingHistory.shared.record(.allowed, url: url, title: tab_title, reason: BrowsingReason.aiRelevant,
+                                                      focusMode: currentRunningFocusModeName, aiScore: dProbability)
                         allApiObject.capturePosthog(event: "allow-automatically-convince-ai", metadata: [:])
                         
                         arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
@@ -1462,11 +1484,13 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
         // bare app. is-app-safe has no dedicated title field yet (backend coord t86), so surface it as leading
         // context in the justifications it already weighs.
         appJustifications.insert("The \(appName) window is currently titled: \"\(windowTitle)\"", at: 0)
-        addLog(text: "checkAppFromAi: \(appName) window title '\(windowTitle)' added to AI context")
+        addLog(text: "checkAppFromAi: \(appName) window title \(LogPrivacy.text(windowTitle)) added to AI context")
+        BrowsingHistory.shared.record(.seen, title: windowTitle, app: runningApp.bundleIdentifier ?? appName,
+                                      reason: BrowsingReason.appWindowForAi)
     }
 
     let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
-    addLog(text: "currentTask in is App Safe :\(currentTaskInToDoPlayer)")
+    addLog(text: "currentTask in is App Safe :\(LogPrivacy.text(currentTaskInToDoPlayer))")
     let requestKey = appRelevanceKey(appName: appName, runningApp: runningApp)
     let isCurrent = {
         appRelevanceTargetIsCurrent(requestKey, appName: appName, runningApp: runningApp)
@@ -1489,6 +1513,8 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                     if var dProbability = dic?.value(forKey: "allowed_probability") as? Double{
                         print("dProbability is \(dProbability) ****")
                         addLog(text: "checked chatGPTIsAppSafe:- \(appName), dProbability:\(dProbability)")
+                        BrowsingHistory.shared.record(.aiVerdict, app: runningApp.bundleIdentifier ?? appName,
+                                                      focusMode: currentRunningFocusModeName, aiScore: dProbability, aiReason: reason)
                         let suggested_task = dic?.value(forKey: "suggested_task") as? String
                         let suggested_task_id = dic?.value(forKey: "suggested_task_id") as? String
                         
@@ -1713,7 +1739,7 @@ func checkAppFromAiWithNewIntention(appName:String, intentionForThisApp:String, 
     let arrayOfLast5Apps = getArrayOfLast5AppJustifications()
     arrConvinceAiAppsInCurrentFocus.append(["app":appName, "intentionForApp":intentionForThisApp])
     let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
-    addLog(text: "currentTask in is App Safe with New Intention to use:\(currentTaskInToDoPlayer)")
+    addLog(text: "currentTask in is App Safe with New Intention to use:\(LogPrivacy.text(currentTaskInToDoPlayer))")
     allApiObject.chatGPTIsAppSafeWithNewIntention(appName: appName, focus_mode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, intentionForThisApp: intentionForThisApp, other_explanations_including_apps: arrayOfLast5Apps, currentTaskInToDoPlayer: currentTaskInToDoPlayer, currentHabitName: currentHabitName, completionHandler: {dic, checkedUrl, payload  in
         if dic != nil{
             DispatchQueue.main.async{
@@ -2453,7 +2479,7 @@ func switchRunningFocusMode(toIndex index: Int) -> Bool {
     workBeforeFocusBegin(index: index)
     appdelegate?.setStatusBarButtonColorForFocusMode(color: nil,
                                                      colorString: arrFocusType[index]["color"] as? String ?? "")
-    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+    SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
     updateAllFocusModes()
     addLog(text: "[user-action] focus session: block list switched to \(arrFocusType[index]["name"] as? String ?? "")")
     return true
@@ -2522,7 +2548,10 @@ var habitBlockTimerHelper = habitBlockTimerManager()
 
 
 func focusBlockUnwantedUrl(script: String, url:String, lastBlockReasonFromAi:String?, browser: BROWSER?, isUrlBlockByAi:Bool, blockReason:String){
-    addLog(text:"focusBlockUnwantedUrl:- \(url)")
+    addLog(text:"focusBlockUnwantedUrl:- \(LogPrivacy.site(url)) reason=\(isUrlBlockByAi ? BrowsingReason.aiBlock : blockReason)")
+    BrowsingHistory.shared.record(.blocked, url: url, app: browser.map { "\($0)" },
+                                  reason: isUrlBlockByAi ? BrowsingReason.aiBlock : blockReason,
+                                  focusMode: runningFocusModeName, aiReason: lastBlockReasonFromAi)
     var newScript = script
     newScript = newScript.replacingOccurrences(of: "<NEWPAGE>", with: "")
     currentBrowserUrlForAi = ""
@@ -2576,7 +2605,11 @@ func focusTryToBlockUnwantedUrl(script: String, url:String, browser: BROWSER?, t
             }
         }
     }
-    addLog(text: "focusTryToBlockUnwantedUrl:- \(url)")
+    // The same string in both, so the log's `<site:…:ref>` finds this entry in the history.
+    let pageURL = fullUrl.isEmpty ? url : fullUrl
+    addLog(text: "focusTryToBlockUnwantedUrl:- \(LogPrivacy.site(pageURL)) app=\(runningApp.bundleIdentifier ?? "nil")")
+    BrowsingHistory.shared.record(.seen, url: pageURL, title: tabTitle, app: runningApp.bundleIdentifier,
+                                  reason: BrowsingReason.notOnAllowList, focusMode: runningFocusModeName)
     if SettingsManagerObject.isCuddlyModeEnabled{
         if arrBlockedUrlsInCuddlyModeCurrentFocus.contains(url){
             focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: false, blockReason: "blocked_once_in_this_session")
@@ -2610,7 +2643,11 @@ func focusTryToBlockUnwantedUrl(script: String, url:String, browser: BROWSER?, t
 }
 
 func focusBlockUnwantedApp(runningApp: NSRunningApplication, appName:String, showNotification:Bool, isAppBlockByAi:Bool){
+    // UI-test builds run on a developer's own Mac: never hide their other apps.
+    if UITestHost.suppressesEnforcement { return }
     addLog(text: "focusBlockUnwantedApp:- \(appName)")
+    BrowsingHistory.shared.record(.blocked, app: runningApp.bundleIdentifier ?? appName,
+                                  reason: isAppBlockByAi ? BrowsingReason.aiBlock : nil, focusMode: runningFocusModeName)
     // A Quick Look preview can't be hidden like an app (the XPC service that hosts it isn't activatable):
     // close the preview window instead. `appName` is the previewed file's name there.
     let isQuickLookPreview = isQuickLookService(runningApp)
@@ -2808,7 +2845,7 @@ func startWorkFocusAutomaticallyClicked(id:String, minutes:Int, intention:String
                 
                 appdelegate!.focusModeStartted(isStartedByPusher: false)
                 allApiObject.capturePosthog(event: "start-work-focus-mode", metadata: [:])
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 isFocusModeStartedAutomatically = false
                 break;
             }
@@ -3013,7 +3050,7 @@ func startFocusModeFromFocusDeviceButton(diffMinutes:Int, shouldUpdateFocusButto
     }
     
     if let goal = goal {
-        addLog(text: "Starting focus session for \(diffMinutes) minutes with goal: \(goal)")
+        addLog(text: "Starting focus session for \(diffMinutes) minutes with goal: \(LogPrivacy.text(goal))")
     } else {
         addLog(text: "Starting focus session for \(diffMinutes) minutes")
     }
@@ -3254,7 +3291,7 @@ private func repairMeetingsFocusModeZohoEntries(at index: Int) -> Bool {
     guard changed else { return false }
     arrFocusType[index]["allowed_urls"] = allowedUrls
     arrFocusType[index]["allowed_apps"] = allowedApps
-    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+    SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
     addLog(text: "checkAllFocusModes: repaired Meetings focus mode Zoho entries (#2388)")
     return true
 }
@@ -3269,7 +3306,7 @@ func checkAllFocusModes(){
     var isDeepWorkFocusContain = false
     
     
-    if let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrFocusTypes) as? [[String:Any]]{
+    if let arr = SensitiveDefaults.object(forKey: kUserdefaultsArrFocusTypes) as? [[String:Any]]{
         arrFocusType = arr
         
         for i in 0..<arrFocusType.count{
@@ -3314,7 +3351,7 @@ func checkAllFocusModes(){
         let dic:[String:Any] = ["id":id, "name":"Block super distracting sites/apps", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)),"allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":false, "isDefault":true, "isAllowedListApproach":false, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp, "isAutoDoNotDisturbEnabled": true]//#453//tags
         
         arrFocusType.insert(dic, at: 0)
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
             if success{
                 // create first pending blocking schedule for new onboarding
@@ -3335,7 +3372,7 @@ func checkAllFocusModes(){
                 arrFocusType[defaultContainLocation]["isAllowedListApproach"] = false
                 arrFocusType[defaultContainLocation]["allowed_urls"] = []
                 arrFocusType[defaultContainLocation]["blockUrlsArray"] = []
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
 
                 allApiObject.editFocusMode(focusType: arrFocusType[defaultContainLocation], completionHandler: {newDic in
                     DispatchQueue.main.async {
@@ -3363,7 +3400,7 @@ func checkAllFocusModes(){
             }
             arrFocusType.remove(at: defaultContainLocation)
             arrFocusType.insert(focusMode, at: 0)
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         }
         // Persist the onboarding "first blocking schedule" against the EXISTING default focus mode.
         // Previously createFirstBlockingSchedule was only called in the `if !isDefaultContain` branch
@@ -3385,7 +3422,7 @@ func checkAllFocusModes(){
         }else{
             arrFocusType.insert(dic, at: arrFocusType.count - 1)
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
         })
     }
@@ -3398,7 +3435,7 @@ func checkAllFocusModes(){
         }else{
             arrFocusType.append(dic)
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
         })
         
@@ -3413,7 +3450,7 @@ func checkAllFocusModes(){
         }else{
             arrFocusType.insert(dic, at: arrFocusType.count - 1)
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
         })
     }
@@ -3428,7 +3465,7 @@ func checkAllFocusModes(){
         }else{
             arrFocusType.insert(dic, at: arrFocusType.count - 1)
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
         })
     }
@@ -3448,7 +3485,7 @@ func checkAllFocusModes(){
         }else{
             arrFocusType.insert(dic, at: arrFocusType.count - 1)
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
         })
         
@@ -3475,7 +3512,7 @@ func checkAllFocusModes(){
         
     }
     sortFocusModes()
-    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+    SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
     
     
     arrFocusTypeForPomodoro.removeAll()

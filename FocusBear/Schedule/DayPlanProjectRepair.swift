@@ -492,7 +492,7 @@ final class TodoColumnRepair {
             write(repairs, index: index + 1, titles: titles, quadrants: quadrants, account: account)
             return
         }
-        addLog(text: "TodoColumnRepair: moving to-do \(repair.taskID) '\(title)' in project \(repair.projectID) "
+        addLog(text: "TodoColumnRepair: moving to-do \(repair.taskID) \(LogPrivacy.text(title)) in project \(repair.projectID) "
             + "from column \(repair.fromColumnID) to \(repair.toColumnID)")
         DayPlanSync.shared.setTodoStatus(todoID: repair.taskID, title: title,
                                          quadrant: (quadrants[repair.taskID] ?? nil) ?? kDayPlanNeutralQuadrant,

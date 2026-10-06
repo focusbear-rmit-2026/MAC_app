@@ -69,6 +69,10 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
         
         btnSignIn.title = buttonSignInOldAccountText
         lblTitleCreateAccount.stringValue = buttonCreateAccount
+        btnSignIn.setAccessibilityIdentifier(UITestContract.Identifier.Login.goToSignInButton)
+        boxButtonSignUpWithEmail.setAccessibilityIdentifier(UITestContract.Identifier.Login.signUpWithEmailButton)
+        boxButtonSignUpWithGoogle.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.signUpWithGoogleButton)
+        boxButtonSignUpWithApple.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.signUpWithAppleButton)
     }
     
     override func viewWillAppear() {

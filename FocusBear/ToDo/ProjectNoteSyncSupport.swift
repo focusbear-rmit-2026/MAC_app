@@ -24,6 +24,40 @@ enum ProjectNoteDraftError: Error, Equatable {
     case storageUnavailable
 }
 
+/// How a draft is kept at rest. Drafts are local-only (unsynced edits), so a draft that can't be sealed
+/// right now is not written at all — the editor keeps its state in memory — and one that can't be opened
+/// right now reads as absent but is never deleted or overwritten.
+protocol ProjectNoteDraftSealing {
+    /// The bytes to store, or nil when the data key is unavailable (nothing may be written then).
+    func seal(_ envelope: Data, slot: String) -> Data?
+    /// The plain envelope, or nil when the stored bytes can't be opened right now.
+    func open(_ stored: Data, slot: String) -> Data?
+}
+
+/// Seals drafts with the signed-in account's data key (SecureStore). A draft written by an older build
+/// is plain JSON: it is still read, and `sealLegacyDrafts` replaces it with a sealed copy.
+struct SecureStoreDraftSealing: ProjectNoteDraftSealing {
+    static let slotPrefix = "note-draft/"
+    var store: SecureStore = .shared
+
+    func seal(_ envelope: Data, slot: String) -> Data? {
+        if case .disabled = store.currentState { return envelope }
+        guard let context = context() else { return nil }
+        return try? store.seal(envelope, slot: Self.slotPrefix + slot, scope: context.scope, with: context.key)
+    }
+
+    func open(_ stored: Data, slot: String) -> Data? {
+        guard SecureEnvelope.isEnvelope(stored) else { return stored }
+        guard let context = context() else { return nil }
+        return try? store.open(stored, slot: Self.slotPrefix + slot, scope: context.scope, with: context.key)
+    }
+
+    private func context() -> (scope: String, key: SecureStore.SealingKey)? {
+        guard store.currentState.isReady, let accountId = store.currentAccountId, let key = store.sealingKey else { return nil }
+        return (SecureStore.accountScope(for: accountId), key)
+    }
+}
+
 /// A private recovery copy, never a replacement for merging Yjs state from the server/peers.
 /// All operations require the complete identity; no "last note" or cross-account fallback exists.
 /// Callers must also retain/check the current account and note generation around async operations.
@@ -42,14 +76,49 @@ final class ProjectNoteDraftStore {
 
     // Codable Data adds one base64 layer; cap reads before decoding it. Identity fields are bounded.
     private static let maxStoredBytes = ((maxSnapshotBytes + 2) / 3) * 4 + 32 * 1024
+    /// Room for the sealed envelope's header, nonce and tag, so a draft at the size limit still loads.
+    private static let sealingOverheadBytes = 256
     private static let fileLock = NSLock()
+    private static let draftExtension = "json"
     private let directory: URL
+    private let sealing: ProjectNoteDraftSealing
     private let files = FileManager.default
 
-    init(directory: URL? = nil) {
+    static var defaultDirectory: URL {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support", isDirectory: true)
-        self.directory = directory ?? support.appendingPathComponent("FocusBear/ProjectNoteDrafts-v1", isDirectory: true)
+        return support.appendingPathComponent("FocusBear/ProjectNoteDrafts-v1", isDirectory: true)
+    }
+
+    init(directory: URL? = nil, sealing: ProjectNoteDraftSealing = SecureStoreDraftSealing()) {
+        self.directory = directory ?? Self.defaultDirectory
+        self.sealing = sealing
+    }
+
+    /// Replaces every plain-JSON draft an older build left with a sealed copy: sealed, opened again and
+    /// compared in memory, then renamed over the original (so a failure leaves the original in place).
+    /// Idempotent; a no-op while the data key is unavailable. Returns how many drafts were sealed.
+    @discardableResult
+    func sealLegacyDrafts() -> Int {
+        Self.fileLock.lock()
+        defer { Self.fileLock.unlock() }
+        let names = (try? files.contentsOfDirectory(atPath: directory.path)) ?? []
+        var sealed = 0
+        for name in names where (name as NSString).pathExtension == Self.draftExtension {
+            let url = directory.appendingPathComponent(name, isDirectory: false)
+            guard let stored = try? Data(contentsOf: url), !SecureEnvelope.isEnvelope(stored),
+                  stored.count <= Self.maxStoredBytes,
+                  (try? JSONDecoder().decode(Envelope.self, from: stored)) != nil,
+                  let replacement = sealing.seal(stored, slot: name), SecureEnvelope.isEnvelope(replacement),
+                  sealing.open(replacement, slot: name) == stored else { continue }
+            do {
+                try atomicWrite(replacement, to: url)
+                sealed += 1
+            } catch {
+                addLog(text: "[secure-store] could not seal a project note draft yet")
+            }
+        }
+        return sealed
     }
 
     /// Corrupt, oversized, unsupported or differently scoped files are not returned or deleted.
@@ -92,7 +161,7 @@ final class ProjectNoteDraftStore {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
         let data = try encoder.encode(envelope)
-        guard data.count <= Self.maxStoredBytes else { throw ProjectNoteDraftError.snapshotTooLarge }
+        guard data.count <= Self.maxStoredBytes - Self.sealingOverheadBytes else { throw ProjectNoteDraftError.snapshotTooLarge }
         return data
     }
 
@@ -104,7 +173,11 @@ final class ProjectNoteDraftStore {
                 throw ProjectNoteDraftError.storageUnavailable
             }
             try files.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path)
-            try atomicWrite(data, to: fileURL(identity: identity))
+            let destination = fileURL(identity: identity)
+            guard let stored = sealing.seal(data, slot: destination.lastPathComponent) else {
+                throw ProjectNoteDraftError.storageUnavailable
+            }
+            try atomicWrite(stored, to: destination)
         } catch {
             // Do not propagate paths or serialized note data into generic error/log pipelines.
             throw ProjectNoteDraftError.storageUnavailable
@@ -167,7 +240,7 @@ final class ProjectNoteDraftStore {
             encoded.append(contentsOf: value.utf8)
         }
         let digest = SHA256.hash(data: encoded).map { String(format: "%02x", $0) }.joined()
-        return directory.appendingPathComponent(digest + ".json", isDirectory: false)
+        return directory.appendingPathComponent(digest + "." + Self.draftExtension, isDirectory: false)
     }
 
     private func loadLocked(identity: ProjectNoteIdentity) -> Data? {
@@ -182,8 +255,9 @@ final class ProjectNoteDraftStore {
         var info = stat()
         guard fstat(descriptor, &info) == 0, (info.st_mode & S_IFMT) == S_IFREG,
               info.st_size > 0, info.st_size <= Self.maxStoredBytes else { return nil }
-        guard let data = try? handle.read(upToCount: Self.maxStoredBytes + 1),
-              data.count <= Self.maxStoredBytes,
+        guard let stored = try? handle.read(upToCount: Self.maxStoredBytes + 1),
+              stored.count <= Self.maxStoredBytes,
+              let data = sealing.open(stored, slot: path.lastPathComponent),
               let value = try? JSONDecoder().decode(Envelope.self, from: data),
               value.version == 1, value.identity == identity,
               (try? Self.revision(in: value.snapshot)) != nil else { return nil }

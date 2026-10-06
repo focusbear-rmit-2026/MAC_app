@@ -93,7 +93,7 @@ class frictionSetPasswordVc: NSViewController {
         lblNewPassword.stringValue = "New Password"
         lblConfirmPassword.stringValue = "Confirm Password"
 
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
+        if !SettingsManagerObject.isAppPasswordSet{
             lblTitle.stringValue = "Set Password"
             btnChangePassword.title = "Set Password"
             textFieldNewPassword.placeholderString = "New Password"
@@ -295,7 +295,7 @@ class frictionSetPasswordVc: NSViewController {
         if textFieldNewPassword.stringValue == textFieldConfirmPassword.stringValue{
             let base64password = textFieldConfirmPassword.stringValue.toBase64()
             
-            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
+            if !SettingsManagerObject.isAppPasswordSet{
                 allApiObject.capturePosthog(event: "set-password", metadata: [:])
                 var passwordSetAlertTitle = "Password successfully set."
                 if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
@@ -315,7 +315,7 @@ class frictionSetPasswordVc: NSViewController {
                 alertforvalidation(question: passwordChagedAlertTitle, text: "")
             }
             
-            UserDefaults.standard.set(base64password, forKey: SettingsManagerObject.kUserdefaultsAppPassword)
+            SettingsManagerObject.appPassword.set(encoded: base64password)
             resetView()
             checkBoxSavedPassword.isHidden = false
             lblCheckBoxSavedPassword.isHidden = false

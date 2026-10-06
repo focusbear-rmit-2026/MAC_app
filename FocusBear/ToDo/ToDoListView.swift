@@ -93,9 +93,28 @@ struct ReturnGuardTextField: NSViewRepresentable {
     var onEndEditing: () -> Void = {}
     var isBordered = true
     var fontSize: CGFloat = 13
+    /// Set on the NSTextField itself: SwiftUI's modifier doesn't reach an NSViewRepresentable's view.
+    var accessibilityIdentifier: String?
+    /// What VoiceOver calls the field. Defaults to the placeholder: a placeholder alone is not a name
+    /// to VoiceOver, and it is the only text on screen that says what these fields are for.
+    var accessibilityLabel: String?
+    /// Takes keyboard focus when its sheet opens. With Full Keyboard Access on, AppKit otherwise
+    /// starts a sheet on its first button, so ⌘N then typing a title typed into "Cancel".
+    var focusesWhenShown = false
 
     final class GuardedTextField: NSTextField {
         var onCommit: () -> Void = {}
+        var focusesWhenShown = false
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            guard focusesWhenShown, let window else { return }
+            // After SwiftUI finishes installing the sheet, or its own initial focus wins.
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.window === window else { return }
+                window.makeFirstResponder(self)
+            }
+        }
         override func performKeyEquivalent(with event: NSEvent) -> Bool {
             if event.type == .keyDown, event.keyCode == 36 || event.keyCode == 76,
                let editor = currentEditor(), window?.firstResponder === editor {
@@ -132,6 +151,7 @@ struct ReturnGuardTextField: NSViewRepresentable {
 
     func makeNSView(context: Context) -> GuardedTextField {
         let field = GuardedTextField()
+        field.focusesWhenShown = focusesWhenShown
         field.delegate = context.coordinator
         field.isBordered = isBordered
         field.isBezeled = isBordered
@@ -145,6 +165,7 @@ struct ReturnGuardTextField: NSViewRepresentable {
         field.cell?.usesSingleLineMode = true
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
         field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        if let accessibilityIdentifier { field.setAccessibilityIdentifier(accessibilityIdentifier) }
         return field
     }
 
@@ -152,7 +173,13 @@ struct ReturnGuardTextField: NSViewRepresentable {
         context.coordinator.parent = self
         field.onCommit = onCommit
         field.placeholderString = placeholder
+        field.setAccessibilityLabel(spokenName)
         if field.stringValue != text { field.stringValue = text }
+    }
+
+    private var spokenName: String? {
+        let name = accessibilityLabel ?? placeholder
+        return name.isEmpty ? nil : name
     }
 }
 
@@ -161,11 +188,16 @@ struct ToDoSearchField: View {
     @Binding var text: String
     var placeholder: String
     var isBusy: Bool
+    /// Set when the placeholder doesn't work as a name: "Search..." fails the audit's human-readable check.
+    var accessibilityLabel: String?
+    var accessibilityIdentifier: String? = nil
 
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass").foregroundColor(.secondary)
-            ReturnGuardTextField(text: $text, placeholder: placeholder, isBordered: false)
+            ReturnGuardTextField(text: $text, placeholder: placeholder, isBordered: false,
+                                 accessibilityIdentifier: accessibilityIdentifier,
+                                 accessibilityLabel: accessibilityLabel)
             if isBusy {
                 ProgressView().scaleEffect(0.5).frame(width: 16, height: 16)
             } else if !text.isEmpty {
@@ -231,6 +263,7 @@ struct ToDoScreen: View {
                 .pickerStyle(SegmentedPickerStyle())
                 .labelsHidden()
                 .frame(width: 220)
+                .accessibilityIdentifier(UITestContract.Identifier.Projects.screenTabs)
                 Spacer()
             }
             if selectedTab == .tasks {
@@ -324,10 +357,14 @@ struct TasksTabView: View {
             SwiftUI.Button(action: { store.openEditor(for: nil) }) { Label(strings[.newTask], systemImage: "plus") }
                 .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 30))
                 .keyboardShortcut("n", modifiers: .command)
-            ToDoSearchField(text: $store.searchQuery, placeholder: strings[.searchPlaceholder], isBusy: store.isSearching)
+                .accessibilityIdentifier(UITestContract.Identifier.ToDo.newTaskButton)
+            ToDoSearchField(text: $store.searchQuery, placeholder: strings[.searchPlaceholder], isBusy: store.isSearching,
+                            accessibilityLabel: strings[.searchTasks],
+                            accessibilityIdentifier: UITestContract.Identifier.TasksRegression.searchField)
                 .frame(maxWidth: 300)
             ToDoIconButton(systemImage: "line.horizontal.3.decrease.circle", help: strings[.filter],
                            isActive: store.showFilters || store.filters.isActive) { store.showFilters.toggle() }
+                .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.filterButton)
             sortPicker
             Spacer()
             ToDoIconButton(systemImage: "arrow.clockwise", help: strings[.refresh]) { store.refreshAll() }
@@ -345,6 +382,7 @@ struct TasksTabView: View {
         .labelsHidden()
         .frame(width: 210)
         .help(sortHelp)
+        .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.sortPicker)
     }
 
     private var sortHelp: String {
@@ -365,16 +403,20 @@ struct TasksTabView: View {
                 Label(ForecastText[.reprioritiseMenuItem], systemImage: "calendar.badge.clock")
             }
             .disabled(forecast.isApplying)
+            .accessibilityIdentifier(UITestContract.Identifier.ToDo.reschedulePlanMenuItem)
             Divider()
             SwiftUI.Button(action: { store.resetBrainDump(); store.isBrainDumpVisible = true }) {
                 Label(strings[.brainDumpToTasks], systemImage: "brain")
             }
+            .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.brainDumpMenuItem)
             SwiftUI.Button(action: { store.exportAllTasks() }) { Label(strings[.exportCsv], systemImage: "square.and.arrow.up") }
                 .disabled(store.isExporting)
             SwiftUI.Button(action: { store.isMatrixVisible = true }) { Label(strings[.eisenhowerMatrix], systemImage: "square.grid.2x2") }
+                .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.eisenhowerMatrixMenuItem)
             SwiftUI.Button(action: { store.loadSavedWebsites(); store.isProcrastinateVisible = true }) {
                 Label(strings[.procrastinate], systemImage: "bookmark")
             }
+            .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.procrastinateMenuItem)
             Divider()
             SwiftUI.Button(action: { openDashboardIntegrations() }) { Label(strings[.manageIntegrations], systemImage: "link") }
         } label: {
@@ -387,6 +429,9 @@ struct TasksTabView: View {
         .overlay(RoundedRectangle(cornerRadius: 6).stroke(ToDoTheme.separator))
         .cornerRadius(6)
         .help(strings[.moreOptions])
+        // Otherwise VoiceOver falls back to the symbol's own name, a bare "More".
+        .accessibilityLabel(strings[.moreOptions])
+        .accessibilityIdentifier(UITestContract.Identifier.ToDo.toolsMenu)
     }
 
     /// Third-party sync (ClickUp, Trello, calendars, MCP) is managed on the web dashboard.
@@ -467,6 +512,7 @@ private struct ToDoFiltersPanel: View {
                 }
                 .labelsHidden()
                 .pickerStyle(MenuPickerStyle())
+                .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.filterDueDatePicker)
             }
             filterColumn(strings[.filterEnergyLevel]) {
                 let selection = Binding<String>(
@@ -497,6 +543,7 @@ private struct ToDoFiltersPanel: View {
             if store.filters.isActive {
                 SwiftUI.Button(action: { store.filters = ToDoFilters() }) { Text(strings[.clearFilters]) }
                     .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 26))
+                    .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.clearFiltersButton)
             }
         }
         .padding(12)
@@ -583,6 +630,7 @@ private struct ToDoSectionsList: View {
         }
         .buttonStyle(PlainButtonStyle())
         .pointingHandCursor()
+        .accessibilityIdentifier(UITestContract.Identifier.ToDo.sectionPrefix + section.id)
     }
 
     @ViewBuilder
@@ -609,10 +657,15 @@ private struct ToDoSectionsList: View {
     private func emptyState(_ title: String, showNewTask: Bool) -> some View {
         VStack(spacing: 10) {
             Image(systemName: "checklist").font(.system(size: 36)).foregroundColor(.secondary)
-            Text(title).font(.headline)
+                .accessibilityHidden(true)
+            // The button below speaks the heading, so the heading itself would be heard twice.
+            Text(title).font(.headline).accessibilityHidden(showNewTask)
             if showNewTask {
+                // The toolbar's New Task button sits beside this one; two controls with one name are
+                // indistinguishable to VoiceOver, so this one is named after the heading it answers.
                 SwiftUI.Button(action: { store.openEditor(for: nil) }) { Label(strings[.newTask], systemImage: "plus") }
                     .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 30))
+                    .accessibilityLabel(title)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -664,6 +717,8 @@ struct ToDoTaskRow: View {
         .cornerRadius(ToDoTheme.cornerRadius)
         .opacity(task.isCompleted && !isSelected ? 0.7 : 1)
         .onChange(of: isSelected) { selected in if !selected { isConfirmingDelete = false; isSnoozeShown = false } }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(UITestContract.Identifier.ToDo.taskRow)
         .contextMenu {
             SwiftUI.Button(action: { store.openEditor(for: task) }) { Text(strings[.editTaskTitle]) }
             SwiftUI.Button(action: { store.toggleComplete(task) }) { Text(task.isCompleted ? strings[.markIncomplete] : strings.format(.markComplete, ToDoStrings.titleToken, task.title)) }
@@ -701,8 +756,10 @@ struct ToDoTaskRow: View {
                 SwiftUI.Button(action: { isConfirmingDelete = false }) { Text(strings[.cancel]) }
                     .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 24))
                     .keyboardShortcut(.cancelAction)
+                    .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.rowCancelDeleteButton)
                 SwiftUI.Button(action: { store.delete(task) }) { Label(strings[.delete], systemImage: "trash") }
                     .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 24))
+                    .accessibilityIdentifier(UITestContract.Identifier.ToDo.confirmDeleteButton)
             } else {
                 actionButton(strings[.snooze], systemImage: "clock.arrow.circlepath") { isSnoozeShown = true }
                     .background(SmartSnoozePopoverPresenter(isPresented: $isSnoozeShown, baseDate: Date(),
@@ -710,9 +767,11 @@ struct ToDoTaskRow: View {
                                                             onSmart: { store.smartSnooze(task) },
                                                             onMove: { store.snooze(task, to: $0) }))
                 actionButton(strings[.edit], systemImage: "square.and.pencil") { store.openEditor(for: task) }
+                    .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.rowEditButton)
                 actionButton(task.isCompleted ? strings[.markIncomplete] : strings[.markCompleteShort],
                              systemImage: task.isCompleted ? "arrow.uturn.backward.circle" : "checkmark.circle") { store.toggleComplete(task) }
                 actionButton(strings[.delete], systemImage: "trash") { isConfirmingDelete = true }
+                    .accessibilityIdentifier(UITestContract.Identifier.ToDo.deleteButton)
                 Spacer()
             }
         }
@@ -740,6 +799,7 @@ struct ToDoTaskRow: View {
                 .buttonStyle(PlainButtonStyle())
                 .pointingHandCursor()
                 .help(task.isCompleted ? strings[.markIncomplete] : strings.format(.markComplete, ToDoStrings.titleToken, task.title))
+                .accessibilityIdentifier(UITestContract.Identifier.ToDo.taskCheckbox)
             }
         }
         .padding(.top, 1)
@@ -806,6 +866,7 @@ struct ToDoTaskRow: View {
         .buttonStyle(PlainButtonStyle())
         .pointingHandCursor()
         .help(strings[.editDueDate])
+        .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.rowDueButton)
         .popover(isPresented: $isDuePopoverShown, arrowEdge: .bottom) {
             ToDoDueDatePopover(strings: strings, currentDue: task.due_date) { day in
                 isDuePopoverShown = false
@@ -853,11 +914,11 @@ struct ToDoDueDatePopover: View {
                 }
             } else {
                 HStack(spacing: 6) {
-                    presetButton(strings[.today]) { onCommit(Calendar.current.startOfDay(for: Date())) }
-                    presetButton(strings[.tomorrow]) { onCommit(Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: Date()))) }
-                    presetButton(strings[.nextWeek]) { onCommit(Calendar.current.date(byAdding: .day, value: 7, to: Calendar.current.startOfDay(for: Date()))) }
+                    presetButton(strings[.today], identifier: Identifiers.duePresetToday) { onCommit(Calendar.current.startOfDay(for: Date())) }
+                    presetButton(strings[.tomorrow], identifier: Identifiers.duePresetTomorrow) { onCommit(Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: Date()))) }
+                    presetButton(strings[.nextWeek], identifier: Identifiers.duePresetNextWeek) { onCommit(Calendar.current.date(byAdding: .day, value: 7, to: Calendar.current.startOfDay(for: Date()))) }
                     if let due = currentDue, !due.isEmpty {
-                        presetButton(strings[.clear]) { onCommit(nil) }
+                        presetButton(strings[.clear], identifier: Identifiers.duePresetClear) { onCommit(nil) }
                     }
                 }
             }
@@ -865,10 +926,13 @@ struct ToDoDueDatePopover: View {
         .padding(12)
     }
 
-    private func presetButton(_ title: String, action: @escaping () -> Void) -> some View {
+    private typealias Identifiers = UITestContract.Identifier.TasksRegression
+
+    private func presetButton(_ title: String, identifier: String, action: @escaping () -> Void) -> some View {
         SwiftUI.Button(action: action) { Text(title).font(.system(size: 11)) }
             .buttonStyle(BorderedButtonStyle())
             .pointingHandCursor()
+            .accessibilityIdentifier(identifier)
     }
 
     private func commit() {

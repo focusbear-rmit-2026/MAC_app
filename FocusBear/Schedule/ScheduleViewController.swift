@@ -349,6 +349,7 @@ enum ScheduleText {
     static var addNewHabit: String { t("addNewHabit", "Add new habit") }
     static var newHabitTitle: String { t("newHabitTitle", "New habit") }
     static var habitPickEmoji: String { t("habitPickEmoji", "Pick an emoji") }
+    static var habitFieldIcon: String { t("habitFieldIcon", "Habit icon") }
     static var routineTimingQuestion: String { t("routineTimingQuestion", "When do you want %@ to start?") }
     static var routineTimingHint: String { t("routineTimingHint", "This moves the routine on every day it's scheduled.") }
     static var habitSkipAhead: String { t("habitSkipAhead", "Skip") }
@@ -1245,6 +1246,7 @@ class scheduleViewController: NSViewController {
             stackView.widthAnchor.constraint(equalTo: clip.widthAnchor),
         ])
         self.view = root
+        root.setUITestLandmark(UITestContract.Identifier.DayPlan.view)
         tasksPanel.date = selectedDate
         fetchProjectsForAutocomplete()
     }
@@ -1274,7 +1276,9 @@ class scheduleViewController: NSViewController {
             return b
         }
         let prev = arrow("chevron.left", #selector(prevDayClicked))
+        prev.setAccessibilityIdentifier(UITestContract.Identifier.TasksRegression.previousDayButton)
         let next = arrow("chevron.right", #selector(nextDayClicked))
+        next.setAccessibilityIdentifier(UITestContract.Identifier.TasksRegression.nextDayButton)
 
         dateLabelButton.bezelStyle = .rounded
         dateLabelButton.isBordered = false
@@ -1283,6 +1287,7 @@ class scheduleViewController: NSViewController {
         dateLabelButton.target = self
         dateLabelButton.action = #selector(pickDateClicked)
         dateLabelButton.translatesAutoresizingMaskIntoConstraints = false
+        dateLabelButton.setAccessibilityIdentifier(UITestContract.Identifier.TasksRegression.dateButton)
         // Fixed width so the ‹ › arrows never shift as the date string changes length.
         dateLabelButton.widthAnchor.constraint(equalToConstant: 150).isActive = true
 
@@ -1291,6 +1296,7 @@ class scheduleViewController: NSViewController {
         todayButton.controlSize = .small
         todayButton.target = self
         todayButton.action = #selector(goTodayClicked)
+        todayButton.setAccessibilityIdentifier(UITestContract.Identifier.TasksRegression.backToTodayButton)
         todayButton.attributedTitle = NSAttributedString(string: ScheduleText.backToToday, attributes: [
             .foregroundColor: NSColor.linkColor,
             .underlineStyle: NSUnderlineStyle.single.rawValue,
@@ -1309,6 +1315,7 @@ class scheduleViewController: NSViewController {
         addEventButton.toolTip = ScheduleText.addEvent
         addEventButton.target = self
         addEventButton.action = #selector(addEventClicked)
+        addEventButton.setAccessibilityIdentifier(UITestContract.Identifier.DayPlanEditors.addEventButton)
         addEventButton.translatesAutoresizingMaskIntoConstraints = false
 
         // "Today" indicator shown UNDER the date when viewing today (so the date string — and thus
@@ -3421,6 +3428,7 @@ class scheduleViewController: NSViewController {
     /// active routine only) and "Edit routine timing" (when the routine is known to the settings JSON).
     private func makeRoutineMenuButton(section: RoutineSettingsSection?, showsSkip: Bool) -> NSButton {
         let btn = RoutineMenuButton(title: "", target: self, action: #selector(routineMenuClicked(_:)))
+        btn.setAccessibilityIdentifier(UITestContract.Identifier.DayPlanEditors.routineMenuButton)
         btn.section = section
         btn.showsSkip = showsSkip
         btn.isBordered = false
@@ -4560,6 +4568,7 @@ class scheduleViewController: NSViewController {
         save.bezelStyle = .rounded
         save.isEnabled = !DayPlanRoutineDraft.shared.isSaving
         save.translatesAutoresizingMaskIntoConstraints = false
+        save.setAccessibilityIdentifier(UITestContract.Identifier.TasksRegression.draftSaveButton)
 
         let row = NSStackView(views: [label, save])
         row.orientation = .horizontal
@@ -5581,7 +5590,7 @@ enum DayPlanMockup {
 
         let cal = Calendar.current
         let baseDate: Date = {
-            let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.calendar = cal
+            let f = MachineDateFormat.formatter(MachineDateFormat.dayKey)
             return scenario.baseDate.flatMap { f.date(from: $0) } ?? (f.date(from: "2026-06-22") ?? Date())
         }()
         func at(_ hhmm: String) -> Date {

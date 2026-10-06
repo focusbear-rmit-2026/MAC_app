@@ -3,6 +3,7 @@
 
 import argparse
 import plistlib
+import re
 from pathlib import Path
 import sys
 
@@ -13,6 +14,7 @@ APP_RELATIVE_PATH = Path("Debug/Focus Bear.app")
 METADATA_KEY = "__xctestrun_metadata__"
 TEST_ROOT_PLACEHOLDER = "__TESTROOT__"
 SUPPORTED_FORMAT_VERSIONS = (1, 2)
+UNRESOLVED_PLACEHOLDER_PATTERN = re.compile(r"__[A-Z][A-Z0-9_]*__")
 
 
 def read_plist(path):
@@ -71,7 +73,7 @@ def verify_target(target, products_directory, expected_app):
     if not isinstance(raw_path, str) or not raw_path:
         raise ValueError("Missing test-host path")
     expanded_path = raw_path.replace(TEST_ROOT_PLACEHOLDER, str(products_directory))
-    if "__" in expanded_path or not Path(expanded_path).is_absolute():
+    if UNRESOLVED_PLACEHOLDER_PATTERN.search(expanded_path) or not Path(expanded_path).is_absolute():
         raise ValueError("Unresolved or relative test-host path")
     if Path(expanded_path).resolve(strict=True) != expected_app:
         raise ValueError("Test manifest points to a different host application")

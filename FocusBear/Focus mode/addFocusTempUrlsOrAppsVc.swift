@@ -258,7 +258,7 @@ class addFocusTempUrlsOrAppsVc: NSViewController {
                 
                 arrFocusType[i]["allowed_urls"] = urlsArray
                 
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 updateAllFocusModes()
                 
 

@@ -9,6 +9,9 @@
 
 import Foundation
 
+/// The local cache of the user's blocking schedules, kept in their Application Support folder.
+let kBlockingSchedulesCacheFileName = "blocking_schedules.json"
+
 // MARK: - Enums with API raw values
 //enum PauseFriction: String, Codable {
 //    case none
@@ -874,10 +877,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         guard let jsonData = try? encoder.encode(arrBlockingSchedule[index]) else { return }
-        if let jsonString = String(data: jsonData, encoding: .utf8) {//
-            print(jsonString)
-            addLog(text: "Blocking schedule added:- \(jsonString)")
-        }
+        addLog(text: "Blocking schedule added:- id=\(arrBlockingSchedule[index].id) \(LogPrivacy.structure(jsonData))")
         allApiObject.addBlockingSchedule(jsonData: jsonData, completionHandler: {bool in
             
         })
@@ -887,20 +887,14 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         guard let jsonData = try? encoder.encode(arrBlockingSchedule[index]) else { return }
-        
-        if let jsonString = String(data: jsonData, encoding: .utf8) {//
-            print(jsonString)
-            addLog(text: "Blocking schedule updated:- \(jsonString)")
-        }
+        addLog(text: "Blocking schedule updated:- id=\(arrBlockingSchedule[index].id) \(LogPrivacy.structure(jsonData))")
         allApiObject.updateBlockingSchedule(id: arrBlockingSchedule[index].id, jsonData: jsonData, completionHandler: {bool in
             
         })
     }
 
     func readCustomBlockingScheduleData(jsonData: Data) {
-        if let jsonString = String(data: jsonData, encoding: .utf8) {
-            addLog(text: "Read Custom Blocking Schedule Data: \(jsonString)")
-        }
+        addLog(text: "Read Custom Blocking Schedule Data: \(LogPrivacy.structure(jsonData))")
 
         let decoder = JSONDecoder()
 
@@ -947,15 +941,13 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     }
 
     
-    // local cache added v3.32.487
-    private let localBlockingSchedulesFile = "blocking_schedules.json"
-
+    // local cache added v3.32.487; sealed at rest by SecureFiles (a server-backed copy of the schedules)
     private func blockingSchedulesFileURL() -> URL {
         let currentUserURL = appdelegate!.currentUserURL ?? applicationSupportURL!
         if !FileManager.default.fileExists(atPath: currentUserURL.path) {
             try? FileManager.default.createDirectory(at: currentUserURL, withIntermediateDirectories: true)
         }
-        return currentUserURL.appendingPathComponent(localBlockingSchedulesFile)
+        return currentUserURL.appendingPathComponent(kBlockingSchedulesCacheFileName)
     }
 
     func saveBlockingSchedulesToLocal() {
@@ -965,7 +957,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
             
             let data = try encoder.encode(arrBlockingSchedule)
             
-            try data.write(to: blockingSchedulesFileURL(), options: .atomic)
+            try SecureFiles.shared.write(data, to: blockingSchedulesFileURL())
             
             addLog(text: "Blocking schedules saved locally.")
             
@@ -977,13 +969,13 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     func loadBlockingSchedulesFromLocal() {
         let url = blockingSchedulesFileURL()
         
-        guard FileManager.default.fileExists(atPath: url.path) else {
+        guard SecureFiles.shared.exists(url) else {
             addLog(text: "No local blocking schedules file found.")
             return
         }
         
         do {
-            let data = try Data(contentsOf: url)
+            let data = try SecureFiles.shared.readData(url)
             
             let decoder = JSONDecoder()
             let wrapped = try decoder.decode([FailableDecodable<customBlockingSchedule>].self, from: data)

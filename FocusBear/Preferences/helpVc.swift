@@ -93,6 +93,7 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
         loadCoursesWebView()
         
         tabView.delegate = self
+        tabView.setAccessibilityIdentifier(UITestContract.Identifier.Help.tabView)
         textView.placeHolderTitleString = NSAttributedString(string: placeHolderLogsFeedback, attributes: [NSAttributedString.Key.foregroundColor : NSColor.secondaryLabelColor, NSAttributedString.Key.font : NSFont.systemFont(ofSize: 13)])
         addDebugLogsTabIfNeeded()
         tabView.selectTabViewItem(at: 0)
@@ -547,7 +548,8 @@ enum ReportLogExtract {
     }
 
     /// `SOURCES.md`: where each part of `recent.log` came from, and where the rest of the log lives.
-    static func sourcesDescription(_ portions: [Portion], logsFolder: URL, reportTime: Date) -> String {
+    static func sourcesDescription(_ portions: [Portion], logsFolder: URL, reportTime: Date,
+                                   includesBrowsingHistory: Bool = false) -> String {
         let minutes = Int(window / 60)
         var lines = ["# Log sources", "",
                      "`\(extractFileName)` holds the \(minutes) minutes of app log before this report (\(formatter.string(from: reportTime))), oldest first.",
@@ -558,7 +560,16 @@ enum ReportLogExtract {
             lines.append("- `\(portion.source.path)` — \(portion.sourceSize) bytes at extraction; extract starts at \(begins)"
                          + (portion.firstTimestamp.map { " (\($0))" } ?? ""))
         }
+        if includesBrowsingHistory { lines += ["", browsingHistoryDescription] }
         return lines.joined(separator: "\n") + "\n"
+    }
+
+    /// The log only names sites; the full URLs and titles exist nowhere else once this window passes.
+    static var browsingHistoryDescription: String {
+        "`\(BrowsingHistory.exportFileName)` holds the \(Int(BrowsingHistory.retention / 60)) minutes of browsing and blocking "
+            + "before this report — full URLs, window titles, the front app and each block decision with its reason — "
+            + "decrypted from the app's sealed history, which keeps nothing older. The app log shows the same pages as "
+            + "`<site:domain:ref>`; search this file for that token."
     }
 }
 
@@ -569,14 +580,14 @@ func writeFocusBearClaudeTask(note: String, screenshots: [URL],
                              root: URL = LocalReportStatusReader.defaultRoot,
                              logsFolder: URL? = DebugLogsFolderURL,
                              now: Date = Date(),
-                             accountID: () -> String = { LocalReportCapability.currentAccount }) -> URL? {
+                             accountID: () -> String = { LocalReportCapability.currentAccount },
+                             browsingHistory: () -> String = { BrowsingHistory.shared.exportText() }) -> URL? {
     // Reject stray/default-button submissions before looking up identity or touching the filesystem.
     guard ReportProblemSubmission.hasContent(note: note, screenshots: screenshots) else { return nil }
     let account = accountID()
     guard LocalReportCapability.isEnabled(for: account) else { return nil }
     let fm = FileManager.default
-    let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-    let stamp = f.string(from: now)
+    let stamp = MachineDateFormat.string(from: now, format: MachineDateFormat.fileNameTimestamp)
     let folder = root.appendingPathComponent(stamp, isDirectory: true)
     try? fm.createDirectory(at: folder, withIntermediateDirectories: true)
 
@@ -584,12 +595,20 @@ func writeFocusBearClaudeTask(note: String, screenshots: [URL],
     if let logsFolder = logsFolder {
         let portions = ReportLogExtract.extract(sources: ReportLogExtract.sources(in: logsFolder), reportTime: now)
         let dst = folder.appendingPathComponent("logs"); try? fm.createDirectory(at: dst, withIntermediateDirectories: true)
-        try? portions.map(\.text).joined().write(to: dst.appendingPathComponent(ReportLogExtract.extractFileName),
-                                                 atomically: true, encoding: .utf8)
-        try? ReportLogExtract.sourcesDescription(portions, logsFolder: logsFolder, reportTime: now)
+        // Lines older builds wrote may still hold a token or an email; reports are read by agents.
+        try? LogRedactor.redact(portions.map(\.text).joined())
+            .write(to: dst.appendingPathComponent(ReportLogExtract.extractFileName), atomically: true, encoding: .utf8)
+        // Page URLs can carry OAuth codes and signed-link credentials, and titles email addresses.
+        let historyWritten = (try? LogRedactor.redact(browsingHistory())
+            .write(to: dst.appendingPathComponent(BrowsingHistory.exportFileName), atomically: true, encoding: .utf8)) != nil
+        try? ReportLogExtract.sourcesDescription(portions, logsFolder: logsFolder, reportTime: now,
+                                                 includesBrowsingHistory: historyWritten)
             .write(to: dst.appendingPathComponent(ReportLogExtract.sourcesFileName), atomically: true, encoding: .utf8)
         logLines = ["- logs/\(ReportLogExtract.extractFileName) — the \(Int(ReportLogExtract.window / 60)) minutes of app log before this report",
                     "- logs/\(ReportLogExtract.sourcesFileName) — which files it came from and where; older context is in \(logsFolder.path)"]
+        if historyWritten {
+            logLines.append("- logs/\(BrowsingHistory.exportFileName) — the \(Int(BrowsingHistory.retention / 60)) minutes of browsing and blocking (full URLs and titles) before this report")
+        }
     }
     var shots: [String] = []
     if !screenshots.isEmpty {
@@ -670,6 +689,7 @@ struct ReportProblemForm: View {
 
                 ZStack(alignment: .topLeading) {
                     TextEditor(text: $feedback)
+                        .accessibilityIdentifier(UITestContract.Identifier.Help.reportProblemText)
                         .font(.system(size: 13)).frame(minHeight: 90)
                         .padding(4)
                         .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.3)))
@@ -693,6 +713,7 @@ struct ReportProblemForm: View {
                         // This form stays hosted while other Help controls/sheets handle Return.
                         // Sending a report must not become the window-wide default action.
                         .disabled(isSending || isPicking || !ReportProblemSubmission.hasContent(note: feedback, screenshots: screenshots))
+                        .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.reportProblemSendButton)
                     if let s = status { Text(s).foregroundColor(.secondary) }
                     Spacer()
                 }

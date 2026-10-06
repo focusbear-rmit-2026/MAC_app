@@ -409,12 +409,18 @@ func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningAppl
         }
     }
     popUpBlockConfirmWcObj!.showWindow(nil)
+    BrowsingHistory.shared.record(.checkInShown, url: isBlockApp ? nil : (fullUrl.isEmpty ? url : fullUrl), title: tabTitle,
+                                  app: currentApp?.bundleIdentifier ?? (isBlockApp ? blockedAppName : nil),
+                                  reason: BrowsingReason.blockConfirmPopup, focusMode: runningFocusModeName,
+                                  aiScore: scoreForThisSiteApp, aiReason: aiBlockReason)
 }
 //-------------------------------------------------//
 
 //***********Popup Set Intention Blocked urls Window***************//
 func showSetIntentionBlockedUrlsWindow(script: String, url:String, browser:BROWSER?, allreadyCheckedIndex:Int, isAppBlocking:Bool, currentApp:NSRunningApplication?, blockedAppName:String, blockItem:String){
-    addLog(text: "func:- showSetIntentionBlockedUrlsWindow :- currentApp: \(currentApp?.localizedName ?? ""), url: \(url)")
+    addLog(text: "func:- showSetIntentionBlockedUrlsWindow :- currentApp: \(currentApp?.localizedName ?? ""), url: \(LogPrivacy.site(url))")
+    BrowsingHistory.shared.record(.checkInShown, url: url, app: currentApp?.bundleIdentifier ?? blockedAppName,
+                                  reason: BrowsingReason.intentionPrompt, focusMode: runningFocusModeName)
     print("showSetIntentionBlockedUrlsWindow*************")
     var currentPid: pid_t?
     if let runningApp = NSWorkspace.shared.frontmostApplication{
@@ -1081,13 +1087,15 @@ func showCustomLoginWindow(isLogin:Bool){
             mainWindowControllerObj?.window?.center()
         }
         
+        // Before showing it: the form lays itself out as sign-in or sign-up as it appears, so set
+        // late, "Sign up with email" after a logout opened the sign-in form.
+        customLoginVcObj?.isLogin = isLogin
         mainViewControllerObj!.showCustomLoginVc()
         // Set the login state BEFORE disabling tabs, so the alwaysEnabled guard (Todo List) sees
         // ._LOGIN_ and lets disableAllTabForOnboarding() actually keep it disabled.
         currentState = ._LOGIN_
         leftMenuVcObj?.disableAllTabForOnboarding()
         mainViewControllerObj?.collapseLeftPanel()
-        customLoginVcObj?.isLogin = isLogin
         appdelegate!.statusbutton?.action = #selector(AppDelegate.bringMainWindowToForeground(_:))
         return;
     }

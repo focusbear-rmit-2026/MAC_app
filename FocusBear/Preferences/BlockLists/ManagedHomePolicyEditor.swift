@@ -23,6 +23,7 @@ struct ManagedHomePolicyEditor: View {
                 Text(text("homeChangesTitle", "Parent-approved home changes")).font(.title2)
                 Spacer()
                 SwiftUI.Button(text("close", "Close")) { presentation.wrappedValue.dismiss() }
+                    .accessibilityIdentifier(Ids.homeEditorCloseButton)
             }
             Text(text("exactApproval", "A parent first approves an editing request, then reviews the exact changes. Your running schedule changes only after their final approval."))
                 .foregroundColor(.secondary)
@@ -54,6 +55,7 @@ struct ManagedHomePolicyEditor: View {
                     runtime.proposeSettingsChanges(draft.changes)
                 }
                 .disabled(!canEdit || runtime.isRequestBusy || draft.validationKey != nil || !draft.hasChanges)
+                .accessibilityIdentifier(Ids.homeEditorSubmitButton)
             }
         }
         .padding(20)
@@ -61,6 +63,8 @@ struct ManagedHomePolicyEditor: View {
         .onAppear { runtime.pollSettingsRequest() }
         .onReceive(pollTimer) { _ in runtime.pollSettingsRequest() }
         .environment(\.locale, ManagedPolicyPresentation.locale)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(Ids.homeEditor)
     }
 
     private var requestStatus: some View {
@@ -97,12 +101,14 @@ struct ManagedHomePolicyEditor: View {
         SwiftUI.Button(text("requestApproval", "Request parent approval")) {
             runtime.requestSettingsEdit(scope: ManagedPolicyChanges.editableFields)
         }.disabled(runtime.isRequestBusy || runtime.effectivePolicy?.home?.revision != draft.baseRevision)
+        .accessibilityIdentifier(Ids.homeEditorRequestApprovalButton)
     }
 
     private var generalFields: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(text("homeSchedule", "Home schedule")).font(.headline)
             TextField(text("policyName", "Schedule name"), text: $draft.name)
+                .accessibilityIdentifier(Ids.homeEditorNameField)
             TextField(text("timeZone", "IANA time zone (for example, Australia/Melbourne)"), text: $draft.timeZone)
             Toggle(text("enableSchedule", "Enable this home schedule"), isOn: $draft.isEnabled)
             Text(text("homePrecedence", "The home schedule applies only outside active school hours, including school holidays when a home window is scheduled."))
@@ -265,4 +271,6 @@ struct ManagedHomePolicyEditor: View {
     private func text(_ key: String, _ fallback: String) -> String {
         ManagedBlockingText.value(key, fallback: fallback)
     }
+
+    private typealias Ids = UITestContract.Identifier.ManagedSafety
 }

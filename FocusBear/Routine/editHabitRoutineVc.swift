@@ -251,7 +251,7 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
     var alertSettingChanged:NSAlert?
     func jsonReceivedFromWebView(jsonResult: NSDictionary){
         addLog(text: "func jsonReceivedFromWebView")
-        addLog(text: "settings json is:- \(jsonResult)")
+        addLog(text: "settings json is:- \(LogPrivacy.structure(jsonResult))")
         allApiObject.isSettingsValid(settings: jsonResult, isOnboarding:false, completionHandler: {dic,statusCode  in
             DispatchQueue.main.async {
                 isGettingSchema = false
@@ -270,7 +270,7 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
                             
                             if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
                                 print()
-                                UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                SensitiveDefaults.set(backToString, forKey: kUserdefaultsSelectedJson)
                             }
                         } catch let myJSONError {
                             print(myJSONError)

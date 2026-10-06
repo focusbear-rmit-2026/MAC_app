@@ -262,7 +262,7 @@ final class DayPlanRoutineDraft {
     private let savedSettingsJSON: () -> String?
 
     /// `savedSettingsJSON` is the saved user-settings blob; tests pass a fixture instead of UserDefaults.
-    init(savedSettingsJSON: @escaping () -> String? = { UserDefaults.standard.string(forKey: kUserdefaultsSelectedJson) }) {
+    init(savedSettingsJSON: @escaping () -> String? = { SensitiveDefaults.string(forKey: kUserdefaultsSelectedJson) }) {
         self.savedSettingsJSON = savedSettingsJSON
     }
 
@@ -657,7 +657,7 @@ final class DayPlanRoutineDraft {
                     onFailure(statusCode, serverMessage)
                     return
                 }
-                UserDefaults.standard.set(json, forKey: kUserdefaultsSelectedJson)
+                SensitiveDefaults.set(json, forKey: kUserdefaultsSelectedJson)
                 self.settings = nil
                 DayPlanAnalytics.capture(DayPlanAnalytics.routineDraftSaved)
                 appdelegate?.quitAndRestartApp(coverWithSplash: true)

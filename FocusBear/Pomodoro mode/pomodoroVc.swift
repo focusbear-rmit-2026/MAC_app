@@ -279,7 +279,7 @@ class pomodoroVc: NSViewController {
     /// for the whole run — the old screen did this by disabling half its controls.
     @available(macOS 11.0, *)
     private func applySuperFocusLock(isMorningAutoStart: Bool) {
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil {
+        if SettingsManagerObject.isAppPasswordSet {
             if SettingsManagerObject.isPasswordRequireInStopPomodoro {
                 isFrictionLevelHigh = true
             }
@@ -591,6 +591,7 @@ class pomodoroVc: NSViewController {
         }
         alertWarning.addButton(withTitle: buttonBlockText)
         alertWarning.addButton(withTitle: buttonNoText)
+            .setAccessibilityIdentifier(UITestContract.Identifier.FocusStart.declineBlockingButton)
         alertWarning.beginSheetModal(for: window, completionHandler: { [weak self] modalResponse in
             guard let self = self else { return }
             if modalResponse == .alertFirstButtonReturn {
@@ -626,7 +627,7 @@ class pomodoroVc: NSViewController {
                 arrFocusType[i]["lastTaskUsed"] = focusModeTaskString
                 updateFocusModeTask(taskString: focusModeTaskString)
                 arrFocusType[i]["lastIntentionUsed"] = state.goal.isEmpty ? "" : state.goal
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 updateAllFocusModes()
                 break
             }
@@ -811,7 +812,7 @@ class pomodoroVc: NSViewController {
                 UserDefaults.standard.set(minute, forKey: kUserdefaultsLastFocusModeMinutes)
 
                 taskCreatedByBlockPopup = ""
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 updateAllFocusModes()
                 break
             }

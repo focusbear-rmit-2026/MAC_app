@@ -33,7 +33,7 @@ class accountabilityBuddyVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        view.setUITestLandmark(UITestContract.Identifier.Routine.accountabilityBuddySheet)
         
         
     }

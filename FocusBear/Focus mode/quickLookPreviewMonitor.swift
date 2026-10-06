@@ -67,6 +67,7 @@ final class quickLookPreviewMonitor {
     private var judgedFileName: String?
 
     func start() {
+        if UITestHost.suppressesEnforcement { return }
         queue.async {
             guard self.timer == nil else { return }
             let timer = DispatchSource.makeTimerSource(queue: self.queue)

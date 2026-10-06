@@ -1,0 +1,15 @@
+# Findings scripts/check-at-rest.sh tolerates for now: '<path glob relative to $HOME> <kind>'.
+# {domain} is the scanned bundle id. Each at-rest PR deletes the lines it makes unnecessary, so the
+# list only ever shrinks. An entry that matches nothing is reported as a note: remove it.
+
+# The UI-test build CI makes is ad-hoc signed, and SecureStore never encrypts in an ad-hoc build (its
+# data key would change with every build), so its habits, Day Plan, notes, block lists and CSVs stay
+# plaintext there by design. Web app state (WebKit local storage) and cached API responses are not
+# SecureStore's. A developer-signed build seals the registered data (SensitiveKeyRegistry).
+Library/Preferences/{domain}.plist canary
+Library/Application Support/{domain}/* canary
+Library/WebKit/{domain}/* canary
+Library/Caches/{domain}/* canary
+Library/HTTPStorages/{domain}/* canary
+# The UI-test credentials cache (test account only) is plaintext until it moves to SecureStore.
+Library/Application Support/{domain}/UITestCredentials.json jwt

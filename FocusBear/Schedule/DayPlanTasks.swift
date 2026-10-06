@@ -849,6 +849,10 @@ final class DayPlanTaskStore {
     static let tasksDidChangeExternally = Notification.Name("io.focusbear.dayPlanTasksDidChangeExternally")
 
     private var completionObserver: NSObjectProtocol?
+    private var secureStoreObserver: NSObjectProtocol?
+    /// The plan was read while SecureStore had no key (or no account) yet, so it may be missing what is
+    /// sealed; reload once the store opens.
+    private var loadedBeforeSecureStoreOpened = false
 
     private init() {
         load()
@@ -856,6 +860,18 @@ final class DayPlanTaskStore {
         completionObserver = TodoCompletionBus.observe { [weak self] change in
             self?.applyExternalCompletion(todoID: change.todoID, completed: change.completed)
         }
+        // Loaded before the data key was available, the plan was empty and edits since then waited in
+        // SecureStore; once they are merged with the sealed plan, take the merged result.
+        secureStoreObserver = NotificationCenter.default.addObserver(
+            forName: SecureStore.didBecomeReady, object: SecureStore.shared, queue: .main) { [weak self] _ in
+            self?.reloadAfterSecureStoreOpened()
+        }
+    }
+
+    private func reloadAfterSecureStoreOpened() {
+        guard !Self.mockMode, loadedBeforeSecureStoreOpened else { return }
+        load()
+        NotificationCenter.default.post(name: DayPlanTaskStore.tasksDidChangeExternally, object: nil)
     }
 
     /// An isolated in-memory fixture, without loading the user's saved tasks or observing live edits.
@@ -887,7 +903,7 @@ final class DayPlanTaskStore {
         byDay[dayKey(date)] = tasks
     }
 
-    private let key = "dayPlanTasksByDay"
+    private let key = kUserdefaultsDayPlanTasksByDay
     /// One-time flag: the cross-day snooze-clone de-dupe (see `dedupeSnoozeClones`) has run for this install.
     private let snoozeCloneDedupeKey = "dayPlanSnoozeCloneDedupeDone"
     private var byDay: [String: [DayPlanTask]] = [:]
@@ -898,9 +914,7 @@ final class DayPlanTaskStore {
     /// one. See `whenBackedByTodo`.
     private var pendingMintCallbacks: [String: [(String?) -> Void]] = [:]
 
-    private static let dayFormatter: DateFormatter = {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.calendar = Calendar.current; return f
-    }()
+    private static let dayFormatter = MachineDateFormat.formatter(MachineDateFormat.dayKey)
     private func dayKey(_ date: Date) -> String { Self.dayFormatter.string(from: date) }
 
     /// Read-only snapshot for forecasting. Opening a forecast must not trigger rollover writes.
@@ -1827,9 +1841,15 @@ final class DayPlanTaskStore {
     }
 
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: key),
+        loadedBeforeSecureStoreOpened = !SecureStore.shared.currentState.isReady
+        guard let data = SensitiveDefaults.data(forKey: key),
               let decoded = try? JSONDecoder().decode([String: [DayPlanTask]].self, from: data) else { return }
         byDay = decoded
+        // Sealed data can only be read once SecureStore opens, so this runs on every load, not once.
+        if let migrated = LegacyCalendarDateMigration.normalizingDayKeys(byDay, merge: LegacyCalendarDateMigration.mergingDayPlanTasks) {
+            byDay = migrated
+            save()
+        }
         cleanup()
         dedupeSnoozeClones()
         rolloverIncompleteTasks()
@@ -1911,7 +1931,7 @@ final class DayPlanTaskStore {
         storageRevision += 1
         if Self.mockMode { return }   // mockups are in-memory only
         if let data = try? JSONEncoder().encode(byDay) {
-            UserDefaults.standard.set(data, forKey: key)
+            SensitiveDefaults.set(data, forKey: key)
             NotificationCenter.default.post(name: Self.forecastSnapshotDidChange, object: nil)
         }
     }
@@ -2181,6 +2201,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate, 
             : ScheduleText.tasksShowCompleted
         let check = cursorButton(checkboxWithTitle: toggleTitle, target: self, action: #selector(toggleShowCompleted(_:)))
         check.state = showCompleted ? .on : .off
+        check.setAccessibilityIdentifier(UITestContract.Identifier.TasksRegression.showCompletedCheckbox)
         let heading = label(ScheduleText.tasksSettings, size: 13, bold: true)
         let form = NSStackView(views: [heading, check])
         form.orientation = .vertical; form.alignment = .leading; form.spacing = 10
@@ -2211,6 +2232,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate, 
 
     private func buildChrome() {
         let header = label(ScheduleText.tasksForToday, size: 15, bold: true)
+        header.setAccessibilityIdentifier(UITestContract.Identifier.TasksRegression.tasksHeader)
         headerLabel = header
         // Above the header, and only while the day is over capacity. Capped at two truncating lines
         // and hugging its content vertically so a narrow panel can never let it squeeze the task list
@@ -2227,9 +2249,11 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate, 
         totalLabel.font = .systemFont(ofSize: 11)
         totalLabel.textColor = .secondaryLabelColor
         totalLabel.translatesAutoresizingMaskIntoConstraints = false
+        totalLabel.setAccessibilityIdentifier(UITestContract.Identifier.TasksRegression.tasksTotal)
 
         let addNew = cursorButton(title: ScheduleText.tasksAddNew, target: self, action: #selector(addFromScratchClicked))
         addNew.bezelStyle = .rounded
+        addNew.setAccessibilityIdentifier(UITestContract.Identifier.DayPlan.addTaskButton)
         if #available(macOS 11.0, *) { addNew.image = NSImage(systemSymbolName: "plus", accessibilityDescription: nil); addNew.imagePosition = .imageLeading }
         let addList = cursorButton(title: ScheduleText.tasksAddFromList, target: self, action: #selector(addFromList))
         addList.bezelStyle = .rounded
@@ -2245,6 +2269,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate, 
         if #available(macOS 11.0, *) { cog.image = NSImage(systemSymbolName: "gearshape", accessibilityDescription: "Settings") } else { cog.title = "⚙" }
         cog.contentTintColor = .secondaryLabelColor
         cog.toolTip = ScheduleText.tasksSettings
+        cog.setAccessibilityIdentifier(UITestContract.Identifier.TasksRegression.tasksSettingsButton)
         cog.setContentHuggingPriority(.required, for: .horizontal)
         let totalRow = NSStackView(views: [totalLabel, NSView(), cog])
         totalRow.orientation = .horizontal; totalRow.alignment = .centerY; totalRow.spacing = 6
@@ -3331,7 +3356,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate, 
         // "taskModal…" identifier tells AppDelegate's global Return-key monitor to let this field
         // handle Return itself instead of advancing/starting the current habit — see the matching
         // allowlist check there.
-        titleField.identifier = NSUserInterfaceItemIdentifier("taskModalTitle")
+        titleField.identifier = NSUserInterfaceItemIdentifier(UITestContract.Identifier.TasksRegression.taskDetailsTitleField)
         modalTitleField = titleField
 
         // Searchable dropdown of known projects (still free-text, so a new project can be typed).
@@ -3361,7 +3386,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate, 
         let durationField = NSTextField(string: "\(task.durationMinutes)")
         durationField.translatesAutoresizingMaskIntoConstraints = false
         durationField.widthAnchor.constraint(equalToConstant: 60).isActive = true
-        durationField.identifier = NSUserInterfaceItemIdentifier("taskModalDuration")
+        durationField.identifier = NSUserInterfaceItemIdentifier(UITestContract.Identifier.TasksRegression.taskDetailsDurationField)
         modalDurationField = durationField
 
         // Outcome displays 1–5; the menu item tag retains the server's /10 value.
@@ -3409,7 +3434,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate, 
         // current habit on Enter) sees an unrecognised field and hijacks Return before it ever reaches
         // NewlineKeepingTextView.performKeyEquivalent below — Enter would start the next habit instead
         // of inserting a newline. See the matching allowlist check there.
-        notesView.identifier = NSUserInterfaceItemIdentifier("taskModalNotes")
+        notesView.identifier = NSUserInterfaceItemIdentifier(UITestContract.Identifier.TasksRegression.taskDetailsNotesView)
         modalNotesView = notesView
         let notesScroll = NSScrollView()
         notesScroll.documentView = notesView
@@ -3493,8 +3518,10 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate, 
 
         let cancel = cursorButton(title: ScheduleText.eventCancel, target: self, action: #selector(cancelTaskModal))
         cancel.bezelStyle = .rounded; cancel.keyEquivalent = "\u{1b}"
+        cancel.setAccessibilityIdentifier(UITestContract.Identifier.TasksRegression.taskDetailsCancelButton)
         let save = cursorButton(title: ScheduleText.eventSave, target: self, action: #selector(saveTaskModal))
         save.bezelStyle = .rounded; save.keyEquivalent = "\r"
+        save.setAccessibilityIdentifier(UITestContract.Identifier.TasksRegression.taskDetailsSaveButton)
         let buttons = NSStackView(views: [NSView(), cancel, save])
         buttons.orientation = .horizontal; buttons.spacing = 8
 
@@ -4400,7 +4427,7 @@ final class DayPlanTasksPanel: NSView, NSTextFieldDelegate, NSComboBoxDelegate, 
         caption.textColor = .secondaryLabelColor
 
         let input = NSTextField(string: suggestedName)
-        input.identifier = NSUserInterfaceItemIdentifier("newProjectName")
+        input.identifier = NSUserInterfaceItemIdentifier(UITestContract.Identifier.TasksRegression.newProjectNameField)
         input.delegate = self
         input.translatesAutoresizingMaskIntoConstraints = false
         input.widthAnchor.constraint(equalToConstant: 150).isActive = true
@@ -5040,6 +5067,7 @@ final class CustomRoutinesPanel: NSView {
             btn.title = "⋯"   // i18n-ignore — glyph only
         }
         btn.toolTip = ScheduleText.customRoutineManage
+        btn.setAccessibilityIdentifier(UITestContract.Identifier.TasksRegression.customRoutinesManageButton)
         btn.translatesAutoresizingMaskIntoConstraints = false
         btn.setContentHuggingPriority(.required, for: .horizontal)
         return btn

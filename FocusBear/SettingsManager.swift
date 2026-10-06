@@ -174,7 +174,17 @@ class SettingsManager:NSObject{
     var maxTabLimitCount = 5
     
     
+    /// Legacy key for the settings/quit password and its keychain account; the value itself now lives
+    /// in `appPassword` (a verifier plus a keychain copy), never in this plaintext key.
     var kUserdefaultsAppPassword = "kUserdefaultsAppPassword"
+
+    var appPassword: AppPasswordStore {
+        AppPasswordStore(defaults: .standard,
+                         secrets: LogicTestHost.isEnabled ? InMemorySecretItemStore.shared : KeychainSecretItemStore(),
+                         legacyKey: kUserdefaultsAppPassword)
+    }
+
+    var isAppPasswordSet: Bool { appPassword.isSet }
     
     var kUserdefaultsPasswordRequireInChangeSettings = "kUserdefaultsPasswordRequireInChangeSettings"
     var kUserdefaultsPasswordRequireInSkipMorning = "kUserdefaultsPasswordRequireInSkipMorning"
@@ -191,10 +201,10 @@ class SettingsManager:NSObject{
     
     
     
-    var kUserdefaultsArrBlockedUrls = "kUserdefaultsArrBlockedUrls"
+    var kUserdefaultsArrBlockedUrls = kUserdefaultsArrBlockedUrlsBase
     
-    var kUserdefaultsArrBlockedApps = "kUserdefaultsArrBlockedApps"
-    var kUserdefaultsArrAlwaysAllowedApps = "kUserdefaultsArrAlwaysAllowedApps"
+    var kUserdefaultsArrBlockedApps = kUserdefaultsArrBlockedAppsBase
+    var kUserdefaultsArrAlwaysAllowedApps = kUserdefaultsArrAlwaysAllowedAppsBase
     
     var kUserdefaultsOfficeModeEnabled = "kUserdefaultsOfficeModeEnabled"
     var kUserdefaultsReducedMotion = "kUserdefaultsReducedMotion"
@@ -247,7 +257,7 @@ class SettingsManager:NSObject{
     var kUserdefaultsAiCheckUrlEnabled = "kUserdefaultsAiCheckUrlEnabled"
     var kUserdefaultsAccountabilityBuddyEnabled = "kUserdefaultsAccountabilityBuddyEnabled"
 
-    var kUserdefaultsLocalDeviceSettings = "kUserdefaultsLocalDeviceSettings"
+    var kUserdefaultsLocalDeviceSettings = kUserdefaultsLocalDeviceSettingsBase
     
     //    var kUserdefaultsAiAllowUrlShowAlertEnabled = "kUserdefaultsAiAllowUrlShowAlertEnabled"
     
@@ -433,7 +443,7 @@ class SettingsManager:NSObject{
                 }
             }else{
                 addLog(text: "Local Device Settings json is nil)")
-                if let dic = UserDefaults.standard.value(forKey: kUserdefaultsLocalDeviceSettings) as? NSDictionary{
+                if let dic = SensitiveDefaults.value(forKey: kUserdefaultsLocalDeviceSettings) as? NSDictionary{
                     settings = dic
                 }
             }
@@ -446,7 +456,7 @@ class SettingsManager:NSObject{
 //                if settings.value(forKey: kAppPassword) == nil{
 //                    settings[kAppPassword] = ""
 //                }
-               // UserDefaults.standard.set(settings, forKey: kUserdefaultsLocalDeviceSettings)
+               // SensitiveDefaults.set(settings, forKey: kUserdefaultsLocalDeviceSettings)
                 
                 if let rawSettings = settings as? [String: Any] {// this will remove <null> values so saving in userdefaults will not crash app
                     // Remove NSNull and invalid values
@@ -461,7 +471,7 @@ class SettingsManager:NSObject{
                     }
 
                     // Now safe to save
-                    UserDefaults.standard.set(cleanedSettings, forKey: kUserdefaultsLocalDeviceSettings)
+                    SensitiveDefaults.set(cleanedSettings, forKey: kUserdefaultsLocalDeviceSettings)
                 }
                 
                 print(settings)
@@ -754,26 +764,21 @@ class SettingsManager:NSObject{
                 }
                 
                 if let val = settings.value(forKey: kArrBlockedUrls) as? [String]{
-                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsArrBlockedUrls)
+                    SensitiveDefaults.set(val, forKey: self.kUserdefaultsArrBlockedUrls)
                 }
                 if let val = settings.value(forKey: kArrBlockedApps) as? [String]{
-                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsArrBlockedApps)
+                    SensitiveDefaults.set(val, forKey: self.kUserdefaultsArrBlockedApps)
                 }
                 if let val = settings.value(forKey: kArrAlwaysAllowedApps) as? [String]{
-                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsArrAlwaysAllowedApps)
+                    SensitiveDefaults.set(val, forKey: self.kUserdefaultsArrAlwaysAllowedApps)
                 }
                 
 
                 addLog(text: "Local AppPassword")
-                if let val = settings.value(forKey: kAppPassword) as? String{
-                    if val.isEmpty{
-                        UserDefaults.standard.removeObject(forKey: kUserdefaultsAppPassword)
-                    }else{
-                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsAppPassword)
-                    }
-                    
+                if let val = settings.value(forKey: kAppPassword) as? String, !val.isEmpty{
+                    self.appPassword.adoptServerValue(val)
                 }else{
-                    UserDefaults.standard.removeObject(forKey: kUserdefaultsAppPassword)
+                    self.appPassword.clear()
                 }
                 addLog(text: "Local CuddlyModeEnabled")
                 if let val = settings.value(forKey: kCuddlyModeEnabled) as? Bool{
@@ -1099,11 +1104,12 @@ class SettingsManager:NSObject{
             }
             
             if let password = UserDefaults.standard.object(forKey: kUserdefaultsPasswordSetInOnboarding) as? String{
-                if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) == nil{
-                    UserDefaults.standard.set(password, forKey: self.kUserdefaultsAppPassword)
+                if !isAppPasswordSet{
+                    appPassword.set(encoded: password)
                 }
                 UserDefaults.standard.removeObject(forKey: kUserdefaultsPasswordSetInOnboarding)
             }
+            appPassword.migrateLegacyValue()
             
             //  ---------------------------SETTINGS Prompt To Remember next Habit--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPromptToRememberHabit) as? Bool{
@@ -1386,22 +1392,22 @@ class SettingsManager:NSObject{
                 UserDefaults.standard.set(false, forKey: kUserdefaultsHardcorePomodoroEnabled)
             }
             addLog(text: "Parse BlockedUrls")
-            if let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrBlockedUrls) as? [String]{
+            if let arr = SensitiveDefaults.object(forKey: kUserdefaultsArrBlockedUrls) as? [String]{
                 arrBlockedUrls = arr
             }else{
-                UserDefaults.standard.set(arrBlockedUrls, forKey: kUserdefaultsArrBlockedUrls)
+                SensitiveDefaults.set(arrBlockedUrls, forKey: kUserdefaultsArrBlockedUrls)
             }
             
-            if let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrBlockedApps) as? [String]{
+            if let arr = SensitiveDefaults.object(forKey: kUserdefaultsArrBlockedApps) as? [String]{
                 arrBlockedApps = arr
             }else{
-                UserDefaults.standard.set(arrBlockedApps, forKey: kUserdefaultsArrBlockedApps)
+                SensitiveDefaults.set(arrBlockedApps, forKey: kUserdefaultsArrBlockedApps)
             }
             
-            if let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrAlwaysAllowedApps) as? [String]{
+            if let arr = SensitiveDefaults.object(forKey: kUserdefaultsArrAlwaysAllowedApps) as? [String]{
                 arrAlwaysAllowedApps = arr
             }else{
-                UserDefaults.standard.set(arrAlwaysAllowedApps, forKey: kUserdefaultsArrAlwaysAllowedApps)
+                SensitiveDefaults.set(arrAlwaysAllowedApps, forKey: kUserdefaultsArrAlwaysAllowedApps)
             }
             
             if let id = UserDefaults.standard.object(forKey: kUserdefaultsLastFocusModeId) as? String{
@@ -1591,10 +1597,8 @@ class SettingsManager:NSObject{
             kTalkingClockSuppressMeetings:talkingClockSuppressDuringMeetings,
             "has_edited_blocked_urls":isEditBlockedUrlsOnce
         ]
-        if let password = UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) as? String{
-            if !password.isEmpty{
-                json[kAppPassword] = password
-            }
+        if let password = appPassword.encodedValue{
+            json[kAppPassword] = password
         }
         return json
     }
@@ -1660,7 +1664,14 @@ class SettingsManager:NSObject{
         UserDefaults.standard.set(isMotivationalMessageEnabled, forKey: kUserdefaultsMotivationalMessageEnabled)
         UserDefaults.standard.set(isAiCheckUrlEnabled, forKey: kUserdefaultsAiCheckUrlEnabled)
         //        UserDefaults.standard.set(isAiAllowUrlShowAlertEnabled, forKey: kUserdefaultsAiAllowUrlShowAlertEnabled)
-        
+
+        // Uploading without the password would tell the server (and every other device) there is none.
+        // The keychain copy comes back on the next settings download or the next correct entry.
+        guard !appPassword.isEncodedValueUnavailable else {
+            isSettingsChanged = true
+            addLog(text: "[at-rest] settings upload deferred: app password unreadable from the keychain")
+            return
+        }
         let json = getLocalJsonToUpload()
         
         let dic: [String: [String:Any]] = [

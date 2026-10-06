@@ -665,7 +665,7 @@ enum RoutineVisualizePrompt {
 /// (`skipped_habit_ids` on the routine), but a skip for a future day has nowhere to live yet, so it
 /// is kept on this Mac and applied when that day is built.
 enum DayPlanHabitSkips {
-    private static let storageKey = "dayPlanSkippedHabitIdsByDay"
+    static let storageKey = "dayPlanSkippedHabitIdsByDay"
     /// Days kept. Old entries are dropped so the list can't grow without bound.
     static let retainedDays = 60
 
@@ -737,7 +737,7 @@ enum RoutineHabitSchedule {
 /// `DayPlanHabitSkips`. Nothing here is ever sent to the server, so Settings › Edit habits keeps
 /// showing the true duration.
 enum DayPlanHabitDurations {
-    private static let storageKey = "dayPlanHabitDurationOverridesByDay"
+    static let storageKey = "dayPlanHabitDurationOverridesByDay"
     /// Days kept. Old entries are dropped so the map can't grow without bound.
     static let retainedDays = 60
     /// The shortest trim offered or accepted — below a minute a habit block stops being a usable slot.
@@ -859,7 +859,7 @@ enum DayPlanHabitDurations {
 /// manual edits (title, notes, a series-wide time shift) to events they don't own. A trim written
 /// there would have to overwrite that record to change one end time.
 enum DayPlanMeetingDurations {
-    private static let storageKey = "dayPlanMeetingDurationOverridesByDay"
+    static let storageKey = "dayPlanMeetingDurationOverridesByDay"
     /// Days kept, so the map can't grow without bound — same horizon as the habit trims.
     static let retainedDays = 60
 

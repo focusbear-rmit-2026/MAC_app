@@ -29,6 +29,10 @@ class whySkipHabitVc: NSViewController {
             btnSkipCompletely.title = whySkipHabitVcInfo.value(forKey: "buttonSkipBreaksCompletely") as? String ?? btnSkipCompletely.title
         }
         btnCanNotDoIt.isSecondaryButton = true
+        view.setUITestLandmark(UITestContract.Identifier.SessionsRegression.whySkipScreen)
+        btnAlreadyDidIt.setAccessibilityIdentifier(UITestContract.Identifier.SessionsRegression.whySkipAlreadyDidItButton)
+        btnCanNotDoIt.setAccessibilityIdentifier(UITestContract.Identifier.SessionsRegression.whySkipCanNotDoItButton)
+        btnSkipCompletely.setAccessibilityIdentifier(UITestContract.Identifier.SessionsRegression.whySkipBreakCompletelyButton)
     }
     
     override func viewWillAppear() {

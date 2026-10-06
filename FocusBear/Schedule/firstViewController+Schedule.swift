@@ -237,7 +237,7 @@ extension firstViewController: ScheduleHost {
     /// keeps its place directly behind it and comes up again afterwards, rather than being abandoned
     /// or completed — then start it in the player.
     private func startHabitMidRoutine(_ target: habit) {
-        addLog(text: "[user-action] dayplan: start habit mid-routine \(target.name ?? "")")
+        addLog(text: "[user-action] dayplan: start habit mid-routine \(LogPrivacy.text(target.name))")
         moveRoutineHabitToCurrentPosition(id: target.id)
         timerViewcontrollerObj?.showAllowedActivityPlayerTab()
         timerViewcontrollerObj?.tryStartTimerHabit(durationSeconds: target.durationSeconds,

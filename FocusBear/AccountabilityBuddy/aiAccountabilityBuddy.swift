@@ -218,15 +218,13 @@ var lastCompletedAccountabilityBuddySession: AccountabilityBuddySession?
 /// Once true, the loop stops re-reading UserDefaults every tick.
 var didAttemptAccountabilityBuddyRestore = false
 
-private let kAccountabilityBuddySessionPersistKey = "kAccountabilityBuddySessionPersist"
-
 /// Persist the running buddy session so it survives an app restart. The session state
 /// (currentAccountabilityBuddySession + the currentRunningFocusType allow-list overrides) is in-memory
 /// only, so without this a relaunch restores the focus timer but reverts to the default super-distracting
 /// (non-AI) mode — the "AI blocking removed after restart" symptom.
 func persistAccountabilityBuddySession(endTime: Date) {
     guard let session = currentAccountabilityBuddySession else { return }
-    UserDefaults.standard.set([
+    SensitiveDefaults.set([
         "goal": session.goal,
         "allowedApps": session.allowedApps,
         "allowedUrls": session.allowedUrls,
@@ -241,7 +239,7 @@ func persistAccountabilityBuddySession(endTime: Date) {
 }
 
 func clearPersistedAccountabilityBuddySession() {
-    UserDefaults.standard.removeObject(forKey: kAccountabilityBuddySessionPersistKey)
+    SensitiveDefaults.removeObject(forKey: kAccountabilityBuddySessionPersistKey)
 }
 
 /// Re-attach a persisted buddy session to the focus session restored after a restart, re-applying the
@@ -259,7 +257,7 @@ func restoreAccountabilityBuddySessionIfNeeded() {
         didAttemptAccountabilityBuddyRestore = true
         return
     }
-    guard let dict = UserDefaults.standard.dictionary(forKey: kAccountabilityBuddySessionPersistKey),
+    guard let dict = SensitiveDefaults.dictionary(forKey: kAccountabilityBuddySessionPersistKey),
           let endInterval = dict["endTime"] as? TimeInterval else {
         didAttemptAccountabilityBuddyRestore = true   // nothing persisted; stop re-reading every tick
         return
@@ -317,7 +315,7 @@ func restoreAccountabilityBuddySessionIfNeeded() {
     // marker, so its Stop/Pause bypass survives the NEXT relaunch too.
     setFocusSessionAutoStarted(true)
     didAttemptAccountabilityBuddyRestore = true
-    addLog(text: "accountability buddy: restored \(wasSuperStrict ? "super-strict" : "normal") session after restart for goal '\(goal)'")
+    addLog(text: "accountability buddy: restored \(wasSuperStrict ? "super-strict" : "normal") session after restart for goal \(LogPrivacy.text(goal))")
 }
 
 // MARK: - Context the buddy reasons over
@@ -353,7 +351,7 @@ func accountabilityBuddyMinutesLeftInDay() -> Int? {
 func accountabilityBuddyUncompletedHabits() -> [String] {
     let habits = ScheduleTab.habitInputs(from: accountabilityBuddyRoutineHabits(), now: Date(), dropCompleted: true)
         .map { "\($0.title) (~\(max(1, $0.durationSeconds / 60)) min)" }
-    addLog(text: "accountability buddy: \(habits.count) uncompleted habits for state \(currentState): \(habits)")
+    addLog(text: "accountability buddy: \(habits.count) uncompleted habits for state \(currentState)")
     return habits
 }
 
@@ -459,7 +457,7 @@ func accountabilityBuddyCalendarContext() -> [String] {
             }
             return "\(name) — \(when)"
         }
-    addLog(text: "accountability buddy: \(all.count) todaysMeetings, \(lines.count) in calendar context: \(lines)")
+    addLog(text: "accountability buddy: \(all.count) todaysMeetings, \(lines.count) in calendar context")
     return Array(lines)
 }
 
@@ -999,7 +997,7 @@ func startScopedAiFocusSession(goal: String, minutes: Int, allowedApps: [String]
     allApiObject.capturePosthog(event: event, metadata: ["duration_minutes": "\(minutes)",
                                                           "allowed_apps": "\(allowedApps.count)",
                                                           "allowed_urls": "\(allowedUrls.count)"])
-    addLog(text: "\(event): started \(superStrict ? "super-strict" : "normal") session for goal '\(goal)' (\(minutes)m)")
+    addLog(text: "\(event): started \(superStrict ? "super-strict" : "normal") session for goal \(LogPrivacy.text(goal)) (\(minutes)m)")
 }
 
 // MARK: - Presentation
@@ -1098,6 +1096,7 @@ final class AccountabilityBuddyChatViewController: NSViewController {
             onGiveUp: { [weak self] in self?.cancelChat() })
         let host = NSHostingView(rootView: chat)
         host.frame = NSRect(x: 0, y: 0, width: 460, height: 560)
+        host.setAccessibilityIdentifier(UITestContract.Identifier.Routine.accountabilityBuddySheet)
         self.view = host
     }
 
@@ -1440,8 +1439,10 @@ struct AccountabilityChatView: View {
         HStack(spacing: 8) {
             TextField(strings.inputPlaceholder, text: $input, onCommit: send)
                 .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier(UITestContract.Identifier.Routine.buddyChatInput)
             SwiftUI.Button(strings.buttonSend, action: send)
                 .disabled(isThinking || input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .accessibilityIdentifier(UITestContract.Identifier.Routine.buddyChatSendButton)
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
     }

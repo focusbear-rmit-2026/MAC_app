@@ -137,6 +137,8 @@
     "trayIconBalloonText": "Focus Bear"
   },
   "menuView": {
+    "a11yOpenFocusBearMenu": "Focus-Bear-Menü öffnen",
+    "a11yHideFloatingBar": "Diese Leiste ausblenden",
     "blockingOffTitle": "Blockierung ist aus",
     "blockingAttentionTitle": "Blockierung braucht Aufmerksamkeit",
     "blockingPermissionsLimited": "Einige Blockierfunktionen sind eventuell nicht verfügbar, weil eine macOS-Berechtigung fehlt. Anderes Blockieren läuft weiter.",
@@ -564,6 +566,7 @@
     "addNewHabit": "Neue Gewohnheit hinzufügen",
     "newHabitTitle": "Neue Gewohnheit",
     "habitPickEmoji": "Emoji wählen",
+    "habitFieldIcon": "Gewohnheitssymbol",
     "routineTimingQuestion": "Wann soll %@ beginnen?",
     "routineTimingHint": "Das verschiebt die Routine an jedem Tag, an dem sie geplant ist.",
     "eventScopeTitle": "Dies ist ein wiederkehrender Termin",
@@ -630,6 +633,7 @@
     "requestFailedText": "Die Anfrage konnte nicht verarbeitet werden",
     "newTaskText": "Neue Aufgabe",
     "searchPlaceholder": "Suchen …",
+    "searchTasksText": "Aufgaben durchsuchen",
     "filterText": "Filter",
     "moreOptionsText": "Weitere Optionen",
     "sortSmartText": "Smart",
@@ -1727,6 +1731,10 @@
     "buttonOwnUrlBrainDumpText": "Nutze dein eigenes System für den Brain Dump"
   },
   "focusMusicInfo": {
+    "a11yDownloadTrack": "%@ herunterladen",
+    "a11yPlayTrack": "%@ abspielen",
+    "a11yStopTrack": "%@ stoppen",
+    "a11yRemoveTrack": "%@ entfernen",
     "nowPlayingLabelText": "Läuft gerade",
     "sectionTitleSpotify": "Spotify",
     "sectionTitleYouTubeMusic": "YouTube Music",
@@ -1840,6 +1848,8 @@
     "buttonAbortFocus": "Individuellen Zeitplan pausieren"
   },
   "preferencesInfo": {
+    "workRatioFieldLabel": "Fokusminuten",
+    "breakRatioFieldLabel": "Pausenminuten",
     "checkBoxFocusMusicText": "Fokusmusik automatisch abspielen, wenn eine Sitzung beginnt",
     "switchButtonFocusGlowBorderText": "Leuchtrand während Fokus-Sitzungen anzeigen",
     "descriptionFocusGlowBorderText": "Zeigt einen sanft leuchtenden Rand um deinen Bildschirm an, während eine Fokus-Sitzung läuft.",
@@ -3127,6 +3137,7 @@
   },
   "settingsNew": {
     "uiSettingTitle": "Oberfläche",
+    "searchSettingsLabel": "Einstellungen durchsuchen",
     "accessibilitySettingTitle": "Bedienungshilfen",
     "aISettingTitle": "KI-Funktionen",
     "pomodoroSettingTitle": "Fokus-Sitzungen",

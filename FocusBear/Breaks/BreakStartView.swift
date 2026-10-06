@@ -78,6 +78,7 @@ struct BreakStartView: SwiftUI.View {
         .pickerStyle(SegmentedPickerStyle())
         .labelsHidden()
         .frame(maxWidth: 420)
+        .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.breakStartModePicker)
     }
 
     private var modeBinding: Binding<BreakStartKit.BreakMode> {
@@ -126,6 +127,7 @@ struct BreakStartView: SwiftUI.View {
                     .padding(.vertical, 10)
             }
             .buttonStyle(BorderedButtonStyle())
+            .accessibilityIdentifier(UITestContract.Identifier.Breaks.startScreenStartButton)
             Toggle(strings.autoStartCheckbox, isOn: autoStartBinding)
                 .font(.system(size: 13))
         }
@@ -145,6 +147,7 @@ struct BreakStartView: SwiftUI.View {
                 .foregroundColor(.secondary)
         }
         .buttonStyle(PlainButtonStyle())
+        .accessibilityIdentifier(UITestContract.Identifier.Breaks.startScreenSkipButton)
     }
 }
 

@@ -50,6 +50,8 @@ final class HotkeyService {
 
     /// Re-reads current settings and registers/re-registers the shortcuts.
     func registerAll() {
+        // Global shortcuts are machine-wide; a UI-test build would take them from the real app.
+        if UITestHost.isEnabled { return }
         registerBrainDump()
         registerFocusMusic()
         registerTaskList()

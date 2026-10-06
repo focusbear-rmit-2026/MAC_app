@@ -744,6 +744,8 @@
     "menuItemNotesTitle": "Notes"
   },
   "preferencesInfo": {
+    "workRatioFieldLabel": "Focus minutes",
+    "breakRatioFieldLabel": "Break minutes",
     "checkBoxFocusMusicText": "Automatically play focus music when a session starts",
     "switchButtonFocusGlowBorderText": "Show glow border during focus sessions",
     "descriptionFocusGlowBorderText": "Display a soft glowing border around your screen while a focus session is running.",
@@ -2154,6 +2156,10 @@
     "buttonDontAskAgainText": "Remember my choice"
   },
   "focusMusicInfo": {
+    "a11yDownloadTrack": "Download %@",
+    "a11yPlayTrack": "Play %@",
+    "a11yStopTrack": "Stop %@",
+    "a11yRemoveTrack": "Remove %@",
     "nowPlayingLabelText": "Now Playing",
     "sectionTitleSpotify": "Spotify",
     "sectionTitleYouTubeMusic": "YouTube Music",
@@ -2522,6 +2528,7 @@
   },
   "settingsNew": {
     "uiSettingTitle": "UI",
+    "searchSettingsLabel": "Search settings",
     "accessibilitySettingTitle": "Accessibility",
     "aISettingTitle": "AI Features",
     "pomodoroSettingTitle": "Focus Sessions",
@@ -3651,6 +3658,7 @@
     "addNewHabit": "Add new habit",
     "newHabitTitle": "New habit",
     "habitPickEmoji": "Pick an emoji",
+    "habitFieldIcon": "Habit icon",
     "routineTimingQuestion": "When do you want %@ to start?",
     "routineTimingHint": "This moves the routine on every day it's scheduled.",
     "eventScopeTitle": "This is a repeating event",
@@ -3735,6 +3743,8 @@
     "ttUpgradeButton": "Upgrade to Pro"
   },
   "menuView": {
+    "a11yOpenFocusBearMenu": "Open Focus Bear menu",
+    "a11yHideFloatingBar": "Hide this bar",
     "blockingOffTitle": "Blocking is off",
     "blockingAttentionTitle": "Blocking needs attention",
     "blockingPermissionsLimited": "Some blocking features may be unavailable because a macOS permission is missing. Other blocking can continue.",
@@ -4408,6 +4418,7 @@
     "requestFailedText": "Could not process the request",
     "newTaskText": "New Task",
     "searchPlaceholder": "Search...",
+    "searchTasksText": "Search tasks",
     "filterText": "Filter",
     "moreOptionsText": "More Options",
     "sortSmartText": "Smart",

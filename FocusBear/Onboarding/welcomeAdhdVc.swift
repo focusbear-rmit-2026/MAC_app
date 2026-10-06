@@ -20,7 +20,8 @@ class welcomeAdhdVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        btnMeToo.setAccessibilityIdentifier(UITestContract.Identifier.Onboarding.welcomeAdhdContinueButton)
+        btnNeverHadIssue.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.welcomeAdhdNeverHadIssueButton)
 
         btnNeverHadIssue.title = "I never had that issue"
         btnMeToo.title = "Me too!"

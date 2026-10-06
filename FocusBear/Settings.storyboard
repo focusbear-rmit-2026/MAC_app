@@ -6347,6 +6347,8 @@ Gw
                         <outlet property="bgBox" destination="yWd-iU-jr3" id="iod-FK-tRk"/>
                         <outlet property="boxNewBadge" destination="juu-KZ-ElF" id="94A-AS-aDf"/>
                         <outlet property="btnInfo" destination="RVL-c1-wAv" id="BFQ-y5-moZ"/>
+                        <outlet property="btnRow" destination="mnZ-JX-hwT" id="rWb-bt-N4m"/>
+                        <outlet property="imgViewChevron" destination="Vj9-VO-bvq" id="Aqv-Fx-8Lc"/>
                         <outlet property="imgViewIcon" destination="AaA-rm-lLt" id="5rq-NK-K0X"/>
                         <outlet property="lblDescription" destination="coA-m1-Dk5" id="dhd-xJ-iNr"/>
                         <outlet property="lblTitle" destination="Okk-m3-Knt" id="11b-w6-usi"/>

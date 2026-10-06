@@ -9,7 +9,7 @@
 
 import Cocoa
 
-class accordionBox: NSBox {
+class accordionBox: PressableBox {
     
     // MARK: - Properties
     private var isExpanded: Bool = false {
@@ -47,6 +47,7 @@ class accordionBox: NSBox {
         button.isBordered = false
         button.isHidden = true
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.hiddenToolsButton)
         return button
     }()
 
@@ -94,6 +95,7 @@ class accordionBox: NSBox {
         addSubview(titleLabel)
         addSubview(gearButton)
         addSubview(arrowImageView)
+        hideDrawingFromAccessibility(titleLabel, arrowImageView)
 
         NSLayoutConstraint.activate([
             titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
@@ -169,9 +171,20 @@ class accordionBox: NSBox {
     /// mutation deleting `onUserToggled?` from the click path survived the suite.
     func handleHeaderClick(at point: NSPoint) {
         guard bounds.contains(point) else { return }
+        toggleByUser()
+    }
+
+    private func toggleByUser() {
         isExpanded.toggle()
         onUserToggled?(isExpanded)
     }
+
+    // MARK: - PressableBox
+    override func performPress() -> Bool {
+        toggleByUser()
+        return true
+    }
+    override func isAccessibilityExpanded() -> Bool { isExpanded }
 
     // MARK: - Public Methods
     func setExpanded(_ expanded: Bool, animated: Bool = false) {

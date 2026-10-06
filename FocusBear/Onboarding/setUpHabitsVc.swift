@@ -21,7 +21,7 @@ class setUpHabitsVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        btnSkip.setAccessibilityIdentifier(UITestContract.Identifier.Onboarding.skipHabitsButton)
         lblTitle.stringValue = "Set up habits to focus better"
         lblSubTitle.stringValue = "Research shows that habits like sleeping better, meditating, and exercising improve your focus"
         btnContinue.title = "Set up habits"

@@ -1128,7 +1128,7 @@ final class FocusSessionStore: ObservableObject {
         isSavingTask = true
         editFailed = false
         let title = edits.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        addLog(text: "focus session: create task \(title)")
+        addLog(text: "focus session: create task \(LogPrivacy.text(title))")
         allApiObject.upsertToDo(body: FocusSessionTaskUpsert.creationBody(with: edits)) { [weak self] succeeded, json in
             DispatchQueue.main.async {
                 guard let self = self else { return }

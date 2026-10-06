@@ -22,6 +22,8 @@ class askPermissionsVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        btnContinue.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.askPermissionsGrantButton)
+        btnSkip.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.askPermissionsSkipButton)
         lblTitle.stringValue = "The schedule is set up! Now let's sort permissions."
         lblSubTitle.stringValue = "Focus Bear needs System Events, Accessibility, and Browser permissions to keep distractions blocked."
         btnSkip.title = "Skip"

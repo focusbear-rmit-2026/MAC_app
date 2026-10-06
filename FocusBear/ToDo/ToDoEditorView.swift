@@ -213,6 +213,7 @@ struct ToDoEditorSheet: View {
     private static let statusMenuWidth: CGFloat = 220
     private static let durationFieldWidth: CGFloat = 60
     private static let projectSearchWidth: CGFloat = 300
+    private typealias Identifiers = UITestContract.Identifier.TasksRegression
     private var strings: ToDoStrings { store.strings }
     private var isNew: Bool { task == nil }
 
@@ -299,7 +300,10 @@ struct ToDoEditorSheet: View {
                     topSection
                     projectsSection
                     assigneeSection
-                    labelled(strings[.description]) { ToDoMultilineEditor(text: detailsBinding, placeholder: strings[.description]) }
+                    labelled(strings[.description]) {
+                        ToDoMultilineEditor(text: detailsBinding, placeholder: strings[.description],
+                                            accessibilityIdentifier: Identifiers.editorDescription)
+                    }
                     subtasksSection
                     attachmentsSection
                     if !isNew {
@@ -359,11 +363,13 @@ struct ToDoEditorSheet: View {
             SwiftUI.Button(action: closeAttempt) { Text(strings[.cancel]) }
                 .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 30))
                 .keyboardShortcut(.cancelAction)
+                .accessibilityIdentifier(Identifiers.editorCancelButton)
             SwiftUI.Button(action: save) { Text(store.isSavingTask ? strings[.saving] : strings[.save]) }
                 .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 30))
                 .disabled(!canSave)
                 .keyboardShortcut("s", modifiers: .command)
                 .help(titleIsBlank ? strings[.titleIsNeeded] : strings[.save])
+                .accessibilityIdentifier(UITestContract.Identifier.ToDo.editorSaveButton)
         }
     }
 
@@ -388,7 +394,9 @@ struct ToDoEditorSheet: View {
             // mid-edit (report 2026-09-14_11-51-05). This field tells Return apart from blur, and
             // only Return saves.
             ReturnGuardTextField(text: $draft.title, placeholder: strings[.addATask],
-                                 onCommit: { if canSave { save() } }, fontSize: 15)
+                                 onCommit: { if canSave { save() } }, fontSize: 15,
+                                 accessibilityIdentifier: UITestContract.Identifier.ToDo.editorTitleField,
+                                 focusesWhenShown: true)
             if titleIsBlank {
                 Image(systemName: "exclamationmark.triangle").foregroundColor(ToDoTheme.today).help(strings[.titleIsNeeded])
             }
@@ -421,6 +429,7 @@ struct ToDoEditorSheet: View {
                     ForEach(ToDoStatus.allCases, id: \.self) { status in Text(strings.statusLabel(status)).tag(status) }
                 }
                 .labelsHidden().pickerStyle(SegmentedPickerStyle()).frame(maxWidth: ToDoEditorSheet.statusControlWidth)
+                .accessibilityIdentifier(Identifiers.editorStatusPicker)
             }
         }
     }
@@ -463,7 +472,8 @@ struct ToDoEditorSheet: View {
                 topRow(letter: "T", title: strings[.timelineDueDate]) {
                     // The bare time-pressure sub-score ("1.7") meant nothing next to the TOP score
                     // above it and made the card look busy (report 2026-09-14_19-50-05).
-                    ToDoDueDateField(day: Binding(get: { dueDate }, set: { draft.due_date = $0.map(ToDoDates.ymd) }), strings: strings, isStacked: true)
+                    ToDoDueDateField(day: Binding(get: { dueDate }, set: { draft.due_date = $0.map(ToDoDates.ymd) }), strings: strings, isStacked: true,
+                                     fieldIdentifier: Identifiers.editorDueDateField)
                     // Everything the forecast has to say about this date sits under the control it is
                     // about, not at the foot of the card where it read as a comment on the whole task
                     // (reports 2026-09-15_17-59-04 and _20-08-56). NOT gated on `isNew`: re-dating a
@@ -476,7 +486,8 @@ struct ToDoEditorSheet: View {
                 }
                 ForecastOutcomePicker(wireValue: $draft.outcome)
                 topRow(letter: "P", title: strings[.perspiration]) {
-                    levelSlider(value: Binding(get: { draft.effectivePerspiration }, set: { setPerspiration($0) }), label: strings.perspirationLabel(draft.effectivePerspiration))
+                    levelSlider(value: Binding(get: { draft.effectivePerspiration }, set: { setPerspiration($0) }),
+                                title: strings[.perspiration], label: strings.perspirationLabel(draft.effectivePerspiration))
                     durationField
                 }
             }
@@ -492,6 +503,8 @@ struct ToDoEditorSheet: View {
         HStack(spacing: 6) {
             TextField("", text: $durationMinutesText)
                 .textFieldStyle(RoundedBorderTextFieldStyle()).frame(width: ToDoEditorSheet.durationFieldWidth)
+                .accessibilityLabel(strings[.duration])
+                .accessibilityIdentifier(Identifiers.editorDurationField)
                 .onChange(of: durationMinutesText) { text in
                     guard let minutes = Int(text.trimmingCharacters(in: .whitespaces)), minutes > 0 else { return }
                     let level = ToDoScoring.perspiration(forMinutes: minutes, current: draft.effectivePerspiration)
@@ -526,10 +539,13 @@ struct ToDoEditorSheet: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func levelSlider(value: Binding<Int>, label: String) -> some View {
+    /// `title` is the row heading drawn above the slider; SwiftUI doesn't tie the two together, so
+    /// without it the slider is announced with no name at all.
+    private func levelSlider(value: Binding<Int>, title: String, label: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Slider(value: Binding(get: { Double(value.wrappedValue) }, set: { value.wrappedValue = Int($0.rounded()) }),
                    in: Double(ToDoScoring.minLevel)...Double(ToDoScoring.maxLevel), step: 1)
+                .accessibilityLabel(title)
             Text("\(value.wrappedValue) · \(label)").font(.system(size: 11)).foregroundColor(.secondary)
         }
     }
@@ -558,31 +574,36 @@ struct ToDoEditorSheet: View {
                 Text("\(selectedProjectIds.count) / \(store.projects.count)").font(.system(size: 11)).foregroundColor(.secondary)
             }
             if !selectedProjects.isEmpty {
-                chipRow(selectedProjects.map { ($0.id, strings.projectName($0.name)) }, selected: true) { toggleProject($0) }
+                chipRow(selectedProjects.map { ($0.id, strings.projectName($0.name), $0.name) }, selected: true,
+                        identifier: Identifiers.editorSelectedProjectChip) { toggleProject($0) }
             }
             // Return only — SwiftUI's own `onCommit` also fires on losing focus, which would create a
             // project simply because the user typed a search and clicked elsewhere (the same defect
             // as the New Project sheet, report 2026-09-15_20-13-26).
             ReturnGuardTextField(text: $projectSearch, placeholder: strings[.searchProjectsPlaceholder],
-                                 onCommit: createProjectFromSearch)
+                                 onCommit: createProjectFromSearch,
+                                 accessibilityIdentifier: Identifiers.editorProjectSearchField)
                 .frame(maxWidth: ToDoEditorSheet.projectSearchWidth)
             if store.projects.isEmpty {
                 Text(strings[.noExistingProjects]).font(.system(size: 12)).foregroundColor(.secondary)
             } else if filteredProjects.isEmpty {
                 Text(strings[.noProjectsFound]).font(.system(size: 12)).foregroundColor(.secondary)
             } else {
-                chipRow(filteredProjects.prefix(ToDoEditorSheet.maxVisibleProjectChips).map { ($0.id, strings.projectName($0.name)) }, selected: false) { toggleProject($0) }
+                chipRow(filteredProjects.prefix(ToDoEditorSheet.maxVisibleProjectChips).map { ($0.id, strings.projectName($0.name), $0.name) }, selected: false,
+                        identifier: Identifiers.editorAvailableProjectChip) { toggleProject($0) }
             }
             if let name = creatableProjectName {
                 SwiftUI.Button(action: createProjectFromSearch) {
                     Label(strings.format(.createProjectNamed, ToDoStrings.projectToken, name), systemImage: "plus")
                 }
                 .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 26))
+                .accessibilityIdentifier(Identifiers.editorCreateProjectButton)
             }
         }
     }
 
-    private func chipRow(_ items: [(id: String, name: String)], selected: Bool, onTap: @escaping (String) -> Void) -> some View {
+    private func chipRow(_ items: [(id: String, name: String, projectName: String)], selected: Bool, identifier: String,
+                         onTap: @escaping (String) -> Void) -> some View {
         // No wrapping flow layout on macOS 11: a horizontal scroller keeps long rows usable.
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
@@ -592,6 +613,7 @@ struct ToDoEditorSheet: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                     .pointingHandCursor()
+                    .accessibilityIdentifier(UITestContract.Identifier.named(identifier, item.projectName))
                 }
             }
         }
@@ -684,6 +706,7 @@ struct ToDoEditorSheet: View {
                     .buttonStyle(PlainButtonStyle()).pointingHandCursor()
                     TextField(strings[.addASubtask], text: Binding(get: { draft.subtasks?[index].name ?? "" }, set: { draft.subtasks?[index].name = $0 }))
                         .textFieldStyle(PlainTextFieldStyle())
+                        .accessibilityLabel(strings[.addASubtask])
                         .foregroundColor(subtask.is_completed ? .secondary : .primary)
                     SwiftUI.Button(action: { draft.subtasks?.remove(at: index) }) { Image(systemName: "trash").foregroundColor(.secondary) }
                         .buttonStyle(PlainButtonStyle()).pointingHandCursor()
@@ -692,7 +715,9 @@ struct ToDoEditorSheet: View {
                 .background(ToDoTheme.card).cornerRadius(6)
             }
             HStack(spacing: 8) {
+                // A TextField's title is only its placeholder; VoiceOver needs it as the name too.
                 TextField(strings[.addASubtask], text: $pendingSubtask, onCommit: addSubtask).textFieldStyle(RoundedBorderTextFieldStyle())
+                    .accessibilityLabel(strings[.addASubtask])
                 AddItemButton(title: strings[.addSubtask], action: addSubtask)
                     .disabled(pendingSubtask.trimmingCharacters(in: .whitespaces).isEmpty)
             }
@@ -903,16 +928,23 @@ struct ToDoMultilineEditor: View {
     @Binding var text: String
     let placeholder: String
     var height: CGFloat = 80
+    /// Empty is SwiftUI's "none".
+    var accessibilityIdentifier = ""
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             TextEditor(text: $text)
                 .font(.system(size: 13))
                 .padding(4)
+                .accessibilityLabel(placeholder)
+                .accessibilityIdentifier(accessibilityIdentifier)
             if text.isEmpty {
+                // Drawn text, not a real placeholder: VoiceOver would read it as a stray label beside
+                // the editor that already carries it as its name.
                 Text(placeholder).font(.system(size: 13)).foregroundColor(Color.gray.opacity(0.7))
                     .padding(.horizontal, 9).padding(.vertical, 8)
                     .allowsHitTesting(false)
+                    .accessibilityHidden(true)
             }
         }
         .frame(height: height)

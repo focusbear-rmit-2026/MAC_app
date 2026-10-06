@@ -107,7 +107,7 @@ class createTaskVc: NSViewController {
             }
             if result{
                 DispatchQueue.main.async {
-                    addLog(text: "\(title) task created successfully.")
+                    addLog(text: "task \(LogPrivacy.text(title)) created successfully.")
                     self.view.window?.close()
                 }
             }

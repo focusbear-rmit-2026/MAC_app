@@ -25,6 +25,7 @@ struct FocusLogTab: View {
                                     description: strings.startFocusSessionHint)
                 } else {
                     FocusLogTable(store: store, strings: strings)
+                        .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.statsTable)
                     if store.canLoadMore {
                         HStack {
                             Spacer()

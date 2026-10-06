@@ -69,7 +69,7 @@ class customRoutineStateVc: NSViewController {
                     }
                 }
             }
-            let (dateString) = getStringFromDate(date: nextRoutine, dateFormat: timeFormat)
+            let (dateString) = getDisplayStringFromDate(date: nextRoutine, dateFormat: timeFormat)
 
             var nextRoutineText = "Great job staying on track! Your next scheduled routine (<ROUTINE>) is set for <TIME>. Be ready to jump back in and continue building those healthy habits. You've got this!"
             if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
@@ -103,7 +103,7 @@ class customRoutineStateVc: NSViewController {
                                     }
                                 }
                             }
-                            let cutOffDateString = getStringFromDate(date: cutOffdate, dateFormat: timeFormat)
+                            let cutOffDateString = getDisplayStringFromDate(date: cutOffdate, dateFormat: timeFormat)
                             var freeTimeText = "Well done! You've got free time until <CUTOFFTIME>"// v 2.28.453
                             if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
                                 freeTimeText = habitsStateVcInfo.value(forKey: "freeTimeText") as? String ?? freeTimeText

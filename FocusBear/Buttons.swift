@@ -858,7 +858,7 @@ class boxButtonOld: NSBox {
     }
 }
 
-class boxButton: NSBox {
+class boxButton: PressableBox {
 
     // MARK: - Public API
     weak var target: AnyObject?
@@ -908,6 +908,7 @@ class boxButton: NSBox {
             owner: self,
             userInfo: nil
         ))
+        hideDrawingFromAccessibility(titleLabel, iconView)
     }
 
     // MARK: - Content
@@ -1023,12 +1024,23 @@ class boxButton: NSBox {
         let location = convert(event.locationInWindow, from: nil)
         
         // Fire action ONLY if mouseUp is inside the button
-        if bounds.contains(location) {
-            if let target = target, let action = action {
-                NSApp.sendAction(action, to: target, from: self)
-            }
-        }
+        if bounds.contains(location) { sendActionToTarget() }
     }
+
+    private func sendActionToTarget() {
+        guard let target = target, let action = action else { return }
+        NSApp.sendAction(action, to: target, from: self)
+    }
+
+    // MARK: - PressableBox
+    override var isPressable: Bool { isEnabled }
+    override var spokenTitle: String? { titleLabel.stringValue }
+    override func performPress() -> Bool {
+        guard isEnabled else { return false }
+        sendActionToTarget()
+        return true
+    }
+
 
     // MARK: - Tracking area
     override func updateTrackingAreas() {

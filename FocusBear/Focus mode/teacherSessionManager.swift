@@ -50,6 +50,9 @@ class teacherSessionManager: NSObject {
     let teacherSessionDateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
 
     private var isRoutinePostponedByTeacherSession = false
+    /// The running session was started by a UI test (`UITestManagedSafetyFixture`) and exists in this
+    /// process only, so there is no server session to send heartbeats to.
+    private var isUITestSession = false
     
     func isTeacherSessionActive()->Bool{
         return activeTeacherSessionId != nil
@@ -184,7 +187,7 @@ class teacherSessionManager: NSObject {
         guard let finishTime = getDateFromStringInUtc(date: finishTimeString, dateFormat: teacherSessionDateFormat) else{
             return ""
         }
-        return getStringFromDate(date: finishTime, dateFormat: "h:mm a")
+        return getDisplayStringFromDate(date: finishTime, dateFormat: "h:mm a")
     }
 
     // The allowed-site chips shown on the invite: the session's allowed URLs, falling back to allowed apps
@@ -555,6 +558,14 @@ class teacherSessionManager: NSObject {
         }
     }
 
+    #if DEBUG
+    /// A class session for the UI tests, joined exactly as an accepted invite joins one.
+    func startForUITests(sessionDic:[String:Any]){
+        isUITestSession = true
+        startTeacherSession(sessionDic: sessionDic)
+    }
+    #endif
+
     //***********C3 early-stop lock***************//
 
     func canTeacherSessionFinishNow()->Bool{
@@ -588,6 +599,7 @@ class teacherSessionManager: NSObject {
                 }
             }
         })
+        customAlertVcObj?.view.setUITestLandmark(UITestContract.Identifier.TeacherSession.lockedAlert)
     }
 
     // legit end only:- class-session-ended event or scheduled_finish_time reached
@@ -600,6 +612,7 @@ class teacherSessionManager: NSObject {
 
         stopHeartbeatTimer()
         activeTeacherSessionId = nil
+        isUITestSession = false
         activeTeacherSessionTeamId = nil
         activeTeacherSessionName = ""
         appliedAllowlistVersion = 0
@@ -745,7 +758,7 @@ class teacherSessionManager: NSObject {
     }
 
     @objc func sendTeacherSessionHeartbeat(){
-        guard let sessionId = activeTeacherSessionId else{
+        guard let sessionId = activeTeacherSessionId, !isUITestSession else{
             stopHeartbeatTimer()
             return;
         }
@@ -756,7 +769,7 @@ class teacherSessionManager: NSObject {
 
     // best-effort final beat on quit; the server also infers quit from the heartbeat gap
     func sendFinalHeartbeatBeforeTerminate(){
-        guard let sessionId = activeTeacherSessionId else{
+        guard let sessionId = activeTeacherSessionId, !isUITestSession else{
             return;
         }
         addLog(text: "teacher session:- sending final heartbeat before terminate")

@@ -162,6 +162,7 @@ struct ProjectsTabView: View {
                     Text(ForecastText[.tab]).tag(ProjectsStore.ViewMode.forecast)
                 }
                 .pickerStyle(SegmentedPickerStyle()).labelsHidden().frame(maxWidth: 400)
+                .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.projectsViewModePicker)
                 Spacer()
                 ToDoIconButton(systemImage: "envelope", help: strings[.pendingInvitations], isActive: !store.pendingInvitations.isEmpty) { store.isInvitationsVisible = true }
                 ToDoIconButton(systemImage: "arrow.clockwise", help: strings[.refresh]) { store.refresh() }
@@ -170,6 +171,7 @@ struct ProjectsTabView: View {
             HStack(spacing: 8) {
                 SwiftUI.Button(action: { store.isCreateVisible = true }) { Label(strings[.newProject], systemImage: "plus") }
                     .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 30))
+                    .accessibilityIdentifier(UITestContract.Identifier.Projects.newProjectButton)
                 Spacer()
             }
             // "What matters" searches the portfolio rows it already has; "All projects" also asks
@@ -184,7 +186,8 @@ struct ProjectsTabView: View {
                         .labelsHidden().pickerStyle(MenuPickerStyle()).frame(width: 130)
                     }
                     if store.viewMode == .all, !store.knownTags.isEmpty { tagFilterPicker }
-                    ToDoSearchField(text: $store.searchQuery, placeholder: strings[.projectSearchPlaceholder], isBusy: store.isProjectsLoading && !store.projects.isEmpty)
+                    ToDoSearchField(text: $store.searchQuery, placeholder: strings[.projectSearchPlaceholder], isBusy: store.isProjectsLoading && !store.projects.isEmpty,
+                                    accessibilityIdentifier: UITestContract.Identifier.TasksRegression.projectsSearchField)
                         .frame(maxWidth: 300)
                 }
             }
@@ -412,6 +415,7 @@ private struct AllProjectCard: View {
                     Text(strings.projectName(project.name)).font(.system(size: 14, weight: .semibold)).lineLimit(1).foregroundColor(.primary)
                 }
                 .buttonStyle(PlainButtonStyle()).pointingHandCursor()
+                .accessibilityIdentifier(UITestContract.Identifier.named(UITestContract.Identifier.Projects.openProjectButton, project.name))
                 if isMember { ToDoChip(text: strings[.memberBadge], systemImage: "person.2") }
                 if project.lifecycleStatus != .active { ToDoChip(text: strings.projectStatusLabel(project.lifecycleStatus)) }
                 Spacer()
@@ -756,6 +760,7 @@ private struct ProjectsAllView: View {
                 Text(strings[.createFirstProject]).font(.subheadline).foregroundColor(.secondary)
                 SwiftUI.Button(action: { store.isCreateVisible = true }) { Label(strings[.newProject], systemImage: "plus") }
                     .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 30))
+                    .accessibilityIdentifier(UITestContract.Identifier.Projects.newProjectButton)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -786,7 +791,8 @@ struct ProjectCreateSheet: View {
             // dismissed the sheet mid-sentence ("when I clicked on the due date text box the modal
             // closed immediately", report 2026-09-15_20-13-26). `ReturnGuardTextField` commits on
             // Return only.
-            ReturnGuardTextField(text: $name, placeholder: strings[.projectNamePlaceholder], onCommit: create)
+            ReturnGuardTextField(text: $name, placeholder: strings[.projectNamePlaceholder], onCommit: create,
+                                 accessibilityIdentifier: UITestContract.Identifier.Projects.nameField)
             HStack(spacing: 6) {
                 Text(strings[.due]).font(.system(size: 12, weight: .semibold))
                 Text(strings[.optional]).font(.system(size: 11)).foregroundColor(.secondary)
@@ -800,6 +806,7 @@ struct ProjectCreateSheet: View {
                     .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 30)).keyboardShortcut(.cancelAction)
                 SwiftUI.Button(action: create) { Text(store.isCreatingProject ? strings[.saving] : strings[.save]) }
                     .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 30)).disabled(!canCreate)
+                    .accessibilityIdentifier(UITestContract.Identifier.Projects.createButton)
             }
         }
         .padding(16)

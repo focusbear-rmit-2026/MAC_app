@@ -322,6 +322,7 @@ extension customBlockingSchedulesVc: NSTableViewDelegate, NSTableViewDataSource{
             }
             alertWarning.addButton(withTitle: buttonBlockText)
             alertWarning.addButton(withTitle: buttonNoText)
+            alertWarning.buttons.last?.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.schedulePermissionsDeclineButton)
             
             alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                 if modalResponse == .alertFirstButtonReturn{

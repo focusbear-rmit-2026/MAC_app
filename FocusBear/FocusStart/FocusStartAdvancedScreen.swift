@@ -204,7 +204,8 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
                                 systemIcon: "hourglass",
                                 isExpanded: state.expandedCard == .duration,
                                 scale: scale,
-                                onToggle: { state.toggleCard(.duration) }) {
+                                onToggle: { state.toggleCard(.duration) },
+                                headerAccessibilityIdentifier: UITestContract.Identifier.FocusStart.durationCard) {
             VStack(spacing: scale.pt(FocusStartLayout.cardContentGap)) {
                 FocusStartDurationDial(duration: $state.duration,
                                        strings: state.strings,
@@ -212,7 +213,8 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
                                        isEnabled: state.isDurationEditable)
                 HStack(spacing: scale.pt(FocusStartLayout.rowGap)) {
                     labelledControl(state.strings.untimedModeLabel, scale) {
-                        FocusStartToggle(isOn: $state.duration.isUntimed, scale: scale)
+                        FocusStartToggle(label: state.strings.untimedModeLabel, isOn: $state.duration.isUntimed, scale: scale)
+                            .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.untimedToggle)
                     }
                     Spacer(minLength: 0)
                 }
@@ -220,7 +222,7 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
                 if state.isAdvancedOptionsEnabled {
                     HStack(spacing: scale.pt(FocusStartLayout.rowGap)) {
                         labelledControl(state.strings.superFocusLabel, scale) {
-                            FocusStartToggle(isOn: $state.isSuperFocusOn, scale: scale)
+                            FocusStartToggle(label: state.strings.superFocusLabel, isOn: $state.isSuperFocusOn, scale: scale)
                                 .disabled(!state.isSuperFocusEditable)
                         }
                         if state.isSuperFocusOn {
@@ -252,7 +254,8 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
                         Text(state.strings.enableMicroBreaksLabel)
                             .font(scale.font(FocusStartLayout.summaryFont))
                             .fixedSize(horizontal: false, vertical: true)
-                        FocusStartToggle(isOn: $state.isMicroBreaksOn, scale: scale)
+                            .accessibilityHidden(true)
+                        FocusStartToggle(label: state.strings.enableMicroBreaksLabel, isOn: $state.isMicroBreaksOn, scale: scale)
                             .disabled(!state.isDurationEditable)
                     }.frame(maxWidth: .infinity, alignment: .leading)
                     HStack(spacing: scale.pt(FocusStartLayout.inlineGap)) {
@@ -279,7 +282,8 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
                                 systemIcon: "trophy",
                                 isExpanded: state.expandedCard == .goal,
                                 scale: scale,
-                                onToggle: { state.toggleCard(.goal) }) {
+                                onToggle: { state.toggleCard(.goal) },
+                                headerAccessibilityIdentifier: UITestContract.Identifier.FocusStart.goalCard) {
             VStack(spacing: scale.pt(FocusStartLayout.cardContentGap)) {
                 projectSelection(scale)
                 selectedTasks(scale)
@@ -298,6 +302,7 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
                 HStack(spacing: scale.pt(12)) {
                     searchField(state.strings.goalPlaceholder, text: $state.projectQuery, scale,
                                 onCommit: state.useCustomGoal)
+                        .accessibilityIdentifier(UITestContract.Identifier.FocusStart.goalField)
                     iconButton("plus", label: state.strings.useGoal, scale: scale, action: state.useCustomGoal)
                         .disabled(goalIsEmpty)
                         .opacity(goalIsEmpty ? 0.35 : 1)
@@ -365,11 +370,14 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
             if let project = state.selectedProject { Text(project.iconEmoji ?? "") }
             VStack(alignment: .leading, spacing: scale.pt(8)) {
                 Text(state.goal).lineLimit(2)
+                    .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.selectedGoal)
                 if let project = state.selectedProject { projectImportance(project, scale) }
             }
             Spacer(minLength: 0)
             iconButton("pencil", label: state.strings.changeGoal, scale: scale, action: state.editGoal)
+                .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.editGoalButton)
             iconButton("xmark", label: state.strings.clearGoal, scale: scale, action: state.clearGoal)
+                .accessibilityIdentifier(UITestContract.Identifier.FocusStart.clearGoalButton)
         }
         .font(scale.font(FocusStartLayout.summaryFont))
         .padding(scale.pt(24))
@@ -386,8 +394,10 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
             ForEach(state.selectedTasks) { task in selectedTask(task, scale) }
             if state.showsTaskSearch {
                 searchField(state.strings.taskPlaceholder, text: $state.taskQuery, scale)
+                    .accessibilityIdentifier(UITestContract.Identifier.FocusStart.taskSearchField)
             } else {
                 taskSearchToggle(state.strings.addMoreTasks, scale) { state.isTaskSearchExpanded = true }
+                    .accessibilityIdentifier(UITestContract.Identifier.FocusStart.addMoreTasksButton)
             }
         }
     }
@@ -405,10 +415,12 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
         HStack(spacing: scale.pt(18)) {
             VStack(alignment: .leading, spacing: scale.pt(10)) {
                 Text(task.title).lineLimit(2)
+                    .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.selectedTask)
                 taskMetadata(task, scale)
             }
             Spacer(minLength: 0)
             iconButton("xmark", label: state.strings.removeTask, scale: scale) { state.removeSelectedTask(task.id) }
+                .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.removeTaskButton)
         }
         .font(scale.font(FocusStartLayout.summaryFont))
         .padding(scale.pt(24))
@@ -484,6 +496,7 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
             .frame(minHeight: scale.pt(120))
             .contentShape(Rectangle())
         }.buttonStyle(FBButtonStyle())
+        .accessibilityIdentifier(UITestContract.Identifier.FocusStart.taskSuggestion)
     }
 
     private func blockingCard(_ scale: FocusStartScale) -> some SwiftUI.View {
@@ -492,7 +505,8 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
                                 systemIcon: "nosign",
                                 isExpanded: state.expandedCard == .blocking,
                                 scale: scale,
-                                onToggle: { state.toggleCard(.blocking) }) {
+                                onToggle: { state.toggleCard(.blocking) },
+                                headerAccessibilityIdentifier: UITestContract.Identifier.SessionsRegression.blockingCard) {
             VStack(spacing: scale.pt(FocusStartLayout.cardContentGap)) {
                 if managedRuntime.isSettingsLocked { managedSafetySummary(scale) }
                 // #2571 (16): show which block list is applied right next to the label — the list stays
@@ -506,6 +520,7 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
                             .font(scale.font(FocusStartLayout.bodyFont, .semibold))
                             .foregroundColor(FocusStartPalette.accent)
                             .lineLimit(1)
+                            .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.selectedBlockListName)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -575,6 +590,8 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(scale.pt(24))
         .overlay(RoundedRectangle(cornerRadius: scale.pt(20)).stroke(FocusStartPalette.border))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(UITestContract.Identifier.ManagedSafety.focusStartSummary)
     }
 
     /// One of the goal card's two search wells: a magnifier, then the field itself.
@@ -589,6 +606,8 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
             TextField(placeholder, text: text, onCommit: onCommit)
                 .textFieldStyle(PlainTextFieldStyle())
                 .font(scale.font(FocusStartLayout.fieldFont))
+                // A TextField's title is only its placeholder; VoiceOver needs it as the name too.
+                .accessibilityLabel(placeholder)
         }
         .focusStartField(scale)
     }
@@ -605,6 +624,7 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
                 .font(scale.font(FocusStartLayout.bodyFont))
                 .foregroundColor(FocusStartPalette.primaryText)
                 .fixedSize()
+                .accessibilityHidden(true)
             control()
         }
         .fixedSize()
@@ -672,6 +692,7 @@ struct FocusStartAdvancedScreen: SwiftUI.View {
                     Spacer(minLength: 0)
                 }.contentShape(Rectangle())
             }.buttonStyle(FBButtonStyle()).disabled(!state.isBlockListEditable)
+            .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.blockListChoice)
             // #2571 (16): a bold white checkmark in a filled orange circle marks the applied block list,
             // right-aligned in a fixed slot just left of the edit icon (hidden when unselected so rows
             // stay aligned). The filled badge reads clearly as "this one is selected".

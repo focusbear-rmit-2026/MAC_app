@@ -40,6 +40,7 @@ struct FocusStartPrimaryButton: SwiftUI.View {
         )
         .opacity(isEnabled ? 1 : 0.5)
         .disabled(!isEnabled)
+        .accessibilityIdentifier(UITestContract.Identifier.FocusStart.startButton)
     }
 }
 
@@ -80,6 +81,7 @@ struct FocusStartModeLink: SwiftUI.View {
             .contentShape(Rectangle())
         }
         .buttonStyle(FBButtonStyle())
+        .accessibilityIdentifier(UITestContract.Identifier.FocusStart.modeLink)
     }
 
     private var chevron: some SwiftUI.View {
@@ -166,6 +168,7 @@ struct FocusStartDurationDial: SwiftUI.View {
                     .font(scale.font(FocusStartLayout.durationNumberFont, .semibold))
                     .foregroundColor(FocusStartPalette.accent)
                     .pointingHandCursor()
+                    .accessibilityIdentifier(component == .hours ? UITestContract.Identifier.FocusStart.durationHours : UITestContract.Identifier.FocusStart.durationMinutes)
                     .onTapGesture {
                         guard isEnabled else { return }
                         draft = shown
@@ -237,6 +240,7 @@ struct FocusStartDurationDial: SwiftUI.View {
             field.delegate = context.coordinator
             field.cell?.sendsActionOnEndEditing = false
             field.setContentHuggingPriority(.required, for: .horizontal)
+            field.setAccessibilityIdentifier(UITestContract.Identifier.FocusStart.durationField)
             // Focus + select-all once the field is in a window (next runloop tick), so the first click
             // lets the user type immediately and a keystroke replaces the shown value.
             DispatchQueue.main.async {
@@ -302,6 +306,7 @@ struct FocusStartDurationDial: SwiftUI.View {
         }
         .buttonStyle(FBButtonStyle())
         .disabled(duration.isUntimed)
+        .accessibilityIdentifier(steps < 0 ? UITestContract.Identifier.SessionsRegression.durationMinusButton : UITestContract.Identifier.SessionsRegression.durationPlusButton)
     }
 
     private var slider: some SwiftUI.View {
@@ -372,6 +377,8 @@ struct FocusStartAccordionCard<Content: SwiftUI.View>: SwiftUI.View {
     let isExpanded: Bool
     let scale: FocusStartScale
     let onToggle: () -> Void
+    /// On the header, the part a test presses to open the card.
+    var headerAccessibilityIdentifier = ""
     let content: () -> Content
 
     var body: some SwiftUI.View {
@@ -431,6 +438,7 @@ struct FocusStartAccordionCard<Content: SwiftUI.View>: SwiftUI.View {
             .contentShape(Rectangle())
         }
         .buttonStyle(FBButtonStyle())
+        .accessibilityIdentifier(headerAccessibilityIdentifier)
     }
 }
 
@@ -602,6 +610,8 @@ struct FocusStartBlockListCombo: NSViewRepresentable {
 /// The design's pill switch. `Toggle` with the system switch style would draw the macOS blue one.
 @available(macOS 11.0, *)
 struct FocusStartToggle: SwiftUI.View {
+    /// What VoiceOver calls the switch; the visible label beside it is hidden so it isn't read twice.
+    let label: String
     @Binding var isOn: Bool
     let scale: FocusStartScale
 
@@ -624,6 +634,21 @@ struct FocusStartToggle: SwiftUI.View {
             .contentShape(Rectangle())
         }
         .buttonStyle(FBButtonStyle())
+        .accessibilityAsSwitch(label: label, isOn: $isOn)
+    }
+}
+
+@available(macOS 11.0, *)
+private extension SwiftUI.View {
+    /// A drawn switch is a nameless button to VoiceOver. From macOS 12 it is announced as a real
+    /// switch (name, on/off, toggle action); on 11 it at least has its name.
+    @ViewBuilder
+    func accessibilityAsSwitch(label: String, isOn: Binding<Bool>) -> some SwiftUI.View {
+        if #available(macOS 12.0, *) {
+            accessibilityRepresentation { SwiftUI.Toggle(label, isOn: isOn) }
+        } else {
+            accessibilityLabel(Text(label))
+        }
     }
 }
 

@@ -9,7 +9,7 @@
 
 import Cocoa
 
-class mainWindowListBox: NSBox {
+class mainWindowListBox: PressableBox {
     // MARK: - Properties
     
     let kBorderColor = NSColor(red: 232/255, green: 136/255, blue: 0/255, alpha: 1)
@@ -168,6 +168,7 @@ class mainWindowListBox: NSBox {
         
         self.imageView = imageView
         self.label = label
+        hideDrawingFromAccessibility(imageView, label)
 
         // Trailing "hide" button, revealed on hover only when showsHideButton is set (see mouseEntered).
         let hideButton = cursorButton(title: "✕", target: self, action: #selector(hideButtonClicked))
@@ -175,6 +176,7 @@ class mainWindowListBox: NSBox {
         hideButton.translatesAutoresizingMaskIntoConstraints = false
         hideButton.isHidden = true
         hideButton.toolTip = leftMenuConfigString("hideToolTooltip") ?? "Hide this tool"
+        hideButton.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.hideToolButton)
         contentView.addSubview(hideButton)
         NSLayoutConstraint.activate([
             hideButton.widthAnchor.constraint(equalToConstant: 20),
@@ -297,13 +299,24 @@ class mainWindowListBox: NSBox {
     }
     
     override func mouseDown(with event: NSEvent) {
-        if isEnabled && !isSelected{
-            if delegate?.selectableListBoxShouldChangeSelection(self) ?? true{
-                isSelected = true
-                delegate?.selectableListBoxDidChangeSelectionByUser(self)
-            }
-        }
+        selectByUser()
     }
+
+    /// A click, or its accessibility equivalent. Returns whether the row accepted the press.
+    @discardableResult
+    private func selectByUser() -> Bool {
+        guard isEnabled, !isSelected else { return false }
+        if delegate?.selectableListBoxShouldChangeSelection(self) ?? true {
+            isSelected = true
+            delegate?.selectableListBoxDidChangeSelectionByUser(self)
+        }
+        return true
+    }
+
+    // MARK: - PressableBox
+    override var isPressable: Bool { isEnabled }
+    override var spokenTitle: String? { title.isEmpty ? label?.stringValue : title }
+    override func performPress() -> Bool { selectByUser() }
     
     // MARK: - Selection Management
     private func notifySelectionChange() {

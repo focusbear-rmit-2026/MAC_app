@@ -211,7 +211,8 @@ final class RelevanceShadowService {
 
 // MARK: - Comparison + JSONL logging
 
-private let relevanceShadowJsonlURL: URL? = applicationSupportURL?.appendingPathComponent("relevance-shadow.jsonl")
+let kRelevanceShadowLogFileName = "relevance-shadow.jsonl"
+private let relevanceShadowJsonlURL: URL? = applicationSupportURL?.appendingPathComponent(kRelevanceShadowLogFileName)
 private var relevanceShadowLogger: CSVLogger?
 
 /// Runs the shadow model against the same signal the existing AI URL check just used,

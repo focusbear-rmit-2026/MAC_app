@@ -7,6 +7,28 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7B10FBBA25CCCC562E088296 /* SecureFileStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD0365B23CEF982527409BC0 /* SecureFileStoreTests.swift */; };
+		B76560FBD0649C206BCCA760 /* BrowsingHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEB6D3FF0D56ABDEB158C369 /* BrowsingHistoryTests.swift */; };
+		60B05C283185CDFEBBC1EBE0 /* SecureStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117557C28C9BA5D08C72855B /* SecureStoreTests.swift */; };
+		B4C41D7C608654D9BA754ED3 /* SecureStoreTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = D886E56F34D210588A820F3B /* SecureStoreTestSupport.swift */; };
+		76741590B71BC404860130B4 /* SensitiveDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8B48779F45EEA1F6F0EC0EA /* SensitiveDefaults.swift */; };
+		23D689B8C454A4A2811B2334 /* SensitiveKeyRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98F832EA7F4E03C95D7BE543 /* SensitiveKeyRegistry.swift */; };
+		5101ED356AA39F105E99E5BF /* SecureFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66ADF0BCE69DB8BBC464032B /* SecureFileStore.swift */; };
+		65EBB62E4876E213850536D2 /* SecureStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1918B907CB617DF5662FDB53 /* SecureStore.swift */; };
+		8C147747A1BD6E0F9F08FBD1 /* SecureMerge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79BFBCD128948E9C8445ED0A /* SecureMerge.swift */; };
+		B5734C4262D997C1A8712182 /* DataKeyProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F8044B217B65CA8E5081EF /* DataKeyProvider.swift */; };
+		0480C9446E4B2F5C7A7318BB /* SecureEnvelope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B371D77C030B088CDC900E1 /* SecureEnvelope.swift */; };
+		848711A28339E71B55C2B2A7 /* IsolatedDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50CA5868AFCCF9EFFDE0CF12 /* IsolatedDefaults.swift */; };
+		0262A3E1B53072E71498D77E /* SharedSuiteHygieneTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBCF31AC3CEA12FBA58E6E47 /* SharedSuiteHygieneTests.swift */; };
+		E6D446EB451EE9245B8498D6 /* LogRedactorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B933C400CBA594B469F50733 /* LogRedactorTests.swift */; };
+		78B86CA7691E2AE377DF4DD9 /* AtRestSecretsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AF142D8E63DC81E533BA026 /* AtRestSecretsTests.swift */; };
+		ECEF0D0C61A3062598F61A31 /* WebCacheCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373370927A8CF1AC37570CB8 /* WebCacheCleaner.swift */; };
+		F47E4B31B9266C6B6DA34167 /* LogRedactor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3455C77E952E8BF519A9CEA /* LogRedactor.swift */; };
+		52B654183A892D103B8E4CD2 /* BrowsingHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B330247197E77F9D9C4AA1D0 /* BrowsingHistory.swift */; };
+		BEE9CEB6DA1FDD372D086173 /* AppPasswordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 820D18740AD4C1AB655622AC /* AppPasswordStore.swift */; };
+		076E90A154D24F7C8C361399 /* SharedSuiteHygiene.swift in Sources */ = {isa = PBXBuildFile; fileRef = E57D064072644A8D73D68A10 /* SharedSuiteHygiene.swift */; };
+		7D036A76E5EB4BFFA722469B /* SharedSuiteIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C5E9E8BF9318AE5D21D2CF /* SharedSuiteIdentity.swift */; };
+		8EBB859C1420D70051C64139 /* SharedSuiteIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C5E9E8BF9318AE5D21D2CF /* SharedSuiteIdentity.swift */; };
 		BFE320000000000000000007 /* MainWindowListBoxInteractionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFE320000000000000000008 /* MainWindowListBoxInteractionTests.swift */; };
 		BFE320000000000000000001 /* LocalReportStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFE320000000000000000002 /* LocalReportStatus.swift */; };
 		CSHOT0001 /* CleanShotPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = CSHOT0002 /* CleanShotPicker.swift */; };
@@ -170,6 +192,7 @@
 		274E0F4928902CF1000234A3 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E0F4828902CF1000234A3 /* User.swift */; };
 		274E0F4C28902E29000234A3 /* Auth0.plist in Resources */ = {isa = PBXBuildFile; fileRef = 274E0F4B28902E28000234A3 /* Auth0.plist */; };
 		274E671628951DDD0030163F /* AllApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E671528951DDC0030163F /* AllApi.swift */; };
+		EV2A00000000000000000001 /* EventsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EV2A00000000000000000002 /* EventsService.swift */; };
 		2BC962788650BE9B5AF7744A /* RestoreHiddenToolsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 923E7D62446EEA6F34FEF7D1 /* RestoreHiddenToolsView.swift */; };
 		2D64BA07FDD9863D4274B076 /* SpotifyTrackStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6F1F3A7517EFCBB53BA0EC6 /* SpotifyTrackStore.swift */; };
 		BHR00001 /* BusyHoursCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BHR00002 /* BusyHoursCalculator.swift */; };
@@ -418,6 +441,8 @@
 		8FAC6C8E27805F70008A4180 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8FAC6C8C27805F70008A4180 /* Main.storyboard */; };
 		8FAC6C972780612B008A4180 /* mainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FAC6C962780612B008A4180 /* mainWindowController.swift */; };
 		8FAC6C992780671E008A4180 /* globalFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FAC6C982780671E008A4180 /* globalFile.swift */; };
+		MDF00001 /* MachineDateFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = MDF00002 /* MachineDateFormat.swift */; };
+		LCDM0001 /* LegacyCalendarDateMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = LCDM0002 /* LegacyCalendarDateMigration.swift */; };
 		8FAC6C9B2780681A008A4180 /* settings.json in Resources */ = {isa = PBXBuildFile; fileRef = 8FAC6C9A2780681A008A4180 /* settings.json */; };
 		8FAC6C9D27806DCB008A4180 /* firstViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FAC6C9C27806DCB008A4180 /* firstViewController.swift */; };
 		8FAC6C9F2780748D008A4180 /* tblCellHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FAC6C9E2780748D008A4180 /* tblCellHabits.swift */; };
@@ -508,6 +533,7 @@
 		LNM00010 /* LateNoMoreEventMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LNM00011 /* LateNoMoreEventMatcherTests.swift */; };
 		VCT00001 /* VoiceCommandTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = VCT00002 /* VoiceCommandTests.swift */; };
 		ABH00020 /* DaysOfWeekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00021 /* DaysOfWeekTests.swift */; };
+		EV2A00000000000000000003 /* EventsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EV2A00000000000000000004 /* EventsServiceTests.swift */; };
 		B9E5CE9C47907EAB2CF6BB48 /* libonnxruntime.1.19.2.dylib in Embed ORT */ = {isa = PBXBuildFile; fileRef = 9E77B89BB3F9938EEBB5BC80 /* libonnxruntime.1.19.2.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		BEAR0001 /* blocking_bear.png in Resources */ = {isa = PBXBuildFile; fileRef = BEARF001 /* blocking_bear.png */; };
 		BEED37F6C1373AFCB67BCF04 /* Pods_Focus_Bear.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E339C651791746EA3D066A6A /* Pods_Focus_Bear.framework */; };
@@ -518,6 +544,8 @@
 		RST00001 /* RoutineSchedulingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RST00002 /* RoutineSchedulingTests.swift */; };
 		SMT00001 /* SettingsManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SMT00002 /* SettingsManagerTests.swift */; };
 		TPT00001 /* TimeParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TPT00002 /* TimeParsingTests.swift */; };
+		MDFT0001 /* MachineDateFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = MDFT0002 /* MachineDateFormatTests.swift */; };
+		LCDMT001 /* LegacyCalendarDateMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LCDMT002 /* LegacyCalendarDateMigrationTests.swift */; };
 		FBEXT00005 /* FocusSessionExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBEXT00006 /* FocusSessionExtensionTests.swift */; };
 		STT00001 /* MarkdownTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = STT00002 /* MarkdownTextTests.swift */; };
 		STT00003 /* StatsLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = STT00004 /* StatsLogicTests.swift */; };
@@ -646,6 +674,54 @@
 4D9F853F122041CBEA81F421 /* ManagedPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55F6FF469159527253799E23 /* ManagedPolicyTests.swift */; };
 		NOTE00013 /* ProjectNotesFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTE00014 /* ProjectNotesFeed.swift */; };
 		PNFT0001 /* ProjectNotesFeedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = PNFT0002 /* ProjectNotesFeedTests.swift */; };
+		F0CB0A000000000000000200 /* UITestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000100 /* UITestSupport.swift */; };
+		F0CB0A000000000000000201 /* LaunchAndNavigationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000101 /* LaunchAndNavigationUITests.swift */; };
+		F0CB0A000000000000000202 /* AuthUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000102 /* AuthUITests.swift */; };
+		F0CB0A000000000000000203 /* DayPlanAndToDoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000103 /* DayPlanAndToDoUITests.swift */; };
+		F0CB0A000000000000000204 /* FocusSessionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000104 /* FocusSessionUITests.swift */; };
+		F0CB0A000000000000000205 /* BlockingAndRoutineUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000105 /* BlockingAndRoutineUITests.swift */; };
+		F0CB0A000000000000000310 /* UITestContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000300 /* UITestContract.swift */; };
+		F0CB0A000000000000000311 /* UITestContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000300 /* UITestContract.swift */; };
+		F0CB0A000000000000000312 /* AppDelegate+UITestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000301 /* AppDelegate+UITestSupport.swift */; };
+		F0CB0A000000000000000330 /* UITestBlockingFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000320 /* UITestBlockingFixture.swift */; };
+		F0CB0A000000000000000410 /* BlockingEnforcementUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000400 /* BlockingEnforcementUITests.swift */; };
+		F0CB0A000000000000000411 /* SettingsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000401 /* SettingsUITests.swift */; };
+		F0CB0A000000000000000412 /* ToolsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000402 /* ToolsUITests.swift */; };
+		F0CB0A000000000000000413 /* ProjectsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000403 /* ProjectsUITests.swift */; };
+		F0CB0A000000000000000414 /* AccountSignUpUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000404 /* AccountSignUpUITests.swift */; };
+		F0CB0A000000000000000415 /* DayPlanEditorsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000405 /* DayPlanEditorsUITests.swift */; };
+		F0CB0A000000000000000430 /* AccessibilityChecks.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000420 /* AccessibilityChecks.swift */; };
+		F0CB0A000000000000000431 /* AccessibilityUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000421 /* AccessibilityUITests.swift */; };
+		F0CB0A000000000000000432 /* KeyboardAccessibilityUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000422 /* KeyboardAccessibilityUITests.swift */; };
+		F0CB0A000000000000000341 /* PressableBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000340 /* PressableBox.swift */; };
+		F0CB0A000000000000000441 /* SafeInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000440 /* SafeInteraction.swift */; };
+		F0CB0A000000000000000561 /* A0AccountCleanupUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000560 /* A0AccountCleanupUITests.swift */; };
+		EV2A00000000000000000006 /* EventsV2UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EV2A00000000000000000007 /* EventsV2UITests.swift */; };
+		EV2A00000000000000000005 /* EventsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EV2A00000000000000000002 /* EventsService.swift */; };
+		F0CB0A000000000000000501 /* RegressionDayPlanUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000500 /* RegressionDayPlanUITests.swift */; };
+		F0CB0A000000000000000503 /* RegressionToDoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000502 /* RegressionToDoUITests.swift */; };
+		F0CB0A000000000000000505 /* RegressionProjectsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000504 /* RegressionProjectsUITests.swift */; };
+		F0CB0A000000000000000507 /* RegressionFocusSessionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000506 /* RegressionFocusSessionUITests.swift */; };
+		F0CB0A000000000000000509 /* RegressionBreaksUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000508 /* RegressionBreaksUITests.swift */; };
+		F0CB0A00000000000000050B /* RegressionRoutineUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A00000000000000050A /* RegressionRoutineUITests.swift */; };
+		F0CB0A00000000000000050D /* RegressionSettingsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A00000000000000050C /* RegressionSettingsUITests.swift */; };
+		F0CB0A00000000000000050F /* RegressionBlockingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A00000000000000050E /* RegressionBlockingUITests.swift */; };
+		F0CB0A000000000000000511 /* RegressionMenuBarUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000510 /* RegressionMenuBarUITests.swift */; };
+		F0CB0A000000000000000513 /* RegressionOnboardingAuthUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000512 /* RegressionOnboardingAuthUITests.swift */; };
+		F0CB0A000000000000000515 /* RegressionToolsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000514 /* RegressionToolsUITests.swift */; };
+		F0CB0A000000000000000517 /* RegressionShortcutsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000516 /* RegressionShortcutsUITests.swift */; };
+		F0CB0A000000000000000541 /* UITestContract+Tasks.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000540 /* UITestContract+Tasks.swift */; };
+		F0CB0A000000000000000542 /* UITestContract+Tasks.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000540 /* UITestContract+Tasks.swift */; };
+		F0CB0A000000000000000544 /* UITestContract+Sessions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000543 /* UITestContract+Sessions.swift */; };
+		F0CB0A000000000000000545 /* UITestContract+Sessions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000543 /* UITestContract+Sessions.swift */; };
+		F0CB0A000000000000000547 /* UITestContract+Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000546 /* UITestContract+Settings.swift */; };
+		F0CB0A000000000000000548 /* UITestContract+Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000546 /* UITestContract+Settings.swift */; };
+		F0CB0A00000000000000054A /* UITestContract+Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000549 /* UITestContract+Onboarding.swift */; };
+		F0CB0A00000000000000054B /* UITestContract+Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000549 /* UITestContract+Onboarding.swift */; };
+		F0CB0A000000000000000581 /* UITestContract+Managed.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000580 /* UITestContract+Managed.swift */; };
+		F0CB0A000000000000000582 /* UITestContract+Managed.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000580 /* UITestContract+Managed.swift */; };
+		F0CB0A000000000000000584 /* UITestManagedSafetyFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000583 /* UITestManagedSafetyFixture.swift */; };
+		F0CB0A000000000000000586 /* RegressionManagedSafetyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB0A000000000000000585 /* RegressionManagedSafetyUITests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -655,6 +731,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 8FAC6C8227805F6D008A4180;
 			remoteInfo = "Earn Your Screentime";
+		};
+		F0CB0A000000000000000007 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8FAC6C7B27805F6D008A4180 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8FAC6C8227805F6D008A4180;
+			remoteInfo = "Focus Bear";
 		};
 /* End PBXContainerItemProxy section */
 
@@ -694,6 +777,27 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		BD0365B23CEF982527409BC0 /* SecureFileStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureFileStoreTests.swift; sourceTree = "<group>"; };
+		FEB6D3FF0D56ABDEB158C369 /* BrowsingHistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowsingHistoryTests.swift; sourceTree = "<group>"; };
+		117557C28C9BA5D08C72855B /* SecureStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureStoreTests.swift; sourceTree = "<group>"; };
+		D886E56F34D210588A820F3B /* SecureStoreTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureStoreTestSupport.swift; sourceTree = "<group>"; };
+		B8B48779F45EEA1F6F0EC0EA /* SensitiveDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensitiveDefaults.swift; sourceTree = "<group>"; };
+		98F832EA7F4E03C95D7BE543 /* SensitiveKeyRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensitiveKeyRegistry.swift; sourceTree = "<group>"; };
+		66ADF0BCE69DB8BBC464032B /* SecureFileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureFileStore.swift; sourceTree = "<group>"; };
+		1918B907CB617DF5662FDB53 /* SecureStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureStore.swift; sourceTree = "<group>"; };
+		79BFBCD128948E9C8445ED0A /* SecureMerge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureMerge.swift; sourceTree = "<group>"; };
+		A3F8044B217B65CA8E5081EF /* DataKeyProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataKeyProvider.swift; sourceTree = "<group>"; };
+		4B371D77C030B088CDC900E1 /* SecureEnvelope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureEnvelope.swift; sourceTree = "<group>"; };
+		50CA5868AFCCF9EFFDE0CF12 /* IsolatedDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IsolatedDefaults.swift; sourceTree = "<group>"; };
+		FBCF31AC3CEA12FBA58E6E47 /* SharedSuiteHygieneTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedSuiteHygieneTests.swift; sourceTree = "<group>"; };
+		B933C400CBA594B469F50733 /* LogRedactorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogRedactorTests.swift; sourceTree = "<group>"; };
+		1AF142D8E63DC81E533BA026 /* AtRestSecretsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtRestSecretsTests.swift; sourceTree = "<group>"; };
+		373370927A8CF1AC37570CB8 /* WebCacheCleaner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebCacheCleaner.swift; sourceTree = "<group>"; };
+		D3455C77E952E8BF519A9CEA /* LogRedactor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogRedactor.swift; sourceTree = "<group>"; };
+		B330247197E77F9D9C4AA1D0 /* BrowsingHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowsingHistory.swift; sourceTree = "<group>"; };
+		820D18740AD4C1AB655622AC /* AppPasswordStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPasswordStore.swift; sourceTree = "<group>"; };
+		E57D064072644A8D73D68A10 /* SharedSuiteHygiene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedSuiteHygiene.swift; sourceTree = "<group>"; };
+		84C5E9E8BF9318AE5D21D2CF /* SharedSuiteIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedSuiteIdentity.swift; sourceTree = "<group>"; };
 		BFE320000000000000000008 /* MainWindowListBoxInteractionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowListBoxInteractionTests.swift; sourceTree = "<group>"; };
 		BFE320000000000000000002 /* LocalReportStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalReportStatus.swift; sourceTree = "<group>"; };
 		CSHOT0002 /* CleanShotPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanShotPicker.swift; sourceTree = "<group>"; };
@@ -857,6 +961,7 @@
 		CKS00005 /* Focus Bear-Release.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Focus Bear-Release.entitlements"; sourceTree = "<group>"; };
 		274E0F4B28902E28000234A3 /* Auth0.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Auth0.plist; sourceTree = "<group>"; };
 		274E671528951DDC0030163F /* AllApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllApi.swift; sourceTree = "<group>"; };
+		EV2A00000000000000000002 /* EventsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsService.swift; sourceTree = "<group>"; };
 		276F8B5EEE7EC9C4B2DA2895 /* ORTBridge.mm */ = {isa = PBXFileReference; includeInIndex = 1; name = ORTBridge.mm; path = FocusBear/RelevanceModel/ORTBridge.mm; sourceTree = "<group>"; };
 		2DEF19BEE8458F980B62C5C3 /* firstViewController+Schedule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "firstViewController+Schedule.swift"; sourceTree = "<group>"; };
 		5A3E0C8C2FA42A4700301BE2 /* HiddenFocusModeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiddenFocusModeManager.swift; sourceTree = "<group>"; };
@@ -1099,6 +1204,8 @@
 		8FAC6C8F27805F70008A4180 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8FAC6C962780612B008A4180 /* mainWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mainWindowController.swift; sourceTree = "<group>"; };
 		8FAC6C982780671E008A4180 /* globalFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = globalFile.swift; sourceTree = "<group>"; };
+		MDF00002 /* MachineDateFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachineDateFormat.swift; sourceTree = "<group>"; };
+		LCDM0002 /* LegacyCalendarDateMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyCalendarDateMigration.swift; sourceTree = "<group>"; };
 		8FAC6C9A2780681A008A4180 /* settings.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = settings.json; sourceTree = "<group>"; };
 		8FAC6C9C27806DCB008A4180 /* firstViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = firstViewController.swift; sourceTree = "<group>"; };
 		8FAC6C9E2780748D008A4180 /* tblCellHabits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tblCellHabits.swift; sourceTree = "<group>"; };
@@ -1200,6 +1307,7 @@
 		LNM00011 /* LateNoMoreEventMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LateNoMoreEventMatcherTests.swift; sourceTree = "<group>"; };
 		VCT00002 /* VoiceCommandTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCommandTests.swift; sourceTree = "<group>"; };
 		ABH00021 /* DaysOfWeekTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaysOfWeekTests.swift; sourceTree = "<group>"; };
+		EV2A00000000000000000004 /* EventsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsServiceTests.swift; sourceTree = "<group>"; };
 		B1946472169EA35218827571 /* DayPlanAnalytics.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DayPlanAnalytics.swift; sourceTree = "<group>"; };
 		B215C30047E6A2A37A923150 /* ScheduleViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScheduleViewController.swift; sourceTree = "<group>"; };
 		B53899A75071A11A5946BC44 /* RelevanceModelDownloader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RelevanceModelDownloader.swift; path = FocusBear/RelevanceModel/RelevanceModelDownloader.swift; sourceTree = "<group>"; };
@@ -1218,6 +1326,8 @@
 		RST00002 /* RoutineSchedulingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineSchedulingTests.swift; sourceTree = "<group>"; };
 		SMT00002 /* SettingsManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsManagerTests.swift; sourceTree = "<group>"; };
 		TPT00002 /* TimeParsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeParsingTests.swift; sourceTree = "<group>"; };
+		MDFT0002 /* MachineDateFormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachineDateFormatTests.swift; sourceTree = "<group>"; };
+		LCDMT002 /* LegacyCalendarDateMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyCalendarDateMigrationTests.swift; sourceTree = "<group>"; };
 		FBEXT00006 /* FocusSessionExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionExtensionTests.swift; sourceTree = "<group>"; };
 		STT00002 /* MarkdownTextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTextTests.swift; sourceTree = "<group>"; };
 		STT00004 /* StatsLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsLogicTests.swift; sourceTree = "<group>"; };
@@ -1355,6 +1465,48 @@
 55F6FF469159527253799E23 /* ManagedPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FocusBearTests/ManagedPolicyTests.swift"; sourceTree = SOURCE_ROOT; };
 		NOTE00014 /* ProjectNotesFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectNotesFeed.swift; sourceTree = "<group>"; };
 		PNFT0002 /* ProjectNotesFeedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectNotesFeedTests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000002 /* Focus BearUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Focus BearUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		F0CB0A000000000000000100 /* UITestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestSupport.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000101 /* LaunchAndNavigationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAndNavigationUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000102 /* AuthUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000103 /* DayPlanAndToDoUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayPlanAndToDoUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000104 /* FocusSessionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000105 /* BlockingAndRoutineUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockingAndRoutineUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000300 /* UITestContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestContract.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000301 /* AppDelegate+UITestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDelegate+UITestSupport.swift"; sourceTree = "<group>"; };
+		F0CB0A000000000000000320 /* UITestBlockingFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestBlockingFixture.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000400 /* BlockingEnforcementUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockingEnforcementUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000401 /* SettingsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000402 /* ToolsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolsUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000403 /* ProjectsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000404 /* AccountSignUpUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSignUpUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000405 /* DayPlanEditorsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayPlanEditorsUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000420 /* AccessibilityChecks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityChecks.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000421 /* AccessibilityUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000422 /* KeyboardAccessibilityUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardAccessibilityUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000340 /* PressableBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PressableBox.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000440 /* SafeInteraction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeInteraction.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000560 /* A0AccountCleanupUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = A0AccountCleanupUITests.swift; sourceTree = "<group>"; };
+		EV2A00000000000000000007 /* EventsV2UITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsV2UITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000500 /* RegressionDayPlanUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegressionDayPlanUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000502 /* RegressionToDoUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegressionToDoUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000504 /* RegressionProjectsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegressionProjectsUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000506 /* RegressionFocusSessionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegressionFocusSessionUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000508 /* RegressionBreaksUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegressionBreaksUITests.swift; sourceTree = "<group>"; };
+		F0CB0A00000000000000050A /* RegressionRoutineUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegressionRoutineUITests.swift; sourceTree = "<group>"; };
+		F0CB0A00000000000000050C /* RegressionSettingsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegressionSettingsUITests.swift; sourceTree = "<group>"; };
+		F0CB0A00000000000000050E /* RegressionBlockingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegressionBlockingUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000510 /* RegressionMenuBarUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegressionMenuBarUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000512 /* RegressionOnboardingAuthUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegressionOnboardingAuthUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000514 /* RegressionToolsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegressionToolsUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000516 /* RegressionShortcutsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegressionShortcutsUITests.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000540 /* UITestContract+Tasks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UITestContract+Tasks.swift"; sourceTree = "<group>"; };
+		F0CB0A000000000000000543 /* UITestContract+Sessions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UITestContract+Sessions.swift"; sourceTree = "<group>"; };
+		F0CB0A000000000000000546 /* UITestContract+Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UITestContract+Settings.swift"; sourceTree = "<group>"; };
+		F0CB0A000000000000000549 /* UITestContract+Onboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UITestContract+Onboarding.swift"; sourceTree = "<group>"; };
+		F0CB0A000000000000000580 /* UITestContract+Managed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UITestContract+Managed.swift"; sourceTree = "<group>"; };
+		F0CB0A000000000000000583 /* UITestManagedSafetyFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestManagedSafetyFixture.swift; sourceTree = "<group>"; };
+		F0CB0A000000000000000585 /* RegressionManagedSafetyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegressionManagedSafetyUITests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1388,9 +1540,35 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F0CB0A000000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		3B91F3E161EE62A702DCBB45 /* Security */ = {
+			isa = PBXGroup;
+			children = (
+				373370927A8CF1AC37570CB8 /* WebCacheCleaner.swift */,
+				D3455C77E952E8BF519A9CEA /* LogRedactor.swift */,
+				B330247197E77F9D9C4AA1D0 /* BrowsingHistory.swift */,
+				820D18740AD4C1AB655622AC /* AppPasswordStore.swift */,
+				B8B48779F45EEA1F6F0EC0EA /* SensitiveDefaults.swift */,
+				98F832EA7F4E03C95D7BE543 /* SensitiveKeyRegistry.swift */,
+				66ADF0BCE69DB8BBC464032B /* SecureFileStore.swift */,
+				1918B907CB617DF5662FDB53 /* SecureStore.swift */,
+				79BFBCD128948E9C8445ED0A /* SecureMerge.swift */,
+				A3F8044B217B65CA8E5081EF /* DataKeyProvider.swift */,
+				4B371D77C030B088CDC900E1 /* SecureEnvelope.swift */,
+				E57D064072644A8D73D68A10 /* SharedSuiteHygiene.swift */,
+			);
+			path = Security;
+			sourceTree = "<group>";
+		};
 		13219A8D2ED597CF00699D2E /* tabLimiter */ = {
 			isa = PBXGroup;
 			children = (
@@ -1608,6 +1786,7 @@
 		8F396D1B2C2AB53800C8896A /* FBHelper */ = {
 			isa = PBXGroup;
 			children = (
+				84C5E9E8BF9318AE5D21D2CF /* SharedSuiteIdentity.swift */,
 				8F396D292C2AB6A400C8896A /* Info.plist */,
 				8F396D1C2C2AB53800C8896A /* AppDelegate.swift */,
 				8FCD13B52C2BF015005EEA63 /* nudgeWc.swift */,
@@ -1955,6 +2134,7 @@
 		8FAC6C7A27805F6D008A4180 = {
 			isa = PBXGroup;
 			children = (
+				F0CB0A00000000000000000B /* FocusBearUITests */,
 				8F94BAD2287E84E600A82D82 /* Focus Bear.entitlements */,
 				CKS00005 /* Focus Bear-Release.entitlements */,
 				8FAC6C8527805F6D008A4180 /* FocusBear */,
@@ -1971,6 +2151,7 @@
 		8FAC6C8427805F6D008A4180 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				F0CB0A000000000000000002 /* Focus BearUITests.xctest */,
 				8FAC6C8327805F6D008A4180 /* Focus Bear.app */,
 				8FD1053C27EEE44100B7728E /* Focus BearTests.xctest */,
 				8F396D1A2C2AB53800C8896A /* FBHelper.app */,
@@ -1981,6 +2162,17 @@
 		8FAC6C8527805F6D008A4180 /* FocusBear */ = {
 			isa = PBXGroup;
 			children = (
+				F0CB0A000000000000000340 /* PressableBox.swift */,
+				F0CB0A000000000000000320 /* UITestBlockingFixture.swift */,
+				F0CB0A000000000000000583 /* UITestManagedSafetyFixture.swift */,
+				F0CB0A000000000000000300 /* UITestContract.swift */,
+				F0CB0A000000000000000540 /* UITestContract+Tasks.swift */,
+				F0CB0A000000000000000543 /* UITestContract+Sessions.swift */,
+				F0CB0A000000000000000546 /* UITestContract+Settings.swift */,
+				F0CB0A000000000000000549 /* UITestContract+Onboarding.swift */,
+				F0CB0A000000000000000580 /* UITestContract+Managed.swift */,
+				F0CB0A000000000000000301 /* AppDelegate+UITestSupport.swift */,
+				3B91F3E161EE62A702DCBB45 /* Security */,
 				5AA6CC8B2FBC0A91007BD5D1 /* officeModeSettingsVc.swift */,
 				5AA6CC892FBC0A49007BD5D1 /* WiFiProfileMapping.swift */,
 				5AA6CC872FBC0A1F007BD5D1 /* WiFiMonitorService.swift */,
@@ -2048,6 +2240,8 @@
 				8F050A0B278467B000F3CE17 /* FocusBear-Bridging-Header.h */,
 				8F8869CB2AE38CBB0089E109 /* searchableComboBox.swift */,
 				8FAC6C982780671E008A4180 /* globalFile.swift */,
+				MDF00002 /* MachineDateFormat.swift */,
+				LCDM0002 /* LegacyCalendarDateMigration.swift */,
 				INAP0002 /* InstalledApps.swift */,
 				134C1D382E8263CC0032AF65 /* log.swift */,
 				134C1D322E8260C10032AF65 /* allSubclasses.swift */,
@@ -2063,6 +2257,7 @@
 				274C9A92289BF8D40066F883 /* SettingsManager.swift */,
 				8F1456BB2D40B32600130B21 /* TabMatrics.swift */,
 				274E671528951DDC0030163F /* AllApi.swift */,
+				EV2A00000000000000000002 /* EventsService.swift */,
 				E2AFF50781FF64A00B0C9A64 /* TalkingClockManager.swift */,
 				8F344A032D882532003D82A4 /* allCsvFilesData.swift */,
 				8F7DA75D2B1B412000B2E1CC /* pusherEvents.swift */,
@@ -2219,6 +2414,14 @@
 		8FD1053D27EEE44100B7728E /* FocusBearTests */ = {
 			isa = PBXGroup;
 			children = (
+				50CA5868AFCCF9EFFDE0CF12 /* IsolatedDefaults.swift */,
+				FBCF31AC3CEA12FBA58E6E47 /* SharedSuiteHygieneTests.swift */,
+				B933C400CBA594B469F50733 /* LogRedactorTests.swift */,
+				1AF142D8E63DC81E533BA026 /* AtRestSecretsTests.swift */,
+				BD0365B23CEF982527409BC0 /* SecureFileStoreTests.swift */,
+				FEB6D3FF0D56ABDEB158C369 /* BrowsingHistoryTests.swift */,
+				117557C28C9BA5D08C72855B /* SecureStoreTests.swift */,
+				D886E56F34D210588A820F3B /* SecureStoreTestSupport.swift */,
 				8FD1053E27EEE44100B7728E /* Focus_BearTests.swift */,
 				LGHOST02 /* LogicTestHostTests.swift */,
                 AICAC004 /* AiRelevanceDecisionCacheTests.swift */,
@@ -2246,6 +2449,7 @@
 				LNM00011 /* LateNoMoreEventMatcherTests.swift */,
 				VCT00002 /* VoiceCommandTests.swift */,
 				ABH00021 /* DaysOfWeekTests.swift */,
+				EV2A00000000000000000004 /* EventsServiceTests.swift */,
 				UBT00002 /* URLBlockingTests.swift */,
 				TODOT0002 /* ToDoLogicTests.swift */,
 				TODODF02 /* ToDoDueDateFieldTests.swift */,
@@ -2286,6 +2490,8 @@
 				RST00002 /* RoutineSchedulingTests.swift */,
 				SMT00002 /* SettingsManagerTests.swift */,
 				TPT00002 /* TimeParsingTests.swift */,
+				MDFT0002 /* MachineDateFormatTests.swift */,
+				LCDMT002 /* LegacyCalendarDateMigrationTests.swift */,
 				STT00002 /* MarkdownTextTests.swift */,
 				STT00004 /* StatsLogicTests.swift */,
 				DPRT0002 /* DayPlanRoutineDraftTests.swift */,
@@ -2554,6 +2760,44 @@
 			path = FocusStart;
 			sourceTree = "<group>";
 		};
+		F0CB0A00000000000000000B /* FocusBearUITests */ = {
+			isa = PBXGroup;
+			children = (
+				F0CB0A000000000000000440 /* SafeInteraction.swift */,
+				F0CB0A000000000000000560 /* A0AccountCleanupUITests.swift */,
+				EV2A00000000000000000007 /* EventsV2UITests.swift */,
+				F0CB0A000000000000000500 /* RegressionDayPlanUITests.swift */,
+				F0CB0A000000000000000502 /* RegressionToDoUITests.swift */,
+				F0CB0A000000000000000504 /* RegressionProjectsUITests.swift */,
+				F0CB0A000000000000000506 /* RegressionFocusSessionUITests.swift */,
+				F0CB0A000000000000000508 /* RegressionBreaksUITests.swift */,
+				F0CB0A00000000000000050A /* RegressionRoutineUITests.swift */,
+				F0CB0A00000000000000050C /* RegressionSettingsUITests.swift */,
+				F0CB0A00000000000000050E /* RegressionBlockingUITests.swift */,
+				F0CB0A000000000000000510 /* RegressionMenuBarUITests.swift */,
+				F0CB0A000000000000000512 /* RegressionOnboardingAuthUITests.swift */,
+				F0CB0A000000000000000514 /* RegressionToolsUITests.swift */,
+				F0CB0A000000000000000516 /* RegressionShortcutsUITests.swift */,
+				F0CB0A000000000000000585 /* RegressionManagedSafetyUITests.swift */,
+				F0CB0A000000000000000422 /* KeyboardAccessibilityUITests.swift */,
+				F0CB0A000000000000000421 /* AccessibilityUITests.swift */,
+				F0CB0A000000000000000420 /* AccessibilityChecks.swift */,
+				F0CB0A000000000000000405 /* DayPlanEditorsUITests.swift */,
+				F0CB0A000000000000000404 /* AccountSignUpUITests.swift */,
+				F0CB0A000000000000000403 /* ProjectsUITests.swift */,
+				F0CB0A000000000000000402 /* ToolsUITests.swift */,
+				F0CB0A000000000000000401 /* SettingsUITests.swift */,
+				F0CB0A000000000000000400 /* BlockingEnforcementUITests.swift */,
+				F0CB0A000000000000000100 /* UITestSupport.swift */,
+				F0CB0A000000000000000101 /* LaunchAndNavigationUITests.swift */,
+				F0CB0A000000000000000102 /* AuthUITests.swift */,
+				F0CB0A000000000000000103 /* DayPlanAndToDoUITests.swift */,
+				F0CB0A000000000000000104 /* FocusSessionUITests.swift */,
+				F0CB0A000000000000000105 /* BlockingAndRoutineUITests.swift */,
+			);
+			path = FocusBearUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -2589,6 +2833,7 @@
 				5E71D5F0000000005E71D5F0 /* [Sentry] Upload Debug Symbols */,
 				F0C0D3A00000000000000001 /* Strip isolated test URL schemes */,
 				511B1AF418874EC559B3C970 /* Embed ORT */,
+				F0CB0A00000000000000000C /* Mark UI-test builds */,
 			);
 			buildRules = (
 			);
@@ -2623,6 +2868,24 @@
 			productReference = 8FD1053C27EEE44100B7728E /* Focus BearTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		F0CB0A000000000000000001 /* Focus BearUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F0CB0A000000000000000008 /* Build configuration list for PBXNativeTarget "Focus BearUITests" */;
+			buildPhases = (
+				F0CB0A000000000000000003 /* Sources */,
+				F0CB0A000000000000000004 /* Frameworks */,
+				F0CB0A000000000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F0CB0A000000000000000006 /* PBXTargetDependency */,
+			);
+			name = "Focus BearUITests";
+			productName = "Focus BearUITests";
+			productReference = F0CB0A000000000000000002 /* Focus BearUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -2633,6 +2896,10 @@
 				LastUpgradeCheck = 1340;
 				ORGANIZATIONNAME = "Focus Bear";
 				TargetAttributes = {
+					F0CB0A000000000000000001 = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = 8FAC6C8227805F6D008A4180;
+					};
 					8F396D192C2AB53800C8896A = {
 						CreatedOnToolsVersion = 13.4.1;
 					};
@@ -2675,6 +2942,7 @@
 				8FAC6C8227805F6D008A4180 /* Focus Bear */,
 				8FD1053B27EEE44100B7728E /* Focus BearTests */,
 				8F396D192C2AB53800C8896A /* FBHelper */,
+				F0CB0A000000000000000001 /* Focus BearUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -2762,6 +3030,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		8FD1053A27EEE44100B7728E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0CB0A000000000000000005 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -2862,6 +3137,38 @@
 			shellScript = "bash \"${SRCROOT}/scripts/strip-isolated-test-url-schemes.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
+		F0CB0A00000000000000000C /* Mark UI-test builds */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Mark UI-test builds";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Only UI-test builds get the UI Test display name; URL stripping is shared with logic tests.\nif [ \"${FB_BUNDLE_ID_SUFFIX:-}\" = \".uitests\" ]; then\n  /usr/libexec/PlistBuddy -c \"Add :CFBundleDisplayName string Focus Bear (UI Test)\" \"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\" 2>/dev/null || /usr/libexec/PlistBuddy -c \"Set :CFBundleDisplayName Focus Bear (UI Test)\" \"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+		F0C0D3A00000000000000001 /* Strip isolated test URL schemes */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = (
+				"$(SRCROOT)/scripts/strip-isolated-test-url-schemes.sh",
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "Strip isolated test URL schemes";
+			outputPaths = ();
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "bash \"${SRCROOT}/scripts/strip-isolated-test-url-schemes.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -2869,6 +3176,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7D036A76E5EB4BFFA722469B /* SharedSuiteIdentity.swift in Sources */,
 				8FA84B892C4141D1009287FE /* sharedFile.swift in Sources */,
 				8F396D1F2C2AB53800C8896A /* nudgeVc.swift in Sources */,
 				8FCD13B62C2BF015005EEA63 /* nudgeWc.swift in Sources */,
@@ -2881,6 +3189,29 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0CB0A000000000000000341 /* PressableBox.swift in Sources */,
+				F0CB0A000000000000000330 /* UITestBlockingFixture.swift in Sources */,
+				F0CB0A000000000000000584 /* UITestManagedSafetyFixture.swift in Sources */,
+				F0CB0A000000000000000310 /* UITestContract.swift in Sources */,
+				F0CB0A000000000000000541 /* UITestContract+Tasks.swift in Sources */,
+				F0CB0A000000000000000544 /* UITestContract+Sessions.swift in Sources */,
+				F0CB0A000000000000000547 /* UITestContract+Settings.swift in Sources */,
+				F0CB0A00000000000000054A /* UITestContract+Onboarding.swift in Sources */,
+				F0CB0A000000000000000581 /* UITestContract+Managed.swift in Sources */,
+				F0CB0A000000000000000312 /* AppDelegate+UITestSupport.swift in Sources */,
+				ECEF0D0C61A3062598F61A31 /* WebCacheCleaner.swift in Sources */,
+				F47E4B31B9266C6B6DA34167 /* LogRedactor.swift in Sources */,
+				52B654183A892D103B8E4CD2 /* BrowsingHistory.swift in Sources */,
+				BEE9CEB6DA1FDD372D086173 /* AppPasswordStore.swift in Sources */,
+				76741590B71BC404860130B4 /* SensitiveDefaults.swift in Sources */,
+				23D689B8C454A4A2811B2334 /* SensitiveKeyRegistry.swift in Sources */,
+				5101ED356AA39F105E99E5BF /* SecureFileStore.swift in Sources */,
+				65EBB62E4876E213850536D2 /* SecureStore.swift in Sources */,
+				8C147747A1BD6E0F9F08FBD1 /* SecureMerge.swift in Sources */,
+				B5734C4262D997C1A8712182 /* DataKeyProvider.swift in Sources */,
+				0480C9446E4B2F5C7A7318BB /* SecureEnvelope.swift in Sources */,
+				076E90A154D24F7C8C361399 /* SharedSuiteHygiene.swift in Sources */,
+				8EBB859C1420D70051C64139 /* SharedSuiteIdentity.swift in Sources */,
 				8F8C3FD82A8CD865005CAF96 /* meetingDetactionVc.swift in Sources */,
 				8F2E993A2B31CC52001AF655 /* addOnsVc.swift in Sources */,
 				134D1DEC2E41E52300328E84 /* leftMenuVc.swift in Sources */,
@@ -2895,6 +3226,8 @@
 				8FA428582C6CA1DE00849938 /* customAlertVc.swift in Sources */,
 				8F92E88627BF8B340085AF8C /* addFocusTypeVc.swift in Sources */,
 				8FAC6C992780671E008A4180 /* globalFile.swift in Sources */,
+				MDF00001 /* MachineDateFormat.swift in Sources */,
+				LCDM0001 /* LegacyCalendarDateMigration.swift in Sources */,
 				8F70A53D2A67E383001E1DFE /* loaderVc.swift in Sources */,
 				8FA84B882C4141D1009287FE /* sharedFile.swift in Sources */,
 				8F5FB26D28FFEB3200586760 /* incorrectTimeVc.swift in Sources */,
@@ -3136,6 +3469,7 @@
 				8FBE37A52A8F5B640018402A /* aiSettingNewVc.swift in Sources */,
 				8FCE07AB2931F2A300DF4530 /* popUpOfflineVc.swift in Sources */,
 				274E671628951DDD0030163F /* AllApi.swift in Sources */,
+				EV2A00000000000000000001 /* EventsService.swift in Sources */,
 				E0AA4E363AFEF2F7180E9848 /* TalkingClockManager.swift in Sources */,
 				8F6465CE2A612C58009A3341 /* tblCellUrlRelaxMode.swift in Sources */,
 				8F3DD01629F3B4CA00E23715 /* AHAuthorizer.m in Sources */,
@@ -3361,6 +3695,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				848711A28339E71B55C2B2A7 /* IsolatedDefaults.swift in Sources */,
+				0262A3E1B53072E71498D77E /* SharedSuiteHygieneTests.swift in Sources */,
+				E6D446EB451EE9245B8498D6 /* LogRedactorTests.swift in Sources */,
+				78B86CA7691E2AE377DF4DD9 /* AtRestSecretsTests.swift in Sources */,
+				7B10FBBA25CCCC562E088296 /* SecureFileStoreTests.swift in Sources */,
+				B76560FBD0649C206BCCA760 /* BrowsingHistoryTests.swift in Sources */,
+				60B05C283185CDFEBBC1EBE0 /* SecureStoreTests.swift in Sources */,
+				B4C41D7C608654D9BA754ED3 /* SecureStoreTestSupport.swift in Sources */,
 				8FD1054B27EF221800B7728E /* validationTest.swift in Sources */,
 				8FD1053F27EEE44100B7728E /* Focus_BearTests.swift in Sources */,
 				LGHOST01 /* LogicTestHostTests.swift in Sources */,
@@ -3388,6 +3730,7 @@
 				LNM00010 /* LateNoMoreEventMatcherTests.swift in Sources */,
 				VCT00001 /* VoiceCommandTests.swift in Sources */,
 				ABH00020 /* DaysOfWeekTests.swift in Sources */,
+				EV2A00000000000000000003 /* EventsServiceTests.swift in Sources */,
 				UBT00001 /* URLBlockingTests.swift in Sources */,
 				TODOT0001 /* ToDoLogicTests.swift in Sources */,
 				TODODF01 /* ToDoDueDateFieldTests.swift in Sources */,
@@ -3429,6 +3772,8 @@
 				RST00001 /* RoutineSchedulingTests.swift in Sources */,
 				SMT00001 /* SettingsManagerTests.swift in Sources */,
 				TPT00001 /* TimeParsingTests.swift in Sources */,
+				MDFT0001 /* MachineDateFormatTests.swift in Sources */,
+				LCDMT001 /* LegacyCalendarDateMigrationTests.swift in Sources */,
 				STT00001 /* MarkdownTextTests.swift in Sources */,
 				STT00003 /* StatsLogicTests.swift in Sources */,
 				DPRT0001 /* DayPlanRoutineDraftTests.swift in Sources */,
@@ -3447,6 +3792,51 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F0CB0A000000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F0CB0A000000000000000441 /* SafeInteraction.swift in Sources */,
+				F0CB0A000000000000000561 /* A0AccountCleanupUITests.swift in Sources */,
+				EV2A00000000000000000006 /* EventsV2UITests.swift in Sources */,
+				EV2A00000000000000000005 /* EventsService.swift in Sources */,
+				F0CB0A000000000000000501 /* RegressionDayPlanUITests.swift in Sources */,
+				F0CB0A000000000000000503 /* RegressionToDoUITests.swift in Sources */,
+				F0CB0A000000000000000505 /* RegressionProjectsUITests.swift in Sources */,
+				F0CB0A000000000000000507 /* RegressionFocusSessionUITests.swift in Sources */,
+				F0CB0A000000000000000509 /* RegressionBreaksUITests.swift in Sources */,
+				F0CB0A00000000000000050B /* RegressionRoutineUITests.swift in Sources */,
+				F0CB0A00000000000000050D /* RegressionSettingsUITests.swift in Sources */,
+				F0CB0A00000000000000050F /* RegressionBlockingUITests.swift in Sources */,
+				F0CB0A000000000000000511 /* RegressionMenuBarUITests.swift in Sources */,
+				F0CB0A000000000000000513 /* RegressionOnboardingAuthUITests.swift in Sources */,
+				F0CB0A000000000000000515 /* RegressionToolsUITests.swift in Sources */,
+				F0CB0A000000000000000517 /* RegressionShortcutsUITests.swift in Sources */,
+				F0CB0A000000000000000586 /* RegressionManagedSafetyUITests.swift in Sources */,
+				F0CB0A000000000000000542 /* UITestContract+Tasks.swift in Sources */,
+				F0CB0A000000000000000545 /* UITestContract+Sessions.swift in Sources */,
+				F0CB0A000000000000000548 /* UITestContract+Settings.swift in Sources */,
+				F0CB0A00000000000000054B /* UITestContract+Onboarding.swift in Sources */,
+				F0CB0A000000000000000582 /* UITestContract+Managed.swift in Sources */,
+				F0CB0A000000000000000432 /* KeyboardAccessibilityUITests.swift in Sources */,
+				F0CB0A000000000000000431 /* AccessibilityUITests.swift in Sources */,
+				F0CB0A000000000000000430 /* AccessibilityChecks.swift in Sources */,
+				F0CB0A000000000000000415 /* DayPlanEditorsUITests.swift in Sources */,
+				F0CB0A000000000000000414 /* AccountSignUpUITests.swift in Sources */,
+				F0CB0A000000000000000413 /* ProjectsUITests.swift in Sources */,
+				F0CB0A000000000000000412 /* ToolsUITests.swift in Sources */,
+				F0CB0A000000000000000411 /* SettingsUITests.swift in Sources */,
+				F0CB0A000000000000000410 /* BlockingEnforcementUITests.swift in Sources */,
+				F0CB0A000000000000000311 /* UITestContract.swift in Sources */,
+				F0CB0A000000000000000200 /* UITestSupport.swift in Sources */,
+				F0CB0A000000000000000201 /* LaunchAndNavigationUITests.swift in Sources */,
+				F0CB0A000000000000000202 /* AuthUITests.swift in Sources */,
+				F0CB0A000000000000000203 /* DayPlanAndToDoUITests.swift in Sources */,
+				F0CB0A000000000000000204 /* FocusSessionUITests.swift in Sources */,
+				F0CB0A000000000000000205 /* BlockingAndRoutineUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -3454,6 +3844,11 @@
 			isa = PBXTargetDependency;
 			target = 8FAC6C8227805F6D008A4180 /* Focus Bear */;
 			targetProxy = 8FD1054127EEE44100B7728E /* PBXContainerItemProxy */;
+		};
+		F0CB0A000000000000000006 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8FAC6C8227805F6D008A4180 /* Focus Bear */;
+			targetProxy = F0CB0A000000000000000007 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -3698,7 +4093,10 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = A3571BB6ACEBCB217ABDB57F /* FocusBear-Debug.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "$(FB_APP_ICON_NAME$(FB_BUNDLE_ID_SUFFIX:c99extidentifier))";
+				FB_APP_ICON_NAME = AppIcon;
+				FB_APP_ICON_NAME_uitests = "AppIcon-UITest";
+				FB_APP_ICON_NAME_logictests = "AppIcon-UITest";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Focus Bear.entitlements";
 				COMBINE_HIDPI_IMAGES = YES;
@@ -3816,6 +4214,46 @@
 			};
 			name = Release;
 		};
+		F0CB0A000000000000000009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.App.EarnYourScreentime.UITestsRunner";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = "Focus Bear";
+			};
+			name = Debug;
+		};
+		F0CB0A00000000000000000A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.App.EarnYourScreentime.UITestsRunner";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = "Focus Bear";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -3851,6 +4289,15 @@
 			buildConfigurations = (
 				8FD1054427EEE44100B7728E /* Debug */,
 				8FD1054527EEE44100B7728E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F0CB0A000000000000000008 /* Build configuration list for PBXNativeTarget "Focus BearUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F0CB0A000000000000000009 /* Debug */,
+				F0CB0A00000000000000000A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

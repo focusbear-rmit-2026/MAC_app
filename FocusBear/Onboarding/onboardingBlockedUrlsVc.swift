@@ -30,6 +30,10 @@ class onboardingBlockedUrlsVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        textFieldUrl.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedUrlField)
+        btnAddUrl.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedUrlAddButton)
+        lblBlockedCount.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedUrlsCount)
+        btnContinue.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedUrlsProceedButton)
         // Do view setup here.
         btnAddUrl.keyEquivalent = "\r"
         
@@ -225,7 +229,7 @@ class onboardingBlockedUrlsVc: NSViewController {
                 }
             }
         }
-        UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)//
+        SensitiveDefaults.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)//
 
         
         getOnboardingVcObject().navigate(to: ._BLOCKED_APPS_)
@@ -437,8 +441,11 @@ extension onboardingBlockedUrlsVc: NSOutlineViewDelegate, NSOutlineViewDataSourc
             
             if let url = data["url"] as? String {
                 cell.btnCheckBox.title = url
+                cell.btnCheckBox.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedUrlCheckboxPrefix + url)
             }else if let category = data["category"] as? String{
                 cell.btnCheckBox.title = category
+                // Reused cells: a category row must not keep the site identifier of its last use.
+                cell.btnCheckBox.setAccessibilityIdentifier(nil)
             }
 
             return cell

@@ -111,7 +111,7 @@ final class BreakFrequencyStreakTracker {
         // load the cached settings blob, mutate the one field, PUT via isSettingsValid,
         // then re-cache whatever the server returns.
         var jsonResult = NSDictionary()
-        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String,
+        if let stringDic = SensitiveDefaults.object(forKey: kUserdefaultsSelectedJson) as? String,
             let data = stringDic.data(using: .utf8) {
             do {
                 jsonResult = try JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? NSDictionary()
@@ -128,7 +128,7 @@ final class BreakFrequencyStreakTracker {
                     do {
                         let jsonData = try JSONSerialization.data(withJSONObject: dic, options: [])
                         if let backToString = String(data: jsonData, encoding: .utf8) {
-                            UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                            SensitiveDefaults.set(backToString, forKey: kUserdefaultsSelectedJson)
                         }
                     } catch {
                         addLog(text: "BreakFrequencyStreakTracker: failed to re-cache settings JSON — \(error.localizedDescription)")

@@ -141,7 +141,7 @@ class breaksBrainDumpVc: NSViewController {// not in use
 
     func resetBrainDump(){
         
-        if let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String {
+        if let notes = SensitiveDefaults.object(forKey: kUserdefaultsFocusModeNotes) as? String {
             textView.string = notes
         }else{
             textView.string = ""
@@ -314,7 +314,7 @@ class breaksBrainDumpVc: NSViewController {// not in use
             self.timerBreaksScreenIdle?.invalidate()
             self.timerBreaksScreenIdle = nil
         }
-        UserDefaults.standard.set(textView.string, forKey: kUserdefaultsFocusModeNotes)
+        SensitiveDefaults.set(textView.string, forKey: kUserdefaultsFocusModeNotes)
     }
     
     @IBAction func btnPostponeBreakClicked(_ sender: Any) {
@@ -350,16 +350,16 @@ class breaksBrainDumpVc: NSViewController {// not in use
                 let taskName = comboBoxTask.stringValue
                 let nextWeek = Calendar.current.date(byAdding: .day, value: 7, to: today) ?? Date()
                 let dateString = getStringFromDateInUtc(date: nextWeek, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-                addLog(text: "Create new task:- name: \(taskName)")
+                addLog(text: "Create new task:- name: \(LogPrivacy.text(taskName))")
                 allApiObject.addTask(title: taskName, details: "", eisenhowerQuadrant: 1, dueDate: dateString, objective: "", tags: [], completionHandler: { result,json in
                     if result{
-                        addLog(text: "\(taskName) task created successfully.")
+                        addLog(text: "task \(LogPrivacy.text(taskName)) created successfully.")
                         self.taskSaveFromBrainDump = taskName
                         
                         if let json = json{
                             if let id = json.value(forKey: "id") as? String{
                                 self.taskIdSaveFromBrainDump = id
-                                addLog(text: "task: \(taskName) with id: \(id) saved for later")
+                                addLog(text: "task: \(LogPrivacy.text(taskName)) with id: \(id) saved for later")
                             }
                         }
                     }
@@ -369,13 +369,13 @@ class breaksBrainDumpVc: NSViewController {// not in use
                 if isFocusModeOn(){
                     let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
                     if currentTaskInToDoPlayer?.lowercased() == taskName.lowercased(){
-                        addLog(text: "\(taskName) task is aleready current task in focus mode. do notneed to save")
+                        addLog(text: "task \(LogPrivacy.text(taskName)) is aleready current task in focus mode. do notneed to save")
                     }else{
                         let task = arrAllTasks[taskAddedIndex]
                         if let id = task.value(forKey: "id") as? String, let taskTitle = task.value(forKey: "title") as? String{
                             self.taskSaveFromBrainDump = taskTitle
                             self.taskIdSaveFromBrainDump = id
-                            addLog(text: "task: \(taskTitle) with id: \(id) saved for later")
+                            addLog(text: "task: \(LogPrivacy.text(taskTitle)) with id: \(id) saved for later")
                         }
                     }
                 }else{
@@ -384,7 +384,7 @@ class breaksBrainDumpVc: NSViewController {// not in use
                     if let id = task.value(forKey: "id") as? String, let taskTitle = task.value(forKey: "title") as? String{
                         self.taskSaveFromBrainDump = taskTitle
                         self.taskIdSaveFromBrainDump = id
-                        addLog(text: "task: \(taskTitle) with id: \(id) saved for later")
+                        addLog(text: "task: \(LogPrivacy.text(taskTitle)) with id: \(id) saved for later")
                     }
                 }
             }

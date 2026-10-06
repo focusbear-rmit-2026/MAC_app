@@ -64,6 +64,8 @@ class teacherUnlockRequestVc: NSViewController, NSTextFieldDelegate {
         textFieldAppOrUrl = NSTextField(frame: NSRect(x: 20, y: 142, width: 420, height: 26))
         textFieldAppOrUrl.placeholderString = placeHolderAppOrUrlString
         textFieldAppOrUrl.delegate = self
+        textFieldAppOrUrl.setAccessibilityTitleUIElement(lblAppOrUrl)
+        textFieldAppOrUrl.setAccessibilityIdentifier(UITestContract.Identifier.TeacherSession.unlockRequestAppOrUrlField)
         self.view.addSubview(textFieldAppOrUrl)
 
         lblReason = NSTextField(labelWithString: reasonString)
@@ -73,17 +75,21 @@ class teacherUnlockRequestVc: NSViewController, NSTextFieldDelegate {
         textFieldReason = NSTextField(frame: NSRect(x: 20, y: 80, width: 420, height: 26))
         textFieldReason.placeholderString = placeHolderReasonString
         textFieldReason.delegate = self
+        textFieldReason.setAccessibilityTitleUIElement(lblReason)
+        textFieldReason.setAccessibilityIdentifier(UITestContract.Identifier.TeacherSession.unlockRequestReasonField)
         self.view.addSubview(textFieldReason)
 
         btnCreateRequest = NSButton(title: buttonCreateRequestString, target: self, action: #selector(btnCreateRequestClicked(_:)))
         btnCreateRequest.bezelStyle = .rounded
         btnCreateRequest.keyEquivalent = "\r"
         btnCreateRequest.frame = NSRect(x: 320, y: 20, width: 120, height: 32)
+        btnCreateRequest.setAccessibilityIdentifier(UITestContract.Identifier.TeacherSession.unlockRequestSendButton)
         self.view.addSubview(btnCreateRequest)
 
         btnCancel = NSButton(title: buttonCancelText, target: self, action: #selector(btnCancelClicked(_:)))
         btnCancel.bezelStyle = .rounded
         btnCancel.frame = NSRect(x: 200, y: 20, width: 110, height: 32)
+        btnCancel.setAccessibilityIdentifier(UITestContract.Identifier.TeacherSession.unlockRequestCancelButton)
         self.view.addSubview(btnCancel)
 
         loader = NSProgressIndicator(frame: NSRect(x: 170, y: 26, width: 20, height: 20))

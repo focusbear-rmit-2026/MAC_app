@@ -701,6 +701,8 @@
     "menuItemNotesTitle": "Notas"
   },
   "preferencesInfo": {
+    "workRatioFieldLabel": "Minutos de enfoque",
+    "breakRatioFieldLabel": "Minutos de descanso",
     "checkBoxFocusMusicText": "Reproducir música de enfoque automáticamente al iniciar una sesión",
     "switchButtonFocusGlowBorderText": "Mostrar borde brillante durante las sesiones de enfoque",
     "descriptionFocusGlowBorderText": "Muestra un suave borde brillante alrededor de la pantalla mientras se ejecuta una sesión de enfoque.",
@@ -2110,6 +2112,10 @@
     "buttonDontAskAgainText": "Recordar mi elección"
   },
   "focusMusicInfo": {
+    "a11yDownloadTrack": "Descargar %@",
+    "a11yPlayTrack": "Reproducir %@",
+    "a11yStopTrack": "Detener %@",
+    "a11yRemoveTrack": "Quitar %@",
     "nowPlayingLabelText": "Reproduciendo ahora",
     "sectionTitleSpotify": "Spotify",
     "sectionTitleYouTubeMusic": "YouTube Music",
@@ -2478,6 +2484,7 @@
   },
   "settingsNew": {
     "uiSettingTitle": "IU",
+    "searchSettingsLabel": "Buscar en la configuración",
     "accessibilitySettingTitle": "Accesibilidad",
     "aISettingTitle": "Funciones de IA",
     "pomodoroSettingTitle": "Sesiones de Enfoque",
@@ -3638,6 +3645,7 @@
     "habitFieldDurationLabel": "Duración",
     "habitInvalidDurationRange": "La duración debe estar entre 1 segundo y 999 minutos.",
     "habitPickEmoji": "Elegir un emoji",
+    "habitFieldIcon": "Icono del hábito",
     "newHabitTitle": "Nuevo hábito",
     "editRepeatingTitle": "Este es un evento repetido",
     "editRepeatingInfo": "¿Quieres cambiar solo este evento o todos los eventos de la serie?",
@@ -3662,6 +3670,8 @@
     "ttUpgradeButton": "Mejorar a Pro"
   },
   "menuView": {
+    "a11yOpenFocusBearMenu": "Abrir el menú de Focus Bear",
+    "a11yHideFloatingBar": "Ocultar esta barra",
     "blockingOffTitle": "El bloqueo está desactivado",
     "blockingAttentionTitle": "El bloqueo necesita atención",
     "blockingPermissionsLimited": "Algunas funciones de bloqueo pueden no estar disponibles porque falta un permiso de macOS. Otras formas de bloqueo pueden seguir funcionando.",
@@ -4281,6 +4291,7 @@
     "requestFailedText": "No se pudo procesar la solicitud",
     "newTaskText": "Nueva tarea",
     "searchPlaceholder": "Buscar...",
+    "searchTasksText": "Buscar tareas",
     "filterText": "Filtrar",
     "moreOptionsText": "Más opciones",
     "sortSmartText": "Inteligente",

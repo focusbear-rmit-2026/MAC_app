@@ -73,7 +73,7 @@ class onboardingVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        btnBack.setAccessibilityIdentifier(UITestContract.Identifier.Onboarding.backButton)
         currentOnboardingState = ._NOTHING_
         let orangeColor = NSColor(named: "dark_OrangeColor") ?? NSColor.orange
         btnBack.borderColor = orangeColor.withAlphaComponent(0.5).cgColor
@@ -268,6 +268,13 @@ class onboardingVc: NSViewController {
         if onboardingStack.count < 1 || currentState != ._ONBOARDING_{// Login screens are part of onboarding. Hide the back button when normal login is shown.
             btnBack.isHidden = true
         }
+        markStepForUITests(state)
+    }
+
+    /// Names the step area after the step showing (`onboardingStep_<state>`). Test build only.
+    private func markStepForUITests(_ state: ONBOARDINGSTATE) {
+        guard UITestHost.isEnabled else { return }
+        containerView.setUITestLandmark(UITestContract.Identifier.Onboarding.stepPrefix + "\(state)")
     }
     
     
@@ -299,7 +306,6 @@ class onboardingVc: NSViewController {
                     
 
                     appdelegate!.sharedDefaults?.removeObject(forKey: kUserdefaultsSharedUserId)
-                    appdelegate!.sharedDefaults?.removeObject(forKey: kUserdefaultsSharedAccessToken)
                     appdelegate!.sharedDefaults?.removeObject(forKey: kUserdefaultsSharedAppVersion)
                     appdelegate!.sharedDefaults?.synchronize()
                     kUserdefaultsVideoShown = "kUserdefaultsVideoShown"

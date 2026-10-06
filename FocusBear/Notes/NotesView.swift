@@ -259,6 +259,7 @@ struct NotesScreen: View {
                 Image(systemName: "magnifyingglass").foregroundColor(.secondary)
                 TextField(strings.searchPlaceholder, text: $store.searchQuery)
                     .textFieldStyle(PlainTextFieldStyle())
+                    .accessibilityLabel(strings.searchPlaceholder)
                 if store.isSearching {
                     ProgressView().scaleEffect(0.5).frame(width: 16, height: 16)
                 }
@@ -280,6 +281,7 @@ struct NotesScreen: View {
                 Label(strings.newNote, systemImage: "plus")
             }
             .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 30))
+            .accessibilityIdentifier(UITestContract.Identifier.Notes.newNoteButton)
             .disabled(store.isFetchingNotes && store.visibleNotes.isEmpty)
 
             // A new note is an active note, so offering it from the archive would only file something
@@ -520,7 +522,8 @@ private struct BrainDumpCard: View {
                 .help(strings.hideBrainDump)
             }
             NoteFormattingToolbar(controller: editorController, strings: strings)
-            NoteRichTextEditor(html: $store.brainDumpBody, placeholder: strings.brainDumpPlaceholder, controller: editorController)
+            NoteRichTextEditor(html: $store.brainDumpBody, placeholder: strings.brainDumpPlaceholder, controller: editorController,
+                               accessibilityName: strings.brainDumpTitle)
                 .frame(height: BrainDumpCard.editorHeight)
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(NSColor.separatorColor)))
                 .onChange(of: store.brainDumpBody) { store.brainDumpChanged($0) }
@@ -660,8 +663,10 @@ private struct NoteRow: View {
                 Spacer()
                 SwiftUI.Button(action: onEdit) { Image(systemName: "pencil") }
                     .buttonStyle(PlainButtonStyle()).pointingHandCursor()
+                    .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.noteEditButton)
                 SwiftUI.Button(action: onDelete) { Image(systemName: "trash").foregroundColor(.red) }
                     .buttonStyle(PlainButtonStyle()).pointingHandCursor()
+                    .accessibilityIdentifier(UITestContract.Identifier.Notes.deleteButton)
             }
         }
         .padding(12)
@@ -670,6 +675,8 @@ private struct NoteRow: View {
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(NSColor.separatorColor)))
         .cornerRadius(8)
         .onTapGesture(count: 2, perform: onEdit)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(UITestContract.Identifier.Notes.row)
     }
 }
 
@@ -747,13 +754,16 @@ struct NoteEditorSheet: View {
                 SwiftUI.Button(action: { store.closeEditor() }) { Text(strings.cancel) }
                     .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 30))
                     .keyboardShortcut(.cancelAction)
+                    .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.noteEditorCancelButton)
                 SwiftUI.Button(action: save) { Text(store.isSavingNote ? strings.saving : strings.save) }
                     .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 30))
                     .disabled(!canSave)
+                    .accessibilityIdentifier(UITestContract.Identifier.Notes.editorSaveButton)
             }
             TextField(strings.noteTitlePlaceholder, text: $title)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .font(.system(size: 14))
+                .accessibilityIdentifier(UITestContract.Identifier.Notes.editorTitleField)
             NoteFormattingToolbar(controller: editorController, strings: strings)
             NoteRichTextEditor(html: $bodyHTML, placeholder: strings.noteBodyPlaceholder, controller: editorController)
                 .frame(height: NoteEditorSheet.editorHeight)

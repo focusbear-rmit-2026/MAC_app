@@ -343,7 +343,7 @@ class passwordVc: NSViewController {
         lblNewPassword.stringValue = "New Password"
         lblConfirmPassword.stringValue = "Confirm Password"
 
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
+        if !SettingsManagerObject.isAppPasswordSet{
             lblTitle.stringValue = "Set Password"
             btnChangePassword.title = "Set Password"
             textFieldNewPassword.placeholderString = "New Password"
@@ -616,7 +616,7 @@ class passwordVc: NSViewController {
         alert.beginSheetModal(for: view.window!, completionHandler: { (modalResponse) in
             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                 print("okclicked")
-                UserDefaults.standard.removeObject(forKey: SettingsManagerObject.kUserdefaultsAppPassword)
+                SettingsManagerObject.appPassword.clear()
                 SettingsManagerObject.isSettingsChanged = true
                 SettingsManagerObject.putUserLocalDeviceSettings()
                 self.resetView()
@@ -677,7 +677,7 @@ class passwordVc: NSViewController {
         if textFieldNewPassword.stringValue == textFieldConfirmPassword.stringValue{
             let base64password = textFieldConfirmPassword.stringValue.toBase64()
             
-            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
+            if !SettingsManagerObject.isAppPasswordSet{
                 allApiObject.capturePosthog(event: "set-password", metadata: [:])
                 var passwordSetAlertTitle = "Password successfully set."
                 if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
@@ -697,7 +697,7 @@ class passwordVc: NSViewController {
                 alertforvalidation(question: passwordChagedAlertTitle, text: "")
             }
             
-            UserDefaults.standard.set(base64password, forKey: SettingsManagerObject.kUserdefaultsAppPassword)
+            SettingsManagerObject.appPassword.set(encoded: base64password)
             SettingsManagerObject.isSettingsChanged = true
             SettingsManagerObject.putUserLocalDeviceSettings()
             

@@ -70,6 +70,9 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         // Return to btnOkClicked whenever this dialog is visible (see the keyDown monitor in AppDelegate).
         btnOk.keyEquivalent = "\r"
         btnCancel.keyEquivalent = "\u{1b}"
+        view.setUITestLandmark(UITestContract.Identifier.SessionsRegression.logQuantityScreen)
+        btnOk.setAccessibilityIdentifier(UITestContract.Identifier.SessionsRegression.logQuantityOkButton)
+        btnCancel.setAccessibilityIdentifier(UITestContract.Identifier.SessionsRegression.logQuantityCancelButton)
         if let logQuantityInfo = configjson.value(forKey: "logQuantityInfo") as? NSDictionary{
             if let buttonCancelText = logQuantityInfo.value(forKey: "buttonCancelText") as? String{
                 btnCancel.title = buttonCancelText

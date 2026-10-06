@@ -1,0 +1,31 @@
+{
+  "source": "Focus-Bear/aws-infra @ f55dde8: src/lambda/events-service/src/events-shared/dto/track-event.dto.ts (TrackEventDto) and src/v2/ingest/handler.ts (validateEvents, whitelist: true); MAX_BATCH_SIZE from lib/service/events-v2-serverless-stack.ts",
+  "required_fields": {
+    "event_type": "non_empty_string",
+    "user_properties": "object",
+    "event_data": "object",
+    "operating_system": "string"
+  },
+  "dropped_by_whitelist": ["app_version"],
+  "max_batch_size": 1000,
+  "accepted_example": {
+    "event_type": "mac-events-v2-probe",
+    "user_properties": { "USERNAME": "Test", "id": "00000000-0000-0000-0000-000000000000", "USES_MAC_APP": true },
+    "event_data": { "data": { "source": "ui-test", "nested": { "a": 1 } } },
+    "operating_system": "macos",
+    "app_version": "2.30.0"
+  },
+  "rejected_examples": {
+    "missing_operating_system": {
+      "event_type": "mac-events-v2-probe",
+      "user_properties": { "USERNAME": "Test", "id": "x", "USES_MAC_APP": true },
+      "event_data": { "data": {} }
+    },
+    "empty_event_type": {
+      "event_type": "",
+      "user_properties": { "USERNAME": "Test", "id": "x", "USES_MAC_APP": true },
+      "event_data": { "data": {} },
+      "operating_system": "macos"
+    }
+  }
+}

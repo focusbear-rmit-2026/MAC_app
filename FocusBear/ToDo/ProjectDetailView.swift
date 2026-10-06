@@ -28,6 +28,8 @@ struct ProjectDetailView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             navRow
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier(UITestContract.Identifier.Projects.detail)
             if store.notFound {
                 notFound
             } else {
@@ -52,12 +54,14 @@ struct ProjectDetailView: View {
             SwiftUI.Button(action: onBack) { Label(strings[.backToProjects], systemImage: "chevron.left") }
                 .buttonStyle(PlainButtonStyle()).pointingHandCursor()
                 .foregroundColor(ToDoTheme.accent)
+                .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.projectBackButton)
             if let message = store.statusMessage {
                 Text(message).font(.system(size: 12)).foregroundColor(.secondary).transition(.opacity)
             }
             Spacer()
             SwiftUI.Button(action: onShowInTaskList) { Label(strings[.showInTaskList], systemImage: "line.horizontal.3") }
                 .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 28))
+                .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.projectShowInTaskListButton)
             if store.canOpenMembers {
                 SwiftUI.Button(action: { store.isMembersVisible = true }) {
                     Label(strings.format(.membersWithCount, ToDoStrings.countToken, String(store.members.count)), systemImage: "person.2")
@@ -67,6 +71,7 @@ struct ProjectDetailView: View {
             if store.canOpenSettings {
                 SwiftUI.Button(action: { store.isSettingsVisible = true }) { Label(strings[.settings], systemImage: "gearshape") }
                     .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 28))
+                    .accessibilityIdentifier(UITestContract.Identifier.Projects.settingsButton)
             }
             if store.canLeave {
                 SwiftUI.Button(action: { store.requestConfirmation(.leave) }) { Text(strings[.leave]) }
@@ -84,7 +89,9 @@ struct ProjectDetailView: View {
                 InlineRenameField(display: strings.projectName(store.project.name), value: store.project.name,
                                   placeholder: strings[.projectNamePlaceholder], fontSize: ProjectDetailView.nameFontSize,
                                   fontWeight: .bold, editHint: strings[.renameProjectHint],
-                                  isEditable: store.canEditName) { store.rename(to: $0) }
+                                  isEditable: store.canEditName,
+                                  headingIdentifier: UITestContract.Identifier.TasksRegression.projectNameHeading,
+                                  fieldIdentifier: UITestContract.Identifier.TasksRegression.projectRenameField) { store.rename(to: $0) }
                 if let description = store.project.description, !description.isEmpty {
                     Text(description).font(.system(size: 12)).foregroundColor(.secondary).lineLimit(2)
                 }
@@ -518,6 +525,9 @@ private struct InlineRenameField: View {
     let isEditable: Bool
     /// Whether a rename is in progress, for callers that must give Escape to the field while it is.
     var onEditingChanged: (Bool) -> Void = { _ in }
+    /// Empty is SwiftUI's "none".
+    var headingIdentifier = ""
+    var fieldIdentifier: String? = nil
     let onCommit: (String) -> Void
 
     @SwiftUI.State private var isEditing = false
@@ -532,7 +542,8 @@ private struct InlineRenameField: View {
                 // (rather than pressing Return) left the new title in a field nobody read: the list kept
                 // saying "Untitled note" and nothing reached the server (report 2026-09-14_16-18-22).
                 ReturnGuardTextField(text: $draft, placeholder: placeholder,
-                                     onCommit: commit, onEndEditing: commit)
+                                     onCommit: commit, onEndEditing: commit,
+                                     accessibilityIdentifier: fieldIdentifier)
                     .frame(width: InlineRenameField.editorWidth)
                     .onExitCommand(perform: cancel)
             } else if isEditable {
@@ -568,6 +579,7 @@ private struct InlineRenameField: View {
 
     private var heading: some View {
         Text(display).font(.system(size: fontSize, weight: fontWeight)).lineLimit(1)
+            .accessibilityIdentifier(headingIdentifier)
     }
 
     private func beginEditing() {
@@ -655,9 +667,12 @@ private struct ProjectTasksView: View {
         HStack(spacing: 8) {
             if store.canAddTask {
                 SwiftUI.Button(action: { todoStore.openEditor(for: nil, project: store.project) }) { Label(strings[.addTask], systemImage: "plus") }
+                    .accessibilityIdentifier(UITestContract.Identifier.Projects.addTaskButton)
                     .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 28))
             }
-            ToDoSearchField(text: $store.searchQuery, placeholder: strings[.searchPlaceholder], isBusy: false).frame(maxWidth: 240)
+            ToDoSearchField(text: $store.searchQuery, placeholder: strings[.searchPlaceholder], isBusy: false,
+                            accessibilityLabel: strings[.searchTasks])
+                .frame(maxWidth: 240)
             Picker("", selection: $store.sortMode) {
                 Text(strings[.sortSmart]).tag(ToDoSortMode.smart)
                 Text(strings[.sortChronological]).tag(ToDoSortMode.chronological)
@@ -671,6 +686,7 @@ private struct ProjectTasksView: View {
             }
             .pickerStyle(SegmentedPickerStyle()).labelsHidden().frame(width: 80)
             .disabled(store.tasks.isEmpty)
+            .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.projectTasksModePicker)
         }
     }
 
@@ -681,6 +697,7 @@ private struct ProjectTasksView: View {
             Text(strings[.createFirstTask]).font(.subheadline).foregroundColor(.secondary)
             if store.canAddTask {
                 SwiftUI.Button(action: { todoStore.openEditor(for: nil, project: store.project) }) { Label(strings[.addTask], systemImage: "plus") }
+                    .accessibilityIdentifier(UITestContract.Identifier.Projects.addTaskButton)
                     .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 30))
             }
         }
@@ -721,6 +738,8 @@ private struct ProjectTasksView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .modifier(ProjectColumnDropTarget(column: column, drag: drag))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(UITestContract.Identifier.Projects.column)
     }
 
     private var board: some View {
@@ -752,6 +771,8 @@ private struct ProjectTasksView: View {
         .background((column.completes ? ToDoTheme.good : ToDoTheme.neutral).opacity(0.08))
         .cornerRadius(ToDoTheme.cornerRadius)
         .modifier(ProjectColumnDropTarget(column: column, drag: drag))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(UITestContract.Identifier.Projects.column)
     }
 
     private static let boardColumnWidth: CGFloat = 240
@@ -916,6 +937,7 @@ private struct ProjectTaskCard: View {
                     Image(systemName: "arrow.right.square").foregroundColor(.secondary)
                 }
                 .menuStyle(BorderlessButtonMenuStyle()).frame(width: 22).help(strings[.moveTo])
+                .accessibilityIdentifier(UITestContract.Identifier.Projects.moveTaskMenu)
             }
         }
         .padding(8)
@@ -926,6 +948,8 @@ private struct ProjectTaskCard: View {
         // The card itself fades where it started, so the preview under the pointer is plainly the
         // same card in flight rather than a copy.
         .opacity(isBeingDragged ? ProjectTaskCard.draggedOpacity : (task.isCompleted ? 0.7 : 1))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(UITestContract.Identifier.Projects.taskCard)
         .contentShape(Rectangle())
         // One click opens the editor. A card has no inline actions to reveal first (unlike a Tasks
         // list row), so a double-click requirement just read as a dead click. The drag takes the
@@ -1405,6 +1429,7 @@ struct ProjectSettingsSheet: View {
             Text(strings[.deleteWarning]).font(.system(size: 11)).foregroundColor(.secondary)
             SwiftUI.Button(action: { store.requestConfirmation(.delete) }) { Label(strings[.deleteProject], systemImage: "trash") }
                 .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 28))
+                .accessibilityIdentifier(UITestContract.Identifier.Projects.deleteButton)
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)

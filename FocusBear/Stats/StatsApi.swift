@@ -163,7 +163,7 @@ extension AllApi {
     /// is 0 when the request never reached the server. Non-2xx bodies are logged via `writeJsonInLog`.
     private func performStatsRequest(path: String, method: String, body: Data?,
                                      completionHandler: @escaping (_ data: Data?, _ statusCode: Int) -> ()) {
-        addLog(text: "func call:- api stats \(method) \(path)")
+        addLog(text: "func call:- api stats \(method) \(LogPrivacy.url(path))")
         appdelegate!.credentialsManager.credentials { credentialsInfo in
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             guard appdelegate!.credential != nil, let url = NSURL(string: "\(baseUrl)\(path)") else {
@@ -178,12 +178,12 @@ extension AllApi {
             }
             let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
                 guard let httpResponse = response as? HTTPURLResponse else {
-                    addLog(text: "api stats \(method) \(path) error:- \(error?.localizedDescription ?? "no response")")
+                    addLog(text: "api stats \(method) \(LogPrivacy.url(path)) error:- \(error?.localizedDescription ?? "no response")")
                     completionHandler(nil, 0)
                     return
                 }
                 if !AllApi.isSuccess(httpResponse.statusCode) {
-                    addLog(text: "api stats \(method) \(path) Api error:- statusCode is \(httpResponse.statusCode)")
+                    addLog(text: "api stats \(method) \(LogPrivacy.url(path)) Api error:- statusCode is \(httpResponse.statusCode)")
                     self.writeJsonInLog(data: data)
                 }
                 completionHandler(data, httpResponse.statusCode)

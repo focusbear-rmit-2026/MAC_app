@@ -103,6 +103,7 @@ struct BreakWarningView: View {
                     .foregroundColor(.white)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier(UITestContract.Identifier.Breaks.warningStartButton)
 
             HStack(spacing: 8) {
                 Text(model.selectMinutesTitle)
@@ -113,6 +114,7 @@ struct BreakWarningView: View {
                 }
                 .labelsHidden()
                 .frame(width: 72)
+                .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.warningMinutesPicker)
             }
 
             HStack(spacing: 12) {
@@ -125,6 +127,7 @@ struct BreakWarningView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier(UITestContract.Identifier.Breaks.warningSkipButton)
 
                 HoldToPostponeButton(seconds: model.requiredHoldSeconds,
                                      title: model.postponeTitle,
@@ -132,6 +135,7 @@ struct BreakWarningView: View {
                                      onComplete: model.onPostpone,
                                      onPressingChanged: model.onPostponePressing)
                 .frame(maxWidth: .infinity)
+                .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.warningPostponeButton)
             }
         }
         .padding(22)

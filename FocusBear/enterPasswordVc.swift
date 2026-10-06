@@ -151,7 +151,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             }
         }
         //If user click stop, it can prompt for the password. If no password is set, it can prompt for the random characters.// added in v 2.27.420 // 27/9/25
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
+        if !SettingsManagerObject.isAppPasswordSet{
             tabView.selectTabViewItem(tabViewItemEnterCharacters)
         }else{
             tabView.selectTabViewItem(tabViewItemPassword)
@@ -227,27 +227,25 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 return;
             }
             
-            if let passwordBase64 = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) as? String{
-                if let password = passwordBase64.fromBase64(){
-                    if textFieldPassword.stringValue == password{
-                        addLog(text: "Enter password view - password is correct")//
-                        lastAppUnlockTime = Date()
-                        allApiObject.capturePosthog(event: "unlock-using-password", metadata: [:])
-                        authenticated()
+            if SettingsManagerObject.isAppPasswordSet{
+                if SettingsManagerObject.appPassword.matches(textFieldPassword.stringValue){
+                    addLog(text: "Enter password view - password is correct")//
+                    lastAppUnlockTime = Date()
+                    allApiObject.capturePosthog(event: "unlock-using-password", metadata: [:])
+                    authenticated()
+                }else{
+                    addLog(text: "Enter password view - Invalid password.")//
+                    var alertTitle = "Invalid password."
+                    if let enterPasswordViewInfo = configjson.value(forKey: "enterPasswordViewInfo") as? NSDictionary{
+                        if let title = enterPasswordViewInfo.value(forKey: "incorrectPasswordErrorTitle") as? String{
+                            alertTitle = title
+                        }
+                    }
+                    if isCurrentViewInMainWindow{
+                        lblError.isHidden = false
+                        lblError.stringValue = alertTitle
                     }else{
-                        addLog(text: "Enter password view - Invalid password.")//
-                        var alertTitle = "Invalid password."
-                        if let enterPasswordViewInfo = configjson.value(forKey: "enterPasswordViewInfo") as? NSDictionary{
-                            if let title = enterPasswordViewInfo.value(forKey: "incorrectPasswordErrorTitle") as? String{
-                                alertTitle = title
-                            }
-                        }
-                        if isCurrentViewInMainWindow{
-                            lblError.isHidden = false
-                            lblError.stringValue = alertTitle
-                        }else{
-                           alertforvalidation(question: alertTitle, text: "")
-                        }
+                       alertforvalidation(question: alertTitle, text: "")
                     }
                 }
             }
@@ -805,7 +803,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     var timerCheckClearPasswordTime:Timer?
     @objc func clearPassword(){
         UserDefaults.standard.removeObject(forKey: kUserdefaults24HoursClearPasswordTime)
-        UserDefaults.standard.removeObject(forKey: SettingsManagerObject.kUserdefaultsAppPassword)
+        SettingsManagerObject.appPassword.clear()
         addLog(text: "password is cleard after 24 hours")
     }
     
@@ -887,7 +885,7 @@ extension enterPasswordVc:NSTabViewDelegate{
 
     func tabView(_ tabView: NSTabView, shouldSelect tabViewItem: NSTabViewItem?) -> Bool {
         if tabViewItem == tabViewItemPassword{
-            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
+            if !SettingsManagerObject.isAppPasswordSet{
                 return false
             }
         }

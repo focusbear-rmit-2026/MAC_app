@@ -23,7 +23,8 @@ class setScheduledDistractionBlockingVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        btnNoThanks.setAccessibilityIdentifier(UITestContract.Identifier.Onboarding.skipDistractionBlockingButton)
+        btnContinue.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.setUpDistractionBlockingButton)
         lblTitle.stringValue = "Set up Scheduled Distraction Blocking"
         lblSubTitle.stringValue = "Here’s what it will look like:"
         btnContinue.title = "Set up distraction blocking"

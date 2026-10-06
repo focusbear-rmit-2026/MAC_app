@@ -76,6 +76,7 @@ class microBreaksSettingsVc: NSViewController {
         showBreaksInCallItemVcObj?.lblTitle.stringValue = checkBoxShowBreaksInCallText
         showBreaksInCallItemVcObj?.lblSubTitle.isHidden = true
         showBreaksInCallItemVcObj?.delegate = self
+        showBreaksInCallItemVcObj?.btnSwitch.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.showBreaksInCallSwitch)
         showBreaksInCallItemVcObj?.toolTip = advanced_MicroBreak_ShowBreaksInCall
         
         stackView.addView(enableBreaksItemVcObj!.view, in: .bottom)

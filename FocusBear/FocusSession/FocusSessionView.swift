@@ -105,6 +105,7 @@ struct FocusSessionScreen: SwiftUI.View {
             SwiftUI.Button(action: store.presentNotesLightbox) {
                 SwiftUI.Label(store.strings.notesLabel, systemImage: "note.text")
             }
+            .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.notesButton)
         }.font(scale.font(FocusSessionLayout.rowTitleFont))
     }
 
@@ -185,6 +186,7 @@ private struct FocusSessionHeader: SwiftUI.View {
                     .foregroundColor(store.phase == .paused
                                      ? FocusSessionPalette.secondaryText
                                      : FocusSessionPalette.accent)
+                    .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.countdown)
             }
             if !browserPermissions.deniedBrowsers.isEmpty {
                 browserPermissionWarning
@@ -274,6 +276,7 @@ private struct FocusSessionTimerPanel: SwiftUI.View {
             Text(store.progressText)
                 .font(scale.font(FocusSessionLayout.badgeFont, .medium))
                 .foregroundColor(FocusSessionPalette.secondaryText)
+                .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.progress)
         }
     }
 
@@ -284,6 +287,7 @@ private struct FocusSessionTimerPanel: SwiftUI.View {
                              tooltip: store.strings.reduceDurationTooltip,
                              isEnabled: !store.isDurationLocked,
                              action: store.reduceSession)
+                    .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.reduceButton)
             }
             primaryControls
             if store.showsDurationControls {
@@ -291,6 +295,7 @@ private struct FocusSessionTimerPanel: SwiftUI.View {
                              tooltip: store.strings.extendDurationTooltip,
                              isEnabled: true,
                              action: store.extendSession)
+                    .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.extendButton)
             }
         }
     }
@@ -303,15 +308,19 @@ private struct FocusSessionTimerPanel: SwiftUI.View {
         case .paused:
             HStack(spacing: scale.pt(FocusSessionLayout.cardGap)) {
                 circleControl(symbol: "play.fill", tooltip: store.strings.resumeTooltip, action: store.resumeSession)
+                    .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.resumeButton)
                 if store.canEndFromThisScreen {
                     circleControl(symbol: "stop.fill", tooltip: store.strings.endSessionTooltip, action: store.requestEndSession)
+                        .accessibilityIdentifier(UITestContract.Identifier.FocusSession.endButton)
                 }
             }
         case .running:
             circleControl(symbol: "pause.fill", tooltip: store.strings.pauseTooltip, action: store.pauseSession)
+                .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.pauseButton)
         case .superFocus, .idle:
             if store.canEndFromThisScreen {
                 circleControl(symbol: "stop.fill", tooltip: store.strings.endSessionTooltip, action: store.requestEndSession)
+                    .accessibilityIdentifier(UITestContract.Identifier.FocusSession.endButton)
             }
         }
     }
@@ -328,6 +337,7 @@ private struct FocusSessionTimerPanel: SwiftUI.View {
                     .foregroundColor(FocusSessionPalette.secondaryText)
             }
             .buttonStyle(FBButtonStyle())
+            .accessibilityIdentifier(UITestContract.Identifier.FocusSession.endButton)
         }
     }
 
@@ -451,10 +461,19 @@ private struct FocusSessionGoalCard: SwiftUI.View {
             }
             .buttonStyle(PlainButtonStyle())
             .pointingHandCursor()   // the whole row is actionable, so show the hand cursor over it
+            // macOS folds this row into the disclosure triangle, which then had no name and never
+            // said the goal it hides; name it, with the goal while the card is shut.
+            .accessibilityLabel(Text(toggleAccessibilityLabel))
+            .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.goalToggle)
         }
         .padding(scale.pt(FocusSessionLayout.cardPadding))
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(cardChrome(scale: scale))
+    }
+
+    private var toggleAccessibilityLabel: String {
+        guard !isExpanded, !store.focusGoal.isEmpty else { return store.strings.focusGoalLabel }
+        return store.strings.focusGoalLabel + ": " + store.focusGoal
     }
 
     @ViewBuilder
@@ -470,6 +489,7 @@ private struct FocusSessionGoalCard: SwiftUI.View {
             ZStack(alignment: .topLeading) {
                 TextEditor(text: $store.focusGoal)
                     .font(scale.font(FocusSessionLayout.bodyFont))
+                    .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.goalEditor)
                 if store.focusGoal.isEmpty {
                     Text(store.strings.focusGoalPlaceholder)
                         .font(scale.font(FocusSessionLayout.bodyFont))
@@ -485,6 +505,9 @@ private struct FocusSessionGoalCard: SwiftUI.View {
             .overlay(
                 RoundedRectangle(cornerRadius: scale.pt(FocusSessionLayout.cardCornerRadius))
                     .strokeBorder(FocusSessionPalette.border, lineWidth: scale.pt(FocusSessionLayout.panelHairline))
+                    // A shape overlay takes clicks; this one sat over the editor, which then never
+                    // got the keyboard (#2691).
+                    .allowsHitTesting(false)
             )
         }
     }
@@ -666,6 +689,7 @@ private struct FocusSessionTaskPanel: SwiftUI.View {
             .disabled(store.isTaskEditingLocked)
             .opacity(store.isTaskEditingLocked ? 0.5 : 1)
             .help(store.strings.addTasksTooltip)
+            .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.addFirstTaskButton)
         }
     }
 

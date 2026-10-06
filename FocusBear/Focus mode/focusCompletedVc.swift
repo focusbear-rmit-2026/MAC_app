@@ -295,6 +295,22 @@ class focusCompletedVc: NSViewController {
         pinButtonTrackingArea = NSTrackingArea.init(rect: btnPin.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         btnPin.addTrackingArea(pinButtonTrackingArea!)
         btnStartAnotherFocusBlock.isSecondaryButton = true
+        setUITestIdentifiers()
+    }
+
+    private func setUITestIdentifiers() {
+        typealias Ids = UITestContract.Identifier.SessionsRegression
+        view.setUITestLandmark(Ids.completedScreen)
+        btnStartAnotherFocusBlock.setAccessibilityIdentifier(Ids.completedStartAnotherButton)
+        btnTakeBreak.setAccessibilityIdentifier(Ids.completedCloseButton)
+        textFieldAchieve.setAccessibilityIdentifier(Ids.completedAchievementField)
+        // The accordion's button has no outlet: it is the one button laid over the header box.
+        boxAccordinMoreOptions.contentView?.subviews.compactMap { $0 as? NSButton }.first?
+            .setAccessibilityIdentifier(Ids.completedAchievementToggle)
+        let stars = [btnStarFirst, btnStarSecond, btnStarThird, btnStarFourth, btnStarFifth]
+        for (index, star) in stars.enumerated() {
+            star?.setAccessibilityIdentifier(Ids.completedRatingStarPrefix + String(index + 1))
+        }
     }
     
     override func viewWillDisappear() {
@@ -322,7 +338,7 @@ class focusCompletedVc: NSViewController {
                     arrFocusType[i]["lastStartedDate"] = nil
                     arrFocusType[i]["lastScheduledEndDate"] = nil
                 }
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 
                 updateAllFocusModeTags()
                 addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
@@ -759,7 +775,7 @@ class focusCompletedVc: NSViewController {
             arrFocusType[i]["lastStartedDate"] = nil
             arrFocusType[i]["lastScheduledEndDate"] = nil
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         
         updateAllFocusModeTags()
        
@@ -811,7 +827,7 @@ class focusCompletedVc: NSViewController {
             arrFocusType[i]["lastStartedDate"] = nil
             arrFocusType[i]["lastScheduledEndDate"] = nil
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         
         updateAllFocusModeTags()
         addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
@@ -930,7 +946,7 @@ class focusCompletedVc: NSViewController {
                 arrFocusType[i]["lastStartedDate"] = nil
                 arrFocusType[i]["lastScheduledEndDate"] = nil
             }
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
             
             updateAllFocusModeTags()
             addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())

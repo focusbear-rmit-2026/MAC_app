@@ -35,6 +35,10 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
         lblError.stringValue = "Focus type with the same name already exist."
         lblError.isHidden = true
         textFieldFocusType.delegate = self
+        textFieldFocusType.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.addBlockListNameField)
+        btnAdd.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.addBlockListAddButton)
+        btnCancel.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.addBlockListCancelButton)
+        lblError.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.addBlockListError)
         
         
         if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
@@ -180,7 +184,7 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
 
         lblError.isHidden = true
         self.dismiss(self)
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         resetPomodoroVcFocusListIfNeeded()
         
         allApiObject.addFocusMode(focusType: dic, completionHandler: {success in

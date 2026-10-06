@@ -46,6 +46,8 @@ enum BlockingScheduleDefaults {
 
 // MARK: - View model
 
+private typealias SettingsUITestIdentifier = UITestContract.Identifier.SettingsRegression
+
 @available(macOS 11.0, *)
 final class BlockingScheduleEditorModel: ObservableObject {
     @Published var name = ""
@@ -147,6 +149,8 @@ struct BlockingScheduleEditorView: View {
         }
         .background(FBColor.background)
         .onAppear { if expandMoreOptions { showMoreOptions = true } }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(SettingsUITestIdentifier.scheduleEditor)
     }
 
     private var header: some View {
@@ -162,6 +166,7 @@ struct BlockingScheduleEditorView: View {
                 HStack(spacing: 8) {
                     TextField("Create a block name", text: $model.name)
                         .textFieldStyle(PlainTextFieldStyle())
+                        .accessibilityIdentifier(SettingsUITestIdentifier.scheduleNameField)
                         .font(.fbRegular(14))
                         .padding(8)
                         .background(RoundedRectangle(cornerRadius: 8).fill(FBColor.fieldBackground))
@@ -253,6 +258,7 @@ struct BlockingScheduleEditorView: View {
                         .overlay(Circle().strokeBorder(on ? Color.clear : FBColor.grayBorder, lineWidth: 1))
                 }
                 .buttonStyle(FBButtonStyle())
+                .accessibilityIdentifier(SettingsUITestIdentifier.scheduleDayPrefix + String(pill.index))
             }
         }
     }
@@ -309,9 +315,9 @@ struct BlockingScheduleEditorView: View {
             field(title: "Strictness") {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 18) {
-                        strictnessRadio("Flexible", ._NORMAL_)
-                        strictnessRadio("Moderate", ._STRICT_)
-                        strictnessRadio("Strict", ._SUPER_STRICT_)
+                        strictnessRadio("Flexible", ._NORMAL_, position: 0)
+                        strictnessRadio("Moderate", ._STRICT_, position: 1)
+                        strictnessRadio("Strict", ._SUPER_STRICT_, position: 2)
                         Spacer()
                     }
                     Text(strictnessDescription)
@@ -325,7 +331,7 @@ struct BlockingScheduleEditorView: View {
         .cardBackground()
     }
 
-    private func strictnessRadio(_ title: String, _ value: FOCUSMODESTRICTNESS) -> some View {
+    private func strictnessRadio(_ title: String, _ value: FOCUSMODESTRICTNESS, position: Int) -> some View {
         let on = model.strictness == value
         return SwiftUI.Button(action: { model.strictness = value }) {
             HStack(spacing: 6) {
@@ -337,6 +343,7 @@ struct BlockingScheduleEditorView: View {
             }
         }
         .buttonStyle(FBButtonStyle())
+        .accessibilityIdentifier(SettingsUITestIdentifier.scheduleStrictnessPrefix + String(position))
     }
 
     // MARK: More options
@@ -377,6 +384,7 @@ struct BlockingScheduleEditorView: View {
                     Text("Delete schedule").fbOutlineButtonLabel(.primary)
                 }
                 .buttonStyle(FBButtonStyle())
+                .accessibilityIdentifier(SettingsUITestIdentifier.scheduleDeleteButton)
             }
             Spacer()
             if showCancel {
@@ -384,6 +392,7 @@ struct BlockingScheduleEditorView: View {
                     Text("Cancel").fbOutlineButtonLabel(.primary)
                 }
                 .buttonStyle(FBButtonStyle())
+                .accessibilityIdentifier(SettingsUITestIdentifier.scheduleCancelButton)
             }
             SwiftUI.Button(action: onSave) {
                 Text(model.isEditing ? "Save changes" : "Create")
@@ -392,6 +401,7 @@ struct BlockingScheduleEditorView: View {
                     .background(RoundedRectangle(cornerRadius: 8).fill(FBColor.accent))
             }
             .buttonStyle(FBButtonStyle())
+            .accessibilityIdentifier(SettingsUITestIdentifier.scheduleSaveButton)
         }
     }
 

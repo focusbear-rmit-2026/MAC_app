@@ -69,6 +69,10 @@ enum LogicTestHost {
     /// information" prompt per run on their own Mac (the self-hosted runner). Each "Always Allow" added
     /// another ACL entry — 24 CI cdhashes on the item by 2026-09-24. Tests have no business reading a
     /// person's real login.
+    ///
+    /// UI-test builds (`UITestHost`) use it too: CI signs them ad hoc, so a keychain item they wrote
+    /// would prompt on the next run's binary and stall the suite. They sign in from the environment
+    /// on every launch instead.
     final class CredentialsStore: CredentialsStorage {
         private var entries: [String: Data] = [:]
         func getEntry(forKey key: String) -> Data? { entries[key] }
@@ -77,7 +81,7 @@ enum LogicTestHost {
     }
 
     static func makeCredentialsManager() -> CredentialsManager {
-        isEnabled
+        isEnabled || UITestHost.isEnabled
             ? CredentialsManager(authentication: Auth0.authentication(), storage: CredentialsStore())
             : CredentialsManager(authentication: Auth0.authentication())
     }
@@ -234,7 +238,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     // auth
     var credential:Credentials?
-    var user: AuthUser?
+    var user: AuthUser? {
+        didSet {
+            // Encrypted local data is per account: opening the signed-in account's makes it readable.
+            guard let userId = user?.userId, !userId.isEmpty else { return }
+            SecureStore.shared.activate(accountId: userId)
+        }
+    }
     // Tokens live in the data-protection keychain (no per-binary ACL, so macOS never asks for
     // Uses Auth0's default (legacy login) keychain storage. A data-protection keychain path was tried on
     // this branch but removed: in signed Release it stored the tokens yet could not read them back, so
@@ -275,6 +285,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     func deleteAllSettings(){
         guard ManagedBlockingRuntime.shared.allowLegacySettingsMutation() else { return }
+        closeAllCsvFiles()
+        SecureStore.shared.eraseAllData()
         let domain = Bundle.main.bundleIdentifier!
         UserDefaults.standard.removePersistentDomain(forName: domain)
         UserDefaults.standard.synchronize()
@@ -304,14 +316,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if !isAutomatic{
             UserDefaults.standard.removeObject(forKey: kUserDefaultsLastUserLoginWithGoogle)
         }
-        UserDefaults.standard.set(currentUserEmail, forKey: kUserDefaultsLastUserEmailBeforeLogout)
+        // The email is only known once the account details call returns; don't let an early logout
+        // overwrite the remembered address with an empty one.
+        if !currentUserEmail.isEmpty {
+            UserDefaults.standard.set(currentUserEmail, forKey: kUserDefaultsLastUserEmailBeforeLogout)
+        }
         //--------------------------------------------------//
 
         // Clear persisted user identity so stale data doesn't bleed into the next account
         currentLeaderboardUsername = ""
-        sharedDefaults?.removeObject(forKey: kUserdefaultsSharedLeaderboardUsername)
-        sharedDefaults?.removeObject(forKey: kUserdefaultsSharedUserEmail)
-        sharedDefaults?.removeObject(forKey: kUserdefaultsSharedUserName)
+        SharedSuiteHygiene.removeLegacySecrets(from: sharedDefaults)
+        sharedDefaults.map(InternalTestUser.clear(in:))
 
         self.user = nil
         let _ = self.credentialsManager.clear()
@@ -332,6 +347,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         UserDefaults.standard.removeObject(forKey: kUserdefaultsTalkingClockQuietStart)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsTalkingClockQuietEnd)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsTalkingClockSuppressMeetings)
+
+        // Queued CSV rows must be sealed while this account is still open; then its server-backed
+        // caches go (the next sign-in fetches them again) and its unsent local data stays, sealed.
+        closeAllCsvFiles()
+        SecureStore.shared.signOut()
         quitAndRestartApp()
     }
     let alertAppAutoRestart = NSAlert()
@@ -342,7 +362,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if let url = urls.first{
             let urlString = url.absoluteString
             lastOpenUrlString = urlString
-            addLog(text: "func:- open url \(urlString)")
+            addLog(text: "func:- open url \(LogPrivacy.url(urlString))")
             if isSettingsLoddedInAppdelegate{
                 filterUrl(url: lastOpenUrlString)
             }
@@ -394,17 +414,35 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             LogicTestHost.loadBundledConfiguration()
             return
         }
-        SentrySDK.start { options in
-            options.dsn = "https://85574080eb088006a0f2b0f5d326d6ff@o4509122919006208.ingest.us.sentry.io/4509122992275456"
-            #if DEBUG
-            options.debug = true
-            #endif
-            options.attachStacktrace = true// line added on 5/3/25
-            options.enableSwizzling = false
-            options.enableAutoSessionTracking = false
-            options.sendDefaultPii = false // do not send PII (IP address, request bodies) by default
+        UITestHost.refuseUnisolatedLaunch()
+        // A UI-test app's failures belong in its test results, not in production Sentry.
+        if !UITestHost.isEnabled {
+            SentrySDK.start { options in
+                options.dsn = "https://85574080eb088006a0f2b0f5d326d6ff@o4509122919006208.ingest.us.sentry.io/4509122992275456"
+                #if DEBUG
+                options.debug = true
+                #endif
+                options.attachStacktrace = true// line added on 5/3/25
+                options.enableSwizzling = false
+                options.enableAutoSessionTracking = false
+                options.sendDefaultPii = false // do not send PII (IP address, request bodies) by default
+            }
         }
        
+        applyUITestResetIfNeeded()
+        listenForUITestCommandsIfRequested()
+        // Drafts older builds wrote in plain JSON are sealed whenever an account's key becomes available.
+        _ = NotificationCenter.default.addObserver(forName: SecureStore.didBecomeReady, object: SecureStore.shared,
+                                                   queue: nil) { _ in
+            DispatchQueue.global(qos: .utility).async { ProjectNoteDraftStore().sealLegacyDrafts() }
+        }
+        // Opens the previous launch's account (decrypting its values, migrating any plaintext) before
+        // anything reads them, and starts watching for the key when it is unavailable.
+        _ = SecureFiles.shared
+        // Prunes the sealed 30-minute browsing history from the last run even before anything is browsed.
+        _ = BrowsingHistory.shared
+        LegacyCalendarDateMigration.migrateUserDefaultsIfNeeded()
+
         //doing this because if app is started after quit by user then  helper app will know that main app is restarted
         //        getTransparentWindowObject().showWindow(nil)
         let isAppRestartedNormally = UserDefaults.standard.object(forKey: kUserDefaultsAppRestartedNormally) as? Bool ?? false
@@ -456,7 +494,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         menuItemUninstall.isHidden = true
         client.start()// for getting true time
 
-        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: self, userDriverDelegate: nil)
+        // A UI-test app never checks for, downloads or installs updates.
+        updaterController = SPUStandardUpdaterController(startingUpdater: !UITestHost.isEnabled, updaterDelegate: self, userDriverDelegate: nil)
         updaterController?.updater.automaticallyChecksForUpdates = true
         
         
@@ -468,16 +507,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         DebugLogsFolderURL = applicationSupportURL!.appendingPathComponent("Logs")
         CreateDirectoryIfNotExist(path: DebugLogsFolderURL!.path)
         DebugLogsURL = DebugLogsFolderURL!.appendingPathComponent("Debug_Logs.txt")
-        //        DebugGraphLogsURL = DebugLogsFolderURL!.appendingPathComponent("Debug_Graphs_Logs.txt")
-        quantityCsvURL = applicationSupportURL!.appendingPathComponent("eystStats.csv")
+        if let logsFolder = DebugLogsFolderURL {
+            Log.queue.async { LogFilePermissions.tighten(folder: logsFolder) }
+            LegacyLogScrubber.scrubIfNeeded(folder: logsFolder, currentLog: DebugLogsURL)
+        }
+        quantityCsvURL = applicationSupportURL!.appendingPathComponent(kStatsCsvFileName)
         arrNonTimerBasedHabitsDurationsPlistFileUrl = applicationSupportURL!.appendingPathComponent("nonTimerBasedHabitsDurations.plist")
-        focusAlignmentScoreCsvURL = applicationSupportURL!.appendingPathComponent("focusAlignmentScore.csv")
-        focusAIDecisionsCsvURL = applicationSupportURL!.appendingPathComponent("focusAIDecisions.csv")
+        focusAlignmentScoreCsvURL = applicationSupportURL!.appendingPathComponent(kFocusAlignmentScoreCsvFileName)
+        focusAIDecisionsCsvURL = applicationSupportURL!.appendingPathComponent(kFocusAIDecisionsCsvFileName)
         browsersTabAuditCsvURL = applicationSupportURL!.appendingPathComponent("browsersTabAudit.csv")
-        focusProductivityStatsCsvURL = applicationSupportURL!.appendingPathComponent("focusProductivityStats.csv")
-        offlineActivitiesCsvURL = applicationSupportURL!.appendingPathComponent("offlineActivities.csv")
+        focusProductivityStatsCsvURL = applicationSupportURL!.appendingPathComponent(kFocusProductivityStatsCsvFileName)
+        offlineActivitiesCsvURL = applicationSupportURL!.appendingPathComponent(kOfflineActivitiesCsvFileName)
         trackFilesFolderURL = applicationSupportURL!.appendingPathComponent("Tracks")
-        usageTimingsExplanationCsvUrl = applicationSupportURL!.appendingPathComponent("usage_timings.csv")
+        usageTimingsExplanationCsvUrl = applicationSupportURL!.appendingPathComponent(kUsageTimingsCsvFileName)
         
         settingForScreeenTimeFileURL = applicationSupportURL!.appendingPathComponent("fbtt.plist")
         CreateDirectoryIfNotExist(path: trackFilesFolderURL!.path)
@@ -513,7 +555,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         allApiObject.downloadBlockPageAsync(url: URL(string: "https://focus-bear.github.io/assets/focus-blocked/index.html"), destinationUrl: fileUrl){ (success, error) in
             print(success)
-            if flaskServerObject.startFlaskServer(){
+            // A UI test that doesn't enforce blocking has no block page to serve; the server is a
+            // Rosetta process per test launch otherwise.
+            if !UITestHost.suppressesEnforcement, flaskServerObject.startFlaskServer(){
                 blockWebUrlString = "http://localhost:\(flaskServerPort)"
             }else{
                 blockWebUrlString = fileUrl.absoluteString
@@ -558,7 +602,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         // ///////////////////SET TOP ICON////////////////////////
         if self.statusItem.button != nil {
             self.statusbutton = self.statusItem.button
+            self.statusbutton?.setAccessibilityIdentifier(UITestContract.Identifier.MenuBar.statusItem)
             self.statusbutton?.image = NSImage(named: NSImage.Name("Bear-Small"))
+            // VoiceOver read the image's asset name ("Bear Small"); the icon is the app itself.
+            self.statusbutton?.setAccessibilityLabel(appName)
             
             self.statusbutton?.font = NSFont.systemFont(ofSize: 10)
             
@@ -688,6 +735,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             // froze the launch UI (Sentry AppHang: SimpleKeychain.data). Compute it once out here
             // instead: this closure is getConfigFile's URLSession completion, so we're already off the
             // main thread — no extra dispatch needed — then hop to main for the launch/login UI.
+            self.signInForUITestIfRequested()
             let canRenew = self.credentialsManager.canRenew()
             DispatchQueue.main.async {
 
@@ -1055,12 +1103,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
 
                 sharedDefaults?.setValue(self.user?.userId ?? "", forKeyPath: kUserdefaultsSharedUserId)
-                sharedDefaults?.setValue(self.credential!.accessToken, forKeyPath: kUserdefaultsSharedAccessToken)
                 sharedDefaults?.setValue(appVersion, forKeyPath: kUserdefaultsSharedAppVersion)
-                // Restore persisted user info so account screen shows correct values before the API call returns
-                currentUserEmail = sharedDefaults?.object(forKey: kUserdefaultsSharedUserEmail) as? String ?? ""
-                currentUserName = sharedDefaults?.object(forKey: kUserdefaultsSharedUserName) as? String ?? ""
-                currentLeaderboardUsername = sharedDefaults?.object(forKey: kUserdefaultsSharedLeaderboardUsername) as? String ?? ""
+                SharedSuiteHygiene.sendQueuedHelperEvents(from: sharedDefaults,
+                                                          signedInUserId: self.user?.userId ?? "") { event, metadata in
+                    allApiObject.captureEventEndpoint(event: event, metadata: metadata)
+                }
 
                 SentrySDK.configureScope { scope in
                     let user = User(userId: self.user?.userId ?? "")
@@ -1073,6 +1120,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 sharedDefaults?.synchronize()
                 DispatchQueue.main.async {
                     kUserdefaultsVideoShown = kUserdefaultsVideoShown + (self.user?.userId ?? "")
+                    if self.handleUITestSkipOnboardingIfNeeded() { return }
                     if UserDefaults.standard.object(forKey: kUserdefaultsVideoShown) == nil{
                         var shouldShowOnboardingAfterLogin = true
                         var userHasDoneOnboardingOnWeb = false
@@ -1382,15 +1430,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 self.currentUserURL = applicationSupportURL!.appendingPathComponent(self.user?.userId ?? "")
                 if self.currentUserURL != nil{
                     CreateDirectoryIfNotExist(path: self.currentUserURL!.path)
-                    quantityCsvURL = self.currentUserURL!.appendingPathComponent("eystStats.csv")
+                    quantityCsvURL = self.currentUserURL!.appendingPathComponent(kStatsCsvFileName)
                     arrNonTimerBasedHabitsDurationsPlistFileUrl = self.currentUserURL!.appendingPathComponent("nonTimerBasedHabitsDurations.plist")
-                    focusAlignmentScoreCsvURL = self.currentUserURL!.appendingPathComponent("focusAlignmentScore.csv")
-                    focusAIDecisionsCsvURL = self.currentUserURL!.appendingPathComponent("focusAIDecisions.csv")
-                    focusProductivityStatsCsvURL = self.currentUserURL!.appendingPathComponent("focusProductivityStats.csv")
-                    offlineActivitiesCsvURL = self.currentUserURL!.appendingPathComponent("offlineActivities.csv")
+                    focusAlignmentScoreCsvURL = self.currentUserURL!.appendingPathComponent(kFocusAlignmentScoreCsvFileName)
+                    focusAIDecisionsCsvURL = self.currentUserURL!.appendingPathComponent(kFocusAIDecisionsCsvFileName)
+                    focusProductivityStatsCsvURL = self.currentUserURL!.appendingPathComponent(kFocusProductivityStatsCsvFileName)
+                    offlineActivitiesCsvURL = self.currentUserURL!.appendingPathComponent(kOfflineActivitiesCsvFileName)
                     newLocalSettingsFileURL = self.currentUserURL!.appendingPathComponent("localSettings.plist")
                     browsersTabAuditCsvURL = self.currentUserURL!.appendingPathComponent("browsersTabAudit.csv")
-                    usageTimingsExplanationCsvUrl = self.currentUserURL!.appendingPathComponent("usage_timings.csv")
+                    usageTimingsExplanationCsvUrl = self.currentUserURL!.appendingPathComponent(kUsageTimingsCsvFileName)
                 }
                 nonTimerBasedHabitsObject.readNonTimerBasedHabitsDurations()
                 if let id  = UserDefaults.standard.object(forKey: kUserdefaultsDeviceId) as? String{
@@ -1519,7 +1567,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                     }else{
                         UserDefaults.standard.removeObject(forKey: kUserdefaults24HoursClearPasswordTime)
-                        UserDefaults.standard.removeObject(forKey: SettingsManagerObject.kUserdefaultsAppPassword)
+                        SettingsManagerObject.appPassword.clear()
                         SettingsManagerObject.isSettingsChanged = true
                         SettingsManagerObject.putUserLocalDeviceSettings()
                         addLog(text: "password is cleared after 24 hours")
@@ -1548,7 +1596,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 allApiObject.getAllFocusModes(completionHandler: {dic in
                     if let arrFocusModes = dic as? [[String:Any]]{
                         let newArr = arrFocusModes.map(flattenServerFocusMode)
-                        UserDefaults.standard.set(plistSafeFocusModes(newArr), forKey: kUserdefaultsArrFocusTypes)
+                        SensitiveDefaults.set(plistSafeFocusModes(newArr), forKey: kUserdefaultsArrFocusTypes)
                     }
                     
                     checkAllFocusModes()
@@ -1568,10 +1616,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         currentUserEmail = dic?.value(forKey: "email") as? String ?? ""
                         currentUserName = dic?.value(forKey: "name") as? String ?? ""
                         currentLeaderboardUsername = dic?.value(forKey: "username") as? String ?? ""
-                        self.sharedDefaults?.setValue(currentUserEmail, forKeyPath: kUserdefaultsSharedUserEmail)
-                        self.sharedDefaults?.setValue(currentUserName, forKeyPath: kUserdefaultsSharedUserName)
-                        self.sharedDefaults?.setValue(currentLeaderboardUsername, forKeyPath: kUserdefaultsSharedLeaderboardUsername)
-                        self.sharedDefaults?.synchronize()
+                        if let sharedDefaults = self.sharedDefaults {
+                            InternalTestUser.record(email: currentUserEmail, in: sharedDefaults)
+                        }
                         DispatchQueue.main.async {
                             accountVcObj?.reloadView()
                         }
@@ -1625,6 +1672,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         // where the user reopens the app manually before that time.)
         sharedDefaults?.removeObject(forKey: kUserdefaultsMainAppScheduledRestartDate)
         sharedDefaults?.synchronize()
+        SharedSuiteHygiene.removeLegacySecrets(from: sharedDefaults)
+        WebCacheCleaner.clearFocusBearCaches()
         // Armed first, so a hang during the rest of startup is still reported.
         MainThreadWatchdog.shared.start()
         // Both the Do Not Disturb click and the shutdown prompt ask this before taking the menu bar
@@ -2346,7 +2395,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         var jsonResult:NSDictionary?
         jsonResult = json
         if jsonResult == nil{
-            if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+            if let stringDic = SensitiveDefaults.object(forKey: kUserdefaultsSelectedJson) as? String {
                 //            jsonResult = dic
                 if let data = stringDic.data(using: String.Encoding.utf8) {
                     
@@ -2368,7 +2417,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 jsonResult = dicResult
                                 
                                 if let str = String(data: data, encoding: String.Encoding.utf8){
-                                    UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+                                    SensitiveDefaults.set(str, forKey: kUserdefaultsSelectedJson)
                                 }
                             }
                         }catch {
@@ -2903,7 +2952,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         // -------------------GETTING SETTINGS JSON----------------------//
         var isFirstTime = false
-        if UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) == nil{
+        if SensitiveDefaults.object(forKey: kUserdefaultsSelectedJson) == nil{
             isFirstTime = true
         }
         
@@ -2952,7 +3001,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         do {
                                             let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
                                             if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
-                                                UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                                SensitiveDefaults.set(backToString, forKey: kUserdefaultsSelectedJson)
                                                 //appdelegate?.readSettingsJsonDictionary(json: nil)//will not do this here
                                             }
                                         } catch let myJSONError {
@@ -2962,7 +3011,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         do {
                                             let data = try (JSONSerialization.data(withJSONObject: settings!, options: .prettyPrinted))
                                             if let str = String(data: data, encoding: String.Encoding.utf8){
-                                                UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+                                                SensitiveDefaults.set(str, forKey: kUserdefaultsSelectedJson)
                                             }
                                         } catch let error as NSError {
                                             print(error)
@@ -2987,7 +3036,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         do {
                                             let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
                                             if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
-                                                UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                                SensitiveDefaults.set(backToString, forKey: kUserdefaultsSelectedJson)
                                             }
                                         } catch let myJSONError {
                                             print(myJSONError)
@@ -2996,7 +3045,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         do {
                                             let data = try (JSONSerialization.data(withJSONObject: settings!, options: .prettyPrinted))
                                             if let str = String(data: data, encoding: String.Encoding.utf8){
-                                                UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+                                                SensitiveDefaults.set(str, forKey: kUserdefaultsSelectedJson)
                                             }
                                         } catch let error as NSError {
                                             print(error)
@@ -3013,7 +3062,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     do {
                         let data = try (JSONSerialization.data(withJSONObject: settings!, options: .prettyPrinted))
                         if let str = String(data: data, encoding: String.Encoding.utf8){
-                            UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+                            SensitiveDefaults.set(str, forKey: kUserdefaultsSelectedJson)
                         }
                     } catch let error as NSError {
                         print(error)
@@ -3034,7 +3083,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func readSettingsAndLoadApp(settings: NSMutableDictionary?){
         self.readSettingsJsonDictionary(json: settings)
         
-        arrAllFocusModeTags = UserDefaults.standard.object(forKey: kUserdefaultsAllFocusModesTags) as? [[String : String]] ?? []
+        arrAllFocusModeTags = SensitiveDefaults.object(forKey: kUserdefaultsAllFocusModesTags) as? [[String : String]] ?? []
         allApiObject.getFocusModeTags(completionHandler: {arrJson in
             
         })
@@ -3050,6 +3099,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addLog(text: "func:- initialWork   isSettingsLoddedInAppdelegate done")
             
             self.isSettingsLoddedInAppdelegate = true
+            if UITestHost.isEnabled {
+                // Not left to the next five-second tick: every UI test launch waited for it.
+                DispatchQueue.main.async { self.runUITestLaunchHooks() }
+            }
             //
             SettingsManagerObject.readLocalSettings()
             if UserDefaults.standard.object(forKey: kUserdefaultsIsAppEnabled) == nil{
@@ -3184,7 +3237,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                             return event
                                         }
                                     }
-                                    if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                                    if SettingsManagerObject.isAppPasswordSet{
                                         if enterPasswordVcObj != nil{
                                             if getHabitsVcObject().view.subviews.contains(enterPasswordVcObj!.view){
                                                 return event
@@ -3546,7 +3599,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     /// Ensure the shared menu view controller is attached to the container for the CURRENT mode (popover
     /// when `isMenuPopoverEnabled`, else the detached window). The VC can only be in one place at a time,
     /// so a mode flip / earlier full-screen experiment can leave it detached → an empty menu. Idempotent.
-    private func ensureMenuContentAttached() {
+    func ensureMenuContentAttached() {
         if menuViewControllerObj == nil {
             menuViewControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("menuViewController")) as? menuViewController
         }
@@ -3871,7 +3924,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     self.timerCheckClearPasswordTime?.invalidate()
                     self.timerCheckClearPasswordTime = nil
                     UserDefaults.standard.removeObject(forKey: kUserdefaults24HoursClearPasswordTime)
-                    UserDefaults.standard.removeObject(forKey: SettingsManagerObject.kUserdefaultsAppPassword)
+                    SettingsManagerObject.appPassword.clear()
                     SettingsManagerObject.isSettingsChanged = true
                     SettingsManagerObject.putUserLocalDeviceSettings()
                     addLog(text: "password is cleard after 24 hours")
@@ -4153,7 +4206,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     private func migrateBrainDumpToBackendIfNeeded() {
         guard UserDefaults.standard.value(forKey: kUserdefaultsBrainDumpSentToWebView) == nil,
               !isBrainDumpMigrationInFlight else { return }
-        let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String ?? ""
+        let notes = SensitiveDefaults.object(forKey: kUserdefaultsFocusModeNotes) as? String ?? ""
         guard !notes.isEmpty else {
             UserDefaults.standard.set(true, forKey: kUserdefaultsBrainDumpSentToWebView)
             return
@@ -4177,7 +4230,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         allApiObject.getAllFocusModes(completionHandler: { dic in
             if let arrFocusModes = dic as? [[String:Any]]{
                 let newArr = arrFocusModes.map(flattenServerFocusMode)
-                UserDefaults.standard.set(plistSafeFocusModes(newArr), forKey: kUserdefaultsArrFocusTypes)
+                SensitiveDefaults.set(plistSafeFocusModes(newArr), forKey: kUserdefaultsArrFocusTypes)
             }
             checkAllFocusModes()
             completion?()
@@ -5188,7 +5241,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     focusButtonServiceObject.startFocusSession(seconds: time)
                     focusModeStartted(isStartedByPusher: false)
                     allApiObject.capturePosthog(event: "start-meetings-focus-mode", metadata: [:])
-                    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                    SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                     isMeetingsFocusStartedAutomatically = true
                     isFocusModeStartedAutomatically = false
 
@@ -5371,6 +5424,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     
                                     dic[headers[i]] = subarray[i]
                                 }
+                                dic = LegacyCalendarDateMigration.normalizingOfflineActivityTimestamps(dic)
                                 dic["duration_logged"] = Int(dic["duration_logged"] as? String ?? "") ?? 0
                                 
                                 let quantity_logged_string = dic["quantity_logged"] as? String ?? ""
@@ -5498,7 +5552,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     var nRetry = 0
     
     func filterUrl(url:String){
-        addLog(text: "func:- filterUrl \(url)")
+        addLog(text: "func:- filterUrl \(LogPrivacy.url(url))")
 
         // Growth/unlock flow: open the gated "advanced AuDHD results" webview.
         // Handled ABOVE the app-enabled / subscription guards below, so it works even
@@ -6036,6 +6090,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     @objc func backgroundThread(){
         DispatchQueue.main.async {
+            if self.isSettingsLoddedInAppdelegate {
+                self.runUITestLaunchHooks()
+            }
             if isAppEnable{// If the app is disabled, this function will be called only in one case—when the app has been deactivated for 4 hours.
                 self.checkIsMeetingsGoingOn() //and app kon kon si check krni haiu
             }else{
@@ -6185,7 +6242,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     if !isAppEnable{
                         shouldShowEveningHabit = false
                         
-                        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                        if SettingsManagerObject.isAppPasswordSet{
                             if SettingsManagerObject.isPasswordRequireInSkipEvening{
                                 shouldShowEveningHabit = true
                             }
@@ -6220,7 +6277,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if !isAppEnable{
                     shouldShowEveningHabit = false
                     
-                    if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                    if SettingsManagerObject.isAppPasswordSet{
                         if cutOffTime != nil{
                             if isCutOffTimeGoing(){
                                 if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
@@ -6836,7 +6893,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if currentAction == ._INPROGRESS_{
                     if isCutOffTimeGoing(){
                         if !arrFilteredEveningHabits[currentHabitIndex].isPriorityHigh{
-                            addLog(text: "evening habit skipped:- running late global cutoff time passed:- \(arrFilteredEveningHabits[currentHabitIndex].name)  \(arrFilteredEveningHabits[currentHabitIndex].id)") // remove this
+                            addLog(text: "evening habit skipped:- running late global cutoff time passed:- \(LogPrivacy.text(arrFilteredEveningHabits[currentHabitIndex].name))  \(arrFilteredEveningHabits[currentHabitIndex].id)") // remove this
                             abortAllProcess()
                             if mainWindowControllerObj?.window?.isVisible ?? false{
                                 mainWindowControllerObj?.window?.close()
@@ -6877,7 +6934,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         mainWindowControllerObj?.window?.close()
                                         hideBlankWindowInSecondaryMonitor()
                                     }
-                                    addLog(text: "evening habit skipped:- cutoff time for this running habit passed:- \(arrFilteredEveningHabits[currentHabitIndex].name)  \(arrFilteredEveningHabits[currentHabitIndex].id)") // remove this
+                                    addLog(text: "evening habit skipped:- cutoff time for this running habit passed:- \(LogPrivacy.text(arrFilteredEveningHabits[currentHabitIndex].name))  \(arrFilteredEveningHabits[currentHabitIndex].id)") // remove this
                                     let alertHighPriorityHabitTime = NSAlert()
                                     alertHighPriorityHabitTime.setSharingType()
                                     var cutOffTimePassedForHabitText = "It's past the cutoff time you set for this habit. Taking you to your next habit."
@@ -7090,7 +7147,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 if arrHabitIds.contains(habit.id){
                                     arrFilteredEveningHabits.append(habit)
                                 }else{
-                                    addLog(text: "evening habit skipped:- habit was not selected by user last time:- \(habit.name)  \(habit.id)") // remove this
+                                    addLog(text: "evening habit skipped:- habit was not selected by user last time:- \(LogPrivacy.text(habit.name))  \(habit.id)") // remove this
                                 }
                             }
                             if arrFilteredEveningHabits.count == 0{
@@ -7254,7 +7311,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
                     let currentDate = Date()
                     if currentDate > cutOffDate{
-                        addLog(text: "evening habit skipped:- running late cutoff time passed for this habit:- \(habit.name)  \(habit.id)") // remove this
+                        addLog(text: "evening habit skipped:- running late cutoff time passed for this habit:- \(LogPrivacy.text(habit.name))  \(habit.id)") // remove this
                         continue;
                     }
                 }
@@ -7262,7 +7319,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             if RoutineHabitSchedule.shouldPlay(habitId: habit.id, daysOfWeek: habit.days_of_week, on: today) {
                 arrFilteredEveningHabits.append(habit)
             }else{
-                addLog(text: "evening habit skipped:- not scheduled for today or skipped ahead \(habit.days_of_week):- \(habit.name)  \(habit.id)") // remove this
+                addLog(text: "evening habit skipped:- not scheduled for today or skipped ahead \(habit.days_of_week):- \(LogPrivacy.text(habit.name))  \(habit.id)") // remove this
             }
         }
         
@@ -7299,7 +7356,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         if tempHabits[i].isPriorityHigh{
                             arrFilteredEveningHabits.append(tempHabits[i])
                         }else{
-                            addLog(text: "evening habit skipped:- Global cutoffTime passed and this habit is not high priority habit:- \(tempHabits[i].name)  \(tempHabits[i].id)") // remove this
+                            addLog(text: "evening habit skipped:- Global cutoffTime passed and this habit is not high priority habit:- \(LogPrivacy.text(tempHabits[i].name))  \(tempHabits[i].id)") // remove this
                         }
                     }
                     
@@ -7356,8 +7413,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 hideBlankWindowInSecondaryMonitor()
                 
                 UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
-                UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
-                UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
+                SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+                SensitiveDefaults.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
                 leftMenuVcObj?.habitOver()
                 currentHabitIndex = -1
             }
@@ -7969,7 +8026,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         firefoxServer.stop()
         EventBuffer.shared.flushEvents()
         focusButtonServiceObject.stop()
-        
+        WebCacheCleaner.clearFocusBearCachesBeforeQuit()
+
         closeAllCsvFiles()
     }
     
@@ -7997,7 +8055,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 
                 if UserDefaults.standard.object(forKey: kUserdefaultsIsUserLoggedIn) as? Bool == nil{
                     if UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) == nil{
-                        sharedDefaults?.removeObject(forKey: kUserdefaultsSharedAccessToken)
                         sharedDefaults?.setValue(globalUUID, forKeyPath: kUserdefaultsSharedUserId)
                         sharedDefaults?.setValue(true, forKeyPath: kUserdefaultsOnboardingIncompleted)
                         sharedDefaults?.setValue(Date(), forKeyPath: kUserdefaultsAppQuitForUser)
@@ -8273,7 +8330,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
         // The focus modes may not be loaded into the global yet (the pomodoro screen normally does it),
         // so hydrate from UserDefaults first — otherwise the menu could start nothing.
-        if arrFocusType.isEmpty, let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrFocusTypes) as? [[String:Any]] {
+        if arrFocusType.isEmpty, let arr = SensitiveDefaults.object(forKey: kUserdefaultsArrFocusTypes) as? [[String:Any]] {
             arrFocusType = arr
         }
         // Resolve which block list / focus mode to run: the chosen id, else the default one, else the
@@ -8300,7 +8357,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
         workBeforeFocusBegin(index: i)
         setStatusBarButtonColorForFocusMode(color: nil, colorString: arrFocusType[i]["color"] as? String ?? "")
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         updateAllFocusModes()
 
         isFocusModeRunning = true
@@ -8401,7 +8458,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 var stringTime = ""
                 
                 if let date = endFocusModeTime{
-                    stringTime = getStringFromDate(date: date, dateFormat: "hh:mm a")
+                    stringTime = getDisplayStringFromDate(date: date, dateFormat: "hh:mm a")
                 }
                 
                 for dic in arrFocusType{
@@ -8785,7 +8842,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         var stringTime = ""
         
         if let date = endFocusModeTime{
-            stringTime = getStringFromDate(date: date, dateFormat: "hh:mm a")
+            stringTime = getDisplayStringFromDate(date: date, dateFormat: "hh:mm a")
         }
         
         for dic in arrFocusType{
@@ -8833,6 +8890,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
 
     @objc func frontApplicationChanged(){
+        // UI-test builds run on a developer's own Mac: never hide, launch or close their other apps.
+        if UITestHost.suppressesEnforcement { return }
 
         if UserDefaults.standard.object(forKey: kUserdefaultsIsUserLoggedIn) as? Bool != nil{
             if UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) != nil{
@@ -9669,7 +9728,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     if arrBlockedUrls.count == 0{
                                         arrBlockedUrls = ["facebook.com"] // for try block url if no blocked url is set
                                     }
-                                    addLog(text: "Try website blocking view is visible and current app is:- \(nameLowercased) and current url is:- \(url)")
+                                    addLog(text: "Try website blocking view is visible and current app is:- \(nameLowercased) and current url is:- \(LogPrivacy.site(url))")
                                 }
                             }
                         }
@@ -10285,6 +10344,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     func blockAlwaysBlockedApp(runningApp: NSRunningApplication, appName:String){
+        // UI-test builds run on a developer's own Mac: never hide, launch or close their other apps.
+        if UITestHost.suppressesEnforcement { return }
         addLog(text:"blockAlwaysBlockedApp:- \(appName)")// addded in 2.28.443
         exitFullScreen(runningApp:runningApp)
         runningApp.hide()
@@ -10312,7 +10373,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     func blockAlwaysBlockedUrl(script: String, browser: BROWSER?, url:String){
-        addLog(text:"blockAlwaysBlockedUrl:- \(url)")
+        addLog(text:"blockAlwaysBlockedUrl:- \(LogPrivacy.site(url))")
+        BrowsingHistory.shared.record(.blocked, url: url, app: browser.map { "\($0)" }, reason: BrowsingReason.alwaysBlocked,
+                                      focusMode: runningFocusModeName)
         if browser == ._ARC_{
             NSWorkspace.shared.launchApplication("Arc")
         }
@@ -10411,6 +10474,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     func startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl:Bool){
+        // UI-test builds run on a developer's own Mac: never launch the habit's allowed apps there.
+        let shouldLaunchAppAndUrl = shouldLaunchAppAndUrl && !UITestHost.isEnabled
         addLog(text:"start Timer Activities AllowedApp")
         
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_{
@@ -10518,6 +10583,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     @objc func checkActivityAllowedApp(){
+        // UI-test builds run on a developer's own Mac: never hide, launch or close their other apps.
+        if UITestHost.suppressesEnforcement { return }
         if (currentState == ._MICRO_BREAK_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && (currentActivityPlaying != nil || currentHabitPlaying != nil){
             if let runningApp = NSWorkspace.shared.frontmostApplication{
                 if let appUrl = runningApp.bundleURL{
@@ -10981,8 +11048,7 @@ final class ClaudeDebugTaskMenu: NSObject {
         let note = textView.string.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let fm = FileManager.default
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-        let stamp = f.string(from: Date())
+        let stamp = MachineDateFormat.string(from: Date(), format: MachineDateFormat.fileNameTimestamp)
         let folder = fm.homeDirectoryForCurrentUser.appendingPathComponent("FocusBear-Claude-Tasks/\(stamp)")
         try? fm.createDirectory(at: folder, withIntermediateDirectories: true)
 

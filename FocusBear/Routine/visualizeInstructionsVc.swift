@@ -398,7 +398,7 @@ class visualizeInstructionsVc: NSViewController {
                                         let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
                                         let currentDate = Date()
                                         if currentDate > cutOffDate{
-                                            addLog(text: "evening habit skipped:- this next habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[i].name)  \(arrFilteredEveningHabits[i].id)") // remove this
+                                            addLog(text: "evening habit skipped:- this next habit is high priority habit but cutoff time of this habit has passed:- \(LogPrivacy.text(arrFilteredEveningHabits[i].name))  \(arrFilteredEveningHabits[i].id)") // remove this
                                             continue;
                                         }
                                     }

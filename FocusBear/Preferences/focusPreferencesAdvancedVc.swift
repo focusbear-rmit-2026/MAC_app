@@ -87,6 +87,8 @@ class focusPreferencesAdvancedVc: NSViewController {
         textViewRunShelltBeforeFocus.delegate = self
         
         tokenField.delegate = self
+        checkBoxUseAi?.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.blockListUseAiCheckbox)
+        btnOk.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.blockListAdvancedOkButton)
         
         btnCheckBoxSuggestWorkFocusMode.title = "Automatically suggest starting this focus mode when any allowed URL/App is opened"
         
@@ -198,7 +200,7 @@ class focusPreferencesAdvancedVc: NSViewController {
         guard row >= 0, row < arrFocusType.count else { return }
         let enabled = (checkBoxUseAi?.state ?? .off) == .on
         arrFocusType[row]["is_ai_enabled"] = enabled
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         allApiObject.capturePosthog(
             event: enabled ? "settings-changed-enable-ai-for-block-list" : "settings-changed-disable-ai-for-block-list",
             metadata: [:])
@@ -406,7 +408,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             btnSelectAppleScriptBeforeFocus.isEnabled = false
             allApiObject.capturePosthog(event: "settings-changed-disable-script-before-focus", metadata: [:])//#490
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         
     }
     
@@ -431,7 +433,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             btnSelectAppleScriptAfterFocus.isEnabled = false
             allApiObject.capturePosthog(event: "settings-changed-disable-script-after-focus", metadata: [:])//#490
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
 
     }
     
@@ -448,7 +450,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             textViewRunShelltBeforeFocus.isEditable = false
             allApiObject.capturePosthog(event: "settings-changed-enable-shell-command-before-focus", metadata: [:])
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
 
         
     }
@@ -466,7 +468,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             textViewRunShelltAfterFocus.isEditable = false
             allApiObject.capturePosthog(event: "settings-changed-enable-shell-command-after-focus", metadata: [:])
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
 
     }
     
@@ -495,7 +497,7 @@ class focusPreferencesAdvancedVc: NSViewController {
                     arrFocusType[row]["scriptPathBeforeFocus"] = url.path
                     self.lblUrlCurrentApplescriptBefore.stringValue = url.path
                     self.lblUrlCurrentApplescriptBefore.toolTip = url.path
-                    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                    SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
 
                     allApiObject.capturePosthog(event: "set-apple-script-before-starting-focus-mode", metadata: [:])
                 }
@@ -528,7 +530,7 @@ class focusPreferencesAdvancedVc: NSViewController {
                     arrFocusType[row]["scriptPathAfterFocus"] = url.path
                     self.lblUrlCurrentApplescriptAfter.stringValue = url.path
                     self.lblUrlCurrentApplescriptAfter.toolTip = url.path
-                    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                    SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
 
                     allApiObject.capturePosthog(event: "set-apple-script-after-completing-focus-mode", metadata: [:])
                 }
@@ -565,7 +567,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             }
             self.tblView.reloadData()
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
 
         allApiObject.capturePosthog(event: "remove-blocked-url-in-focus-mode", metadata: [:])//#490
 
@@ -582,7 +584,7 @@ class focusPreferencesAdvancedVc: NSViewController {
         let focusAlignmentScoreThreshold = Int(popUpBtnFocusAlignmentScore.titleOfSelectedItem ?? "") ?? 80
         if oldFocusAlignmentScoreThreshold != focusAlignmentScoreThreshold{
             arrFocusType[row]["focusAlignmentScoreThreshold"] = focusAlignmentScoreThreshold
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
             allApiObject.capturePosthog(event: "focus-alignment-score-threshold-changed", metadata: [:])
         }
 
@@ -600,7 +602,7 @@ class focusPreferencesAdvancedVc: NSViewController {
                 allApiObject.capturePosthog(event: "set-shell-command-after-completing-focus-mode", metadata: [:])
             }
      
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         }
         self.dismiss(self)
     }
@@ -722,7 +724,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             self.tblViewApps.reloadData()
             self.tblViewApps.selectRowIndexes(IndexSet(arrayLiteral: (appsArray.count - 1)), byExtendingSelection: false)
             self.tblViewApps.scrollRowToVisible(appsArray.count - 1)
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
             if isContainAlready{
                 self.showAlertAppAlreadyAdded()
             }
@@ -765,7 +767,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             }
             self.tblViewApps.reloadData()
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         allApiObject.capturePosthog(event: "remove-blocked-app-in-focus-mode", metadata: [:])
         reSetCurrentFocusMode(focusType:arrFocusType[selectedFocusTypeRow])
     }
@@ -789,7 +791,7 @@ class focusPreferencesAdvancedVc: NSViewController {
                     if response == .alertFirstButtonReturn{
                         _ = isAccessibilityEnabled(isPrompt: true)
                         arrFocusType[row]["isAutoDoNotDisturbEnabled"] = true
-                        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                         allApiObject.capturePosthog(event: "settings-changed-enable-dnd", metadata: [:])//#490
                     }else{
                         self.checkBoxAutoDoNotDisturb.state = .off
@@ -798,13 +800,13 @@ class focusPreferencesAdvancedVc: NSViewController {
 
             }else{
                 arrFocusType[row]["isAutoDoNotDisturbEnabled"] = true
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 allApiObject.capturePosthog(event: "settings-changed-enable-dnd", metadata: [:])//#490
             }
 
         }else{
             arrFocusType[row]["isAutoDoNotDisturbEnabled"] = false
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
             allApiObject.capturePosthog(event: "settings-changed-disable-dnd", metadata: [:])//#490
         }
 
@@ -823,7 +825,7 @@ class focusPreferencesAdvancedVc: NSViewController {
         }else{
             arrFocusType[row]["autoSuggestFocusModeOnAllowedURL"] = false
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
     }
 }
 

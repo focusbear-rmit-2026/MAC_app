@@ -500,7 +500,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
     @IBAction func btnStartSmallClicked(_ sender: Any) {
         addLog(text: "[user-action] btnStartSmallClicked")//
         var jsonResult = NSDictionary()
-        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+        if let stringDic = SensitiveDefaults.object(forKey: kUserdefaultsSelectedJson) as? String {
             //            jsonResult = dic
             if let data = stringDic.data(using: String.Encoding.utf8) {
                 
@@ -619,7 +619,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                             print(jsonResultData)
                             
                             if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
-                                UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                SensitiveDefaults.set(backToString, forKey: kUserdefaultsSelectedJson)
                                 appdelegate?.readSettingsJsonDictionary(json: nil)
                             }
                             

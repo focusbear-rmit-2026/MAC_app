@@ -94,7 +94,11 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        btnSkipHabit.setAccessibilityIdentifier(UITestContract.Identifier.Routine.skipHabitButton)
+        btnIAmDone.setAccessibilityIdentifier(UITestContract.Identifier.Routine.doneButton)
+        lblTimer.setAccessibilityIdentifier(UITestContract.Identifier.SessionsRegression.habitTimerLabel)
+        btnPause.setAccessibilityIdentifier(UITestContract.Identifier.SessionsRegression.habitPauseButton)
+        textViewNotes.setAccessibilityIdentifier(UITestContract.Identifier.SessionsRegression.habitNotes)
         
         let orangeColor = NSColor(named: "dark_OrangeColor") ?? NSColor.orange
         btnBackToHabits.borderColor = orangeColor.withAlphaComponent(0.5).cgColor
@@ -433,7 +437,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     func changeVideoUrl(url:String){
         var videoUrl = url
-        addLog(text:"video url is :- \(videoUrl)")
+        addLog(text:"video url is :- \(LogPrivacy.site(videoUrl))")
         var isVimeoUrl = false
         var videoID: String?
         if let host = URL(string: videoUrl)?.host {
@@ -500,7 +504,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             //videoUrl = videoUrl.replacingOccurrences(of: "youtube.com", with: "youtube-nocookie.com")// not working
         }
         
-        addLog(text:"Final video url is :- \(videoUrl)")// Added in v 2.27.419
+        addLog(text:"Final video url is :- \(LogPrivacy.site(videoUrl))")// Added in v 2.27.419
         print("Final video url is :- \(videoUrl)")
         let link = URL(string:videoUrl)!
         var request = URLRequest(url: link)
@@ -576,7 +580,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         btnTabVideo.isHidden = true
         isVideoLodded = false
         if var videoUrl = url{
-            addLog(text:"video url is :- \(videoUrl)")
+            addLog(text:"video url is :- \(LogPrivacy.site(videoUrl))")
             self.webView.isHidden = false
             isVideoLodded = true
             tabCount += 1
@@ -654,7 +658,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 }
                 //videoUrl = videoUrl.replacingOccurrences(of: "youtube.com", with: "youtube-nocookie.com")// // not working //
             }
-            addLog(text:"Final video url is :- \(videoUrl)")// Added in v 2.27.419
+            addLog(text:"Final video url is :- \(LogPrivacy.site(videoUrl))")// Added in v 2.27.419
             print("Final video url is :- \(videoUrl)")
             let link = URL(string:videoUrl)!
             var request = URLRequest(url: link)
@@ -832,7 +836,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 if let dic = filterArr.first{
                     currentRunningFocusType = dic
                     let lastIntentionUsed = dic["lastIntentionUsed"] as? String ?? ""
-                    addLog(text:"Task For Focus Mode :- \(lastIntentionUsed)")
+                    addLog(text:"Task For Focus Mode :- \(LogPrivacy.text(lastIntentionUsed))")
                     whatToAchieveInFocusBlock = lastIntentionUsed
                     appdelegate!.statusbutton?.imagePosition = .imageLeft
                     appdelegate!.setStatusBarButtonColorForFocusMode(color: nil, colorString: dic["color"] as? String ?? "")
@@ -1104,24 +1108,24 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             if shouldLaunchAppAndUrl{
                 textViewNotes.string = ""
                 if currentState == ._CUSTOM_ROUTINE_{
-                    UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
+                    SensitiveDefaults.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
                 }else{
-                    UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+                    SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
                 }
             }else{
                 if currentState == ._CUSTOM_ROUTINE_{
-                    textViewNotes.string = UserDefaults.standard.object(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes) as? String ?? ""
+                    textViewNotes.string = SensitiveDefaults.object(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes) as? String ?? ""
                 }else{
-                    textViewNotes.string = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
+                    textViewNotes.string = SensitiveDefaults.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
                 }
             }
             btnTabNotes.isHidden = false
             self.view.window?.makeFirstResponder(textViewNotes)
         }else{
             if currentState == ._CUSTOM_ROUTINE_{
-                UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
+                SensitiveDefaults.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
             }else{
-                UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+                SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
             }
             textViewNotes.string = ""
             textViewNotes.enclosingScrollView?.isHidden = true
@@ -1336,12 +1340,12 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         if take_notes == DURING_ACTIVITY{//  har jgh ye block load video k niche rakho
             textViewNotes.enclosingScrollView?.isHidden = false
             textViewNotes.string = ""
-            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastSpecaialActivitySavedNotes)
+            SensitiveDefaults.removeObject(forKey: kUserdefaultsLastSpecaialActivitySavedNotes)
             btnTabNotes.isHidden = false
             boxTakeNotes.isHidden = false
             tabCount += 1
         }else{
-            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastSpecaialActivitySavedNotes)
+            SensitiveDefaults.removeObject(forKey: kUserdefaultsLastSpecaialActivitySavedNotes)
             textViewNotes.string = ""
             textViewNotes.enclosingScrollView?.isHidden = true
             boxTakeNotes.isHidden = true
@@ -1682,12 +1686,12 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         if currentActivity.take_notes == DURING_ACTIVITY{//  har jgh ye block load video k niche rakho
             textViewNotes.enclosingScrollView?.isHidden = false
             textViewNotes.string = ""
-            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastActivitySavedNotes)
+            SensitiveDefaults.removeObject(forKey: kUserdefaultsLastActivitySavedNotes)
             boxTakeNotes.isHidden = false
             btnTabNotes.isHidden = false
             tabCount += 1
         }else{
-            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastActivitySavedNotes)
+            SensitiveDefaults.removeObject(forKey: kUserdefaultsLastActivitySavedNotes)
             textViewNotes.string = ""
             textViewNotes.enclosingScrollView?.isHidden = true
             boxTakeNotes.isHidden = true
@@ -2390,13 +2394,13 @@ extension timerViewcontroller:NSTextViewDelegate{
         }
         if textView == self.textViewNotes{
             if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
-                UserDefaults.standard.set(textViewNotes.string, forKey: kUserdefaultsLastHabitSavedNotes)
+                SensitiveDefaults.set(textViewNotes.string, forKey: kUserdefaultsLastHabitSavedNotes)
             }else if currentState == ._MICRO_BREAK_{
-                UserDefaults.standard.set(textViewNotes.string, forKey: kUserdefaultsLastActivitySavedNotes)
+                SensitiveDefaults.set(textViewNotes.string, forKey: kUserdefaultsLastActivitySavedNotes)
             }else if currentState == ._SPECIAL_ACTIVITY_{
-                UserDefaults.standard.set(textViewNotes.string, forKey: kUserdefaultsLastSpecaialActivitySavedNotes)
+                SensitiveDefaults.set(textViewNotes.string, forKey: kUserdefaultsLastSpecaialActivitySavedNotes)
             }else if currentState == ._CUSTOM_ROUTINE_{
-                UserDefaults.standard.set(textViewNotes.string, forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
+                SensitiveDefaults.set(textViewNotes.string, forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
             }
         }
     }

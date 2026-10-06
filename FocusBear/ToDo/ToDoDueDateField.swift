@@ -24,6 +24,8 @@ struct ToDoDueDateField: View {
     /// Calendar icon under the typed field instead of beside it — for a narrow column such as the
     /// task editor's TOP card, where a single row would not fit.
     var isStacked = false
+    /// The typed field's accessibility identifier, where a UI test needs to read it.
+    private let fieldIdentifier: String?
 
     /// What the field shows. Seeded from `day`, and re-seeded whenever the day moves underneath.
     @SwiftUI.State private var input: String
@@ -37,10 +39,11 @@ struct ToDoDueDateField: View {
     private static let hintFontSize: CGFloat = 11
     private static let settleDelay: TimeInterval = 0.6
 
-    init(day: Binding<Date?>, strings: ToDoStrings, isStacked: Bool = false) {
+    init(day: Binding<Date?>, strings: ToDoStrings, isStacked: Bool = false, fieldIdentifier: String? = nil) {
         _day = day
         self.strings = strings
         self.isStacked = isStacked
+        self.fieldIdentifier = fieldIdentifier
         _input = SwiftUI.State(initialValue: ToDoDueDateFieldText.text(for: day.wrappedValue))
     }
 
@@ -77,7 +80,8 @@ struct ToDoDueDateField: View {
 
     private var typedField: some View {
         ReturnGuardTextField(text: $input, placeholder: strings[.dueDatePlaceholder],
-                             onCommit: commitTypedDate, onEndEditing: commitTypedDate)
+                             onCommit: commitTypedDate, onEndEditing: commitTypedDate,
+                             accessibilityIdentifier: fieldIdentifier)
             .help(strings[.dueDateGrammarHelp])
     }
 

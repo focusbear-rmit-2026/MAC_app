@@ -178,6 +178,7 @@ struct EventFormHeaderView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(PlainButtonStyle())
+            .accessibilityIdentifier(UITestContract.Identifier.DayPlanEditors.eventFormCloseButton)
             // Esc used to be the old "Cancel" button's key equivalent; keep it working now that ✕ owns
             // dismissal.
             .keyboardShortcut(.cancelAction)

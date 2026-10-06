@@ -231,7 +231,7 @@ class focusTimerManager {
                                     extractedUrl = extractedUrl.removingPercentEncoding ?? extractedUrl
                                     let isAllowed = validation.isUrlValid(urlToCheck: extractedUrl, allowUrl: turl)
                                     if isAllowed{
-                                        addLog(text: "teacher session:- url unlocked (now on allow-list), auto-opening \(extractedUrl)")
+                                        addLog(text: "teacher session:- url unlocked (now on allow-list), auto-opening \(LogPrivacy.site(extractedUrl))")
                                         DispatchQueue.main.async {
                                             setUrlToBrowser(browser: currentBrowser, url: extractedUrl)
                                         }
@@ -422,6 +422,9 @@ class focusTimerManager {
                     
                 }else{
                     currentBrowserUrlForAi = ""
+                    BrowsingHistory.shared.record(.allowed, url: originalUrlStringFromBrowser, title: tabTitle,
+                                                  app: runningApp.bundleIdentifier, reason: BrowsingReason.allowedByFocusMode,
+                                                  focusMode: currentRunningFocusModeName)
                     if !isAllowedListApproachInFocus{//Always blocked URLs should be blocked immediately even in cuddly bear mode#476
                         var bool = false
                         let arrBlockedUrls = getBlockedUrlsToBlock()
@@ -673,7 +676,7 @@ class focusTimerManager {
 
                     if var extractedUrl = extractSubstring(from: url, start: "old_url=", end: "&focus_mode_end_time") {
                         extractedUrl = extractedUrl.removingPercentEncoding ?? extractedUrl
-                        addLog(text: "teacher session:- opening unlock request window for url: \(extractedUrl)")
+                        addLog(text: "teacher session:- opening unlock request window for url: \(LogPrivacy.site(extractedUrl))")
                         DispatchQueue.main.async {
                             teacherSessionManagerObject.showTeacherUnlockRequestWindow()
                             if let teacherUnlockRequestVcObj = teacherSessionManagerObject.teacherUnlockRequestWindow?.contentViewController as? teacherUnlockRequestVc{

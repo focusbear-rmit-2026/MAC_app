@@ -29,7 +29,8 @@ class skipHabitVc: NSViewController {
             lblTitle.stringValue = skipHabitVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
             btnDoHabit.title = skipHabitVcInfo.value(forKey: "buttonDoHabitsText") as? String ?? btnDoHabit.title
         }
-        
+        view.setUITestLandmark(UITestContract.Identifier.SessionsRegression.skipCountdownScreen)
+        btnDoHabit.setAccessibilityIdentifier(UITestContract.Identifier.SessionsRegression.skipCountdownKeepHabitButton)
     }
     
     override func viewWillDisappear() {

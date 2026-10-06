@@ -113,7 +113,7 @@ class chooseHabitsVC: NSViewController {
                             let currentDate = Date()
                             if currentDate > cutOffDate{
                                 addLog(text: "file chooseHabitsVC :- func viewWillAppear")// remove this
-                                addLog(text: "evening habit ignored:- this habit is high priority habit and cutoff time has passed:- \(arrPreFilteredEveningHabits[i].name)  \(arrPreFilteredEveningHabits[i].id)") // remove this
+                                addLog(text: "evening habit ignored:- this habit is high priority habit and cutoff time has passed:- \(LogPrivacy.text(arrPreFilteredEveningHabits[i].name))  \(arrPreFilteredEveningHabits[i].id)") // remove this
                                 continue;
                             }
                         }
@@ -196,7 +196,7 @@ class chooseHabitsVC: NSViewController {
         let date = Date().addingTimeInterval(TimeInterval(totalDuration))
         
         lblRequiredTime.stringValue = getStringTime(seconds: totalDuration)
-        lblCompletionTime.stringValue = getStringFromDate(date: date, dateFormat: "hh:mm a")
+        lblCompletionTime.stringValue = getDisplayStringFromDate(date: date, dateFormat: "hh:mm a")
         if totalDuration == 0{
             lblCompletionTime.isHidden = true
             lblTitleCompletionTime.isHidden = true

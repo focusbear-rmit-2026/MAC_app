@@ -176,12 +176,12 @@ struct VoiceCommandClient {
         let path = request.url?.path ?? ""
         session.dataTask(with: request as URLRequest) { data, response, error in
             guard let httpResponse = response as? HTTPURLResponse else {
-                addLog(text: "api voice \(path) error:- \(error?.localizedDescription ?? "no response")")
+                addLog(text: "api voice \(LogPrivacy.url(path)) error:- \(error?.localizedDescription ?? "no response")")
                 completion(nil, VoiceCommandResponseParser.noResponseStatusCode)
                 return
             }
             if !VoiceCommandResponseParser.successStatusCodes.contains(httpResponse.statusCode) {
-                addLog(text: "api voice \(path) Api error:- statusCode is \(httpResponse.statusCode)")
+                addLog(text: "api voice \(LogPrivacy.url(path)) Api error:- statusCode is \(httpResponse.statusCode)")
             }
             completion(data, httpResponse.statusCode)
         }.resume()

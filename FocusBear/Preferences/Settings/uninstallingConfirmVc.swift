@@ -215,6 +215,8 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
     }
     
     func clearAllData(){
+        closeAllCsvFiles()
+        SecureStore.shared.eraseAllData()
         let properties = [URLResourceKey.localizedNameKey, URLResourceKey.creationDateKey, URLResourceKey.contentModificationDateKey, URLResourceKey.localizedTypeDescriptionKey,URLResourceKey.nameKey]
         let array = try? FileManager.default.contentsOfDirectory(at: applicationSupportURL!, includingPropertiesForKeys: properties, options: .skipsHiddenFiles)
         if array != nil{

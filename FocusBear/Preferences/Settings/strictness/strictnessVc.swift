@@ -70,6 +70,8 @@ class strictnessVc: NSViewController {
             blockingScheduleTitle = settingsNew.value(forKey: "blockingScheduleSettingTitle") as? String ?? blockingScheduleTitle
             titleBlockLists = settingsNew.value(forKey: "titleBlockLists") as? String ?? titleBlockLists
         }
+        sliderStrictness.setAccessibilityLabel(lblTitleStrictnessLevel.stringValue)
+        sliderStrictness.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.strictnessSlider)
         
         if let blockedUrlsViewInfo = configjson.value(forKey: "blockedUrlsViewInfo") as? NSDictionary{
             blockedUrlsSettingTitle = blockedUrlsViewInfo.value(forKey: "title") as? String ?? blockedUrlsSettingTitle
@@ -140,6 +142,7 @@ class strictnessVc: NSViewController {
         blockListItemVcObj?.lblDescription.isHidden = true
         blockListItemVcObj?.toolTip = strictness_Block_Lists
         blockListItemVcObj?.delegate = self
+        blockListItemVcObj?.btnRow.setAccessibilityIdentifier(UITestContract.Identifier.Blocking.blockListsRow)
         
         
         //---Custom Blocking----
@@ -153,6 +156,7 @@ class strictnessVc: NSViewController {
         customBlockingVcObj?.lblDescription.isHidden = true
         customBlockingVcObj?.delegate = self
         customBlockingVcObj?.toolTip = strictness_Blocking_Schedules
+        customBlockingVcObj?.btnRow.setAccessibilityIdentifier(UITestContract.Identifier.Blocking.blockingSchedulesRow)
 
         stackView.addView(blockedURLsItemVcObj!.view, in: .bottom)
         blockedURLsItemVcObj?.lblTitle.stringValue = blockedUrlsSettingTitle
@@ -189,6 +193,7 @@ class strictnessVc: NSViewController {
         alwaysAllowedAppsItemVcObj?.lblDescription.isHidden = true
         alwaysAllowedAppsItemVcObj?.delegate = self
         alwaysAllowedAppsItemVcObj?.toolTip = strictness_AlwaysAllowedApps
+        alwaysAllowedAppsItemVcObj?.btnRow.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.alwaysAllowedAppsRow)
 
         stackView.addView(browserTabLimiterItemVcObj!.view, in: .bottom)
         browserTabLimiterItemVcObj?.lblTitle.stringValue = tabLimiterSettingTitle
@@ -196,6 +201,7 @@ class strictnessVc: NSViewController {
         browserTabLimiterItemVcObj?.lblDescription.isHidden = true
         browserTabLimiterItemVcObj?.delegate = self
         browserTabLimiterItemVcObj?.lineBottom.isHidden = true
+        browserTabLimiterItemVcObj?.btnRow.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.tabLimiterRow)
 
         arrForSearchFromSettings.append(["title": frictionItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": frictionItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": passwordItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": passwordItemVcObj!.bgBox as Any])

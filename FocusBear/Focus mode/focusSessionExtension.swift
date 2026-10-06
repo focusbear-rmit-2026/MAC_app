@@ -298,7 +298,7 @@ enum FocusSessionExtension {
         }
         whatToAchieveInFocusBlock = intentionAfterExtension(
             previousIntention: whatToAchieveInFocusBlock, reason: trimmed)
-        addLog(text: "extend: buddy reason recorded, intention is now \"\(whatToAchieveInFocusBlock)\"")
+        addLog(text: "extend: buddy reason recorded, intention is now \(LogPrivacy.text(whatToAchieveInFocusBlock))")
         allApiObject.capturePosthog(event: FocusExtensionAnalyticsEvent.buddyAnswered, metadata: [:])
     }
 

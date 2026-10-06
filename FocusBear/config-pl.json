@@ -137,6 +137,8 @@
     "trayIconBalloonText": "Focus Bear"
   },
   "menuView": {
+    "a11yOpenFocusBearMenu": "Otwórz menu Focus Bear",
+    "a11yHideFloatingBar": "Ukryj ten pasek",
     "blockingOffTitle": "Blokowanie jest wyłączone",
     "blockingAttentionTitle": "Blokowanie wymaga uwagi",
     "blockingPermissionsLimited": "Część funkcji blokowania może być niedostępna, bo brakuje uprawnienia macOS. Pozostałe blokowanie działa dalej.",
@@ -564,6 +566,7 @@
     "addNewHabit": "Dodaj nowy nawyk",
     "newHabitTitle": "Nowy nawyk",
     "habitPickEmoji": "Wybierz emoji",
+    "habitFieldIcon": "Ikona nawyku",
     "routineTimingQuestion": "O której ma się zaczynać %@?",
     "routineTimingHint": "To przesuwa rutynę w każdy zaplanowany dzień.",
     "eventScopeTitle": "To wydarzenie cykliczne",
@@ -630,6 +633,7 @@
     "requestFailedText": "Nie udało się przetworzyć żądania",
     "newTaskText": "Nowe zadanie",
     "searchPlaceholder": "Szukaj…",
+    "searchTasksText": "Szukaj zadań",
     "filterText": "Filtruj",
     "moreOptionsText": "Więcej opcji",
     "sortSmartText": "Inteligentnie",
@@ -1284,6 +1288,10 @@
     "buttonOwnUrlBrainDumpText": "Użyj własnego systemu do brain dump"
   },
   "focusMusicInfo": {
+    "a11yDownloadTrack": "Pobierz %@",
+    "a11yPlayTrack": "Odtwórz %@",
+    "a11yStopTrack": "Zatrzymaj %@",
+    "a11yRemoveTrack": "Usuń %@",
     "nowPlayingLabelText": "Teraz odtwarzane",
     "sectionTitleSpotify": "Spotify",
     "sectionTitleYouTubeMusic": "YouTube Music",
@@ -1397,6 +1405,8 @@
     "buttonAbortFocus": "Wstrzymaj niestandardowy harmonogram"
   },
   "preferencesInfo": {
+    "workRatioFieldLabel": "Minuty skupienia",
+    "breakRatioFieldLabel": "Minuty przerwy",
     "checkBoxFocusMusicText": "Automatycznie odtwarzaj muzykę do skupienia po rozpoczęciu sesji",
     "switchButtonFocusGlowBorderText": "Pokazuj świecącą obwódkę podczas sesji skupienia",
     "descriptionFocusGlowBorderText": "Wyświetla delikatnie świecącą obwódkę wokół ekranu podczas trwania sesji skupienia.",
@@ -3127,6 +3137,7 @@
   },
   "settingsNew": {
     "uiSettingTitle": "Interfejs",
+    "searchSettingsLabel": "Szukaj w ustawieniach",
     "accessibilitySettingTitle": "Ułatwienia dostępu",
     "aISettingTitle": "Funkcje AI",
     "pomodoroSettingTitle": "Sesje skupienia",

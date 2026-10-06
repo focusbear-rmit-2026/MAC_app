@@ -29,6 +29,7 @@ private struct ToDoSheetHeader<Trailing: View>: View {
                 .buttonStyle(AppOrangeButtonStyle(secondary: true, height: 30))
                 .keyboardShortcut(.cancelAction)
                 .disabled(!canClose)
+                .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.toolsSheetCloseButton)
         }
     }
 }
@@ -75,7 +76,8 @@ struct ToDoBrainDumpSheet: View {
 
     private var input: some View {
         VStack(alignment: .leading, spacing: 10) {
-            ToDoMultilineEditor(text: $store.brainDumpText, placeholder: strings[.brainDumpPlaceholder], height: 180)
+            ToDoMultilineEditor(text: $store.brainDumpText, placeholder: strings[.brainDumpPlaceholder], height: 180,
+                                accessibilityIdentifier: UITestContract.Identifier.TasksRegression.brainDumpEditor)
             HStack {
                 Text("\(store.brainDumpText.count) / \(ToDoStore.brainDumpCharLimit)").font(.system(size: 11)).foregroundColor(.secondary)
                 Spacer()
@@ -226,6 +228,8 @@ struct ToDoEisenhowerSheet: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(ToDoTheme.quadrantColor(quadrant).opacity(0.12))
         .cornerRadius(ToDoTheme.cornerRadius)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.matrixQuadrantPrefix + String(quadrant.rawValue))
     }
 }
 
@@ -275,6 +279,7 @@ struct ToDoProcrastinateSheet: View {
             HStack(spacing: 8) {
                 Text(strings[.url]).font(.system(size: 12, weight: .semibold)).frame(width: 40, alignment: .leading)
                 TextField("https://", text: $url, onCommit: add).textFieldStyle(RoundedBorderTextFieldStyle())
+                    .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.procrastinateUrlField)
             }
             if let error = urlError {
                 Text(error).font(.system(size: 11)).foregroundColor(ToDoTheme.overdue).padding(.leading, 48)

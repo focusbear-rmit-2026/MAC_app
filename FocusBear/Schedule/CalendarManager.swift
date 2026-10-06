@@ -85,6 +85,9 @@ final class CalendarManager {
     }
 
     func requestAccess(completion: @escaping (Bool) -> Void) {
+        // A UI-test build has its own bundle id, so a request would put a fresh system Calendar prompt
+        // in front of the tests. Tests run as "no calendar connected".
+        if UITestHost.isEnabled { completion(false); return }
         // Only an undetermined status shows a real system prompt — treat that as the user's calendar
         // connect attempt (an already-decided status returns immediately, no dialog, so don't log it).
         let isConnectAttempt = (access == .notDetermined)
@@ -121,6 +124,7 @@ final class CalendarManager {
     /// appears for an already-decided status, so this is safe to call while we're showing the banner.
     /// `completion` runs on the main thread once the status is refreshed.
     func revalidateAccess(_ completion: @escaping () -> Void) {
+        if UITestHost.isEnabled { DispatchQueue.main.async { completion() }; return }
         let handler: (Bool, Error?) -> Void = { granted, error in
             self.logPermissionCompletion(operation: "revalidate", granted: granted, error: error)
             DispatchQueue.main.async { completion() }
@@ -492,18 +496,18 @@ final class CalendarManager {
 
     // MARK: - Per-event private notes (local only, never written to the calendar)
 
-    private let privateNotesKey = "scheduleEventPrivateNotes"
+    private let privateNotesKey = kUserdefaultsScheduleEventPrivateNotes
 
     /// A private note the user keeps on an event — stored only in Focus Bear, so other attendees of
     /// a shared calendar event never see it.
     func privateNote(forEventID id: String) -> String? {
-        (UserDefaults.standard.dictionary(forKey: privateNotesKey) as? [String: String])?[id]
+        (SensitiveDefaults.dictionary(forKey: privateNotesKey) as? [String: String])?[id]
     }
 
     func setPrivateNote(_ note: String?, forEventID id: String) {
-        var map = (UserDefaults.standard.dictionary(forKey: privateNotesKey) as? [String: String]) ?? [:]
+        var map = (SensitiveDefaults.dictionary(forKey: privateNotesKey) as? [String: String]) ?? [:]
         if let note = note, !note.isEmpty { map[id] = note } else { map[id] = nil }
-        UserDefaults.standard.set(map, forKey: privateNotesKey)
+        SensitiveDefaults.set(map, forKey: privateNotesKey)
     }
 
     // MARK: - Local, day-plan-only overrides (events the user doesn't own)
@@ -548,10 +552,10 @@ final class CalendarManager {
         return (override.start, override.end)
     }
 
-    private let localOverridesKey = "scheduleEventLocalOverrides"
+    private let localOverridesKey = kUserdefaultsScheduleEventLocalOverrides
 
     private func localOverridesMap() -> [String: LocalEventOverride] {
-        guard let data = UserDefaults.standard.data(forKey: localOverridesKey),
+        guard let data = SensitiveDefaults.data(forKey: localOverridesKey),
               let map = try? JSONDecoder().decode([String: LocalEventOverride].self, from: data) else { return [:] }
         return map
     }
@@ -564,7 +568,7 @@ final class CalendarManager {
     func setLocalOverride(_ override: LocalEventOverride?, forEventID id: String) {
         var map = localOverridesMap()
         map[id] = override
-        if let data = try? JSONEncoder().encode(map) { UserDefaults.standard.set(data, forKey: localOverridesKey) }
+        if let data = try? JSONEncoder().encode(map) { SensitiveDefaults.set(data, forKey: localOverridesKey) }
         invalidateMeetingsCache()   // the overlaid title/time is baked into the cached meetings
     }
 
@@ -815,13 +819,7 @@ final class DayPlanSync {
         return !token.isEmpty && !uid.isEmpty
     }
 
-    private static let dayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.calendar = Calendar.current
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
+    private static let dayFormatter = MachineDateFormat.formatter(MachineDateFormat.dayKey)
 
     func dayString(_ date: Date) -> String { Self.dayFormatter.string(from: date) }
 

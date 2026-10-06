@@ -57,8 +57,9 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
-        
+        btnContinue.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.occupationContinueButton)
+        btnSkip.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.occupationSkipButton)
+        textFieldOccupation.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.occupationDetailField)
         
         lblDescription.stringValue = "I’ll suggest which websites to block and which ones are productive."
         btnContinue.title = "That’s me!"
@@ -330,6 +331,7 @@ extension askOccupationVc: NSCollectionViewDelegate, NSCollectionViewDataSource{
     func collectionView(_ collectionView: NSCollectionView, itemForRepresentedObjectAt indexPath: IndexPath) -> NSCollectionViewItem {
         let item = self.collectionView.makeItem(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "collectionViewItemOccupation"), for: indexPath) as! collectionViewItemOccupation
         item.lblTitle.stringValue = arrOccupations[indexPath.item]
+        item.lblTitle.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.occupationOptionPrefix + "\(indexPath.item)")
         if selectedIndex == indexPath.item{
             item.isItemSelected = true
         }else{

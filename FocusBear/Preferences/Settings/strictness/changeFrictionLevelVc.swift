@@ -64,6 +64,8 @@ class changeFrictionLevelVc: NSViewController {
         }
         
         btnCancel.isSecondaryButton = true
+        slider.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.strictnessSheetSlider)
+        btnCancel.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.strictnessSheetCancelButton)
     }
     override func viewDidAppear() {
         SettingsManagerObject.putUserLocalDeviceSettings()
@@ -133,7 +135,7 @@ class changeFrictionLevelVc: NSViewController {
             hideDockIcon()
             SettingsManagerObject.immediatelyBlockDistractingSites = true
             SettingsManagerObject.immediatelyBlockDistractingApps = true
-            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
+            if !SettingsManagerObject.isAppPasswordSet{
                 alertSetPasswordConfirm()
             }else{
                 self.dismiss(self)
@@ -155,7 +157,7 @@ class changeFrictionLevelVc: NSViewController {
             SettingsManagerObject.immediatelyBlockDistractingSites = false
             SettingsManagerObject.immediatelyBlockDistractingApps = false
             SettingsManagerObject.isSettingsChanged = true
-            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
+            if !SettingsManagerObject.isAppPasswordSet{
                 alertSetPasswordConfirm()
             }else{
                 self.dismiss(self)

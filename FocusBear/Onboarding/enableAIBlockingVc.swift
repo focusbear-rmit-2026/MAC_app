@@ -25,7 +25,8 @@ class enableAIBlockingVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        btnContinue.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.enableAiBlockingButton)
+        btnNoThanks.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.declineAiBlockingButton)
         
         lblPointFirst.stringValue = "The AI never knows who you are."
         lblPointSecond.stringValue = "Your browsing stays private - we don't share it with AI providers."

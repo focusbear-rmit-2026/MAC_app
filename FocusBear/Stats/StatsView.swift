@@ -24,6 +24,7 @@ struct StatsScreen: View {
                     .padding(20)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .accessibilityIdentifier(UITestContract.Identifier.Stats.content)
         }
         .background(StatsPalette.page)
     }
@@ -36,6 +37,7 @@ struct StatsScreen: View {
                     ForEach(StatsTab.allCases) { tab in
                         StatsTabButton(title: tab.title(strings), systemImage: tab.systemImage,
                                        isSelected: store.selectedTab == tab) { store.selectedTab = tab }
+                            .accessibilityIdentifier(UITestContract.Identifier.Stats.tabPrefix + tab.rawValue)
                     }
                 }
                 .padding(.vertical, 2)
@@ -108,6 +110,7 @@ struct StatsCard<Content: View>: View {
         .background(StatsPalette.card)
         .cornerRadius(10)
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(StatsPalette.separator, lineWidth: 1))
+        .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.statsCard)
     }
 }
 
@@ -147,6 +150,7 @@ struct StatsEmptyState: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
+        .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.statsEmptyState)
     }
 }
 
@@ -163,6 +167,7 @@ struct StatsErrorView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
+        .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.statsError)
     }
 }
 

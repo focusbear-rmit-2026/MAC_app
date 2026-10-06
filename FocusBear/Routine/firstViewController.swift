@@ -68,7 +68,7 @@ class firstViewController: NSViewController {
     var shouldIgnoreVisualizeInstructions = false
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        btnStartFirstHabit.setAccessibilityIdentifier(UITestContract.Identifier.Routine.startFirstHabitButton)
         
         btnStartFirstHabit.cell?.wraps = true
         btnSelectHabitsToDo.title = "I don't have time for all these habits"
@@ -752,7 +752,7 @@ class firstViewController: NSViewController {
         addLog(text: "[user-action] btnStartFirstHabitClicked")
         self.timer?.invalidate()
         self.isTimerGoingOn = false
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{//qki enter per ye button handle hai  or jha se handle h vha condition lganase accha yahi lagadi (enterv  password per bhi default enter key code h button per )
+        if SettingsManagerObject.isAppPasswordSet{//qki enter per ye button handle hai  or jha se handle h vha condition lganase accha yahi lagadi (enterv  password per bhi default enter key code h button per )
             if enterPasswordVcObj != nil{
                 if mainViewControllerObj!.view.subviews.contains(enterPasswordVcObj!.view){
                     return;
@@ -796,7 +796,7 @@ class firstViewController: NSViewController {
                                 let currentDate = Date()
                                 if currentDate > cutOffDate{
                                     addLog(text: " func btnStartFirstHabitClicked")// remove this
-                                    addLog(text: "evening habit skipped:- this first habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[i].name)  \(arrFilteredEveningHabits[i].id)") // remove this
+                                    addLog(text: "evening habit skipped:- this first habit is high priority habit but cutoff time of this habit has passed:- \(LogPrivacy.text(arrFilteredEveningHabits[i].name))  \(arrFilteredEveningHabits[i].id)") // remove this
                                     continue;
                                 }
                             }

@@ -26,7 +26,7 @@ big wins) · **P2** structural (plan refactors) · **P3** hygiene.
 
 | # | Finding | Where | Detail |
 |---|---|---|---|
-| P0-1 | **Access tokens logged in plaintext** | `AllApi.swift:139, 816, 905, …` (dozens of sites) | `addLog(text: "accessToken is:- \(token)")` writes bearer tokens to the on-disk debug log — the same log bundled into report-problem uploads and `~/FocusBear-Claude-Tasks/`. Remove all token logging. |
+| P0-1 | ~~**Access tokens logged in plaintext**~~ — fixed | `log.swift` `addLog` | The last four `accessToken is:-` lines are gone, and every line now passes through `LogRedactor` (JWTs, `Bearer`, token/password fields, emails). Logs written before the fix are rewritten once at launch (`LegacyLogScrubber`), and report extracts are redacted again on the way out. |
 | P0-2 | **Notarization credentials committed** | `DMG/build.sh:9`, `pkg/2build.sh:20` | Apple ID (personal gmail) + app-specific password in plaintext in two scripts. Rotate the password and move to env vars / CI secrets. (Already flagged in CLAUDE.md.) |
 | P0-3 | **Sentry `sendDefaultPii = true`** with `debug = true` in release | `AppDelegate.swift:189-193` | PII shipped to Sentry; debug logging on in production builds. |
 

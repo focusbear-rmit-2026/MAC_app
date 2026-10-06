@@ -78,7 +78,7 @@ extension AllApi {
     /// so validation errors are visible in the app log.
     private func performNotesRequest(path: String, method: String, body: Data?,
                                      completionHandler: @escaping (_ data: Data?, _ statusCode: Int) -> ()) {
-        addLog(text: "func call:- api notes \(method) \(path)")
+        addLog(text: "func call:- api notes \(method) \(LogPrivacy.url(path))")
         appdelegate!.credentialsManager.credentials { credentialsInfo in
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             guard appdelegate!.credential != nil, let url = NSURL(string: "\(baseUrl)\(path)") else {
@@ -93,12 +93,12 @@ extension AllApi {
             }
             let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
                 guard let httpResponse = response as? HTTPURLResponse else {
-                    addLog(text: "api notes \(method) \(path) error:- \(error?.localizedDescription ?? "no response")")
+                    addLog(text: "api notes \(method) \(LogPrivacy.url(path)) error:- \(error?.localizedDescription ?? "no response")")
                     completionHandler(nil, 0)
                     return
                 }
                 if httpResponse.statusCode != 200 {
-                    addLog(text: "api notes \(method) \(path) Api error:- statusCode is \(httpResponse.statusCode)")
+                    addLog(text: "api notes \(method) \(LogPrivacy.url(path)) Api error:- statusCode is \(httpResponse.statusCode)")
                     self.writeJsonInLog(data: data)
                 }
                 completionHandler(data, httpResponse.statusCode)

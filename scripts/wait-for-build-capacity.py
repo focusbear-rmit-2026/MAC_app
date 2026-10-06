@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """Wait for safe macOS build capacity without launching or stopping any application."""
 
+import os
 import re
+import shutil
 import subprocess
 import sys
 import time
 
+BYTES_PER_GIB = 1024 ** 3
+MIN_FREE_DISK_BYTES = 5 * BYTES_PER_GIB
 MIN_FREE_PERCENT = 20
 MAX_FREE_PERCENT = 100
 MAX_LOAD = 20
@@ -17,6 +21,8 @@ NO_MATCH_EXIT_CODE = 1
 
 def check_capacity():
     try:
+        build_directory = os.environ.get("RUNNER_TEMP") or os.getcwd()
+        disk = shutil.disk_usage(build_directory)
         memory = subprocess.run(["memory_pressure"], capture_output=True, text=True,
                                 timeout=COMMAND_TIMEOUT_SECONDS, check=True)
         load = subprocess.run(["sysctl", "-n", "vm.loadavg"], capture_output=True, text=True,
@@ -25,6 +31,10 @@ def check_capacity():
                                   timeout=COMMAND_TIMEOUT_SECONDS, check=False)
     except (OSError, subprocess.SubprocessError) as error:
         return False, f"capacity probe unavailable: {type(error).__name__}"
+    if (not all(isinstance(value, int) and not isinstance(value, bool) for value in disk)
+            or disk.total <= 0 or not 0 <= disk.free <= disk.total
+            or not 0 <= disk.used <= disk.total):
+        return False, "capacity probe returned invalid disk inventory"
     memory_match = re.search(r"free percentage:\s*(\d+)%", memory.stdout)
     load_match = re.fullmatch(r"\s*\{\s*([0-9]+(?:\.[0-9]+)?)\s+[0-9.]+\s+[0-9.]+\s*\}\s*", load.stdout)
     if not memory_match or not load_match or builders.returncode not in (0, NO_MATCH_EXIT_CODE):
@@ -34,8 +44,10 @@ def check_capacity():
     if not 0 <= free_percent <= MAX_FREE_PERCENT:
         return False, "capacity probe returned invalid memory percentage"
     has_builder = builders.returncode == 0
-    ready = free_percent >= MIN_FREE_PERCENT and one_minute_load < MAX_LOAD and not has_builder
-    return ready, f"memory free={free_percent}%, 1-minute load={one_minute_load:g}, xcodebuild active={has_builder}"
+    ready = (disk.free >= MIN_FREE_DISK_BYTES and free_percent >= MIN_FREE_PERCENT
+             and one_minute_load < MAX_LOAD and not has_builder)
+    return ready, (f"disk free={disk.free / BYTES_PER_GIB:.2f} GiB (minimum {MIN_FREE_DISK_BYTES / BYTES_PER_GIB:g}), "
+                   f"memory free={free_percent}%, 1-minute load={one_minute_load:g}, xcodebuild active={has_builder}")
 
 
 def wait_for_capacity():

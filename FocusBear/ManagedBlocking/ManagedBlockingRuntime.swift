@@ -46,6 +46,9 @@ final class ManagedBlockingRuntime: ObservableObject {
     private var appealedResources = Set<String>()
     private var failedBrowserIds = Set<Int>()
     private let navigationGate = ManagedNavigationGate()
+    /// A UI test installed the policy (`installForUITests`): there is no stored session to restore or
+    /// replace, and no identity, so nothing here can reach the keychain or the server.
+    private var isUITestFixture = false
 
     var sessionToken: UUID { sessionGeneration }
     var hasManagedIdentity: Bool { navigationGate.hasManagedIdentity }
@@ -60,6 +63,9 @@ final class ManagedBlockingRuntime: ObservableObject {
     }
 
     func restoreLastSession() {
+        #if DEBUG
+        if let fixture = UITestManagedSafetyFixture.requestedPolicy { return installForUITests(fixture) }
+        #endif
         startTimer()
         // Keychain access can block while macOS is recovering the login keychain. Do not hold AppKit
         // startup hostage to the optional managed-session restore; the routine UI and its ordinary
@@ -75,6 +81,7 @@ final class ManagedBlockingRuntime: ObservableObject {
     }
 
     func authenticatedSessionReady() {
+        guard !isUITestFixture else { return }
         guard let user = appdelegate?.user?.userId, !user.isEmpty, !currentDeviceId.isEmpty else { return }
         guard ManagedIdentityRules.permitsSwitch(isSupervised: isSettingsLocked, currentUser: userId, newUser: user) else {
             clockStatus = "uncertain"
@@ -91,7 +98,7 @@ final class ManagedBlockingRuntime: ObservableObject {
     }
 
     var isSignedInAsWrongAccount: Bool {
-        isSettingsLocked && appdelegate?.user?.userId != nil && appdelegate?.user?.userId != userId
+        !isUITestFixture && isSettingsLocked && appdelegate?.user?.userId != nil && appdelegate?.user?.userId != userId
     }
 
     func signOutWrongAccount() {
@@ -110,11 +117,33 @@ final class ManagedBlockingRuntime: ObservableObject {
             let alert = NSAlert()
             alert.messageText = ManagedBlockingText.value("settingsLocked", fallback: "Settings are locked. A parent must approve home schedule changes.")
             alert.addButton(withTitle: ManagedBlockingText.value("close", fallback: "Close"))
+                .setAccessibilityIdentifier(UITestContract.Identifier.ManagedSafety.settingsLockedAlertCloseButton)
             if let window = NSApp.keyWindow { alert.beginSheetModal(for: window, completionHandler: nil) }
             else { alert.runModal() }
         }
         return false
     }
+
+    #if DEBUG
+    /// A UI test's managed policy, in memory only (`UITestManagedSafetyFixture` gates it to the `.uitests`
+    /// build launched with `--uiTest`). The store is never touched, so nothing reaches the keychain, and
+    /// the timer never starts, so nothing refreshes, polls a browser or sends a receipt. The identity stays
+    /// empty, which `ManagedBlockingAPI.request` refuses before any network call — so even the inspector's
+    /// Refresh and the home editor's approval request stay on this Mac.
+    func installForUITests(_ fixture: UITestManagedSafetyFixture.PolicyState) {
+        isUITestFixture = true
+        effectivePolicy = fixture.snapshot
+        activePolicy = fixture.snapshot.activePolicy(at: fixture.now)
+        isSettingsLocked = fixture.snapshot.settingsLocked
+        syncState = fixture.syncState
+        lastSyncedAt = fixture.lastSyncedAt
+        clockStatus = "trusted"
+        serverAnchor = fixture.now
+        wallAnchor = Date(); uptimeAnchor = ProcessInfo.processInfo.systemUptime
+        updateNavigationGate()
+        addLog(text: "ManagedBlockingRuntime: UI-test policy installed (\(fixture.syncState.rawValue))")
+    }
+    #endif
 
     func checkCurrentBrowserNow() {
         DispatchQueue.main.async { if self.isSettingsLocked { self.pollBrowser() } }

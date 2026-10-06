@@ -225,6 +225,8 @@ struct HabitEditView: View {
             }
             .buttonStyle(FBButtonStyle())
             .help(ScheduleText.habitCancel)
+            // The footer's Cancel does the same; VoiceOver announcing two "Cancel"s reads as two actions.
+            .accessibilityHidden(true)
         }
         .padding(.horizontal, 18).padding(.vertical, 12)
         .background(FBColor.accent)
@@ -242,12 +244,16 @@ struct HabitEditView: View {
     private var basicsRow: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
+                // VoiceOver reads a SwiftUI field's placeholder as its only name, and this one is a glyph.
                 TextField(Self.iconPlaceholder, text: $model.values.icon)
                     .frame(width: 48)
                     .multilineTextAlignment(.center)
                     .help(ScheduleText.habitPickEmoji)
+                    .accessibilityLabel(ScheduleText.habitFieldIcon)
                 emojiPickerButton
                 TextField(ScheduleText.habitFieldName, text: $model.values.name)
+                    .accessibilityLabel(ScheduleText.habitFieldName)
+                    .accessibilityIdentifier(UITestContract.Identifier.DayPlanEditors.habitNameField)
             }
             HStack(spacing: 14) {
                 Toggle(ScheduleText.habitFieldUseTimer, isOn: $model.values.usesTimer)
@@ -256,6 +262,7 @@ struct HabitEditView: View {
                 } else {
                     Text(ScheduleText.habitFieldCompletion).font(.fbRegular(13))
                     TextField("", text: $model.values.completionRequirement)
+                        .accessibilityLabel(ScheduleText.habitFieldCompletion)
                 }
             }
         }
@@ -268,9 +275,11 @@ struct HabitEditView: View {
             Text(ScheduleText.habitFieldDurationLabel).font(.fbRegular(13))
             TextField("", value: $model.values.durationMinutesPart, formatter: Self.minutesFormatter)
                 .frame(width: Self.durationFieldWidth)
+                .accessibilityLabel(durationFieldLabel(unit: ScheduleText.habitDurationMinutesUnit))
             unitLabel(ScheduleText.habitDurationMinutesUnit)
             TextField("", value: $model.values.durationSecondsPart, formatter: Self.secondsFormatter)
                 .frame(width: Self.durationFieldWidth)
+                .accessibilityLabel(durationFieldLabel(unit: ScheduleText.habitDurationSecondsUnit))
             unitLabel(ScheduleText.habitDurationSecondsUnit)
             Text(HabitDurationText.short(seconds: model.values.durationSeconds))
                 .font(.fbSemibold(12)).foregroundColor(.secondary).padding(.leading, 4)
@@ -279,6 +288,11 @@ struct HabitEditView: View {
 
     private func unitLabel(_ text: String) -> some View {
         Text(text).font(.fbRegular(12)).foregroundColor(.secondary)
+    }
+
+    /// The two duration fields are told apart on screen only by the unit beside each one.
+    private func durationFieldLabel(unit: String) -> String {
+        "\(ScheduleText.habitFieldDurationLabel) (\(unit))"
     }
 
     /// Shown in the empty icon field so a new habit's blank emoji slot reads as one.
@@ -292,6 +306,7 @@ struct HabitEditView: View {
         }
         .buttonStyle(FBButtonStyle())
         .help(ScheduleText.habitPickEmoji)
+        .accessibilityLabel(ScheduleText.habitPickEmoji)
     }
 
     // MARK: Tab strip
@@ -352,7 +367,7 @@ struct HabitEditView: View {
         if model.showsCutoff {
             Toggle(ScheduleText.habitFieldCutoff, isOn: $model.values.cutoffEnabled)
             if model.values.cutoffEnabled {
-                MinutesTimePicker(minutes: $model.values.cutoffMinutes)
+                MinutesTimePicker(title: ScheduleText.habitFieldCutoff, minutes: $model.values.cutoffMinutes)
                     .padding(.leading, 20)
             }
         }
@@ -480,6 +495,7 @@ struct HabitEditView: View {
             SwiftUI.Button(action: onCancel) { Text(ScheduleText.habitCancel) }
                 .buttonStyle(AppOrangeButtonStyle(secondary: true))
                 .keyboardShortcut(.cancelAction)
+                .accessibilityIdentifier(UITestContract.Identifier.DayPlanEditors.habitEditorCancelButton)
             SwiftUI.Button(action: onSave) { Text(ScheduleText.habitSave) }
                 .buttonStyle(AppOrangeButtonStyle(secondary: false))
                 .disabled(model.validationMessage != nil)
@@ -553,6 +569,8 @@ struct RoutineTimingView: View {
     let onSave: (Int, Int?) -> Void
     let onCancel: () -> Void
 
+    private var timingQuestion: String { String(format: ScheduleText.routineTimingQuestion, routineName) }
+
     private var cutoffIsValid: Bool {
         !showsCutoff || DayPlanRoutineDraft.isEveningCutoffValid(cutoffEnabled ? cutoffMinutes : nil,
             eveningStart: minutes, morningStart: morningStartMinutes)
@@ -560,17 +578,18 @@ struct RoutineTimingView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(String(format: ScheduleText.routineTimingQuestion, routineName))
+            Text(timingQuestion)
                 .font(.fbSemibold(16))
                 .fixedSize(horizontal: false, vertical: true)
-            MinutesTimePicker(minutes: $minutes)
+            MinutesTimePicker(title: timingQuestion, minutes: $minutes)
             Text(ScheduleText.routineTimingHint).font(.fbRegular(12)).foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             if showsCutoff {
                 VStack(alignment: .leading, spacing: 6) {
                     Toggle(ScheduleText.routineCutoffLabel, isOn: $cutoffEnabled).font(.fbMedium(13))
+                        .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.routineTimingCutoffToggle)
                     if cutoffEnabled {
-                        MinutesTimePicker(minutes: $cutoffMinutes).accessibilityLabel(ScheduleText.routineCutoffLabel)
+                        MinutesTimePicker(title: ScheduleText.routineCutoffLabel, minutes: $cutoffMinutes)
                         Text(ScheduleText.routineCutoffHint).font(.fbRegular(12)).foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -585,6 +604,7 @@ struct RoutineTimingView: View {
                 SwiftUI.Button(action: onCancel) { Text(ScheduleText.habitCancel) }
                     .buttonStyle(AppOrangeButtonStyle(secondary: true))
                     .keyboardShortcut(.cancelAction)
+                    .accessibilityIdentifier(UITestContract.Identifier.DayPlanEditors.routineTimingCancelButton)
                 SwiftUI.Button(action: { onSave(minutes, showsCutoff && cutoffEnabled ? cutoffMinutes : nil) }) { Text(ScheduleText.habitSave) }
                     .buttonStyle(AppOrangeButtonStyle(secondary: false))
                     .keyboardShortcut(.defaultAction)
@@ -602,10 +622,12 @@ struct RoutineTimingView: View {
 /// An hour:minute picker bound to minutes-since-midnight (the form's unit for cutoffs and routine starts).
 @available(macOS 11.0, *)
 struct MinutesTimePicker: View {
+    /// What VoiceOver calls the field and its up/down stepper — the visible label sits beside it.
+    let title: String
     @Binding var minutes: Int
 
     var body: some View {
-        DatePicker("", selection: dateBinding, displayedComponents: .hourAndMinute)
+        DatePicker(title, selection: dateBinding, displayedComponents: .hourAndMinute)
             .labelsHidden()
             .fixedSize()
     }

@@ -26,6 +26,9 @@ struct NoteRichTextEditor: NSViewRepresentable {
     @Binding var html: String
     let placeholder: String
     let controller: NoteEditorController
+    /// What VoiceOver calls the editor. The placeholder is drawn by hand, so without a label the text
+    /// view was announced with no name at all; falls back to the placeholder when nothing better is shown.
+    var accessibilityName: String? = nil
 
     static let baseFontSize: CGFloat = 14
 
@@ -43,6 +46,7 @@ struct NoteRichTextEditor: NSViewRepresentable {
         let textView = NoteTextView()
         textView.delegate = context.coordinator
         textView.placeholder = placeholder
+        textView.setAccessibilityLabel(accessibilityName ?? placeholder)
         textView.minSize = NSSize(width: 0, height: 0)
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         textView.isVerticallyResizable = true
@@ -63,6 +67,7 @@ struct NoteRichTextEditor: NSViewRepresentable {
         context.coordinator.parent = self
         guard let textView = scrollView.documentView as? NoteTextView else { return }
         textView.placeholder = placeholder
+        textView.setAccessibilityLabel(accessibilityName ?? placeholder)
         // Only reload when the value changed from outside the editor (e.g. the brain dump arriving from
         // the API); the editor's own edits already match and reloading would reset the cursor.
         if html != context.coordinator.lastEmittedHTML {

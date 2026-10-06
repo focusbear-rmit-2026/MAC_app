@@ -184,7 +184,7 @@ final class SmartSnoozePopover: NSObject, NSTextFieldDelegate, NSPopoverDelegate
     static let fieldWidth: CGFloat = 230
     static let suggestionDateFormat = "EEE d MMM"
     private static let previewDateFormat = "EEE d MMM yyyy"
-    private static let inputIdentifier = NSUserInterfaceItemIdentifier("snoozeInput")
+    private static let inputIdentifier = NSUserInterfaceItemIdentifier(UITestContract.Identifier.TasksRegression.snoozeField)
     private static let padding: CGFloat = 14
     private static let infoIconSize: CGFloat = 15
 
@@ -282,8 +282,10 @@ final class SmartSnoozePopover: NSObject, NSTextFieldDelegate, NSPopoverDelegate
 
         let move = cursorButton(title: ScheduleText.tasksSnoozeConfirm, target: self, action: #selector(moveClicked))
         move.bezelStyle = .rounded; move.keyEquivalent = "\r"
+        move.setAccessibilityIdentifier(UITestContract.Identifier.TasksRegression.snoozeMoveButton)
         let cancel = cursorButton(title: ScheduleText.tasksSnoozeCancel, target: self, action: #selector(cancelClicked))
         cancel.bezelStyle = .rounded; cancel.keyEquivalent = "\u{1b}"
+        cancel.setAccessibilityIdentifier(UITestContract.Identifier.TasksRegression.snoozeCancelButton)
         let buttons = NSStackView(views: [NSView(), cancel, move])
         buttons.orientation = .horizontal; buttons.spacing = 8
 

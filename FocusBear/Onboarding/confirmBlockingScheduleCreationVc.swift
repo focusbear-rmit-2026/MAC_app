@@ -22,7 +22,8 @@ class confirmBlockingScheduleCreationVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        btnNo.setAccessibilityIdentifier(UITestContract.Identifier.Onboarding.skipBlockingScheduleButton)
+        btnYes.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.createBlockingScheduleButton)
         lblTitle.stringValue = "Add a New Blocking Schedule"
         lblSubTitle.stringValue = "You can have distracting sites and apps blocked during work hours or at night ⏰"
         btnNo.title = "No thanks"

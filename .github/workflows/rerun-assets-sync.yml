@@ -1,0 +1,61 @@
+name: Re-run Assets Sync Checks
+
+# config-assets-sync.yml only runs on pull_request events, so a Mac PR that went red because its
+# new strings weren't on Focus-Bear/assets main yet stays red after the assets PR merges. This
+# workflow re-runs exactly those checks once assets main has every key the run reported missing;
+# PRs still waiting on keys are listed in the log and left alone. See
+# scripts/rerun-assets-sync-checks.py.
+#
+# Triggers:
+#   - repository_dispatch (type `assets-merged`): sent by Focus-Bear/assets'
+#     .github/workflows/notify-mac-app.yml on every push to its main that touches config/**,
+#     i.e. right after an assets PR merges. That needs the MAC_APP_DISPATCH_TOKEN secret in the
+#     assets repo; without it nothing fires and this is a manual job.
+#   - workflow_dispatch: run it by hand from the Actions tab (e.g. for a merge made while the
+#     dispatch token was missing).
+#   - pull_request: when this workflow or its scripts change, run the unit tests and a dry run
+#     (never re-runs anything from a PR).
+# repository_dispatch / workflow_dispatch only fire from the default branch.
+#
+# Focus-Bear/assets is public, so GITHUB_TOKEN can read its config; no extra secret is needed here.
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [assets-merged]
+  pull_request:
+    paths:
+      - 'scripts/rerun-assets-sync-checks.py'
+      - 'scripts/test-rerun-assets-sync-checks.py'
+      - 'scripts/check-config-assets-sync.py'
+      - '.github/workflows/rerun-assets-sync.yml'
+
+# Several assets PRs merged in a row send one dispatch each. Every run re-evaluates every open PR
+# against the assets main of that moment, so a newer run makes an older one redundant: cancel it
+# and let the burst collapse to the last run. The re-run itself is idempotent, so a run cancelled
+# halfway loses nothing. PR dry runs get their own group so they never cancel a real one.
+concurrency:
+  group: rerun-assets-sync${{ github.event_name == 'pull_request' && format('-pr-{0}', github.ref) || '' }}
+  cancel-in-progress: true
+
+jobs:
+  rerun-assets-sync:
+    name: Re-run assets sync checks whose keys have landed
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: write
+      pull-requests: read
+      contents: read
+    steps:
+      - name: Checkout Mac-App
+        uses: actions/checkout@v4
+
+      - name: Unit-test the re-run decision logic
+        run: python3 scripts/test-rerun-assets-sync-checks.py
+
+      - name: Re-run sync checks whose missing keys are now on assets main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN_FLAG: ${{ github.event_name == 'pull_request' && '--dry-run' || '' }}
+        run: python3 scripts/rerun-assets-sync-checks.py $DRY_RUN_FLAG

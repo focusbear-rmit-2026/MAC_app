@@ -396,6 +396,7 @@ class simplePomodoroVc: NSViewController {
         }
         alertWarning.addButton(withTitle: buttonBlockText)
         alertWarning.addButton(withTitle: buttonNoText)
+            .setAccessibilityIdentifier(UITestContract.Identifier.FocusStart.declineBlockingButton)
         alertWarning.beginSheetModal(for: window, completionHandler: { [weak self] modalResponse in
             guard let self = self else { return }
             if modalResponse == .alertFirstButtonReturn {
@@ -560,7 +561,7 @@ class simplePomodoroVc: NSViewController {
             // Matches pomodoroVc's advanced start path.
             focusModeTaskString = state.taskQueueForSessionStart
             arrFocusType[i]["lastTaskUsed"] = focusModeTaskString
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
             updateAllFocusModes()
             taskCreatedByBlockPopup = ""
             appdelegate!.setStatusBarButtonColorForFocusMode(color: nil, colorString: arrFocusType[i]["color"] as? String ?? "")

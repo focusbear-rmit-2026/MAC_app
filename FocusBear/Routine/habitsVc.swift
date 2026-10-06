@@ -24,7 +24,7 @@ class habitsVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        btnAbort.setAccessibilityIdentifier(UITestContract.Identifier.Routine.postponeButton)
         lblMessage.stringValue = "OK - Stay focused throughout the day!"
         lblMessage.isHidden = true
         btnAbort.title = "Please spare me"
@@ -106,9 +106,9 @@ class habitsVc: NSViewController {
         refreshDateTimeClockVisibility()
         if let dict = UserDefaults.standard.persistentDomain(forName: "com.apple.menuextra.clock") {
             print(dict)
-            lblCurrentDateTime.stringValue = getStringFromDate(date: Date(), dateFormat: dict["DateFormat"] as? String ?? "EEE d MMM h:mm:ss")
+            lblCurrentDateTime.stringValue = getDisplayStringFromDate(date: Date(), dateFormat: dict["DateFormat"] as? String ?? "EEE d MMM h:mm:ss")  // i18n-ignore: a date pattern, not text
         }else{
-            lblCurrentDateTime.stringValue = getStringFromDate(date: Date(), dateFormat: "EEE d MMM h:mm:ss")
+            lblCurrentDateTime.stringValue = getDisplayStringFromDate(date: Date(), dateFormat: "EEE d MMM h:mm:ss")  // i18n-ignore: a date pattern, not text
         }
     }
     
@@ -1146,7 +1146,7 @@ class habitsVc: NSViewController {
         }
         if isLastActivityStoppedInRunningState && lastActivityRunningId == arrFilteredEveningHabits[0].id{
             isLastActivityStoppedInRunningState = false
-            addLog(text:"func showAllEveningHabits:- Activity Postpone In Running State:- start direct \(arrFilteredEveningHabits[0].name ?? "") in running state")
+            addLog(text:"func showAllEveningHabits:- Activity Postpone In Running State:- start direct \(LogPrivacy.text(arrFilteredEveningHabits[0].name)) in running state")
             removeSubViews()
             self.showCloseButtons()
             
@@ -1163,7 +1163,7 @@ class habitsVc: NSViewController {
                 arrFilteredEveningHabits.insert(habit, at: 0)
             }
             isLastActivityStoppedInRunningState = false
-            addLog(text:"func showAllEveningHabits:- app terminate In Running State:- start direct \(arrFilteredEveningHabits[0].name ?? "") in running state")
+            addLog(text:"func showAllEveningHabits:- app terminate In Running State:- start direct \(LogPrivacy.text(arrFilteredEveningHabits[0].name)) in running state")
             removeSubViews()
             self.showCloseButtons()
             currentHabitIndex = 0
@@ -1178,7 +1178,7 @@ class habitsVc: NSViewController {
             
         }else{
             addLog(text:"func showAllEveningHabits:- show All Evening Habits")
-            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+            SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
             isLastActivityStoppedInRunningState = false
             isPromptToRememberHabitShowedInLastHabit = false
             self.showCloseButtons()
@@ -1266,7 +1266,7 @@ class habitsVc: NSViewController {
         }
         if isLastActivityStoppedInRunningState && lastActivityRunningId == arrFilteredMorningHabits[0].id{
             isLastActivityStoppedInRunningState = false
-            addLog(text:"func showAllMorningHabits:- Activity Postpone In Running State:- start direct \(arrFilteredMorningHabits[0].name ?? "") in running state")
+            addLog(text:"func showAllMorningHabits:- Activity Postpone In Running State:- start direct \(LogPrivacy.text(arrFilteredMorningHabits[0].name)) in running state")
             removeSubViews()
             self.showCloseButtons()
             
@@ -1285,7 +1285,7 @@ class habitsVc: NSViewController {
             }
             
             isLastActivityStoppedInRunningState = false
-            addLog(text:"func showAllMorningHabits:- app terminate In Running State:- start direct \(arrFilteredMorningHabits[0].name ?? "") in running state")
+            addLog(text:"func showAllMorningHabits:- app terminate In Running State:- start direct \(LogPrivacy.text(arrFilteredMorningHabits[0].name)) in running state")
             removeSubViews()
             self.showCloseButtons()
             currentHabitIndex = 0
@@ -1300,7 +1300,7 @@ class habitsVc: NSViewController {
             
         }else{
             addLog(text:"func showAllMorningHabits:- show All Morning Habits")
-            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+            SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
             isLastActivityStoppedInRunningState = false
             isPromptToRememberHabitShowedInLastHabit = false
             lastShownRandomChoiceDic = [String:activityChoice]()
@@ -1398,7 +1398,7 @@ class habitsVc: NSViewController {
         removeCompletedHabitsForMorningEveningRoutine()
         
         addLog(text: "Showing morning/evening habits from habit completed back button.")
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+        SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         isLastActivityStoppedInRunningState = false
         isPromptToRememberHabitShowedInLastHabit = false
         lastShownRandomChoiceDic = [String:activityChoice]()
@@ -1513,7 +1513,7 @@ class habitsVc: NSViewController {
                         let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
                         let currentDate = Date()
                         if currentDate > cutOffDate{
-                            addLog(text: "evening habit skipped:- cutoff time for this first habit passed:- \(arrFilteredEveningHabits[i].name)  \(arrFilteredEveningHabits[i].id)") // remove this
+                            addLog(text: "evening habit skipped:- cutoff time for this first habit passed:- \(LogPrivacy.text(arrFilteredEveningHabits[i].name))  \(arrFilteredEveningHabits[i].id)") // remove this
                             continue;
                         }
                     }
@@ -1697,7 +1697,7 @@ class habitsVc: NSViewController {
         }
         if isLastActivityStoppedInRunningState && lastActivityRunningId == arrFilteredMorningHabits[index].id{
             isLastActivityStoppedInRunningState = false
-            addLog(text:"func startDirectIncompleteMorningHabitAtIndex:- Activity Postpone In Running State:- start direct \(arrFilteredMorningHabits[index].name ?? "") in running state")
+            addLog(text:"func startDirectIncompleteMorningHabitAtIndex:- Activity Postpone In Running State:- start direct \(LogPrivacy.text(arrFilteredMorningHabits[index].name)) in running state")
             
             currentHabitIndex = index
             habitsView.addSubview(timerViewcontrollerObj!.view)
@@ -1709,7 +1709,7 @@ class habitsVc: NSViewController {
             
         }else if lastSavedActivityTime.compare(startDate) == .orderedDescending && lastSavedActivityId == arrFilteredMorningHabits[index].id{
             isLastActivityStoppedInRunningState = false
-            addLog(text:"func startDirectIncompleteMorningHabitAtIndex:- app terminate In Running State:- start direct \(arrFilteredMorningHabits[index].name ?? "") in running state")
+            addLog(text:"func startDirectIncompleteMorningHabitAtIndex:- app terminate In Running State:- start direct \(LogPrivacy.text(arrFilteredMorningHabits[index].name)) in running state")
             
             currentHabitIndex = index
             if lastSavedActivityProgress > arrFilteredMorningHabits[currentHabitIndex].durationSeconds{
@@ -1731,7 +1731,7 @@ class habitsVc: NSViewController {
             }
             
             isLastActivityStoppedInRunningState = false
-            addLog(text:"func startDirectIncompleteMorningHabitAtIndex:- app terminate In Running State:- start direct \(arrFilteredMorningHabits[index].name ?? "") in running state")
+            addLog(text:"func startDirectIncompleteMorningHabitAtIndex:- app terminate In Running State:- start direct \(LogPrivacy.text(arrFilteredMorningHabits[index].name)) in running state")
             
             currentHabitIndex = index
             if lastSavedActivityProgress > arrFilteredMorningHabits[currentHabitIndex].durationSeconds{
@@ -1763,7 +1763,7 @@ class habitsVc: NSViewController {
     
     func showRoutineAllHabits(routineIndex:Int){
         addLog(text: "func showRoutineAllHabits:- Showing Routine habits.")
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
+        SensitiveDefaults.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
         closeEasyPostponeWindowIfVisible()
         if currentAction == ._VISUALIZE_{// did this beacuse we dont want user do to visualize again if he has don once for a habit
             currentState = ._CUSTOM_ROUTINE_
@@ -1833,7 +1833,7 @@ class habitsVc: NSViewController {
         }
         
         if lastSavedActivityTime.compare(startDate) == .orderedDescending && lastSavedActivityId == arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[index].id{
-            addLog(text:"func startDirectIncompleteCustomRoutineHabitAtIndex:- app terminate In Running State:- start direct \(arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[index].name ?? "") in running state")
+            addLog(text:"func startDirectIncompleteCustomRoutineHabitAtIndex:- app terminate In Running State:- start direct \(LogPrivacy.text(arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[index].name)) in running state")
             
             currentHabitIndex = index
             if lastSavedActivityProgress > arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[currentHabitIndex].durationSeconds{
@@ -1856,7 +1856,7 @@ class habitsVc: NSViewController {
                 arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.insert(habit, at: index)
             }
             let arrHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits
-            addLog(text:"func startDirectIncompleteCustomRoutineHabitAtIndex:- app terminate In Running State:- start direct \(arrFilteredMorningHabits[index].name ?? "") in running state")
+            addLog(text:"func startDirectIncompleteCustomRoutineHabitAtIndex:- app terminate In Running State:- start direct \(LogPrivacy.text(arrFilteredMorningHabits[index].name)) in running state")
             
             currentHabitIndex = index
             if lastSavedActivityProgress > arrHabits[currentHabitIndex].durationSeconds{
@@ -1985,7 +1985,7 @@ class habitsVc: NSViewController {
                                 let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
                                 let currentDate = Date()
                                 if currentDate > cutOffDate{
-                                    addLog(text: "evening habit skipped:- cutoff time for this incomplete habit passed:- \(arrFilteredEveningHabits[i].name ?? "")  \(arrFilteredEveningHabits[i].id ?? "")") // remove this
+                                    addLog(text: "evening habit skipped:- cutoff time for this incomplete habit passed:- \(LogPrivacy.text(arrFilteredEveningHabits[i].name))  \(arrFilteredEveningHabits[i].id ?? "")") // remove this
                                     lastActivityIndex = -1
                                 }
                             }
@@ -2010,7 +2010,7 @@ class habitsVc: NSViewController {
         
         if isLastActivityStoppedInRunningState && lastActivityRunningId == arrFilteredEveningHabits[index].id{
             isLastActivityStoppedInRunningState = false
-            addLog(text:"func startDirectIncompleteEveningHabitAtIndex:- Activity Postpone In Running State:- start direct\(arrFilteredEveningHabits[index].name ?? "")in running state")
+            addLog(text:"func startDirectIncompleteEveningHabitAtIndex:- Activity Postpone In Running State:- start direct\(LogPrivacy.text(arrFilteredEveningHabits[index].name))in running state")
             
             currentHabitIndex = index
             habitsView.addSubview(timerViewcontrollerObj!.view)
@@ -2020,7 +2020,7 @@ class habitsVc: NSViewController {
             timerViewcontrollerObj?.tryStartTimerHabit(durationSeconds: arrFilteredEveningHabits[currentHabitIndex].durationSeconds, name: arrFilteredEveningHabits[currentHabitIndex].name!, currentHabit: arrFilteredEveningHabits[currentHabitIndex], currentTimerValue:lastActivityStoppedTimerCount)
         }else if lastSavedActivityTime.compare(shutOffdate) == .orderedDescending && lastSavedActivityId == arrFilteredEveningHabits[index].id{
             isLastActivityStoppedInRunningState = false
-            addLog(text:"func startDirectIncompleteEveningHabitAtIndex:- app terminate In Running State:- start direct \(arrFilteredEveningHabits[index].name ?? "") in running state")
+            addLog(text:"func startDirectIncompleteEveningHabitAtIndex:- app terminate In Running State:- start direct \(LogPrivacy.text(arrFilteredEveningHabits[index].name)) in running state")
             
             currentHabitIndex = index
             if lastSavedActivityProgress > arrFilteredEveningHabits[currentHabitIndex].durationSeconds{
@@ -2042,7 +2042,7 @@ class habitsVc: NSViewController {
             }
             
             isLastActivityStoppedInRunningState = false
-            addLog(text:"func startDirectIncompleteEveningHabitAtIndex:- app terminate In Running State:- start direct \(arrFilteredEveningHabits[index].name ?? "") in running state")
+            addLog(text:"func startDirectIncompleteEveningHabitAtIndex:- app terminate In Running State:- start direct \(LogPrivacy.text(arrFilteredEveningHabits[index].name)) in running state")
             
             currentHabitIndex = index
             if lastSavedActivityProgress > arrFilteredEveningHabits[currentHabitIndex].durationSeconds{
@@ -2090,8 +2090,8 @@ class habitsVc: NSViewController {
         UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
         
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
+        SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+        SensitiveDefaults.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
         leftMenuVcObj?.habitOver()
         currentHabitIndex = -1
         hideBlankWindowInSecondaryMonitor()
@@ -2110,8 +2110,8 @@ class habitsVc: NSViewController {
         UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
         
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
+        SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+        SensitiveDefaults.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
         leftMenuVcObj?.habitOver()
         shutOffMac()
         currentHabitIndex = -1
@@ -2271,18 +2271,18 @@ class habitsVc: NSViewController {
                         if arrFilteredEveningHabits[currentHabitIndex].isPriorityHigh{
                             newIndexFound = true
                         }else{
-                            addLog(text: "evening habit skipped:- this next habit is not High Priority habit:- \(arrFilteredEveningHabits[currentHabitIndex].name)  \(arrFilteredEveningHabits[currentHabitIndex].id)") // remove this
+                            addLog(text: "evening habit skipped:- this next habit is not High Priority habit:- \(LogPrivacy.text(arrFilteredEveningHabits[currentHabitIndex].name))  \(arrFilteredEveningHabits[currentHabitIndex].id)") // remove this
                             currentHabitIndex = currentHabitIndex + 1
                         }
                     }else{
-                        addLog(text: "evening habit skipped:- cutoff time for this next habit passed:- \(arrFilteredEveningHabits[currentHabitIndex].name)  \(arrFilteredEveningHabits[currentHabitIndex].id)") // remove this
+                        addLog(text: "evening habit skipped:- cutoff time for this next habit passed:- \(LogPrivacy.text(arrFilteredEveningHabits[currentHabitIndex].name))  \(arrFilteredEveningHabits[currentHabitIndex].id)") // remove this
                         currentHabitIndex = currentHabitIndex + 1
                     }
                 }else{
                     if arrFilteredEveningHabits[currentHabitIndex].isPriorityHigh{
                         newIndexFound = true
                     }else{
-                        addLog(text: "evening habit skipped:- this next habit is not High Priority habit and this habit has no cutOffTime:- \(arrFilteredEveningHabits[currentHabitIndex].name)  \(arrFilteredEveningHabits[currentHabitIndex].id)") // remove this
+                        addLog(text: "evening habit skipped:- this next habit is not High Priority habit and this habit has no cutOffTime:- \(LogPrivacy.text(arrFilteredEveningHabits[currentHabitIndex].name))  \(arrFilteredEveningHabits[currentHabitIndex].id)") // remove this
                         currentHabitIndex = currentHabitIndex + 1
                     }
                     
@@ -2382,8 +2382,8 @@ class habitsVc: NSViewController {
         UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
         
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
+        SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+        SensitiveDefaults.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
         hideCloseButtons()
         removeSubViews()
         // Morning routine done: no "stay focused for the day" message — the app stays open on the Day

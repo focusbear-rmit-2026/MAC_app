@@ -188,6 +188,7 @@ struct CustomRoutineManagerView: View {
             }
             .buttonStyle(FBButtonStyle())
             .help(ScheduleText.habitCancel)
+            .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.customRoutineManagerCloseButton)
         }
         .padding(.horizontal, 18).padding(.vertical, 12)
         .background(FBColor.accent)
@@ -242,6 +243,7 @@ private struct CustomRoutineListView: View {
                 Spacer()
                 SwiftUI.Button(action: { model.startNewRoutine() }) { Text(ScheduleText.customRoutineNew) }
                     .buttonStyle(AppOrangeButtonStyle(secondary: false))
+                    .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.customRoutineNewButton)
             }
             .padding(16)
         }
@@ -347,6 +349,7 @@ private struct CustomRoutineEditView: View {
     @ViewBuilder private var fields: some View {
         labelled(ScheduleText.customRoutineFieldName) {
             TextField(ScheduleText.customRoutineFieldName, text: $model.form.name)
+                .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.customRoutineNameField)
         }
         labelled(ScheduleText.customRoutineFieldTrigger) {
             Picker("", selection: $model.form.triggerOnDemand) {
@@ -362,10 +365,10 @@ private struct CustomRoutineEditView: View {
         }
         if !model.form.triggerOnDemand {
             labelled(ScheduleText.customRoutineFieldStart) {
-                MinutesTimePicker(minutes: $model.form.startMinutes)
+                MinutesTimePicker(title: ScheduleText.customRoutineFieldStart, minutes: $model.form.startMinutes)
             }
             labelled(ScheduleText.customRoutineFieldEnd) {
-                MinutesTimePicker(minutes: $model.form.endMinutes)
+                MinutesTimePicker(title: ScheduleText.customRoutineFieldEnd, minutes: $model.form.endMinutes)
             }
         } else {
             Text(ScheduleText.customRoutineOnDemandHint)
@@ -451,6 +454,7 @@ private struct CustomRoutineEditView: View {
                 SwiftUI.Button(action: { model.backToList() }) { Text(ScheduleText.habitCancel) }
                     .buttonStyle(AppOrangeButtonStyle(secondary: true))
                     .keyboardShortcut(.cancelAction)
+                    .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.customRoutineEditCancelButton)
                 SwiftUI.Button(action: saveOrCreate) { Text(saveTitle) }
                     .buttonStyle(AppOrangeButtonStyle(secondary: false))
                     .disabled(model.formValidationMessage != nil)

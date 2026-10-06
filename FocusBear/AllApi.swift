@@ -325,7 +325,7 @@ class AllApi:NSObject {
         if data != nil{
             do {
                 if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                    addLog(text: "json is:- \(jsonResult)")
+                    addLog(text: "json is:- \(LogPrivacy.structure(jsonResult))")
                 }
             }catch{
                 
@@ -521,75 +521,18 @@ class AllApi:NSObject {
             distinct_id = globalUUID
         }
         
-        var properties = [String:Any]()
-        
-        
-        
-        for key in metadata.keys{
-            properties[key] = metadata[key]
-        }
-        var event_data = [String : Any]()
-        event_data = ["data":properties]
-        
-        var json: [String: Any] = [
-            "event_type": event,
-            "user_properties": [
-                "USERNAME": currentUserName,
-                "id": distinct_id,
-                "USES_MAC_APP": true
-            ],
-            "event_data": event_data
-        ]
-        
-        json["operating_system"] = "macos"// for new events endpoint #1536 v 2.28.436
-        json["app_version"] = getAppVersionInString()// #1255// 
-        EventBuffer.shared.addEvent(json)
-
-        
-        
-        
-        /* old work
-        let responsePath = "\(baseUrl)/events"
-        if let responsePathUrl = NSURL(string: responsePath){
-            let request = makeRequest(responsePathUrl: responsePathUrl)
-            request.httpMethod = "POST";
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            let jsonData = try? JSONSerialization.data(withJSONObject: json)
-            request.httpBody = jsonData
-            let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                data, response, error in
-                
-                if let httpResponse = response as? HTTPURLResponse{
-                    if httpResponse.statusCode == 204{ //it means it is right
-                        print("api call captureEventEndpoint success")
-                        // addLog(text: "api call captureEventEndpoint success")
-                        return;
-                    }else{
-                        addLog(text: "api call captureEventEndpoint error:- statusCode is \(httpResponse.statusCode)")
-                        self.writeJsonInLog(data: data)
-                        return
-                    }
-                }
-                if error != nil {
-                    addLog(text: "api call captureEventEndpoint error: \(error!.localizedDescription)")
-                    return
-                }
-                
-                return
-            }
-            
-            task.resume()
-        }else{
-            
-            return
-        }
-         */
+        EventBuffer.shared.addEvent(TrackEventPayload.make(event: event, metadata: metadata, userId: distinct_id,
+                                                           userName: currentUserName,
+                                                           appVersion: getAppVersionInString()))
     }
     
     func capturePosthog(event:String, metadata:[String:Any]){
-        if currentUserEmail.lowercased().contains("internaltest") || isTestUser{
-            return;
+        // The email is only known once the account details call returns; the shared-suite flag
+        // remembers an internal account from the previous launch until then.
+        let isInternalTestUser = InternalTestUser.isInternal(email: currentUserEmail)
+            || (appdelegate?.sharedDefaults.map(InternalTestUser.isRecorded(in:)) ?? false)
+        if isInternalTestUser || isTestUser {
+            return
         }
         // CI/E2E builds boot to the welcome screen on cloud runners and would otherwise inflate the
         // PostHog onboarding funnel with fake "users" (Focus-Bear/analytics#33). Kill telemetry here.
@@ -621,7 +564,7 @@ class AllApi:NSObject {
             if isGeekModeEnabled{
                 mode = "geek-mode"
             }
-            let lastQuitReason = UserDefaults.standard.object(forKey: kUserDefaultsLastQuitReason) as? String ?? ""
+            let lastQuitReason = SensitiveDefaults.object(forKey: kUserDefaultsLastQuitReason) as? String ?? ""
             var properties = [String:Any]()
             
             properties["distinct_id"] = distinct_id
@@ -664,7 +607,7 @@ class AllApi:NSObject {
             }
             
             
-            if let lastQuitReason = UserDefaults.standard.object(forKey: kUserDefaultsLastQuitReason) as? String{
+            if let lastQuitReason = SensitiveDefaults.object(forKey: kUserDefaultsLastQuitReason) as? String{
                 json["last-quit-reason"] = lastQuitReason
             }
             
@@ -815,8 +758,7 @@ class AllApi:NSObject {
                                         if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
                                             
                                             addLog(text: "api call user-local-device-settings success")
-                                            print(jsonResult)
-                                            addLog(text: "User Local Device Settings:- \(jsonResult)")
+                                            addLog(text: "User Local Device Settings:- \(LogPrivacy.structure(jsonResult))")
                                             completionHandler(jsonResult)
                                             return
                                         }
@@ -4117,7 +4059,7 @@ class AllApi:NSObject {
                     if isTaskRequiredToAlignToFocusIntention() {
                         json["task_must_align_to_focus_intention"] = true
                     }
-                    addLog(text: "chatGPTIsURLSafe: json data for api is:- \(json)")// will remove it after some time // from all chatgpt functions // 2.27.427
+                    addLog(text: "chatGPTIsURLSafe: request \(LogPrivacy.structure(json))")
                     request.timeoutInterval = 15
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)
                     request.httpBody = jsonData
@@ -4217,7 +4159,7 @@ class AllApi:NSObject {
                     if isTaskRequiredToAlignToFocusIntention() {
                         json["task_must_align_to_focus_intention"] = true
                     }
-                    addLog(text: "chatGPTIsURLSafeWithNewIntention: json data for api is:- \(json)")// will remove it after some time
+                    addLog(text: "chatGPTIsURLSafeWithNewIntention: request \(LogPrivacy.structure(json))")
                     request.timeoutInterval = 22
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)
                     request.httpBody = jsonData
@@ -4324,7 +4266,7 @@ class AllApi:NSObject {
 //                    if let tabTitle = tabTitle{
 //                        json["tab_title"] = tabTitle
 //                    }
-                    addLog(text: "chatGPTIsAppSafe: json data for api is:- \(json)")// will remove it after some time
+                    addLog(text: "chatGPTIsAppSafe: request \(LogPrivacy.structure(json))")
                     request.timeoutInterval = 15
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)
                     request.httpBody = jsonData
@@ -4420,7 +4362,7 @@ class AllApi:NSObject {
                     if isTaskRequiredToAlignToFocusIntention() {
                         json["task_must_align_to_focus_intention"] = true
                     }
-                    addLog(text: "chatGPTIsAppSafeWithNewIntention: json data for api is:- \(json)")// will remove it after some time
+                    addLog(text: "chatGPTIsAppSafeWithNewIntention: request \(LogPrivacy.structure(json))")
                     request.timeoutInterval = 15
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)
                     request.httpBody = jsonData
@@ -4607,7 +4549,7 @@ class AllApi:NSObject {
                                                 arrAllFocusModeTags.append(stringAny)
                                             }
                                             
-                                            UserDefaults.standard.set(arrAllFocusModeTags, forKey: kUserdefaultsAllFocusModesTags)
+                                            SensitiveDefaults.set(arrAllFocusModeTags, forKey: kUserdefaultsAllFocusModesTags)
                                             return
                                         }
                                         
@@ -5135,7 +5077,7 @@ class AllApi:NSObject {
             
             let occupation = UserDefaults.standard.object(forKey: kUserDefaultsSelectedOccupationForPosthog) as? String ?? ""
             let goals = UserDefaults.standard.object(forKey: kUserDefaultsCustomGoals) as? String ?? ""
-            let lastQuitReason = UserDefaults.standard.object(forKey: kUserDefaultsLastQuitReason) as? String ?? ""
+            let lastQuitReason = SensitiveDefaults.object(forKey: kUserDefaultsLastQuitReason) as? String ?? ""
         
             var properties = [String:Any]()
             
@@ -5243,7 +5185,7 @@ class AllApi:NSObject {
                                 if data != nil{
                                     do {
                                         if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                            addLog(text: "json is:- \(jsonResult)")
+                                            addLog(text: "json is:- \(LogPrivacy.structure(jsonResult))")
                                             completionHandler(true, jsonResult)
                                             return;
                                         }
@@ -5662,7 +5604,7 @@ class AllApi:NSObject {
                                 if data != nil{
                                     do {
                                         if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                            addLog(text: "json is:- \(jsonResult)")
+                                            addLog(text: "json is:- \(LogPrivacy.structure(jsonResult))")
                                             if let message = jsonResult.value(forKey: "message") as? String{
                                                 completionHandler(false, message)
                                                 return;
@@ -6643,7 +6585,6 @@ class AllApi:NSObject {
                 let responsePath = "\(baseUrl)/class-session/\(sessionId)/join"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call joinClassSession \(responsePathUrl)")
-                    let token = appdelegate!.credential!.accessToken
 
                     let request = makeRequest(responsePathUrl: responsePathUrl)
                     request.httpMethod = "POST";
@@ -6684,7 +6625,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call joinClassSession error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return;
                             }
@@ -6745,7 +6685,6 @@ class AllApi:NSObject {
                 let responsePath = "\(baseUrl)/class-session/\(sessionId)/decline"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call declineClassSession \(responsePathUrl)")
-                    let token = appdelegate!.credential!.accessToken
 
                     let request = makeRequest(responsePathUrl: responsePathUrl)
                     request.httpMethod = "POST";
@@ -6772,7 +6711,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call declineClassSession error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return;
                             }
@@ -6831,7 +6769,6 @@ class AllApi:NSObject {
             let responsePath = "\(baseUrl)/class-session/\(sessionId)/tasks/\(taskId)/complete"
             guard let responsePathUrl = NSURL(string: responsePath) else { completionHandler(false); return }
             addLog(text: "api call setClassSessionTaskCompleted \(responsePathUrl)")
-            let token = appdelegate!.credential!.accessToken
 
             let request = makeRequest(responsePathUrl: responsePathUrl)
             request.httpMethod = complete ? "POST" : "DELETE"
@@ -6856,7 +6793,6 @@ class AllApi:NSObject {
                         // 400 session ended / not joined, 404 task not in session — revert the row.
                         addLog(text: "api call setClassSessionTaskCompleted error:- statusCode is \(httpResponse.statusCode)")
                         self.writeJsonInLog(data: data)
-                        addLog(text: "accessToken is:- \(token)")
                         completionHandler(false)
                         return
                     }
@@ -6883,7 +6819,6 @@ class AllApi:NSObject {
                 let responsePath = "\(baseUrl)/class-session/current"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call getCurrentClassSession \(responsePathUrl)")
-                    let token = appdelegate!.credential!.accessToken
 
                     let request = makeRequest(responsePathUrl: responsePathUrl)
                     request.httpMethod = "GET";
@@ -6918,7 +6853,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call getCurrentClassSession error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil)
                                 return;
                             }
@@ -7030,7 +6964,6 @@ class AllApi:NSObject {
                 let responsePath = "\(baseUrl)/class-session/\(sessionId)/unlock-requests"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call requestClassUnlock \(responsePathUrl)")
-                    let token = appdelegate!.credential!.accessToken
 
                     let request = makeRequest(responsePathUrl: responsePathUrl)
                     request.httpMethod = "POST";
@@ -7063,7 +6996,6 @@ class AllApi:NSObject {
                             }else{
                                 addLog(text: "api call requestClassUnlock error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
                                 return;
                             }
@@ -7147,7 +7079,7 @@ final class EventBuffer {
     // batches over 30 days per the #1767 investigation (a single flush can accumulate a lot of
     // events if the app's been offline, or the earlier events include unusually large metadata).
     // Conservative limits, well under AWS API Gateway/Lambda's payload ceilings.
-    private let maxEventsPerChunk = 200
+    static let maxEventsPerChunk = 200
     private let maxChunkBytes = 1_000_000 // 1MB
 
     // Backoff after a 4xx — the endpoint told us the request itself is bad (or, per Denzel's
@@ -7160,6 +7092,8 @@ final class EventBuffer {
     private let maxBackoffSeconds: TimeInterval = 30 * 60
 
     private init() {
+        // Once per launch, so a debug log shows which stack every batch below went to.
+        addLog(text: "EventBuffer: posting to the \(EventsEndpoint.current.rawValue) events stack for this launch (\(EventsEndpoint.environmentKey)=\(EventsEndpoint.disabledValue) or \(EventsEndpoint.forceV1LaunchArgument) forces v1)")
         startBatchTimer()
     }
 
@@ -7203,7 +7137,7 @@ extension EventBuffer {
         var currentBytes = 0
         for event in batch {
             let eventBytes = (try? JSONSerialization.data(withJSONObject: event))?.count ?? 0
-            if !current.isEmpty && (current.count >= maxEventsPerChunk || currentBytes + eventBytes > maxChunkBytes) {
+            if !current.isEmpty && (current.count >= Self.maxEventsPerChunk || currentBytes + eventBytes > maxChunkBytes) {
                 chunks.append(current)
                 current = []
                 currentBytes = 0
@@ -7215,11 +7149,14 @@ extension EventBuffer {
         return chunks
     }
 
-    private func sendBatchToServer(_ batch: [[String: Any]]) {
-        guard let url = URL(string: "https://events.aws.focusbear.io/events")
-        else { return }
+    /// Posts `event` straight away, outside the 30-second queue, through the same request path, and
+    /// hands back the HTTP status (nil when there was no reply). For the UI tests' events probe.
+    func sendNow(_ event: [String: Any], onReply: @escaping (Int?) -> Void) {
+        sendBatchToServer([event], onReply: onReply)
+    }
 
-//        var request = URLRequest(url: url)
+    private func sendBatchToServer(_ batch: [[String: Any]], onReply: ((Int?) -> Void)? = nil) {
+        let url = EventsEndpoint.current.url
         let request = makeRequest(responsePathUrl: url as NSURL)
         request.httpMethod = "POST"
 
@@ -7227,12 +7164,14 @@ extension EventBuffer {
             request.httpBody = try JSONSerialization.data(withJSONObject: batch, options: [])
         } catch {
             print("JSON error:", error)
+            onReply?(nil)
             return
         }
 
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         URLSession.shared.dataTask(with: request as URLRequest) { [weak self] data, response, error in
+            defer { onReply?((response as? HTTPURLResponse)?.statusCode) }
             if let error = error {
                 print("Upload error:", error)
                 addLog(text: "api call events error: \(error.localizedDescription)")
@@ -7256,7 +7195,7 @@ extension EventBuffer {
                 return
             }
 
-            addLog(text: "api call captureEventEndpoint error:- statusCode is \(http.statusCode)")
+            addLog(text: "api call captureEventEndpoint error:- statusCode is \(http.statusCode) from the \(EventsEndpoint.current.rawValue) events stack")
             allApiObject.writeJsonInLog(data: data)
 
             if (400...499).contains(http.statusCode){

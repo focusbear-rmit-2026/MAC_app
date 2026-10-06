@@ -264,12 +264,12 @@ class routinePostponedInfoVc: NSViewController {
                                     let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
                                     let currentDate = Date()
                                     if currentDate > cutOffDate{
-                                        addLog(text: "evening habit skipped:- running late cutoff time passed for this habit:- \(habit.name)  \(habit.id)") // remove this
+                                        addLog(text: "evening habit skipped:- running late cutoff time passed for this habit:- \(LogPrivacy.text(habit.name))  \(habit.id)") // remove this
                                         continue;
                                     }
                                 }
                             }else{
-                                addLog(text: "evening habit skipped:- Global cutoffTime passed and this habit is not high priority habit:- \(habit.name)  \(habit.id)")
+                                addLog(text: "evening habit skipped:- Global cutoffTime passed and this habit is not high priority habit:- \(LogPrivacy.text(habit.name))  \(habit.id)")
                                 continue
                             }
                         }
@@ -277,7 +277,7 @@ class routinePostponedInfoVc: NSViewController {
                         if RoutineHabitSchedule.shouldPlay(habitId: habit.id, daysOfWeek: habit.days_of_week, on: today) {
                             arrFilteredEveningHabits.append(habit)
                         }else{
-                            addLog(text: "evening habit skipped:- not scheduled for today or skipped ahead \(habit.days_of_week):- \(habit.name)  \(habit.id)") // remove this
+                            addLog(text: "evening habit skipped:- not scheduled for today or skipped ahead \(habit.days_of_week):- \(LogPrivacy.text(habit.name))  \(habit.id)") // remove this
                         }
                     }
                     
@@ -528,8 +528,8 @@ class routinePostponedInfoVc: NSViewController {
             
             
             UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
-            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
-            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
+            SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+            SensitiveDefaults.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
             currentHabitIndex = -1
             habitsVcObj?.showHabitState()
         }
@@ -667,8 +667,8 @@ class routinePostponedInfoVc: NSViewController {
             
             
             UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
-            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
-            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
+            SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+            SensitiveDefaults.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
             currentHabitIndex = -1
             habitsVcObj?.showHabitState()
         }
@@ -720,7 +720,7 @@ class routinePostponedInfoVc: NSViewController {
                             let currentDate = Date()
                             if currentDate > cutOffDate{
                                 addLog(text: "routinePostponedInfoVc func btnPlayClicked")// remove this
-                                addLog(text: "routinePostponedInfoVc evening habit skipped:- this first habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[i].name)  \(arrFilteredEveningHabits[i].id)") // remove this
+                                addLog(text: "routinePostponedInfoVc evening habit skipped:- this first habit is high priority habit but cutoff time of this habit has passed:- \(LogPrivacy.text(arrFilteredEveningHabits[i].name))  \(arrFilteredEveningHabits[i].id)") // remove this
                                 continue;
                             }
                         }

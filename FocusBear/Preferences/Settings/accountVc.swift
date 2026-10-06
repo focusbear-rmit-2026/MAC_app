@@ -43,6 +43,7 @@ class accountVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        lblEmaiId.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.accountEmail)
         // Do view setup here.
         lblSubscriptionDetails.stringValue = "Subscription Details"
         lblStatus.stringValue = "Status:"
@@ -57,6 +58,7 @@ class accountVc: NSViewController {
         lblTitleName.stringValue = "Leaderboard Username:"
         lblTitleEmailId.stringValue = "Email Id:"
         btnLogout.title = "Logout"
+        btnLogout.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.logoutButton)
         btnResetPassword.title = "Reset Password"
         if let accountVcInfo = configjson.value(forKey: "accountVcInfo") as? NSDictionary{
             lblTitle.stringValue = accountVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
@@ -97,6 +99,9 @@ class accountVc: NSViewController {
             btnEditUserName.toolTip = accountVcInfo.value(forKey: "editUsernameTooltip") as? String ?? btnEditUserName.toolTip
             btnCancelEditing.toolTip = accountVcInfo.value(forKey: "cancelUsernameTooltip") as? String ?? btnCancelEditing.toolTip
         }
+        // Icon-only buttons: the tooltip is the only text that says what they do.
+        btnEditUserName.setAccessibilityLabel(btnEditUserName.toolTip)
+        btnCancelEditing.setAccessibilityLabel(btnCancelEditing.toolTip)
         setUsernameEditMode(false)
     }
     
@@ -229,8 +234,6 @@ class accountVc: NSViewController {
             self.btnUpdate.isEnabled = true
             if statusCode == 200 {
                 currentLeaderboardUsername = newUsername
-                appdelegate?.sharedDefaults?.setValue(currentLeaderboardUsername, forKeyPath: kUserdefaultsSharedLeaderboardUsername)
-                appdelegate?.sharedDefaults?.synchronize()
                 self.setUsernameEditMode(false)   // back to label + edit icon
                 self.reloadView()
                 allApiObject.capturePosthog(event: "leaderboard-username-updated", metadata: [:])
@@ -332,9 +335,9 @@ class accountVc: NSViewController {
                 addLog(text:"isEmailVerified :- \(isEmailVerified)")
                 currentUserEmail = dic?.value(forKey: "email") as? String ?? ""
                 currentUserName = dic?.value(forKey: "username") as? String ?? ""
-                appdelegate!.sharedDefaults?.setValue(currentUserEmail, forKeyPath: kUserdefaultsSharedUserEmail)
-                appdelegate!.sharedDefaults?.setValue(currentUserName, forKeyPath: kUserdefaultsSharedUserName)
-                appdelegate!.sharedDefaults?.synchronize()
+                if let sharedDefaults = appdelegate?.sharedDefaults {
+                    InternalTestUser.record(email: currentUserEmail, in: sharedDefaults)
+                }
                 
                 if isCurrentUserGuestAccount(){
                     addLog(text: "No need to verify email. Reason: Guest account.")

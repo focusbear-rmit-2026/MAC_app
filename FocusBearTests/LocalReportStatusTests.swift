@@ -1322,19 +1322,27 @@ final class LocalReportStatusTests: XCTestCase {
         let logs = try logsFolder(current: logLine(minutesBefore: 30, "old") + logLine(minutesBefore: 1, "recent"),
                                   rotated: logLine(minutesBefore: 900, "yesterday"))
         let reports = root.appendingPathComponent("reports", isDirectory: true)
+        let history = "2026-09-26 09:59:00 blocked focusBlockUnwantedUrl url=\"https://example.org/cb?code=oauth-secret&page=2\"\n"
         let folder = try XCTUnwrap(writeFocusBearClaudeTask(note: "It froze", screenshots: [], root: reports,
                                                             logsFolder: logs, now: reportTime,
-                                                            accountID: { LocalReportCapability.accountID }))
+                                                            accountID: { LocalReportCapability.accountID },
+                                                            browsingHistory: { history }))
         let written = try FileManager.default.contentsOfDirectory(atPath: folder.appendingPathComponent("logs").path).sorted()
-        XCTAssertEqual(written, [ReportLogExtract.extractFileName, ReportLogExtract.sourcesFileName].sorted(),
-                       "no log file is copied")
+        XCTAssertEqual(written, [ReportLogExtract.extractFileName, ReportLogExtract.sourcesFileName,
+                                 BrowsingHistory.exportFileName].sorted(),
+                       "no log file is copied; the browsing history sits beside the extract")
+        let exported = try String(contentsOf: folder.appendingPathComponent("logs/\(BrowsingHistory.exportFileName)"))
+        XCTAssertTrue(exported.contains("https://example.org/cb?code="), "the full URL is what the report is for")
+        XCTAssertFalse(exported.contains("oauth-secret"), "credentials in a URL are still redacted")
         let extract = try String(contentsOf: folder.appendingPathComponent("logs/\(ReportLogExtract.extractFileName)"))
         XCTAssertEqual(extract, logLine(minutesBefore: 1, "recent"))
         let sources = try String(contentsOf: folder.appendingPathComponent("logs/\(ReportLogExtract.sourcesFileName)"))
         XCTAssertTrue(sources.contains(logs.path), "points back to the real Logs folder")
+        XCTAssertTrue(sources.contains(BrowsingHistory.exportFileName), "SOURCES.md lists the browsing history")
         let task = try String(contentsOf: folder.appendingPathComponent("TASK.md"))
         XCTAssertTrue(task.contains("logs/\(ReportLogExtract.extractFileName)"))
         XCTAssertTrue(task.contains("logs/\(ReportLogExtract.sourcesFileName)"))
+        XCTAssertTrue(task.contains("logs/\(BrowsingHistory.exportFileName)"))
     }
 
     // MARK: How many rows an open group draws (Sentry FOCUS-BEAR-MACOS-1K7)

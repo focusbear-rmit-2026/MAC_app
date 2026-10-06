@@ -291,8 +291,11 @@ Offline handling: activity-logging calls that fail are appended to CSV files and
 - Config in `FocusBear/Auth0/Auth0.plist` (tenant `dev-2hidr8ad.us.auth0.com`).
 - Login is a Resource-Owner-Password grant from `Login/customLoginVc.swift` (realm
   `Username-Password-Authentication`, audience `https://auth.focusbear.io/api/v2/`).
-- Tokens are stored by Auth0's `CredentialsManager` in the **Keychain** (never UserDefaults; only a
-  `kUserdefaultsIsUserLoggedIn` flag lives there).
+- Tokens are stored by Auth0's `CredentialsManager` in the login **Keychain** (only a
+  `kUserdefaultsIsUserLoggedIn` flag lives in UserDefaults). Builds before the at-rest work also
+  copied the access token into the FBHelper shared suite; that copy is gone and the main app deletes
+  it at launch (`LegacySharedSuiteSecrets`). Log lines pass through `LogRedactor` (tokens,
+  passwords and emails never reach `Debug_Logs.txt`).
 - Refresh: `AppDelegate.renewCredentialsIfNeeded` — hand-rolled throttle (once per 5 min, renew when
   expiry < 24 h away). Plus most API calls independently ask `credentialsManager.credentials {...}`
   before firing.
@@ -344,7 +347,10 @@ LaunchAgent (`~/Library/LaunchAgents/com.focusbear.focusbearhelper.plist`, writt
 - **Purpose:** restart the main app if it's force-quit during a session, and show nag windows.
 - **IPC:** `DistributedNotificationCenter` notifications (object string
   `"com.App.EarnYourScreentime"`) + a shared App Group `UserDefaults` (`sharedDefaults`). Key names
-  are duplicated between `FBHelper/sharedFile.swift` and the main app — keep them in sync manually.
+  live in `FBHelper/sharedFile.swift`, which both targets compile.
+- **No secrets in the shared suite.** It is a plain plist in `~/Library/Preferences`. FBHelper has
+  no credentials: its analytics events go into `HelperEventQueue` and the signed-in main app sends
+  them. It learns "internal test account" from a bool, not from the email.
 - The helper polls on two 10 s timers (nag logic; force-quit monitoring). The main app posts
   `mainAppQuitByUser` on legitimate quit so the helper doesn't resurrect it.
 

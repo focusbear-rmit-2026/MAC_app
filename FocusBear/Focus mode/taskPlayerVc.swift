@@ -330,7 +330,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     }
     
     func addAndPlayTaskInCurrentList(taskName: String, id:String, duration:Int, shouldCompleteCurrentTask:Bool) {
-        addLog(text: "func:- addAndPlayTaskInCurrentList taskName: \(taskName), duration: \(duration), shouldCompleteCurrentTask: \(shouldCompleteCurrentTask), id: \(id)")
+        addLog(text: "func:- addAndPlayTaskInCurrentList taskName: \(LogPrivacy.text(taskName)), duration: \(duration), shouldCompleteCurrentTask: \(shouldCompleteCurrentTask), id: \(id)")
         taskCreatedByBlockPopup = taskName
         // Reflect the changed task on the Focus Button device. getCurrentTaskInFocusMode() returns
         // taskCreatedByBlockPopup first, so currentFocusGoal() already reflects the new task here. This
@@ -355,7 +355,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         let payload: [String: Any] = [
             "todoPlayer": taskData
         ]
-        addLog(text: "syncWithDevices payload is:- \(payload)")
+        addLog(text: "syncWithDevices payload is:- \(LogPrivacy.structure(payload))")
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: payload, options: [])
             guard let jsonString = String(data: jsonData, encoding: .utf8) else {
@@ -435,7 +435,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     }
 
     func addTaskInCurrentList(taskName: String, id:String, duration:Int) {
-        addLog(text: "func:- addTaskInCurrentList taskName: \(taskName), duration: \(duration), id: \(id)")
+        addLog(text: "func:- addTaskInCurrentList taskName: \(LogPrivacy.text(taskName)), duration: \(duration), id: \(id)")
         let taskDic:[String:Any] = [
             "id": id,
             "title": taskName,

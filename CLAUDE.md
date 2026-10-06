@@ -6,21 +6,50 @@ Start with [`ARCHITECTURE.md`](ARCHITECTURE.md) for how the app is structured (s
 flow, the global-singleton/state-machine/view-swapping patterns) and [`TECH_DEBT.md`](TECH_DEBT.md)
 for the known-problems register before "fixing" anything that looks odd.
 
-## Where work goes: PRs into `main-human-verified`
+## Where work goes: the existing cluster PRs (standing rule, 2026-10-04)
 
-**`integration/mac-swiftui-rebuild` was merged on 2026-09-22 (#2569, squash) and is finished.** New
-Mac-App work branches off `main-human-verified` and comes back as its own PR:
+**Never open a new Mac-App PR.** On 2026-10-04 the 124 open PRs — many undoing each other's work —
+were consolidated into feature-area **cluster PRs**, and the user made it a standing rule that every
+fix goes into the matching existing cluster:
+
+| Cluster | Branch | Area |
+|---|---|---|
+| C0 | `cluster/ci-test-infrastructure` | CI, test infrastructure, docs — **base of every other cluster** |
+| C1 | `cluster/routine-meetings-postpones` | routine, meetings, postpones |
+| C2 | `cluster/displays-fullscreen` | displays, borderless full screen |
+| C3 | `cluster/day-plan` | Day Plan |
+| C4 | `cluster/tasks-rescheduler` | tasks, to-do, rescheduler/forecast |
+| C5 | `cluster/projects-tracker` | Projects portfolio, Time Tracker |
+| C6 | `cluster/ai-checkin-buddy` | AI check-in, accountability buddy |
+| C7 | `cluster/accessibility-keyboard` | accessibility, keyboard, notes |
+| C8 | `cluster/breaks-habits` | breaks, micro-breaks, habits |
+| C9 | `cluster/blocking-managed-trusted-time` | blocking, managed mode, trusted time |
+| C10 | `cluster/helper-stability-sentry` | helper, stability, Sentry |
+| C11 | `cluster/report-tooling` | report-problem tooling |
+| C12 | `cluster/ui-tests-events-v2` | XCUITest suite, events-v2 |
+| C13 | `cluster/at-rest-encryption` | at-rest secrets (stacked on C12) |
 
 ```bash
 git fetch origin
-git checkout -b fix/<what-it-is> origin/main-human-verified
-# …work…
-gh pr create --base main-human-verified
+git worktree add ~/dev/claude-worktrees/Mac-App-cluster-<area> origin/cluster/<area>   # or reuse it
+# …one self-contained commit…
+git push origin HEAD:cluster/<area>
+# then add a row for the fix to that cluster PR's body table
 ```
 
-The global "always open a PR when finishing a self-contained task" rule therefore applies here again,
-like every other repo. The two earlier regimes — commit straight to integration, then stack a PR onto
-it — are both over; they are recorded below only because they explain the repo's history.
+- Make each fix **one self-contained commit that also cherry-picks onto the local install branch**, so
+  it can be installed before the cluster merges.
+- Feature clusters target C0's branch; once C0 merges, merge `main-human-verified` into each cluster and
+  retarget it. Never force-push a cluster branch.
+- If nothing fits, use the closest cluster and say so; ask the user before creating a new cluster.
+- **Only the user's own PRs.** Consolidating, closing, reopening, editing or folding a PR into a cluster applies
+  only to PRs authored by `jeznag`. Never touch other people's PRs (2026-10-04: #1829 and #2847 were closed by
+  mistake and reopened). Check `.author.login` before any bulk action.
+- This overrides the global "always open a PR" rule for this repo. Tell sub-agents explicitly — they
+  default to `gh pr create`.
+
+Earlier regimes (commit straight to `integration/mac-swiftui-rebuild`, then one PR per change into
+`main-human-verified`) are over; they are recorded below only because they explain the repo's history.
 
 ### ⚠️ #2569 was a SQUASH merge — ancestry lies
 
@@ -92,11 +121,50 @@ on it concurrently.
   build** (and loses TCC grants). Copy `Config/Local.xcconfig` into every new worktree.
 - `security dump-keychain -a ~/Library/Keychains/login.keychain-db` prints each item's ACL
   and partition list — accumulated `cdhash:` entries are the fingerprint of this problem.
-- Signed **Release** builds store the tokens in the **data-protection keychain** instead
-  (`CredentialsKeychainStorage`), which has no ACLs and never prompts. That needs the
-  restricted `keychain-access-groups` entitlement, which lives only in
-  `Focus Bear-Release.entitlements` — macOS **SIGKILLs** a process that claims it without a
-  provisioning profile granting it, and ad-hoc Debug/CI builds embed no profile.
+- **Every build, Release included, keeps the tokens in the login keychain** (Auth0's default
+  `CredentialsManager` storage). A data-protection-keychain store (`CredentialsKeychainStorage`)
+  existed briefly and was removed in #2588: Release could write tokens but not read them back,
+  which caused a login loop. `Focus Bear-Release.entitlements` still claims
+  `keychain-access-groups`, which nothing uses now. Unit-test and UI-test hosts keep credentials
+  in memory (`LogicTestHost.makeCredentialsManager`).
+- **The token must never leave the keychain.** Older builds copied it into the FBHelper shared
+  suite (`~/Library/Preferences/TCUD568B3U.group.com.focusbear.fbmac.plist`), which any process
+  running as the user can read. FBHelper now queues its analytics events for the main app to send
+  (`HelperEventQueue`), and the main app deletes the old copy at launch and logout
+  (`LegacySharedSuiteSecrets`). Don't add secrets, emails or names back to the shared suite.
+  Local tools that need the to-do list ask the app instead: the AppleScript command
+  `list to dos` (`FBListToDosCommand`) answers with the app's own credentials, read-only. The
+  `focusbear-tasks` skill uses it.
+- **The settings/quit password is not in the preferences plist** (`AppPasswordStore`). A salted
+  PBKDF2 verifier in UserDefaults decides "is a password set" and checks entries, so a locked or
+  re-signed keychain can never lock anyone out; the base64 value settings sync must send lives in
+  the keychain (per-signature account, no prompts). Use `SettingsManagerObject.isAppPasswordSet` /
+  `.appPassword`, never `UserDefaults…kUserdefaultsAppPassword` (`PlaintextSecretSourceTests`
+  fails the build otherwise). Settings upload waits while the keychain copy is unreadable, because
+  uploading without it would clear the password on the server.
+- **Personal data is encrypted at rest per account** (`FocusBear/Security/SecureStore.swift`). Keys
+  listed in `SensitiveKeyRegistry` (habits JSON, block lists, Day Plan, calendar notes, AI decisions,
+  Wi-Fi networks, brain dump, habit-note drafts, quit reasons) go through `SensitiveDefaults`, never
+  `UserDefaults.standard`; the CSVs/JSON logs in `SensitiveKeyRegistry.files` go through
+  `SecureFiles.shared`; project-note drafts are sealed by `ProjectNoteDraftStore`.
+  `scripts/check-sensitive-defaults.sh` (CI) fails on a registered key or file used the old way. AES-GCM,
+  one random data key per account in the login keychain (`dek.v1.<account>.<signature>`, never prompts),
+  key fingerprint in every envelope. Ad-hoc builds (CI, UI tests, Debug without `Local.xcconfig`) do
+  not encrypt (`.disabled`): their key would change every build.
+  - **Failure rules — keep them when adding a key.** Pick its durability honestly. *Server-backed*: an
+    unreadable copy reads as empty and is fetched again. *Local-only*: never overwritten or deleted
+    without having been read; writes made while the key is unavailable wait in memory and are merged
+    (`SecureMerge`) into the sealed value when the key returns. Nothing is ever written in plaintext as
+    a fallback. Migration is verify-then-delete per key behind a one-time sealed backup.
+  - Sign-out deletes the account's server-backed caches; local-only data (and the key) stay for that
+    account. Reset/uninstall erase everything (`eraseAllData`). Values written before any sign-in wait in
+    memory for the first account.
+  - Not encrypted, on purpose: values needed before sign-in (`kUserDefaultsLastUserEmailBeforeLogout`,
+    onboarding selections), `fbtt.plist` (read by the Time Tracker app), the browser-tab audit CSV
+    (opened in another app), ids/durations/colours, and the debug logs (redacted instead).
+  - Threat model: this stops another program running as the user from silently reading Focus Bear's
+    files. Apple Events to Focus Bear need the user's Automation consent, and reading its memory needs
+    debugger privileges, so the app itself is not an open door to the decrypted data.
 
 ## Signed / release build (Developer ID + notarized DMG)
 

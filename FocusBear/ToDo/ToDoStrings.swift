@@ -27,6 +27,9 @@ enum ToDoStringKey: String, CaseIterable {
     // Toolbar
     case newTask = "newTaskText"
     case searchPlaceholder = "searchPlaceholder"
+    /// The search field's spoken name: its placeholder's trailing "..." fails the accessibility audit's
+    /// human-readable check, and "Search" alone doesn't say what is searched.
+    case searchTasks = "searchTasksText"
     case filter = "filterText"
     case moreOptions = "moreOptionsText"
     case sortSmart = "sortSmartText"
@@ -471,7 +474,7 @@ struct ToDoStrings {
         .tabTasks: "Tasks", .tabProjects: "Projects", .close: "Close", .cancel: "Cancel", .save: "Save",
         .saving: "Saving…", .delete: "Delete", .add: "Add", .done: "Done", .discard: "Discard", .loading: "Loading…",
         .requestFailed: "Could not process the request",
-        .newTask: "New Task", .searchPlaceholder: "Search...", .filter: "Filter", .moreOptions: "More Options",
+        .newTask: "New Task", .searchPlaceholder: "Search...", .searchTasks: "Search tasks", .filter: "Filter", .moreOptions: "More Options",
         .sortSmart: "Smart", .sortSmartTooltip: "Smart sort — ADHD-friendly. Sorted by TOP score, highest priority first.",
         .sortChronological: "Newest", .sortChronologicalTooltip: "Chronological sort. Most recently created tasks first.",
         .sortDueDate: "Due date", .sortDueDateTooltip: "Due date sort. Overdue first, then soonest due. Tasks without a due date last.",

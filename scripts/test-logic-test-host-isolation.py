@@ -20,7 +20,7 @@ SHIPPING_BUNDLE_IDENTIFIER = "com.App.EarnYourScreentime"
 
 class LogicTestHostIsolationTests(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory()
+        self.temporary = tempfile.TemporaryDirectory(prefix="logic__artifacts_")
         self.addCleanup(self.temporary.cleanup)
         self.products = Path(self.temporary.name) / "Build/Products"
         self.app = self.products / VERIFY.APP_RELATIVE_PATH
@@ -101,6 +101,15 @@ class LogicTestHostIsolationTests(unittest.TestCase):
     def test_accepts_absolute_path_to_verified_host(self):
         self.target["TestHostPath"] = str(self.app)
         self.assertEqual(self.verify(), self.manifest_path.resolve())
+
+    def test_accepts_double_underscores_in_absolute_artifact_path(self):
+        self.target["TestHostPath"] = str(self.app.resolve())
+        self.assertIn("logic__artifacts_", self.target["TestHostPath"])
+        self.assertEqual(self.verify(), self.manifest_path.resolve())
+
+    def test_rejects_absolute_path_with_unresolved_macro(self):
+        self.target["TestHostPath"] = str(self.products / "__TESTHOST__" / "Focus Bear.app")
+        self.assert_refused()
 
     def test_rejects_additional_shipping_target(self):
         self.manifest["AnotherTarget"] = dict(self.target, TestHostBundleIdentifier=SHIPPING_BUNDLE_IDENTIFIER)

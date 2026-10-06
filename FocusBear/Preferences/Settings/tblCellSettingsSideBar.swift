@@ -13,6 +13,12 @@ class tblCellSettingsSideBar: NSTableCellView {
     @IBOutlet weak var imgView: NSImageView!
     @IBOutlet weak var boxNewBadge: customNewBadgeBox!
     @IBOutlet weak var lblTitle: NSTextField!
+
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        imgView.hideDecorativeIconFromVoiceOver()
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
 

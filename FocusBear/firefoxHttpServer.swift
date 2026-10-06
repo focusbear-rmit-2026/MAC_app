@@ -107,7 +107,8 @@ class firefoxHttpServer {
         completion?(json["applied"] as? Bool == true)
     }
     func start() {
-        
+        // A fixed port the installed app is already listening on; a UI-test build must not compete.
+        if UITestHost.suppressesEnforcement { return }
         print("Starting FocusBear Local HTTP Server on 50502")
 
         // POST /check_url  << this acts like "handle WebSocket message"

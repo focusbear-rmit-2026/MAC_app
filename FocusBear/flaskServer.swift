@@ -36,6 +36,9 @@ class flaskServer:NSObject {
 
     func startFlaskServer()->Bool {
         addLog(text: "func startFlaskServer")
+        // It serves the block page, so a UI-test build that blocks nothing has no use for it — and
+        // XCTest's hard kill of the app between tests left two server processes behind per launch.
+        if UITestHost.suppressesEnforcement { return false }
 #if arch(arm64)
         let serverPath = Bundle.main.path(forResource: "server", ofType: nil)
 #else

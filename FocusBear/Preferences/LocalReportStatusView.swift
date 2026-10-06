@@ -90,7 +90,9 @@ struct LocalReportStatusView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if LocalReportCapability.isEnabled(for: store.loadedAccount) { reportTable }
+            if LocalReportCapability.isEnabled(for: store.loadedAccount) {
+                reportTable.accessibilityIdentifier(UITestContract.Identifier.Help.localReportsTable)
+            }
         }
         .onAppear { store.refresh() }
         .background(LocalReportStatusRefreshHost { store.refreshIfIdle() }.frame(width: 0, height: 0))

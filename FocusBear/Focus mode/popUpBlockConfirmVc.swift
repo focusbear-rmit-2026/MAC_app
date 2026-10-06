@@ -110,7 +110,7 @@ class popUpBlockConfirmVc: NSViewController {
     var titleStillFocusGoal = "Is your focus goal still: \"<GOAL>\"?"
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        view.setUITestLandmark(UITestContract.Identifier.Blocking.focusBlockPrompt)
         lblSelectTask.stringValue = "No current task, select a task to proceed."
         btnWorkingOnSomethingElse.title = "No I'm working on something else now"
         btnSetTask.title = "Set Task"
@@ -283,7 +283,7 @@ class popUpBlockConfirmVc: NSViewController {
             }
             
             if let currentTaskInToDoPlayer = getCurrentTaskInFocusMode(){
-                addLog(text: "currentTaskInToDoPlayer:- \(currentTaskInToDoPlayer)")
+                addLog(text: "currentTaskInToDoPlayer:- \(LogPrivacy.text(currentTaskInToDoPlayer))")
                 var currentTaskText = "Current task is \"<TASK>\""
                 if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
                     currentTaskText = popUpBlockConfirmVcInfo.value(forKey: "currentTaskText") as? String ?? currentTaskText
@@ -479,7 +479,7 @@ class popUpBlockConfirmVc: NSViewController {
             lblTitle.stringValue = blockTitle
             
             if let currentTaskInToDoPlayer = getCurrentTaskInFocusMode(){
-                addLog(text: "currentTaskInToDoPlayer:- \(currentTaskInToDoPlayer)")
+                addLog(text: "currentTaskInToDoPlayer:- \(LogPrivacy.text(currentTaskInToDoPlayer))")
                 var currentTaskText = "Current task is \"<TASK>\""
                 if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
                     currentTaskText = popUpBlockConfirmVcInfo.value(forKey: "currentTaskText") as? String ?? currentTaskText
@@ -1664,7 +1664,7 @@ class popUpBlockConfirmVc: NSViewController {
     /// Extracted so both the cached and fresh-fetch paths share the same logic (#1679).
     private func setTaskWithDeduplication(taskName: String, candidateTasks: [NSDictionary], shouldComplete: Bool) {
         if let match = TaskDeduplicationHelper.existingTask(named: taskName, in: candidateTasks) {
-            addLog(text: "popUpBlockConfirmVc: task '\(taskName)' already exists – reusing existing task, skipping creation.")
+            addLog(text: "popUpBlockConfirmVc: task \(LogPrivacy.text(taskName)) already exists – reusing existing task, skipping creation.")
             closeWindow()
             if let id = match.task.value(forKey: "id") as? String,
                let taskTitle = match.task.value(forKey: "title") as? String {
@@ -1675,10 +1675,10 @@ class popUpBlockConfirmVc: NSViewController {
             let today = Date()
             let nextWeek = Calendar.current.date(byAdding: .day, value: 7, to: today) ?? Date()
             let dateString = getStringFromDateInUtc(date: nextWeek, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-            addLog(text: "Create new task:- name: \(taskName)")
+            addLog(text: "Create new task:- name: \(LogPrivacy.text(taskName))")
             allApiObject.addTask(title: taskName, details: "", eisenhowerQuadrant: 1, dueDate: dateString, objective: "", tags: [], completionHandler: { result, json in
                 if result {
-                    addLog(text: "\(taskName) task created successfully.")
+                    addLog(text: "task \(LogPrivacy.text(taskName)) created successfully.")
                 }
                 DispatchQueue.main.async { [self] in
                     loader.stopAnimation(self)

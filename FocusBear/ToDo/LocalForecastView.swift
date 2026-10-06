@@ -158,6 +158,9 @@ struct ForecastOutcomePicker: View {
                 }
             }
             .labelsHidden().pickerStyle(MenuPickerStyle()).font(.localForecastRegular(12))
+            // The heading above is a separate Text, so the menu itself had no name.
+            .accessibilityLabel(Text(ForecastText[.outcome]))
+            .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.outcomePicker)
         }
     }
 }
@@ -1043,6 +1046,7 @@ struct ForecastReschedulePlanSheet: View {
                 SwiftUI.Button(ForecastText[.close]) { store.showsWorkPlan = false }
                     .disabled(store.isApplying || store.isLoading).keyboardShortcut(.cancelAction)
                     .pointingHandCursor()
+                    .accessibilityIdentifier(UITestContract.Identifier.ToDo.reschedulePlanCloseButton)
             }
             Text(ForecastText[.reviewExplanation]).font(.localForecastRegular(12)).foregroundColor(.secondary)
             // The lock is the user's to set: it was a hardcoded rule, and someone who wants the next
@@ -1110,6 +1114,7 @@ struct ForecastReschedulePlanSheet: View {
                     Spacer()
                     SwiftUI.Button(ForecastText[.applySelected]) { store.applySelected(selected) }
                         .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 32))
+                        .accessibilityIdentifier(UITestContract.Identifier.TasksRegression.reschedulePlanApplyButton)
                         .disabled(selected.isEmpty || store.isApplying || store.isLoading || !store.calendarAvailable)
                 }
             }

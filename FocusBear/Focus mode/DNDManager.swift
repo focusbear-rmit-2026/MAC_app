@@ -33,6 +33,8 @@ class DNDManager {
     var isDndEnabled: Bool { coalescer.desiredState }
 
     func setDND(_ enable: Bool, settle: DNDSettleWindow = .standard) {
+        // DND is toggled by synthetic clicks on the menu-bar clock — never from a UI-test app.
+        if UITestHost.isEnabled { return }
         let requestedAt = Date()
         onMainThread { [weak self] in
             guard let self else { return }

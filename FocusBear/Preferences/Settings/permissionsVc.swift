@@ -46,6 +46,9 @@ class permissionsVc: NSViewController {
             lblTitle.stringValue = settingsNew.value(forKey: "permissionsSettingTitle") as? String ?? lblTitle.stringValue
             lblDescription.stringValue = settingsNew.value(forKey: "descriptionPermissions") as? String ?? lblDescription.stringValue
         }
+        // The pane title is the only text that names the browsers table.
+        tblView.setAccessibilityLabel(lblTitle.stringValue)
+        tblView.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.permissionsTable)
         
     }
     
@@ -263,6 +266,8 @@ extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
             cell.lblTitle.stringValue = arrBrowsers[row]["name"] as? String ?? ""
             //            cell.lblDescription.stringValue = arrBrowsers[row]["description"] as? String ?? ""
             cell.imgView.image = arrBrowsers[row]["image"] as? NSImage
+            // The browser's name is written beside its icon.
+            cell.imgView.hideDecorativeIconFromVoiceOver()
             cell.lblFirefoxPermission.isHidden = true
             let state = arrBrowsers[row]["isEnabled"] as? Bool ?? false
             if state{

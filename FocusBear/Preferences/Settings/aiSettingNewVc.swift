@@ -50,6 +50,7 @@ class aiSettingNewVc: NSViewController {
         enableMotivationalMessageItemVcObj?.lblTitle.stringValue = checkBoxMorningMotivationText
         enableMotivationalMessageItemVcObj?.lblSubTitle.stringValue = descriptionMorningMotivationText
         enableMotivationalMessageItemVcObj?.delegate = self
+        enableMotivationalMessageItemVcObj?.btnSwitch.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.motivationalMessageSwitch)
         enableMotivationalMessageItemVcObj?.toolTip = ai_MotivationalMessage
         
         stackView.addView(allowSitesByAiItemVcObj!.view, in: .bottom)

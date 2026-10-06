@@ -27,7 +27,7 @@ class tabStrictnessContainerVc: NSViewController {
     }
     
     @IBAction func btnSegmentControlGeekModeClicked(_ sender: Any) {
-        guard ManagedBlockingRuntime.shared.allowLegacySettingsMutation() else { return }
+        guard ManagedBlockingRuntime.shared.allowLegacySettingsMutation() else { return segmentControlGeekMode.showCurrentMode() }
         if segmentControlGeekMode.selectedSegment == 0{
             if SettingsManagerObject.isGeekModeEnabled{
                 return;

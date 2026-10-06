@@ -201,6 +201,7 @@ struct FocusSessionTaskPickerSheet: SwiftUI.View {
             }
             .buttonStyle(FBButtonStyle())
             .help(store.strings.closeButton)
+            .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.taskPickerCloseButton)
         }
     }
 
@@ -299,6 +300,7 @@ struct FocusSessionEndConfirmSheet: SwiftUI.View {
                     )
             }
             .buttonStyle(FBButtonStyle())
+            .accessibilityIdentifier(UITestContract.Identifier.SessionsRegression.endCancelButton)
 
             SwiftUI.Button(action: store.endSession) {
                 Text(store.strings.endSessionConfirmButton)
@@ -312,6 +314,7 @@ struct FocusSessionEndConfirmSheet: SwiftUI.View {
                     )
             }
             .buttonStyle(FBButtonStyle())
+            .accessibilityIdentifier(UITestContract.Identifier.FocusSession.endConfirmButton)
         }
         .padding(scale.pt(FocusSessionLayout.panelPadding))
         .frame(width: scale.pt(Self.sheetWidthDesignPixels))

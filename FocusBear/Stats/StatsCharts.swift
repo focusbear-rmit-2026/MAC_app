@@ -72,6 +72,7 @@ struct StatsChart: View {
             Text(emptyMessage)
                 .foregroundColor(StatsPalette.secondaryText)
                 .frame(maxWidth: .infinity, minHeight: StatsChart.chartHeight)
+                .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.statsEmptyState)
         } else {
             VStack(spacing: 4) {
                 HStack(alignment: .top, spacing: 4) {
@@ -87,6 +88,7 @@ struct StatsChart: View {
                 xAxis
                 Text(xAxisTitle).font(.system(size: 11)).foregroundColor(StatsPalette.secondaryText)
             }
+            .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.statsChart)
         }
     }
 

@@ -492,7 +492,7 @@ func markBrowserGrantedInStore(_ browser: BROWSER) {
 /// isBrowserAutomationRequestInFlight makes every probe skip. On allow we mark the browser granted so
 /// blocking resumes; on deny we just don't ask again this session.
 func requestBrowserAutomationOnceIfNeeded(_ browser: BROWSER) {
-    if browser == ._FIREFOX_ { return }
+    if browser == ._FIREFOX_ || UITestHost.suppressesEnforcement { return }
     if isBrowserAutomationRequestInFlight { return }
     if isBrowserPermissionGranted(browser) { return }
     if browsersAutoPromptAttempted.contains(browser.rawValue) { return }

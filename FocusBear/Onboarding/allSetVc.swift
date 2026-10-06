@@ -22,7 +22,7 @@ class allSetVc: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-       
+        btnContinue.setAccessibilityIdentifier(UITestContract.Identifier.Onboarding.finishButton)
         lblTitle.stringValue = "Fantastic! We are all set."
         lblSubTitle.stringValue = "You are now ready to become a creature of habit."
         btnContinue.title = "Start using Focus Bear"

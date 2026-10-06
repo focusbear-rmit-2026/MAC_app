@@ -437,7 +437,7 @@ class askQuitVc: NSViewController {
             Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { timer in
                 self.loader.stopAnimation(self)
                 self.btnAppQuit.isEnabled = true
-                UserDefaults.standard.set("super gentle quit", forKey: kUserDefaultsLastQuitReason)
+                SensitiveDefaults.set("super gentle quit", forKey: kUserDefaultsLastQuitReason)
                 appdelegate?.quitAppForUser()
             }
         }else{

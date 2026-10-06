@@ -429,7 +429,7 @@ final class BlockListStore: ObservableObject {
     /// divergence should be visible in the debug log rather than invisible.
     private func persist(index: Int) {
         Self.pruneOrphanedCategories(at: index)
-        UserDefaults.standard.set(plistSafeFocusModes(arrFocusType), forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(plistSafeFocusModes(arrFocusType), forKey: kUserdefaultsArrFocusTypes)
         // `editFocusMode` no-ops for Locked Focus modes, which the rail never shows anyway.
         let name = arrFocusType[index][FocusModeKey.name] as? String ?? ""
         allApiObject.editFocusMode(focusType: arrFocusType[index], completionHandler: { [weak self] updated in
@@ -504,7 +504,7 @@ final class BlockListStore: ObservableObject {
     private static func writeUrls(_ urls: [String], at index: Int) {
         if arrFocusType[index][FocusModeKey.isDefault] as? Bool == true {
             SettingsManagerObject.arrBlockedUrls = urls
-            UserDefaults.standard.set(urls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
+            SensitiveDefaults.set(urls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
             return
         }
         let key = usesAllowList(arrFocusType[index]) ? FocusModeKey.allowedUrls : FocusModeKey.blockUrlsArray
@@ -514,7 +514,7 @@ final class BlockListStore: ObservableObject {
     private static func writeApps(_ apps: [String], at index: Int) {
         if arrFocusType[index][FocusModeKey.isDefault] as? Bool == true {
             SettingsManagerObject.arrBlockedApps = apps
-            UserDefaults.standard.set(apps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)
+            SensitiveDefaults.set(apps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)
             return
         }
         let key = usesAllowList(arrFocusType[index]) ? FocusModeKey.allowedApps : FocusModeKey.blockAppsArray

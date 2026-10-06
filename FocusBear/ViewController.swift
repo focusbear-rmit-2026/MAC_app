@@ -399,6 +399,24 @@ class ViewController: NSViewController {
             // Update the view, if already loaded.
         }
     }
+    /// A page's root reaches VoiceOver as a group (a SwiftUI page's hosting view always does), and an
+    /// unnamed one is announced as just "group". Named after the sidebar item that opened it,
+    /// VoiceOver says which page focus has entered.
+    func namePageForVoiceOver(_ title: String?) {
+        guard let title, !title.isEmpty else { return }
+        for page in containerView.subviews {
+            page.setAccessibilityLabel(title)
+        }
+    }
+
+    /// Names the content area after the sidebar item that filled it, so a UI test has one landmark per
+    /// screen whatever the screen is built with. Test build only: in the shipping app the content area
+    /// stays a plain container for VoiceOver.
+    func markContentForUITests(shownBy menuItemIdentifier: String) {
+        guard UITestHost.isEnabled, !menuItemIdentifier.isEmpty else { return }
+        containerView.setUITestLandmark(UITestContract.Identifier.Screen.shown(byMenuItem: menuItemIdentifier))
+    }
+
     func removeSubViews(){
         let viewsArr = containerView.subviews
         for subview in viewsArr {
@@ -508,7 +526,7 @@ class ViewController: NSViewController {
     }
     
     func isEnterPasswordForPreferencesViewVisible()->Bool{
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+        if SettingsManagerObject.isAppPasswordSet{
             if self.view.subviews.contains(getEnterPasswordVcObjForPreferences().view){
                 return true
             }
@@ -520,7 +538,7 @@ class ViewController: NSViewController {
         if enterPasswordVcObj == nil{
             return false
         }
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+        if SettingsManagerObject.isAppPasswordSet{
             if self.view.subviews.contains(enterPasswordVcObj!.view){
                 return true
             }
@@ -1277,6 +1295,7 @@ struct FocusButtonToolView: View {
                 HStack(spacing: 8) {
                     Circle().fill(model.isConnected ? Color.green : Color.gray).frame(width: 10, height: 10)
                     Text(model.isConnected ? "Connected" : "Not connected").foregroundColor(.secondary)
+                        .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.focusButtonStatus)
                 }
                 HStack(spacing: 10) {
                     if model.isConnected {
@@ -1289,6 +1308,7 @@ struct FocusButtonToolView: View {
                         SwiftUI.Button("Connect") { model.connect() }
                             .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 33))
                             .disabled(model.connecting || model.isCheckingFirmware)
+                            .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.focusButtonConnectButton)
                     }
                     if model.connecting { ProgressView().scaleEffect(0.5).frame(width: 16, height: 16) }
                 }
@@ -1353,6 +1373,7 @@ struct FocusButtonToolView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     if let url = URL(string: "https://button.focusbear.io") {
                         SwiftUI.Link("Get yours from button.focusbear.io", destination: url)
+                            .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.focusButtonShopLink)
                     }
                 }
             }
@@ -1480,10 +1501,12 @@ struct ExternalToolView: View {
             HStack(spacing: 8) {
                 Circle().fill(statusColor).frame(width: 10, height: 10)
                 Text(statusText).foregroundColor(.secondary)
+                    .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.externalToolStatus)
             }
             Text(shownDescription).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
             SwiftUI.Button(model.isInstalled ? "Open" : "Download") { primaryAction() }
                 .buttonStyle(AppOrangeButtonStyle(secondary: false))
+                .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.externalToolPrimaryButton)
         }
         // Standalone this view owns its padding; embedded (scrollable == false) the parent pads, so
         // the download content lines up with the shared title/toggle above it.

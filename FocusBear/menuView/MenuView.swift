@@ -1018,6 +1018,7 @@ struct FocusBearMenuView: View {
                          title: menuLocalized("menuBreaks", "Breaks"),
                          subtitle: model.breaksSummary.isEmpty ? menuLocalized("menuTakeBreak", "Take a mindful break") : model.breaksSummary,
                          solid: highlightedSection == .breaks,
+                         identifier: UITestContract.Identifier.SettingsRegression.menuBreaksRow,
                          isOpen: binding(.breaks), scheme: scheme) {
                 VStack(alignment: .leading, spacing: 8) {
                     if !model.lastBreakText.isEmpty {
@@ -1026,7 +1027,8 @@ struct FocusBearMenuView: View {
                             .foregroundColor(MenuTheme.subtitle(scheme))
                     }
                     if model.canStartBreak {
-                        LinkButton(title: menuLocalized("menuStartBreak", "Start a break now"), scheme: scheme, action: model.onOpenBreaks)
+                        LinkButton(title: menuLocalized("menuStartBreak", "Start a break now"), scheme: scheme,
+                                   identifier: UITestContract.Identifier.SettingsRegression.menuStartBreakLink, action: model.onOpenBreaks)
                     }
                 }
             }
@@ -1035,6 +1037,7 @@ struct FocusBearMenuView: View {
                          title: menuLocalized("menuDayPlan", "Day Plan"),
                          subtitle: dayPlanSubtitle,
                          solid: highlightedSection == .dayPlan,
+                         identifier: UITestContract.Identifier.SettingsRegression.menuDayPlanRow,
                          isOpen: binding(.dayPlan), scheme: scheme) {
                 dayPlanBody
             }
@@ -1050,17 +1053,21 @@ struct FocusBearMenuView: View {
                          accessory: model.musicTrackName.isEmpty ? nil : AnyView(
                             MusicToggleButton(playing: model.musicPlaying, scheme: scheme, action: model.onToggleMusic)
                          ),
+                         identifier: UITestContract.Identifier.SettingsRegression.menuToolsRow,
                          isOpen: binding(.tools), scheme: scheme) {
                 VStack(spacing: 8) {
                     if model.musicTrackName.isEmpty {
-                        ToolButton(icon: "music.note", title: menuLocalized("menuFocusMusic", "Focus Music"), scheme: scheme, action: model.onOpenFocusMusic)
+                        ToolButton(icon: "music.note", title: menuLocalized("menuFocusMusic", "Focus Music"), scheme: scheme,
+                                   identifier: UITestContract.Identifier.SettingsRegression.menuFocusMusicButton, action: model.onOpenFocusMusic)
                     } else {
                         // A track is loaded: play/pause icon on the left + the track name.
                         ToolButton(icon: model.musicPlaying ? "pause.fill" : "play.fill",
                                    title: model.musicTrackName, scheme: scheme, action: model.onToggleMusic)
                     }
-                    ToolButton(icon: "note.text", title: menuLocalized("menuNotes", "Notes"), scheme: scheme, action: model.onOpenBrainDump)
-                    ToolButton(icon: "checklist", title: menuLocalized("menuToDoPlayer", "To-Do Player"), scheme: scheme, action: model.onOpenToDoPlayer)
+                    ToolButton(icon: "note.text", title: menuLocalized("menuNotes", "Notes"), scheme: scheme,
+                               identifier: UITestContract.Identifier.SettingsRegression.menuNotesButton, action: model.onOpenBrainDump)
+                    ToolButton(icon: "checklist", title: menuLocalized("menuToDoPlayer", "To-Do Player"), scheme: scheme,
+                               identifier: UITestContract.Identifier.SettingsRegression.menuToDoPlayerButton, action: model.onOpenToDoPlayer)
                 }
             }
 
@@ -1100,10 +1107,11 @@ struct FocusBearMenuView: View {
                 .foregroundColor(MenuTheme.primaryText(scheme))
             Spacer()
             if model.micAvailable {
-                IconButton(systemName: "mic", scheme: scheme, action: startVoice)
+                IconButton(systemName: "mic", scheme: scheme, identifier: UITestContract.Identifier.SettingsRegression.menuMicButton, action: startVoice)
                     .help(HotkeyService.voiceInputShortcutDisplay)
             }
-            IconButton(systemName: model.menuPinnedAsWindow ? "pin.fill" : "pin", scheme: scheme, action: model.onTogglePin)
+            IconButton(systemName: model.menuPinnedAsWindow ? "pin.fill" : "pin", scheme: scheme,
+                       identifier: UITestContract.Identifier.SettingsRegression.menuPinButton, action: model.onTogglePin)
             // Expand, not a cog: the popover is a summary of the day, so the natural thing to reach for
             // from its header is the full Day Plan (report 2026-09-15_17-46-04). Preferences is still a
             // click away once the main window is open — the Day Plan opens it, and its left menu has
@@ -1115,8 +1123,10 @@ struct FocusBearMenuView: View {
             IconButton(systemName: "arrow.up.left.and.arrow.down.right", scheme: scheme,
                        help: menuLocalized("menuViewFullDayPlan", "View full day plan"),
                        mirroredHorizontally: true,
+                       identifier: UITestContract.Identifier.MenuBar.openDayPlanButton,
                        action: model.onOpenDayPlan)
-            IconButton(systemName: "power", scheme: scheme, action: model.onQuit)
+            IconButton(systemName: "power", scheme: scheme, identifier: UITestContract.Identifier.MenuBar.quitButton,
+                       action: model.onQuit)
         }
         .padding(.bottom, 2)
     }
@@ -1133,6 +1143,7 @@ struct FocusBearMenuView: View {
                         TextField(menuLocalized("menuFocusGoalPlaceholder", "Enter Focus Goal here"),
                                   text: $model.focusIntentionDraft)
                             .textFieldStyle(PlainTextFieldStyle())
+                            .accessibilityIdentifier(UITestContract.Identifier.SettingsRegression.menuFocusGoalField)
                             .font(MenuTheme.font(13, .regular))
                             .foregroundColor(MenuTheme.primaryText(scheme))
                         // Advanced (icon only): open the main window's Start Focus Session view for the
@@ -1223,6 +1234,7 @@ struct FocusBearMenuView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 .pointingHandCursor()
+                .accessibilityIdentifier(UITestContract.Identifier.SettingsRegression.menuStartFocusButton)
             }
         }
     }
@@ -1468,6 +1480,7 @@ struct FocusBearMenuView: View {
                      title: focusAccordionTitle,
                      subtitle: focusSubtitle,
                      solid: highlightedSection == .focus,
+                     identifier: UITestContract.Identifier.MenuBar.focusSection,
                      isOpen: binding(.focus), scheme: scheme) {
             VStack(alignment: .leading, spacing: 8) {
                 intentionEditor
@@ -1788,7 +1801,8 @@ struct FocusBearMenuView: View {
                     .font(MenuTheme.font(12, .regular))
                     .foregroundColor(MenuTheme.subtitle(scheme))
             }
-            LinkButton(title: menuLocalized("menuViewFullDayPlan", "View full day plan"), scheme: scheme, action: model.onOpenDayPlan)
+            LinkButton(title: menuLocalized("menuViewFullDayPlan", "View full day plan"), scheme: scheme,
+                       identifier: UITestContract.Identifier.SettingsRegression.menuViewFullDayPlanLink, action: model.onOpenDayPlan)
         }
     }
 
@@ -2061,9 +2075,12 @@ private struct VoiceView: View {
                 .foregroundColor(MenuTheme.primaryText(scheme))
             Spacer()
             IconButton(systemName: "house", scheme: scheme, action: onClose)
-            IconButton(systemName: model.menuPinnedAsWindow ? "pin.fill" : "pin", scheme: scheme, action: model.onTogglePin)
-            IconButton(systemName: "gearshape", scheme: scheme, action: model.onPreferences)
-            IconButton(systemName: "power", scheme: scheme, action: model.onQuit)
+            IconButton(systemName: model.menuPinnedAsWindow ? "pin.fill" : "pin", scheme: scheme,
+                       identifier: UITestContract.Identifier.SettingsRegression.menuPinButton, action: model.onTogglePin)
+            IconButton(systemName: "gearshape", scheme: scheme,
+                       identifier: UITestContract.Identifier.MenuBar.preferencesButton, action: model.onPreferences)
+            IconButton(systemName: "power", scheme: scheme, identifier: UITestContract.Identifier.MenuBar.quitButton,
+                       action: model.onQuit)
         }
     }
 
@@ -2408,6 +2425,8 @@ private struct AccordionRow<Body: View>: View {
     // Optional control shown in the header before the chevron (e.g. the focus-music play/pause button),
     // tappable without expanding the row.
     var accessory: AnyView? = nil
+    /// For UI tests to find the row's header by.
+    var identifier: String = ""
     @Binding var isOpen: Bool
     let scheme: ColorScheme
     @ViewBuilder var content: () -> Body
@@ -2450,6 +2469,7 @@ private struct AccordionRow<Body: View>: View {
             }
             .buttonStyle(PlainButtonStyle())
             .pointingHandCursor()
+            .accessibilityIdentifier(identifier)
 
             if isOpen {
                 content()
@@ -2488,6 +2508,8 @@ private struct IconChip: View {
 private struct LinkButton: View {
     let title: String
     let scheme: ColorScheme
+    /// For UI tests to find it by.
+    var identifier: String = ""
     let action: () -> Void
     var body: some View {
         SwiftUI.Button(action: action) {
@@ -2497,6 +2519,7 @@ private struct LinkButton: View {
         }
         .buttonStyle(PlainButtonStyle())
         .pointingHandCursor()
+        .accessibilityIdentifier(identifier)
     }
 }
 
@@ -2505,6 +2528,8 @@ private struct ToolButton: View {
     let icon: String
     let title: String
     let scheme: ColorScheme
+    /// For UI tests to find it by.
+    var identifier: String = ""
     let action: () -> Void
     var body: some View {
         SwiftUI.Button(action: action) {
@@ -2523,6 +2548,7 @@ private struct ToolButton: View {
         }
         .buttonStyle(PlainButtonStyle())
         .pointingHandCursor()
+        .accessibilityIdentifier(identifier)
     }
 }
 
@@ -2538,6 +2564,8 @@ private struct IconButton: View {
     /// Symbol from macOS 14 and this app still runs on macOS 11; mirroring the macOS 10.15 symbol
     /// gives that exact glyph on every version, from one code path.
     var mirroredHorizontally: Bool = false
+    /// For UI tests to find it by.
+    var identifier: String = ""
     let action: () -> Void
 
     @ViewBuilder var body: some View {
@@ -2552,6 +2580,7 @@ private struct IconButton: View {
         }
         .buttonStyle(PlainButtonStyle())
         .pointingHandCursor()
+        .accessibilityIdentifier(identifier)
         if let help = help {
             button.help(help).accessibilityLabel(Text(help))
         } else {
