@@ -15,6 +15,7 @@
 //  thin shim that carries the decision out.
 //
 
+import CoreGraphics
 import Foundation
 
 enum AllowedActivityFullScreen {
@@ -131,6 +132,8 @@ extension AllowedActivityFullScreen {
         let routineState: CURRENTSTATE
         let isFullScreenWindowShowing: Bool
         let isMeetingSessionLive: Bool
+        /// The display the borderless window is on — `NSScreen.displayID` of its full-screen host.
+        var fullScreenDisplayID: CGDirectDisplayID? = nil
     }
 
     struct Coordinator {
@@ -144,11 +147,26 @@ extension AllowedActivityFullScreen {
         /// single authority: it is told at the start, pause, resume, skip and finish of every habit, so
         /// by the time teardown routes the window this already says "no habit".
         private(set) var isAllowedActivityHabitHoldingTheScreen = false
+        /// The display the routine was full screen on when it first stepped aside, so it can go back
+        /// there once the habit is over (`FullScreenDisplays.hostAfterAllowedActivityHabit`).
+        ///
+        /// Kept through a pause: pausing — which is how Skip starts — brings full screen back on the
+        /// display the user clicked in, so the skip question appears there, and a resume steps aside
+        /// from THAT display. Neither may replace the display the routine really came from, which is
+        /// why only the first step-aside records it. Handed out, and forgotten, when the habit is over.
+        private(set) var displayBeforeHabit: CGDirectDisplayID?
 
         /// A habit started, paused, resumed, was skipped or finished.
         mutating func habitLifecycle(isAllowedActivityHabit: Bool, in context: Context) -> Action {
             isAllowedActivityHabitHoldingTheScreen = isAllowedActivityHabit
             return resolve(.habitLifecycle, isAllowedActivityHabit, context)
+        }
+
+        /// The allowed-activity habit is over — skipped, finished, cut off, or replaced by an ordinary
+        /// habit. Returns the display the routine should go back to, once.
+        mutating func takeDisplayBeforeHabit() -> CGDirectDisplayID? {
+            defer { displayBeforeHabit = nil }
+            return displayBeforeHabit
         }
 
         /// Something is about to size the main window — the menu-bar expand button, a sidebar row, the
@@ -165,6 +183,7 @@ extension AllowedActivityFullScreen {
         mutating func reset() {
             didLeaveFullScreenForHabit = false
             isAllowedActivityHabitHoldingTheScreen = false
+            displayBeforeHabit = nil
         }
 
         private mutating func resolve(_ trigger: Trigger, _ isRunning: Bool, _ context: Context) -> Action {
@@ -181,7 +200,10 @@ extension AllowedActivityFullScreen {
                 // Only a step-aside from an actual full-screen window is one we owe a restore for. A
                 // routing call that merely keeps an already-small window small must not claim one, or a
                 // later pause would "restore" a window the user never had covered.
-                if context.isFullScreenWindowShowing { didLeaveFullScreenForHabit = true }
+                if context.isFullScreenWindowShowing {
+                    didLeaveFullScreenForHabit = true
+                    if displayBeforeHabit == nil { displayBeforeHabit = context.fullScreenDisplayID }
+                }
             case .restoreFullScreen:
                 didLeaveFullScreenForHabit = false
             case .doNothing:
@@ -202,11 +224,16 @@ var allowedActivityFullScreenCoordinator = AllowedActivityFullScreen.Coordinator
 /// Must be called at EVERY lifecycle moment, including the ones that change nothing about the window:
 /// it is what keeps `isAllowedActivityHabitHoldingTheScreen` — the flag window routing trusts — current.
 ///
-/// - Parameter isAllowedActivityHabit: pass `false` from the pause / completion / skip points, which is
-///   what asks for the window back.
-func applyFullScreen(forAllowedActivityHabit isAllowedActivityHabit: Bool) {
-    applyAllowedActivityFullScreen(description: "lifecycle(allowedActivity=\(isAllowedActivityHabit))") {
-        coordinator, context in
+/// - Parameters:
+///   - isAllowedActivityHabit: pass `false` from the pause / completion / skip points, which is what asks
+///     for the window back.
+///   - isPausingHabit: the habit is only paused, not over. Full screen comes back on the display the user
+///     clicked in (that is where the skip question belongs); every other `false` means the habit is over,
+///     and the routine goes back to the display it was on before the habit.
+func applyFullScreen(forAllowedActivityHabit isAllowedActivityHabit: Bool, isPausingHabit: Bool = false) {
+    let isHabitOver = !isAllowedActivityHabit && !isPausingHabit
+    applyAllowedActivityFullScreen(description: "lifecycle(allowedActivity=\(isAllowedActivityHabit) over=\(isHabitOver))",
+                                   isHabitOver: isHabitOver) { coordinator, context in
         coordinator.habitLifecycle(isAllowedActivityHabit: isAllowedActivityHabit, in: context)
     }
 }
@@ -227,6 +254,7 @@ func keepWindowedForAllowedActivityHabit() -> Bool {
 @discardableResult
 private func applyAllowedActivityFullScreen(
     description: String,
+    isHabitOver: Bool = false,
     decide: (inout AllowedActivityFullScreen.Coordinator, AllowedActivityFullScreen.Context) -> AllowedActivityFullScreen.Action
 ) -> Bool {
     guard let windowController = mainWindowControllerObj, windowController.window != nil,
@@ -235,9 +263,12 @@ private func applyAllowedActivityFullScreen(
         isFullScreenSettingEnabled: SettingsManagerObject.isFullScreenEnabled,
         routineState: currentState,
         isFullScreenWindowShowing: windowController.isFullScreenVisible,
-        isMeetingSessionLive: currentAccountabilityBuddySession?.isMeeting == true)
+        isMeetingSessionLive: currentAccountabilityBuddySession?.isMeeting == true,
+        fullScreenDisplayID: windowController.fullScreenDisplay?.displayID)
     let action = decide(&allowedActivityFullScreenCoordinator, context)
-    addLog(text: "allowed-activity full screen: \(action) (\(description) state=\(currentState) showing=\(context.isFullScreenWindowShowing) holding=\(allowedActivityFullScreenCoordinator.isAllowedActivityHabitHoldingTheScreen) leftForHabit=\(allowedActivityFullScreenCoordinator.didLeaveFullScreenForHabit))")
+    let displayBeforeHabit = isHabitOver ? allowedActivityFullScreenCoordinator.takeDisplayBeforeHabit() : nil
+    let hostAfterHabit = displayBeforeHabit.flatMap(windowController.hostAfterAllowedActivityHabit)
+    addLog(text: "allowed-activity full screen: \(action) (\(description) state=\(currentState) showing=\(context.isFullScreenWindowShowing) holding=\(allowedActivityFullScreenCoordinator.isAllowedActivityHabitHoldingTheScreen) leftForHabit=\(allowedActivityFullScreenCoordinator.didLeaveFullScreenForHabit) display=\(displayLogName(context.fullScreenDisplayID)) returnTo=\(displayLogName(displayBeforeHabit)))")
     switch action {
     case .leaveFullScreen:
         // `showSmallSizeWindow()` alone only restyles — the window would keep the full-screen FRAME and
@@ -249,9 +280,13 @@ private func applyAllowedActivityFullScreen(
     case .restoreFullScreen:
         // The canonical re-entry: re-applies the borderless style AND re-frames the window to the screen.
         // Flagged as the restore so it is not itself treated as ordinary routing and turned back around.
-        rootViewController.checkIsFullScreenNeeded(isRestoringAfterAllowedActivityHabit: true)
+        rootViewController.checkIsFullScreenNeeded(isRestoringAfterAllowedActivityHabit: true, on: hostAfterHabit)
         return true
     case .doNothing:
-        return false
+        // Skipping paused the habit first, which already brought full screen back — on the display the
+        // user clicked Skip in. Now that the habit is over, the routine goes home.
+        guard hostAfterHabit != nil, windowController.isFullScreenVisible else { return false }
+        windowController.moveFullScreenWindow(to: hostAfterHabit)
+        return true
     }
 }

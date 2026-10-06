@@ -7,7 +7,8 @@
 //   * MorningRoutineStartGuard  — 2026-06-24_16-19-02, custom routine kicked back to morning
 //   * EventTimeParser           — 2026-06-24_21-08-27, typing "3" in the minutes became "03"
 //   * PostponeGate              — 2026-06-24_21-01-49, 5s countdown demanded after the password
-//   * DayPlanDestination        — 2026-06-25_18-11-05, "View full day plan" during an allowed app
+//   * DayPlanDestination        — 2026-06-25_18-11-05, "View full day plan" during an allowed app;
+//                                 2026-09-28_13-28-20, blank window after a routine ending on one
 //
 
 @testable import Focus_Bear
@@ -211,6 +212,24 @@ class DayPlanDestinationTests: XCTestCase {
     func test_noAllowedActivityTabs_targetsTheMainWindowDayPlan() {
         XCTAssertEqual(DayPlanDestination.target(hasAllowedActivityTabs: false),
                        .mainWindowDayPlan)
+    }
+
+    func test_tabBarUnhiddenInAMountedPlayer_isOnScreen() {
+        XCTAssertTrue(DayPlanDestination.isAllowedActivityTabBarOnScreen(isTabBarUnhidden: true,
+                                                                           isHabitPlayerMounted: true))
+    }
+
+    func test_routineFinishedAfterAnAllowedAppHabit_tabBarIsNotOnScreen() {
+        // Report 2026-09-28_13-28-20: the last habit was an allowed-app one, so its tab bar was still
+        // unhidden after the routine ended and the player left the habits area. The end-of-routine
+        // Day Plan was sent into that detached player and the main window stayed blank.
+        XCTAssertFalse(DayPlanDestination.isAllowedActivityTabBarOnScreen(isTabBarUnhidden: true,
+                                                                            isHabitPlayerMounted: false))
+    }
+
+    func test_plainHabitPlaying_tabBarIsNotOnScreen() {
+        XCTAssertFalse(DayPlanDestination.isAllowedActivityTabBarOnScreen(isTabBarUnhidden: false,
+                                                                            isHabitPlayerMounted: true))
     }
 
     func test_dayPlanIsTheSecondSegment() {

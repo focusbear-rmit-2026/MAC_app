@@ -198,7 +198,8 @@ func restoreMainWindowOnActivationIfNeeded() -> Bool {
         isMenuVisible: isMenuVisible,
         isAnotherFocusBearWindowFront: isAnotherFocusBearWindowFront,
         state: currentState,
-        isMainWindowConfiguredBorderless: mainWindowControllerObj?.isFullScreenVisible ?? false)
+        isMainWindowConfiguredBorderless: mainWindowControllerObj?.isFullScreenVisible ?? false,
+        isAllowedActivityHabit: isAllowedActivityHabitPlaying)
     // Logged whichever way it goes, and with the windows named: a silent `doNothing` is
     // indistinguishable from the feature being absent, and an unnamed "something else is up" is
     // indistinguishable from a wrong guess. Both cost this report a round trip.
@@ -1533,6 +1534,29 @@ func closeSplashWindow(){
 }
 
 
+/// Remembers what the last full-screen entry was anchored to — the macOS primary display and any
+/// explicitly requested host — so a later display-topology change can tell "the primary changed"
+/// (follow it) from "the same displays were re-arranged" (stay put). Entry decides with
+/// `FullScreenDisplays.preferredHosts`; reconfiguration with `preferencesAfterReconfiguration`.
+struct FullScreenDisplaySelection<DisplayID: Equatable> {
+    private(set) var primaryID: DisplayID?
+    private(set) var requestedID: DisplayID?
+
+    mutating func beginEntry(primaryID: DisplayID?, requestedID: DisplayID?, continuing: Bool) {
+        if !continuing || self.primaryID == nil { self.primaryID = primaryID }
+        if !continuing || requestedID != nil { self.requestedID = requestedID }
+    }
+
+    mutating func preferencesAfterReconfiguration(primaryID: DisplayID?, rememberedID: DisplayID?,
+                                                  currentID: DisplayID?) -> [DisplayID?] {
+        let changedPrimary = self.primaryID != nil && primaryID != self.primaryID
+        self.primaryID = primaryID
+        // Explicit allowed-activity returns/manual choices survive topology updates. Automatic
+        // placement follows a changed primary; geometry-only updates keep the current physical host.
+        return [requestedID, changedPrimary ? primaryID : nil, rememberedID, currentID]
+    }
+}
+
 /// Which display the routine's borderless full-screen window takes, and which displays get the blank
 /// covers. One rule for both, so a cover can never land on the display the routine is on.
 ///
@@ -1547,11 +1571,71 @@ enum FullScreenDisplays {
         preferred.compactMap { $0 }.first(where: { all.contains($0) }) ?? all.first
     }
 
+    /// Screen objects and geometry can be replaced when a monitor is connected or rearranged.
+    /// Resolve remembered identities against the new inventory before framing either host or covers.
+    static func reconfiguredHost<Screen, DisplayID: Equatable>(preferredIDs: [DisplayID?], all: [Screen],
+                                                               displayID: (Screen) -> DisplayID?) -> Screen? {
+        for identifier in preferredIDs.compactMap({ $0 }) {
+            if let screen = all.first(where: { displayID($0) == identifier }) { return screen }
+        }
+        return all.first
+    }
+
     /// Every display except the host. A host that is no longer connected falls back to the primary.
     static func screensToCover<Screen: Equatable>(all: [Screen], host: Screen?) -> [Screen] {
         guard let host = host, all.contains(host) else { return Array(all.dropFirst()) }
         return all.filter { $0 != host }
     }
+
+    /// The displays to try, in order, when the borderless window is shown.
+    ///
+    /// - `requested` wins when there is one: an allowed-activity habit that is over sends the routine
+    ///   back to the display it was on before the habit (see `hostAfterAllowedActivityHabit`).
+    /// - Fresh morning/evening routine entry uses the current primary display.
+    /// - Other entries go to the display with keyboard focus, where the user is
+    ///   working — e.g. the menu they just clicked Skip in — so the skip question appears there.
+    /// - An automatic focus summary retains the current display instead of following keyboard focus.
+    /// - A re-assert of a window that is already full screen keeps its display rather than jumping.
+    static func preferredHosts<Screen>(requested: Screen?, isAlreadyFullScreen: Bool,
+                                       focused: Screen?, current: Screen?, state: CURRENTSTATE = ._NOTHING_,
+                                       primary: Screen? = nil, isWindowVisible: Bool = true) -> [Screen?] {
+        let isRoutine = state == ._MORNING_HABIT_ || state == ._EVENING_HABIT_
+        // A closed nested-break window still carries its fullscreen flag. Returning to a routine
+        // is a fresh entry, and NSScreen.main identifies keyboard focus, not the macOS primary.
+        let isActiveFullScreen = isAlreadyFullScreen && (!isRoutine || isWindowVisible)
+        if isRoutine && !isActiveFullScreen {
+            return [requested, primary, focused, current]
+        }
+        let shouldKeepCurrentDisplay = isActiveFullScreen || state == ._FOCUS_SUMMARY_
+        return [requested] + (shouldKeepCurrentDisplay ? [current, focused] : [focused, current])
+    }
+
+    /// Where the routine goes once an allowed-activity habit is skipped or ends: back to the display it
+    /// was on before the habit started, found by its display identifier. Skipping put the skip question
+    /// on the display the user clicked in, and the routine used to stay there — so with the menu on the
+    /// laptop screen, the Day Plan moved off the primary external monitor for good (report
+    /// 2026-09-25_14-51-33, follow-up 2026-09-28). A display unplugged since then falls back to the
+    /// focused one, and failing that the primary.
+    static func hostAfterAllowedActivityHabit<Screen: Equatable, DisplayID: Equatable>(
+        displayBeforeHabit: DisplayID?, focused: Screen?, all: [Screen],
+        displayID: (Screen) -> DisplayID?) -> Screen? {
+        let screenBeforeHabit = displayBeforeHabit.flatMap { id in all.first { displayID($0) == id } }
+        return host(preferred: [screenBeforeHabit, focused], all: all)
+    }
+}
+
+extension NSScreen {
+    private static let screenNumberKey = NSDeviceDescriptionKey("NSScreenNumber")
+
+    /// Stable for as long as the display stays connected, unlike the `NSScreen` object itself, which
+    /// AppKit replaces whenever the display arrangement changes.
+    var displayID: CGDirectDisplayID? {
+        deviceDescription[Self.screenNumberKey] as? CGDirectDisplayID
+    }
+}
+
+func displayLogName(_ displayID: CGDirectDisplayID?) -> String {
+    displayID.map { "\($0)" } ?? "none"
 }
 
 var arrWindows = [NSWindow]()

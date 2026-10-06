@@ -22,6 +22,7 @@
 //
 
 @testable import Focus_Bear
+import CoreGraphics
 import XCTest
 
 final class AllowedActivityFullScreenTests: XCTestCase {
@@ -461,5 +462,243 @@ extension AllowedActivityFullScreenTests {
 
     func testASingleDisplayGetsNoCovers() {
         XCTAssertEqual(FullScreenDisplays.screensToCover(all: [Self.primary], host: Self.primary), [])
+    }
+}
+
+// MARK: - Going back to the routine's own display once the habit is over (report 2026-09-25_14-51-33, follow-up 2026-09-28)
+//
+// "It swapped my monitors." The Day Plan was full screen on the primary external monitor; the allowed-app
+// habit ran with its menu on the laptop screen; Skip brought the routine back on the laptop — correctly,
+// for the skip question — and it then stayed there after the skip instead of going home.
+extension AllowedActivityFullScreenTests {
+    private static let externalMonitor = CGRect(x: 0, y: 0, width: 1600, height: 900)
+    private static let laptopScreen = CGRect(x: -1024, y: 234, width: 1024, height: 666)
+    private static let externalMonitorID: CGDirectDisplayID = 2
+    private static let laptopScreenID: CGDirectDisplayID = 1
+    private static let unpluggedDisplayID: CGDirectDisplayID = 3
+    private static let bothDisplays = [externalMonitor, laptopScreen]
+
+    private static func displayID(of screen: CGRect) -> CGDirectDisplayID? {
+        switch screen {
+        case externalMonitor: return externalMonitorID
+        case laptopScreen: return laptopScreenID
+        default: return nil
+        }
+    }
+
+    private static func context(showing: Bool, on displayID: CGDirectDisplayID?) -> AllowedActivityFullScreen.Context {
+        .init(isFullScreenSettingEnabled: true, routineState: ._EVENING_HABIT_,
+              isFullScreenWindowShowing: showing, isMeetingSessionLive: false, fullScreenDisplayID: displayID)
+    }
+
+    private static func hostAfterHabit(displayBeforeHabit: CGDirectDisplayID?, focused: CGRect?) -> CGRect? {
+        FullScreenDisplays.hostAfterAllowedActivityHabit(displayBeforeHabit: displayBeforeHabit, focused: focused,
+                                                         all: bothDisplays, displayID: displayID(of:))
+    }
+
+    func testTheRoutineGoesBackToTheDisplayItWasOnBeforeTheHabit() {
+        // The skip was clicked on the laptop screen, so that is the focused display.
+        XCTAssertEqual(Self.hostAfterHabit(displayBeforeHabit: Self.externalMonitorID, focused: Self.laptopScreen),
+                       Self.externalMonitor)
+    }
+
+    func testADisplayUnpluggedDuringTheHabitFallsBackToTheFocusedOne() {
+        XCTAssertEqual(Self.hostAfterHabit(displayBeforeHabit: Self.unpluggedDisplayID, focused: Self.laptopScreen),
+                       Self.laptopScreen)
+        XCTAssertEqual(Self.hostAfterHabit(displayBeforeHabit: Self.unpluggedDisplayID, focused: nil),
+                       Self.externalMonitor, "with nothing focused either, the primary display")
+    }
+
+    func testWithNoRememberedDisplayTheFocusedOneIsUsed() {
+        XCTAssertEqual(Self.hostAfterHabit(displayBeforeHabit: nil, focused: Self.laptopScreen), Self.laptopScreen)
+    }
+
+    func testFreshRoutineEntryUsesPrimaryInsteadOfKeyboardFocus() {
+        for state in [CURRENTSTATE._MORNING_HABIT_, ._EVENING_HABIT_] {
+            let preferred = FullScreenDisplays.preferredHosts(requested: nil, isAlreadyFullScreen: false,
+                focused: Self.laptopScreen, current: Self.laptopScreen, state: state, primary: Self.externalMonitor)
+            XCTAssertEqual(FullScreenDisplays.host(preferred: preferred, all: Self.bothDisplays), Self.externalMonitor)
+        }
+    }
+
+    func testClosedNestedBreakDoesNotRetainItsOldRoutineDisplay() {
+        let preferred = FullScreenDisplays.preferredHosts(requested: nil, isAlreadyFullScreen: true,
+            focused: Self.laptopScreen, current: Self.laptopScreen, state: ._MORNING_HABIT_,
+            primary: Self.externalMonitor, isWindowVisible: false)
+        XCTAssertEqual(FullScreenDisplays.host(preferred: preferred, all: Self.bothDisplays), Self.externalMonitor)
+    }
+
+    func testRoutineExplicitReturnAndActiveWindowKeepTheirDisplay() {
+        for isAlreadyFullScreen in [false, true] {
+            let preferred = FullScreenDisplays.preferredHosts(requested: Self.laptopScreen,
+                isAlreadyFullScreen: isAlreadyFullScreen, focused: Self.externalMonitor,
+                current: Self.laptopScreen, state: ._MORNING_HABIT_, primary: Self.externalMonitor)
+            XCTAssertEqual(FullScreenDisplays.host(preferred: preferred, all: Self.bothDisplays), Self.laptopScreen)
+        }
+        let active = FullScreenDisplays.preferredHosts(requested: nil, isAlreadyFullScreen: true,
+            focused: Self.externalMonitor, current: Self.laptopScreen, state: ._EVENING_HABIT_, primary: Self.externalMonitor)
+        XCTAssertEqual(FullScreenDisplays.host(preferred: active, all: Self.bothDisplays), Self.laptopScreen)
+    }
+
+    func testPrimaryRoutinePolicyDoesNotLeakIntoSubsequentSummaryOrGenericEntry() {
+        for state in [CURRENTSTATE._FOCUS_SUMMARY_, ._NOTHING_] {
+            let preferred = FullScreenDisplays.preferredHosts(requested: nil, isAlreadyFullScreen: false,
+                focused: Self.laptopScreen, current: Self.laptopScreen, state: state, primary: Self.externalMonitor)
+            XCTAssertEqual(FullScreenDisplays.host(preferred: preferred, all: Self.bothDisplays), Self.laptopScreen)
+        }
+    }
+
+    func testARequestedDisplayBeatsTheFocusedAndCurrentOnes() {
+        let preferred = FullScreenDisplays.preferredHosts(requested: Self.externalMonitor, isAlreadyFullScreen: false,
+                                                          focused: Self.laptopScreen, current: Self.laptopScreen)
+        XCTAssertEqual(FullScreenDisplays.host(preferred: preferred, all: Self.bothDisplays), Self.externalMonitor)
+    }
+
+    func testWithoutARequestTheSkipQuestionStillAppearsWhereTheUserClicked() {
+        let entering = FullScreenDisplays.preferredHosts(requested: nil, isAlreadyFullScreen: false,
+                                                         focused: Self.laptopScreen, current: Self.externalMonitor)
+        XCTAssertEqual(FullScreenDisplays.host(preferred: entering, all: Self.bothDisplays), Self.laptopScreen)
+
+        let reasserting = FullScreenDisplays.preferredHosts(requested: nil, isAlreadyFullScreen: true,
+                                                            focused: Self.laptopScreen, current: Self.externalMonitor)
+        XCTAssertEqual(FullScreenDisplays.host(preferred: reasserting, all: Self.bothDisplays), Self.externalMonitor,
+                       "a window already full screen keeps its display")
+    }
+
+    func testAutomaticSummaryKeepsExistingDisplayWhenKeyboardFocusMoved() {
+        let preferred = FullScreenDisplays.preferredHosts(requested: nil, isAlreadyFullScreen: false,
+                                                          focused: Self.laptopScreen, current: Self.externalMonitor,
+                                                          state: ._FOCUS_SUMMARY_)
+        let host = FullScreenDisplays.host(preferred: preferred, all: Self.bothDisplays)
+        XCTAssertEqual(host, Self.externalMonitor)
+        XCTAssertEqual(FullScreenDisplays.screensToCover(all: Self.bothDisplays, host: host), [Self.laptopScreen])
+    }
+
+    func testSummaryRespectsExplicitRequestedDisplay() {
+        let preferred = FullScreenDisplays.preferredHosts(requested: Self.laptopScreen, isAlreadyFullScreen: false,
+                                                          focused: Self.externalMonitor, current: Self.externalMonitor,
+                                                          state: ._FOCUS_SUMMARY_)
+        XCTAssertEqual(FullScreenDisplays.host(preferred: preferred, all: Self.bothDisplays), Self.laptopScreen)
+    }
+
+    func testSummaryFollowsCurrentWindowAfterUserMovesIt() {
+        let preferred = FullScreenDisplays.preferredHosts(requested: nil, isAlreadyFullScreen: false,
+                                                          focused: Self.externalMonitor, current: Self.laptopScreen,
+                                                          state: ._FOCUS_SUMMARY_)
+        XCTAssertEqual(FullScreenDisplays.host(preferred: preferred, all: Self.bothDisplays), Self.laptopScreen)
+    }
+
+    func testSummaryFallsBackWhenItsPreviousDisplayIsDisconnected() {
+        let preferred = FullScreenDisplays.preferredHosts(requested: nil, isAlreadyFullScreen: false,
+                                                          focused: Self.laptopScreen, current: Self.externalMonitor,
+                                                          state: ._FOCUS_SUMMARY_)
+        XCTAssertEqual(FullScreenDisplays.host(preferred: preferred, all: [Self.laptopScreen]), Self.laptopScreen)
+        let withoutCurrent = FullScreenDisplays.preferredHosts(requested: nil, isAlreadyFullScreen: false,
+                                                               focused: nil, current: Optional<CGRect>.none,
+                                                               state: ._FOCUS_SUMMARY_)
+        XCTAssertEqual(FullScreenDisplays.host(preferred: withoutCurrent, all: Self.bothDisplays), Self.externalMonitor)
+    }
+
+    func testRoutineEntriesStillFollowKeyboardFocusOutsideSummary() {
+        for state in [CURRENTSTATE._MORNING_HABIT_, ._EVENING_HABIT_, ._CUSTOM_ROUTINE_, ._MICRO_BREAK_] {
+            let preferred = FullScreenDisplays.preferredHosts(requested: nil, isAlreadyFullScreen: false,
+                                                              focused: Self.laptopScreen, current: Self.externalMonitor,
+                                                              state: state)
+            XCTAssertEqual(FullScreenDisplays.host(preferred: preferred, all: Self.bothDisplays), Self.laptopScreen)
+        }
+    }
+
+    /// The report's sequence: start on the external monitor, Skip (a pause) on the laptop, then the skip.
+    func testSkippingRemembersTheDisplayFromBeforeTheHabitNotTheOneTheQuestionWasOn() {
+        var coordinator = AllowedActivityFullScreen.Coordinator()
+        XCTAssertEqual(coordinator.habitLifecycle(isAllowedActivityHabit: true,
+                                                  in: Self.context(showing: true, on: Self.externalMonitorID)),
+                       .leaveFullScreen)
+        // Skip pauses the habit: full screen comes back, on the laptop where Skip was clicked.
+        XCTAssertEqual(coordinator.habitLifecycle(isAllowedActivityHabit: false, in: Self.context(showing: false, on: nil)),
+                       .restoreFullScreen)
+        XCTAssertEqual(coordinator.displayBeforeHabit, Self.externalMonitorID, "a pause must keep the display")
+
+        XCTAssertEqual(coordinator.takeDisplayBeforeHabit(), Self.externalMonitorID)
+        XCTAssertNil(coordinator.takeDisplayBeforeHabit(), "handed out once, then forgotten")
+    }
+
+    func testResumingFromThePausedDisplayDoesNotReplaceTheOriginalOne() {
+        var coordinator = AllowedActivityFullScreen.Coordinator()
+        _ = coordinator.habitLifecycle(isAllowedActivityHabit: true, in: Self.context(showing: true, on: Self.externalMonitorID))
+        _ = coordinator.habitLifecycle(isAllowedActivityHabit: false, in: Self.context(showing: false, on: nil))       // pause
+        _ = coordinator.habitLifecycle(isAllowedActivityHabit: true, in: Self.context(showing: true, on: Self.laptopScreenID)) // resume
+        XCTAssertEqual(coordinator.takeDisplayBeforeHabit(), Self.externalMonitorID)
+    }
+
+    func testAWindowThatWasNeverFullScreenRecordsNoDisplay() {
+        var coordinator = AllowedActivityFullScreen.Coordinator()
+        _ = coordinator.habitLifecycle(isAllowedActivityHabit: true, in: Self.context(showing: false, on: Self.laptopScreenID))
+        XCTAssertNil(coordinator.takeDisplayBeforeHabit())
+    }
+
+    func testEndingTheRoutineForgetsTheDisplay() {
+        var coordinator = AllowedActivityFullScreen.Coordinator()
+        _ = coordinator.habitLifecycle(isAllowedActivityHabit: true, in: Self.context(showing: true, on: Self.externalMonitorID))
+        coordinator.reset()
+        XCTAssertNil(coordinator.displayBeforeHabit)
+    }
+}
+
+extension AllowedActivityFullScreenTests {
+    private struct DisplayFixture: Equatable {
+        let id: Int
+        let frame: CGRect
+    }
+
+    func testTopologyChangeResolvesFreshHostGeometryBeforeChoosingCovers() {
+        let laptop = DisplayFixture(id: 1, frame: CGRect(x: 500, y: -600, width: 1000, height: 600))
+        let external = DisplayFixture(id: 2, frame: CGRect(x: 0, y: 0, width: 1500, height: 1000))
+        let displays = [external, laptop]
+        let host = FullScreenDisplays.reconfiguredHost(preferredIDs: [laptop.id, external.id], all: displays, displayID: { $0.id })
+        XCTAssertEqual(host, laptop, "Retain the physical host, using its new origin and dimensions")
+        XCTAssertEqual(FullScreenDisplays.screensToCover(all: displays, host: host), [external])
+    }
+
+    func testRemovedHostFallsBackToCurrentConnectedDisplay() {
+        let remaining = DisplayFixture(id: 2, frame: CGRect(x: 0, y: 0, width: 1000, height: 600))
+        let host = FullScreenDisplays.reconfiguredHost(preferredIDs: [1, remaining.id], all: [remaining], displayID: { $0.id })
+        XCTAssertEqual(host, remaining)
+        XCTAssertTrue(FullScreenDisplays.screensToCover(all: [remaining], host: host).isEmpty)
+    }
+
+    func testMissingDisplayIdentitiesUseNewPrimaryAndEmptyInventoryIsSafe() {
+        let primary = DisplayFixture(id: 2, frame: .zero)
+        XCTAssertEqual(FullScreenDisplays.reconfiguredHost(preferredIDs: [1], all: [primary], displayID: { $0.id }), primary)
+        XCTAssertNil(FullScreenDisplays.reconfiguredHost(preferredIDs: [1], all: [DisplayFixture](), displayID: { $0.id }))
+    }
+}
+
+extension AllowedActivityFullScreenTests {
+    func testExternalPrimaryReconnectOverridesAutomaticLaptopFallback() {
+        var selection = FullScreenDisplaySelection<Int>()
+        selection.beginEntry(primaryID: 1, requestedID: nil, continuing: false)
+        selection.beginEntry(primaryID: 2, requestedID: nil, continuing: true)
+        let preferences = selection.preferencesAfterReconfiguration(primaryID: 2, rememberedID: 1, currentID: 1)
+        XCTAssertEqual(FullScreenDisplays.reconfiguredHost(preferredIDs: preferences, all: [2, 1], displayID: { $0 }), 2)
+        let unchanged = selection.preferencesAfterReconfiguration(primaryID: 2, rememberedID: 1, currentID: 1)
+        XCTAssertEqual(FullScreenDisplays.reconfiguredHost(preferredIDs: unchanged, all: [2, 1], displayID: { $0 }), 1)
+    }
+
+    func testExplicitDisplayChoiceSurvivesPrimaryReconnectAndRepeatedEntry() {
+        var selection = FullScreenDisplaySelection<Int>()
+        selection.beginEntry(primaryID: 1, requestedID: 1, continuing: false)
+        selection.beginEntry(primaryID: 1, requestedID: nil, continuing: true)
+        let preferences = selection.preferencesAfterReconfiguration(primaryID: 2, rememberedID: 1, currentID: 1)
+        XCTAssertEqual(FullScreenDisplays.reconfiguredHost(preferredIDs: preferences, all: [2, 1], displayID: { $0 }), 1)
+        XCTAssertEqual(FullScreenDisplays.reconfiguredHost(preferredIDs: preferences, all: [2], displayID: { $0 }), 2)
+    }
+
+    func testFreshEntryDoesNotRetainAnOlderExplicitDisplayChoice() {
+        var selection = FullScreenDisplaySelection<Int>()
+        selection.beginEntry(primaryID: 1, requestedID: 1, continuing: false)
+        selection.beginEntry(primaryID: 1, requestedID: nil, continuing: false)
+        let preferences = selection.preferencesAfterReconfiguration(primaryID: 2, rememberedID: 1, currentID: 1)
+        XCTAssertEqual(FullScreenDisplays.reconfiguredHost(preferredIDs: preferences, all: [2, 1], displayID: { $0 }), 2)
     }
 }

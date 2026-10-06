@@ -7,6 +7,143 @@ final class MainWindowContentLayoutTests: XCTestCase {
     private let visible = NSRect(x: 0, y: 70, width: 1440, height: 806)
 
     @MainActor
+    func testDisplayReconfigurationFramesHostBeforeRebuildingCovers() throws {
+        let host = try XCTUnwrap(NSScreen.screens.first)
+        let previousCovers = arrWindows
+        let previousSetting = SettingsManagerObject.isFullScreenEnabled
+        arrWindows = []
+        SettingsManagerObject.isFullScreenEnabled = true
+        let window = TopologyFixtureWindow(contentRect: NSRect(x: -20000, y: -20000, width: 900, height: 450),
+                                           styleMask: [.borderless, .resizable], backing: .buffered, defer: true)
+        window.isReleasedWhenClosed = false
+        let controller = mainWindowController(window: window)
+        controller.isFullScreenVisible = true
+        controller.fullScreenHostScreen = host
+        defer {
+            window.close()
+            arrWindows = previousCovers
+            SettingsManagerObject.isFullScreenEnabled = previousSetting
+        }
+        var rebuilt = false
+        controller.reconcileFullScreenDisplays(isFullScreenEnabled: { true }) {
+            XCTAssertTrue(arrWindows.isEmpty)
+            XCTAssertEqual(window.frame, host.frame)
+            XCTAssertEqual(controller.fullScreenDisplay?.displayID, host.displayID)
+            rebuilt = true
+        }
+        XCTAssertTrue(rebuilt)
+    }
+
+    @MainActor
+    func testDisplayReconfigurationDoesNotCoverHiddenOrTitledHost() {
+        let oldCovers = arrWindows
+        arrWindows = []
+        defer { arrWindows = oldCovers }
+        let window = NSWindow(contentRect: NSRect(x: -20000, y: -20000, width: 900, height: 450),
+                              styleMask: [.titled], backing: .buffered, defer: true)
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+        let controller = mainWindowController(window: window)
+        controller.isFullScreenVisible = true
+        let frame = window.frame
+        controller.reconcileFullScreenDisplays { XCTFail("An ordinary hidden window must not acquire covers") }
+        XCTAssertEqual(window.frame, frame)
+    }
+
+    @MainActor
+    func testProtectedNavigationLeavesFullscreenAndPageIntactUntilApproval() throws {
+        let controller = ViewController(nibName: nil, bundle: nil)
+        let window = NSWindow(contentRect: display, styleMask: [.borderless, .resizable],
+                              backing: .buffered, defer: true)
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+        let page = NSView(frame: display)
+        window.contentView = page
+        let originalFrame = window.frame
+        var approve: (() -> Void)?
+        var navigationCount = 0
+        XCTAssertTrue(controller.deferSettingsNavigationUntilAuthorized({
+            navigationCount += 1
+            window.styleMask = [.titled, .resizable]
+            window.contentView = NSView()
+        }, requiresAuthorization: { true }, presentAuthorization: { approval, _ in approve = approval }))
+        XCTAssertEqual(navigationCount, 0)
+        XCTAssertEqual(window.frame, originalFrame)
+        XCTAssertFalse(window.styleMask.contains(.titled))
+        XCTAssertTrue(window.contentView === page)
+        let approval = try XCTUnwrap(approve)
+        approval()
+        approval()
+        XCTAssertEqual(navigationCount, 1)
+    }
+
+    @MainActor
+    func testCancelledProtectedNavigationCannotExecuteFromStaleApproval() throws {
+        let controller = ViewController(nibName: nil, bundle: nil)
+        var approve: (() -> Void)?
+        var cancel: (() -> Void)?
+        var navigated = false
+        XCTAssertTrue(controller.deferSettingsNavigationUntilAuthorized({ navigated = true },
+            requiresAuthorization: { true }, presentAuthorization: { approve = $0; cancel = $1 }))
+        try XCTUnwrap(cancel)()
+        try XCTUnwrap(approve)()
+        XCTAssertFalse(navigated)
+        XCTAssertFalse(controller.deferSettingsNavigationUntilAuthorized({}, requiresAuthorization: { false }))
+    }
+
+    @MainActor
+    func testReplacingCurrentPageInvalidatesPendingProtectedNavigation() throws {
+        let controller = CleanupFixtureViewController()
+        let root = NSView()
+        let content = NSView()
+        root.addSubview(content)
+        controller.view = root
+        controller.containerView = content
+        var approve: (() -> Void)?
+        var navigated = false
+        XCTAssertTrue(controller.deferSettingsNavigationUntilAuthorized({ navigated = true },
+            requiresAuthorization: { true }, presentAuthorization: { approve = $0; _ = $1 }))
+        controller.removeSubViews()
+        try XCTUnwrap(approve)()
+        XCTAssertFalse(navigated)
+    }
+
+    @MainActor
+    func testPendingProtectedNavigationDoesNotReplacePromptOrDestination() throws {
+        let controller = ViewController(nibName: nil, bundle: nil)
+        var approve: (() -> Void)?
+        var destinations: [Int] = []
+        XCTAssertTrue(controller.deferSettingsNavigationUntilAuthorized({ destinations.append(1) },
+            requiresAuthorization: { true }, presentAuthorization: { approve = $0; _ = $1 }))
+        XCTAssertTrue(controller.deferSettingsNavigationUntilAuthorized({ destinations.append(2) },
+            requiresAuthorization: { true }, presentAuthorization: { _, _ in XCTFail("Prompt replaced") }))
+        try XCTUnwrap(approve)()
+        XCTAssertEqual(destinations, [1])
+    }
+
+    @MainActor
+    func testAuthorizedRouteCanReenterOnlyDuringItsApprovedCallback() throws {
+        let controller = ViewController(nibName: nil, bundle: nil)
+        var approve: (() -> Void)?
+        XCTAssertTrue(controller.deferSettingsNavigationUntilAuthorized({
+            XCTAssertFalse(controller.deferSettingsNavigationUntilAuthorized({}, requiresAuthorization: { true },
+                presentAuthorization: { _, _ in XCTFail("Approved route prompted again") }))
+        }, requiresAuthorization: { true }, presentAuthorization: { approve = $0; _ = $1 }))
+        try XCTUnwrap(approve)()
+        var promptedAgain = false
+        XCTAssertTrue(controller.deferSettingsNavigationUntilAuthorized({}, requiresAuthorization: { true },
+            presentAuthorization: { _, cancel in promptedAgain = true; cancel() }))
+        XCTAssertTrue(promptedAgain)
+    }
+
+    @MainActor
+    func testUnprotectedNavigationDoesNotCreatePromptOrRunDeferredAction() {
+        let controller = ViewController(nibName: nil, bundle: nil)
+        XCTAssertFalse(controller.deferSettingsNavigationUntilAuthorized({ XCTFail("Caller owns immediate route") },
+            requiresAuthorization: { false }, presentAuthorization: { _, _ in XCTFail("Unexpected prompt") }))
+    }
+
+    @MainActor
     func testAppointmentReturnFramesAndShowsHostBeforeReplacingStaleCovers() throws {
         let oldLoaded = isMainWindowLoaded
         let oldCovers = arrWindows
@@ -727,6 +864,192 @@ private final class SecondaryCoverFixtureWindow: NSWindow {
         super.orderOut(sender)
     }
 
+}
+
+private final class TopologyFixtureWindow: NSWindow {
+    override var isVisible: Bool { true }
+}
+
+/// The borderless full-screen window must be exactly its display — never taller. After the user
+/// unplugged an external monitor mid-routine, the window was framed to the 666pt laptop screen and then
+/// grew to ~744pt, top edge kept, so the pause button and Help & Support hung below the screen
+/// (report 2026-10-05_08-42-51).
+final class FullScreenWindowFitTests: XCTestCase {
+    private struct FixtureScreen: Equatable {
+        let id: CGDirectDisplayID
+        let frame: NSRect
+    }
+
+    private static let laptop = FixtureScreen(id: 1, frame: NSRect(x: 0, y: 0, width: 1024, height: 666))
+    private static let dell = FixtureScreen(id: 3, frame: NSRect(x: 1024, y: 0, width: 1920, height: 1080))
+    /// Offscreen stand-ins for the same displays, so the windows below never appear.
+    private static let offscreenDell = NSRect(x: -20000, y: -20000, width: 1920, height: 1080)
+    private static let offscreenLaptop = NSRect(x: -20000, y: -19586, width: 1024, height: 666)
+    private static let menuBarInset: CGFloat = 32
+    private static let sidebarWidth: CGFloat = 216
+    /// What the report's window needed below the menu bar: 744pt tall in all.
+    private static let tooTallContent: CGFloat = 712
+
+    // MARK: Which frame, after a reconfiguration
+
+    func testUnpluggingTheMonitorRefitsTheWindowToTheRemainingScreen() {
+        var selection = FullScreenDisplaySelection<CGDirectDisplayID>()
+        selection.beginEntry(primaryID: Self.dell.id, requestedID: nil, continuing: false)
+        let remaining = [Self.laptop]
+
+        let preferences = selection.preferencesAfterReconfiguration(primaryID: remaining.first?.id,
+                                                                    rememberedID: Self.dell.id, currentID: Self.laptop.id)
+        let host = FullScreenDisplays.reconfiguredHost(preferredIDs: preferences, all: remaining, displayID: { $0.id })
+
+        XCTAssertEqual(host, Self.laptop)
+        XCTAssertEqual(MainWindowContentLayout.fullScreenHeightCeiling(isCustomFullScreen: true, styleMask: [.borderless, .resizable],
+                                                                       hostFrame: host?.frame), 666,
+                       "The window may be no taller than the laptop screen it was moved to")
+    }
+
+    func testOnlyTheBorderlessFullScreenIsCapped() {
+        let frame = Self.laptop.frame
+        XCTAssertEqual(MainWindowContentLayout.fullScreenHeightCeiling(isCustomFullScreen: true, styleMask: [.borderless, .resizable],
+                                                                       hostFrame: frame), frame.height)
+        XCTAssertNil(MainWindowContentLayout.fullScreenHeightCeiling(isCustomFullScreen: false, styleMask: [.borderless, .resizable],
+                                                                     hostFrame: frame), "Not full screen")
+        XCTAssertNil(MainWindowContentLayout.fullScreenHeightCeiling(isCustomFullScreen: true, styleMask: [.titled, .closable, .resizable],
+                                                                     hostFrame: frame), "A titled window is the user's to size")
+        XCTAssertNil(MainWindowContentLayout.fullScreenHeightCeiling(isCustomFullScreen: true, styleMask: [.borderless, .fullScreen],
+                                                                     hostFrame: frame), "macOS's own full screen sizes itself")
+        XCTAssertNil(MainWindowContentLayout.fullScreenHeightCeiling(isCustomFullScreen: true, styleMask: [.borderless, .resizable],
+                                                                     hostFrame: nil))
+    }
+
+    // MARK: Content cannot grow the window
+
+    /// The mechanism behind the report, then the fix: content needing more height than the window has
+    /// makes AppKit grow the window downwards; the cap stops it.
+    @MainActor
+    func testContentTallerThanTheDisplayCannotGrowTheWindow() {
+        let (uncapped, _) = Self.makeWindow(contentMinimumHeight: Self.tooTallContent)
+        defer { uncapped.close() }
+        uncapped.setFrame(Self.offscreenLaptop, display: false)
+        uncapped.layoutIfNeeded()
+        XCTAssertGreaterThan(uncapped.frame.height, Self.offscreenLaptop.height + 0.5,
+                             "Premise: without the cap AppKit grows the window to fit its content")
+
+        let (window, root) = Self.makeWindow(contentMinimumHeight: Self.tooTallContent)
+        defer { window.close() }
+        MainWindowContentLayout.prepareContent(root, forFrame: Self.offscreenLaptop, heightCeiling: Self.offscreenLaptop.height)
+        window.setFrame(Self.offscreenLaptop, display: false)
+        window.layoutIfNeeded()
+        XCTAssertEqual(window.frame, Self.offscreenLaptop)
+    }
+
+    /// A window that grew before the cap was lowered is pulled back onto the display, top edge kept.
+    @MainActor
+    func testAWindowThatAlreadyGrewIsPulledBackOntoItsDisplay() {
+        let (window, root) = Self.makeWindow(contentMinimumHeight: Self.tooTallContent)
+        defer { window.close() }
+        window.setFrame(Self.offscreenLaptop, display: false)
+        window.layoutIfNeeded()
+        XCTAssertEqual(window.frame.maxY, Self.offscreenLaptop.maxY, accuracy: 0.5)
+
+        MainWindowContentLayout.capFullScreenHeight(Self.offscreenLaptop.height, on: root)
+        window.layoutIfNeeded()
+        XCTAssertEqual(window.frame, Self.offscreenLaptop)
+    }
+
+    @MainActor
+    func testTheCapMakesRoomForATallerDisplayAndComesOffForATitledWindow() {
+        let (window, root) = Self.makeWindow(contentMinimumHeight: 0)
+        defer { window.close() }
+        MainWindowContentLayout.capFullScreenHeight(Self.offscreenLaptop.height, on: root)
+        window.setFrame(Self.offscreenLaptop, display: false)
+        window.layoutIfNeeded()
+
+        MainWindowContentLayout.prepareContent(root, forFrame: Self.offscreenDell, heightCeiling: Self.offscreenDell.height)
+        window.setFrame(Self.offscreenDell, display: false)
+        window.layoutIfNeeded()
+        XCTAssertEqual(window.frame, Self.offscreenDell, "Plugging the monitor back in must still fill it")
+        XCTAssertEqual(root.constraints.filter { $0.identifier == MainWindowContentLayout.fullScreenHeightConstraintIdentifier }.count, 1,
+                       "One cap, re-used")
+
+        MainWindowContentLayout.capFullScreenHeight(nil, on: root)
+        XCTAssertNil(MainWindowContentLayout.fullScreenHeightCap(on: root))
+    }
+
+    // MARK: The routine page itself fits the laptop screen
+
+    /// Offscreen render of the report's page — a one-item checklist habit with the reduced-motion
+    /// layout — moved from the Dell to the 1024×666 laptop screen: the timer and pause button must be
+    /// inside the window, and the window must still be exactly the screen.
+    @MainActor
+    func testTheRoutinePageKeepsTheTimerAndPauseOnALaptopScreen() {
+        let page = mainStoryboard.instantiateController(identifier: "timerViewcontroller") { coder in
+            TimerPageFixture(coder: coder)
+        }
+        let pageView = page.view
+        page.stackViewCustomTab.arrangedSubviews.forEach { $0.isHidden = true }
+        page.boxCheckList.isHidden = false
+        page.boxButtonTabViews.isHidden = true
+        page.boxCompletionRequirements.isHidden = true
+        page.boxTimer.isHidden = false
+        page.btnSkipHabit.isHidden = true
+        page.lblTitle.stringValue = "🙏 Beten"
+        page.titleTopSpace.constant = 50
+        page.boxTimerCenterY = page.boxTimerCenterY.setMultiplier(multiplier: 1.75)
+
+        let (window, root) = Self.makeWindow(contentMinimumHeight: 0)
+        defer { window.close() }
+        pageView.translatesAutoresizingMaskIntoConstraints = false
+        root.addSubview(pageView)
+        NSLayoutConstraint.activate([
+            pageView.topAnchor.constraint(equalTo: root.topAnchor, constant: Self.menuBarInset),
+            pageView.bottomAnchor.constraint(equalTo: root.bottomAnchor),
+            pageView.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: Self.sidebarWidth),
+            pageView.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+        ])
+        window.layoutIfNeeded()
+
+        MainWindowContentLayout.prepareContent(root, forFrame: Self.offscreenLaptop, heightCeiling: Self.offscreenLaptop.height)
+        window.setFrame(Self.offscreenLaptop, display: false)
+        window.layoutIfNeeded()
+
+        XCTAssertEqual(window.frame, Self.offscreenLaptop)
+        let visibleArea = NSRect(x: 0, y: 0, width: root.bounds.width, height: root.bounds.height - Self.menuBarInset)
+        for (name, control) in [("timer", page.boxTimer as NSView), ("pause", page.boxPlay as NSView)] {
+            let frame = root.convert(control.bounds, from: control)
+            XCTAssertTrue(visibleArea.contains(frame), "The \(name) is cut off: \(frame) is outside \(visibleArea)")
+        }
+    }
+
+    /// A borderless window shaped like the main window: content below the menu bar inset, needing at
+    /// least `contentMinimumHeight` of it.
+    private static func makeWindow(contentMinimumHeight: CGFloat) -> (NSWindow, NSView) {
+        let window = NSWindow(contentRect: offscreenDell, styleMask: [.borderless, .resizable], backing: .buffered, defer: true)
+        window.isReleasedWhenClosed = false
+        window.setFrame(offscreenDell, display: false)
+        let root = NSView(frame: NSRect(origin: .zero, size: offscreenDell.size))
+        window.contentView = root
+        if contentMinimumHeight > 0 {
+            let content = NSView()
+            content.translatesAutoresizingMaskIntoConstraints = false
+            root.addSubview(content)
+            NSLayoutConstraint.activate([
+                content.topAnchor.constraint(equalTo: root.topAnchor, constant: menuBarInset),
+                content.bottomAnchor.constraint(equalTo: root.bottomAnchor),
+                content.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+                content.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+                content.heightAnchor.constraint(greaterThanOrEqualToConstant: contentMinimumHeight),
+            ])
+        }
+        window.layoutIfNeeded()
+        return (window, root)
+    }
+}
+
+/// The real storyboard page without its live setup (config strings, menus, break-mode button).
+private final class TimerPageFixture: timerViewcontroller {
+    override func viewDidLoad() {}
+    override func viewWillAppear() {}
+    override func viewDidLayout() {}
 }
 
 /// Never order a real test window onto the desktop; visibility is the fixture's observable state.

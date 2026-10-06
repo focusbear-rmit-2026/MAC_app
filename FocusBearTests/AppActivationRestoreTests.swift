@@ -257,6 +257,22 @@ final class AppActivationRestoreTests: XCTestCase {
                        .showMainWindow)
     }
 
+    func testUserActivationRestoresAllowedAppHabitWindow() {
+        for state: CURRENTSTATE in [._MORNING_HABIT_, ._EVENING_HABIT_, ._CUSTOM_ROUTINE_] {
+            XCTAssertEqual(action(state: state, isAllowedActivityHabit: true), .showMainWindow)
+            XCTAssertEqual(action(state: state), .doNothing)
+        }
+    }
+
+    func testAllowedHabitStillSuppressesMenuAndSelfActivation() {
+        XCTAssertEqual(action(state: ._MORNING_HABIT_, isSelfActivation: true,
+                              isAllowedActivityHabit: true), .doNothing)
+        XCTAssertEqual(action(state: ._MORNING_HABIT_, isMenuVisible: true,
+                              isAllowedActivityHabit: true), .doNothing)
+        XCTAssertEqual(action(state: ._MORNING_HABIT_, didAnotherWindowOpenSinceActivation: true,
+                              isAllowedActivityHabit: true), .doNothing)
+    }
+
     // MARK: - Helper
 
     private func action(state: CURRENTSTATE,
@@ -267,7 +283,8 @@ final class AppActivationRestoreTests: XCTestCase {
                         didAnotherWindowCloseSinceActivation: Bool = false,
                         isMenuVisible: Bool = false,
                         isAnotherFocusBearWindowFront: Bool = false,
-                        isMainWindowConfiguredBorderless: Bool = false) -> AppActivationRestore.Action {
+                        isMainWindowConfiguredBorderless: Bool = false,
+                        isAllowedActivityHabit: Bool = false) -> AppActivationRestore.Action {
         AppActivationRestore.action(secondsSinceLaunch: secondsSinceLaunch,
                                     isSelfActivation: isSelfActivation,
                                     isMainWindowVisible: isMainWindowVisible,
@@ -276,6 +293,7 @@ final class AppActivationRestoreTests: XCTestCase {
                                     isMenuVisible: isMenuVisible,
                                     isAnotherFocusBearWindowFront: isAnotherFocusBearWindowFront,
                                     state: state,
-                                    isMainWindowConfiguredBorderless: isMainWindowConfiguredBorderless)
+                                    isMainWindowConfiguredBorderless: isMainWindowConfiguredBorderless,
+                                    isAllowedActivityHabit: isAllowedActivityHabit)
     }
 }

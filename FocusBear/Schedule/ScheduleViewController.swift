@@ -5368,14 +5368,17 @@ extension timerViewcontroller {
     /// player's time-of-day clock must be hidden then (it overlaps the Day Plan's tasks panel and the
     /// Day Plan 2has its own clock) — same as the other Day Plan hosts.
     var isAllowedActivityDayPlanFront: Bool {
-        guard let seg = allowedActivitySegment, seg.superview?.isHidden == false else { return false }
+        guard hasAllowedActivityTabs, let seg = allowedActivitySegment else { return false }
         return seg.selectedSegment == AllowedActivityTab.dayPlan.rawValue
     }
 
     /// Whether the allowed-activity player's "Habit Player | Day Plan" tab bar is on screen, i.e.
-    /// an allowed-app habit is the thing currently playing.
+    /// an allowed-app habit is the thing currently playing. The bar's hidden flag alone outlives the
+    /// habit — see `DayPlanDestination.isAllowedActivityTabBarOnScreen`.
     var hasAllowedActivityTabs: Bool {
-        allowedActivitySegment?.superview?.isHidden == false
+        DayPlanDestination.isAllowedActivityTabBarOnScreen(
+            isTabBarUnhidden: allowedActivitySegment?.superview?.isHidden == false,
+            isHabitPlayerMounted: isViewLoaded && view.superview != nil)
     }
 
     /// Builds the segmented control + Day Plan overlay once, lazily. Idempotent.
@@ -5468,7 +5471,7 @@ extension timerViewcontroller {
     /// Switch the allowed-activity tabs back to the Habit Player pane. Called when the user taps a
     /// habit in the Day Plan that's already playing — switch tabs rather than restarting it.
     func showAllowedActivityPlayerTab() {
-        guard let seg = allowedActivitySegment, seg.superview?.isHidden == false else { return }
+        guard hasAllowedActivityTabs, let seg = allowedActivitySegment else { return }
         seg.selectedSegment = AllowedActivityTab.habitPlayer.rawValue
         allowedActivityDayPlanBox?.isHidden = true
         allowedActivityScheduleVC?.stopAutoRefresh()
@@ -5484,7 +5487,7 @@ extension timerViewcontroller {
     /// - Returns: whether the Day Plan tab was actually shown (false when no tabs are on screen).
     @discardableResult
     func showAllowedActivityDayPlanTab() -> Bool {
-        guard let seg = allowedActivitySegment, seg.superview?.isHidden == false else { return false }
+        guard hasAllowedActivityTabs, let seg = allowedActivitySegment else { return false }
         seg.selectedSegment = AllowedActivityTab.dayPlan.rawValue
         allowedActivityDayPlanBox?.isHidden = false
         // Mirror allowedActivityTabChanged's Day Plan branch — the segment is set programmatically

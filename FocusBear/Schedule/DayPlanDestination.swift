@@ -30,4 +30,16 @@ enum DayPlanDestination {
     static func target(hasAllowedActivityTabs: Bool) -> Target {
         hasAllowedActivityTabs ? .allowedActivityDayPlanTab : .mainWindowDayPlan
     }
+
+    /// Whether the allowed-activity tab bar is really on screen. Its bar is only unhidden when an
+    /// allowed-app habit STARTS and only re-hidden when the next habit starts, so after the routine's
+    /// last habit ends it stays unhidden inside a player that has already been taken out of the
+    /// habits area. Trusting the bar alone sent the end-of-routine Day Plan into that detached player
+    /// and left the main window blank (report 2026-09-28_13-28-20).
+    /// - Parameters:
+    ///   - isTabBarUnhidden: the tab bar's own hidden flag is off.
+    ///   - isHabitPlayerMounted: the habit player's view is still in the habits area.
+    static func isAllowedActivityTabBarOnScreen(isTabBarUnhidden: Bool, isHabitPlayerMounted: Bool) -> Bool {
+        isTabBarUnhidden && isHabitPlayerMounted
+    }
 }

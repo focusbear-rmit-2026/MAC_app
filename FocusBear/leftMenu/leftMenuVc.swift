@@ -895,6 +895,13 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         if mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false{
             return false
         }
+        if box == boxSettings || box == boxBlocks || box == boxEditHabits,
+           mainViewControllerObj?.deferSettingsNavigationUntilAuthorized({ [weak self, weak box] in
+               guard let self, let box else { return }
+               self.switchToTab(box)
+           }) == true {
+            return false
+        }
         return true
     }
     
@@ -1237,6 +1244,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     
     
     func showSettingsView(){
+        if mainViewControllerObj?.deferSettingsNavigationUntilAuthorized({ [weak self] in
+            self?.showSettingsView()
+        }) == true { return }
         if mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false{
             return;
         }
@@ -1250,6 +1260,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     
     
     func showFocusModeSettingsView(){
+        if mainViewControllerObj?.deferSettingsNavigationUntilAuthorized({ [weak self] in
+            self?.showFocusModeSettingsView()
+        }) == true { return }
         if mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false{
             return;
         }
@@ -1262,6 +1275,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     
     
     func showBlocksView(){
+        if mainViewControllerObj?.deferSettingsNavigationUntilAuthorized({ [weak self] in
+            self?.showBlocksView()
+        }) == true { return }
         if mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false{
             return;
         }
@@ -1304,6 +1320,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     }
 
     func showEditHabitsView(){
+        if mainViewControllerObj?.deferSettingsNavigationUntilAuthorized({ [weak self] in
+            self?.showEditHabitsView()
+        }) == true { return }
         if mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false{
             return;
         }

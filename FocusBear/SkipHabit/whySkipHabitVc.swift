@@ -52,6 +52,10 @@ class whySkipHabitVc: NSViewController {
         if currentAction == ._INPROGRESS_ {
             focusButtonServiceObject.cancelHabit()
         }
+        // The habit is over, as in `skipHabitVc.skipHabit()`. Skip paused it first, which brought the
+        // routine back full screen on the display the user clicked Skip in; this sends it back to the
+        // display it was on before the habit (report 2026-09-25_14-51-33, follow-up 2026-09-28).
+        applyFullScreen(forAllowedActivityHabit: false)
         if rememberNextHabitVcObj != nil{
             if activityCompletionVcObj!.view.subviews.contains(rememberNextHabitVcObj!.view){
                 rememberNextHabitVcObj!.view.removeFromSuperview()

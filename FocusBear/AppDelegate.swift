@@ -1702,6 +1702,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         // Glowing screen-edge border shown while a focus session is running.
         FocusGlowBorderManager.shared.start()
 
+        #if DEBUG
+        // Lets a local UI test run take the screen from a routine nobody is using (UITestRunnerYield.swift).
+        UITestRunnerYieldController.shared.start()
+        #endif
+
         // ⚠️ applicationDidFinishLaunching runs for EVERYONE on every launch — before the
         // logged-in/onboarding/login decision, and for fresh and logged-out users too. So it is NOT
         // a safe place to start anything that hits authenticated endpoints or assumes a signed-in
@@ -10864,6 +10869,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         window.sharingType = .none
                     }
                 }
+                window.setFrame(screen.frame, display: false)
                 window.contentViewController = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("blankController")) as! blankController
                 arrWindows.append(resetWin(window))
             }
@@ -10881,42 +10887,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     @objc func setframe(){
-        //let screenList = NSScreen.screens
-        for i in 0..<arrWindows.count {  // create the corresponding windows
-            let window = arrWindows[i]
-            window.setFrame(NSMakeRect(NSMinX(window.screen!.frame), NSMinY(window.screen!.frame), NSWidth(window.screen!.frame), NSHeight(window.screen!.frame)), display: true)
-        }
-    }
-    
-    @objc func screenChanged() {  // call back for when the user reconfigured the Screen
-        if !checkIsFullScreenEnabled(){
-            return;
-        }
-        if isMainWindowLoaded{
-            if let window = mainWindowControllerObj?.window, window.isVisible,
-               mainWindowControllerObj?.isFullScreenVisible == true {
-                // Resize to the screen this window is actually ON. This used to take NSScreen.screens
-                // first entry and place the window at a hardcoded (0, 0) — so on a multi-display setup
-                // a screen reconfiguration gave the window the PRIMARY display's height while it sat on
-                // another one. With a tall external next to a short laptop screen that is exactly the
-                // reported "window suddenly got super tall and I couldn't see the bottom" (report
-                // 2026-06-25_17-24-22): too tall for the display showing it, and its origin dragged to
-                // the primary's. Non-primary screens have non-zero origins, which (0, 0) threw away.
-                let screen = window.screen ?? NSScreen.main ?? NSScreen.screens.first
-                if let screen = screen {
-                    window.setFrame(screen.frame, display: true)
-                }
-                for i in 0..<arrWindows.count{
-                    let window = arrWindows[i]
-                    window.orderOut(nil)
-                    arrWindows[i].windowController?.window = nil
-                }
-                arrWindows.removeAll()
-                showExtraWindows()
+        for window in arrWindows {
+            guard let screen = window.screen else {
+                window.orderOut(nil)
+                continue
             }
+            window.setFrame(screen.frame, display: true)
         }
     }
     
+    @objc func screenChanged() {
+        guard let controller = mainWindowControllerObj else { return }
+        controller.reconcileFullScreenDisplays { self.showExtraWindows() }
+    }
+
     var timerPomodoroMode: Timer?
     //Called when the "Take a five minute break" button is clicked.
     func setTimerForPomodoroMode(delay:TimeInterval){

@@ -83,8 +83,8 @@ enum AppActivationRestore {
     /// States where the routine state machine — not the user's app switching — decides whether the main
     /// window is on screen. A routine keeps running with its window closed (an allowed-activity habit
     /// backgrounds itself), a micro break can be dismissed, onboarding drives the window itself. In all
-    /// of them "no window" is a deliberate outcome, and yanking one to the front mid-meeting would be a
-    /// worse bug than the one being fixed here, so activation stays out of the way.
+    /// of them "no window" is a deliberate outcome. An allowed-app habit is the exception when the user
+    /// switches back explicitly; menu, popup, and self-activation guards still take precedence.
     ///
     /// Not listed, and so restorable: `_NOTHING_` (the ordinary case), `_LOGIN_` (the login screen IS the
     /// main window — `showAskLoginWindow` already routes the menu-bar click to it) and the `_POSTPONE_*`
@@ -181,7 +181,8 @@ enum AppActivationRestore {
                        isMenuVisible: Bool,
                        isAnotherFocusBearWindowFront: Bool,
                        state: CURRENTSTATE,
-                       isMainWindowConfiguredBorderless: Bool) -> Action {
+                       isMainWindowConfiguredBorderless: Bool,
+                       isAllowedActivityHabit: Bool = false) -> Action {
         // Activation fires constantly — every switch-to, every alert, every self-activation the app does
         // when it puts up a window of its own — so everything below stays cheap and idempotent.
         guard secondsSinceLaunch >= launchSettlingSeconds else { return .doNothing }
@@ -189,7 +190,9 @@ enum AppActivationRestore {
         guard !didAnotherWindowCloseSinceActivation else { return .doNothing }
         guard !isMainWindowVisible, !isMenuVisible else { return .doNothing }
         guard !isAnotherFocusBearWindowFront else { return .doNothing }
-        guard !statesThatOwnMainWindow.contains(state) else { return .doNothing }
+        let isAllowedRoutineHabit = isAllowedActivityHabit &&
+            [CURRENTSTATE._MORNING_HABIT_, ._EVENING_HABIT_, ._CUSTOM_ROUTINE_].contains(state)
+        guard !statesThatOwnMainWindow.contains(state) || isAllowedRoutineHabit else { return .doNothing }
         return isMainWindowConfiguredBorderless ? .showMainWindowAsSmallWindow : .showMainWindow
     }
 }
@@ -268,6 +271,56 @@ enum MainWindowContentLayout {
         return true
     }
 
+    /// The single height cap kept on the borderless full-screen window's content view.
+    static let fullScreenHeightConstraintIdentifier = "mainWindowFullScreenHeight"
+
+    static func fullScreenHeightCap(on root: NSView) -> NSLayoutConstraint? {
+        root.constraints.first { $0.identifier == fullScreenHeightConstraintIdentifier }
+    }
+
+    /// How tall the main window's content may be: its display's height while it is the borderless full
+    /// screen, and unlimited otherwise — a titled window, or macOS's own full screen, is AppKit's to size.
+    static func fullScreenHeightCeiling(isCustomFullScreen: Bool, styleMask: NSWindow.StyleMask,
+                                        hostFrame: NSRect?) -> CGFloat? {
+        guard isCustomFullScreen, !styleMask.contains(.titled), !styleMask.contains(.fullScreen),
+              let hostFrame = hostFrame, hostFrame.height.isFinite, hostFrame.height > 0 else { return nil }
+        return hostFrame.height
+    }
+
+    /// Keeps the borderless full-screen window no taller than its display.
+    ///
+    /// AppKit holds a window's size at only `windowSizeStayPut` priority, so content whose required
+    /// minimum is taller than the window makes AppKit GROW the window, keeping its top edge. After an
+    /// external monitor was unplugged mid-routine the window was framed to the 666pt laptop screen and
+    /// then grew to ~744pt, its bottom — the routine's pause button, the sidebar's Help & Support —
+    /// hanging below the screen (report 2026-10-05_08-42-51). `maxSize` and `contentMaxSize` do not
+    /// stop that growth (verified offscreen); a required cap on the content view does — the same
+    /// effect the width cap above has to work around. The content then compresses inside the window
+    /// instead of resizing it, and a cap lowered onto a window that has already grown pulls it back,
+    /// top edge kept. Passing nil removes the cap.
+    static func capFullScreenHeight(_ height: CGFloat?, on root: NSView?) {
+        guard let root = root else { return }
+        let existingCap = fullScreenHeightCap(on: root)
+        guard let height = height else {
+            existingCap?.isActive = false
+            return
+        }
+        if let cap = existingCap {
+            if abs(cap.constant - height) > 0.5 { cap.constant = height }
+            return
+        }
+        let cap = root.heightAnchor.constraint(lessThanOrEqualToConstant: height)
+        cap.identifier = fullScreenHeightConstraintIdentifier
+        cap.isActive = true
+    }
+
+    /// Both caps on the content view are also ceilings on the window, so they have to make room for a
+    /// frame BEFORE it is applied — e.g. full screen moving onto a taller display.
+    static func prepareContent(_ root: NSView?, forFrame frame: NSRect, heightCeiling: CGFloat?) {
+        allowWindowWidth(frame.width, on: root)
+        capFullScreenHeight(heightCeiling, on: root)
+    }
+
     /// The Main storyboard pins boxContainer.top to its root view. A positive AppKit top-anchor
     /// constant moves the box down, including for the storyboard's unflipped NSView/NSBox pair.
     @discardableResult
@@ -326,10 +379,12 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     /// The display chosen when the borderless window was last shown; the window's frame and the blank
     /// covers both read it, so they cannot pick different displays. See `FullScreenDisplays`.
     var fullScreenHostScreen: NSScreen?
+    private var fullScreenDisplaySelection = FullScreenDisplaySelection<CGDirectDisplayID>()
 
     /// The display the routine goes full screen on: the one chosen at entry, else the window's own.
     var fullScreenDisplay: NSScreen? {
-        FullScreenDisplays.host(preferred: [fullScreenHostScreen, window?.screen], all: NSScreen.screens)
+        FullScreenDisplays.reconfiguredHost(preferredIDs: [fullScreenHostScreen?.displayID, window?.screen?.displayID],
+                                            all: NSScreen.screens, displayID: { $0.displayID })
     }
 
     /// A saved fullscreen preference alone must not cover other displays while Help or another
@@ -338,6 +393,27 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         guard isFullScreenVisible, let window = window else { return false }
         return window.isVisible && !window.isMiniaturized && !window.styleMask.contains(.titled)
     }
+    func reconcileFullScreenDisplays(isFullScreenEnabled: () -> Bool = checkIsFullScreenEnabled,
+                                    rebuildCovers: () -> Void) {
+        hideBlankWindowInSecondaryMonitor()
+        guard shouldCoverSecondaryScreens, isFullScreenEnabled(), let window = window else { return }
+        let screens = NSScreen.screens
+        guard !screens.isEmpty else { return }
+        let preferences = fullScreenDisplaySelection.preferencesAfterReconfiguration(
+            primaryID: screens.first?.displayID, rememberedID: fullScreenHostScreen?.displayID,
+            currentID: window.screen?.displayID)
+        guard let host = FullScreenDisplays.reconfiguredHost(preferredIDs: preferences, all: screens,
+                                                             displayID: { $0.displayID }) else { return }
+        fullScreenHostScreen = host
+        if window.frame != host.frame {
+            addLog(text: "full screen refit: window \(window.frame) -> display \(displayLogName(host.displayID)) \(host.frame)")
+        }
+        MainWindowContentLayout.prepareContent(window.contentView, forFrame: host.frame, heightCeiling: host.frame.height)
+        window.setFrame(host.frame, display: true)
+        refreshContentInsets()
+        rebuildCovers()
+    }
+
     override func windowDidLoad() {
         super.windowDidLoad()
         
@@ -378,6 +454,13 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         hideBlankWindowInSecondaryMonitor()
     }
 
+    #if DEBUG
+    /// While the routine steps aside for a UI test run, any route that orders it back in is undone here.
+    func windowDidChangeOcclusionState(_ notification: Notification) {
+        UITestRunnerYieldController.shared.mainWindowVisibilityChanged()
+    }
+    #endif
+
     private func restoreSecondaryScreenCoversIfNeeded() {
         guard arrWindows.isEmpty, shouldCoverSecondaryScreens, checkIsFullScreenEnabled() else { return }
         // Lifecycle events only restore coverage; they must not run the legacy modal cleanup.
@@ -385,13 +468,19 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     }
     
     
-    func showFullSizeWindow(){
-        // Chosen once, before anything is framed or covered. ENTERING full screen goes to the display
-        // with keyboard focus — where the user is working, e.g. the menu they just clicked Skip in — so
-        // the routine and its skip question appear there, not wherever the window was left. A
-        // re-assert of a window that is already full screen keeps its display rather than jumping.
-        let preferred = isFullScreenVisible ? [window?.screen, NSScreen.main] : [NSScreen.main, window?.screen]
+    /// - Parameter requestedHost: the display to use when the caller knows better than the usual rule —
+    ///   the display the routine was on before an allowed-activity habit that is now over.
+    func showFullSizeWindow(on requestedHost: NSScreen? = nil){
+        fullScreenDisplaySelection.beginEntry(primaryID: NSScreen.screens.first?.displayID,
+            requestedID: requestedHost?.displayID, continuing: isFullScreenVisible && window?.isVisible == true)
+        // Chosen once, before anything is framed or covered. See `FullScreenDisplays.preferredHosts`.
+        let preferred = FullScreenDisplays.preferredHosts(requested: requestedHost, isAlreadyFullScreen: isFullScreenVisible,
+                                                          focused: NSScreen.main, current: window?.screen, state: currentState,
+                                                          primary: NSScreen.screens.first, isWindowVisible: window?.isVisible == true)
         fullScreenHostScreen = FullScreenDisplays.host(preferred: preferred, all: NSScreen.screens)
+        if fullScreenHostScreen != window?.screen {
+            addLog(text: "full screen host: display \(displayLogName(fullScreenHostScreen?.displayID)) (window was on \(displayLogName(window?.screen?.displayID)), requested \(displayLogName(requestedHost?.displayID)))")
+        }
         isFullScreenVisible = true
         // However the window got back to full screen — this restore, or a route that bypasses
         // `checkIsFullScreenNeeded()` entirely such as `endFullScreenCalendarGrant()` — we no longer owe
@@ -430,6 +519,23 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         }
     }
     
+    /// See `FullScreenDisplays.hostAfterAllowedActivityHabit`.
+    func hostAfterAllowedActivityHabit(displayBeforeHabit: CGDirectDisplayID) -> NSScreen? {
+        FullScreenDisplays.hostAfterAllowedActivityHabit(displayBeforeHabit: displayBeforeHabit, focused: NSScreen.main,
+                                                         all: NSScreen.screens, displayID: { $0.displayID })
+    }
+
+    /// Moves a borderless window that is already full screen to `host`, re-placing the blank covers
+    /// around it. Used when an allowed-activity habit is over while its skip question left the routine on
+    /// the display the user clicked in.
+    func moveFullScreenWindow(to host: NSScreen?) {
+        guard isFullScreenVisible, let host = host, host != fullScreenDisplay else { return }
+        // The covers are built per display around the host, so they have to be rebuilt, not moved.
+        hideBlankWindowInSecondaryMonitor()
+        showFullSizeWindow(on: host)
+        mainViewControllerObj?.setframe()
+    }
+
     /// Approval may start/reveal a focus session without navigating to a different sidebar item.
     /// Its routing deliberately preserves existing window size, so finish the routine's fullscreen
     /// transition explicitly after the approval callback unwinds. Never interrupt a newer routine.

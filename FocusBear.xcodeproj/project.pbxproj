@@ -116,6 +116,7 @@
 		FB57A61F7B549A37B4C979FC /* FocusStartAdvancedScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB57AA8F88883D2C44BE4967 /* FocusStartAdvancedScreen.swift */; };
 		135ABEFD2E013254007ED73A /* breaksData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135ABEFC2E01324D007ED73A /* breaksData.swift */; };
 		BRKSTARTKIT02 /* BreakStartKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = BRKSTARTKIT01 /* BreakStartKit.swift */; };
+		UTRYKIT002 /* UITestRunnerYield.swift in Sources */ = {isa = PBXBuildFile; fileRef = UTRYKIT001 /* UITestRunnerYield.swift */; };
 		RRESUME002 /* RoutineResume.swift in Sources */ = {isa = PBXBuildFile; fileRef = RRESUME001 /* RoutineResume.swift */; };
 		AAFSKIT002 /* AllowedActivityFullScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFSKIT001 /* AllowedActivityFullScreen.swift */; };
 		BRKSTARTMODEL02 /* BreakStartModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BRKSTARTMODEL01 /* BreakStartModel.swift */; };
@@ -642,6 +643,7 @@
 		AAFSTST002 /* AllowedActivityFullScreenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFSTST001 /* AllowedActivityFullScreenTests.swift */; };
 		FSTT0001 /* FocusStartTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FSTT0002 /* FocusStartTests.swift */; };
 		FSVT0001 /* FocusStartVisualTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FSVT0002 /* FocusStartVisualTests.swift */; };
+		UTRYTST002 /* UITestRunnerYieldTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = UTRYTST001 /* UITestRunnerYieldTests.swift */; };
 		EVCT0001 /* EventCancellationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EVCT0002 /* EventCancellationTests.swift */; };
 		MRSG0001 /* MorningRoutineStartGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = MRSG0002 /* MorningRoutineStartGuard.swift */; };
 		ETP00001 /* EventTimeParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = ETP00002 /* EventTimeParser.swift */; };
@@ -892,6 +894,7 @@
 		FB57AA8F88883D2C44BE4967 /* FocusStartAdvancedScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusStartAdvancedScreen.swift; sourceTree = "<group>"; };
 		135ABEFC2E01324D007ED73A /* breaksData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breaksData.swift; sourceTree = "<group>"; };
 		BRKSTARTKIT01 /* BreakStartKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakStartKit.swift; sourceTree = "<group>"; };
+		UTRYKIT001 /* UITestRunnerYield.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestRunnerYield.swift; sourceTree = "<group>"; };
 		RRESUME001 /* RoutineResume.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineResume.swift; sourceTree = "<group>"; };
 		AAFSKIT001 /* AllowedActivityFullScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllowedActivityFullScreen.swift; sourceTree = "<group>"; };
 		BRKSTARTMODEL01 /* BreakStartModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakStartModel.swift; sourceTree = "<group>"; };
@@ -1436,6 +1439,7 @@
 		AAFSTST001 /* AllowedActivityFullScreenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllowedActivityFullScreenTests.swift; sourceTree = "<group>"; };
 		FSTT0002 /* FocusStartTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusStartTests.swift; sourceTree = "<group>"; };
 		FSVT0002 /* FocusStartVisualTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusStartVisualTests.swift; sourceTree = "<group>"; };
+		UTRYTST001 /* UITestRunnerYieldTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestRunnerYieldTests.swift; sourceTree = "<group>"; };
 		EVCT0002 /* EventCancellationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventCancellationTests.swift; sourceTree = "<group>"; };
 		MRSG0002 /* MorningRoutineStartGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningRoutineStartGuard.swift; sourceTree = "<group>"; };
 		ETP00002 /* EventTimeParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventTimeParser.swift; sourceTree = "<group>"; };
@@ -1652,6 +1656,7 @@
 				130FFDBA2E4C663800694795 /* blankController.swift */,
 				135CBDAE2D967005003BA438 /* routineData.swift */,
 				RRESUME001 /* RoutineResume.swift */,
+				UTRYKIT001 /* UITestRunnerYield.swift */,
 				SNAG002 /* ShutdownNagPolicy.swift */,
 				AAFSKIT001 /* AllowedActivityFullScreen.swift */,
 				MRSG0002 /* MorningRoutineStartGuard.swift */,
@@ -2469,6 +2474,7 @@
 				BMDT0002 /* BrowserMeetingDetectionTests.swift */,
 				TCMG0002 /* TalkingClockMeetingGateTests.swift */,
 				ECPT0002 /* EventCalendarPickerTests.swift */,
+				UTRYTST001 /* UITestRunnerYieldTests.swift */,
 				HTC00008 /* HabitTaskChecklistTests.swift */,
 				BRKSTARTT0002 /* BreakStartKitTests.swift */,
 				RRESUMET02 /* RoutineResumeTests.swift */,
@@ -3434,6 +3440,7 @@
 				8FD91CAA2A0E1A51001606FE /* popUpCheckListVc.swift in Sources */,
 				135ABEFD2E013254007ED73A /* breaksData.swift in Sources */,
 				BRKSTARTKIT02 /* BreakStartKit.swift in Sources */,
+				UTRYKIT002 /* UITestRunnerYield.swift in Sources */,
 				RRESUME002 /* RoutineResume.swift in Sources */,
 				AAFSKIT002 /* AllowedActivityFullScreen.swift in Sources */,
 				BRKSTARTMODEL02 /* BreakStartModel.swift in Sources */,
@@ -3754,6 +3761,7 @@
 				BMDT0001 /* BrowserMeetingDetectionTests.swift in Sources */,
 				TCMG0001 /* TalkingClockMeetingGateTests.swift in Sources */,
 				ECPT0001 /* EventCalendarPickerTests.swift in Sources */,
+				UTRYTST002 /* UITestRunnerYieldTests.swift in Sources */,
 				HTC00007 /* HabitTaskChecklistTests.swift in Sources */,
 				BRKSTARTT0001 /* BreakStartKitTests.swift in Sources */,
 				RRESUMET01 /* RoutineResumeTests.swift in Sources */,

@@ -190,10 +190,12 @@ jobs:
             -only-testing:"Focus BearTests/LocalReportStatusTests" \
             -only-testing:"Focus BearTests/MainWindowListBoxInteractionTests" \
             -only-testing:"Focus BearTests/MainWindowContentLayoutTests" \
+            -only-testing:"Focus BearTests/FullScreenWindowFitTests" \
             -only-testing:"Focus BearTests/MainThreadWindowTitleTests" \
             -only-testing:"Focus BearTests/AllowedActivityFullScreenTests" \
             -only-testing:"Focus BearTests/ShutdownNagPolicyTests" \
             -only-testing:"Focus BearTests/LeftMenuAvailabilityTests" \
+            -only-testing:"Focus BearTests/UITestRunnerYieldTests" \
             -only-testing:"Focus BearTests/BlockListComboBoxTextTests" \
             -only-testing:"Focus BearTests/EventCalendarPickerTests" \
             -only-testing:"Focus BearTests/DayPlanReloadTimingTests" \

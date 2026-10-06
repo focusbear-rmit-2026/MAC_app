@@ -64,6 +64,7 @@ class ViewController: NSViewController {
     func updateFullScreenContentInsets() {
         guard isViewLoaded else { return }
         MainWindowContentLayout.constrainWidthToWindow(view)
+        keepFullScreenWindowWithinItsDisplay()
         guard let content = boxContainer else { return }
         var inset: CGFloat = 0
         if let window = view.window, let screen = window.screen {
@@ -78,6 +79,23 @@ class ViewController: NSViewController {
                 styleMask: window.styleMask)
         }
         MainWindowContentLayout.apply(topInset: inset, to: content, in: view)
+    }
+
+    /// Re-applied on every layout pass and display change, so the cap follows the display full screen
+    /// is on and comes off as soon as the window is titled again.
+    private func keepFullScreenWindowWithinItsDisplay() {
+        guard let window = view.window, window.contentView === view else {
+            MainWindowContentLayout.capFullScreenHeight(nil, on: view)
+            return
+        }
+        let host = (window.windowController as? mainWindowController)?.fullScreenDisplay
+        MainWindowContentLayout.capFullScreenHeight(fullScreenHeightCeiling(for: window, hostFrame: host?.frame), on: view)
+    }
+
+    private func fullScreenHeightCeiling(for window: NSWindow, hostFrame: NSRect?) -> CGFloat? {
+        MainWindowContentLayout.fullScreenHeightCeiling(
+            isCustomFullScreen: (window.windowController as? mainWindowController)?.isFullScreenVisible == true,
+            styleMask: window.styleMask, hostFrame: hostFrame)
     }
     
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
@@ -102,12 +120,14 @@ class ViewController: NSViewController {
     ///   deliberate: this is the one door into the borderless window, so a route added later is covered
     ///   by default instead of quietly reopening the bug (report 2026-09-16_17-05-07 follow-up, where
     ///   the new menu-bar expand button did exactly that).
-    func checkIsFullScreenNeeded(isRestoringAfterAllowedActivityHabit: Bool = false) {
+    /// - Parameter host: the display to go full screen on, when the caller has one — see
+    ///   `mainWindowController.showFullSizeWindow(on:)`.
+    func checkIsFullScreenNeeded(isRestoringAfterAllowedActivityHabit: Bool = false, on host: NSScreen? = nil) {
         if !isRestoringAfterAllowedActivityHabit, keepWindowedForAllowedActivityHabit() { return }
         if checkIsFullScreenEnabled(){
             if !(self.view.window?.styleMask.contains(.fullScreen) ?? false){// Don’t do this if the user is already in fullscreen. Wait until the user toggles back to a small screen, then check the setting again.
                 shouldIgnoreViewWilDisappear = true
-                mainWindowControllerObj?.showFullSizeWindow()// This will cause the viewWillDisappear function to be called
+                mainWindowControllerObj?.showFullSizeWindow(on: host)// This will cause the viewWillDisappear function to be called
                 boxTopButtons.isHidden = false
                 lastSmallWindowFrame = self.view.window?.frame
                 shouldIgnoreViewWilDisappear = false
@@ -150,9 +170,12 @@ class ViewController: NSViewController {
     /// view is also AppKit's ceiling on the window itself (see `MainWindowContentLayout.allowWindowWidth`),
     /// so a wider frame has to lift it first — otherwise Auto Layout silently clamps the window to the
     /// width it already had, and e.g. growing into full screen from a small window keeps the small width.
+    /// The full-screen height cap is a ceiling the same way, so it is set to the new frame's height
+    /// first (and removed for a titled window).
     private func setMainWindowFrame(_ frame: NSRect, animate: Bool = false) {
         guard let window = view.window else { return }
-        MainWindowContentLayout.allowWindowWidth(frame.width, on: window.contentView)
+        MainWindowContentLayout.prepareContent(window.contentView, forFrame: frame,
+                                               heightCeiling: fullScreenHeightCeiling(for: window, hostFrame: frame))
         window.setFrame(frame, display: true, animate: animate)
     }
 
@@ -418,6 +441,7 @@ class ViewController: NSViewController {
     }
 
     func removeSubViews(){
+        pendingSettingsNavigationID = nil
         let viewsArr = containerView.subviews
         for subview in viewsArr {
             subview.removeFromSuperview()
@@ -509,8 +533,47 @@ class ViewController: NSViewController {
         //mainWindowControllerObj?.window?.close()
     }
     
+    private var pendingSettingsNavigationID: UUID?
+    private var isPerformingAuthorizedSettingsNavigation = false
+
+    /// Authorize before changing selection, window geometry or loading a protected pane.
+    /// A cancelled/replaced prompt must never perform its previously requested navigation.
+    @discardableResult
+    func deferSettingsNavigationUntilAuthorized(
+        _ navigation: @escaping () -> Void,
+        requiresAuthorization: () -> Bool = isPasswordRequireInOpenSettings,
+        presentAuthorization: (((@escaping () -> Void), (@escaping () -> Void)) -> Void)? = nil
+    ) -> Bool {
+        guard !isPerformingAuthorizedSettingsNavigation else { return false }
+        if pendingSettingsNavigationID != nil { return true }
+        guard requiresAuthorization() else { return false }
+        let requestID = UUID()
+        pendingSettingsNavigationID = requestID
+        let approve = { [weak self] in
+            guard let self, self.pendingSettingsNavigationID == requestID else { return }
+            self.pendingSettingsNavigationID = nil
+            self.isPerformingAuthorizedSettingsNavigation = true
+            defer { self.isPerformingAuthorizedSettingsNavigation = false }
+            navigation()
+        }
+        let cancel = { [weak self] in
+            guard self?.pendingSettingsNavigationID == requestID else { return }
+            self?.pendingSettingsNavigationID = nil
+        }
+        if let presentAuthorization {
+            presentAuthorization(approve, cancel)
+        } else {
+            askPasswordForSettings()
+            getEnterPasswordVcObjForPreferences().requestAuthorization(action: approve, onCancel: cancel)
+            if let window = view.window, !window.isVisible {
+                window.makeKeyAndOrderFront(nil)
+            }
+        }
+        return true
+    }
+
     func askPasswordForSettingsIfNeeded(){
-        if isPasswordRequireInOpenSettings(){
+        if !isPerformingAuthorizedSettingsNavigation, isPasswordRequireInOpenSettings(){
             askPasswordForSettings()
         }
     }

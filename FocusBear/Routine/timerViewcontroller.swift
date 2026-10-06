@@ -1609,6 +1609,10 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     func startTimerActivity(durationInSeconds:Int,name:String, urlsArray:[String], logQuantityQuestion:[quantityQuestion],currentActivity: breakActivity, currentChoice:activityChoice?,logQuantity:Bool, logQuantityType:String) {
         breakPlayerGeneration = UUID()
         breakModeSwitchHadNoRemaining = false
+        // A break activity reuses this player but never has the allowed-activity tabs. Without this,
+        // a Day Plan tab left showing after an allowed-app habit covered the break activity playing
+        // underneath it (report 2026-09-28_10-58-48, 13:36).
+        updateAllowedActivityScheduleTab(for: nil)
 //        isLastActivityStoppedInRunningState = false
         //lastActivityRunningId = ""
         //lastActivityStoppedTimerCount = 0
@@ -2088,7 +2092,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             isActivityPaused = true
             // Paused means the person is no longer doing the allowed activity, so the routine's
             // full-screen window may come back — the PO's "return to full screen if habit is paused".
-            applyFullScreen(forAllowedActivityHabit: false)
+            // Only paused, though: it comes back where the user clicked (Skip pauses first, and the skip
+            // question belongs there), and returns to its own display once the habit is over.
+            applyFullScreen(forAllowedActivityHabit: false, isPausingHabit: true)
             allApiObject.capturePosthog(event: "pause-activity", metadata: [:])
             timer?.invalidate()
             

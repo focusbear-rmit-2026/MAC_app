@@ -2498,7 +2498,10 @@ class menuViewController: NSViewController {
         // While an allowed-app habit is playing, the Day Plan the user can actually reach is the tab
         // inside the habit player: the sidebar dispatch below early-returns during a live routine,
         // leaving them on the Habit Player tab. Route to that tab instead. See DayPlanDestination.
-        if DayPlanDestination.target(hasAllowedActivityTabs: timerViewcontrollerObj?.hasAllowedActivityTabs ?? false) == .allowedActivityDayPlanTab,
+        let destination = DayPlanDestination.target(hasAllowedActivityTabs: timerViewcontrollerObj?.hasAllowedActivityTabs ?? false)
+        // Which pane the Day Plan went to — a wrong pick here shows up only as a blank window.
+        addLog(text: "openDayPlanSchedule: destination=\(destination) state=\(currentState)")
+        if destination == .allowedActivityDayPlanTab,
            timerViewcontrollerObj?.showAllowedActivityDayPlanTab() == true {
             NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
             closeMenuWindowIsVisible()
