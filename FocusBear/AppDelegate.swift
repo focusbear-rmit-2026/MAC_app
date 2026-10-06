@@ -240,6 +240,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     var credential:Credentials?
     var user: AuthUser? {
         didSet {
+            FocusLifecycleIdentity.shared.updateAccountID(user?.userId)
             // Encrypted local data is per account: opening the signed-in account's makes it readable.
             guard let userId = user?.userId, !userId.isEmpty else { return }
             SecureStore.shared.activate(accountId: userId)
@@ -1371,6 +1372,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 
                 kUserDefaultsLastRoutinePostponeEndDate = kUserDefaultsLastRoutinePostponeEndDate + (self.user?.userId ?? "")
                 kUserDefaultsLastRoutinePostponeState = kUserDefaultsLastRoutinePostponeState + (self.user?.userId ?? "")
+                kUserDefaultsPersistedPostponeCapChecked = kUserDefaultsPersistedPostponeCapChecked + (self.user?.userId ?? "")
+                kUserDefaultsMeetingSessionPostponeEndDate = kUserDefaultsMeetingSessionPostponeEndDate + (self.user?.userId ?? "")
 
                 kUserdefaultsHiddenFocusModeIDs = kUserdefaultsHiddenFocusModeIDs + (self.user?.userId ?? "")
 
@@ -1687,6 +1690,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
         // Start Wi-Fi profile auto-switching (#1000)
         WiFiMonitorService.shared.startMonitoring()
+
+        // Hear the meetings the user deals with in the Late No More app. Safe before login: it only
+        // calls the API when the user acts, and that call checks for credentials first.
+        LateNoMoreDismissalRelay.startRelayingLateNoMoreAcknowledgements()
 
         // Let another local process (e.g. a firmware flashing tool) ask us to release the Focus Button
         // serial port via ~/.focusbear/focus-button-command (#1947 / Focus-Button#15,#21).
@@ -4382,6 +4389,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     var alertSuggestFocusMode:NSAlert?
     var isUserOnMeeting = false
     var meetingStartTime:Date?
+    /// The current (or most recent) run of detected call presence, bridged across witness dropouts —
+    /// see `MeetingCoverage.presenceRunStart`. Read by the meeting-session auto-end to tell a call the
+    /// user was in from a pre-join device check.
+    private var meetingPresenceRunStart: Date?
+    private var meetingPresenceRunEnd: Date?
     
     var isAutoMeetingsModeStarted = false
     var appUsedInAutoMeetingFocusMode = ""
@@ -4532,6 +4544,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             )
 
             var micStatus: MicStatus?
+            var micOwner = MicOwnerKind.none
             if isMicAlreadyOn{
                 let monitor = micMonitor()
                 let status = monitor.microphoneStatus()
@@ -4541,6 +4554,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 // matches a running meeting app by name — otherwise a Bluetooth-headset call goes
                 // undetected even though the mic is on.
                 micStatus = status.apps.isEmpty ? nil : status
+                micOwner = MicOwnerKind.classify(isMicOn: true, owners: status.apps)
                 let micApps = status.apps.map { "\($0.appName)[\($0.bundleID)]" }.joined(separator: ", ")
                 addLog(text: "func checkIsMeetingsGoingOn:- input=\(monitor.defaultInputDeviceInfo()) micApps(\(status.apps.count))=[\(micApps)]")
             }
@@ -4581,7 +4595,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                             if let browser = getCurrentBrowserFrom(browserName: appNameToCheck){
                                                 addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is a browser:- get current url")
                                                 
-                                                if !isBrowserMeetingAllowed(focus: focus, browser: browser){
+                                                if !isBrowserMeetingAllowed(focus: focus, browser: browser, micOwner: micOwner){
                                                     continue;
                                                 }
                                             }
@@ -4630,7 +4644,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                             if let browser = getCurrentBrowserFrom(browserName: nameLowercased){
                                                 addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is a browser:- get current url")
                                                 
-                                                if !isBrowserMeetingAllowed(focus: focus, browser: browser){
+                                                if !isBrowserMeetingAllowed(focus: focus, browser: browser, micOwner: micOwner){
                                                     continue;
                                                 }
                                             }
@@ -4652,10 +4666,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         // and of per-app mic attribution (which misses browser calls on some Bluetooth
                         // inputs — see the instrumentation above). Only reached with mic/camera/keep-awake
                         // already on, so an idle open tab alone won't trip it.
-                        if detectBrowserMeeting(focus: focus, runningAppNames: runningAppNames){
+                        if detectBrowserMeeting(focus: focus, runningAppNames: runningAppNames, micOwner: micOwner){
                             return;
                         }
-                        addLog(text: "func checkIsMeetingsGoingOn:- no meeting app or browser-meeting matched (mic=\(isMicAlreadyOn) cam=\(isCameraAlreadyOn))")
+                        addLog(text: "func checkIsMeetingsGoingOn:- no meeting app or browser-meeting matched (mic=\(isMicAlreadyOn) cam=\(isCameraAlreadyOn) micOwner=\(micOwner.rawValue))")
                         handleMeetingEnded()
                         break;
                     }
@@ -4671,14 +4685,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     /// Meetings focus type lists that browser AND the mic is attributed to it — the latter fails for
     /// browser calls on some Bluetooth inputs (`microphoneStatus` returns no apps), so a Google Meet
     /// call slips through with mic/camera live but nothing matched. Check any running, recognised
-    /// browser for a live meeting URL (`meet.google.com/<room>`, or the focus's `allowed_urls`) and
-    /// treat that as the meeting. Returns true if one was found + handled. Runs on the detection
-    /// background queue; reads browser tabs via the AppHang-safe `fetchBrowserAllTabUrlsInBackground`.
-    private func detectBrowserMeeting(focus: [String: Any], runningAppNames: Set<String>) -> Bool {
+    /// browser for a meeting tab (see `BrowserMeetingDecision`) and treat that as the meeting. Returns
+    /// true if one was found + handled. Runs on the detection background queue; reads browser tabs via
+    /// the AppHang-safe `fetchBrowserAllTabUrlsInBackground`.
+    private func detectBrowserMeeting(focus: [String: Any], runningAppNames: Set<String>, micOwner: MicOwnerKind) -> Bool {
         for name in runningAppNames {
             guard let browser = getCurrentBrowserFrom(browserName: name) else { continue }
-            if isBrowserMeetingAllowed(focus: focus, browser: browser){
-                addLog(text: "func checkIsMeetingsGoingOn:- browser meeting detected in \(name)")
+            if let reason = browserMeetingReason(focus: focus, browser: browser, micOwner: micOwner){
+                addLog(text: "func checkIsMeetingsGoingOn:- browser meeting detected in \(name) (\(reason.rawValue), micOwner=\(micOwner.rawValue))")
                 appUsedInAutoMeetingFocusMode = name
                 handleMeetingDetected()
                 return true
@@ -4692,11 +4706,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     // A cancellable main-queue work item (NOT a Timer): handleMeetingEnded runs on the background
     // meeting-detection thread, where Timer.scheduledTimer lands on a non-spinning run loop and never fires.
     private var meetingSessionAutoEndWorkItem: DispatchWorkItem?
-    private let meetingSessionAutoEndGraceSeconds: TimeInterval = 15
+    /// Allowance past a meeting session's booked length (plus the auto-end wait) before its recorded
+    /// duration is clamped — room for a call overrunning a little, never for a whole night.
+    private let meetingDurationCapSlackSeconds = 5 * 60
 
     private func handleMeetingEnded(){
         if isUserOnMeeting{
             isUserOnMeeting = false
+            meetingPresenceRunEnd = Date()
             writeSettingForScreeenTime(habitInfo: "")
             // A meeting focus session (started by LNM when the meeting began) should end when the meeting
             // ends — but only after a grace period, since switching into a breakout room briefly reads as
@@ -4725,63 +4742,32 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
-    /// Browser live-meeting URL rules: (host suffix, path fragments that mark an ACTIVE meeting). An empty
-    /// fragment list ⇒ ANY non-root path on that host is a meeting room (e.g. `whereby.com/my-room`). Host
-    /// is matched by SUFFIX so per-org subdomains (`acme.zoom.us`, `company.webex.com`) count. One registry
-    /// so meeting-URL knowledge isn't scattered — a bare home page under the same domain does NOT count.
-    private static let browserMeetingUrlRules: [(hostSuffix: String, meetingPathFragments: [String])] = [
-        ("teams.microsoft.com", ["meetup-join", "light-meetings", "/l/meeting"]),
-        ("teams.live.com",      ["meetup-join", "light-meetings", "/l/meeting"]),
-        ("zoom.us",             ["/j/", "/wc/", "/s/", "/my/"]),
-        ("meet.google.com",     []),
-        ("meet.jit.si",         []),
-        ("whereby.com",         []),
-        // Zoho Meeting rooms live on meeting.zoho.<region> — never meet.zoho.com (#2388).
-        ("meeting.zoho.com",    []),
-        ("meeting.zoho.eu",     []),
-        ("meeting.zoho.in",     []),
-        ("meeting.zoho.com.au", []),
-        ("webex.com",           ["/meet/", "/join/", "/wbxmjs/", "/j.php"]),
-    ]
-
-    /// True when `url` is a live browser meeting (an actual room/join link), not the platform's home page.
-    private func urlLooksLikeLiveMeeting(_ url: String) -> Bool {
-        let host = getDomainFromUrl(url: url).lowercased()
-        guard !host.isEmpty else { return false }
-        let loweredUrl = url.lowercased()
-        for rule in Self.browserMeetingUrlRules where host == rule.hostSuffix || host.hasSuffix("." + rule.hostSuffix) {
-            if rule.meetingPathFragments.isEmpty {
-                // No fragment gate for this host: any path segment beyond "/" is a room.
-                let path = NSURL(string: url)?.path ?? ""
-                return path.count > 1
-            }
-            if rule.meetingPathFragments.contains(where: { loweredUrl.contains($0) }) { return true }
-        }
-        return false
+    private func isBrowserMeetingAllowed(focus: [String: Any], browser: BROWSER, micOwner: MicOwnerKind) -> Bool {
+        browserMeetingReason(focus: focus, browser: browser, micOwner: micOwner) != nil
     }
 
-    private func isBrowserMeetingAllowed(focus: [String: Any], browser:BROWSER) -> Bool {
-        
-        if let allTabUrls = fetchBrowserAllTabUrlsInBackground(browser: browser){
-            for  activeTabUrl in allTabUrls{
-                
-                // Recognise live browser meetings across platforms (Meet, Teams, Zoom, Jitsi, Whereby,
-                // Zoho, Webex) from the URL itself — a room/join link, not the platform home page.
-                if urlLooksLikeLiveMeeting(activeTabUrl) {
-                    return true
-                }
-                let arrAllowedUrlsMeetingsFocus = focus["allowed_urls"] as? [String] ?? []
-                for turl in arrAllowedUrlsMeetingsFocus{
-                    if validation.isUrlValid(urlToCheck: activeTabUrl, allowUrl: turl){
-                        return true
-                    }
-                }
-            }
+    /// Why `browser`'s open tabs show a call (Meet, Teams, Zoom, Jitsi, Whereby, Zoho, Webex, or the
+    /// Meetings focus's `allowed_urls`), or nil when they don't.
+    private func browserMeetingReason(focus: [String: Any], browser: BROWSER, micOwner: MicOwnerKind) -> BrowserMeetingDecision.Reason? {
+        guard let allTabUrls = fetchBrowserAllTabUrlsInBackground(browser: browser) else { return nil }
+        let allowedMeetingUrls = focus["allowed_urls"] as? [String] ?? []
+        let evidence = BrowserMeetingDecision.TabEvidence.from(tabUrls: allTabUrls) { tabUrl in
+            allowedMeetingUrls.contains { validation.isUrlValid(urlToCheck: tabUrl, allowUrl: $0) }
         }
-        return false
+        return BrowserMeetingDecision.reason(evidence: evidence, micOwner: micOwner)
     }
     
     private func fetchBrowserAllTabUrlsInBackground(browser: BROWSER) -> [String]? {
+        if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+            return nil
+        }
+        // Every window, not just the front one: a call often sits in its own window, and Chrome's
+        // front window can be the meeting's blank picture-in-picture window (report
+        // 2026-10-06_13-30-40). Firefox/SigmaOS have no window list, and a window read can fail —
+        // both fall back to the front-window read.
+        if let windows = getBrowserAllWindowStruct(browser: browser), !windows.isEmpty {
+            return windows.values.flatMap { $0 }
+        }
         // Call directly on the (background) meeting-detection thread. `getBrowserAllTabUrl`
         // routes through `runAppleScriptSafely`, which already serialises the AppleScript onto
         // `appleScriptSerialQueue` and applies a bounded timeout — a background caller gets the
@@ -4797,7 +4783,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     /// the meantime (handleMeetingDetected cancels the timer). No-op unless an LNM meeting session is live.
     private func startMeetingSessionAutoEndGraceIfNeeded() {
         guard currentAccountabilityBuddySession?.isMeeting == true else { return }
-        addLog(text: "meeting ended: auto-ending meeting focus session in \(Int(meetingSessionAutoEndGraceSeconds))s unless a meeting resumes (breakout-room grace)")
+        addLog(text: "meeting ended: auto-ending meeting focus session in \(Int(MeetingSessionAutoEndRules.quietSecondsBeforeEnding))s unless a meeting resumes (breakout-room grace)")
         // Schedule on the MAIN queue (this can be called from the background detection thread) so it fires
         // reliably; a DispatchWorkItem lets handleMeetingDetected cancel it if a meeting resumes.
         DispatchQueue.main.async { [weak self] in
@@ -4805,7 +4791,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             self.meetingSessionAutoEndWorkItem?.cancel()
             let work = DispatchWorkItem { [weak self] in self?.autoEndMeetingFocusSessionIfMeetingOver() }
             self.meetingSessionAutoEndWorkItem = work
-            DispatchQueue.main.asyncAfter(deadline: .now() + self.meetingSessionAutoEndGraceSeconds, execute: work)
+            DispatchQueue.main.asyncAfter(deadline: .now() + MeetingSessionAutoEndRules.quietSecondsBeforeEnding, execute: work)
         }
     }
 
@@ -4814,7 +4800,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     private func rearmMeetingSessionAutoEndGrace() {
         let work = DispatchWorkItem { [weak self] in self?.autoEndMeetingFocusSessionIfMeetingOver() }
         meetingSessionAutoEndWorkItem = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + meetingSessionAutoEndGraceSeconds, execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + MeetingSessionAutoEndRules.quietSecondsBeforeEnding, execute: work)
     }
 
     /// Fired after the grace window: end the meeting focus session iff the meeting is still over and the
@@ -4825,17 +4811,27 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addLog(text: "meeting focus session auto-end skipped: isMeetingSession=false")
             return
         }
+        let now = Date()
         let calendarSaysLive = MeetingCoverage.hasLiveOrImminentMeeting(
-            now: Date(), meetings: AnnouncedMeetingRegister.shared.activeMeetings())
-        guard MeetingCoverage.shouldAutoEndMeetingSession(isUserOnMeeting: isUserOnMeeting,
-                                                         hasLiveAnnouncedMeeting: calendarSaysLive) else {
-            addLog(text: "meeting focus session auto-end skipped: onMeeting=\(isUserOnMeeting) calendarSaysLive=\(calendarSaysLive)")
+            now: now, meetings: AnnouncedMeetingRegister.shared.activeMeetings())
+        let presenceSeconds = meetingPresenceRunStart.flatMap { start in
+            meetingPresenceRunEnd.map { $0.timeIntervalSince(start) }
+        }
+        // No recorded end: detection never saw this call, so there is no dropout to wait out and the
+        // calendar alone decides.
+        let quietSeconds = meetingPresenceRunEnd.map { now.timeIntervalSince($0) } ?? .infinity
+        let decision = MeetingCoverage.autoEndDecision(isUserOnMeeting: isUserOnMeeting,
+                                                       hasLiveAnnouncedMeeting: calendarSaysLive,
+                                                       lastPresenceSeconds: presenceSeconds,
+                                                       quietSeconds: quietSeconds)
+        guard decision == .end else {
+            addLog(text: "meeting focus session auto-end skipped: \(decision) onMeeting=\(isUserOnMeeting) calendarSaysLive=\(calendarSaysLive) presence=\(presenceSeconds.map { Int($0) } ?? -1)s quiet=\(quietSeconds.isFinite ? Int(quietSeconds) : -1)s")
             // Re-arm rather than give up: detection may stay quiet for the whole call (a browser tab
             // the mic check can't see), and the session must still end once the meeting really is over.
             rearmMeetingSessionAutoEndGrace()
             return
         }
-        addLog(text: "meeting ended >\(Int(meetingSessionAutoEndGraceSeconds))s ago: auto-ending meeting focus session")
+        addLog(text: "meeting ended >\(Int(MeetingSessionAutoEndRules.quietSecondsBeforeEnding))s ago: auto-ending meeting focus session (calendarSaysLive=\(calendarSaysLive) presence=\(presenceSeconds.map { Int($0) } ?? -1)s)")
         // If the meeting had postponed an INCOMPLETE morning/evening routine, hand the user back to it (same
         // as stopping the session manually) rather than just ending — otherwise the routine is silently
         // abandoned after the meeting. Otherwise finish silently.
@@ -4848,8 +4844,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
 
     func handleMeetingDetected(){
+        let now = Date()
+        if !isUserOnMeeting {
+            meetingPresenceRunStart = MeetingCoverage.presenceRunStart(now: now,
+                                                                       previousRunStart: meetingPresenceRunStart,
+                                                                       previousRunEnd: meetingPresenceRunEnd)
+            meetingPresenceRunEnd = nil
+        }
         isUserOnMeeting = true
-        meetingStartTime = Date()
+        meetingStartTime = now
         writeSettingForScreeenTime(habitInfo: "")
         // A meeting is (still) on — cancel any pending auto-end of the meeting focus session. Covers the
         // breakout-room case where the meeting briefly looked ended and re-appeared within the grace window.
@@ -5907,6 +5910,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
                 if let announcedEndTime = eventEndTime{
                     addLog(text: "event-about-to-start:- got end time")
+                    // An all-day event or day-long block is not an appointment to pause habits for.
+                    // "Look after Sean" 08:00-20:30 held this popup over the morning routine for an
+                    // hour and swallowed the real call announced beside it (report
+                    // 2026-09-25_22-31-53, follow-up).
+                    if let startTime = eventStartTime,
+                       !MeetingCoverage.isMeeting(start: startTime, end: announcedEndTime){
+                        addLog(text: "event-about-to-start:- ignoring trigger, \(startTime)-\(announcedEndTime) is longer than a meeting (all-day event or calendar block)")
+                        return
+                    }
                     // Remember EVERY announced meeting, popup or not: the routine's postpone is
                     // computed from the whole live/imminent chain, so it has to be able to see the
                     // meeting that follows the one currently on screen.
@@ -6033,7 +6045,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             if SettingsManagerObject.isAccountabilityBuddyEnabled, currentAccountabilityBuddySession == nil {
                                 let remainingSeconds = Int(meetingEndTime.timeIntervalSinceNow)
                                 if remainingSeconds > 0 {
-                                    startMeetingFocusSession(title: eventTitle, durationMinutes: max(1, remainingSeconds / 60))
+                                    startMeetingFocusSession(title: eventTitle, durationMinutes: MeetingPostponeSession.sessionMinutes(secondsRemaining: remainingSeconds))
                                     // The meeting session covers a live call the user must actually attend, so drop
                                     // the routine's borderless full-screen window — otherwise it stayed covering the
                                     // whole screen and the user couldn't see/join the meeting.
@@ -6458,8 +6470,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     return;
                                 }
                                 
-                                if self.isUserOnMeeting{
-                                    addLog(text: "isUserOnMeeting True: Morning Habits Time checking Cancelled.")
+                                // Detection is briefly quiet after unlocking; the live meeting session
+                                // still owns this time. Explicit Stop clears that session before resuming.
+                                if MeetingCoverage.shouldHoldMorningRoutineForMeeting(
+                                    isUserOnMeeting: self.isUserOnMeeting,
+                                    isMeetingSessionLive: currentAccountabilityBuddySession?.isMeeting == true) {
+                                    addLog(text: "Active meeting: Morning Habits Time checking Cancelled.")
                                     customBlockingScheduleManagerObj.checkCustomBlockingScheduleTime()
                                     return;
                                 }
@@ -8276,7 +8292,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     
-    func setFocusModeTimer(hour:Int?, minute:Int?){
+    func setFocusModeTimer(hour:Int?, minute:Int?, seconds: Int? = nil){
         addLog(text: "setFocusModeTimer")
         DispatchQueue.global().sync {
             focusModeMinutesToPerform = minute ?? 0
@@ -8290,7 +8306,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             timerForFocusModeEndNotification?.invalidate()
             timerForFocusModeEndNotification = nil
             var time = 0
-            if hour != nil{
+            if let seconds {
+                time = max(1, seconds)
+            }else if hour != nil{
                 time = hour!*60*60
             }else if minute != nil{
                 time = minute!*60
@@ -8319,9 +8337,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     ///   the calendar, or an approved postpone. Those are the sessions that get dismissed seconds
     ///   later, so their Do Not Disturb request is given longer to settle before it costs a click.
     @objc func startFocusFromMenu(focusModeId: String, minutes: Int, intention: String,
-                                  isAutoStarted: Bool = false, initialTaskQueue: String? = nil) {
+                                  isAutoStarted: Bool = false, initialTaskQueue: String? = nil, durationSeconds: Int = 0) {
         let minute = max(1, minutes)
-        endFocusModeTime = Calendar.current.date(byAdding: .minute, value: minute, to: Date())
+        let seconds = durationSeconds > 0 ? durationSeconds : minute * MeetingFocusResumeTiming.SECONDS_PER_MINUTE
+        endFocusModeTime = Date().addingTimeInterval(TimeInterval(seconds))
 
         minFocusAlignmentScoreToShowDistractingPopUp = 99.9
         if SettingsManagerObject.isDataCollectionModeEnabled {
@@ -8367,8 +8386,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         timerForFocusMode?.invalidate(); timerForFocusMode = nil
         timerForFocusModeEndNotification?.invalidate(); timerForFocusModeEndNotification = nil
 
-        setFocusModeTimer(hour: nil, minute: minute)
-        focusButtonServiceObject.startFocusSession(seconds: minute * 60)
+        setFocusModeTimer(hour: nil, minute: minute, seconds: seconds)
+        focusButtonServiceObject.startFocusSession(seconds: seconds)
 
         isFocusModeStartedFromPomodoroMode = true
         isSkipBreakActivityDuringPomodoro = true
@@ -8526,7 +8545,30 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     
     @objc func focusModeTimerFinished(){
+        if currentAccountabilityBuddySession?.isMeeting == true, endMeetingSessionWithItsRoutinePostpone(){ return }
         tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:true, isCustomRoutineTime:false, shouldUpdateFocusButton: true)
+    }
+
+    /// A meeting session that runs out takes the routine postpone it was covering with it — see
+    /// `MeetingPostponeSession`. Returns false when it covered none, so the session finishes as usual.
+    private func endMeetingSessionWithItsRoutinePostpone() -> Bool {
+        let habits = getHabitsVcObject()
+        switch habits.routinePostponeOutcomeWhenMeetingSessionRunsOut() {
+        case .finishNormally:
+            return false
+        case .resumeRoutine:
+            // The path Stop and the meeting auto-end already take: finish silently, resume the routine.
+            guard let menu = menuViewControllerObj else { return false }
+            addLog(text: "meeting focus session ran out: ending the routine postpone it covered → resuming routine")
+            menu.stopFocusModeAndResumeRoutine()
+            return true
+        case .continueInto(let next):
+            addLog(text: "meeting focus session ran out: \(LogPrivacy.text(next.title)) follows straight on → new meeting session and postpone")
+            tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend: false, isCustomRoutineTime: false, shouldUpdateFocusButton: true)
+            // After the finish's own main-queue clean-up, so it cannot tear down the new session.
+            DispatchQueue.main.async { habits.continueMeetingPostpone(into: next) }
+            return true
+        }
     }
     
     
@@ -8589,7 +8631,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         // way a stale start time once logged a ~10-minute meeting as 13–15h. Read the cap here, before
         // currentAccountabilityBuddySession is cleared below.
         if let meetingSession = currentAccountabilityBuddySession, meetingSession.isMeeting {
-            let maxMeetingSeconds = meetingSession.durationMinutes * 60 + Int(meetingSessionAutoEndGraceSeconds) + 300
+            let maxMeetingSeconds = meetingSession.durationMinutes * 60
+                + Int(MeetingSessionAutoEndRules.quietSecondsBeforeEnding) + meetingDurationCapSlackSeconds
             if focusModeActualDurationPerformed > maxMeetingSeconds {
                 addLog(text: "meeting focus block duration \(focusModeActualDurationPerformed)s exceeds cap \(maxMeetingSeconds)s — clamping")
                 focusModeActualDurationPerformed = maxMeetingSeconds
@@ -8671,7 +8714,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "Meeting using {\(self.appUsedInAutoMeetingFocusMode)}", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
             
             
-            allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: Date(), rating:nil, completionHandler: {newDic in
+            allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: Date(), rating:nil, sessionTasks: focusModeTaskString, completionHandler: {newDic in
                 DispatchQueue.main.async {
                     
                 }
@@ -8692,7 +8735,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
                 addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
                 
-                allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: Date(), rating:nil, completionHandler: {newDic in
+                allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: Date(), rating:nil, sessionTasks: focusModeTaskString, completionHandler: {newDic in
                     DispatchQueue.main.async {
                         
                     }
@@ -8802,6 +8845,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
 
     @objc func focusModeStartted(isStartedByPusher:Bool){
+        invalidateMeetingFocusHandoffForNewSession()
         addLog(text: "focus Mode Started called")
         // Reset the postpone-origin flag at every session start; the postpone-pomodoro path re-sets it to
         // true right after calling this (see pomodoroVc), so non-postpone sessions start clean.

@@ -2,6 +2,330 @@ import XCTest
 @testable import Focus_Bear
 
 final class AccountabilityPostponeRecoveryTests: XCTestCase {
+    @MainActor
+    func testQueuedCredentialMustMatchCapturedAccountAndCurrentGeneration() {
+        let identity = FocusLifecycleIdentity()
+        identity.updateAccountID("account A")
+        let snapshot = identity.capture()
+        let queue = FocusLifecycleRequestQueue(scheduleDeadline: { _, _ in {} }, deliver: { $0() })
+        var request: FocusLifecycleRequestQueue.Lease?
+        queue.enqueue(isValid: { snapshot.isCurrent }, expectedAccountID: snapshot.accountID,
+                      start: { request = $0 }, completion: { _ in })
+        XCTAssertTrue(request?.permitsCredentialAccount("account A") ?? false)
+        XCTAssertFalse(request?.permitsCredentialAccount("account B") ?? true)
+        XCTAssertFalse(request?.permitsCredentialAccount(nil) ?? true)
+        XCTAssertFalse(request?.permitsCredentialAccount("") ?? true)
+        identity.updateAccountID("account B")
+        XCTAssertFalse(request?.permitsCredentialAccount("account A") ?? true)
+        XCTAssertFalse(request?.isActive ?? true)
+    }
+
+    func testIdentityGenerationRejectsLogoutAndReturnToSameAccount() {
+        let identity = FocusLifecycleIdentity()
+        XCTAssertFalse(identity.capture().isCurrent)
+        identity.updateAccountID("account A")
+        let original = identity.capture()
+        identity.updateAccountID("account A")
+        XCTAssertTrue(original.isCurrent, "A same-account credential refresh does not invalidate work")
+        identity.updateAccountID(nil)
+        XCTAssertFalse(original.isCurrent)
+        identity.updateAccountID("account A")
+        XCTAssertFalse(original.isCurrent, "Logging back in must not revive old callbacks")
+        let second = identity.capture()
+        identity.updateAccountID("account B")
+        XCTAssertFalse(second.isCurrent)
+    }
+
+    @MainActor
+    func testAccountChangeCancelsActiveLeaseAndDropsQueuedOldAccountRequests() {
+        let identity = FocusLifecycleIdentity()
+        identity.updateAccountID("account A")
+        let original = identity.capture()
+        let queue = FocusLifecycleRequestQueue(scheduleDeadline: { _, _ in {} }, deliver: { $0() })
+        var active: FocusLifecycleRequestQueue.Lease?
+        var transmitted = 0
+        var cancelled = 0
+        var completed = 0
+        queue.enqueue(isValid: { original.isCurrent }, start: { lease in
+            active = lease
+            lease.attachCancellation { cancelled += 1 }
+        }, completion: { result in XCTAssertNil(result); completed += 1 })
+        queue.enqueue(isValid: { original.isCurrent }, start: { _ in transmitted += 1 },
+                      completion: { result in XCTAssertNil(result); completed += 1 })
+        identity.updateAccountID("account B")
+        XCTAssertFalse(active?.isActive ?? true)
+        XCTAssertEqual(cancelled, 1)
+        XCTAssertEqual(completed, 2)
+        XCTAssertEqual(transmitted, 0)
+        let current = identity.capture()
+        queue.enqueue(isValid: { current.isCurrent }, start: { lease in transmitted += 1; lease.finish([:]) },
+                      completion: { XCTAssertNotNil($0) })
+        XCTAssertEqual(transmitted, 1)
+    }
+
+    @MainActor
+    func testMeetingExtensionWaitsForRegistrationAndDropsAfterUnconfirmedStart() {
+        let segment = MeetingFocusTransport.Segment()
+        segment.predecessor.settle(succeeded: true)
+        let queue = FocusLifecycleRequestQueue(scheduleDeadline: { _, _ in {} }, deliver: { $0() })
+        var startLease: FocusLifecycleRequestQueue.Lease?
+        var extensionsSent = 0
+        queue.enqueue(start: { startLease = $0 }, completion: { segment.startSettled(succeeded: $0 != nil) })
+        queue.enqueue(start: { lease in
+            if segment.canSendMutation { extensionsSent += 1; lease.finish([:]) }
+            else { lease.finish(nil) }
+        }, completion: { segment.mutationSettled(succeeded: $0 != nil) })
+        XCTAssertEqual(extensionsSent, 0)
+        startLease?.finish(nil)
+        XCTAssertEqual(extensionsSent, 0)
+        XCTAssertTrue(segment.isReportingPending)
+    }
+
+    @MainActor
+    func testUnconfirmedFinishDropsDependentStartAndStopDespiteLateSuccess() {
+        var deadlines: [() -> Void] = []
+        let queue = FocusLifecycleRequestQueue(scheduleDeadline: { _, callback in
+            deadlines.append(callback)
+            return {}
+        }, deliver: { $0() })
+        let segment = MeetingFocusTransport.Segment()
+        var finishLease: FocusLifecycleRequestQueue.Lease?
+        var transmittedStarts = 0
+        var transmittedStops = 0
+        queue.enqueue(start: { finishLease = $0 }, completion: {
+            segment.predecessor.settle(succeeded: $0 != nil)
+        })
+        queue.enqueue(start: { lease in
+            if segment.canSendStart { transmittedStarts += 1; lease.finish([:]) }
+            else { lease.finish(nil) }
+        }, completion: { segment.startSettled(succeeded: $0 != nil) })
+        queue.enqueue(start: { lease in
+            if segment.canSendMutation { transmittedStops += 1; lease.finish([:]) }
+            else { lease.finish(nil) }
+        }, completion: { segment.mutationSettled(succeeded: $0 != nil, isFinish: true) })
+        deadlines[0]()
+        XCTAssertEqual(transmittedStarts, 0)
+        XCTAssertEqual(transmittedStops, 0)
+        XCTAssertTrue(segment.isReportingPending)
+        finishLease?.finish([:])
+        XCTAssertEqual(segment.predecessor.succeeded, false)
+        XCTAssertFalse(segment.canSendStart)
+        XCTAssertFalse(segment.canSendMutation)
+    }
+
+    func testConfirmedFinishAndStartPermitMutationsUntilFinish() {
+        let segment = MeetingFocusTransport.Segment()
+        XCTAssertFalse(segment.canSendStart)
+        segment.predecessor.settle(succeeded: true)
+        XCTAssertTrue(segment.canSendStart)
+        XCTAssertFalse(segment.canSendMutation)
+        segment.startSettled(succeeded: true)
+        XCTAssertTrue(segment.canSendMutation)
+        segment.mutationSettled(succeeded: true)
+        XCTAssertTrue(segment.canSendMutation)
+        segment.mutationSettled(succeeded: true, isFinish: true)
+        XCTAssertFalse(segment.canSendMutation)
+        XCTAssertFalse(segment.isReportingPending)
+    }
+
+    func testAmbiguousStartNeverAuthorizesStopOrAutomaticRestoration() {
+        let meeting = MeetingFocusTransport.Segment()
+        meeting.predecessor.settle(succeeded: true)
+        meeting.startSettled(succeeded: false)
+        meeting.startSettled(succeeded: true)
+        XCTAssertFalse(meeting.canSendMutation, "Late success must not revive an uncertain segment")
+        let restored = MeetingFocusTransport.Segment()
+        let finish = MeetingFocusTransport.FinishRequest(segment: meeting, confirmation: restored.predecessor)
+        XCTAssertFalse(finish.canSend)
+        XCTAssertFalse(finish.allowsRetry)
+        finish.settle(succeeded: false)
+        XCTAssertFalse(restored.canSendStart)
+        restored.startSettled(succeeded: false)
+        XCTAssertTrue(restored.isReportingPending)
+    }
+
+    @MainActor
+    func testMeetingTransportScopeKeepsManualSessionRequestsUnchanged() {
+        let transport = MeetingFocusTransport()
+        let meeting = MeetingFocusTransport.Segment()
+        transport.finishPredecessor(of: meeting) {
+            XCTAssertFalse(transport.captureFinish(modeID: "original").allowsRetry)
+            transport.captureFinish(modeID: "original").settle(succeeded: true)
+        }
+        XCTAssertTrue(transport.captureFinish(modeID: "original").allowsRetry)
+        transport.start(meeting) {
+            transport.sessionStarted()
+            XCTAssertTrue(transport.activeSegment === meeting)
+            XCTAssertTrue(transport.captureStart(modeID: "meeting") === meeting)
+            XCTAssertNil(transport.segmentForMode("unrelated"))
+            XCTAssertTrue(transport.captureFinish(modeID: "unrelated").allowsRetry)
+            XCTAssertFalse(transport.captureFinish(modeID: "meeting").allowsRetry)
+        }
+        transport.sessionStarted()
+        XCTAssertNil(transport.activeSegment)
+        XCTAssertTrue(transport.captureFinish(modeID: "original").canSend)
+        XCTAssertTrue(transport.captureFinish(modeID: "original").allowsRetry)
+    }
+
+    @MainActor
+    func testLifecycleTransportOrdersFinishStartAndPauseUntilEachCompletes() {
+        var deadlines: [() -> Void] = []
+        let queue = FocusLifecycleRequestQueue(scheduleDeadline: { _, action in
+            deadlines.append(action)
+            return {}
+        }, deliver: { $0() })
+        var leases: [FocusLifecycleRequestQueue.Lease] = []
+        var events: [String] = []
+        for name in ["finish original", "start meeting", "finish meeting", "resume original", "pause original"] {
+            queue.enqueue(start: { lease in events.append(name); leases.append(lease) }, completion: { _ in })
+        }
+        XCTAssertEqual(events, ["finish original"])
+        leases[0].finish([:])
+        XCTAssertEqual(events, ["finish original", "start meeting"])
+        leases[1].finish(nil)
+        XCTAssertEqual(events.last, "finish meeting", "A failed request must release the queue")
+        leases[2].finish([:])
+        XCTAssertEqual(events.last, "resume original")
+        leases[3].finish([:])
+        XCTAssertEqual(events.last, "pause original", "Pause cannot overtake the restored start")
+        leases[4].finish([:])
+        XCTAssertEqual(deadlines.count, events.count)
+    }
+
+    @MainActor
+    func testLifecycleDeadlineCancelsTransportAndIgnoresLateCallbacks() {
+        var deadlines: [() -> Void] = []
+        let queue = FocusLifecycleRequestQueue(scheduleDeadline: { _, action in
+            deadlines.append(action)
+            return {}
+        }, deliver: { $0() })
+        var first: FocusLifecycleRequestQueue.Lease?
+        var cancellations = 0
+        var completions = 0
+        var nextStarts = 0
+        queue.enqueue(start: { lease in
+            first = lease
+            lease.attachCancellation { cancellations += 1 }
+        }, completion: { _ in completions += 1 })
+        queue.enqueue(start: { _ in nextStarts += 1 }, completion: { _ in })
+        deadlines[0]()
+        XCTAssertFalse(first?.isActive ?? true)
+        XCTAssertEqual(cancellations, 1)
+        XCTAssertEqual(completions, 1)
+        XCTAssertEqual(nextStarts, 1)
+        first?.finish([:])
+        deadlines[0]()
+        XCTAssertEqual(completions, 1)
+        XCTAssertEqual(nextStarts, 1)
+    }
+
+    @MainActor
+    func testLifecycleMissingCredentialsAndLateTaskCreationCannotStrandQueue() {
+        var deadlines: [() -> Void] = []
+        let queue = FocusLifecycleRequestQueue(scheduleDeadline: { _, action in
+            deadlines.append(action)
+            return {}
+        }, deliver: { $0() })
+        var waitingForCredentials: FocusLifecycleRequestQueue.Lease?
+        var followingCompleted = false
+        queue.enqueue(start: { waitingForCredentials = $0 }, completion: { _ in })
+        queue.enqueue(start: { $0.finish(nil) }, completion: { _ in followingCompleted = true })
+        deadlines[0]()
+        XCTAssertTrue(followingCompleted)
+        var lateTaskCancelled = false
+        waitingForCredentials?.attachCancellation { lateTaskCancelled = true }
+        XCTAssertTrue(lateTaskCancelled, "A task created after expiry must be cancelled before sending")
+    }
+
+    func testMeetingHandoffStartsAfterQueuedFinishCleanupAndAcceptsFinishStateChange() {
+        var state = "running"
+        var callbacks: [() -> Void] = []
+        var events: [String] = []
+        scheduleMeetingFocusHandoff(finish: {
+            events.append("finish report")
+            state = "finished"
+            callbacks.append { events.append("finish UI cleanup") }
+        }, currentState: { state }, enqueue: { callbacks.append($0) },
+            cancelled: { XCTFail("The finish's own state change must not cancel the handoff") },
+            start: { events.append("start resumed segment") })
+        XCTAssertEqual(events, ["finish report"])
+        callbacks.forEach { $0() }
+        XCTAssertEqual(events, ["finish report", "finish UI cleanup", "start resumed segment"])
+    }
+
+    func testRoutineTransitionAfterMeetingFinishCancelsQueuedRestore() {
+        var state = "postponed"
+        var callbacks: [() -> Void] = []
+        var cancelled = false
+        scheduleMeetingFocusHandoff(finish: {}, currentState: { state },
+            enqueue: { callbacks.append($0) }, cancelled: { cancelled = true },
+            start: { XCTFail("A newly active routine must not be replaced by saved focus") })
+        state = "routine active"
+        callbacks.forEach { $0() }
+        XCTAssertTrue(cancelled)
+    }
+
+    func testFinishedSegmentSnapshotCannotFollowTheNewSessionsMutableState() {
+        var tasks = "original queue"
+        var duration = 127
+        var score = 84.0
+        let snapshot = FocusSessionFinishSnapshot(tasks: tasks, durationSeconds: duration, alignmentScore: score)
+        tasks = "meeting queue"
+        duration = 0
+        score = 100
+        XCTAssertEqual(snapshot.tasks, "original queue")
+        XCTAssertEqual(snapshot.durationSeconds, 127)
+        XCTAssertEqual(snapshot.alignmentScore, 84)
+        XCTAssertNotEqual(snapshot.tasks, tasks)
+        XCTAssertNotEqual(snapshot.durationSeconds, duration)
+        XCTAssertNotEqual(snapshot.alignmentScore, score)
+    }
+
+    func testMeetingHandoffRetainsPreviousSessionAcrossMeetingStartAndConsumesItOnce() {
+        var handoff = MeetingFocusHandoff<String>()
+        let generation = handoff.suspend("original session")
+        XCTAssertTrue(handoff.beginStart(generation))
+        handoff.sessionStarted()
+        handoff.endStart()
+        XCTAssertEqual(handoff.consume()?.0, "original session")
+        XCTAssertNil(handoff.consume())
+    }
+
+    func testUnrelatedSessionInvalidatesQueuedMeetingOrResume() {
+        var handoff = MeetingFocusHandoff<String>()
+        let generation = handoff.suspend("original session")
+        handoff.sessionStarted()
+        XCTAssertFalse(handoff.beginStart(generation))
+        XCTAssertNil(handoff.consume())
+    }
+
+    func testOldMeetingCallbackCannotCancelNewerHandoff() {
+        var handoff = MeetingFocusHandoff<String>()
+        let old = handoff.suspend("old")
+        let current = handoff.suspend("new")
+        handoff.cancel(ifCurrent: old)
+        XCTAssertFalse(handoff.beginStart(old))
+        XCTAssertTrue(handoff.beginStart(current))
+        XCTAssertEqual(handoff.consume()?.0, "new")
+    }
+
+    func testInterruptedRemainingTimePreservesSecondsAndPausedDuration() {
+        let now = Date(timeIntervalSinceReferenceDate: 1000)
+        XCTAssertEqual(MeetingFocusResumeTiming.remainingSeconds(
+            end: now.addingTimeInterval(61.2), pausedSeconds: nil, now: now), 62)
+        XCTAssertEqual(MeetingFocusResumeTiming.remainingSeconds(
+            end: now.addingTimeInterval(-500), pausedSeconds: 37, now: now), 37)
+        XCTAssertNil(MeetingFocusResumeTiming.remainingSeconds(end: now, pausedSeconds: nil, now: now))
+        XCTAssertNil(MeetingFocusResumeTiming.remainingSeconds(end: nil, pausedSeconds: nil, now: now))
+        XCTAssertNil(MeetingFocusResumeTiming.remainingSeconds(end: nil, pausedSeconds: 0, now: now))
+    }
+
+    func testRestoredStrictnessUsesTheExistingPersistedValues() {
+        XCTAssertEqual(MeetingFocusResumeTiming.storedStrictness(._NORMAL_), FocusStartStrictness.junior.storedValue)
+        XCTAssertEqual(MeetingFocusResumeTiming.storedStrictness(._STRICT_), FocusStartStrictness.captain.storedValue)
+        XCTAssertEqual(MeetingFocusResumeTiming.storedStrictness(._SUPER_STRICT_), FocusStartStrictness.pawfessor.storedValue)
+    }
+
     func testStaleBuddyApprovalClosesAndCancelsWithoutPostponing() {
         let savedState = currentState
         defer { currentState = savedState }

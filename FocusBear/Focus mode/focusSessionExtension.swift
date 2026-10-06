@@ -57,6 +57,7 @@ enum ExtendReasonVerdict: Equatable {
 /// Keys of the focus-mode (block list) dictionaries in `arrFocusType` / `currentRunningFocusType`
 /// that the extension flow and the AI block buddy read or write.
 enum FocusModeDictionaryKey {
+    static let isAllowedAllApps = "isAllowedAllApps"
     static let id = "id"
     static let isAiEnabled = "is_ai_enabled"
     static let isOn = "isOn"

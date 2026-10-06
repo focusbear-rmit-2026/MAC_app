@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Auth0
 var baseUrl = "https://api.focusbear.io"//https://api.aws.focusbear.io"  //https://api.focusbear.io" // also in helper app. in pusher
 class AllApi:NSObject {
     
@@ -3272,27 +3273,90 @@ class AllApi:NSObject {
         }
     }
 
-    func startFocusMode(id:String,intention:String, start_time:Date, finish_time:Date, completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
+    private enum FocusLifecycleHeader {
+        static let AUTHORIZATION = "Authorization"
+        static let USER_ID = "x-focus-bear-user-id"
+        static let BEARER_PREFIX = "Bearer "
+    }
+
+    /// Lifecycle success is request-local, like guarded settings mutations. Applying it globally
+    /// would spawn an unscoped secondary renewal that could outlive an account switch.
+    private func validatedFocusLifecycleCredential(_ result: CredentialsManagerResult<Credentials>,
+        lease: FocusLifecycleRequestQueue.Lease) -> Credentials? {
+        precondition(Thread.isMainThread)
+        guard lease.isActive else { return nil }
+        switch result {
+        case .success(let credentials):
+            guard lease.permitsCredentialAccount(AuthUser(from: credentials.accessToken)?.userId) else { return nil }
+            return credentials
+        case .failure:
+            // Preserve the existing failure policy only while this captured account is still current.
+            appdelegate?.setCredentialAndUserInfo(credentialsInfo: result, isAppLaunching: false)
+            return nil
+        }
+    }
+
+    private func makeFocusLifecycleRequest(url: NSURL, credentials: Credentials,
+        lease: FocusLifecycleRequestQueue.Lease) -> NSMutableURLRequest {
+        let request = makeRequest(responsePathUrl: url)
+        request.setValue(FocusLifecycleHeader.BEARER_PREFIX + credentials.accessToken,
+                         forHTTPHeaderField: FocusLifecycleHeader.AUTHORIZATION)
+        request.setValue(lease.expectedAccountID, forHTTPHeaderField: FocusLifecycleHeader.USER_ID)
+        return request
+    }
+
+    func startFocusMode(id: String, intention: String, start_time: Date, finish_time: Date,
+                        sessionTasks: String? = nil, completionHandler: @escaping (NSDictionary?) -> Void) {
+        let tasks = sessionTasks ?? focusModeTaskString
+        let segment = MeetingFocusTransport.shared.captureStart(modeID: id)
+        let identity = FocusLifecycleIdentity.shared.capture()
+        DispatchQueue.main.async {
+            FocusLifecycleRequestQueue.shared.enqueue(isValid: { identity.isCurrent }, expectedAccountID: identity.accountID, start: { lease in
+                guard segment?.canSendStart ?? true else {
+                    lease.finish(nil)
+                    return
+                }
+                self.performStartFocusMode(id: id, intention: intention, start_time: start_time,
+                    finish_time: finish_time, sessionTasks: tasks, lease: lease,
+                    allowsRetry: segment == nil, completionHandler: { lease.finish($0) })
+            }, completion: { response in
+                segment?.startSettled(succeeded: response != nil)
+                if segment?.isReportingPending == true {
+                    addLog(text: "meeting handoff: backend start unconfirmed; reporting pending, local enforcement retained")
+                }
+                completionHandler(response)
+            })
+        }
+    }
+
+    private func performStartFocusMode(id: String, intention: String, start_time: Date, finish_time: Date,
+                                       sessionTasks: String, lease: FocusLifecycleRequestQueue.Lease,
+                                       allowsRetry: Bool, completionHandler: @escaping (NSDictionary?) -> Void) {
         addLog(text: "func call:- startFocusMode:- focus-mode/id/start")
-        
-        appdelegate!.credentialsManager.credentials {credentialsInfo in
-            addLog(text: "get updated credentialsInfo from credentialsManager")
-            
-            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
-            
-            if appdelegate!.credential != nil{
-                
+        let tasksAtStart = sessionTasks
+
+        guard let delegate = appdelegate else {
+            completionHandler(nil)
+            return
+        }
+        delegate.credentialsManager.credentials {credentialsInfo in
+            DispatchQueue.main.async {
+                guard let credentials = self.validatedFocusLifecycleCredential(credentialsInfo, lease: lease) else {
+                    completionHandler(nil)
+                    return
+                }
+
+
                 let responsePath = "\(baseUrl)/focus-mode/\(id)/start"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call startFocusMode \(responsePathUrl)")
-                    let token = appdelegate!.credential!.accessToken
-                    
-                    let request = makeRequest(responsePathUrl: responsePathUrl)
+
+                    let request = self.makeFocusLifecycleRequest(url: responsePathUrl, credentials: credentials, lease: lease)
                     request.httpMethod = "POST";
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                    
+
                     var to_dos:[[String: Any]] = []
-                    if let data = focusModeTaskString.data(using: String.Encoding.utf8) {
+                    if let data = tasksAtStart.data(using: String.Encoding.utf8) {
                         do {
                             let jsonResult:[[String: Any]] = try (JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]] ?? [])
                             print(jsonResult)
@@ -3301,32 +3365,32 @@ class AllApi:NSObject {
                             print(error)
                         }
                     }
-                    
+
                     let json: [String: Any] = [
                         "intention":intention,
                         "finish_time":getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
                         "start_time":getStringFromDateInUtc(date: start_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
                         "to_dos":to_dos
                     ]
-                    
-                    
-                    
-                    
+
+
+
+
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)
                     request.httpBody = jsonData
                     let task = URLSession.shared.dataTask(with: request as URLRequest) {
                         data, response, error in
-                        
+                        guard lease.isActive else { return }
+
                         if let httpResponse = response as? HTTPURLResponse{
                             //it means it is right
                             self.isApiStartFocusModeErrorFound = false
                             if data != nil{
                                 do {
                                     if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                        
-                                        
-                                        // if let id = jsonResult.value(forKey: "id") as? String{
-                                        
+
+
+
                                         if httpResponse.statusCode == 201{
                                             addLog(text: "api call startFocusMode success")
                                             completionHandler(jsonResult)
@@ -3334,18 +3398,17 @@ class AllApi:NSObject {
                                         }else{
                                             addLog(text: "api call startFocusMode Api error:- statusCode is \(httpResponse.statusCode)")
                                             self.writeJsonInLog(data: data)
-                                            if httpResponse.statusCode == 400{//it means may be a focus mode is already running so complete it
+                                            if httpResponse.statusCode == 400 && allowsRetry {// Legacy manual-session recovery only.
                                                 finishOldFocusModeIfRunning(startNewFocusId: id, intention: intention, start_time: start_time, finish_time: finish_time)
                                             }
                                             completionHandler(nil)
                                             return
                                         }
-                                        
-                                        
-                                        //  }
-                                        
+
+
+
                                     }
-                                    
+
                                 }catch{
                                     addLog(text: "api call startFocusMode error:- \(error.localizedDescription)")
                                     completionHandler(nil)
@@ -3354,20 +3417,20 @@ class AllApi:NSObject {
                                 }
                             }
                         }
-                        
-                        
+
+
                         if error != nil {
                             addLog(text: "api call startFocusMode error:- \(error!.localizedDescription)")
                             if (error as? NSError)?.code == self.errorCodeRequestTimeout{
-                                if self.isApiStartFocusModeErrorFound{
+                                if !allowsRetry || self.isApiStartFocusModeErrorFound{
                                     self.isApiStartFocusModeErrorFound = false
                                     completionHandler(nil)
                                     return
                                 }else{
                                     self.isApiStartFocusModeErrorFound = true
                                     addLog(text: "error startFocusMode:- try second time")
-                                    
-                                    self.startFocusMode(id: id, intention: intention, start_time: start_time, finish_time: finish_time, completionHandler: {newDic in
+
+                                    self.performStartFocusMode(id: id, intention: intention, start_time: start_time, finish_time: finish_time, sessionTasks: tasksAtStart, lease: lease, allowsRetry: allowsRetry, completionHandler: {newDic in
                                         completionHandler(newDic)
                                         return
                                     })
@@ -3376,51 +3439,87 @@ class AllApi:NSObject {
                                 completionHandler(nil)
                                 return
                             }
-                            
-                            
+
+
                         }else{
                             completionHandler(nil)
                             return
                         }
                     }
-                    
+
+                    lease.attachCancellation { task.cancel() }
+                    guard lease.isActive else { return }
                     task.resume()
                 }else{
                     completionHandler(nil)
                     return
                 }
-                
-            }else{
-                completionHandler(nil)
-                return
+
             }
         }
     }
-    
+
     /// `sessionTasks`, when given, is the task queue to log against the session instead of the live
     /// `focusModeTaskString`, which is then left alone. The finish sent the moment a session ends uses
     /// it, because the end screen goes on showing those tasks (#2678).
-    func finishFocusMode(id:String,achievements:String, distractions:String, finish_time:Date, rating:Int?, sessionTasks: String? = nil, completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
+    func finishFocusMode(id: String, achievements: String, distractions: String, finish_time: Date,
+                         rating: Int?, sessionTasks: String? = nil,
+                         completionHandler: @escaping (NSDictionary?) -> Void) {
+        let snapshot = FocusSessionFinishSnapshot(tasks: sessionTasks ?? focusModeTaskString,
+            durationSeconds: focusModeActualDurationPerformed,
+            alignmentScore: SettingsManagerObject.isAiCheckUrlEnabled ? currentFocusAlignmentScore : nil)
+        // Consume only the ending session's queue before another local session can replace it.
+        if sessionTasks == nil { focusModeTaskString = "" }
+        let handoff = MeetingFocusTransport.shared.captureFinish(modeID: id)
+        let identity = FocusLifecycleIdentity.shared.capture()
+        DispatchQueue.main.async {
+            FocusLifecycleRequestQueue.shared.enqueue(isValid: { identity.isCurrent }, expectedAccountID: identity.accountID, start: { lease in
+                guard handoff.canSend else {
+                    lease.finish(nil)
+                    return
+                }
+                self.performFinishFocusMode(id: id, achievements: achievements, distractions: distractions,
+                    finish_time: finish_time, rating: rating,
+                    snapshot: snapshot, lease: lease, allowsRetry: handoff.allowsRetry,
+                    completionHandler: { lease.finish($0) })
+            }, completion: { response in
+                handoff.settle(succeeded: response != nil)
+                if !handoff.allowsRetry && response == nil {
+                    addLog(text: "meeting handoff: backend finish unconfirmed; dependent reporting pending")
+                }
+                completionHandler(response)
+            })
+        }
+    }
+
+    private func performFinishFocusMode(id: String, achievements: String, distractions: String,
+                                        finish_time: Date, rating: Int?, snapshot: FocusSessionFinishSnapshot,
+                                        lease: FocusLifecycleRequestQueue.Lease, allowsRetry: Bool,
+                                        completionHandler: @escaping (NSDictionary?) -> Void) {
         addLog(text: "func call:-  finishFocusMode:- focus-mode/id/finish")
-        
-        appdelegate!.credentialsManager.credentials {credentialsInfo in
-            addLog(text: "get updated credentialsInfo from credentialsManager")
-            
-            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
-            
-            if appdelegate!.credential != nil{
-                
+
+        guard let delegate = appdelegate else {
+            completionHandler(nil)
+            return
+        }
+        delegate.credentialsManager.credentials {credentialsInfo in
+            DispatchQueue.main.async {
+                guard let credentials = self.validatedFocusLifecycleCredential(credentialsInfo, lease: lease) else {
+                    completionHandler(nil)
+                    return
+                }
+
+
                 let responsePath = "\(baseUrl)/focus-mode/\(id)/finish"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call finishFocusMode \(responsePathUrl)")
-                    let token = appdelegate!.credential!.accessToken
-                    
-                    let request = makeRequest(responsePathUrl: responsePathUrl)
+
+                    let request = self.makeFocusLifecycleRequest(url: responsePathUrl, credentials: credentials, lease: lease)
                     request.httpMethod = "POST";
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                    
+
                     var to_dos:[[String: Any]] = []
-                    if let data = (sessionTasks ?? focusModeTaskString).data(using: String.Encoding.utf8) {
+                    if let data = snapshot.tasks.data(using: String.Encoding.utf8) {
                         do {
                             let jsonResult:[[String: Any]] = try (JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]] ?? [])
                             print(jsonResult)
@@ -3429,42 +3528,39 @@ class AllApi:NSObject {
                             print(error)
                         }
                     }
-                    
+
                     var json: [String: Any] = [
                         "achievements": encodedFocusSessionAchievements(achievements),
                         "distractions": distractions,
                         "finish_time": getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
-                        "focus_duration_seconds": focusModeActualDurationPerformed,
+                        "focus_duration_seconds": snapshot.durationSeconds,
                         "to_dos":to_dos
                     ]
-                    
+
                     var metadata = [String : Any]()
                     if let rating = rating{
                         metadata["focus_stars"] = rating
                     }
-                    if SettingsManagerObject.isAiCheckUrlEnabled{
-                        metadata["focus_alignment_score"] = "\(currentFocusAlignmentScore)"
+                    if let alignmentScore = snapshot.alignmentScore {
+                        metadata["focus_alignment_score"] = "\(alignmentScore)"
                     }
                     json["metadata"] = metadata
-                    
-                    if sessionTasks == nil{
-                        focusModeTaskString = ""
-                    }
-                    
+
+
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)
                     request.httpBody = jsonData
                     let task = URLSession.shared.dataTask(with: request as URLRequest) {
                         data, response, error in
-                        
+                        guard lease.isActive else { return }
+
                         if let httpResponse = response as? HTTPURLResponse{
                             //it means it is right
                             self.isApiFinishFocusModeErrorFound = false
                             if data != nil{
                                 do {
                                     if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                        
-                                        
-                                        // if let id = jsonResult.value(forKey: "id") as? String{
+
+
                                         if httpResponse.statusCode == 201{
                                             addLog(text: "api call finishFocusMode success")
                                             completionHandler(jsonResult)
@@ -3475,12 +3571,11 @@ class AllApi:NSObject {
                                             completionHandler(nil)
                                             return
                                         }
-                                        
-                                        
-                                        //  }
-                                        
+
+
+
                                     }
-                                    
+
                                 }catch{
                                     completionHandler(nil)
                                     addLog(text: "api call finishFocusMode error:- \(error.localizedDescription)")
@@ -3488,25 +3583,21 @@ class AllApi:NSObject {
                                     return;
                                 }
                             }
-                            //                        }else{
-                            //                            completionHandler(nil)
-                            //                            return
-                            //                        }
                         }
-                        
-                        
+
+
                         if error != nil {
                             addLog(text: "api call finishFocusMode error:- \(error!.localizedDescription)")
                             if (error as? NSError)?.code == self.errorCodeRequestTimeout{
-                                if self.isApiFinishFocusModeErrorFound{
+                                if !allowsRetry || self.isApiFinishFocusModeErrorFound{
                                     self.isApiFinishFocusModeErrorFound = false
                                     completionHandler(nil)
                                     return
                                 }else{
                                     self.isApiFinishFocusModeErrorFound = true
                                     addLog(text: "error finishFocusMode:- try second time")
-                                    
-                                    allApiObject.finishFocusMode(id: id, achievements: achievements, distractions: distractions, finish_time: finish_time, rating:rating, sessionTasks: sessionTasks, completionHandler: {newDic in
+
+                                    self.performFinishFocusMode(id: id, achievements: achievements, distractions: distractions, finish_time: finish_time, rating:rating, snapshot: snapshot, lease: lease, allowsRetry: allowsRetry, completionHandler: {newDic in
                                         completionHandler(newDic)
                                         return
                                     })
@@ -3515,126 +3606,166 @@ class AllApi:NSObject {
                                 completionHandler(nil)
                                 return
                             }
-                            
+
                         }else{
                             completionHandler(nil)
                             return
                         }
                     }
-                    
+
+                    lease.attachCancellation { task.cancel() }
+                    guard lease.isActive else { return }
                     task.resume()
                 }else{
                     completionHandler(nil)
                     return
                 }
-                
-            }else{
-                completionHandler(nil)
-                return
+
             }
         }
     }
-    
-    func extendFocusMode(id:String, finish_time:Date, completionHandler: @escaping(_ result: NSDictionary?) -> ()){//v 2.28.439
+
+    func extendFocusMode(id: String, finish_time: Date, completionHandler: @escaping (NSDictionary?) -> Void) {
+        guard let segment = MeetingFocusTransport.shared.segmentForMode(id) else {
+            performExtendFocusMode(id: id, finish_time: finish_time, lease: nil, completionHandler: completionHandler)
+            return
+        }
+        let identity = FocusLifecycleIdentity.shared.capture()
+        DispatchQueue.main.async {
+            FocusLifecycleRequestQueue.shared.enqueue(isValid: { identity.isCurrent }, expectedAccountID: identity.accountID, start: { lease in
+                guard segment.canSendMutation else { lease.finish(nil); return }
+                self.performExtendFocusMode(id: id, finish_time: finish_time, lease: lease,
+                    completionHandler: { lease.finish($0) })
+            }, completion: { response in
+                segment.mutationSettled(succeeded: response != nil)
+                if segment.isReportingPending {
+                    addLog(text: "meeting handoff: backend extension unconfirmed; reporting pending")
+                }
+                completionHandler(response)
+            })
+        }
+    }
+
+    private func performExtendFocusMode(id: String, finish_time: Date,
+        lease: FocusLifecycleRequestQueue.Lease?, completionHandler: @escaping (NSDictionary?) -> Void) {
         addLog(text: "func call:- extendFocusMode:- update_scheduled_finish")
-        
-        appdelegate!.credentialsManager.credentials {credentialsInfo in
-            addLog(text: "get updated credentialsInfo from credentialsManager")
-            
-            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
-            
-            
-            let responsePath = "\(baseUrl)/focus-mode/\(id)/update_scheduled_finish"
-            if let responsePathUrl = NSURL(string: responsePath){
-                addLog(text: "api call extendFocusMode Api \(responsePathUrl)")
-                let token = appdelegate!.credential?.accessToken ?? ""
-                
-                let request = makeRequest(responsePathUrl: responsePathUrl)
-                request.httpMethod = "PATCH";
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                
-                
-                let json: [String: Any] = [
-                    "scheduled_finish_time":getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-                ]
-                
-                
-                
-                print("*****************json for activity************")
-                print(json)
-                print("**********************************************")
-                let jsonData = try? JSONSerialization.data(withJSONObject: json)
-                
-                
-                request.httpBody = jsonData
-                
-                
-                let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                    data, response, error in
-                    
-                    if let httpResponse = response as? HTTPURLResponse {
-                        self.isApiExtendFocusModeErrorFound = false
-                        if httpResponse.statusCode == 200{
-                            addLog(text: "api call extendFocusMode Api success")
-                            if data != nil{
-                                do {
-                                    if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                        
-                                        print("*************** Activity completed response****************")
-                                        print(jsonResult)
-                                        print("***********************************************************")
-                                        completionHandler(jsonResult)
-                                        return
-                                    }
-                                    
-                                }catch{
-                                    addLog(text: "api call extendFocusMode error:- \(error.localizedDescription)")
-                                    completionHandler(nil)
-                                    return
-                                }
-                            }
-                        }else{
-                            addLog(text: "api call extendFocusMode Api error:- statusCode is \(httpResponse.statusCode)")
-                            self.writeJsonInLog(data: data)
-                            completionHandler(nil)
-                            return
-                        }
-                    }
-                    
-                    if error != nil {
-                        addLog(text: "api call extendFocusMode Api error:- \(error!.localizedDescription)")
-                        if (error as? NSError)?.code == self.errorCodeRequestTimeout{
-                            if self.isApiExtendFocusModeErrorFound{
-                                self.isApiExtendFocusModeErrorFound = false
-                                completionHandler(nil)
-                                return
-                            }else{
-                                self.isApiExtendFocusModeErrorFound = true
-                                addLog(text: "error activity extendFocusMode Api:- try second time")
-                                
-                                allApiObject.extendFocusMode(id: id, finish_time:finish_time, completionHandler: {dic  in
-                                    completionHandler(dic)
-                                    return
-                                    
-                                })
-                            }
-                        }else{
-                            completionHandler(nil)
-                            return
-                        }
-                        
-                        
-                    }else{
+
+        guard let delegate = appdelegate else { completionHandler(nil); return }
+        delegate.credentialsManager.credentials { credentialsInfo in
+            let handleCredentials = {
+                var verifiedCredentials: Credentials?
+                if let lease {
+                    guard let credentials = self.validatedFocusLifecycleCredential(credentialsInfo, lease: lease) else {
                         completionHandler(nil)
                         return
                     }
-                    
+                    verifiedCredentials = credentials
+                } else {
+                    appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
                 }
-                
-                task.resume()
-            }else{
-                completionHandler(nil)
+
+
+                let responsePath = "\(baseUrl)/focus-mode/\(id)/update_scheduled_finish"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call extendFocusMode Api \(responsePathUrl)")
+
+                    let request: NSMutableURLRequest
+                    if let lease, let verifiedCredentials {
+                        request = self.makeFocusLifecycleRequest(url: responsePathUrl, credentials: verifiedCredentials, lease: lease)
+                    } else {
+                        request = makeRequest(responsePathUrl: responsePathUrl)
+                    }
+                    request.httpMethod = "PATCH";
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+
+                    let json: [String: Any] = [
+                        "scheduled_finish_time":getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                    ]
+
+
+
+                    print("*****************json for activity************")
+                    print(json)
+                    print("**********************************************")
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+
+
+                    request.httpBody = jsonData
+
+
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        guard lease?.isActive ?? true else { return }
+
+                        if let httpResponse = response as? HTTPURLResponse {
+                            self.isApiExtendFocusModeErrorFound = false
+                            if httpResponse.statusCode == 200{
+                                addLog(text: "api call extendFocusMode Api success")
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+
+                                            print("*************** Activity completed response****************")
+                                            print(jsonResult)
+                                            print("***********************************************************")
+                                            completionHandler(jsonResult)
+                                            return
+                                        }
+
+                                    }catch{
+                                        addLog(text: "api call extendFocusMode error:- \(error.localizedDescription)")
+                                        completionHandler(nil)
+                                        return
+                                    }
+                                }
+                            }else{
+                                addLog(text: "api call extendFocusMode Api error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                completionHandler(nil)
+                                return
+                            }
+                        }
+
+                        if error != nil {
+                            addLog(text: "api call extendFocusMode Api error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if lease != nil || self.isApiExtendFocusModeErrorFound{
+                                    self.isApiExtendFocusModeErrorFound = false
+                                    completionHandler(nil)
+                                    return
+                                }else{
+                                    self.isApiExtendFocusModeErrorFound = true
+                                    addLog(text: "error activity extendFocusMode Api:- try second time")
+
+                                    self.performExtendFocusMode(id: id, finish_time: finish_time, lease: lease, completionHandler: {dic  in
+                                        completionHandler(dic)
+                                        return
+
+                                    })
+                                }
+                            }else{
+                                completionHandler(nil)
+                                return
+                            }
+
+
+                        }else{
+                            completionHandler(nil)
+                            return
+                        }
+
+                    }
+
+                    lease?.attachCancellation { task.cancel() }
+                    guard lease?.isActive ?? true else { return }
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                }
             }
+            if lease != nil { DispatchQueue.main.async(execute: handleCredentials) }
+            else { handleCredentials() }
         }
     }
 
@@ -3653,7 +3784,29 @@ class AllApi:NSObject {
     /// Shared body for the pause/resume endpoints — they differ only by path segment. The `device_id`
     /// header that makeRequest already attaches is what lets this Mac ignore the echo of its own change
     /// when the backend broadcasts it back over Pusher.
-    private func postFocusModeLifecycleAction(id:String, action:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+    private func postFocusModeLifecycleAction(id: String, action: String,
+                                             completionHandler: @escaping (NSDictionary?) -> Void) {
+        let segment = MeetingFocusTransport.shared.segmentForMode(id)
+        let identity = FocusLifecycleIdentity.shared.capture()
+        DispatchQueue.main.async {
+            FocusLifecycleRequestQueue.shared.enqueue(isValid: { identity.isCurrent }, expectedAccountID: identity.accountID, start: { lease in
+                guard segment?.canSendMutation ?? true else {
+                    lease.finish(nil)
+                    return
+                }
+                self.performFocusModeLifecycleAction(id: id, action: action, lease: lease,
+                    completionHandler: { lease.finish($0) })
+            }, completion: { response in
+                segment?.mutationSettled(succeeded: response != nil)
+                if segment?.isReportingPending == true {
+                    addLog(text: "meeting handoff: backend lifecycle unconfirmed; reporting pending")
+                }
+                completionHandler(response)
+            })
+        }
+    }
+
+    private func performFocusModeLifecycleAction(id:String, action:String, lease: FocusLifecycleRequestQueue.Lease, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
         addLog(text: "func call:- focus mode \(action):- focus-mode/id/\(action)")
         guard !id.isEmpty else {
             addLog(text: "focus mode \(action):- no focus mode id, skipping")
@@ -3661,52 +3814,64 @@ class AllApi:NSObject {
             return
         }
 
-        appdelegate!.credentialsManager.credentials { credentialsInfo in
-            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+        guard let delegate = appdelegate else {
+            completionHandler(nil)
+            return
+        }
+        delegate.credentialsManager.credentials { credentialsInfo in
+            DispatchQueue.main.async {
+                guard let credentials = self.validatedFocusLifecycleCredential(credentialsInfo, lease: lease) else {
+                    completionHandler(nil)
+                    return
+                }
 
-            let responsePath = "\(baseUrl)/focus-mode/\(id)/\(action)"
-            guard let responsePathUrl = NSURL(string: responsePath) else {
-                completionHandler(nil)
-                return
+                let responsePath = "\(baseUrl)/focus-mode/\(id)/\(action)"
+                guard let responsePathUrl = NSURL(string: responsePath) else {
+                    completionHandler(nil)
+                    return
+                }
+                addLog(text: "api call focus mode \(action) Api \(responsePathUrl)")
+
+                let request = self.makeFocusLifecycleRequest(url: responsePathUrl, credentials: credentials, lease: lease)
+                request.httpMethod = "POST"
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                // These endpoints take no parameters, but the API rejects an absent body when the
+                // content-type says JSON ("Body cannot be empty when content-type is set to
+                // 'application/json'"), so send an empty object rather than nothing.
+                request.httpBody = try? JSONSerialization.data(withJSONObject: [String: Any]())
+
+                let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
+                    guard lease.isActive else { return }
+                    if let error = error {
+                        // Deliberately no retry: pause/resume is time-sensitive, and a late retry could
+                        // land after the user already toggled back. The local state stays applied and the
+                        // next current-activity-props reconcile corrects the server view.
+                        addLog(text: "api call focus mode \(action) Api error:- \(error.localizedDescription)")
+                        completionHandler(nil)
+                        return
+                    }
+                    guard let httpResponse = response as? HTTPURLResponse else {
+                        completionHandler(nil)
+                        return
+                    }
+                    guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
+                        addLog(text: "api call focus mode \(action) Api error:- statusCode is \(httpResponse.statusCode)")
+                        self.writeJsonInLog(data: data)
+                        completionHandler(nil)
+                        return
+                    }
+                    addLog(text: "api call focus mode \(action) Api success")
+                    if let data = data,
+                       let jsonResult = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) as? NSDictionary {
+                        completionHandler(jsonResult)
+                    } else {
+                        completionHandler(nil)
+                    }
+                }
+                lease.attachCancellation { task.cancel() }
+                guard lease.isActive else { return }
+                task.resume()
             }
-            addLog(text: "api call focus mode \(action) Api \(responsePathUrl)")
-
-            let request = makeRequest(responsePathUrl: responsePathUrl)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            // These endpoints take no parameters, but the API rejects an absent body when the
-            // content-type says JSON ("Body cannot be empty when content-type is set to
-            // 'application/json'"), so send an empty object rather than nothing.
-            request.httpBody = try? JSONSerialization.data(withJSONObject: [String: Any]())
-
-            let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
-                if let error = error {
-                    // Deliberately no retry: pause/resume is time-sensitive, and a late retry could
-                    // land after the user already toggled back. The local state stays applied and the
-                    // next current-activity-props reconcile corrects the server view.
-                    addLog(text: "api call focus mode \(action) Api error:- \(error.localizedDescription)")
-                    completionHandler(nil)
-                    return
-                }
-                guard let httpResponse = response as? HTTPURLResponse else {
-                    completionHandler(nil)
-                    return
-                }
-                guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
-                    addLog(text: "api call focus mode \(action) Api error:- statusCode is \(httpResponse.statusCode)")
-                    self.writeJsonInLog(data: data)
-                    completionHandler(nil)
-                    return
-                }
-                addLog(text: "api call focus mode \(action) Api success")
-                if let data = data,
-                   let jsonResult = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) as? NSDictionary {
-                    completionHandler(jsonResult)
-                } else {
-                    completionHandler(nil)
-                }
-            }
-            task.resume()
         }
     }
 

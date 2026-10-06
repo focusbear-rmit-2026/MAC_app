@@ -1854,6 +1854,10 @@ class activityCompletionVc: NSViewController {
     }
     
     func morningHabitFinished(index:Int) {
+        guard arrFilteredMorningHabits.indices.contains(index) else {
+            addLog(text: "morningHabitFinished: ignoring stale index \(index)")
+            return
+        }
         addLog(text:"morningHabitFinished")
         btnSkipHabit.title = buttonMoreActionsText
         

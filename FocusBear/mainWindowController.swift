@@ -451,6 +451,21 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         }
     }
 
+    /// Reusing a loaded routine view does not trigger its window layout lifecycle. Reframe and
+    /// order the host before rebuilding covers so an old cover cannot obscure the restored page.
+    func restoreRoutineWindowAfterAppointment(
+        prepareLayout: () -> Void = { mainViewControllerObj?.checkIsFullScreenNeeded() },
+        showSecondaryCovers: () -> Void = { showBlankWindowInSecondaryMonitor() }
+    ) {
+        hideBlankWindowInSecondaryMonitor()
+        prepareLayout()
+        showWindow(nil)
+        window?.makeKeyAndOrderFront(nil)
+        // Layout/key-window callbacks may have built covers using the previous frame.
+        hideBlankWindowInSecondaryMonitor()
+        showSecondaryCovers()
+    }
+
     func showSmallSizeWindow(){
         isFullScreenVisible = false
         hideBlankWindowInSecondaryMonitor()

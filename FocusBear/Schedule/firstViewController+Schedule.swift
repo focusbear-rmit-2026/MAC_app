@@ -149,7 +149,14 @@ extension firstViewController: ScheduleHost {
         }
     }
 
+    var supportsLiveHabitActions: Bool {
+        currentState != ._NOTHING_
+    }
+
     func scheduleSegments(now: Date) -> [ScheduleRoutineSegment] {
+        guard supportsLiveHabitActions else {
+            return ScheduleTab.betweenRoutineSegments(now: now)
+        }
         let source = scheduleSourceHabits
         let name: String
         let isMorning: Bool
@@ -181,6 +188,7 @@ extension firstViewController: ScheduleHost {
     /// `reloadData()` still runs so the table's cached row count can't hand `viewFor:row:` an index
     /// past the array (the crash this guard was added for).
     private func isLiveScheduleIndex(_ index: Int) -> Bool {
+        guard supportsLiveHabitActions else { return false }
         tblViewHabits?.reloadData()
         return scheduleSourceHabits.indices.contains(index)
     }

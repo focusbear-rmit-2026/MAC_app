@@ -26,21 +26,16 @@ class popupAppointmentTimeVc: NSViewController {
     /// the intention (Late No More → AI session), and so a dismissal here can be reported to the backend
     /// and silence the same meeting on the user's other devices.
     var appointmentTitle = ""
-    // Fires startAppointment() once the meeting's own end time passes, so the popup can't sit open
-    // (and the routine stay stuck) indefinitely if the user just doesn't click a button — the window
-    // has no close button and nothing else was closing it. Only used on the no-password branch: the
-    // password branch already has its own 120s give-up timer (performTimerCount below), and
-    // auto-advancing past a required password would defeat the postpone-after-cutoff gate above.
+    // Closes the popup once the meeting's own end time passes, so it can't sit open (and the routine
+    // stay stuck) indefinitely if the user just doesn't click a button — the window has no close
+    // button and nothing else was closing it. Only used on the no-password branch: the password
+    // branch already has its own 120s give-up timer (performTimerCount below).
     var autoCloseTimer: Timer?
     /// The meeting's start instant, as reported by Late No More. Together with the title this is how
     /// every platform identifies the same meeting — see `LateNoMoreDismissSync`.
     var appointmentStartTime: Date?
     /// One dismissal report per popup; the "Thanks!" and "I don't need to attend" paths both report.
     private var didReportDismissal = false
-    /// Whether the postpone currently in flight came from the user acting on this popup. `autoCloseTimer`
-    /// postpones the routine too, but a timeout is not the user telling us they dealt with the meeting,
-    /// so it must not silence the reminder on their other devices.
-    private var isPostponeUserInitiated = true
     var subTitle = "Unlocking your Mac so you can turn off Late No More appointment reminders. You have <TIMELEFT> to turn it off. Enter a password to continue using it until your appointment ends at <TIME>"
     
     override func viewDidLoad() {
@@ -111,10 +106,19 @@ class popupAppointmentTimeVc: NSViewController {
 
             let fireInterval = max(endTime.timeIntervalSinceNow, 1)
             autoCloseTimer = Timer.scheduledTimer(withTimeInterval: fireInterval, repeats: false) { [weak self] _ in
-                addLog(text: "popupAppointmentTimeVc:- auto-closing at meeting end time, no user action taken")
-                // Re-evaluate the gate here too: the popup may have opened before the cutoff but be
-                // auto-closing after it, in which case the postpone must now demand the password.
-                self?.confirmPostpone(userInitiated: false)
+                guard let self else { return }
+                let now = Date()
+                guard MeetingCoverage.shouldResumeRoutineAfterAppointmentTimeout(
+                    now: now, meetings: AnnouncedMeetingRegister.shared.activeMeetings(now: now),
+                    isMeetingSessionLive: currentAccountabilityBuddySession?.isMeeting == true) else {
+                    addLog(text: "popupAppointmentTimeVc:- expired reminder dismissed while another meeting remains active")
+                    focusButtonServiceObject.dismissNotification()
+                    self.dismissForRoutineResume()
+                    return
+                }
+                addLog(text: "popupAppointmentTimeVc:- auto-closing at meeting end time, no meeting remains; returning to the routine")
+                // A timeout is not an attendance decision and must not silence reminders on other devices.
+                self.returnToHabits()
             }
             RunLoop.main.add(autoCloseTimer!, forMode: .common)
         }else{
@@ -174,14 +178,13 @@ class popupAppointmentTimeVc: NSViewController {
         return false
     }
 
-    // Confirm (or auto-close) the appointment postpone. The gate is RECOMPUTED here rather than trusting
+    // Confirm the appointment postpone. The gate is RECOMPUTED here rather than trusting
     // the value cached in resetView: a Late No More meeting popup can open BEFORE the cutoff and only be
     // confirmed AFTER it (the meeting starts near the cutoff and the window sits open in between). With the
     // stale value, isCutOffTimeGoing() was false at open time so the after-cutoff branch never armed, and
     // the routine got postponed past cutoff with no password (bug report 2026-08-24). Recomputing at
     // action time re-arms isCutOffTimeGoing() / isHighPrioritySequenceGoing.
-    func confirmPostpone(userInitiated: Bool = true) {
-        isPostponeUserInitiated = userInitiated
+    func confirmPostpone() {
         shouldAskPassword = computeShouldAskPassword()
         if !shouldAskPassword{
             startAppointment()
@@ -196,36 +199,50 @@ class popupAppointmentTimeVc: NSViewController {
 
     func startAppointment(){
         addLog(text: "smallCountDownVc:- startAppointment")
-        if isPostponeUserInitiated{
-            // The user acknowledged the reminder here and is attending the meeting on this Mac.
-            reportDismissal(reason: .joinedOnMac)
-        }
+        let wasRoutineAlreadyPostponed = currentState.isRoutinePostponed
+        let meetingOwnsRoutinePostpone = !wasRoutineAlreadyPostponed ||
+            (currentAccountabilityBuddySession?.isMeeting == true && isFocusSessionStartedFromPostponeIntention)
+        // Only a user's "Thanks!" (or the password after it) reaches here: the user acknowledged the
+        // reminder and is attending the meeting on this Mac.
+        reportDismissal(reason: .joinedOnMac)
         focusButtonServiceObject.dismissNotification()
         autoCloseTimer?.invalidate()
         autoCloseTimer = nil
+        let now = Date()
         // Seconds left in THIS meeting — sizes the strict AI focus session started below.
-        // Deliberately NOT the postpone length: the postpone covers the whole live/imminent
-        // chain (see `postponeSeconds`), while the AI session is scoped to this meeting.
-        let duration = Calendar.current.dateComponents([.second], from: Date(), to: endTime!).second ?? 0
-        // The postpone has to cover every meeting that is live or imminent — not just this popup's
-        // own one — and must never come out SHORTER than a postpone already running. This used to be
-        // `secondsRemainingInThisMeeting + 160`, which is fine when the user clicks "Thanks!" as the
-        // meeting starts but collapses to a flat 160s on the auto-close path, where the popup fires
-        // AT its meeting's end and there is no time remaining. With a meeting following straight on
-        // (Lunch 12:45-13:00, UX checkin 13:00-13:20) that postponed the routine for 2m40s and the
-        // "Habit resumes in…" countdown appeared 40s into the next call (report 2026-09-15_13-03-02).
-        let postponeSeconds = MeetingCoverage.postponeSeconds(now: Date(),
-                                                              meetings: AnnouncedMeetingRegister.shared.activeMeetings(),
-                                                              appointmentEnd: endTime,
-                                                              currentPostponeEnd: currentRoutinePostponeEndDate())
-        addLog(text: "startAppointment:- postponing for \(postponeSeconds) seconds (meeting-aware)")
-        // The captured routine, not the live global — see `routineToPostpone`.
-        let routine = routineToPostpone ?? Self.postponableRoutine(lastCurrentState)
+        let duration = Calendar.current.dateComponents([.second], from: now, to: endTime!).second ?? 0
+        let sessionMinutes = MeetingPostponeSession.sessionMinutes(secondsRemaining: duration)
+        // The meeting session covering this meeting: the one already live, or the one started below.
+        let willStartMeetingSession = SettingsManagerObject.isAccountabilityBuddyEnabled && currentAccountabilityBuddySession == nil
+        let meetingSessionEnd = willStartMeetingSession
+            ? now.addingTimeInterval(TimeInterval(sessionMinutes * 60))
+            : persistedMeetingSessionEnd()
+        // Without a meeting session the postpone has to cover every meeting that is live or imminent —
+        // not just this popup's own one: with a meeting following straight on (Lunch 12:45-13:00, UX
+        // checkin 13:00-13:20), covering only this one had the "Habit resumes in…" countdown appear
+        // 40s into the next call (report 2026-09-15_13-03-02). All-day entries don't count and no
+        // meeting extension exceeds `MeetingPostponeRules.maximumPostponeSeconds`; a longer user
+        // postpone remains intact.
+        let chainPostponeSeconds = MeetingCoverage.postponeSeconds(now: now,
+                                                                   meetings: AnnouncedMeetingRegister.shared.activeMeetings(),
+                                                                   appointmentEnd: endTime,
+                                                                   currentPostponeEnd: currentRoutinePostponeEndDate())
+        // Only a meeting-owned postpone ends with the session; borrowed postpones keep their deadline.
+        let postponeSeconds = MeetingPostponeSession.postponeSeconds(now: now,
+                                                                     chainPostponeSeconds: chainPostponeSeconds,
+                                                                     meetingSessionEnd: meetingSessionEnd,
+                                                                     ownsRoutinePostpone: meetingOwnsRoutinePostpone)
+        addLog(text: "startAppointment:- postponing for \(postponeSeconds) seconds (meeting-aware, meeting session ends \(String(describing: meetingSessionEnd)))")
+        // A break may have finished since the popup opened, restoring its postponed parent.
+        let routine = RoutineResume.appointmentTarget(
+            captured: routineToPostpone ?? Self.postponableRoutine(lastCurrentState), current: currentState)
         switch routine {
         case ._MORNING_HABIT_?:
             getHabitsVcObject().postponeMorningHabitFor(minutes: 0, secondsToPostpone: postponeSeconds, showAskFocusModeView:false, showAskIntention:false)
+            if meetingOwnsRoutinePostpone && meetingSessionEnd != nil { getHabitsVcObject().tieSavedPostponeToMeetingSession() }
         case ._EVENING_HABIT_?:
             getHabitsVcObject().postponeEveningHabitFor(minutes: 0, secondsToPostpone: postponeSeconds, showAskFocusModeView:false, showAskIntention:false)
+            if meetingOwnsRoutinePostpone && meetingSessionEnd != nil { getHabitsVcObject().tieSavedPostponeToMeetingSession() }
         case ._MICRO_BREAK_?:
             // Breaks get THIS meeting's coverage, never the chain's — see `recursThroughTheDay`.
             let breakSeconds = MeetingCoverage.postponeSeconds(for: routine, now: Date(),
@@ -234,7 +251,7 @@ class popupAppointmentTimeVc: NSViewController {
                                                               currentPostponeEnd: currentRoutinePostponeEndDate(),
                                                               breaksAllowedDuringMeetings: SettingsManagerObject.IsShowBreaksInCallEnabled,
                                                               breakIntervalSeconds: breakAfterMinutes * 60)
-            addLog(text: "startAppointment:- break postpone \(breakSeconds)s (this meeting only, not the \(postponeSeconds)s chain)")
+            addLog(text: "startAppointment:- break postpone \(breakSeconds)s (this meeting only, not the \(chainPostponeSeconds)s chain)")
             getHabitsVcObject().postponeBreakActivitiesFor(minutes: 0, secondsToPostpone: breakSeconds, isFromBreakWarningWindow: false)
         case ._CUSTOM_ROUTINE_?:
             getHabitsVcObject().postponeCustomRoutineFor(minutes: 0, secondsToPostpone: postponeSeconds, showAskFocusModeView: false, showAskIntention: false, fromRoutineWarning:false)
@@ -252,11 +269,11 @@ class popupAppointmentTimeVc: NSViewController {
         // meeting title as the intention, so only meeting-relevant apps/sites stay open. Gated on the
         // same AI-accountability setting as the postpone buddy, so it's opt-in.
         // The event-about-to-start handler already starts this session at meeting-start for the full
-        // duration, so only start here if one isn't already live — otherwise the auto-close-at-end timer
-        // (duration ≈ 0) would restart it as a useless ~1-minute session. This start remains as a fallback
-        // for any path that reaches startAppointment without the handler having started a session.
-        if SettingsManagerObject.isAccountabilityBuddyEnabled, currentAccountabilityBuddySession == nil {
-            startMeetingFocusSession(title: appointmentTitle, durationMinutes: max(1, duration / 60))
+        // duration, so only start here if one isn't already live. This start remains as a fallback for
+        // any path that reaches startAppointment without the handler having started a session.
+        if willStartMeetingSession {
+            startMeetingFocusSession(title: appointmentTitle, durationMinutes: sessionMinutes,
+                                     wasRoutineAlreadyPostponed: wasRoutineAlreadyPostponed)
         }
     }
 
@@ -274,27 +291,27 @@ class popupAppointmentTimeVc: NSViewController {
         returnToHabits()
     }
 
-    /// Close the popup and hand the screen back to the routine. Shared by the user's "I don't need to
-    /// attend" click and the password give-up timeout; only the click reports a cross-device dismissal.
-    private func returnToHabits() {
-        focusButtonServiceObject.dismissNotification()
+    /// A local resume must cancel pending popup callbacks without reporting a cross-device skip.
+    func dismissForRoutineResume() {
         autoCloseTimer?.invalidate()
         autoCloseTimer = nil
-        if timer != nil{
-            timer?.invalidate()
-            timer = nil
-        }
-        self.view.window?.close()
-        if currentHabitPlaying == nil && currentActivityPlaying == nil{
-            mainWindowControllerObj?.showWindow(self)
-            showBlankWindowInSecondaryMonitor()
-        }else{
-//            getSmallCountDownWindowObject().showWindow(self)
-//            getsmallCountDownVcObject().view.isHidden = false
-            showSmallTimerView()
-        }
+        timer?.invalidate()
+        timer = nil
+        guard isViewLoaded else { return }
+        view.window?.close()
+    }
+
+    /// Shared by the user's skip click and password timeout; only the click reports a dismissal.
+    private func returnToHabits() {
+        focusButtonServiceObject.dismissNotification()
+        dismissForRoutineResume()
         mainViewControllerObj?.showHabitsView()
         getHabitsVcObject().abortCancel()
+        if currentHabitPlaying == nil && currentActivityPlaying == nil{
+            mainWindowControllerObj?.restoreRoutineWindowAfterAppointment()
+        }else{
+            showSmallTimerView()
+        }
     }
     
     func startTimer() {

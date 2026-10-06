@@ -187,23 +187,109 @@ final class MeetingPostponeCoverageTests: XCTestCase {
     // joining the call — the browser was walking through Teams' launcher, mic detection went quiet
     // for the whole grace window, and the app read that as "the meeting ended". In the very same
     // second the postpone logic extended itself "to cover a live/imminent meeting". Two subsystems,
-    // two answers. These pin the rule that the calendar wins.
+    // two answers. These pin the rule that the calendar wins while the user is still joining.
 
-    func testTheSessionEndsOnlyWhenBothLiveDetectionAndTheCalendarAgreeItIsOver() {
-        XCTAssertTrue(MeetingCoverage.shouldAutoEndMeetingSession(isUserOnMeeting: false,
-                                                                  hasLiveAnnouncedMeeting: false))
+    private var quietEnough: TimeInterval { MeetingSessionAutoEndRules.quietSecondsBeforeEnding }
+    private var established: TimeInterval { MeetingSessionAutoEndRules.establishedPresenceSeconds }
+
+    func testTheSessionEndsWhenDetectionIsQuietAndTheCalendarAgreesItIsOver() {
+        XCTAssertEqual(MeetingCoverage.autoEndDecision(isUserOnMeeting: false, hasLiveAnnouncedMeeting: false,
+                                                       lastPresenceSeconds: nil, quietSeconds: quietEnough),
+                       .end)
     }
 
-    func testAnAnnouncedMeetingVetoesTheAutoEndWhileDetectionIsQuiet() {
-        XCTAssertFalse(MeetingCoverage.shouldAutoEndMeetingSession(isUserOnMeeting: false,
-                                                                   hasLiveAnnouncedMeeting: true),
+    func testAnAnnouncedMeetingVetoesTheAutoEndWhileTheUserIsStillJoining() {
+        // 2026-09-16: an 8-second pre-join device check, then silence while Teams' launcher loaded.
+        XCTAssertEqual(MeetingCoverage.autoEndDecision(isUserOnMeeting: false, hasLiveAnnouncedMeeting: true,
+                                                       lastPresenceSeconds: 8, quietSeconds: quietEnough),
+                       .keepCalendarSaysStillJoining,
                        "a call being joined looks exactly like a call that ended; the calendar knows better")
     }
 
+    func testAnAnnouncedMeetingVetoesTheAutoEndWhenDetectionNeverSawTheCall() {
+        XCTAssertEqual(MeetingCoverage.autoEndDecision(isUserOnMeeting: false, hasLiveAnnouncedMeeting: true,
+                                                       lastPresenceSeconds: nil, quietSeconds: .infinity),
+                       .keepCalendarSaysStillJoining)
+    }
+
     func testLiveDetectionAloneKeepsTheSessionEvenWithNothingOnTheCalendar() {
-        XCTAssertFalse(MeetingCoverage.shouldAutoEndMeetingSession(isUserOnMeeting: true,
-                                                                   hasLiveAnnouncedMeeting: false),
+        XCTAssertEqual(MeetingCoverage.autoEndDecision(isUserOnMeeting: true, hasLiveAnnouncedMeeting: false,
+                                                       lastPresenceSeconds: nil, quietSeconds: .infinity),
+                       .keepStillInCall,
                        "an unscheduled call is still a call")
+    }
+
+    // MARK: Leaving a meeting before its calendar end (report 2026-09-28_09-53-49)
+    //
+    // A Teams call was detected from 09:29:29 until 09:53:09, while the calendar entry ran to 10:00.
+    // The calendar veto re-armed every 15 seconds, so the session (and the postponed morning routine)
+    // waited out the calendar instead of ending 30 seconds after the call did.
+
+    func testLeavingAnEstablishedCallEndsTheSessionAfterThirtyQuietSecondsDespiteTheCalendar() {
+        let presence: TimeInterval = 23 * 60 + 40
+        XCTAssertEqual(MeetingCoverage.autoEndDecision(isUserOnMeeting: false, hasLiveAnnouncedMeeting: true,
+                                                       lastPresenceSeconds: presence, quietSeconds: 30),
+                       .end,
+                       "the calendar says when the meeting was booked to end, not when the user left it")
+    }
+
+    func testTheQuietWindowIsThirtySeconds() {
+        XCTAssertEqual(MeetingSessionAutoEndRules.quietSecondsBeforeEnding, 30, "the user asked for 30 seconds")
+    }
+
+    func testAWitnessDropoutShorterThanTheQuietWindowDoesNotEndTheSession() {
+        // 2026-09-15: four missed 5-second samples (~20s) in the middle of a live Google Meet call.
+        XCTAssertEqual(MeetingCoverage.autoEndDecision(isUserOnMeeting: false, hasLiveAnnouncedMeeting: false,
+                                                       lastPresenceSeconds: 50 * 60, quietSeconds: 20),
+                       .keepNotQuietLongEnough)
+        XCTAssertEqual(MeetingCoverage.autoEndDecision(isUserOnMeeting: false, hasLiveAnnouncedMeeting: true,
+                                                       lastPresenceSeconds: 50 * 60, quietSeconds: 20),
+                       .keepNotQuietLongEnough)
+    }
+
+    func testTheCalendarStopsVetoingExactlyAtTheEstablishedPresenceThreshold() {
+        XCTAssertEqual(MeetingCoverage.autoEndDecision(isUserOnMeeting: false, hasLiveAnnouncedMeeting: true,
+                                                       lastPresenceSeconds: established - 1, quietSeconds: quietEnough),
+                       .keepCalendarSaysStillJoining)
+        XCTAssertEqual(MeetingCoverage.autoEndDecision(isUserOnMeeting: false, hasLiveAnnouncedMeeting: true,
+                                                       lastPresenceSeconds: established, quietSeconds: quietEnough),
+                       .end)
+    }
+
+    func testAPresenceRunThatResumesWithinTheQuietWindowKeepsItsOriginalStart() {
+        let callStart = time(0)
+        let dropoutStart = time(20)
+        let resumed = dropoutStart.addingTimeInterval(quietEnough - 5)
+        XCTAssertEqual(MeetingCoverage.presenceRunStart(now: resumed, previousRunStart: callStart,
+                                                        previousRunEnd: dropoutStart),
+                       callStart,
+                       "a dropout must not reset presence and re-arm the calendar veto for the rest of the call")
+    }
+
+    func testAPresenceRunAfterALongSilenceStartsAfresh() {
+        let resumed = time(20).addingTimeInterval(quietEnough)
+        XCTAssertEqual(MeetingCoverage.presenceRunStart(now: resumed, previousRunStart: time(0),
+                                                        previousRunEnd: time(20)),
+                       resumed)
+    }
+
+    func testTheFirstPresenceRunStartsNow() {
+        XCTAssertEqual(MeetingCoverage.presenceRunStart(now: time(5), previousRunStart: nil, previousRunEnd: nil),
+                       time(5))
+    }
+
+    func testAPreJoinCheckBridgedIntoTheCallCountsAsEstablishedPresence() {
+        // 2026-09-16 replay: device check 10:00:17–10:00:25, silent until 10:00:50, then in the call.
+        let checkStart = time(0)
+        let checkEnd = checkStart.addingTimeInterval(8)
+        let joined = checkEnd.addingTimeInterval(25)
+        let runStart = MeetingCoverage.presenceRunStart(now: joined, previousRunStart: checkStart,
+                                                        previousRunEnd: checkEnd)
+        let left = joined.addingTimeInterval(20 * 60)
+        XCTAssertEqual(MeetingCoverage.autoEndDecision(isUserOnMeeting: false, hasLiveAnnouncedMeeting: true,
+                                                       lastPresenceSeconds: left.timeIntervalSince(runStart),
+                                                       quietSeconds: quietEnough),
+                       .end)
     }
 
     func testAMeetingRunningRightNowCountsAsLive() {
@@ -229,10 +315,10 @@ final class MeetingPostponeCoverageTests: XCTestCase {
     func testABreakPostponeCoversOnlyThisMeetingNotTheChain() {
         let now = Date()
         let thisMeetingEnd = now.addingTimeInterval(20 * 60)
-        // A back-to-back chain running two more hours past this meeting.
+        // A back-to-back chain running half an hour past this meeting (inside the postpone cap).
         let meetings = [
             AnnouncedMeeting(title: "standup", start: now, end: thisMeetingEnd),
-            AnnouncedMeeting(title: "workshop", start: thisMeetingEnd, end: now.addingTimeInterval(140 * 60)),
+            AnnouncedMeeting(title: "workshop", start: thisMeetingEnd, end: now.addingTimeInterval(50 * 60)),
         ]
         let grace = TimeInterval(MeetingPostponeRules.graceSecondsAfterMeetingEnd)
 
@@ -241,7 +327,7 @@ final class MeetingPostponeCoverageTests: XCTestCase {
         let breaks = MeetingCoverage.breakPostponeSeconds(now: now, appointmentEnd: thisMeetingEnd,
                                                           breaksAllowedDuringMeetings: false, breakIntervalSeconds: 30 * 60)
 
-        XCTAssertEqual(TimeInterval(routine), 140 * 60 + grace, accuracy: 1,
+        XCTAssertEqual(TimeInterval(routine), 50 * 60 + grace, accuracy: 1,
                        "the routine still covers the whole chain — that rule is correct and unchanged")
         XCTAssertEqual(TimeInterval(breaks), 20 * 60 + grace, accuracy: 1,
                        "the break comes back after THIS meeting; the seam is when you should stand up")
@@ -287,7 +373,9 @@ final class MeetingPostponeCoverageTests: XCTestCase {
         let new = MeetingCoverage.breakPostponeSeconds(now: now, appointmentEnd: thisMeetingEnd,
                                                           breaksAllowedDuringMeetings: false, breakIntervalSeconds: 30 * 60)
 
-        XCTAssertGreaterThan(old, 8000, "the old rule really did produce a >2h break postpone")
+        // The routine rule is capped now (it produced 8641s then), but still runs past this meeting.
+        XCTAssertGreaterThan(old, 22 * 60 + MeetingPostponeRules.graceSecondsAfterMeetingEnd,
+                             "the routine rule covers the chain, not just this meeting")
         XCTAssertLessThan(new, 30 * 60, "the new one stays inside a single break interval")
     }
 
@@ -308,7 +396,7 @@ final class MeetingPostponeCoverageTests: XCTestCase {
         let thisMeetingEnd = now.addingTimeInterval(20 * 60)
         let meetings = [
             AnnouncedMeeting(title: "standup", start: now, end: thisMeetingEnd),
-            AnnouncedMeeting(title: "workshop", start: thisMeetingEnd, end: now.addingTimeInterval(140 * 60)),
+            AnnouncedMeeting(title: "workshop", start: thisMeetingEnd, end: now.addingTimeInterval(50 * 60)),
         ]
         let grace = TimeInterval(MeetingPostponeRules.graceSecondsAfterMeetingEnd)
 
@@ -320,7 +408,7 @@ final class MeetingPostponeCoverageTests: XCTestCase {
                                                       breaksAllowedDuringMeetings: false, breakIntervalSeconds: 30 * 60)
 
         XCTAssertEqual(TimeInterval(breaks), 20 * 60 + grace, accuracy: 1)
-        XCTAssertEqual(TimeInterval(routine), 140 * 60 + grace, accuracy: 1)
+        XCTAssertEqual(TimeInterval(routine), 50 * 60 + grace, accuracy: 1)
     }
 
     func testARunningRoutinePostponeDoesNotSilenceBreaks() {
@@ -370,13 +458,13 @@ final class MeetingPostponeCoverageTests: XCTestCase {
     func testTheSettingDoesNotChangeARoutinePostpone() {
         // A morning routine still waits out the chain; "breaks during meetings" says nothing about it.
         let now = Date()
-        let end = now.addingTimeInterval(90 * 60)
+        let end = now.addingTimeInterval(45 * 60)
         let meetings = [AnnouncedMeeting(title: "long one", start: now, end: end)]
         let seconds = MeetingCoverage.postponeSeconds(for: ._MORNING_HABIT_, now: now, meetings: meetings,
                                                       appointmentEnd: end, currentPostponeEnd: nil,
                                                       breaksAllowedDuringMeetings: true,
                                                       breakIntervalSeconds: 30 * 60)
-        XCTAssertEqual(TimeInterval(seconds), 90 * 60 + TimeInterval(MeetingPostponeRules.graceSecondsAfterMeetingEnd),
+        XCTAssertEqual(TimeInterval(seconds), 45 * 60 + TimeInterval(MeetingPostponeRules.graceSecondsAfterMeetingEnd),
                        accuracy: 1)
     }
 
@@ -388,6 +476,328 @@ final class MeetingPostponeCoverageTests: XCTestCase {
                                                            breakIntervalSeconds: 0)
         XCTAssertEqual(seconds, MeetingPostponeRules.graceSecondsAfterMeetingEnd,
                        "a 0s postpone would re-fire the break instantly")
+    }
+
+    func testMorningRoutineWaitsForLiveSessionWhileWakeDetectionIsQuiet() {
+        XCTAssertTrue(MeetingCoverage.shouldHoldMorningRoutineForMeeting(
+            isUserOnMeeting: false, isMeetingSessionLive: true))
+        XCTAssertTrue(MeetingCoverage.shouldHoldMorningRoutineForMeeting(
+            isUserOnMeeting: true, isMeetingSessionLive: false))
+        XCTAssertFalse(MeetingCoverage.shouldHoldMorningRoutineForMeeting(
+            isUserOnMeeting: false, isMeetingSessionLive: false),
+            "After explicit Stop clears the session, habits can resume")
+    }
+
+    func testOldAppointmentTimeoutCannotInterruptFollowingMeetingSession() {
+        XCTAssertFalse(MeetingCoverage.shouldResumeRoutineAfterAppointmentTimeout(
+            now: time(60), meetings: [], isMeetingSessionLive: true))
+    }
+
+    func testOldAppointmentTimeoutPreservesAnnouncedFollowingMeeting() {
+        XCTAssertFalse(MeetingCoverage.shouldResumeRoutineAfterAppointmentTimeout(
+            now: time(60), meetings: [lunch, uxCheckin], isMeetingSessionLive: false))
+    }
+
+    func testAppointmentTimeoutReturnsToHabitsOnceAllMeetingsEnd() {
+        XCTAssertTrue(MeetingCoverage.shouldResumeRoutineAfterAppointmentTimeout(
+            now: time(90), meetings: [lunch, uxCheckin], isMeetingSessionLive: false))
+    }
+
+    func testMeetingAnnouncementCannotShortenAnExistingPostpone() {
+        XCTAssertEqual(MeetingCoverage.extensionSecondsToCoverMeeting(now: time(50), meetings: [lunch],
+            currentPostponeEnd: time(90)), 40 * 60)
+        XCTAssertEqual(MeetingCoverage.extensionSecondsToCoverMeeting(now: time(50), meetings: [lunch],
+            currentPostponeEnd: time(55)), 10 * 60 + grace)
+    }
+
+}
+
+// MARK: - A meeting-aware postpone is bounded (report 2026-09-25_22-31-53, follow-up)
+//
+// 26 September, 11:29:59: the "BDA meeting" popup (10:30–11:30) auto-closed at its end and postponed
+// the morning routine for 32560 seconds — until 20:32. The chain it covered was "Look after Sean",
+// 08:00–20:30: a day-long calendar block announced like any meeting. The routine stayed postponed, so
+// it never came back in full screen. All times here are fixed so the tests pass at any hour.
+
+extension MeetingPostponeCoverageTests {
+
+    /// 26 September 2026 at `hour`:`minute`:`second` local.
+    private func september26(_ hour: Int, _ minute: Int, _ second: Int = 0) -> Date {
+        var components = DateComponents()
+        components.year = 2026; components.month = 9; components.day = 26
+        components.hour = hour; components.minute = minute; components.second = second
+        return Calendar.current.date(from: components)!
+    }
+
+    private var lookAfterSean: AnnouncedMeeting {
+        AnnouncedMeeting(title: "Look after Sean", start: september26(8, 0), end: september26(20, 30))
+    }
+
+    private var bdaMeeting: AnnouncedMeeting {
+        AnnouncedMeeting(title: "BDA meeting", start: september26(10, 30), end: september26(11, 30))
+    }
+
+    private var maximumPostpone: Int { MeetingPostponeRules.maximumPostponeSeconds }
+
+    func testTheIncidentNoLongerPostponesUntilTheEvening() {
+        let seconds = MeetingCoverage.postponeSeconds(now: september26(11, 29, 59),
+                                                      meetings: [lookAfterSean, bdaMeeting],
+                                                      appointmentEnd: bdaMeeting.end,
+                                                      currentPostponeEnd: nil)
+        XCTAssertNotEqual(seconds, 32560, "the incident: postponed until 20:32")
+        XCTAssertEqual(seconds, 1 + MeetingPostponeRules.graceSecondsAfterMeetingEnd,
+                       "only the BDA meeting's last second plus grace is left to cover")
+    }
+
+    func testADayLongBlockIsNotAMeeting() {
+        XCTAssertFalse(MeetingCoverage.isMeeting(lookAfterSean))
+        XCTAssertTrue(MeetingCoverage.isMeeting(bdaMeeting))
+        let wholeDay = AnnouncedMeeting(title: "Public holiday", start: september26(0, 0),
+                                        end: september26(0, 0).addingTimeInterval(24 * 60 * 60))
+        XCTAssertFalse(MeetingCoverage.isMeeting(wholeDay), "an all-day event is not a call")
+    }
+
+    func testADayLongBlockNeitherHoldsNorExtendsTheRoutine() {
+        let now = september26(9, 0)
+        XCTAssertNil(MeetingCoverage.coverageEnd(now: now, meetings: [lookAfterSean]))
+        XCTAssertFalse(MeetingCoverage.hasLiveOrImminentMeeting(now: now, meetings: [lookAfterSean]),
+                       "it would also veto ending every meeting focus session until 20:30")
+        XCTAssertNil(MeetingCoverage.extensionSecondsToCoverMeeting(now: now, meetings: [lookAfterSean]))
+    }
+
+    func testAMeetingInsideADayLongBlockIsStillCovered() {
+        // The block must be ignored, not the real call running inside it.
+        let now = september26(10, 45)
+        XCTAssertEqual(MeetingCoverage.coverageEnd(now: now, meetings: [lookAfterSean, bdaMeeting]), bdaMeeting.end)
+        let seconds = MeetingCoverage.postponeSeconds(now: now, meetings: [lookAfterSean, bdaMeeting],
+                                                      appointmentEnd: bdaMeeting.end, currentPostponeEnd: nil)
+        XCTAssertEqual(seconds, 45 * 60 + MeetingPostponeRules.graceSecondsAfterMeetingEnd)
+    }
+
+    func testAMeetingThatHasEndedAddsOnlyTheGracePeriod() {
+        let seconds = MeetingCoverage.postponeSeconds(now: september26(11, 35), meetings: [bdaMeeting],
+                                                      appointmentEnd: bdaMeeting.end, currentPostponeEnd: nil)
+        XCTAssertEqual(seconds, MeetingPostponeRules.graceSecondsAfterMeetingEnd)
+    }
+
+    func testALongMeetingChainIsCoveredOneCappedStepAtATime() {
+        // Three hours of real, back-to-back meetings: each postpone is capped, and the extension that
+        // runs before it ends picks the chain up again, so the routine still never resumes mid-call.
+        let workshop = AnnouncedMeeting(title: "Workshop", start: september26(13, 0), end: september26(14, 30))
+        let review = AnnouncedMeeting(title: "Review", start: september26(14, 30), end: september26(16, 0))
+        let now = september26(13, 0)
+
+        let first = MeetingCoverage.postponeSeconds(now: now, meetings: [workshop, review],
+                                                    appointmentEnd: workshop.end, currentPostponeEnd: nil)
+        XCTAssertEqual(first, maximumPostpone)
+
+        let countdownMoment = now.addingTimeInterval(TimeInterval(first - MeetingPostponeRules.endNotificationLeadSeconds))
+        let extensionSeconds = MeetingCoverage.extensionSecondsToCoverMeeting(now: countdownMoment,
+                                                                             meetings: [workshop, review])
+        XCTAssertEqual(extensionSeconds, maximumPostpone, "an extension is capped too")
+    }
+
+    func testTheCapNeverShortensAPostponeTheUserAlreadyHas() {
+        let now = september26(13, 0)
+        let usersOwnPostponeEnd = now.addingTimeInterval(2 * 60 * 60)
+        let seconds = MeetingCoverage.postponeSeconds(now: now, meetings: [], appointmentEnd: nil,
+                                                      currentPostponeEnd: usersOwnPostponeEnd)
+        XCTAssertEqual(seconds, 2 * 60 * 60)
+    }
+
+    // MARK: The postpone lives as long as the meeting session covering it
+
+    func testBorrowedPostponeKeepsItsIndependentDeadline() {
+        let now = september26(10, 30)
+        let sessionEnd = september26(10, 45)
+        let userPostponeSeconds = 60 * 60
+        let chainSeconds = MeetingCoverage.postponeSeconds(now: now, meetings: [],
+            appointmentEnd: sessionEnd, currentPostponeEnd: now.addingTimeInterval(TimeInterval(userPostponeSeconds)))
+        XCTAssertEqual(chainSeconds, userPostponeSeconds)
+        XCTAssertEqual(MeetingPostponeSession.postponeSeconds(now: now,
+            chainPostponeSeconds: chainSeconds, meetingSessionEnd: sessionEnd,
+            ownsRoutinePostpone: false), userPostponeSeconds)
+        XCTAssertEqual(MeetingPostponeSession.postponeSeconds(now: now,
+            chainPostponeSeconds: chainSeconds, meetingSessionEnd: sessionEnd,
+            ownsRoutinePostpone: true), 15 * 60)
+    }
+
+    func testThePostponeEndsExactlyWhenTheMeetingSessionDoes() {
+        let now = september26(10, 30)
+        let sessionEnd = september26(11, 29)
+        let seconds = MeetingPostponeSession.postponeSeconds(now: now, chainPostponeSeconds: maximumPostpone,
+                                                             meetingSessionEnd: sessionEnd)
+        XCTAssertEqual(now.addingTimeInterval(TimeInterval(seconds)), sessionEnd)
+    }
+
+    func testWithoutAMeetingSessionTheCappedChainRuleApplies() {
+        let now = september26(10, 30)
+        XCTAssertEqual(MeetingPostponeSession.postponeSeconds(now: now, chainPostponeSeconds: 1234, meetingSessionEnd: nil), 1234)
+        XCTAssertEqual(MeetingPostponeSession.postponeSeconds(now: now, chainPostponeSeconds: 1234,
+                                                              meetingSessionEnd: september26(10, 29)),
+                       1234, "a session that has already ended covers nothing")
+    }
+
+    func testASessionIsSizedInWholeMinutesAndNeverEmpty() {
+        XCTAssertEqual(MeetingPostponeSession.sessionMinutes(secondsRemaining: 62 * 60 + 9), 62)
+        XCTAssertEqual(MeetingPostponeSession.sessionMinutes(secondsRemaining: 1), 1)
+        XCTAssertEqual(MeetingPostponeSession.sessionMinutes(secondsRemaining: -30), 1)
+    }
+
+    func testWhenTheSessionRunsOutTheRoutineComesBack() {
+        let tiedEnd = september26(11, 29, 51)
+        let outcome = MeetingPostponeSession.outcomeWhenSessionRunsOut(
+            now: tiedEnd, isRoutinePostponed: true, postponeEnd: tiedEnd, tiedPostponeEnd: tiedEnd,
+            meetings: [lookAfterSean, bdaMeeting])
+        XCTAssertEqual(outcome, .resumeRoutine,
+                       "nine seconds of the BDA meeting are left, and a day-long block is not a follow-on")
+    }
+
+    func testAMeetingFollowingStraightOnGetsItsOwnSession() {
+        let tiedEnd = september26(11, 29, 51)
+        let next = AnnouncedMeeting(title: "Design review", start: september26(11, 30), end: september26(12, 0))
+        let outcome = MeetingPostponeSession.outcomeWhenSessionRunsOut(
+            now: tiedEnd, isRoutinePostponed: true, postponeEnd: tiedEnd, tiedPostponeEnd: tiedEnd,
+            meetings: [bdaMeeting, next])
+        XCTAssertEqual(outcome, .continueInto(next))
+    }
+
+    func testAPostponeTheUserChoseIsNotEndedByAMeetingSession() {
+        let tiedEnd = september26(11, 29, 51)
+        let usersOwnPostponeEnd = september26(12, 30)
+        let outcome = MeetingPostponeSession.outcomeWhenSessionRunsOut(
+            now: tiedEnd, isRoutinePostponed: true, postponeEnd: usersOwnPostponeEnd, tiedPostponeEnd: tiedEnd,
+            meetings: [])
+        XCTAssertEqual(outcome, .finishNormally)
+    }
+
+    func testNothingPostponedMeansTheSessionFinishesNormally() {
+        let tiedEnd = september26(11, 29, 51)
+        let outcome = MeetingPostponeSession.outcomeWhenSessionRunsOut(
+            now: tiedEnd, isRoutinePostponed: false, postponeEnd: tiedEnd, tiedPostponeEnd: tiedEnd, meetings: [])
+        XCTAssertEqual(outcome, .finishNormally)
+    }
+
+    // MARK: A saved postpone at launch
+
+    private func withScratchDefaults(_ body: (UserDefaults) -> Void) {
+        let suiteName = "mtgpp-restore-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        body(defaults)
+    }
+
+    private var endDateKey: String { "mtgpp-end" }
+    private var stateKey: String { "mtgpp-state" }
+    private var tiedEndDateKey: String { "mtgpp-tied-end" }
+    private var capCheckedKey: String { "mtgpp-cap-checked" }
+
+    private func savePostpone(until end: Date, tied: Bool, in defaults: UserDefaults) {
+        defaults.set(end, forKey: endDateKey)
+        defaults.set(CURRENTSTATE._POSTPONE_MORNING_HABIT_.rawValue, forKey: stateKey)
+        if tied { defaults.set(end, forKey: tiedEndDateKey) }
+    }
+
+    private func discard(in defaults: UserDefaults, now: Date, meetingSessionEnd: Date?) -> Bool {
+        PersistedPostponeRestore.discardInvalidPostpone(in: defaults, now: now, meetingSessionEnd: meetingSessionEnd,
+                                                        endDateKey: endDateKey, stateKey: stateKey,
+                                                        tiedEndDateKey: tiedEndDateKey, capCheckedKey: capCheckedKey)
+    }
+
+    func testAMeetingPostponeWithNoMeetingSessionRunningIsDropped() {
+        withScratchDefaults { defaults in
+            defaults.set(true, forKey: capCheckedKey)
+            savePostpone(until: september26(11, 29), tied: true, in: defaults)
+
+            XCTAssertTrue(discard(in: defaults, now: september26(11, 0), meetingSessionEnd: nil))
+            XCTAssertNil(defaults.object(forKey: endDateKey), "the routine must not come back postponed")
+            XCTAssertNil(defaults.object(forKey: stateKey))
+            XCTAssertNil(defaults.object(forKey: tiedEndDateKey))
+        }
+    }
+
+    func testAMeetingPostponeWhoseSessionHasEndedIsDropped() {
+        withScratchDefaults { defaults in
+            defaults.set(true, forKey: capCheckedKey)
+            savePostpone(until: september26(11, 29), tied: true, in: defaults)
+            XCTAssertTrue(discard(in: defaults, now: september26(11, 0), meetingSessionEnd: september26(10, 59)))
+        }
+    }
+
+    func testAMeetingPostponeIsRestoredWhileItsSessionIsRunning() {
+        withScratchDefaults { defaults in
+            defaults.set(true, forKey: capCheckedKey)
+            savePostpone(until: september26(11, 29), tied: true, in: defaults)
+            XCTAssertFalse(discard(in: defaults, now: september26(11, 0), meetingSessionEnd: september26(11, 29)))
+            XCTAssertNotNil(defaults.object(forKey: endDateKey))
+        }
+    }
+
+    func testTheIncidentsSavedPostponeIsDroppedOnTheFirstLaunchWithTheCap() {
+        // Saved by the old build: nine hours long, and no tie recorded.
+        withScratchDefaults { defaults in
+            savePostpone(until: september26(20, 32, 39), tied: false, in: defaults)
+            XCTAssertTrue(discard(in: defaults, now: september26(12, 0), meetingSessionEnd: nil))
+            XCTAssertNil(defaults.object(forKey: endDateKey))
+        }
+    }
+
+    func testAShortUntiedPostponeIsRestoredOnTheFirstLaunch() {
+        withScratchDefaults { defaults in
+            savePostpone(until: september26(12, 20), tied: false, in: defaults)
+            XCTAssertFalse(discard(in: defaults, now: september26(12, 0), meetingSessionEnd: nil))
+            XCTAssertEqual(defaults.object(forKey: endDateKey) as? Date, september26(12, 20))
+        }
+    }
+
+    func testTheCapCheckOnUntiedPostponesRunsOnlyOnce() {
+        // After the first launch an untied postpone is one the user chose, however long.
+        withScratchDefaults { defaults in
+            XCTAssertFalse(discard(in: defaults, now: september26(12, 0), meetingSessionEnd: nil), "nothing saved yet")
+            savePostpone(until: september26(15, 0), tied: false, in: defaults)
+            XCTAssertFalse(discard(in: defaults, now: september26(12, 5), meetingSessionEnd: nil))
+            XCTAssertEqual(defaults.object(forKey: endDateKey) as? Date, september26(15, 0))
+        }
+    }
+}
+
+extension MeetingPostponeCoverageTests {
+
+    // MARK: - Saying what a meeting-held postpone is waiting for (report 2026-09-25_15-36-42)
+
+    /// A 15-minute postpone was stretched to 15:47 for a 15:30–15:45 meeting. The screen must name the
+    /// meeting and the real resume time rather than a bare "routine postponed".
+    func testALiveMeetingNamesItselfAndThePostponesRealEnd() {
+        let postponeEnd = time(62)
+        let hold = MeetingCoverage.hold(now: time(50), meetings: [lunch], postponeEnd: postponeEnd)
+        XCTAssertEqual(hold?.meeting.title, "Lunch")
+        XCTAssertEqual(hold?.resumesAt, postponeEnd)
+    }
+
+    func testAnImminentMeetingCountsToo() {
+        let startsSoon = AnnouncedMeeting(title: "Standup", start: time(30), end: time(45))
+        let justBefore = time(30).addingTimeInterval(-TimeInterval(MeetingPostponeRules.imminentMeetingLeadSeconds))
+        XCTAssertEqual(MeetingCoverage.hold(now: justBefore, meetings: [startsSoon], postponeEnd: time(47))?.meeting.title,
+                       "Standup")
+    }
+
+    func testAnOrdinaryPostponeKeepsThePlainMessage() {
+        XCTAssertNil(MeetingCoverage.hold(now: time(10), meetings: [lunch], postponeEnd: time(20)),
+                     "the meeting is 35 minutes away, so nothing is being held for it")
+        XCTAssertNil(MeetingCoverage.hold(now: time(90), meetings: [lunch, uxCheckin], postponeEnd: time(95)),
+                     "both meetings are over")
+    }
+
+    func testNoRunningPostponeMeansNoHold() {
+        XCTAssertNil(MeetingCoverage.hold(now: time(50), meetings: [lunch], postponeEnd: nil))
+        XCTAssertNil(MeetingCoverage.hold(now: time(50), meetings: [lunch], postponeEnd: time(49)),
+                     "a postpone that has already ended is not holding anything")
+    }
+
+    func testTheChainsCurrentMeetingIsTheOneNamed() {
+        // At 13:05 Lunch is over and UX checkin is live: name UX checkin, not the finished one.
+        XCTAssertEqual(MeetingCoverage.hold(now: time(65), meetings: [lunch, uxCheckin], postponeEnd: time(83))?.meeting.title,
+                       "UX checkin")
     }
 
 }

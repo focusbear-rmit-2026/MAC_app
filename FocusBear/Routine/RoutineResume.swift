@@ -37,6 +37,24 @@ enum RoutineResumeTrigger: Equatable {
 }
 
 enum RoutineResume {
+    /// A popup may outlive a microbreak and must then act on the parent postpone that resumed.
+    static func appointmentTarget(captured: CURRENTSTATE?, current: CURRENTSTATE) -> CURRENTSTATE? {
+        switch current {
+        case ._POSTPONE_MORNING_HABIT_: return ._MORNING_HABIT_
+        case ._POSTPONE_EVENING_HABIT_: return ._EVENING_HABIT_
+        default: return captured
+        }
+    }
+
+    static func shouldPreservePostponeOnFocusStop(trigger: RoutineResumeTrigger, isMeetingSession: Bool, hasMeetingCoverage: Bool,
+                                                  postponeEnd: Date?, now: Date) -> Bool {
+        trigger != .userRequested && !isMeetingSession && hasMeetingCoverage && (postponeEnd.map { $0 > now } ?? false)
+    }
+
+    static func sessionStopResumesRoutine(isMeeting: Bool, wasAlreadyPostponed: Bool) -> Bool {
+        !isMeeting || !wasAlreadyPostponed
+    }
+
 
     /// What should happen to a postponed routine.
     enum Decision: Equatable {
@@ -46,6 +64,18 @@ enum RoutineResume {
         case extendPostponeOverMeeting
         /// Keep waiting, leaving the postpone exactly as it is.
         case stayPostponed
+    }
+
+    /// A postpone timer can unwind a nested break before the user stops the meeting session.
+    /// Recover only the validated postpone captured by the stop path, and only from idle: never
+    /// replace another routine or activity that has since taken ownership of the window.
+    static func stateForExplicitResume(currentState: CURRENTSTATE,
+                                       recoverablePostponeState: CURRENTSTATE?,
+                                       isMeetingSessionLive: Bool) -> CURRENTSTATE {
+        guard currentState == ._NOTHING_, !isMeetingSessionLive,
+              let postponedState = recoverablePostponeState, postponedState.isRoutinePostponed
+        else { return currentState }
+        return postponedState
     }
 
     /// - Parameters:

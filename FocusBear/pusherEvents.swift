@@ -42,6 +42,56 @@ func focusModeStrictness(fromBlockLevel blockLevel: String?) -> FOCUSMODESTRICTN
     }
 }
 
+enum RoutineCompletionEvent {
+    enum PayloadKey {
+        static let activitySequenceID = "activity_sequence_id"
+    }
+
+    struct SequenceIDs {
+        let morning: String?
+        let evening: String?
+        let custom: String?
+    }
+
+    /// Older events and partially loaded routine lists may omit IDs. Preserve their existing
+    /// resync behavior; only a known mismatch proves the event belongs to another routine.
+    static func shouldApply(eventSequenceID: String?, activeSequenceID: String?) -> Bool {
+        guard let eventSequenceID = eventSequenceID, !eventSequenceID.isEmpty,
+              let activeSequenceID = activeSequenceID, !activeSequenceID.isEmpty else { return true }
+        return eventSequenceID == activeSequenceID
+    }
+
+    static func activeSequenceID(state: CURRENTSTATE, sequences: SequenceIDs,
+                                 isBreakFromPostponedMorning: Bool,
+                                 isBreakFromPostponedEvening: Bool) -> String? {
+        switch state {
+        case ._MORNING_HABIT_, ._POSTPONE_MORNING_HABIT_:
+            return sequences.morning
+        case ._EVENING_HABIT_, ._POSTPONE_EVENING_HABIT_:
+            return sequences.evening
+        case ._CUSTOM_ROUTINE_:
+            return sequences.custom
+        case ._MICRO_BREAK_:
+            if isBreakFromPostponedMorning { return sequences.morning }
+            if isBreakFromPostponedEvening { return sequences.evening }
+            return nil
+        default:
+            return nil
+        }
+    }
+
+    static var currentSequenceID: String? {
+        let sequences = SequenceIDs(
+            morning: (arrFilteredMorningHabits.first ?? arrAllDaysMorningHabits.first)?.activity_sequence_id,
+            evening: (arrFilteredEveningHabits.first ?? arrAllDaysEveningHabits.first)?.activity_sequence_id,
+            custom: arrAllCustomRoutine.indices.contains(currentRoutineIndex)
+                ? arrAllCustomRoutine[currentRoutineIndex].sequenceId : nil)
+        return activeSequenceID(state: currentState, sequences: sequences,
+                                isBreakFromPostponedMorning: isBreakActivityExecuteFromPostponeMorningHabit,
+                                isBreakFromPostponedEvening: isBreakActivityExecuteFromPostponeEveningHabit)
+    }
+}
+
 class pusherEvents:NSObject, PusherDelegate {
     var pusher: Pusher!
     /// The user id whose `private-<id>` channel the current `pusher` is subscribed to. Used to keep
@@ -325,6 +375,12 @@ class pusherEvents:NSObject, PusherDelegate {
             }
         })
 
+        // A Late No More meeting reminder was dealt with on one of the user's devices (backend#2395).
+        _ = channel.bind(eventName: LateNoMoreSyncContract.dismissedPusherEventName, eventCallback: { (event: PusherEvent) in
+            let fromAnotherDevice = LateNoMoreDismissalRelay.handleBroadcast(eventData: event.data)
+            addLog(text: "Pusher \(LateNoMoreSyncContract.dismissedPusherEventName) received (fromAnotherDevice=\(fromAnotherDevice))")
+        })
+
         _ = channel.bind(eventName: "focus-mode-resumed", eventCallback: { (event: PusherEvent) in
             guard let dictionary = focusModePayload(from: event) else { return }
             if dictionary["device_id"] as? String == currentDeviceId{ return }
@@ -356,6 +412,13 @@ class pusherEvents:NSObject, PusherDelegate {
                             }
                             
                             if !shouldIgnore {
+                                guard RoutineCompletionEvent.shouldApply(
+                                    eventSequenceID: dictionary[RoutineCompletionEvent.PayloadKey.activitySequenceID] as? String,
+                                    activeSequenceID: RoutineCompletionEvent.currentSequenceID) else {
+                                    addLog(text: "Pusher activity-completed ignored: different routine sequence")
+                                    return
+                                }
+                                addLog(text: "Pusher activity-completed accepted for routine resync: state=\(currentState)")
                                 if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
                                     menuViewControllerObj?.btnResumeHabitsClicked(self)
                                     return;

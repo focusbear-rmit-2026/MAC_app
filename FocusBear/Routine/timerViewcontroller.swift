@@ -8,6 +8,16 @@
 
 import Cocoa
 import WebKit
+
+struct ActivityTimerCompletion {
+    let generation: UUID
+    let state: CURRENTSTATE
+
+    func isCurrent(generation: UUID, state: CURRENTSTATE, action: ACTION) -> Bool {
+        self.generation == generation && self.state == state && action == ._INPROGRESS_
+    }
+}
+
 class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     
@@ -59,6 +69,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     var timerHideBearAnimation:Timer?
     var timer:Timer?
+    private(set) var activityTimerGeneration = UUID()
     var currentTimer = 0
     var totalDuration = 0
     var startTimerValue = 0// we starts timer after video lodded completely and if user has postponed habit at 10 second then we start again habit after postpone time finished from 10 seconds directly  and to hold that value till video  load we are using this variable.
@@ -1771,8 +1782,18 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         writeStringToHabitInfo(isFinishTime: false, activityName: name)
     }
   
+    func cancelActivityTimer() {
+        activityTimerGeneration = UUID()
+        timer?.invalidate()
+        timer = nil
+    }
+
     func setCountDownTimer(){
+        cancelActivityTimer()
+        let generation = activityTimerGeneration
         DispatchQueue.main.async {
+            guard generation == self.activityTimerGeneration else { return }
+
             self.lblTimer.font = NSFont.monospacedDigitSystemFont(ofSize: self.lblTimer.font?.pointSize ?? 41, weight: .regular)
             self.timer?.invalidate()
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
@@ -2005,24 +2026,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 }
             }
 
-            DispatchQueue.global().async {
-                DispatchQueue.main.async {
-                    self.loadBlankUrl()
-                    if currentState == ._BREATHING_{
-                        getHabitsVcObject().breathingOver(isSKipped: false)
-                    }else if currentState == ._MORNING_HABIT_ {
-                        getHabitsVcObject().morningHabitOver()
-                    }else if currentState == ._EVENING_HABIT_ {
-                        getHabitsVcObject().eveningHabitOver()
-                    }else if currentState == ._MICRO_BREAK_{
-                        getHabitsVcObject().activityOver()
-                    }else if currentState == ._SPECIAL_ACTIVITY_{
-                        getHabitsVcObject().specialActivityOver()
-                    }else if currentState == ._CUSTOM_ROUTINE_{
-                        getHabitsVcObject().customRoutineHabitOver()
-                    }
-                }
-            }
+            queueActivityCompletion()
         }
     }
     
@@ -2257,25 +2261,33 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 popUpCheckListWcObj?.window?.close()
             }
         }
-        DispatchQueue.global().async {
-            DispatchQueue.main.async {
-                self.loadBlankUrl()
-                if currentState == ._BREATHING_{
-                    getHabitsVcObject().breathingOver(isSKipped: false)
-                }else if currentState == ._MORNING_HABIT_ {
-                    getHabitsVcObject().morningHabitOver()
-                }else if currentState == ._EVENING_HABIT_ {
-                    getHabitsVcObject().eveningHabitOver()
-                }else if currentState == ._MICRO_BREAK_{
-                    getHabitsVcObject().activityOver()
-                }else if currentState == ._SPECIAL_ACTIVITY_{
-                    getHabitsVcObject().specialActivityOver()
-                }else if currentState == ._CUSTOM_ROUTINE_{
-                    getHabitsVcObject().customRoutineHabitOver()
-                }
+        queueActivityCompletion()
+    }
+    func claimActivityCompletion(_ completion: ActivityTimerCompletion, state: CURRENTSTATE, action: ACTION) -> Bool {
+        guard completion.isCurrent(generation: activityTimerGeneration, state: state, action: action) else { return false }
+        // Paused activities keep INPROGRESS, so manual Done remains valid even with an invalid timer.
+        // Claim once: Done and timer expiry can both enqueue before either callback runs.
+        cancelActivityTimer()
+        return true
+    }
+
+    private func queueActivityCompletion() {
+        let completion = ActivityTimerCompletion(generation: activityTimerGeneration, state: currentState)
+        DispatchQueue.main.async {
+            guard self.claimActivityCompletion(completion, state: currentState, action: currentAction) else { return }
+            self.loadBlankUrl()
+            switch completion.state {
+            case ._BREATHING_: getHabitsVcObject().breathingOver(isSKipped: false)
+            case ._MORNING_HABIT_: getHabitsVcObject().morningHabitOver()
+            case ._EVENING_HABIT_: getHabitsVcObject().eveningHabitOver()
+            case ._MICRO_BREAK_: getHabitsVcObject().activityOver()
+            case ._SPECIAL_ACTIVITY_: getHabitsVcObject().specialActivityOver()
+            case ._CUSTOM_ROUTINE_: getHabitsVcObject().customRoutineHabitOver()
+            default: break
             }
         }
     }
+
     @IBAction func btnSkipHabitClicked(_ sender: Any) {
         if currentState == ._BREATHING_{
             if !isActivityPaused{

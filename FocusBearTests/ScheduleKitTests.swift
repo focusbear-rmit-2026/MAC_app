@@ -1280,3 +1280,130 @@ final class DayPlanEventHeightTests: XCTestCase {
                        "an end before its start must not produce a negative constraint")
     }
 }
+
+
+extension ScheduleKitTests {
+    @MainActor
+    func testIdleRoutineHostDoesNotExposeStaleMorningActions() throws {
+        guard Bundle.main.bundleIdentifier?.hasSuffix(".logictests") == true,
+              fbSharedDefaultsSuiteName.hasSuffix(".logictests") else {
+            throw XCTSkip("Requires isolated logic-test defaults")
+        }
+        let previousState = currentState
+        let previousMorning = arrFilteredMorningHabits
+        defer {
+            currentState = previousState
+            arrFilteredMorningHabits = previousMorning
+        }
+        let staleHabit = Focus_Bear.habit(id: "stale-morning", name: "Make bed", durationSeconds: 60,
+            urlsArray: [], logQuantity: false, logQuantityQuestion: nil, openSpecificApps: false,
+            allowUrls: [], allowApps: [], allowedFocusMode: "", activity_sequence_id: "morning",
+            run_micro_breaks: false, take_notes: NO_NOTE, isPriorityHigh: false,
+            days_of_week: ["all"], text_instructions: "", imgUrls: [], completion_requirements: "",
+            useTimer: true, checkList: [], tutorial: "")
+        arrFilteredMorningHabits = [staleHabit]
+        currentState = ._NOTHING_
+        let host = firstViewController()
+        XCTAssertFalse(host.supportsLiveHabitActions)
+        host.scheduleDone(index: 0)
+        host.scheduleSkip(index: 0)
+        host.scheduleStart(index: 0)
+        XCTAssertEqual(currentState, ._NOTHING_)
+        XCTAssertEqual(arrFilteredMorningHabits.map(\.id), [staleHabit.id])
+        let previousStart = startTime
+        let previousShutoff = shutOffTime
+        let previousEvening = arrFilteredEveningHabits
+        let previousAllEvening = arrAllDaysEveningHabits
+        let previousCustom = arrAllCustomRoutine
+        defer {
+            startTime = previousStart
+            shutOffTime = previousShutoff
+            arrFilteredEveningHabits = previousEvening
+            arrAllDaysEveningHabits = previousAllEvening
+            arrAllCustomRoutine = previousCustom
+        }
+        let now = Date()
+        let calendar = Calendar.current
+        let earlier = calendar.date(byAdding: .hour, value: -1, to: now)!
+        let later = calendar.date(byAdding: .hour, value: 1, to: now)!
+        shutOffTime = Time(hour: calendar.component(.hour, from: earlier), minute: 0, second: 0)
+        startTime = Time(hour: calendar.component(.hour, from: later), minute: 0, second: 0)
+        var eveningHabit = staleHabit
+        eveningHabit.id = "current-evening"
+        eveningHabit.name = "Prepare for tomorrow"
+        arrFilteredEveningHabits = [eveningHabit]
+        arrAllDaysEveningHabits = [eveningHabit]
+        arrAllCustomRoutine = []
+        let segments = host.scheduleSegments(now: now)
+        XCTAssertEqual(segments.first?.name, ScheduleText.eveningRoutineHabits)
+        XCTAssertEqual(segments.first?.habits.map(\.title), [eveningHabit.name!],
+                       "Never reuse the retained morning array")
+        try captureIdleEveningCardIfRequested(host: host, segments: segments, now: now)
+        currentState = ._EVENING_HABIT_
+        XCTAssertTrue(host.supportsLiveHabitActions)
+    }
+
+    func testIdleCutoffNavigationKeepsExistingFullscreenOnly() {
+        func keeps(_ state: CURRENTSTATE = ._NOTHING_, visible: Bool = true,
+                   enabled: Bool = true, cutoff: Bool = true, allowed: Bool = false) -> Bool {
+            leftMenuVc.shouldKeepCutoffWindow(state: state, isFullScreenVisible: visible,
+                isFullScreenEnabled: enabled, isCutoffPassed: cutoff, isAllowedActivityRunning: allowed)
+        }
+        XCTAssertTrue(keeps())
+        XCTAssertFalse(keeps(visible: false))
+        XCTAssertFalse(keeps(enabled: false))
+        XCTAssertFalse(keeps(cutoff: false))
+        XCTAssertFalse(keeps(allowed: true))
+        XCTAssertFalse(keeps(._POSTPONE_EVENING_HABIT_))
+        XCTAssertFalse(keeps(._ABORT_))
+    }
+}
+
+
+private final class IdleRoutineFixtureWindow: NSWindow {
+    override var canBecomeKey: Bool { false }
+    override var canBecomeMain: Bool { false }
+}
+
+private enum IdleRoutineCapture {
+    static let environmentKey = "FOCUSBEAR_IDLE_ROUTINE_CAPTURE_DIRECTORY"
+    static let offscreen: CGFloat = -12000
+    static let width: CGFloat = 740
+    static let minimumHeight: CGFloat = 160
+    static let settle: TimeInterval = 0.1
+    static let filename = "idle-evening-routine.png"
+}
+
+extension ScheduleKitTests {
+    @MainActor
+    private func captureIdleEveningCardIfRequested(host: firstViewController,
+                                                   segments: [ScheduleRoutineSegment], now: Date) throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let directory = environment[IdleRoutineCapture.environmentKey]
+                ?? environment["TEST_RUNNER_" + IdleRoutineCapture.environmentKey] else { return }
+        let end = Calendar.current.date(byAdding: .hour, value: 1, to: now)!
+        let blocks = ScheduleBuilder.build(segments: segments, meetings: [], now: now, dayEnd: end,
+                                           leaveBufferSeconds: 0, outOfOrderAllowed: false)
+            .filter { $0.kind == .habit }
+        XCTAssertFalse(blocks.isEmpty)
+        let controller = scheduleViewController()
+        controller.host = host
+        let card = controller.makeHabitGroupCard(blocks)
+        let window = IdleRoutineFixtureWindow(contentRect: NSRect(x: IdleRoutineCapture.offscreen,
+            y: IdleRoutineCapture.offscreen, width: IdleRoutineCapture.width,
+            height: IdleRoutineCapture.minimumHeight), styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.ignoresMouseEvents = true
+        window.contentView = card
+        window.orderBack(nil)
+        defer { window.orderOut(nil); window.contentView = nil; window.close() }
+        card.layoutSubtreeIfNeeded()
+        RunLoop.main.run(until: Date().addingTimeInterval(IdleRoutineCapture.settle))
+        let bitmap = try XCTUnwrap(card.bitmapImageRepForCachingDisplay(in: card.bounds))
+        card.cacheDisplay(in: card.bounds, to: bitmap)
+        let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+        let output = URL(fileURLWithPath: directory, isDirectory: true)
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        try png.write(to: output.appendingPathComponent(IdleRoutineCapture.filename), options: .atomic)
+    }
+}

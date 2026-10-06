@@ -235,7 +235,9 @@
     "actionBarItemSkip": "Saltar",
     "habitsRemovedWarningText": "Algunos hábitos que pasaron la hora de corte que estableciste han sido eliminados de la lista.",
     "titleMorningRoutinePostponed": "Rutina de la mañana pospuesta. Inicia un hábito para reanudar la rutina de la mañana.",
-    "titleEveningRoutinePostponed": "Rutina de la tarde pospuesta. Inicia un hábito para reanudar la rutina de la tarde."
+    "titleEveningRoutinePostponed": "Rutina de la tarde pospuesta. Inicia un hábito para reanudar la rutina de la tarde.",
+    "titleMorningRoutinePausedForMeeting": "Tu rutina de la mañana está en pausa por <MEETING>. Se reanuda a las <TIME>, o inicia un hábito para reanudarla ahora.",
+    "titleEveningRoutinePausedForMeeting": "Tu rutina de la tarde está en pausa por <MEETING>. Se reanuda a las <TIME>, o inicia un hábito para reanudarla ahora."
   },
   "focusProgressInfo": {
     "pauseText": "Pausar",

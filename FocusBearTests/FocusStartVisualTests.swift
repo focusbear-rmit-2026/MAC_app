@@ -8,6 +8,40 @@ import XCTest
 /// real SwiftUI view directly; no controllers, work-choice loading, settings writes or API calls.
 @MainActor
 final class FocusStartVisualTests: XCTestCase {
+    func testCapturePostponeNoticeInLightAndDarkMenus() throws {
+        let outputKey = "FOCUSBEAR_POSTPONE_NOTICE_CAPTURE_DIRECTORY"
+        guard let directory = ProcessInfo.processInfo.environment[outputKey] else {
+            throw XCTSkip("Postpone notice visual capture is opt-in")
+        }
+        let destination = URL(fileURLWithPath: directory, isDirectory: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        for scheme in [ColorScheme.light, .dark] {
+            let model = MenuModel()
+            model.habitsPostponedUntil = "Habits postponed until 1:47 PM"
+            let view = FocusBearMenuView(model: model)
+                .environment(\.colorScheme, scheme)
+                .frame(width: FocusBearMenuView.width)
+            let host = NSHostingView(rootView: view)
+            let size = NSSize(width: FocusBearMenuView.width, height: 700)
+            let window = FixtureWindow(contentRect: NSRect(origin: NSPoint(x: -12000, y: -12000), size: size),
+                                       styleMask: .borderless, backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.contentView = host
+            window.orderBack(nil)
+            defer { window.orderOut(nil); window.contentView = nil; window.close() }
+            host.frame = NSRect(origin: .zero, size: size)
+            for _ in 0..<3 {
+                host.layoutSubtreeIfNeeded()
+                RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+            }
+            let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            let data = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+            let name = scheme == .light ? "postpone-menu-light.png" : "postpone-menu-dark.png"
+            try data.write(to: destination.appendingPathComponent(name))
+        }
+    }
+
     func testPrimaryButtonUsesItsFullVisibleHitTargetAndHonorsDisabledState() throws {
         for contentWidth: CGFloat in [794, 1370] {
             let scale = FocusStartScale(contentWidth: contentWidth)

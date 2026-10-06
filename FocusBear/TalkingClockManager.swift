@@ -121,14 +121,34 @@ class TalkingClockManager {
     }
 
     private func shouldSuppressForMeeting() -> Bool {
-        guard SettingsManagerObject.talkingClockSuppressDuringMeetings else { return false }
-        // isUserOnMeeting is the live mic/app-based meeting detection set by
-        // handleMeetingDetected() — the same flag that drives the "Meeting active"
-        // menu bar label. It fires independently of any Focus Mode block being
-        // engaged, unlike currentRunningFocusType["isMeetings"] (only true while a
-        // Meetings-type focus block is actually running) or
-        // isMeetingsFocusStartedAutomatically (only true via the auto-detect popup's
-        // "Start Focus" click) — both miss the common case of just being on a call.
-        return appdelegate?.isUserOnMeeting ?? false
+        TalkingClockMeetingGate.shouldSuppress(
+            isSuppressionEnabled: SettingsManagerObject.talkingClockSuppressDuringMeetings,
+            isUserOnMeeting: appdelegate?.isUserOnMeeting ?? false,
+            isMeetingSessionLive: currentAccountabilityBuddySession?.isMeeting == true,
+            hasLiveOrImminentAnnouncedMeeting: MeetingCoverage.hasLiveOrImminentMeeting(
+                now: Date(), meetings: AnnouncedMeetingRegister.shared.activeMeetings()))
+    }
+}
+
+/// When the talking clock stays silent for a meeting.
+///
+/// Live detection alone was not enough. Report 2026-10-06_13-30-40: the clock spoke at 13:30 and
+/// 16:30, at the start of meetings Late No More had announced two minutes earlier, with a meeting
+/// focus session already running. At 13:30 the Teams web call was not detected (mic owner
+/// "Unknown"); at 16:30 the Meet tab was opened seconds after the announcement. Meetings start on
+/// the same boundaries the clock speaks on, so the calendar and the meeting session count too.
+enum TalkingClockMeetingGate {
+    /// - Parameters:
+    ///   - isUserOnMeeting: live mic/camera/browser detection (`handleMeetingDetected`). It works
+    ///     without any focus block, unlike `currentRunningFocusType["isMeetings"]`.
+    ///   - isMeetingSessionLive: a meeting focus session (started from a Late No More announcement).
+    ///   - hasLiveOrImminentAnnouncedMeeting: an announced meeting is running or starts within
+    ///     `MeetingPostponeRules.imminentMeetingLeadSeconds`.
+    static func shouldSuppress(isSuppressionEnabled: Bool,
+                               isUserOnMeeting: Bool,
+                               isMeetingSessionLive: Bool,
+                               hasLiveOrImminentAnnouncedMeeting: Bool) -> Bool {
+        guard isSuppressionEnabled else { return false }
+        return isUserOnMeeting || isMeetingSessionLive || hasLiveOrImminentAnnouncedMeeting
     }
 }

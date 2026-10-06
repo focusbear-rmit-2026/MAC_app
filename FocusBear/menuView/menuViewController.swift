@@ -1828,11 +1828,15 @@ class menuViewController: NSViewController {
             closeMenuWindowIsVisible()
             return;
         }
+        if resumeFocusInterruptedByMeetingIfAvailable() {
+            closeMenuWindowIsVisible()
+            return
+        }
         if wasFocusSessionStartedFromPostpone(){
             // A focus session started by postponing the routine isn't a "real" strict session to gate
             // behind a password — stopping it should just hand the user back to the habits they postponed.
             addLog(text: "[user-action] Stop focus session started from postpone:- skip password + resume routine")
-            stopFocusModeAndResumeRoutine()
+            stopFocusModeAndResumeRoutine(for: .userRequested)
             return;
         }
         if isCurrentFocusSessionAutoStarted() {
@@ -1903,10 +1907,17 @@ class menuViewController: NSViewController {
     /// the routine the user postponed. Reuses the postpone-timer resume path
     /// (`resumeMorningHabit`/`resumeEveningHabit`/`resumeFocusSummary`) but fires it now instead of
     /// waiting for the timer to elapse.
-    func stopFocusModeAndResumeRoutine(){
-        // Read the postpone state before finishing the session — finishing leaves `currentState`
-        // untouched, but the resume functions below guard on it, so capture it first.
+    func stopFocusModeAndResumeRoutine(for trigger: RoutineResumeTrigger = .postponeElapsed){
+        // Capture the validated saved postpone too: a timer may already have unwound a nested
+        // break to idle while the meeting session was still running.
         let postponeState = routinePostponeStateToReCoverOnExtend()
+        let now = Date()
+        let preservePostpone = RoutineResume.shouldPreservePostponeOnFocusStop(
+            trigger: trigger,
+            isMeetingSession: currentAccountabilityBuddySession?.isMeeting == true,
+            hasMeetingCoverage: MeetingCoverage.extensionSecondsToCoverMeeting(
+                now: now, meetings: AnnouncedMeetingRegister.shared.activeMeetings(now: now)) != nil,
+            postponeEnd: currentRoutinePostponeEndDate(), now: now)
         // #2571 (4): stopping the session must clear the hardcore/super-focus flag. The abort path
         // (abortingFocusModeVc) already does; this postpone-resume stop path did not, so a super
         // pomodoro that auto-started from the morning routine left `isHardCorePomodoroModeOn` true —
@@ -1914,13 +1925,33 @@ class menuViewController: NSViewController {
         // `else if isHardCorePomodoroModeOn` branch), looping routine ↔ focus session.
         isHardCorePomodoroModeOn = false
         // We're resuming right now, so cancel the pending timed resume.
-        getHabitsVcObject().stopPostponeEndTimer()
+        if !preservePostpone { getHabitsVcObject().stopPostponeEndTimer() }
         // Silent finish: log/close the session (no completion screen, no password) so we can drop
         // the user back into the routine rather than the idle/menu state.
         appdelegate?.tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend: false, isCustomRoutineTime: false, shouldUpdateFocusButton: true)
+        if preservePostpone {
+            let retainedState = RoutineResume.stateForExplicitResume(
+                currentState: currentState, recoverablePostponeState: postponeState,
+                isMeetingSessionLive: false)
+            if retainedState != currentState { currentState = retainedState }
+            addLog(text: "Stop focus session: retaining routine postpone covered by an announced meeting")
+            closeMenuWindowIsVisible()
+            return
+        }
         // A meeting that this call just ended no longer protects the postpone. Sampling before
         // finishing vetoed routine recovery even after the meeting's automatic end.
         let isMeetingSessionLive = currentAccountabilityBuddySession?.isMeeting == true
+        let recoveredState = RoutineResume.stateForExplicitResume(
+            currentState: currentState, recoverablePostponeState: postponeState,
+            isMeetingSessionLive: isMeetingSessionLive)
+        if recoveredState != currentState {
+            currentState = recoveredState
+        }
+        if currentState.isRoutinePostponed && currentState == postponeState && !isMeetingSessionLive {
+            // backgroundThread waits while this popup is visible. An explicit return to habits
+            // must dismiss it locally, without marking the calendar meeting skipped on other devices.
+            popupAppointmentTimeVcObj?.dismissForRoutineResume()
+        }
         // `.userRequested`: the meeting guard inside these must not swallow an explicit ask. Without it,
         // an announced calendar meeting silently re-postponed the routine the user had just asked for
         // (report 2026-09-17_12-03-44).

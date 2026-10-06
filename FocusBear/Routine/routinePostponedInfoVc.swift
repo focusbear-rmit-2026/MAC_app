@@ -45,12 +45,16 @@ class routinePostponedInfoVc: NSViewController {
             if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
                 lblTitle.stringValue = activityInfo.value(forKey: "titleMorningRoutinePostponed") as? String ?? lblTitle.stringValue
             }
+            applyMeetingHoldTitle(templateKey: "titleMorningRoutinePausedForMeeting",
+                                  fallback: "Your morning routine is paused for <MEETING>. It resumes at <TIME>, or begin a habit to resume it now.")
         }else if lCurrentState == ._EVENING_HABIT_{
             sourceHabits = arrAllDaysEveningHabits
             lblTitle.stringValue = "Evening routine postponed. Begin a habit to resume the evening routine."
             if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
                 lblTitle.stringValue = activityInfo.value(forKey: "titleEveningRoutinePostponed") as? String ?? lblTitle.stringValue
             }
+            applyMeetingHoldTitle(templateKey: "titleEveningRoutinePausedForMeeting",
+                                  fallback: "Your evening routine is paused for <MEETING>. It resumes at <TIME>, or begin a habit to resume it now.")
         }
         
         if let arrIds = UserDefaults.standard.object(
@@ -84,6 +88,17 @@ class routinePostponedInfoVc: NSViewController {
         }
     }
     
+    /// When the postpone is being held open for a meeting, say so and say when the routine comes back,
+    /// rather than the plain "routine postponed" (report 2026-09-25_15-36-42).
+    private func applyMeetingHoldTitle(templateKey: String, fallback: String) {
+        guard let hold = MeetingCoverage.hold(now: Date(), meetings: AnnouncedMeetingRegister.shared.activeMeetings(),
+                                              postponeEnd: currentRoutinePostponeEndDate()) else { return }
+        let template = (configjson.value(forKey: "activityInfo") as? NSDictionary)?.value(forKey: templateKey) as? String ?? fallback
+        lblTitle.stringValue = template
+            .replacingOccurrences(of: "<MEETING>", with: hold.meeting.title)
+            .replacingOccurrences(of: "<TIME>", with: getDisplayStringFromDate(date: hold.resumesAt, dateFormat: getSystemTimeFormat()))
+    }
+
     override func viewDidAppear() {
         tblViewHabits.reloadData()
         // viewWillAppear re-shows the habit list; re-hide it behind the Day Plan so its occluded

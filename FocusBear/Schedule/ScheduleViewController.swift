@@ -3219,7 +3219,7 @@ class scheduleViewController: NSViewController {
 
     /// One bordered block holding all consecutive habits of a routine. Only the *selected*
     /// actionable habit shows a Play/Done/Skip bar underneath it; tapping another habit moves it.
-    private func makeHabitGroupCard(_ habits: [ScheduleBlock]) -> DropTargetView {
+    func makeHabitGroupCard(_ habits: [ScheduleBlock]) -> DropTargetView {
         let durationHeight = DayPlanEventHeight.points(forDurationSeconds:
             habits.filter { !$0.didOverflow }.reduce(0) { $0 + max(0, $1.durationSeconds) })
         let inner = NSStackView()

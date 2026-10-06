@@ -7,6 +7,72 @@ final class MainWindowContentLayoutTests: XCTestCase {
     private let visible = NSRect(x: 0, y: 70, width: 1440, height: 806)
 
     @MainActor
+    func testAppointmentReturnFramesAndShowsHostBeforeReplacingStaleCovers() throws {
+        let oldLoaded = isMainWindowLoaded
+        let oldCovers = arrWindows
+        let oldFullScreenSetting = SettingsManagerObject.isFullScreenEnabled
+        let oldCoordinator = allowedActivityFullScreenCoordinator
+        isMainWindowLoaded = false
+        SettingsManagerObject.isFullScreenEnabled = false
+        let window = AppointmentReturnFixtureWindow(contentRect: NSRect(x: -20000, y: -20000, width: 1000, height: 700),
+                                                   styleMask: [.titled, .resizable], backing: .buffered, defer: true)
+        window.isReleasedWhenClosed = false
+        let controller = AppointmentReturnFixtureController(window: window)
+        controller.isFullScreenVisible = true
+        let staleCover = SecondaryCoverFixtureWindow(contentRect: .zero, styleMask: .borderless,
+                                                     backing: .buffered, defer: true)
+        staleCover.isReleasedWhenClosed = false
+        arrWindows = [staleCover]
+        defer {
+            window.close()
+            staleCover.close()
+            arrWindows = oldCovers
+            isMainWindowLoaded = oldLoaded
+            SettingsManagerObject.isFullScreenEnabled = oldFullScreenSetting
+            allowedActivityFullScreenCoordinator = oldCoordinator
+        }
+        let host = try XCTUnwrap(NSScreen.screens.first)
+        let page = NSView(frame: window.contentView!.bounds)
+        window.contentView?.addSubview(page)
+        var coversShown = false
+        controller.restoreRoutineWindowAfterAppointment(prepareLayout: {
+            XCTAssertTrue(arrWindows.isEmpty, "Discard covers from the previous host before reframing")
+            XCTAssertEqual(staleCover.orderOutCount, 1)
+            window.setFrame(host.frame, display: false)
+            controller.showFullSizeWindow()
+            window.setFrame(host.frame, display: false)
+        }, showSecondaryCovers: {
+            XCTAssertTrue(window.isVisible)
+            XCTAssertTrue(window.orderedFront)
+            XCTAssertFalse(window.styleMask.contains(.titled))
+            XCTAssertEqual(window.frame, host.frame)
+            XCTAssertTrue(controller.shouldCoverSecondaryScreens)
+            XCTAssertTrue(controller.fullScreenDisplay === host)
+            XCTAssertNotNil(page.superview, "Restoration must retain the loaded routine content")
+            coversShown = true
+        })
+        XCTAssertTrue(coversShown)
+    }
+
+    @MainActor
+    func testAppointmentReturnDoesNotForceFullscreenWhenLayoutChoosesWindowed() {
+        let oldCovers = arrWindows
+        arrWindows = []
+        let window = AppointmentReturnFixtureWindow(contentRect: NSRect(x: -20000, y: -20000, width: 1000, height: 700),
+                                                   styleMask: [.titled, .resizable], backing: .buffered, defer: true)
+        window.isReleasedWhenClosed = false
+        defer { arrWindows = oldCovers; window.close() }
+        let controller = AppointmentReturnFixtureController(window: window)
+        let frame = window.frame
+        controller.restoreRoutineWindowAfterAppointment(prepareLayout: {}, showSecondaryCovers: {
+            XCTAssertTrue(window.isVisible)
+            XCTAssertTrue(window.styleMask.contains(.titled))
+            XCTAssertEqual(window.frame, frame)
+            XCTAssertFalse(controller.shouldCoverSecondaryScreens)
+        })
+    }
+
+    @MainActor
     func testDayPlanSplitContentAndExitControlStayInsideNarrowWindowAfterResize() {
         // Reproduce the actual root -> NSBox -> NSSplitView -> habits page hierarchy. A long
         // intrinsic heading plus an expanded sidebar used to grow the content view beyond the
@@ -661,4 +727,21 @@ private final class SecondaryCoverFixtureWindow: NSWindow {
         super.orderOut(sender)
     }
 
+}
+
+/// Never order a real test window onto the desktop; visibility is the fixture's observable state.
+private final class AppointmentReturnFixtureWindow: NSWindow {
+    var fixtureIsVisible = false
+    var orderedFront = false
+    override var isVisible: Bool { fixtureIsVisible }
+    override func makeKeyAndOrderFront(_ sender: Any?) {
+        fixtureIsVisible = true
+        orderedFront = true
+    }
+}
+
+private final class AppointmentReturnFixtureController: mainWindowController {
+    override func showWindow(_ sender: Any?) {
+        (window as? AppointmentReturnFixtureWindow)?.fixtureIsVisible = true
+    }
 }

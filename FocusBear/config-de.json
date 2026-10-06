@@ -2714,7 +2714,9 @@
     "actionBarItemSkip": "Überspringen",
     "habitsRemovedWarningText": "Einige Gewohnheiten, die die von dir festgelegte Grenzzeit überschritten haben, wurden aus der Liste entfernt.",
     "titleMorningRoutinePostponed": "Morgenroutine verschoben. Starte eine Gewohnheit, um die Morgenroutine fortzusetzen.",
-    "titleEveningRoutinePostponed": "Abendroutine verschoben. Starte eine Gewohnheit, um die Abendroutine fortzusetzen."
+    "titleEveningRoutinePostponed": "Abendroutine verschoben. Starte eine Gewohnheit, um die Abendroutine fortzusetzen.",
+    "titleMorningRoutinePausedForMeeting": "Deine Morgenroutine pausiert für <MEETING>. Sie geht um <TIME> weiter, oder starte jetzt eine Gewohnheit, um sie fortzusetzen.",
+    "titleEveningRoutinePausedForMeeting": "Deine Abendroutine pausiert für <MEETING>. Sie geht um <TIME> weiter, oder starte jetzt eine Gewohnheit, um sie fortzusetzen."
   },
   "localReportStatus": {
     "showAllReports": "Alle <COUNT> anzeigen",

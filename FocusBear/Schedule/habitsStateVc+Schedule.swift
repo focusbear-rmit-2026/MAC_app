@@ -55,63 +55,7 @@ extension habitsStateVc: ScheduleHost {
     // MARK: - ScheduleHost
 
     func scheduleSegments(now: Date) -> [ScheduleRoutineSegment] {
-        // Which routine this between-routines view pertains to: the evening routine during the shutoff
-        // window (or the evening / postpone-evening states), else the morning routine. isShutOffTimeGoing
-        // is the discriminator because the evening routine runs inside the shutoff window.
-        let isMorning = !(currentState == ._EVENING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_
-                          || isShutOffTimeGoing())
-        let name = isMorning ? ScheduleText.morningRoutineHabits : ScheduleText.eveningRoutineHabits
-        let todayHabits = ScheduleTab.filterByWeekday(
-            isMorning ? arrAllDaysMorningHabits : arrAllDaysEveningHabits, weekday: now.dayOfWeek())
-
-        // Treat it as a PAST completed routine when that routine actually RAN today, per the completion
-        // data — any of today's habits marked done in dayPlanCompletedHabitIds / the per-day cache the
-        // #2150 fetch fills (isHabitDoneForDay). This works for BOTH morning and evening, unlike the old
-        // isHabitAlreadyShowed && !isShutOffTimeGoing() signal, which excluded the evening routine (it
-        // runs during the shutoff window). Rendered read-only + struck through, with Done-by-id
-        // (isEarlier) for any completion not yet synced — exactly like a previous day, never a live
-        // (here no-op) action bar. "Ran today" via any-habit-done is robust: a routine that's been done
-        // has at least its earlier habits completed even if the just-finished last one is still syncing.
-        let dayKey = getStringFromDate(date: now, dateFormat: "yyyy-MM-dd")
-        // For the MORNING routine, also treat it as ran-today when isHabitAlreadyShowed is set — the same
-        // "morning done, before shutoff" signal reloadData uses for its "next routine" message. Without
-        // this, a completed morning whose habit ids aren't yet in the completion data (isHabitDoneForDay
-        // empty — e.g. before the #2150 refetch) fell through to the "not run yet" branch below and
-        // rendered a live (here no-op) Play/Skip/Done bar. Evening keeps isHabitDoneForDay only, since it
-        // runs during the shutoff window where isHabitAlreadyShowed doesn't apply.
-        let routineRanToday = todayHabits.contains { $0.id.map { isHabitDoneForDay($0, dayKey: dayKey) } ?? false }
-            || (isMorning && isHabitAlreadyShowed)
-            // Evening's counterpart to the morning `isHabitAlreadyShowed` fallback: treat the evening
-            // routine as ran-today when it's already been shown for the current shutoff window, even
-            // before the #2150 completion refetch lands. Without this, returning to the Day Plan right
-            // after aborting shutoff (completion data not yet loaded) fell through to the "not run yet"
-            // branch and rendered the live (here no-op) view instead of the read-only struck / Done-by-id
-            // one. `!isMorning` already implies the evening/shutoff window (see isMorning above).
-            || (!isMorning && eveningAlreadyShownToday())
-        if routineRanToday {
-            let pastHabits = ScheduleTab.habitInputs(from: todayHabits, now: now, dropCompleted: false)
-            if !pastHabits.isEmpty {
-                let windowStart = ScheduleTab.timeOnDate(isMorning ? startTime : shutOffTime, date: now) ?? now
-                let windowEnd = ScheduleTab.timeOnDate(isMorning ? shutOffTime : cutOffTime, date: now)
-                    ?? Calendar.current.date(bySettingHour: 23, minute: 59, second: 0, of: now) ?? now
-                let pastSeg = ScheduleRoutineSegment(
-                    name: name, habits: pastHabits, windowStart: windowStart, windowEnd: windowEnd,
-                    actionable: false, isEarlier: true)
-                // Keep the OTHER routines' previews the standard build adds (evening preview / custom
-                // routines); drop its actionable copy of THIS routine — replaced by the past one above.
-                let previews = ScheduleTab.standardSegments(activeName: name, activeHabits: [],
-                                                            isMorningActive: isMorning, now: now)
-                    .filter { $0.name != name }
-                return [pastSeg] + previews
-            }
-        }
-
-        // Not run yet today (e.g. before the routine start): render as the upcoming routine.
-        let source = isMorning ? arrFilteredMorningHabits : arrFilteredEveningHabits
-        return ScheduleTab.standardSegments(
-            activeName: name,
-            activeHabits: ScheduleTab.habitInputs(from: source, now: now, dropCompleted: false),
-            isMorningActive: isMorning, now: now)
+        ScheduleTab.betweenRoutineSegments(now: now)
     }
 
     // READ-ONLY here: this is the between-routines state (currentState == ._NOTHING_), where the routine
@@ -169,5 +113,68 @@ extension habitsStateVc: ScheduleHost {
         lblDescription?.isHidden = true
         btnResumeHabits?.isHidden = true
         scheduleVC?.startAutoRefresh()
+    }
+}
+
+extension ScheduleTab {
+    /// Shared by both hosts because the active host can survive a routine resync.
+    static func betweenRoutineSegments(now: Date) -> [ScheduleRoutineSegment] {
+        // Which routine this between-routines view pertains to: the evening routine during the shutoff
+        // window (or the evening / postpone-evening states), else the morning routine. isShutOffTimeGoing
+        // is the discriminator because the evening routine runs inside the shutoff window.
+        let isMorning = !(currentState == ._EVENING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_
+                          || isShutOffTimeGoing())
+        let name = isMorning ? ScheduleText.morningRoutineHabits : ScheduleText.eveningRoutineHabits
+        let todayHabits = ScheduleTab.filterByWeekday(
+            isMorning ? arrAllDaysMorningHabits : arrAllDaysEveningHabits, weekday: now.dayOfWeek())
+
+        // Treat it as a PAST completed routine when that routine actually RAN today, per the completion
+        // data — any of today's habits marked done in dayPlanCompletedHabitIds / the per-day cache the
+        // #2150 fetch fills (isHabitDoneForDay). This works for BOTH morning and evening, unlike the old
+        // isHabitAlreadyShowed && !isShutOffTimeGoing() signal, which excluded the evening routine (it
+        // runs during the shutoff window). Rendered read-only + struck through, with Done-by-id
+        // (isEarlier) for any completion not yet synced — exactly like a previous day, never a live
+        // (here no-op) action bar. "Ran today" via any-habit-done is robust: a routine that's been done
+        // has at least its earlier habits completed even if the just-finished last one is still syncing.
+        let dayKey = getStringFromDate(date: now, dateFormat: "yyyy-MM-dd")
+        // For the MORNING routine, also treat it as ran-today when isHabitAlreadyShowed is set — the same
+        // "morning done, before shutoff" signal reloadData uses for its "next routine" message. Without
+        // this, a completed morning whose habit ids aren't yet in the completion data (isHabitDoneForDay
+        // empty — e.g. before the #2150 refetch) fell through to the "not run yet" branch below and
+        // rendered a live (here no-op) Play/Skip/Done bar. Evening keeps isHabitDoneForDay only, since it
+        // runs during the shutoff window where isHabitAlreadyShowed doesn't apply.
+        let routineRanToday = todayHabits.contains { $0.id.map { isHabitDoneForDay($0, dayKey: dayKey) } ?? false }
+            || (isMorning && isHabitAlreadyShowed)
+            // Evening's counterpart to the morning `isHabitAlreadyShowed` fallback: treat the evening
+            // routine as ran-today when it's already been shown for the current shutoff window, even
+            // before the #2150 completion refetch lands. Without this, returning to the Day Plan right
+            // after aborting shutoff (completion data not yet loaded) fell through to the "not run yet"
+            // branch and rendered the live (here no-op) view instead of the read-only struck / Done-by-id
+            // one. `!isMorning` already implies the evening/shutoff window (see isMorning above).
+            || (!isMorning && eveningAlreadyShownToday())
+        if routineRanToday {
+            let pastHabits = ScheduleTab.habitInputs(from: todayHabits, now: now, dropCompleted: false)
+            if !pastHabits.isEmpty {
+                let windowStart = ScheduleTab.timeOnDate(isMorning ? startTime : shutOffTime, date: now) ?? now
+                let windowEnd = ScheduleTab.timeOnDate(isMorning ? shutOffTime : cutOffTime, date: now)
+                    ?? Calendar.current.date(bySettingHour: 23, minute: 59, second: 0, of: now) ?? now
+                let pastSeg = ScheduleRoutineSegment(
+                    name: name, habits: pastHabits, windowStart: windowStart, windowEnd: windowEnd,
+                    actionable: false, isEarlier: true)
+                // Keep the OTHER routines' previews the standard build adds (evening preview / custom
+                // routines); drop its actionable copy of THIS routine — replaced by the past one above.
+                let previews = ScheduleTab.standardSegments(activeName: name, activeHabits: [],
+                                                            isMorningActive: isMorning, now: now)
+                    .filter { $0.name != name }
+                return [pastSeg] + previews
+            }
+        }
+
+        // Not run yet today (e.g. before the routine start): render as the upcoming routine.
+        let source = isMorning ? arrFilteredMorningHabits : arrFilteredEveningHabits
+        return ScheduleTab.standardSegments(
+            activeName: name,
+            activeHabits: ScheduleTab.habitInputs(from: source, now: now, dropCompleted: false),
+            isMorningActive: isMorning, now: now)
     }
 }

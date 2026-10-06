@@ -1211,6 +1211,11 @@ func routinePostponeStateToReCoverOnExtend() -> CURRENTSTATE? {
 private let stalePostponeResurrectionSeconds: TimeInterval = 5 * 60
 
 func restorePostponeStateIfNeeded() {
+    if PersistedPostponeRestore.discardInvalidPostpone(in: .standard, now: Date(),
+                                                       meetingSessionEnd: persistedMeetingSessionEnd()) {
+        addLog(text: "Restored postpone discarded: a meeting postpone with no meeting session running, or an uncapped one saved by an older build; resuming the routine")
+        return
+    }
     guard
         let endDate = UserDefaults.standard.object(
             forKey: kUserDefaultsLastRoutinePostponeEndDate

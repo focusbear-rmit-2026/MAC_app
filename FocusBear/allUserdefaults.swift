@@ -269,6 +269,11 @@ var kUserdefaultsLastUnlockTimeByAccountabilityBuddy = "kLastUnlockTimeByAccount
 
 var kUserDefaultsLastRoutinePostponeEndDate = "kLastRoutinePostponeEndDate" // v 2.28.454
 var kUserDefaultsLastRoutinePostponeState = "kLastRoutinePostponeState"// morning/ evening/ focus summary  // v 2.28.454
+// Set once the persisted routine postpone has been checked against the meeting-postpone cap — see
+// `PersistedPostponeRestore`.
+var kUserDefaultsPersistedPostponeCapChecked = "kPersistedPostponeCapChecked"
+// End date of the routine postpone a meeting focus session is covering — see `MeetingPostponeSession`.
+var kUserDefaultsMeetingSessionPostponeEndDate = "kMeetingSessionPostponeEndDate"
 
 var kUserDefaultsBlockingScheduleAddedFirstTime = "kBlockingScheduleAddedFirstTime"// v2.29.461
 

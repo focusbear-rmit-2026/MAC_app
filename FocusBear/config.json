@@ -262,7 +262,9 @@
     "actionBarItemSkip": "Skip",
     "habitsRemovedWarningText": "Some habits which are past the cutoff time you set have been removed from the list.",
     "titleMorningRoutinePostponed": "Morning routine postponed. Begin a habit to resume the morning routine.",
-    "titleEveningRoutinePostponed": "Evening routine postponed. Begin a habit to resume the evening routine."
+    "titleEveningRoutinePostponed": "Evening routine postponed. Begin a habit to resume the evening routine.",
+    "titleMorningRoutinePausedForMeeting": "Your morning routine is paused for <MEETING>. It resumes at <TIME>, or begin a habit to resume it now.",
+    "titleEveningRoutinePausedForMeeting": "Your evening routine is paused for <MEETING>. It resumes at <TIME>, or begin a habit to resume it now."
   },
   "focusProgressInfo": {
     "pauseText": "Pause",

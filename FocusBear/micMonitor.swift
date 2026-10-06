@@ -98,15 +98,16 @@ final class micMonitor {
                 continue
             }
 
-            let app = NSRunningApplication(
-                processIdentifier: pid
-            )
+            // The capturing process is often a helper (Chrome captures in "Google Chrome Helper"),
+            // which NSRunningApplication alone reported as "Unknown" — report 2026-10-06_13-30-40.
+            let coreAudioBundleID = stringProperty(processObject, kAudioProcessPropertyBundleID).flatMap { $0.isEmpty ? nil : $0 }
+            let owner = MicOwnerResolver.owningApplication(of: pid, coreAudioBundleID: coreAudioBundleID)
 
             activeApps.append(
                 MicApp(
                     pid: pid,
-                    appName: app?.localizedName ?? "Unknown",
-                    bundleID: app?.bundleIdentifier ?? "Unknown"
+                    appName: owner?.localizedName ?? MicApp.unknownName,
+                    bundleID: owner?.bundleIdentifier ?? coreAudioBundleID ?? MicApp.unknownName
                 )
             )
         }

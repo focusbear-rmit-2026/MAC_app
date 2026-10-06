@@ -130,4 +130,73 @@ final class LateNoMoreEventMatcherTests: XCTestCase {
     func testRegistryReportsAnUnknownMeetingAsNotDismissed() {
         XCTAssertFalse(LateNoMoreDismissalRegistry.shared.isDismissed(liveMeeting("Never dismissed \(UUID().uuidString)")))
     }
+
+    // MARK: - Inbound broadcast (`late-no-more-event-dismissed`)
+
+    private let ownDeviceId = "9f1c2b6e-3d4a-4f5b-8c7d-0e1f2a3b4c5d"
+    private let otherDeviceId = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
+
+    private func broadcast(deviceId: String?, title: String = "Standup",
+                           begins: String = "2026-09-14T09:00:00.000Z") -> [String: Any] {
+        var payload: [String: Any] = ["notification_type": "late_no_more_event_dismissed",
+                                      "event_title": title, "event_begins": begins, "event_id": "abc123"]
+        if let deviceId { payload["device_id"] = deviceId }
+        return payload
+    }
+
+    func testBroadcastFromAnotherDeviceNamesTheMeeting() {
+        let meeting = LateNoMoreDismissalDecoder.meetingFromBroadcast(broadcast(deviceId: otherDeviceId), ownDeviceId: ownDeviceId)
+        XCTAssertEqual(meeting?.title, "Standup")
+        XCTAssertEqual(meeting?.id, "abc123")
+        XCTAssertEqual(meeting?.startDate, ISO8601DateFormatter().date(from: "2026-09-14T09:00:00Z"))
+    }
+
+    func testOwnEchoIsIgnored() {
+        XCTAssertNil(LateNoMoreDismissalDecoder.meetingFromBroadcast(broadcast(deviceId: ownDeviceId), ownDeviceId: ownDeviceId))
+    }
+
+    func testBroadcastWithoutDeviceIdIsStillHonoured() {
+        // The phone's PATCH path may not identify itself; its dismissal must still reach the Mac.
+        XCTAssertNotNil(LateNoMoreDismissalDecoder.meetingFromBroadcast(broadcast(deviceId: nil), ownDeviceId: ownDeviceId))
+    }
+
+    func testUnknownOwnDeviceIdDoesNotSwallowSenderlessBroadcasts() {
+        // Before the device id has loaded it is "", which must not equal a missing or empty sender.
+        XCTAssertNotNil(LateNoMoreDismissalDecoder.meetingFromBroadcast(broadcast(deviceId: ""), ownDeviceId: ""))
+    }
+
+    func testBroadcastWithoutTitleOrStartIsIgnored() {
+        XCTAssertNil(LateNoMoreDismissalDecoder.meetingFromBroadcast(broadcast(deviceId: otherDeviceId, title: "  "), ownDeviceId: ownDeviceId))
+        XCTAssertNil(LateNoMoreDismissalDecoder.meetingFromBroadcast(broadcast(deviceId: otherDeviceId, begins: "not a date"), ownDeviceId: ownDeviceId))
+    }
+
+    // MARK: - Late No More app bridge
+
+    func testAcknowledgementFromLateNoMoreRoundTripsWithWholeSecondDates() {
+        let sent = LateNoMoreMeeting(title: "Retro", startDate: start)
+        var userInfo: [AnyHashable: Any] = LateNoMoreDismissalDecoder.lateNoMoreUserInfo(for: sent)
+        userInfo[LateNoMoreBridgeContract.dismissReasonKey] = "joined_on_mac"
+        let received = LateNoMoreDismissalDecoder.acknowledgementFromLateNoMore(userInfo)
+        XCTAssertEqual(received?.meeting, sent)
+        XCTAssertEqual(received?.reason, .joinedOnMac)
+    }
+
+    func testAcknowledgementWithAnUnknownReasonFallsBackToStopReminders() {
+        var userInfo: [AnyHashable: Any] = LateNoMoreDismissalDecoder.lateNoMoreUserInfo(for: LateNoMoreMeeting(title: "Retro", startDate: start))
+        userInfo[LateNoMoreBridgeContract.dismissReasonKey] = "something_new"
+        XCTAssertEqual(LateNoMoreDismissalDecoder.acknowledgementFromLateNoMore(userInfo)?.reason, .stopReminders)
+    }
+
+    func testMalformedAcknowledgementIsRejected() {
+        XCTAssertNil(LateNoMoreDismissalDecoder.acknowledgementFromLateNoMore([LateNoMoreBridgeContract.eventTitleKey: "Retro"]))
+        XCTAssertNil(LateNoMoreDismissalDecoder.acknowledgementFromLateNoMore(nil))
+    }
+
+    // MARK: - device_id on the report
+
+    func testOnlyAUuidDeviceIdIsReported() {
+        XCTAssertEqual(LateNoMoreDismissalDecoder.reportableDeviceId(ownDeviceId), ownDeviceId)
+        XCTAssertNil(LateNoMoreDismissalDecoder.reportableDeviceId(""))
+        XCTAssertNil(LateNoMoreDismissalDecoder.reportableDeviceId("mac-1234"))
+    }
 }

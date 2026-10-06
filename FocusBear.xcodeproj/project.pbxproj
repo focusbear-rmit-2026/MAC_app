@@ -166,6 +166,7 @@
 		13C6C2A22FE2615E00B1F278 /* BreakWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */; };
 		13CBE7652F07E9660025544E /* enableAIBlockingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */; };
 		13D5D0112FD0396E00AB474C /* micMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D5D0102FD0396E00AB474C /* micMonitor.swift */; };
+		BMD00001 /* BrowserMeetingDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = BMD00002 /* BrowserMeetingDetection.swift */; };
 		13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */; };
 		13D90E802ECC514000FC39FD /* createUnlockRequestVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D90E7F2ECC514000FC39FD /* createUnlockRequestVc.swift */; };
 		13DC8AA62FC1DEE40035A7E1 /* routinePostponedInfoVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13DC8AA52FC1DEE40035A7E1 /* routinePostponedInfoVc.swift */; };
@@ -633,6 +634,8 @@
 		LMAV0001 /* LeftMenuAvailabilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LMAV0002 /* LeftMenuAvailabilityTests.swift */; };
 		MPCT0001 /* MeetingPostponeCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = MPCT0002 /* MeetingPostponeCoverageTests.swift */; };
 		CPLT0001 /* CutoffPostponeLimitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CPLT0002 /* CutoffPostponeLimitTests.swift */; };
+		BMDT0001 /* BrowserMeetingDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BMDT0002 /* BrowserMeetingDetectionTests.swift */; };
+		TCMG0001 /* TalkingClockMeetingGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TCMG0002 /* TalkingClockMeetingGateTests.swift */; };
 		ECPT0001 /* EventCalendarPickerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECPT0002 /* EventCalendarPickerTests.swift */; };
 		BRKSTARTT0001 /* BreakStartKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BRKSTARTT0002 /* BreakStartKitTests.swift */; };
 		RRESUMET01 /* RoutineResumeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RRESUMET02 /* RoutineResumeTests.swift */; };
@@ -935,6 +938,7 @@
 		13C6C2A12FE2615E00B1F278 /* BreakWarningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakWarningView.swift; sourceTree = "<group>"; };
 		13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = enableAIBlockingVc.swift; sourceTree = "<group>"; };
 		13D5D0102FD0396E00AB474C /* micMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = micMonitor.swift; sourceTree = "<group>"; };
+		BMD00002 /* BrowserMeetingDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserMeetingDetection.swift; sourceTree = "<group>"; };
 		13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineStateVc.swift; sourceTree = "<group>"; };
 		13D90E7F2ECC514000FC39FD /* createUnlockRequestVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = createUnlockRequestVc.swift; sourceTree = "<group>"; };
 		13DC8AA52FC1DEE40035A7E1 /* routinePostponedInfoVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = routinePostponedInfoVc.swift; sourceTree = "<group>"; };
@@ -1424,6 +1428,8 @@
 		LMAV0002 /* LeftMenuAvailabilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeftMenuAvailabilityTests.swift; sourceTree = "<group>"; };
 		MPCT0002 /* MeetingPostponeCoverageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingPostponeCoverageTests.swift; sourceTree = "<group>"; };
 		CPLT0002 /* CutoffPostponeLimitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CutoffPostponeLimitTests.swift; sourceTree = "<group>"; };
+		BMDT0002 /* BrowserMeetingDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserMeetingDetectionTests.swift; sourceTree = "<group>"; };
+		TCMG0002 /* TalkingClockMeetingGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkingClockMeetingGateTests.swift; sourceTree = "<group>"; };
 		ECPT0002 /* EventCalendarPickerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventCalendarPickerTests.swift; sourceTree = "<group>"; };
 		BRKSTARTT0002 /* BreakStartKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakStartKitTests.swift; sourceTree = "<group>"; };
 		RRESUMET02 /* RoutineResumeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineResumeTests.swift; sourceTree = "<group>"; };
@@ -2226,6 +2232,7 @@
 				8FDA858F279A8E82008AD6AA /* AVMonitor.h */,
 				8FDA8590279A8E82008AD6AA /* AVMonitor.m */,
 				13D5D0102FD0396E00AB474C /* micMonitor.swift */,
+				BMD00002 /* BrowserMeetingDetection.swift */,
 				8F7819D828E588F500FB1F63 /* Login */,
 				8FA633E42848BB860055EE88 /* graph */,
 				8F9A5A94278853A0009121E3 /* Abort */,
@@ -2459,6 +2466,8 @@
 				LMAV0002 /* LeftMenuAvailabilityTests.swift */,
 				MPCT0002 /* MeetingPostponeCoverageTests.swift */,
 				CPLT0002 /* CutoffPostponeLimitTests.swift */,
+				BMDT0002 /* BrowserMeetingDetectionTests.swift */,
+				TCMG0002 /* TalkingClockMeetingGateTests.swift */,
 				ECPT0002 /* EventCalendarPickerTests.swift */,
 				HTC00008 /* HabitTaskChecklistTests.swift */,
 				BRKSTARTT0002 /* BreakStartKitTests.swift */,
@@ -3465,6 +3474,7 @@
 				8F270CB229436D4400E91015 /* tblCellOnboardingBlockedUrls.swift in Sources */,
 				8F6DD76A2A8A4EE300096F08 /* settingsSideBarVc.swift in Sources */,
 				13D5D0112FD0396E00AB474C /* micMonitor.swift in Sources */,
+				BMD00001 /* BrowserMeetingDetection.swift in Sources */,
 				8F8C3FE32A8D0158005CAF96 /* settingPopUpButtonItemVc.swift in Sources */,
 				8FBE37A52A8F5B640018402A /* aiSettingNewVc.swift in Sources */,
 				8FCE07AB2931F2A300DF4530 /* popUpOfflineVc.swift in Sources */,
@@ -3741,6 +3751,8 @@
 				LMAV0001 /* LeftMenuAvailabilityTests.swift in Sources */,
 				MPCT0001 /* MeetingPostponeCoverageTests.swift in Sources */,
 				CPLT0001 /* CutoffPostponeLimitTests.swift in Sources */,
+				BMDT0001 /* BrowserMeetingDetectionTests.swift in Sources */,
+				TCMG0001 /* TalkingClockMeetingGateTests.swift in Sources */,
 				ECPT0001 /* EventCalendarPickerTests.swift in Sources */,
 				HTC00007 /* HabitTaskChecklistTests.swift in Sources */,
 				BRKSTARTT0001 /* BreakStartKitTests.swift in Sources */,

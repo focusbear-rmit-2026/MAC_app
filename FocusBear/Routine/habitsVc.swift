@@ -1394,6 +1394,8 @@ class habitsVc: NSViewController {
     }
     
     func showAllMorningEveningHabitsFromHabitCompleted(){
+        // Back resets the routine index; neither a live timer nor queued completion may use it.
+        timerViewcontrollerObj?.cancelActivityTimer()
         
         removeCompletedHabitsForMorningEveningRoutine()
         
@@ -1582,6 +1584,10 @@ class habitsVc: NSViewController {
     }
     
     func morningHabitOver() {
+        guard arrFilteredMorningHabits.indices.contains(currentHabitIndex) else {
+            addLog(text: "morningHabitOver: ignoring stale completion index \(currentHabitIndex)")
+            return
+        }
         addLog(text:"current morning Habit Over called")
         getHabitsVcObject().stopActivityTimer()
         if mainWindowControllerObj?.window?.isVisible == false{
@@ -3336,7 +3342,8 @@ class habitsVc: NSViewController {
     @discardableResult
     func extendPostponeToCoverAnnouncedMeetings() -> Bool {
         guard let seconds = MeetingCoverage.extensionSecondsToCoverMeeting(now: Date(),
-                                                                          meetings: AnnouncedMeetingRegister.shared.activeMeetings()) else {
+                                                                          meetings: AnnouncedMeetingRegister.shared.activeMeetings(),
+                                                                          currentPostponeEnd: currentRoutinePostponeEndDate()) else {
             return false
         }
         // Only the two habit postpones can be re-armed this way; a postponed focus summary has no
@@ -3345,14 +3352,53 @@ class habitsVc: NSViewController {
         case ._POSTPONE_MORNING_HABIT_:
             addLog(text: "extendPostponeToCoverAnnouncedMeetings:- morning postpone extended to \(seconds) seconds to cover a live/imminent meeting")
             postponeMorningHabitFor(minutes: 0, secondsToPostpone: seconds, showAskFocusModeView: false, showAskIntention: false)
-            return true
         case ._POSTPONE_EVENING_HABIT_:
             addLog(text: "extendPostponeToCoverAnnouncedMeetings:- evening postpone extended to \(seconds) seconds to cover a live/imminent meeting")
             postponeEveningHabitFor(minutes: 0, secondsToPostpone: seconds, showAskFocusModeView: false, showAskIntention: false)
-            return true
         default:
             return false
         }
+        // Still the meeting session's postpone, so it must still end when that session does.
+        if currentAccountabilityBuddySession?.isMeeting == true && isFocusSessionStartedFromPostponeIntention {
+            tieSavedPostponeToMeetingSession()
+        }
+        return true
+    }
+
+    /// Records the routine postpone just saved as the one a meeting focus session covers, so it ends
+    /// with that session and is dropped at launch without it — see `MeetingPostponeSession`.
+    func tieSavedPostponeToMeetingSession() {
+        UserDefaults.standard.set(UserDefaults.standard.object(forKey: kUserDefaultsLastRoutinePostponeEndDate),
+                                  forKey: kUserDefaultsMeetingSessionPostponeEndDate)
+    }
+
+    /// What the meeting session that has just run out means for the routine postpone it covered.
+    func routinePostponeOutcomeWhenMeetingSessionRunsOut() -> MeetingPostponeSession.SessionRunOutOutcome {
+        let postponed = routinePostponeStateToReCoverOnExtend()
+        return MeetingPostponeSession.outcomeWhenSessionRunsOut(
+            now: Date(),
+            isRoutinePostponed: postponed == ._POSTPONE_MORNING_HABIT_ || postponed == ._POSTPONE_EVENING_HABIT_,
+            postponeEnd: UserDefaults.standard.object(forKey: kUserDefaultsLastRoutinePostponeEndDate) as? Date,
+            tiedPostponeEnd: UserDefaults.standard.object(forKey: kUserDefaultsMeetingSessionPostponeEndDate) as? Date,
+            meetings: AnnouncedMeetingRegister.shared.activeMeetings())
+    }
+
+    /// Covers a meeting that follows straight on from one whose session just ran out: it gets a
+    /// meeting session of its own, and the routine stays postponed until exactly that session ends.
+    func continueMeetingPostpone(into meeting: AnnouncedMeeting) {
+        let minutes = MeetingPostponeSession.sessionMinutes(secondsRemaining: Int(meeting.end.timeIntervalSinceNow))
+        let seconds = minutes * 60
+        switch routinePostponeStateToReCoverOnExtend() {
+        case ._POSTPONE_MORNING_HABIT_?:
+            postponeMorningHabitFor(minutes: 0, secondsToPostpone: seconds, showAskFocusModeView: false, showAskIntention: false)
+        case ._POSTPONE_EVENING_HABIT_?:
+            postponeEveningHabitFor(minutes: 0, secondsToPostpone: seconds, showAskFocusModeView: false, showAskIntention: false)
+        default:
+            return
+        }
+        tieSavedPostponeToMeetingSession()
+        // This is the continuation of a meeting-owned postpone, not a new independent postpone.
+        startMeetingFocusSession(title: meeting.title, durationMinutes: minutes, wasRoutineAlreadyPostponed: false)
     }
     
     @objc func showPostponeEndNotification(){

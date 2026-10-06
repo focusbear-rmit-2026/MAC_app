@@ -242,6 +242,16 @@ func clearPersistedAccountabilityBuddySession() {
     SensitiveDefaults.removeObject(forKey: kAccountabilityBuddySessionPersistKey)
 }
 
+/// When the saved MEETING focus session ends, or nil when none is saved. The record is written when a
+/// session starts and cleared when it finishes, so this is the live meeting session's end — and, at
+/// launch, the end of one that was running when the app quit.
+func persistedMeetingSessionEnd(defaults: UserDefaults = .standard) -> Date? {
+    guard let dict = defaults.dictionary(forKey: kAccountabilityBuddySessionPersistKey),
+          dict["isMeeting"] as? Bool == true,
+          let endInterval = dict["endTime"] as? TimeInterval else { return nil }
+    return Date(timeIntervalSince1970: endInterval)
+}
+
 /// Re-attach a persisted buddy session to the focus session restored after a restart, re-applying the
 /// overrides `startAccountabilityBuddySession` sets so the AI URL/app check resumes against the original
 /// goal for the session's remaining time. Driven by the 1s focus loop, on the main RunLoop.
@@ -886,13 +896,14 @@ func meetingIsProtectingARoutine() -> Bool {
 /// SUPER-STRICT only when it postpones a running routine (so Stop hands the user back to their habits, like
 /// the postpone flow); when the routine is already done/idle it runs as a normal focus session.
 @MainActor
-func startMeetingFocusSession(title: String, durationMinutes: Int) {
+func startMeetingFocusSession(title: String, durationMinutes: Int, wasRoutineAlreadyPostponed: Bool? = nil) {
     // Dedupe: never stack a second meeting session on top of a live one. The event-about-to-start
     // handler, the popup "attend" fallback, and rapid handleMeetingDetected re-fires can each try to
     // start a meeting session, so an already-live meeting session must short-circuit here — otherwise a
     // single meeting spawns overlapping sessions, each recording its own "Meetings" focus block. A
     // resumed meeting is handled by cancelling the auto-end grace (handleMeetingDetected), not a restart.
-    if currentAccountabilityBuddySession?.isMeeting == true {
+    if currentAccountabilityBuddySession?.isMeeting == true ||
+        (meetingFocusHandoff.generation != nil && !isFocusModeOn() && !isFocusModePaused()) {
         addLog(text: "startMeetingFocusSession: a meeting focus session is already live — not starting another")
         return
     }
@@ -907,9 +918,31 @@ func startMeetingFocusSession(title: String, durationMinutes: Int) {
     let meetingApps = meetingMode?["allowed_apps"] as? [String] ?? []
     let meetingUrls = meetingMode?["allowed_urls"] as? [String] ?? []
     addLog(text: "startMeetingFocusSession: state=\(currentState) protectingRoutine=\(protectingRoutine) meetingModeFound=\(meetingMode != nil) → \(protectingRoutine ? "super-strict" : "normal")")
-    startScopedAiFocusSession(goal: goal, minutes: minutes, allowedApps: meetingApps, allowedUrls: meetingUrls,
-                              event: "meeting-ai-focus-session-started",
-                              superStrict: protectingRoutine, focusModeId: meetingModeId, isMeeting: true)
+    guard !teacherSessionManagerObject.isTeacherSessionActive() else { return }
+    let startMeeting = {
+        startScopedAiFocusSession(goal: goal, minutes: minutes, allowedApps: meetingApps, allowedUrls: meetingUrls,
+                                  event: "meeting-ai-focus-session-started",
+                                  superStrict: protectingRoutine, focusModeId: meetingModeId, isMeeting: true,
+                                  wasRoutineAlreadyPostponed: wasRoutineAlreadyPostponed)
+    }
+    if let generation = suspendFocusForMeeting(), let delegate = appdelegate {
+        let transportSegment = MeetingFocusTransport.Segment()
+        let identity = FocusLifecycleIdentity.shared.capture()
+        scheduleMeetingFocusHandoff(finish: { finishSegmentForMeetingHandoff(delegate, next: transportSegment) },
+            currentState: { currentState },
+            enqueue: { DispatchQueue.main.async(execute: $0) },
+            cancelled: { meetingFocusHandoff.cancel(ifCurrent: generation) }) {
+                guard identity.isCurrent, !teacherSessionManagerObject.isTeacherSessionActive(),
+                      meetingFocusHandoff.beginStart(generation) else {
+                    meetingFocusHandoff.cancel(ifCurrent: generation)
+                    return
+                }
+                defer { meetingFocusHandoff.endStart() }
+                MeetingFocusTransport.shared.start(transportSegment, action: startMeeting)
+            }
+    } else {
+        startMeeting()
+    }
 }
 
 /// Core that starts a scoped AI focus session: the in-session relevance check judges every gray-area
@@ -919,9 +952,11 @@ func startMeetingFocusSession(title: String, durationMinutes: Int) {
 /// postpone buddy) gates SUPER-STRICT: the meeting flow passes false when no routine is being postponed,
 /// so a meeting that starts while habits are already done is a normal (password-free) focus session.
 @MainActor
-func startScopedAiFocusSession(goal: String, minutes: Int, allowedApps: [String], allowedUrls: [String], event: String, superStrict: Bool = true, focusModeId: String = "", isMeeting: Bool = false, initialTasks: [FocusSessionTask]? = nil) {
+func startScopedAiFocusSession(goal: String, minutes: Int, allowedApps: [String], allowedUrls: [String], event: String, superStrict: Bool = true, focusModeId: String = "", isMeeting: Bool = false, initialTasks: [FocusSessionTask]? = nil, wasRoutineAlreadyPostponed: Bool? = nil) {
     guard let appDelegate = appdelegate else { return }
 
+    let stopResumesRoutine = RoutineResume.sessionStopResumesRoutine(
+        isMeeting: isMeeting, wasAlreadyPostponed: wasRoutineAlreadyPostponed ?? currentState.isRoutinePostponed)
     currentAccountabilityBuddySession = AccountabilityBuddySession(
         goal: goal, allowedApps: allowedApps, allowedUrls: allowedUrls, durationMinutes: minutes, isMeeting: isMeeting)
 
@@ -954,20 +989,9 @@ func startScopedAiFocusSession(goal: String, minutes: Int, allowedApps: [String]
     // forcing breaks off for the whole meeting.
     isSkipBreakActivityDuringPomodoro = SettingsManagerObject.isSkipBreakActivityDuringPomodoro
 
-    var running = currentRunningFocusType
-    running["allowed_apps"] = allowedApps
-    running["allowed_urls"] = allowedUrls
-    running["isAllowedAllApps"] = false
-    // Allow-list approach is what routes NOT-listed sites through the AI relevance check against the
-    // goal. The default "Block super distracting sites/apps" mode is block-list (isAllowedListApproach
-    // false, isDefault true), which allows everything not on the curated distracting list WITHOUT ever
-    // consulting the AI. Flip both so gray-area sites reach chatGPTIsURLSafe. (isBlockSuperDistracting…
-    // and isAIBlockingEnabled already special-case this session; clearing isDefault keeps the URL loop
-    // from forcing block-list mode back on.)
-    running["isAllowedListApproach"] = true
-    running["isDefault"] = false
-    if running["blockAppsArray"] == nil { running["blockAppsArray"] = [String]() }
-    currentRunningFocusType = running
+    if let session = currentAccountabilityBuddySession {
+        applyAccountabilityBuddyBlockingContext(session)
+    }
 
     // The goal is the relevance target the AI URL check judges gray-area sites against.
     whatToAchieveInFocusBlock = goal
@@ -982,13 +1006,9 @@ func startScopedAiFocusSession(goal: String, minutes: Int, allowedApps: [String]
     // super-strict and impossible to stop. Set AFTER startFocusFromMenu, whose focusModeStartted()
     // resets the marker for every start.
     setFocusSessionAutoStarted(true)
-    // #2571 (5): a scoped AI session started to cover a postponed routine (the approved-postpone
-    // buddy, or a meeting protecting a routine) must resume that routine on Stop — as it did before
-    // #5. That path bypasses pomodoroVc.pomodoroModeStarted (where the flag is normally stamped), so
-    // mark it here, after startFocusFromMenu's focusModeStartted() reset it. `wasFocusSessionStarted
-    // FromPostpone()` still also requires a recoverable postpone state, so a meeting started over
-    // already-finished habits (nothing to recover) won't wrongly resume anything.
-    isFocusSessionStartedFromPostponeIntention = true
+    // An approved postpone session owns its routine return. A meeting that borrows an existing
+    // postpone must leave that independent timer running when stopped.
+    isFocusSessionStartedFromPostponeIntention = stopResumesRoutine
 
     // Persist so the session (and its AI overrides) survives an app restart for its remaining time.
     persistAccountabilityBuddySession(endTime: Calendar.current.date(byAdding: .minute, value: minutes, to: Date()) ?? Date())
@@ -998,6 +1018,224 @@ func startScopedAiFocusSession(goal: String, minutes: Int, allowedApps: [String]
                                                           "allowed_apps": "\(allowedApps.count)",
                                                           "allowed_urls": "\(allowedUrls.count)"])
     addLog(text: "\(event): started \(superStrict ? "super-strict" : "normal") session for goal \(LogPrivacy.text(goal)) (\(minutes)m)")
+}
+
+/// Scoped buddy allowances override the current block-list snapshot only for that buddy session.
+private func applyAccountabilityBuddyBlockingContext(_ session: AccountabilityBuddySession) {
+    var running = currentRunningFocusType
+    running[FocusModeKey.allowedApps] = session.allowedApps
+    running[FocusModeKey.allowedUrls] = session.allowedUrls
+    running[FocusModeDictionaryKey.isAllowedAllApps] = false
+    running[FocusModeKey.isAllowedListApproach] = true
+    running[FocusModeKey.isDefault] = false
+    if running[FocusModeKey.blockAppsArray] == nil { running[FocusModeKey.blockAppsArray] = [String]() }
+    currentRunningFocusType = running
+}
+
+// MARK: - Focus interrupted by an LNM meeting
+
+/// A generation prevents an enqueued handoff from resurrecting work after another session starts.
+struct MeetingFocusHandoff<Snapshot> {
+    private(set) var snapshot: Snapshot?
+    private(set) var generation: UUID?
+    private(set) var isStartingHandoff = false
+
+    mutating func suspend(_ snapshot: Snapshot) -> UUID {
+        let generation = UUID()
+        self.snapshot = snapshot
+        self.generation = generation
+        return generation
+    }
+
+    mutating func sessionStarted() {
+        if !isStartingHandoff { cancel() }
+    }
+
+    mutating func beginStart(_ generation: UUID) -> Bool {
+        guard self.generation == generation else { return false }
+        isStartingHandoff = true
+        return true
+    }
+
+    mutating func endStart() { isStartingHandoff = false }
+
+    mutating func consume() -> (Snapshot, UUID)? {
+        guard let snapshot, let generation else { return nil }
+        self.snapshot = nil
+        return (snapshot, generation)
+    }
+
+    mutating func cancel(ifCurrent generation: UUID) {
+        if self.generation == generation { cancel() }
+    }
+
+    mutating func cancel() {
+        snapshot = nil
+        generation = nil
+        isStartingHandoff = false
+    }
+}
+
+/// Snapshot state after synchronous finish cleanup, then yield behind its queued UI cleanup.
+/// Injected scheduling keeps ordering/routine-change regressions testable without launching sessions.
+func scheduleMeetingFocusHandoff<State: Equatable>(finish: () -> Void,
+    currentState: @escaping () -> State,
+    enqueue: (@escaping () -> Void) -> Void,
+    cancelled: @escaping () -> Void,
+    start: @escaping () -> Void) {
+    finish()
+    let finishedState = currentState()
+    enqueue {
+        guard currentState() == finishedState else {
+            cancelled()
+            return
+        }
+        start()
+    }
+}
+
+@MainActor
+private func finishSegmentForMeetingHandoff(_ delegate: AppDelegate, next: MeetingFocusTransport.Segment) {
+    MeetingFocusTransport.shared.finishPredecessor(of: next) {
+        delegate.tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false,
+            allowExtend: false, isCustomRoutineTime: false, shouldUpdateFocusButton: true)
+    }
+}
+
+enum MeetingFocusResumeTiming {
+    static let SECONDS_PER_MINUTE = 60
+
+    static func storedStrictness(_ strictness: FOCUSMODESTRICTNESS) -> Int {
+        switch strictness {
+        case ._NORMAL_: return FocusStartStrictness.junior.storedValue
+        case ._STRICT_: return FocusStartStrictness.captain.storedValue
+        case ._SUPER_STRICT_: return FocusStartStrictness.pawfessor.storedValue
+        }
+    }
+
+    static func remainingSeconds(end: Date?, pausedSeconds: Int?, now: Date) -> Int? {
+        if let pausedSeconds { return pausedSeconds > 0 ? pausedSeconds : nil }
+        guard let end else { return nil }
+        let seconds = end.timeIntervalSince(now)
+        guard seconds.isFinite, seconds > 0, seconds < Double(Int.max) else { return nil }
+        return Int(seconds.rounded(.up))
+    }
+}
+
+private struct InterruptedMeetingFocus {
+    let identity: FocusLifecycleIdentity.Snapshot
+    let modeId: String
+    let remainingSeconds: Int
+    let intention: String
+    let taskQueue: String
+    let strictness: FOCUSMODESTRICTNESS
+    let wasPaused: Bool
+    let wasAutoStarted: Bool
+    let wasStartedFromPostpone: Bool
+    let wasHardcore: Bool
+    let skipPomodoroBreaks: Bool
+    let skipFocusBreaks: Bool
+    let buddySession: AccountabilityBuddySession?
+    let temporaryApps: [NSRunningApplication]
+    let temporaryURLs: [String]
+    let temporaryTabTitles: [String]
+    let temporaryURLIntentions: [String: [String: Any]]
+    let convincedURLs: [[String: String]]
+    let convincedApps: [[String: String]]
+}
+
+// Intentionally process-local: after a relaunch only the active meeting resumes via the existing
+// persistence path. Restoring interrupted work across launches needs a separately reviewed format.
+private var meetingFocusHandoff = MeetingFocusHandoff<InterruptedMeetingFocus>()
+
+func invalidateMeetingFocusHandoffForNewSession() {
+    meetingFocusHandoff.sessionStarted()
+    MeetingFocusTransport.shared.sessionStarted()
+}
+
+@MainActor
+private func suspendFocusForMeeting() -> UUID? {
+    guard let delegate = appdelegate,
+          currentAccountabilityBuddySession?.isMeeting != true,
+          !teacherSessionManagerObject.isTeacherSessionActive(),
+          isFocusModeOn() || isFocusModePaused(),
+          let modeId = currentRunningFocusType[FocusModeDictionaryKey.id] as? String,
+          !modeId.isEmpty,
+          let remaining = MeetingFocusResumeTiming.remainingSeconds(end: endFocusModeTime,
+            pausedSeconds: isFocusModePaused() ? delegate.remainingFocusModeSecondsAfterPaused : nil,
+            now: Date()) else { return nil }
+    let snapshot = InterruptedMeetingFocus(identity: FocusLifecycleIdentity.shared.capture(),
+        modeId: modeId, remainingSeconds: remaining,
+        intention: whatToAchieveInFocusBlock, taskQueue: focusModeTaskString,
+        strictness: currentFocusModeStrictness,
+        wasPaused: isFocusModePaused(), wasAutoStarted: isFocusSessionAutoStarted,
+        wasStartedFromPostpone: isFocusSessionStartedFromPostponeIntention,
+        wasHardcore: isHardCorePomodoroModeOn,
+        skipPomodoroBreaks: isSkipBreakActivityDuringPomodoro, skipFocusBreaks: isSkipBreakActivityDuringFocus,
+        buddySession: currentAccountabilityBuddySession,
+        temporaryApps: arrAllowedAppsInCuddlyModeCurrentFocus,
+        temporaryURLs: arrAllowedUrlsInCuddlyModeCurrentFocus,
+        temporaryTabTitles: arrAllowedTabTitlesInCuddlyModeCurrentFocus,
+        temporaryURLIntentions: dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus,
+        convincedURLs: arrConvinceAiUrlsInCurrentFocus,
+        convincedApps: arrConvinceAiAppsInCurrentFocus)
+    return meetingFocusHandoff.suspend(snapshot)
+}
+
+/// Only explicit Stop of the meeting resumes work; other automatic/routine transitions retain their rules.
+@MainActor
+func resumeFocusInterruptedByMeetingIfAvailable() -> Bool {
+    guard currentAccountabilityBuddySession?.isMeeting == true,
+          let delegate = appdelegate,
+          !teacherSessionManagerObject.isTeacherSessionActive(),
+          let (snapshot, generation) = meetingFocusHandoff.consume() else { return false }
+    guard snapshot.identity.isCurrent,
+          arrFocusType.contains(where: { $0[FocusModeDictionaryKey.id] as? String == snapshot.modeId }) else {
+        meetingFocusHandoff.cancel()
+        return false
+    }
+    let transportSegment = MeetingFocusTransport.Segment()
+    scheduleMeetingFocusHandoff(finish: { finishSegmentForMeetingHandoff(delegate, next: transportSegment) },
+        currentState: { currentState },
+        enqueue: { DispatchQueue.main.async(execute: $0) },
+        cancelled: { meetingFocusHandoff.cancel(ifCurrent: generation) }) {
+        guard snapshot.identity.isCurrent, !teacherSessionManagerObject.isTeacherSessionActive(),
+              let index = arrFocusType.firstIndex(where: { $0[FocusModeDictionaryKey.id] as? String == snapshot.modeId }),
+              meetingFocusHandoff.beginStart(generation) else {
+            meetingFocusHandoff.cancel(ifCurrent: generation)
+            return
+        }
+        defer { meetingFocusHandoff.cancel() }
+        startFocusModeTime = Date()
+        currentFocusModeStrictness = snapshot.strictness
+        MeetingFocusTransport.shared.start(transportSegment) {
+            delegate.startFocusFromMenu(focusModeId: snapshot.modeId,
+                minutes: max(1, snapshot.remainingSeconds / MeetingFocusResumeTiming.SECONDS_PER_MINUTE),
+                intention: snapshot.intention, isAutoStarted: snapshot.wasAutoStarted,
+                initialTaskQueue: snapshot.taskQueue, durationSeconds: snapshot.remainingSeconds)
+        }
+        currentFocusModeStrictness = snapshot.strictness
+        UserDefaults.standard.set(MeetingFocusResumeTiming.storedStrictness(snapshot.strictness), forKey: kUserdefaultsLastFocusModeStrictness)
+        setFocusSessionAutoStarted(snapshot.wasAutoStarted)
+        isFocusSessionStartedFromPostponeIntention = snapshot.wasStartedFromPostpone
+        isHardCorePomodoroModeOn = snapshot.wasHardcore
+        isSkipBreakActivityDuringPomodoro = snapshot.skipPomodoroBreaks
+        isSkipBreakActivityDuringFocus = snapshot.skipFocusBreaks
+        arrAllowedAppsInCuddlyModeCurrentFocus = snapshot.temporaryApps
+        arrAllowedUrlsInCuddlyModeCurrentFocus = snapshot.temporaryURLs
+        arrAllowedTabTitlesInCuddlyModeCurrentFocus = snapshot.temporaryTabTitles
+        // Keep original absolute expiry dates: a meeting must not renew a time-limited exception.
+        dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus = snapshot.temporaryURLIntentions
+        arrConvinceAiUrlsInCurrentFocus = snapshot.convincedURLs
+        arrConvinceAiAppsInCurrentFocus = snapshot.convincedApps
+        currentAccountabilityBuddySession = snapshot.buddySession
+        if let session = snapshot.buddySession { applyAccountabilityBuddyBlockingContext(session) }
+        if let end = endFocusModeTime { persistAccountabilityBuddySession(endTime: end) }
+        if snapshot.wasPaused { delegate.pauseFocusMode(index: index) }
+        showRunningFocusSessionWindow()
+        addLog(text: "meeting ended: restored interrupted focus with saved remaining time")
+    }
+    return true
 }
 
 // MARK: - Presentation

@@ -829,7 +829,24 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         }
     }
 
+    static func shouldKeepCutoffWindow(state: CURRENTSTATE, isFullScreenVisible: Bool,
+                                      isFullScreenEnabled: Bool, isCutoffPassed: Bool,
+                                      isAllowedActivityRunning: Bool) -> Bool {
+        state == ._NOTHING_ && isFullScreenVisible && isFullScreenEnabled
+            && isCutoffPassed && !isAllowedActivityRunning
+    }
+
     func checkScreenSizeIfFullScreenHabitIsRunning(){
+        // A routine resync temporarily clears currentState. Navigating to Help must not
+        // remove the existing cutoff cover while that resync is pending.
+        if Self.shouldKeepCutoffWindow(state: currentState,
+                                      isFullScreenVisible: mainWindowControllerObj?.isFullScreenVisible ?? false,
+                                      isFullScreenEnabled: checkIsFullScreenEnabled(),
+                                      isCutoffPassed: isCutOffTimeGoing(),
+                                      isAllowedActivityRunning: isAnyAllowedFocusModeActivityRunning) {
+            mainViewControllerObj?.checkIsFullScreenNeeded()
+            return
+        }
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_ || currentState == ._CUSTOM_ROUTINE_ || currentState == ._MICRO_BREAK_{
             
             if !isAnyAllowedFocusModeActivityRunning && checkIsFullScreenEnabled(){

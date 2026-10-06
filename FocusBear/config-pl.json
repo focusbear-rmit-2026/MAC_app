@@ -2714,7 +2714,9 @@
     "actionBarItemSkip": "Pomiń",
     "habitsRemovedWarningText": "Niektóre nawyki, które przekroczyły ustawiony przez ciebie czas graniczny, zostały usunięte z listy.",
     "titleMorningRoutinePostponed": "Poranna rutyna odłożona. Rozpocznij nawyk, aby wznowić poranną rutynę.",
-    "titleEveningRoutinePostponed": "Wieczorna rutyna odłożona. Rozpocznij nawyk, aby wznowić wieczorną rutynę."
+    "titleEveningRoutinePostponed": "Wieczorna rutyna odłożona. Rozpocznij nawyk, aby wznowić wieczorną rutynę.",
+    "titleMorningRoutinePausedForMeeting": "Twoja poranna rutyna jest wstrzymana na czas <MEETING>. Wznowi się o <TIME> albo rozpocznij nawyk, aby wznowić ją teraz.",
+    "titleEveningRoutinePausedForMeeting": "Twoja wieczorna rutyna jest wstrzymana na czas <MEETING>. Wznowi się o <TIME> albo rozpocznij nawyk, aby wznowić ją teraz."
   },
   "localReportStatus": {
     "showAllReports": "Pokaż wszystkie (<COUNT>)",

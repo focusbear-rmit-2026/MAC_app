@@ -160,6 +160,7 @@ jobs:
             -only-testing:"Focus BearTests/WildcardPatternSafetyTests" \
             -only-testing:"Focus BearTests/validationTest" \
             -only-testing:"Focus BearTests/ScheduleKitTests" \
+            -only-testing:"Focus BearTests/RoutineResumeTests" \
             -only-testing:"Focus BearTests/SmartSnoozeMathTests" \
             -only-testing:"Focus BearTests/FocusMusicMediaKeyTests" \
             -only-testing:"Focus BearTests/DaysOfWeekTests" \
@@ -230,6 +231,8 @@ jobs:
             -only-testing:"Focus BearTests/FocusSessionExtensionTests" \
             -only-testing:"Focus BearTests/MorningRoutineStartGuardTests" \
             -only-testing:"Focus BearTests/EventTimeParserTests" \
+            -only-testing:"Focus BearTests/BrowserMeetingDetectionTests" \
+            -only-testing:"Focus BearTests/TalkingClockMeetingGateTests" \
             -only-testing:"Focus BearTests/PostponeGateTests" \
             -only-testing:"Focus BearTests/DayPlanDestinationTests" \
             -only-testing:"Focus BearTests/BlockingScheduleDefaultsTests" \

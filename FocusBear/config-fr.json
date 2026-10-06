@@ -2714,7 +2714,9 @@
     "actionBarItemSkip": "Ignorer",
     "habitsRemovedWarningText": "Certaines habitudes ayant dépassé l'heure limite que tu as définie ont été retirées de la liste.",
     "titleMorningRoutinePostponed": "Routine matinale reportée. Commence une habitude pour reprendre la routine matinale.",
-    "titleEveningRoutinePostponed": "Routine du soir reportée. Commence une habitude pour reprendre la routine du soir."
+    "titleEveningRoutinePostponed": "Routine du soir reportée. Commence une habitude pour reprendre la routine du soir.",
+    "titleMorningRoutinePausedForMeeting": "Ta routine matinale est en pause pour <MEETING>. Elle reprend à <TIME>, ou commence une habitude pour la reprendre maintenant.",
+    "titleEveningRoutinePausedForMeeting": "Ta routine du soir est en pause pour <MEETING>. Elle reprend à <TIME>, ou commence une habitude pour la reprendre maintenant."
   },
   "localReportStatus": {
     "showAllReports": "Tout afficher (<COUNT>)",

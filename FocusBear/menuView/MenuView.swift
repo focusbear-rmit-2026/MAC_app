@@ -988,6 +988,10 @@ struct FocusBearMenuView: View {
         VStack(alignment: .leading, spacing: 8) {
             header
 
+            if !model.habitsPostponedUntil.isEmpty {
+                MenuPostponeNotice(text: model.habitsPostponedUntil, scheme: scheme)
+            }
+
             if model.showBlockingBanner && !blockingBannerDismissed {
                 BlockingBanner(scheme: scheme,
                                onSetUp: model.onSetUpBlocking,
@@ -1751,18 +1755,6 @@ struct FocusBearMenuView: View {
                         .buttonStyle(PlainButtonStyle())
                         .pointingHandCursor()
                     }
-                }
-            }
-
-            // Habits postponed until <time> — shown while a morning/evening routine is postponed.
-            if !model.habitsPostponedUntil.isEmpty {
-                HStack(spacing: 8) {
-                    Image(systemName: "clock")
-                        .font(.system(size: 11))
-                        .foregroundColor(MenuTheme.subtitle(scheme))
-                    Text(model.habitsPostponedUntil)
-                        .font(MenuTheme.font(12, .regular))
-                        .foregroundColor(MenuTheme.subtitle(scheme))
                 }
             }
 
@@ -2864,5 +2856,30 @@ private struct ShortcutHintToastView: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(MenuTheme.orange.opacity(0.35), lineWidth: 1)
         )
+    }
+}
+
+/// Routine status stays visible even when Day Plan is collapsed.
+@available(macOS 11.0, *)
+struct MenuPostponeNotice: View {
+    let text: String
+    let scheme: ColorScheme
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "clock")
+                .font(.system(size: 15, weight: .semibold))
+                .accessibilityHidden(true)
+            Text(text)
+                .font(MenuTheme.font(13, .semibold))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .foregroundColor(MenuTheme.primaryText(scheme))
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 12).fill(MenuTheme.chipBg(scheme)))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(MenuTheme.orange, lineWidth: 1))
+        .accessibilityElement(children: .combine)
     }
 }

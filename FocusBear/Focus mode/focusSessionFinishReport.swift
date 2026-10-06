@@ -26,6 +26,244 @@
 
 import Foundation
 
+/// Immutable across credential callbacks and retries, which may outlive the finished session.
+struct FocusSessionFinishSnapshot: Equatable {
+    let tasks: String
+    let durationSeconds: Int
+    let alignmentScore: Double?
+}
+
+/// Identity only: queued work must not cross a sign-out/account-switch boundary.
+final class FocusLifecycleIdentity {
+    static let shared = FocusLifecycleIdentity()
+    struct Snapshot {
+        fileprivate let owner: FocusLifecycleIdentity
+        fileprivate let generation: UUID
+        let accountID: String?
+        var isCurrent: Bool { owner.isCurrent(generation) }
+    }
+
+    private let lock = NSLock()
+    private var accountID: String?
+    private var generation = UUID()
+
+    func updateAccountID(_ accountID: String?) {
+        lock.lock()
+        defer { lock.unlock() }
+        let normalized = accountID.flatMap { $0.isEmpty ? nil : $0 }
+        guard self.accountID != normalized else { return }
+        self.accountID = normalized
+        generation = UUID()
+    }
+
+    func capture() -> Snapshot {
+        lock.lock()
+        defer { lock.unlock() }
+        return Snapshot(owner: self, generation: generation, accountID: accountID)
+    }
+
+    private func isCurrent(_ generation: UUID) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return accountID != nil && self.generation == generation
+    }
+}
+
+/// A failed/ambiguous request cannot authorize a later operation against a mode-based endpoint.
+/// This gate applies only to automatic meeting handoffs; ordinary manual sessions keep their behavior.
+final class MeetingFocusTransport {
+    static let shared = MeetingFocusTransport()
+
+    final class FinishConfirmation {
+        private(set) var succeeded: Bool?
+        func settle(succeeded: Bool) {
+            guard self.succeeded == nil else { return }
+            self.succeeded = succeeded
+        }
+    }
+
+    final class Segment {
+        let predecessor = FinishConfirmation()
+        fileprivate var modeID: String?
+        private(set) var isRegistered = false
+        private(set) var isReportingPending = false
+        private var isFinished = false
+
+        var canSendStart: Bool { predecessor.succeeded == true && !isReportingPending }
+        var canSendMutation: Bool { isRegistered && !isReportingPending && !isFinished }
+
+        func startSettled(succeeded: Bool) {
+            guard !isReportingPending else { return }
+            isRegistered = succeeded
+            if !succeeded { isReportingPending = true }
+        }
+
+        func mutationSettled(succeeded: Bool, isFinish: Bool = false) {
+            if !succeeded { isReportingPending = true }
+            if succeeded && isFinish { isFinished = true }
+        }
+    }
+
+    struct FinishRequest {
+        let segment: Segment?
+        let confirmation: FinishConfirmation?
+        var canSend: Bool { segment?.canSendMutation ?? true }
+        var allowsRetry: Bool { segment == nil && confirmation == nil }
+        func settle(succeeded: Bool) {
+            segment?.mutationSettled(succeeded: succeeded, isFinish: true)
+            confirmation?.settle(succeeded: succeeded)
+        }
+    }
+
+    private(set) var activeSegment: Segment?
+    private var finishingDependency: FinishConfirmation?
+    private var isStartingSegment = false
+
+    func segmentForMode(_ modeID: String) -> Segment? {
+        guard activeSegment?.modeID == modeID else { return nil }
+        return activeSegment
+    }
+
+    func captureStart(modeID: String) -> Segment? {
+        guard let segment = activeSegment else { return nil }
+        if segment.modeID == nil { segment.modeID = modeID }
+        return segmentForMode(modeID)
+    }
+
+    func captureFinish(modeID: String) -> FinishRequest {
+        FinishRequest(segment: segmentForMode(modeID), confirmation: finishingDependency)
+    }
+
+    func finishPredecessor(of segment: Segment, action: () -> Void) {
+        precondition(Thread.isMainThread)
+        finishingDependency = segment.predecessor
+        defer { finishingDependency = nil }
+        action()
+    }
+
+    func start(_ segment: Segment, action: () -> Void) {
+        precondition(Thread.isMainThread)
+        activeSegment = segment
+        isStartingSegment = true
+        defer { isStartingSegment = false }
+        action()
+    }
+
+    func sessionStarted() {
+        if !isStartingSegment { activeSegment = nil }
+    }
+}
+
+/// Orders only focus-session lifecycle requests; local enforcement never waits for transport.
+final class FocusLifecycleRequestQueue {
+    static let shared = FocusLifecycleRequestQueue()
+    private static let MAXIMUM_ATTEMPTS = 2
+    private static let REQUEST_DEADLINE = URLSessionConfiguration.default.timeoutIntervalForRequest
+        * Double(MAXIMUM_ATTEMPTS)
+    typealias DeadlineScheduler = (TimeInterval, @escaping () -> Void) -> (() -> Void)
+
+    final class Lease {
+        private let lock = NSLock()
+        private var active = true
+        private var cancelTask: (() -> Void)?
+        private var completion: ((NSDictionary?) -> Void)?
+        private let isValid: () -> Bool
+        let expectedAccountID: String?
+
+        init(isValid: @escaping () -> Bool, expectedAccountID: String?,
+             completion: @escaping (NSDictionary?) -> Void) {
+            self.isValid = isValid
+            self.expectedAccountID = expectedAccountID
+            self.completion = completion
+        }
+
+        var isActive: Bool {
+            lock.lock()
+            let wasActive = active
+            lock.unlock()
+            guard wasActive else { return false }
+            guard isValid() else {
+                finish(nil, cancelling: true)
+                return false
+            }
+            return true
+        }
+
+        func permitsCredentialAccount(_ accountID: String?) -> Bool {
+            isActive && expectedAccountID != nil && expectedAccountID == accountID
+        }
+
+        func attachCancellation(_ cancellation: @escaping () -> Void) {
+            lock.lock()
+            let shouldCancel = !active
+            if active { cancelTask = cancellation }
+            lock.unlock()
+            if shouldCancel { cancellation() }
+        }
+
+        func finish(_ result: NSDictionary?, cancelling: Bool = false) {
+            lock.lock()
+            guard active else { lock.unlock(); return }
+            active = false
+            let callback = completion
+            let cancellation = cancelling ? cancelTask : nil
+            completion = nil
+            cancelTask = nil
+            lock.unlock()
+            cancellation?()
+            callback?(result)
+        }
+    }
+
+    private struct Pending {
+        let isValid: () -> Bool
+        let expectedAccountID: String?
+        let start: (Lease) -> Void
+        let completion: (NSDictionary?) -> Void
+    }
+    private var pending: [Pending] = []
+    private var activeID: UUID?
+    private var cancelDeadline: (() -> Void)?
+    private let scheduleDeadline: DeadlineScheduler
+    private let deliver: (@escaping () -> Void) -> Void
+
+    init(scheduleDeadline: @escaping DeadlineScheduler = { interval, action in
+        let work = DispatchWorkItem(block: action)
+        DispatchQueue.main.asyncAfter(deadline: .now() + interval, execute: work)
+        return { work.cancel() }
+    }, deliver: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.async(execute: $0) }) {
+        self.scheduleDeadline = scheduleDeadline
+        self.deliver = deliver
+    }
+
+    func enqueue(isValid: @escaping () -> Bool = { true }, expectedAccountID: String? = nil, start: @escaping (Lease) -> Void,
+                 completion: @escaping (NSDictionary?) -> Void) {
+        precondition(Thread.isMainThread)
+        pending.append(Pending(isValid: isValid, expectedAccountID: expectedAccountID, start: start, completion: completion))
+        startNextIfIdle()
+    }
+
+    private func startNextIfIdle() {
+        guard activeID == nil, !pending.isEmpty else { return }
+        let job = pending.removeFirst()
+        let id = UUID()
+        activeID = id
+        let lease = Lease(isValid: job.isValid, expectedAccountID: job.expectedAccountID) { [weak self] result in
+            guard let self else { return }
+            self.deliver {
+                guard self.activeID == id else { return }
+                self.cancelDeadline?()
+                self.cancelDeadline = nil
+                self.activeID = nil
+                job.completion(job.isValid() ? result : nil)
+                self.startNextIfIdle()
+            }
+        }
+        cancelDeadline = scheduleDeadline(Self.REQUEST_DEADLINE) { lease.finish(nil, cancelling: true) }
+        if lease.isActive { job.start(lease) }
+    }
+}
+
 /// A focus session that has ended on this Mac, identified by its block list and the finish time the
 /// end screen shows.
 struct EndedFocusSession: Equatable {
