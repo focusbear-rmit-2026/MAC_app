@@ -910,3 +910,33 @@ The buddy chat button now reads "Reply". (#2716)
 
 Focus & Blocking:
 Adding to a block list is now driven by the search box — start typing and tap a card to add it as a URL, a keyword, or an app (with the best-matching installed app suggested). The separate add buttons at the bottom are gone. (#2865)
+
+
+# v3.36.555
+
+Meetings & routines:
+A meeting during your routine now postpones it, and the postponed screen tells you which meeting it's for and when your habits resume. (#2856)
+Stopping a meeting returns you to your postponed habits; and if a meeting interrupted a focus session, stopping the meeting restores that session with its remaining time. (#2856)
+A meeting session now ends about 30 seconds after you leave the call, instead of waiting until the calendar end time. (#2856)
+Locking and unlocking your Mac no longer ends a meeting that's still running. (#2856)
+Teams web calls in Chrome are now detected reliably, and the talking clock stays quiet at the start of an announced meeting. (#2856)
+Dismissing a meeting on another device now stops this Mac alerting for it too. (#2856)
+The "Habits postponed until…" status stays visible near the menu. (#2856)
+Your evening Day Plan and cut-off screen now stay put during a background sync, instead of briefly dropping or reverting to the morning view. (#2856)
+A habit completed in a different routine (for example on another device) no longer affects the routine you're currently in. (#2856)
+Returning from a meeting no longer briefly flashes the wrong window layout. (#2856)
+Pressing Back during a timed habit no longer occasionally marks it complete. (#2856)
+
+Displays & full screen:
+A fresh routine now opens full-screen on your primary monitor. (#2851)
+After an allowed-app habit, the routine returns to the monitor it was on before. (#2851)
+Reconnecting an external monitor now moves the full-screen routine to it when it becomes the primary display. (#2851)
+Unplugging a monitor mid-routine now resizes the full-screen window to fit the remaining screen, so controls no longer hang off the edge. (#2851)
+The daily focus summary stays on the monitor you're using instead of jumping to another. (#2851)
+Switching back to Focus Bear (Cmd-Tab) during an allowed-app habit reopens the routine window. (#2851)
+Password-protected settings now stay full-screen until you enter the password. (#2851)
+After a routine ends on an allowed-app habit, no leftover blank window or stray Day-Plan is left on screen. (#2851)
+
+Privacy:
+Your personal data (habits, block lists, Day Plan, notes and more) is now encrypted at rest on your Mac. (#2863)
+Debug logs now record only the site of a page, never the full URL or page title; the full browsing history is kept encrypted for 30 minutes for problem reports. (#2850)
