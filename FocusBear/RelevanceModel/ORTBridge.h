@@ -34,6 +34,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// `[P(NotRelevant), P(Relevant)]`, or nil on failure.
 - (nullable NSArray<NSNumber *> *)runTextCNNWithTokenIds:(NSArray<NSNumber *> *)tokenIds
                                                   cosine:(float)cosine;
+/// Runs one ensemble classifier (LR / XGB / tuned XGB).
+/// `features` must contain exactly 6313 float values.
+/// Returns the three class probabilities:
+/// [P(Tier0), P(Tier1), P(Tier2)]
+/// or nil on failure.
+- (nullable NSArray<NSNumber *> *)runClassifierWithFeatures:
+    (NSArray<NSNumber *> *)features;
 
 @end
 

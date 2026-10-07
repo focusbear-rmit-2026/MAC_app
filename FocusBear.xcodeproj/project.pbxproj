@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -397,6 +397,8 @@
 		CBS00001 /* CustomBlockingScheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBS00002 /* CustomBlockingScheduleTests.swift */; };
 		E0AA4E363AFEF2F7180E9848 /* TalkingClockManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2AFF50781FF64A00B0C9A64 /* TalkingClockManager.swift */; };
 		E1407DC4305CCCB80028FBFD /* MAC_RELEVANCE_INTEGRATION.md in Resources */ = {isa = PBXBuildFile; fileRef = E1407DC3305CCCB80028FBFD /* MAC_RELEVANCE_INTEGRATION.md */; };
+		E1A31A7F30743D27000AD455 /* TfidfVectorizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A31A7E30743D22000AD455 /* TfidfVectorizer.swift */; };
+		E1A31A9F307449D7000AD455 /* RelevanceEnsembleModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A31A9E307449CA000AD455 /* RelevanceEnsembleModel.swift */; };
 		E1E76DC73044BFAD007A4893 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = E1E76DC63044BFAD007A4893 /* Sparkle */; };
 		E1F0194230491C47004D0511 /* RelevanceShadowLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F0194130491C47004D0511 /* RelevanceShadowLogger.swift */; };
 		E8856235EAE1570EE7E26EF1 /* ORTBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = 276F8B5EEE7EC9C4B2DA2895 /* ORTBridge.mm */; };
@@ -873,6 +875,8 @@
 		D0C7037C21AF4BA7BFAD7BC0 /* YouTubeMusicPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeMusicPlayerView.swift; sourceTree = "<group>"; };
 		D37822C4312A41568B0E8AE0 /* YouTubeMusicTrackStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeMusicTrackStore.swift; sourceTree = "<group>"; };
 		E1407DC3305CCCB80028FBFD /* MAC_RELEVANCE_INTEGRATION.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = MAC_RELEVANCE_INTEGRATION.md; sourceTree = "<group>"; };
+		E1A31A7E30743D22000AD455 /* TfidfVectorizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TfidfVectorizer.swift; sourceTree = "<group>"; };
+		E1A31A9E307449CA000AD455 /* RelevanceEnsembleModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelevanceEnsembleModel.swift; sourceTree = "<group>"; };
 		E1F0194130491C47004D0511 /* RelevanceShadowLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelevanceShadowLogger.swift; sourceTree = "<group>"; };
 		E2AFF50781FF64A00B0C9A64 /* TalkingClockManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkingClockManager.swift; sourceTree = "<group>"; };
 		E339C651791746EA3D066A6A /* Pods_Focus_Bear.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Focus_Bear.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -903,6 +907,10 @@
 		TCV00002 /* talkingClockSettingsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = talkingClockSettingsVc.swift; sourceTree = "<group>"; };
 		UBT00002 /* URLBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLBlockingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		E1A31AA03075AAB4000AD455 /* v2 */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = v2; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		8F396D172C2AB53800C8896A /* Frameworks */ = {
@@ -1762,6 +1770,9 @@
 		93B27B97FD13BF479EC84EF9 /* RelevanceModel */ = {
 			isa = PBXGroup;
 			children = (
+				E1A31AA03075AAB4000AD455 /* v2 */,
+				E1A31A9E307449CA000AD455 /* RelevanceEnsembleModel.swift */,
+				E1A31A7E30743D22000AD455 /* TfidfVectorizer.swift */,
 				276F8B5EEE7EC9C4B2DA2895 /* ORTBridge.mm */,
 				AB35A2AEE01B3C26A9986891 /* ORTBridge.h */,
 				9E77B89BB3F9938EEBB5BC80 /* libonnxruntime.1.19.2.dylib */,
@@ -1848,6 +1859,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E1A31AA03075AAB4000AD455 /* v2 */,
 			);
 			name = "Focus Bear";
 			packageProductDependencies = (
@@ -2152,6 +2166,7 @@
 				8FB2221A2BA8734400F3DA68 /* createTaskVc.swift in Sources */,
 				8F3CF1752CA17301004D72B0 /* systemEventsPermissionVc.swift in Sources */,
 				13BBEEE22F7561580073B58E /* setUpHabitsVc.swift in Sources */,
+				E1A31A9F307449D7000AD455 /* RelevanceEnsembleModel.swift in Sources */,
 				8F3DD01029F3B47800E23715 /* AHLaunchCtl.m in Sources */,
 				8F0419482C353DCA00481ACD /* allUserdefaults.swift in Sources */,
 				8FFBCE8B28549EB1004B77D9 /* PopoverViewController.swift in Sources */,
@@ -2313,6 +2328,7 @@
 				137A3D842E0ABBC5008E3CF0 /* popUpSaveThisTaskForLaterVc.swift in Sources */,
 				130FE9592FA4C7B800E9C386 /* keyboardShortcutsSettingsVc.swift in Sources */,
 				137A3D802E0A69CB008E3CF0 /* popUpFocusGoalConfirmationVc.swift in Sources */,
+				E1A31A7F30743D27000AD455 /* TfidfVectorizer.swift in Sources */,
 				8F0A18522A8E291200AFA623 /* strictnessVc.swift in Sources */,
 				8FE99DA42CF855EA003BCA3E /* onboardingBlockedAppsVc.swift in Sources */,
 				8F6AC5E029E1540F002EBC99 /* welcomeVc.swift in Sources */,
@@ -2535,8 +2551,12 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CODE_SIGN_ENTITLEMENTS = FBHelper/FBHelper.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FBHelper/Info.plist;
@@ -2552,6 +2572,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.focusbear.focusbearhelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
@@ -2570,6 +2591,7 @@
 				CODE_SIGN_ENTITLEMENTS = FBHelper/FBHelper.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FBHelper/Info.plist;
@@ -2585,6 +2607,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.focusbear.focusbearhelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
@@ -2718,9 +2741,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Focus Bear.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 497;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2739,11 +2766,13 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/FocusBear/RelevanceModel/onnxruntime/lib",
+					"$(PROJECT_DIR)/RelevanceModel/onnxruntime/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11;
 				MARKETING_VERSION = 3.33;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "FocusBear/FocusBear-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -2779,6 +2808,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/FocusBear/RelevanceModel/onnxruntime/lib",
+					"$(PROJECT_DIR)/RelevanceModel/onnxruntime/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11;
 				MARKETING_VERSION = 3.33;

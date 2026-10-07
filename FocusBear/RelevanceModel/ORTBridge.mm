@@ -140,5 +140,141 @@
         return nil;
     }
 }
+- (nullable NSArray<NSNumber *> *)runClassifierWithFeatures:
+    (NSArray<NSNumber *> *)features {
+
+    // The production ensemble was trained with exactly 6313 features.
+    if (features.count != 6313) {
+        NSLog(
+            @"ORTBridge: classifier expected 6313 features, got %lu",
+            (unsigned long)features.count
+        );
+        return nil;
+    }
+
+    try {
+        // Convert NSArray<NSNumber *> -> contiguous float buffer.
+        std::vector<float> featureBuffer(6313);
+
+        for (NSInteger i = 0; i < 6313; i++) {
+            featureBuffer[i] = features[i].floatValue;
+        }
+
+        // Classifier input shape = [1, 6313]
+        std::array<int64_t, 2> shape{
+            1,
+            6313
+        };
+
+        auto mem = Ort::MemoryInfo::CreateCpu(
+            OrtArenaAllocator,
+            OrtMemTypeDefault
+        );
+
+        // All three exported classifiers have one float input.
+        if (_inputNames.size() != 1) {
+            NSLog(
+                @"ORTBridge: classifier expected 1 input, got %lu",
+                (unsigned long)_inputNames.size()
+            );
+            return nil;
+        }
+
+        std::vector<Ort::Value> inputs;
+
+        inputs.push_back(
+            Ort::Value::CreateTensor<float>(
+                mem,
+                featureBuffer.data(),
+                featureBuffer.size(),
+                shape.data(),
+                shape.size()
+            )
+        );
+
+        // Build ONNX input/output name arrays.
+        std::vector<const char *> inNames;
+        inNames.reserve(_inputNames.size());
+
+        for (const auto &name : _inputNames) {
+            inNames.push_back(name.c_str());
+        }
+
+        std::vector<const char *> outNames;
+        outNames.reserve(_outputNames.size());
+
+        for (const auto &name : _outputNames) {
+            outNames.push_back(name.c_str());
+        }
+
+        // Run classifier.
+        auto outputs = _session->Run(
+            Ort::RunOptions{nullptr},
+            inNames.data(),
+            inputs.data(),
+            inputs.size(),
+            outNames.data(),
+            outNames.size()
+        );
+
+        // Our exported sklearn/XGBoost models return:
+        //
+        // output 0 -> predicted class label (int64)
+        // output 1 -> probabilities [P(Tier0), P(Tier1), P(Tier2)]
+        //
+        // Find the float tensor containing exactly 3 values instead
+        // of assuming a particular output index.
+        for (auto &output : outputs) {
+
+            if (!output.IsTensor()) {
+                continue;
+            }
+
+            auto info =
+                output.GetTensorTypeAndShapeInfo();
+
+            const auto elementType =
+                info.GetElementType();
+
+            const size_t count =
+                info.GetElementCount();
+
+            if (
+                elementType ==
+                    ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT
+                &&
+                count == 3
+            ) {
+
+                const float *data =
+                    output.GetTensorData<float>();
+
+                NSMutableArray<NSNumber *> *result =
+                    [NSMutableArray arrayWithCapacity:3];
+
+                for (size_t i = 0; i < 3; i++) {
+                    [result addObject:@(data[i])];
+                }
+
+                return result;
+            }
+        }
+
+        NSLog(
+            @"ORTBridge: classifier probability output not found"
+        );
+
+        return nil;
+
+    } catch (const std::exception &e) {
+
+        NSLog(
+            @"ORTBridge: classifier run failed: %s",
+            e.what()
+        );
+
+        return nil;
+    }
+}
 
 @end

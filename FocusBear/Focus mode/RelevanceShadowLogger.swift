@@ -39,6 +39,7 @@ private struct RelevanceShadowResult: Decodable {
     let confidence_gate_passed: Bool?
     let llm_fallback_required: Bool?
     let error: String?
+    let latency_ms: Double?
 }
 
 /// Launches and owns the long-lived `predict_server.py` subprocess, and serializes
@@ -54,10 +55,9 @@ final class RelevanceShadowService {
         qos: .utility
     )
 
-    private var model: RelevanceOnnxModel?
+    private var model: RelevanceEnsembleModel?
 
     private init() {}
-
     fileprivate func predict(
         focusIntention: String,
         tabTitle: String,
@@ -66,10 +66,16 @@ final class RelevanceShadowService {
         completion: @escaping (RelevanceShadowResult?) -> Void
     ) {
 
-        RelevanceModelDownloader.shared.ensureAvailable { [weak self] directory in
+        RelevanceModelDownloader.shared.ensureAvailable {
+            [weak self] directory in
 
-            guard let self = self,
-                  let directory = directory else {
+            guard let self = self else {
+                completion(nil)
+                return
+            }
+
+            guard let directory = directory else {
+                print("V2 MODEL: files unavailable")
                 completion(nil)
                 return
             }
@@ -78,31 +84,13 @@ final class RelevanceShadowService {
 
                 if self.model == nil {
 
-                    let minilmURL = directory.appendingPathComponent(
-                        RelevanceModelArtifacts.minilm
-                    )
-
-                    let textcnnURL = directory.appendingPathComponent(
-                        RelevanceModelArtifacts.textcnn
-                    )
-
-                    let vocabURL = directory.appendingPathComponent(
-                        RelevanceModelArtifacts.vocab
-                    )
-
-                    let wordIndexURL = directory.appendingPathComponent(
-                        RelevanceModelArtifacts.wordIndex
-                    )
-
-                    self.model = RelevanceOnnxModel(
-                        minilmPath: minilmURL.path,
-                        textcnnPath: textcnnURL.path,
-                        vocabURL: vocabURL,
-                        wordIndexURL: wordIndexURL
+                    self.model = RelevanceEnsembleModel(
+                        modelDirectory: directory
                     )
                 }
 
                 guard let model = self.model else {
+                    print("V2 MODEL: failed to load")
                     completion(nil)
                     return
                 }
@@ -111,56 +99,92 @@ final class RelevanceShadowService {
 
                 guard let prediction = model.predict(
                     focusIntention: focusIntention,
-                    tabTitle: tabTitle
+                    tabTitle: tabTitle,
+                    currentTask: currentTask,
+                    urlKeywords: "",
+                    url: url
                 ) else {
+                    print("V2 MODEL: prediction failed")
                     completion(nil)
                     return
                 }
 
                 let latencyMs =
-                    (CFAbsoluteTimeGetCurrent() - start) * 1000
+                (
+                    CFAbsoluteTimeGetCurrent()
+                    - start
+                ) * 1000
 
-                addLog(
-                    text: String(
+
+                let tier = prediction.tier
+
+                let label: String
+                let action: String
+
+                switch tier {
+
+                case 0:
+                    label =
+                    "Definitely Not Relevant"
+
+                    action =
+                    "block"
+
+                case 1:
+                    label =
+                    "Maybe Relevant"
+
+                    action =
+                    "caution"
+
+                case 2:
+                    label =
+                    "Likely Relevant"
+
+                    action =
+                    "allow"
+
+                default:
+                    completion(nil)
+                    return
+                }
+
+
+                let confidenceGatePassed =
+                prediction.confidence >= 0.70
+
+
+                print(
+                    String(
                         format:
-                        "Relevance ONNX: relevant=%@ confidence=%.4f cosine=%.4f latency=%.2fms",
-                        prediction.isRelevant.description,
+                            "### V2 ENSEMBLE: tier=%d confidence=%.4f cosine=%.4f latency=%.2fms ###",
+                        tier,
                         prediction.confidence,
                         prediction.cosine,
                         latencyMs
                     )
                 )
 
-                let label = prediction.isRelevant
-                    ? "relevant"
-                    : "not_relevant"
 
-                let tier: Int
-                let action: String
-
-                if prediction.confidence < 0.70 {
-                    tier = 1
-                    action = "caution"
-                } else if prediction.isRelevant {
-                    tier = 2
-                    action = "allow"
-                } else {
-                    tier = 0
-                    action = "block"
-                }
-
-                let confidenceGatePassed =
-                    prediction.confidence >= 0.70
-
-                let result = RelevanceShadowResult(
+                let result =
+                RelevanceShadowResult(
                     tier: tier,
                     label: label,
                     action: action,
-                    confidence: Double(prediction.confidence),
-                    cosine_similarity: Double(prediction.cosine),
-                    confidence_gate_passed: confidenceGatePassed,
-                    llm_fallback_required: !confidenceGatePassed,
-                    error: nil
+                    confidence:
+                        Double(
+                            prediction.confidence
+                        ),
+                    cosine_similarity:
+                        Double(
+                            prediction.cosine
+                        ),
+                    confidence_gate_passed:
+                        confidenceGatePassed,
+                    llm_fallback_required:
+                        !confidenceGatePassed,
+                    error: nil,
+                    latency_ms: latencyMs
                 )
 
                 completion(result)
@@ -168,62 +192,101 @@ final class RelevanceShadowService {
         }
     }
 }
-// MARK: - Comparison + JSONL logging
+    // MARK: - Comparison + JSONL logging
 
-private let relevanceShadowJsonlURL: URL? = applicationSupportURL?.appendingPathComponent("relevance-shadow.jsonl")
-private var relevanceShadowLogger: CSVLogger?
-private let relevanceComparisonCsvURL: URL? =
+    private let relevanceShadowJsonlURL: URL? = applicationSupportURL?.appendingPathComponent("relevance-shadow.jsonl")
+    private var relevanceShadowLogger: CSVLogger?
+    private let relevanceComparisonCsvURL: URL? =
     applicationSupportURL?.appendingPathComponent("relevance-comparison.csv")
 
-private var relevanceComparisonLogger: CSVLogger?
+    private var relevanceComparisonLogger: CSVLogger?
 
-private let relevanceComparisonQueue = DispatchQueue(
-    label: "relevance.comparison.csv"
-)
+    private let relevanceComparisonQueue = DispatchQueue(
+        label: "relevance.comparison.csv"
+    )
 
-/// Runs the shadow model against the same signal the existing AI URL check just used,
-/// and appends one JSONL entry recording whether they agree. Purely observational —
-/// this never influences `existingProbability` or any blocking decision. Safe to call
-/// on the main thread: the actual model call and file write both happen off it.
-func logRelevanceShadowCheck(
-    focusIntention: String,
-    tabTitle: String,
-    currentTask: String,
-    url: String,
-    existingProbability: Double,
-    backendReason: String
-) {
-    print("### ONNX SHADOW CHECK CALLED ###")
+    /// Runs the shadow model against the same signal the existing AI URL check just used,
+    /// and appends one JSONL entry recording whether they agree. Purely observational —
+    /// this never influences `existingProbability` or any blocking decision. Safe to call
+    /// on the main thread: the actual model call and file write both happen off it.
+    func logRelevanceShadowCheck(
+        focusIntention: String,
+        tabTitle: String,
+        currentTask: String,
+        url: String,
+        existingProbability: Double,
+        backendReason: String
+    ) {
+        print("### ONNX SHADOW CHECK CALLED ###")
 
-    let backendDecision =
+        let backendDecision =
         existingProbability >= 0.70 ? "allow" : "block"
 
-    RelevanceShadowService.shared.predict(
-        focusIntention: focusIntention,
-        tabTitle: tabTitle,
-        currentTask: currentTask,
-        url: url
-    ) { result in
+        RelevanceShadowService.shared.predict(
+            focusIntention: focusIntention,
+            tabTitle: tabTitle,
+            currentTask: currentTask,
+            url: url
+        ) { result in
 
-        var entry: [String: Any] = [
-            "timestamp": getStringFromDate(
-                date: Date(),
-                dateFormat: "yyyy-MM-dd HH:mm:ss"
-            ),
-            "focus_intention": focusIntention,
-            "current_task": currentTask,
-            "tab_title": tabTitle,
-            "url": url,
+            var entry: [String: Any] = [
+                "timestamp": getStringFromDate(
+                    date: Date(),
+                    dateFormat: "yyyy-MM-dd HH:mm:ss"
+                ),
+                "focus_intention": focusIntention,
+                "current_task": currentTask,
+                "tab_title": tabTitle,
+                "url": url,
 
-            "existing_probability": existingProbability,
-            "existing_decision": backendDecision,
-            "backend_reason": backendReason
-        ]
+                "existing_probability": existingProbability,
+                "existing_decision": backendDecision,
+                "backend_reason": backendReason
+            ]
 
-        guard let result = result,
-              result.error == nil else {
+            guard let result = result,
+                  result.error == nil else {
 
-            entry["agreement"] = "unavailable"
+                entry["agreement"] = "unavailable"
+
+                appendRelevanceShadowEntry(entry)
+
+                appendRelevanceComparisonCsv(
+                    focusIntention: focusIntention,
+                    tabTitle: tabTitle,
+                    currentTask: currentTask,
+                    url: url,
+                    backendProbability: existingProbability,
+                    backendReason: backendReason,
+                    backendDecision: backendDecision,
+                    result: nil
+                )
+
+                return
+            }
+
+            entry["model_tier"] = result.tier
+            entry["model_label"] = result.label
+            entry["model_action"] = result.action
+            entry["model_confidence"] = result.confidence
+            entry["model_cosine"] = result.cosine_similarity
+            entry["model_confidence_gate_passed"] =
+            result.confidence_gate_passed
+
+            let onnxDecision = result.action
+
+            let agreement: String
+
+            if onnxDecision == "caution" {
+                agreement = "caution"
+            } else {
+                agreement =
+                onnxDecision == backendDecision
+                ? "agree"
+                : "disagree"
+            }
+
+            entry["agreement"] = agreement
 
             appendRelevanceShadowEntry(entry)
 
@@ -235,193 +298,161 @@ func logRelevanceShadowCheck(
                 backendProbability: existingProbability,
                 backendReason: backendReason,
                 backendDecision: backendDecision,
-                result: nil
+                result: result
             )
-
-            return
         }
-
-        entry["model_tier"] = result.tier
-        entry["model_label"] = result.label
-        entry["model_action"] = result.action
-        entry["model_confidence"] = result.confidence
-        entry["model_cosine"] = result.cosine_similarity
-        entry["model_confidence_gate_passed"] =
-            result.confidence_gate_passed
-
-        let onnxDecision = result.action
-
-        let agreement: String
-
-        if onnxDecision == "caution" {
-            agreement = "caution"
-        } else {
-            agreement =
-                onnxDecision == backendDecision
-                ? "agree"
-                : "disagree"
-        }
-
-        entry["agreement"] = agreement
-
-        appendRelevanceShadowEntry(entry)
-
-        appendRelevanceComparisonCsv(
-            focusIntention: focusIntention,
-            tabTitle: tabTitle,
-            currentTask: currentTask,
-            url: url,
-            backendProbability: existingProbability,
-            backendReason: backendReason,
-            backendDecision: backendDecision,
-            result: result
-        )
     }
-}
-private func appendRelevanceShadowEntry(_ entry: [String: Any]) {
-    guard let url = relevanceShadowJsonlURL,
-          let data = try? JSONSerialization.data(withJSONObject: entry, options: [.sortedKeys]),
-          let line = String(data: data, encoding: .utf8) else { return }
-    if relevanceShadowLogger == nil {
-        relevanceShadowLogger = CSVLogger(fileURL: url)
-    }
-    relevanceShadowLogger?.append(line: line + "\n")
-}
-private func appendRelevanceComparisonCsv(
-    focusIntention: String,
-    tabTitle: String,
-    currentTask: String,
-    url: String,
-    backendProbability: Double,
-    backendReason: String,
-    backendDecision: String,
-    result: RelevanceShadowResult?
-) {
-
-    relevanceComparisonQueue.async {
-
-        guard let fileURL = relevanceComparisonCsvURL else {
-            return
+    private func appendRelevanceShadowEntry(_ entry: [String: Any]) {
+        guard let url = relevanceShadowJsonlURL,
+              let data = try? JSONSerialization.data(withJSONObject: entry, options: [.sortedKeys]),
+              let line = String(data: data, encoding: .utf8) else { return }
+        if relevanceShadowLogger == nil {
+            relevanceShadowLogger = CSVLogger(fileURL: url)
         }
+        relevanceShadowLogger?.append(line: line + "\n")
+    }
+    private func appendRelevanceComparisonCsv(
+        focusIntention: String,
+        tabTitle: String,
+        currentTask: String,
+        url: String,
+        backendProbability: Double,
+        backendReason: String,
+        backendDecision: String,
+        result: RelevanceShadowResult?
+    ) {
 
-        let fileManager = FileManager.default
+        relevanceComparisonQueue.async {
 
-        var needsHeader = true
+            guard let fileURL = relevanceComparisonCsvURL else {
+                return
+            }
 
-        if fileManager.fileExists(atPath: fileURL.path),
-           let attributes = try? fileManager.attributesOfItem(
+            let fileManager = FileManager.default
+
+            var needsHeader = true
+
+            if fileManager.fileExists(atPath: fileURL.path),
+               let attributes = try? fileManager.attributesOfItem(
                 atPath: fileURL.path
-           ),
-           let fileSize = attributes[.size] as? NSNumber {
+               ),
+               let fileSize = attributes[.size] as? NSNumber {
 
-            needsHeader = fileSize.intValue == 0
-        }
+                needsHeader = fileSize.intValue == 0
+            }
 
-        if relevanceComparisonLogger == nil {
-            relevanceComparisonLogger =
+            if relevanceComparisonLogger == nil {
+                relevanceComparisonLogger =
                 CSVLogger(fileURL: fileURL)
-        }
+            }
 
-        if needsHeader {
+            if needsHeader {
 
-            let header = [
-                "Timestamp",
-                "URL",
-                "TabTitle",
-                "FocusIntention",
-                "CurrentTask",
-                "BackendProbability",
-                "BackendReason",
-                "BackendDecision",
-                "ONNXCosine",
-                "ONNXConfidence",
-                "ONNXLabel",
-                "ONNXDecision",
-                "Agreement"
-            ].joined(separator: ",")
+                let header = [
+                    "Timestamp",
+                    "URL",
+                    "TabTitle",
+                    "FocusIntention",
+                    "CurrentTask",
+                    "BackendProbability",
+                    "BackendReason",
+                    "BackendDecision",
+                    "ONNXCosine",
+                    "ONNXConfidence",
+                    "ONNXLabel",
+                    "ONNXDecision",
+                    "ONNXLatencyMs",
+                    "Agreement"
+                ].joined(separator: ",")
 
-            relevanceComparisonLogger?
-                .append(line: header + "\n")
-        }
+                relevanceComparisonLogger?
+                    .append(line: header + "\n")
+            }
 
-        let onnxCosine: String
-        let onnxConfidence: String
-        let onnxLabel: String
-        let onnxDecision: String
-        let agreement: String
+            let onnxCosine: String
+            let onnxConfidence: String
+            let onnxLabel: String
+            let onnxDecision: String
+            let agreement: String
+            let onnxLatencyMs: String
 
-        if let result = result,
-           let cosine = result.cosine_similarity,
-           let confidence = result.confidence,
-           let label = result.label,
-           let action = result.action {
+            if let result = result,
+               let cosine = result.cosine_similarity,
+               let confidence = result.confidence,
+               let label = result.label,
+               let action = result.action {
 
-            onnxCosine = String(
-                format: "%.6f",
-                cosine
-            )
+                onnxCosine = String(
+                    format: "%.6f",
+                    cosine
+                )
 
-            onnxConfidence = String(
-                format: "%.6f",
-                confidence
-            )
+                onnxConfidence = String(
+                    format: "%.6f",
+                    confidence
+                )
 
-            onnxLabel = label
-            onnxDecision = action
+                onnxLabel = label
+                onnxDecision = action
+                onnxLatencyMs = result.latency_ms.map {
+                    String(format: "%.2f", $0)
+                } ?? ""
 
-            if onnxDecision == "caution" {
-                agreement = "caution"
-            } else {
-                agreement =
+                if onnxDecision == "caution" {
+                    agreement = "caution"
+                } else {
+                    agreement =
                     backendDecision == onnxDecision
                     ? "agree"
                     : "disagree"
+                }
+
+            } else {
+
+                onnxCosine = ""
+                onnxConfidence = ""
+                onnxLabel = ""
+                onnxDecision = ""
+                onnxLatencyMs = ""
+                agreement = "unavailable"
             }
 
-        } else {
+            let values = [
+                getStringFromDate(
+                    date: Date(),
+                    dateFormat: "yyyy-MM-dd HH:mm:ss"
+                ),
+                url,
+                tabTitle,
+                focusIntention,
+                currentTask,
+                String(format: "%.6f", backendProbability),
+                backendReason,
+                backendDecision,
+                onnxCosine,
+                onnxConfidence,
+                onnxLabel,
+                onnxDecision,
+                onnxLatencyMs,
+                agreement
+            ]
 
-            onnxCosine = ""
-            onnxConfidence = ""
-            onnxLabel = ""
-            onnxDecision = ""
-            agreement = "unavailable"
+            let csvLine = values
+                .map { csvEscape($0) }
+                .joined(separator: ",")
+
+            relevanceComparisonLogger?
+                .append(line: csvLine + "\n")
         }
-
-        let values = [
-            getStringFromDate(
-                date: Date(),
-                dateFormat: "yyyy-MM-dd HH:mm:ss"
-            ),
-            url,
-            tabTitle,
-            focusIntention,
-            currentTask,
-            String(format: "%.6f", backendProbability),
-            backendReason,
-            backendDecision,
-            onnxCosine,
-            onnxConfidence,
-            onnxLabel,
-            onnxDecision,
-            agreement
-        ]
-
-        let csvLine = values
-            .map { csvEscape($0) }
-            .joined(separator: ",")
-
-        relevanceComparisonLogger?
-            .append(line: csvLine + "\n")
     }
-}
 
-private func csvEscape(_ value: String) -> String {
+    private func csvEscape(_ value: String) -> String {
 
-    let escaped =
+        let escaped =
         value.replacingOccurrences(
             of: "\"",
             with: "\"\""
         )
 
-    return "\"\(escaped)\""
-}
+        return "\"\(escaped)\""
+    }
