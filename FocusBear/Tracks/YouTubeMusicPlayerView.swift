@@ -62,6 +62,9 @@ struct YouTubeMusicPlayerView: NSViewRepresentable {
         context.coordinator.onResolvedTitle = onResolvedTitle
         configuration.userContentController.add(context.coordinator, name: "trackInfo")
         let webView = WKWebView(frame: .zero, configuration: configuration)
+        // Register with the model so pause/resume can drive the player directly even when this view's
+        // NSHostingView is off-window and SwiftUI has stopped calling updateNSView (menu pause button).
+        FocusMusicViewModel.shared.youtubeWebView = webView
         loadIfNeeded(in: webView, context: context)
         return webView
     }

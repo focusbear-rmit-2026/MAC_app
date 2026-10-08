@@ -1,5 +1,5 @@
 {
-  "originHash" : "aabd11d3dea801462ceceaa4c3f1de681455c3291e7138430b0a3df5287d624a",
+  "originHash" : "68e562e26ea906360aab7ae26f8fd7615c310585aa5d0ff2f8edb4246e88496e",
   "pins" : [
     {
       "identity" : "auth0.swift",
@@ -20,6 +20,15 @@
       }
     },
     {
+      "identity" : "lottie-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/airbnb/lottie-ios",
+      "state" : {
+        "revision" : "a004050748dc197c56256a14dca49a035d74726c",
+        "version" : "4.5.2"
+      }
+    },
+    {
       "identity" : "orsserialport",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/armadsen/ORSSerialPort",
@@ -35,15 +44,6 @@
       "state" : {
         "revision" : "72acffd647cf14081e1d1d7becdfc22230542f98",
         "version" : "1.0.0"
-      }
-    },
-    {
-      "identity" : "sparkle",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/sparkle-project/Sparkle",
-      "state" : {
-        "revision" : "ac2def288cbff5cfc7df3ffef6abdf45b72bcb0a",
-        "version" : "2.9.6"
       }
     },
     {

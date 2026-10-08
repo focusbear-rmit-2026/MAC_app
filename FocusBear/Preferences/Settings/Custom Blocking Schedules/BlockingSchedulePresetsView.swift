@@ -9,6 +9,8 @@
 
 import SwiftUI
 
+private typealias SettingsUITestIdentifier = UITestContract.Identifier.SettingsRegression
+
 /// A starter template for a blocking schedule. Client-side only — picking one
 /// just pre-fills the editor, so there's no persistence/backend involvement.
 struct SchedulePreset: Identifiable {
@@ -41,6 +43,9 @@ struct SchedulePreset: Identifiable {
 struct BlockingSchedulePresetsView: View {
     var onPick: (SchedulePreset) -> Void
     var onBack: () -> Void
+    /// Hidden in onboarding, where the screen already has the onboarding title bar, progress and back
+    /// button — the built-in header would duplicate them. Defaults to true so the running app is unchanged.
+    var showHeader: Bool = true
 
     private let columns = [
         GridItem(.flexible(), spacing: 16),
@@ -50,7 +55,9 @@ struct BlockingSchedulePresetsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            BlockingScheduleHeader(title: "Quick-Start Presets", onBack: onBack)
+            if showHeader {
+                BlockingScheduleHeader(title: "Quick-Start Presets", onBack: onBack)
+            }
 
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 16) {
@@ -59,12 +66,16 @@ struct BlockingSchedulePresetsView: View {
                             presetCard(preset)
                         }
                         .buttonStyle(FBButtonStyle())
+                        .accessibilityIdentifier(SettingsUITestIdentifier.schedulePresetPrefix
+                                                 + String(SchedulePreset.all.firstIndex { $0.id == preset.id } ?? 0))
                     }
                 }
                 .padding(20)
             }
         }
         .background(FBColor.background)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(SettingsUITestIdentifier.schedulePresets)
     }
 
     private func presetCard(_ preset: SchedulePreset) -> some View {

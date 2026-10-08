@@ -48,6 +48,7 @@ class focusTimerManager {
     
     
     @objc func checkInBackground(){
+        ManagedBlockingRuntime.shared.checkCurrentBrowserNow()
         addLog(text:"func call:- checkInBackground")
         
         if !isRunning.testAndSet() {
@@ -163,6 +164,7 @@ class focusTimerManager {
                 return;
             }
             
+            if ManagedBlockingRuntime.shared.shouldDeferLegacyURL(url) { return }
             originalUrlStringFromBrowser = url
             
             if currentBrowser == ._OPERA_GX_{
@@ -229,7 +231,7 @@ class focusTimerManager {
                                     extractedUrl = extractedUrl.removingPercentEncoding ?? extractedUrl
                                     let isAllowed = validation.isUrlValid(urlToCheck: extractedUrl, allowUrl: turl)
                                     if isAllowed{
-                                        addLog(text: "teacher session:- url unlocked (now on allow-list), auto-opening \(extractedUrl)")
+                                        addLog(text: "teacher session:- url unlocked (now on allow-list), auto-opening \(LogPrivacy.site(extractedUrl))")
                                         DispatchQueue.main.async {
                                             setUrlToBrowser(browser: currentBrowser, url: extractedUrl)
                                         }
@@ -241,6 +243,15 @@ class focusTimerManager {
                         }
                     }
                 }
+            }
+            // Focus Bear's own pages, whichever loopback port this run or a previous one is
+            // serving them on. The list below pins a single current port, which a block page left
+            // over from an earlier run no longer matches (report 2026-09-21_10-04-40).
+            if isFocusBearLocalPage(url) {
+                DispatchQueue.main.async {
+                    self.urlInvalidCloseEveryThing()
+                }
+                return;
             }
             //blockWebUrlString
             for turl in defaultAllowedUrl{
@@ -411,6 +422,9 @@ class focusTimerManager {
                     
                 }else{
                     currentBrowserUrlForAi = ""
+                    BrowsingHistory.shared.record(.allowed, url: originalUrlStringFromBrowser, title: tabTitle,
+                                                  app: runningApp.bundleIdentifier, reason: BrowsingReason.allowedByFocusMode,
+                                                  focusMode: currentRunningFocusModeName)
                     if !isAllowedListApproachInFocus{//Always blocked URLs should be blocked immediately even in cuddly bear mode#476
                         var bool = false
                         let arrBlockedUrls = getBlockedUrlsToBlock()
@@ -662,7 +676,7 @@ class focusTimerManager {
 
                     if var extractedUrl = extractSubstring(from: url, start: "old_url=", end: "&focus_mode_end_time") {
                         extractedUrl = extractedUrl.removingPercentEncoding ?? extractedUrl
-                        addLog(text: "teacher session:- opening unlock request window for url: \(extractedUrl)")
+                        addLog(text: "teacher session:- opening unlock request window for url: \(LogPrivacy.site(extractedUrl))")
                         DispatchQueue.main.async {
                             teacherSessionManagerObject.showTeacherUnlockRequestWindow()
                             if let teacherUnlockRequestVcObj = teacherSessionManagerObject.teacherUnlockRequestWindow?.contentViewController as? teacherUnlockRequestVc{

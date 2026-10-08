@@ -146,37 +146,11 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
         })
         
         
-        //load installed apps
-        var arrInstalledApps = [String]()
-        let urls = FileManager.default.urls(for: .applicationDirectory, in: .localDomainMask)
-        let properties = [URLResourceKey.localizedNameKey, URLResourceKey.creationDateKey, URLResourceKey.contentModificationDateKey, URLResourceKey.localizedTypeDescriptionKey,URLResourceKey.nameKey]
-        let array = try? FileManager.default.contentsOfDirectory(at: urls[0], includingPropertiesForKeys: properties, options: .skipsHiddenFiles)
-        if array != nil{
-            for appUrl in array!{
-                
-                if appUrl.pathExtension == "app"{
-                    let appName = appUrl.deletingPathExtension().lastPathComponent
-                    print(appName)
-                    arrInstalledApps.append(appName)
-                }else{
-                    if appUrl.lastPathComponent == "Utilities"{
-                        let arrUtilitiesApp = try? FileManager.default.contentsOfDirectory(at: appUrl, includingPropertiesForKeys: properties, options: .skipsHiddenFiles)
-                        if arrUtilitiesApp != nil{
-                            for appUrl in arrUtilitiesApp!{
-                                if appUrl.pathExtension == "app"{
-                                    let appName = appUrl.deletingPathExtension().lastPathComponent
-                                    print(appName)
-                                    arrInstalledApps.append(appName)
-                                }
-                            }
-                        }
-                        
-                    }
-                }
-            }
-        }
+        // Installed apps are the web's allowed-app suggestions (one enumerator for every loader: InstalledApps).
+        let installedApps = InstalledApps.shared.names()
+        addLog(text: "Load Installed Apps to web settings:- \(installedApps.count) apps")
         let mutableDic = NSMutableDictionary()
-        mutableDic["installedApps"] = arrInstalledApps
+        mutableDic["installedApps"] = installedApps
         
         do {
             let data = try (JSONSerialization.data(withJSONObject: mutableDic, options: .prettyPrinted))
@@ -277,7 +251,7 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
     var alertSettingChanged:NSAlert?
     func jsonReceivedFromWebView(jsonResult: NSDictionary){
         addLog(text: "func jsonReceivedFromWebView")
-        addLog(text: "settings json is:- \(jsonResult)")
+        addLog(text: "settings json is:- \(LogPrivacy.structure(jsonResult))")
         allApiObject.isSettingsValid(settings: jsonResult, isOnboarding:false, completionHandler: {dic,statusCode  in
             DispatchQueue.main.async {
                 isGettingSchema = false
@@ -296,7 +270,7 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
                             
                             if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
                                 print()
-                                UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                SensitiveDefaults.set(backToString, forKey: kUserdefaultsSelectedJson)
                             }
                         } catch let myJSONError {
                             print(myJSONError)

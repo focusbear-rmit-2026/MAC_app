@@ -21,11 +21,19 @@ let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height
 // Suite name shared with FBHelper — must derive identically in both targets.
 // The team prefix comes from the build's DEVELOPMENT_TEAM (via FBTeamIdentifierPrefix in
 // Info.plist) so a contributor building under their own team still gets a matching suite.
+private let focusBearTeamIdentifier = "TCUD568B3U" // i18n-ignore: Apple team id, not UI text
+
 let fbSharedDefaultsSuiteName: String = {
-    if let team = Bundle.main.object(forInfoDictionaryKey: "FBTeamIdentifierPrefix") as? String, !team.isEmpty {
-        return "\(team).group.com.focusbear.fbmac"
+    let team = (Bundle.main.object(forInfoDictionaryKey: "FBTeamIdentifierPrefix") as? String)
+        .flatMap { $0.isEmpty ? nil : $0 } ?? focusBearTeamIdentifier
+    let productionSuite = "\(team).group.com.focusbear.fbmac"
+    // Both test hosts must isolate the helper suite before the app delegate initializes it: a
+    // UI-test build would otherwise read and write the installed app's suite.
+    if UITestHost.hasIsolatedBundleIdentifier {
+        return productionSuite + UITestContract.bundleIdentifierSuffix
     }
-    return "TCUD568B3U.group.com.focusbear.fbmac"
+    return LogicTestHost.sharedDefaultsSuiteName(
+        productionSuiteName: productionSuite, bundleIdentifier: Bundle.main.bundleIdentifier)
 }()
 
 /// Recursively strip anything that is not a property-list type so a value is always safe to hand
@@ -149,6 +157,12 @@ var isActivitiesReducedInExpiredApp = false
 
 var isHardCorePomodoroModeOn = false
 var hardcodePmodoroFocusModeName:String = ""
+/// True for the LIFE of a focus session that was started from the "postpone routine → set intention →
+/// start focus" flow (captured at session start from pomodoroVc.isIntentionFromMorningPostpone, which is
+/// itself cleared in the pomodoro's viewWillDisappear and so can't be read later). Used by the Stop
+/// handler to skip the password gate and hand the user back to the routine they postponed. Reset at every
+/// focus-session start (focusModeStartted) and when the session is stopped/resumed.
+var isFocusSessionStartedFromPostponeIntention = false
 var totalMinutesRemainingForHardcodePomodoro = 0
 var currentPomodoroWorkDuration = 25
 var currentPomodoroBreakDuration = 5
@@ -239,7 +253,7 @@ var dayPlanCompletedHabitIds = Set<String>() {
 func recordPastHabitCompletionViaOfflineSync(activity_id: String, activity_sequence_id: String,
                                              performedAt: Date, duration: Int, quantity: Double?,
                                              notes: String, dayKey: String) {
-    let fmt = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+    let fmt = offlineActivityTimestampFormat
     let startStr = getStringFromDateInUtc(date: performedAt, dateFormat: fmt)
     let finish = Calendar.current.date(byAdding: .second, value: max(duration, 1), to: performedAt) ?? performedAt
     let finishStr = getStringFromDateInUtc(date: finish, dateFormat: fmt)
@@ -298,18 +312,31 @@ func loadPersistedDayPlanCompletedIds() {
     if !ids.isEmpty { dayPlanCompletedHabitIds = ids }
 }
 
+/// The format the offline activities CSV writes its start/finish timestamps in (UTC).
+let offlineActivityTimestampFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+
+/// The LOCAL day (`yyyy-MM-dd`) an offline activity row belongs to. Habit completion is tracked per
+/// local day everywhere else, while the CSV stores UTC — so the two only agree once the timestamp is
+/// converted. Matching the raw UTC text instead dropped every completion whose local morning falls on
+/// the previous UTC day (UTC+10: 8:49am Thursday is 22:49 Wednesday UTC), i.e. most of a Melbourne
+/// morning routine.
+func offlineActivityLocalDayKey(_ timestampUtc: String) -> String? {
+    guard let date = getDateFromStringInUtc(date: timestampUtc, dateFormat: offlineActivityTimestampFormat) else { return nil }
+    return getStringFromDate(date: date, dateFormat: "yyyy-MM-dd")
+}
+
 /// Today's completed/skipped habit ids from the offline activities CSV — the local cache of activity
 /// completions made while offline that the backend (and current-activity-props) doesn't know about
 /// yet. Folding these in keeps the Day Plan correct for offline completions until they sync.
 func offlineCompletedHabitIds() -> Set<String> {
     guard let url = offlineActivitiesCsvURL,
-          let content = try? String(contentsOf: url, encoding: .utf8) else { return [] }
+          let content = try? SecureFiles.shared.readText(url) else { return [] }
     // CSV: activity_id,duration_logged,device_id,activity_sequence_id,start_time,finish_time,…
-    let todayUtc = getStringFromDateInUtc(date: Date(), dateFormat: "yyyy-MM-dd")
+    let today = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd")
     var ids = Set<String>()
     for (i, row) in content.components(separatedBy: "\n").enumerated() where i > 0 && !row.isEmpty {
         let cols = row.components(separatedBy: ",")
-        guard cols.count > 5, !cols[0].isEmpty, cols[5].hasPrefix(todayUtc) else { continue }
+        guard cols.count > 5, !cols[0].isEmpty, offlineActivityLocalDayKey(cols[5]) == today else { continue }
         ids.insert(cols[0])
     }
     return ids
@@ -339,6 +366,29 @@ struct Time{
     var second = 0
 }
 
+/// Whether the routine has already been shown for the current routine-day.
+///
+/// A routine-day does not start at midnight: before the routine's start time the user is still in
+/// *yesterday's* day, so "now" rolls back a day before the two dates are compared. With no start
+/// time known — settings not loaded yet, or a profile whose startup time is missing or unparseable
+/// — there is nothing to roll back to, so the plain calendar day is used.
+///
+/// Pulled out of `AppDelegate.checkLastHabitShowDate` because that force-unwrapped `startTime` and
+/// crashed the app on launch whenever it was nil (EXC_BREAKPOINT in `readSettingsAndLoadApp`).
+func isHabitAlreadyShown(lastShown: Date, now: Date, routineStart: Time?, calendar: Calendar = .current) -> Bool {
+    var today = now
+    if let routineStart,
+       let startOfRoutineDay = calendar.date(bySettingHour: routineStart.hour,
+                                             minute: routineStart.minute,
+                                             second: routineStart.second,
+                                             of: now),
+       now < startOfRoutineDay {
+        today = calendar.date(byAdding: .day, value: -1, to: now) ?? now
+    }
+    // Shown already unless the routine-day has moved past the day it was last shown on.
+    return calendar.compare(today, to: lastShown, toGranularity: .day) != .orderedDescending
+}
+
 
 var occupationStudentIndex = 0
 var occupationBusinessOwnerIndex = 1
@@ -364,6 +414,30 @@ var arrFocusAlignmentScore = ["30", "40", "50", "60", "70", "80", "90", "95", "9
 
 func secondsToHoursMinutesSeconds (seconds : Int) -> (Int, Int, Int) {
     return (seconds / 3600, (seconds % 3600) / 60, (seconds % 3600) % 60)
+}
+
+// Seconds since the last user HID input (mouse/keyboard) system-wide.
+func secondsSinceLastUserInput() -> TimeInterval {
+    return CGEventSource.secondsSinceLastEventType(CGEventSourceStateID.hidSystemState, eventType: CGEventType(rawValue: ~0)!)
+}
+
+// Body for POST /class-session/:id/heartbeat. `in_focus`/`device_id` stay as-is;
+// `idle_seconds` (engagement) is always sent so the backend can score per student.
+// `alignment_score` (site-relevance) is sent only when AI relevance-checking is actually
+// active — gated on isAIBlockingEnabled() rather than the student's raw isAiCheckUrlEnabled,
+// so during a class it follows the TEACHER's allow-list AI setting (which takes precedence).
+// That keeps the score present exactly when it's being computed: no omitted score when the
+// teacher enabled AI but the student's own toggle is off, and no stale score in the reverse case.
+func classSessionHeartbeatBody(inFocus: Bool) -> [String: Any] {
+    var body: [String: Any] = [
+        "in_focus": inFocus,
+        "device_id": currentDeviceId,
+        "idle_seconds": Int(secondsSinceLastUserInput())
+    ]
+    if SettingsManagerObject.isAIBlockingEnabled() {
+        body["alignment_score"] = currentFocusAlignmentScore
+    }
+    return body
 }
 func getStringTimeFromSeconds(seconds : Int)->String{
     let (h,m,s) = secondsToHoursMinutesSeconds(seconds: seconds)
@@ -496,6 +570,15 @@ enum CURRENTSTATE:Int, CustomStringConvertible {
         case ._LOGIN_: return "_LOGIN_"
         }
     }
+
+    /// The user has explicitly stepped away from a routine for a while. Postponed is NOT active — the
+    /// routine owns neither the window nor the left menu in these states.
+    var isRoutinePostponed: Bool {
+        switch self {
+        case ._POSTPONE_MORNING_HABIT_, ._POSTPONE_EVENING_HABIT_, ._POSTPONE_FOCUS_SUMMARY_: return true
+        default: return false
+        }
+    }
 }//_POSTPONE_BREAK_ACTIVITY_ is not required because we always reset break activity timer when user clicks on postpone
 
 var lastCurrentStateSaved:CURRENTSTATE = ._NOTHING_
@@ -539,6 +622,13 @@ var currentState:CURRENTSTATE = ._NOTHING_{
             if oldValue != currentState{
                 leftMenuVcObj?.habitStarted()
             }
+        }
+        // Postponed is NOT active: stepping away from a routine has to give the whole left menu back.
+        // The postpone paths already do this via habitOver(), but a postpone reached any other way
+        // (e.g. the custom-routine rollback above) would otherwise strand the menu in the restricted
+        // state a running routine left behind.
+        if oldValue != currentState, currentState.isRoutinePostponed {
+            leftMenuVcObj?.applyRoutineMenuAvailability()
         }
         if oldValue != currentState {
             // Defer to the next runloop. Mutating the Schedule view's hierarchy synchronously here
@@ -700,9 +790,9 @@ var activityFinishedUnlockNowSoundText = "<ACTIVITY> finished. You’ve earned y
 var startNonTimerActivityButtonText = "Start <NAME>"
 
 var startActivityButtonText = "Start <TIME> <NAME>"
-var unlockMachineButtonText = "Unlock the machine"
+var unlockMachineButtonText = "Let's start work"
 var activityFinishedText = "<ACTIVITY> finished!✅"
-var lastActivityFinishedText = "<ACTIVITY> finished!✅ Nice break - Let's get back into it 💪"
+var lastActivityFinishedText = "<ACTIVITY> finished!✅"
 var activitySkippedText = "<ACTIVITY> skipped!"
 var lastActivitySkippedText = "<ACTIVITY> skipped! Nice break - Let's get back into it 💪"
 var startBreakActivityTitleText = "It’s time for a break. Do <TIME> of <ACTIVITY> to earn more screentime."
@@ -998,46 +1088,122 @@ func getSystemTimeFormat()->String{
     return timeFormat
 }
 
+/// One configured `DateFormatter` per format, time zone and style, shared by the helpers below.
+///
+/// Building a `DateFormatter` loads ICU calendar and locale data, and these helpers run per habit on
+/// every Day Plan rebuild, on the main thread (`DayPlanHabitSkips.dayKey`,
+/// `DayPlanHabitDurations.dayKey`, `isHabitDoneForDay`). Sentry FOCUS-BEAR-MACOS-1HT, -1HV, -1H6 and
+/// -1GR are "App hanging" samples caught inside one of those constructions. A configured formatter is
+/// thread-safe to format and parse with (macOS 10.9+), so building each one once is enough.
+///
+/// A formatter captures the time zone and locale it was built in, so the cache is emptied when either
+/// changes; the next call builds a formatter for the new one, exactly as a fresh formatter would.
+enum CachedDateFormatters {
+    enum Zone: Hashable {
+        case local
+        case utc
+    }
+
+    enum Style: Hashable {
+        /// Gregorian calendar, POSIX locale: anything a machine reads (see `MachineDateFormat`).
+        case machine
+        /// The user's own calendar and locale: text a person reads.
+        case display
+    }
+
+    private struct Key: Hashable {
+        let format: String
+        let zone: Zone
+        let style: Style
+    }
+
+    private static let lock = NSLock()
+    private static var formatters: [Key: DateFormatter] = [:]
+    private static let utcTimeZone = TimeZone(abbreviation: "UTC")
+
+    private static let invalidatingNotifications: [Notification.Name] = [
+        .NSSystemTimeZoneDidChange,
+        NSLocale.currentLocaleDidChangeNotification,
+    ]
+
+    /// Registered on first use; the observers live as long as the process, like the cache.
+    private static let invalidationObservers: [NSObjectProtocol] = invalidatingNotifications.map {
+        NotificationCenter.default.addObserver(forName: $0, object: nil, queue: nil) { _ in removeAll() }
+    }
+
+    static func formatter(format: String, zone: Zone, style: Style = .machine) -> DateFormatter {
+        _ = invalidationObservers
+        let key = Key(format: format, zone: zone, style: style)
+        if let cached = cachedFormatter(for: key) { return cached }
+        // Built outside the lock: the lock is not re-entrant, and the invalidation observers take it
+        // on whichever thread posts the time-zone/locale notification.
+        return store(makeFormatter(format: format, zone: zone, style: style), for: key)
+    }
+
+    static func removeAll() {
+        lock.lock()
+        defer { lock.unlock() }
+        formatters.removeAll()
+    }
+
+    private static func cachedFormatter(for key: Key) -> DateFormatter? {
+        lock.lock()
+        defer { lock.unlock() }
+        return formatters[key]
+    }
+
+    /// Keeps the first formatter stored for `key`, so two threads racing to build one share it.
+    private static func store(_ formatter: DateFormatter, for key: Key) -> DateFormatter {
+        lock.lock()
+        defer { lock.unlock() }
+        if let stored = formatters[key] { return stored }
+        formatters[key] = formatter
+        return formatter
+    }
+
+    /// `makeFormatter(format:zone:)` builds the user-calendar formatter and owns the zone rules; a
+    /// machine formatter takes its time zone from that and pins everything else.
+    private static func makeFormatter(format: String, zone: Zone, style: Style) -> DateFormatter {
+        let display = makeFormatter(format: format, zone: zone)
+        switch style {
+        case .display: return display
+        case .machine: return MachineDateFormat.formatter(format, timeZone: display.timeZone)
+        }
+    }
+
+    private static func makeFormatter(format: String, zone: Zone) -> DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = format
+        if zone == .utc { formatter.timeZone = utcTimeZone }
+        return formatter
+    }
+}
+
 func getStringFromDate(date:Date, dateFormat:String)->String{
-    let df = DateFormatter()
-    df.dateFormat = dateFormat
-    let now = df.string(from: date)
-    return now
+    CachedDateFormatters.formatter(format: dateFormat, zone: .local).string(from: date)
 }
 
 func getStringFromDateInUtc(date:Date, dateFormat:String)->String{
-    let df = DateFormatter()
-    df.dateFormat = dateFormat
-    df.timeZone = TimeZone(abbreviation: "UTC")
-    let now = df.string(from: date)
-    return now
+    CachedDateFormatters.formatter(format: dateFormat, zone: .utc).string(from: date)
 }
+
 func getDateFromString(date:String, dateFormat:String)->Date?{
-    let string = date
-    // Create Date Formatter
-    let dateFormatter = DateFormatter()
-    dateFormatter.dateFormat = dateFormat
-    
-    return dateFormatter.date(from: string)
+    CachedDateFormatters.formatter(format: dateFormat, zone: .local).date(from: date)
 }
 
 func getDateFromStringInUtc(date:String, dateFormat:String)->Date?{
-    let string = date
-    // Create Date Formatter
-    let dateFormatter = DateFormatter()
-    // Set Date Format
-    dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
-    dateFormatter.dateFormat = dateFormat
-    // Convert String to Date
-    return dateFormatter.date(from: string)
+    CachedDateFormatters.formatter(format: dateFormat, zone: .utc).date(from: date)
+}
+
+/// Local time in the user's own calendar and locale, for labels — never for the API or storage, which
+/// take the Gregorian `getStringFromDate`.
+func getDisplayStringFromDate(date: Date, dateFormat: String) -> String {
+    CachedDateFormatters.formatter(format: dateFormat, zone: .local, style: .display).string(from: date)
 }
 
 func getFirstRunDateString()->String{
     let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? Date()
-    let formatter = DateFormatter()
-    formatter.dateFormat = "yyyy-MM-dd"
-    let myDateString = formatter.string(from: firstRunDate)
-    return myDateString
+    return MachineDateFormat.string(from: firstRunDate, format: MachineDateFormat.dayKey)
 }
 func getDaysSinceAppInstalled()->Int{
     let currentDate = Date()
@@ -1045,6 +1211,23 @@ func getDaysSinceAppInstalled()->Int{
     let diffDays = Calendar.current.dateComponents([.day], from: firstRunDate, to: currentDate).day ?? 0
     return diffDays
 }
+
+/// True when the app is running inside CI / an automated test harness. Used to suppress ALL analytics
+/// sends so CI-launched builds never pollute the PostHog onboarding funnel with fake "users": a CI
+/// build boots to the welcome screen and would otherwise fire welcome-screen-shown etc. from cloud
+/// runners (Focus-Bear/analytics#33). Detected via the standard CI env vars, the XCTest harness, or an
+/// explicit FOCUSBEAR_DISABLE_TELEMETRY opt-out CI can set when those env vars don't propagate to the
+/// launched app. Computed each call (cheap) so it reflects the actual process environment.
+let isRunningInCIOrAutomatedTest: Bool = {
+    let env = ProcessInfo.processInfo.environment
+    for key in ["CI", "GITHUB_ACTIONS", "FOCUSBEAR_DISABLE_TELEMETRY",
+                "XCTestConfigurationFilePath", "XCTestSessionIdentifier"] {
+        if let value = env[key], !value.isEmpty { return true }
+    }
+    // A unit/UI-test bundle injects XCTest into the running process. A UI-test app does not: the
+    // runner drives it from outside, so it is recognised by its isolated bundle id instead.
+    return NSClassFromString("XCTestCase") != nil || UITestHost.isEnabled
+}()
 
 func isAppInstalledWithinLast3Days() -> Bool {
     let currentDate = Date()
@@ -1079,8 +1262,13 @@ let daysFreeTrial  = 31
 
 
 
-var focusDefaultAllowApps = ["finder", "universalaccessauthwarn", "system preferences", "loginwindow", "screensaverengine", "osascript", "late no more", "focus bear time tracker"]
-var arrExcludeAppsInBreaksBrainDumpLastActivateApp = ["finder", "universalaccessauthwarn", "system preferences", "loginwindow", "screensaverengine", "osascript", "late no more", "focus bear time tracker"]
+// "securityagent" draws macOS's own password and keychain prompts. Blocking it put the AI check-in
+// over a keychain prompt mid-session (2026-09-25 10:29, Sentry FOCUS-BEAR-MACOS-1K8): the prompt is
+// the system asking the user something, never a distraction. "system settings" is System
+// Preferences' name since macOS 13 — without it the screen where Focus Bear's own permissions are
+// granted could be blocked.
+var focusDefaultAllowApps = ["finder", "universalaccessauthwarn", "system preferences", "system settings", "securityagent", "loginwindow", "screensaverengine", "osascript", "late no more", "focus bear time tracker"]
+var arrExcludeAppsInBreaksBrainDumpLastActivateApp = ["finder", "universalaccessauthwarn", "system preferences", "system settings", "securityagent", "loginwindow", "screensaverengine", "osascript", "late no more", "focus bear time tracker"]
 
 let focusBearTimeTrackerAppName = "focus bear time tracker"
 
@@ -1091,6 +1279,16 @@ var selfAppName = Bundle.main.infoDictionary!["CFBundleName"] as! String
 
 
 var lastFrontMostApplication:NSRunningApplication?
+
+/// The app the user is actually looking at right now, ignoring Focus Bear's own windows: presenting a
+/// block prompt makes Focus Bear frontmost, so `frontmostApplication` can't be trusted on its own. Falls
+/// back to the last non-Focus-Bear app that was frontmost.
+func currentUserFacingApp() -> NSRunningApplication? {
+    if let front = NSWorkspace.shared.frontmostApplication, front.bundleIdentifier != mainAppBundelId {
+        return front
+    }
+    return lastFrontMostApplication
+}
 
 
 func getColorString(color:NSColor)->String{
@@ -1123,6 +1321,10 @@ func intFromHexString(hexStr: String) -> UInt32 {
 
 
 func isBlockSuperDistractingFocusModeOn()->Bool{
+    // An accountability-buddy session judges apps/sites with the AI against the user's goal, NOT the
+    // curated "super distracting" blocklist — so it must not count as the super-distracting mode even
+    // though it piggybacks on the default focus mode. Otherwise the AI URL/app check is skipped.
+    if currentAccountabilityBuddySession != nil { return false }
     if currentRunningFocusType["isDefault"] as? Bool == true {
         return true
     }
@@ -1155,6 +1357,17 @@ func disableSystemSleep(){
 }
 func enableSystemSleep(){
     IOPMAssertionRelease(assertionIDDisableSleep);
+}
+
+/// True when the window's first responder is a text field or text view the user is typing into.
+/// The app's Return-key monitor fires before the responder chain sees the event, so any shortcut it
+/// runs has to check this or it steals Return from every multi-line field on screen.
+func isTextInputFocused(in window: NSWindow?) -> Bool {
+    guard let responder = window?.firstResponder else { return false }
+    if responder is NSTextView { return true }
+    // A focused NSTextField is represented by its field editor, whose delegate is the field.
+    if let fieldEditor = responder as? NSText, fieldEditor.delegate is NSTextField { return true }
+    return responder is NSTextField
 }
 
 
@@ -1202,14 +1415,16 @@ func reloadFocusMusicListIfVisible(){
     }
 }
 
+/// Whether the app should be in its borderless full-screen window RIGHT NOW.
+///
+/// The user's setting says they want full-screen mode; `FullScreenStates` says which states it
+/// covers. Full screen is for holding the user inside a running routine, so a postponed routine and
+/// a micro break are not covered — both used to take the whole display with no traffic lights
+/// (report 2026-09-14_16-31-53). The old mid-meeting break exception is subsumed: no micro break is
+/// covered now, in a meeting or not.
 func checkIsFullScreenEnabled()-> Bool{
-    if currentState == ._MICRO_BREAK_{
-        if isBreakActivityShowingWhileMeeting{
-            return false
-        }
-    }
-    
-    return SettingsManagerObject.isFullScreenEnabled
+    FullScreenStates.shouldUseFullScreen(setting: SettingsManagerObject.isFullScreenEnabled,
+                                         state: currentState)
 }
 
 
@@ -1222,8 +1437,30 @@ var newGifsNamesArray = ["Glasses-Bear-250-px_V3", "cheer_250px_trans_centered",
 //
 
 func wildcard(_ string: String, pattern: String) -> Bool {
-    let pred = NSPredicate(format: "self LIKE %@", pattern)
+    let pred = NSPredicate(format: "self LIKE %@", escapedForLike(pattern))
     return !NSArray(object: string).filtered(using: pred).isEmpty
+}
+
+/// Makes a `LIKE` pattern safe to hand to `NSPredicate`.
+///
+/// A trailing unescaped backslash makes `NSPredicate` raise `NSInvalidArgumentException`, which is
+/// an Objective-C exception and so cannot be caught from Swift — it terminates the app. Verified
+/// directly: the process dies with "terminating due to uncaught exception of type NSException".
+///
+/// Most callers wrap the user's entry as `*entry*`, so the backslash is never last and the hazard
+/// never shows. `isUrlValid`'s `file://` branch does not wrap (urlValidation.swift), so an
+/// allow-list entry like `file:///Users/me/folder\` reaches here unwrapped and crashes Focus Bear.
+///
+/// Doubling an odd run of trailing backslashes escapes the last one, which is what the user meant
+/// by typing it: a literal backslash. `*` and `?` elsewhere in the pattern keep their wildcard
+/// meaning, so no caller's behaviour changes.
+func escapedForLike(_ pattern: String) -> String {
+    var trailing = 0
+    for character in pattern.reversed() {
+        guard character == "\\" else { break }
+        trailing += 1
+    }
+    return trailing % 2 == 0 ? pattern : pattern + "\\"
 }
 
 func getDomainFromUrl(url:String) -> String{
@@ -1418,9 +1655,17 @@ func isAnyPresentationOrVideoShowing()-> Bool{
                         if let name = itemDic.value(forKey: "Process Name") as?  String{
                             let processName = name.lowercased()
                             if processName != selfAppName.lowercased(){
+                                // Name the actual process (and its assertion reason, if it supplied one) so a
+                                // suppressed natural break is diagnosable — e.g. whether it's a genuine video /
+                                // presentation or a false positive like a call app or a media tab keeping the
+                                // display awake. Details keys vary by macOS, so try the common ones.
+                                let reason = (itemDic.value(forKey: "AssertionName") as? String)
+                                    ?? (itemDic.value(forKey: "Name") as? String)
+                                    ?? (itemDic.value(forKey: "Details") as? String) ?? ""
+                                addLog(text: "isAnyPresentationOrVideoShowing: '\(name)' holds a PreventUserIdleDisplaySleep assertion\(reason.isEmpty ? "" : " — \"\(reason)\"").")
                                 return true
                             }
-                            
+
                         }
                     }
                     
@@ -1486,22 +1731,161 @@ var helperUrl: URL = {
     return helperURL
 }()
 
-func createLaunchAgentForHelperApp(){
-    //Background process "open" modified when Focus Bear opened?  #409 It shouldn't appear every time the app is restarted
-    let helperBundleID = "com.focusbear.focusbearhelper"
-    let path = helperUrl.path
-    if let userLA = AHLaunchCtl.allJobsFromFiles(in: AHLaunchDomain.userLaunchAgent) as? [AHLaunchJob] {
-        for uLA in userLA {
-            if uLA.isCurrentlyLoaded{
-                if let arguments = uLA.programArguments as? [String]{
-                    if arguments.contains(where: {$0.caseInsensitiveCompare(path) == .orderedSame}) {
-                        return;
-                    }
-                }
-            }
-            
-            
+/// The LaunchAgent that starts the nudge helper at login.
+///
+/// Split out from `createLaunchAgentForHelperApp()` so what gets written is assertable without
+/// touching ~/Library/LaunchAgents or launchctl.
+enum HelperLaunchAgent {
+    static let label = "com.focusbear.focusbearhelper"
+
+    /// The helper's own executable inside its bundle.
+    static func executablePath(helperBundle: URL) -> String {
+        helperBundle.appendingPathComponent("Contents/MacOS/FBHelper").path
+    }
+
+    /// What launchd should run.
+    ///
+    /// Deliberately NOT `/usr/bin/open`, which is what this used to be. Two things were wrong with
+    /// that, and the one the user sees is the second:
+    ///
+    /// * `open` exits as soon as LaunchServices has been asked to start the helper, so `KeepAlive`
+    ///   was supervising `open` rather than the helper — `launchctl list` shows the job with no PID
+    ///   while the helper runs under a separate LaunchServices label. launchd relaunched `open` on a
+    ///   loop and never watched the thing it was meant to keep alive.
+    /// * macOS names a background item after the program it runs, so Login Items and the
+    ///   "Background Items Added" notice both called this **"open"** — which reads like something
+    ///   suspicious rather than like Focus Bear (report 2026-09-21_18-01-43, issue #409).
+    ///
+    /// Pointing at the executable INSIDE FBHelper.app also lets macOS attribute the item to that
+    /// bundle, so it can show the bundle's display name instead of a bare executable name.
+    static func programArguments(helperBundle: URL) -> [String] {
+        [executablePath(helperBundle: helperBundle)]
+    }
+
+    static func plist(helperBundle: URL) -> [String: Any] {
+        ["Label": label,
+         "ProgramArguments": programArguments(helperBundle: helperBundle),
+         "RunAtLoad": true,
+         "KeepAlive": true]
+    }
+
+    /// Whether an already-loaded job matches what we would write now. Used to leave a correct agent
+    /// alone — and, just as importantly, to REPLACE an old `/usr/bin/open` one instead of returning
+    /// early because it merely mentions the helper somewhere in its arguments, which is what the
+    /// previous check did.
+    static func matchesCurrentDesign(existingArguments: [String]?, helperBundle: URL) -> Bool {
+        existingArguments == programArguments(helperBundle: helperBundle)
+    }
+}
+
+/// The app launched by the XCUITest suite (`Focus BearUITests`).
+///
+/// The suite runs on a developer's own Mac and on a CI Mac. Launched under the shipping bundle id, the
+/// test app would share the installed app's keychain item, preferences, shared-defaults suite, TCC
+/// grants and running instance: XCTest terminates the person's app, the tests log it out, and
+/// enforcement from the test app hides the person's apps and closes their tabs. So UI tests build the
+/// app as `com.App.EarnYourScreentime.uitests` (see docs/ui-tests.md), which isolates all of that, and
+/// a build carrying that id additionally keeps its hands off the rest of the machine: no permission
+/// prompts, no helper LaunchAgent, no updater, no Focus Button, no telemetry, no global shortcuts —
+/// and, unless the blocking tests opt in (`isBlockingEnabled`), no enforcement or AppleScript either.
+enum UITestHost {
+    static var hasIsolatedBundleIdentifier: Bool {
+        Bundle.main.bundleIdentifier == UITestContract.bundleIdentifier
+    }
+
+    /// Debug builds with the isolated id only. Deliberately not tied to the launch argument: a stray
+    /// launch of the test build must not start enforcing either.
+    static var isEnabled: Bool {
+        #if DEBUG
+        return hasIsolatedBundleIdentifier
+        #else
+        return false
+        #endif
+    }
+
+    /// The blocking tests' opt-in: enforce blocking even though this is the test build. Only ever set
+    /// by the CI workflow on the dedicated UI-test Mac, where hiding apps and redirecting browser tabs
+    /// is the point. The flag is honoured only under the isolated bundle id, so it can never change
+    /// what the installed app does.
+    static var isBlockingEnabled: Bool {
+        isEnabled && ProcessInfo.processInfo.environment[UITestContract.Environment.enableBlocking] == UITestContract.Environment.enabledValue
+    }
+
+    /// The test build is running and has not opted in to blocking: leave other apps and browsers alone.
+    static var suppressesEnforcement: Bool { isEnabled && !isBlockingEnabled }
+
+    static func has(_ argument: String) -> Bool { ProcessInfo.processInfo.arguments.contains(argument) }
+
+    /// A UI test driving the SHIPPING bundle id would run against the person's own login and data.
+    /// Quit before touching any of it; the suite then fails with the reason in the log.
+    static func refuseUnisolatedLaunch() {
+        if ProcessInfo.processInfo.environment[UITestContract.Environment.enableBlocking] != nil, !isEnabled {
+            NSLog("UITestHost: ignoring %@ — it applies only to the isolated UI-test build",
+                  UITestContract.Environment.enableBlocking)
         }
+        guard has(UITestContract.LaunchArgument.uiTest), !hasIsolatedBundleIdentifier else { return }
+        NSLog("UITestHost: refusing a UI-test launch under %@ — build with FB_BUNDLE_ID_SUFFIX=%@ (docs/ui-tests.md)",
+              Bundle.main.bundleIdentifier ?? "?", UITestContract.bundleIdentifierSuffix)
+        exit(EXIT_FAILURE)
+    }
+}
+
+extension NSView {
+    /// Makes this view a named group a UI test can find, with its children still reachable inside it.
+    /// Test builds only: to VoiceOver it is one more unnamed group to step through.
+    func setUITestLandmark(_ identifier: String) {
+        guard UITestHost.isEnabled else { return }
+        setAccessibilityElement(true)
+        setAccessibilityRole(.group)
+        setAccessibilityIdentifier(identifier)
+    }
+}
+
+/// A throwaway launch that renders a PNG offscreen and quits: `scripts/mockups/render-mockup.sh`
+/// (DayPlanMockup) or the SwiftUI menu snapshot (MenuSnapshot). Debug builds only.
+enum OffscreenRenderLaunch {
+    static let dayPlanMockupFileVariable = "FB_MOCKUP_FILE"
+    static let menuSnapshotVariable = "FB_SNAPSHOT_MENU"
+    static let menuSnapshotEnabledValue = "1"
+
+    static var isMenuSnapshot: Bool {
+        ProcessInfo.processInfo.environment[menuSnapshotVariable] == menuSnapshotEnabledValue
+    }
+
+    static var isActive: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.environment[dayPlanMockupFileVariable] != nil || isMenuSnapshot
+        #else
+        return false
+        #endif
+    }
+}
+
+func createLaunchAgentForHelperApp(){
+    // The agent is written with THIS process's bundle path into the user's real ~/Library, so a
+    // render launched from build/ repointed the user's helper at that dev build — which then launched
+    // it, and the installed app lost its bundle id (keychain prompt, accessibility=false). A launch
+    // that exists only to draw a PNG must not register anything.
+    guard !OffscreenRenderLaunch.isActive, !UITestHost.isEnabled else { return }
+    //Background process "open" modified when Focus Bear opened?  #409 It shouldn't appear every time the app is restarted
+    let helperBundleID = HelperLaunchAgent.label
+    let userLaunchAgentsPath = "/Users/\(NSUserName())/Library/LaunchAgents/\(helperBundleID).plist"
+    var needsUnloadFirst = false
+    if let userLA = AHLaunchCtl.allJobsFromFiles(in: AHLaunchDomain.userLaunchAgent) as? [AHLaunchJob] {
+        for uLA in userLA where uLA.isCurrentlyLoaded {
+            let arguments = uLA.programArguments as? [String]
+            guard arguments?.contains(where: { $0.contains("FBHelper") }) == true else { continue }
+            if HelperLaunchAgent.matchesCurrentDesign(existingArguments: arguments, helperBundle: helperUrl) {
+               // return          // already what we would write
+            }
+            // An older agent for the same helper — the /usr/bin/open one. `launchctl load` is a
+            // no-op while a label is loaded, so it has to go before the replacement can take.
+            needsUnloadFirst = true
+        }
+    }
+    if needsUnloadFirst {
+        addLog(text: "replacing the legacy /usr/bin/open helper LaunchAgent")
+        shell(launchPath: "/bin/launchctl", arguments: ["unload", "-w", userLaunchAgentsPath])
     }
     //
     
@@ -1517,18 +1901,14 @@ func createLaunchAgentForHelperApp(){
     }
     
     // saves the agent plist file
-    let userLaunchAgentsPath = "\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(helperBundleID).plist")"
-    
-    let dicContent = ["Label": "\(helperBundleID).plist", "ProgramArguments":["/usr/bin/open","-F","-g",path,"--args"],"RunAtLoad":true,"KeepAlive":true] as [String : Any]
-    
-    let plistContent = NSDictionary(dictionary: dicContent)
+    let plistContent = NSDictionary(dictionary: HelperLaunchAgent.plist(helperBundle: helperUrl))
     let success:Bool = plistContent.write(toFile: userLaunchAgentsPath, atomically: true)
     if success {
         print("file has been created!")
     }else{
         print("unable to create the file")
     }
-    shell(launchPath: "/bin/launchctl", arguments: ["load","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(helperBundleID).plist")"])
+    shell(launchPath: "/bin/launchctl", arguments: ["load", "-w", userLaunchAgentsPath])
 }
 
 func deleteLaunchAgent(){
@@ -1620,6 +2000,8 @@ func getBlurFrameForBrowser(x:Int, y:Int, width:Int, height:Int, browser:BROWSER
 
 
 func runAppleScriptFile(path:String){
+    // A focus mode's own scripts act on the whole Mac; UI-test builds must not run them there.
+    if UITestHost.isEnabled { return }
     let task = Process()
     task.launchPath = "/usr/bin/osascript"
     task.arguments = [path]
@@ -1628,6 +2010,8 @@ func runAppleScriptFile(path:String){
 }
 
 func runShellCommand(command:String){
+    // A focus mode's own scripts act on the whole Mac; UI-test builds must not run them there.
+    if UITestHost.isEnabled { return }
     let task = Process()
     var args: [AnyHashable] = []
     args.append("-c")
@@ -1635,6 +2019,23 @@ func runShellCommand(command:String){
     task.launchPath = "/bin/sh"
     task.arguments = args as? [String]
     task.launch()
+}
+
+/// Auto Do-Not-Disturb when a focus mode starts.
+///
+/// This was written out five times, in focusModeData, addTaskVc, pomodoroVc and pusherEvents, and
+/// the copies had drifted: most also switch DND on for a deep-work or default block list when the
+/// mode's own flag is off, and one does not. `includingDeepWorkAndDefault` keeps that difference
+/// explicit at the call site rather than hidden in a fifth copy.
+func applyAutoDoNotDisturb(forFocusModeAt index: Int, includingDeepWorkAndDefault: Bool) {
+    guard arrFocusType.indices.contains(index) else { return }
+    if arrFocusType[index]["isAutoDoNotDisturbEnabled"] as? Bool == true, isAccessibilityEnabled(isPrompt: true) {
+        DNDManager.shared.setDND(true)
+    }
+    guard includingDeepWorkAndDefault, !DNDManager.shared.isDndEnabled else { return }
+    let wantsDND = (arrFocusType[index]["isDeepWorkFocus"] as? Bool)
+        ?? (arrFocusType[index]["isDefault"] as? Bool) ?? false
+    if wantsDND, isAccessibilityEnabled(isPrompt: true) { DNDManager.shared.setDND(true) }
 }
 
 func workBeforeFocusBegin(index:Int){
@@ -1735,7 +2136,7 @@ func workAfterFocusBegin(index:Int){
 //*****************************Read data from csv******************************//
 func readDataFromCSV(url:URL)-> [[String]]{
     var arrItems = [[String]]()
-    if let string = try? String(contentsOf: url){
+    if let string = try? SecureFiles.shared.readText(url){
         let arrCsv = csv(data: string)
         for item in arrCsv{
             if let row = item.first{
@@ -1769,6 +2170,51 @@ func getArrItem(data: String) -> [String] {
 
 
 var arrLanguageDic = [["name":"English", "id":"en", "languageName":"English"], ["name":"Spanish", "id":"es", "languageName":"Spanish"]]
+/// Every language the bundled configuration ships, and the resource each one lives in.
+///
+/// English is `config.json`; every other language is `config-<code>.json` — the same rule the runtime
+/// loader in `AppDelegate` already uses. Screens that preload their strings used to hardcode the pair
+/// `[("en", "config"), ("es", "config-es")]`, so a new language loaded at runtime but was invisible to
+/// every one of those screens. Add a language here and they all pick it up.
+enum BundledConfigLanguage {
+    static let english = "en"
+    static let supported = [english, "es", "de", "fr", "pl"]
+
+    /// `config` for English, `config-<code>` otherwise. The file does not have to exist yet: a missing
+    /// one simply leaves that language falling back to English, which is what an untranslated app does.
+    static func resource(_ code: String) -> String {
+        code == english ? "config" : "config-\(code)"
+    }
+
+    /// The supported language CODE for the language in use ("es-419" → "es"), else English. Screens
+    /// that keep their strings keyed by code look themselves up with this.
+    static func code(_ code: String = currentLanguageCode) -> String {
+        let base = code.lowercased().split(separator: "-").first.map(String.init) ?? english
+        return supported.contains(base) ? base : english
+    }
+
+    /// (code, resource) for every supported language, for screens that preload all of them.
+    static var all: [(code: String, resource: String)] { supported.map { ($0, resource($0)) } }
+
+    /// The language NAME the AI endpoints expect ("please answer in <language>"). Without an entry a
+    /// user gets English answers however well the UI is translated, so this list has to grow with
+    /// `supported`.
+    private static let apiNames = [
+        "en": "english", "es": "spanish", "de": "german", "fr": "french", "pl": "polish",
+    ]
+
+    static func apiName(_ code: String = currentLanguageCode) -> String {
+        let base = code.lowercased().split(separator: "-").first.map(String.init) ?? english
+        return apiNames[base] ?? "english"
+    }
+
+    /// The bundled resource for the language in use, normalised ("es-419" → "es") and defaulting to English.
+    static func current(_ code: String = currentLanguageCode) -> String {
+        let base = code.lowercased().split(separator: "-").first.map(String.init) ?? english
+        return resource(supported.contains(base) ? base : english)
+    }
+}
+
 var currentLanguageCode = ""
 
 
@@ -1851,6 +2297,53 @@ func showAlertNoInternet(window:NSWindow){
     })
 }
 
+/// Ask for the after-cutoff postpone password, running `onAuthorized` only if it is correct.
+///
+/// A fresh controller each time, matching `popupAppointmentTimeVc`: the shared preferences instance
+/// carries its own presentation state and reusing it here showed the wrong view.
+func askPostponePasswordAfterCutoff(presenter: NSViewController, onAuthorized: @escaping () -> Void) {
+    guard let passwordVc = mainStoryboard.instantiateController(
+        withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as? enterPasswordVc else {
+        // Without the sheet there is no way to ask, and silently postponing would be the hole the
+        // password exists to close. Refusing is the safe direction.
+        addLog(text: "askPostponePasswordAfterCutoff:- could not load enterPasswordVc, refusing")
+        showCutoffPostponeRefusedAlert()
+        return
+    }
+    passwordVc.requestAuthorization(action: onAuthorized)
+    presenter.presentAsSheet(passwordVc)
+}
+
+/// Tells the user their cutoff time has passed, so the evening routine can't be postponed any further.
+///
+/// Used for the focus-session extension case (`forExtension`), where the cutoff genuinely leaves no
+/// room for another whole minute, and as the fallback when the password sheet cannot be loaded.
+func showCutoffPostponeRefusedAlert(forExtension: Bool = false) {
+    var title = "Your cutoff time has passed"
+    var message = "It's past your cutoff time, so your evening routine can't be postponed any further."
+    if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
+        title = activityPostponeInfo.value(forKey: "cutoffPostponeRefusedTitle") as? String ?? title
+        message = activityPostponeInfo.value(forKey: "cutoffPostponeRefusedText") as? String ?? message
+    }
+    if forExtension {
+        let info = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary
+        title = info?.value(forKey: "cutoffExtensionRefusedTitle") as? String ?? "Your cutoff limits this extension" // i18n-ignore: bundled config fallback
+        message = info?.value(forKey: "cutoffExtensionRefusedText") as? String ?? "This focus session cannot be extended past <TIME>. There is no room for another full minute." // i18n-ignore: bundled config fallback
+    }
+    message = message.replacingOccurrences(of: "<TIME>", with: cutOffTimeString)
+    let alert = NSAlert()
+    alert.setSharingType()
+    alert.alertStyle = .informational
+    alert.messageText = title
+    alert.informativeText = message
+    alert.addButton(withTitle: buttonOkText)
+    if let window = mainWindowControllerObj?.window, window.isVisible, !window.isMiniaturized{
+        alert.beginSheetModal(for: window, completionHandler: { _ in })
+    }else{
+        alert.runModal()
+    }
+}
+
 
 
 var allActivityTodaySummaryData:NSDictionary?
@@ -1868,6 +2361,7 @@ func setDocBarTo(isHide:Bool){
         if !SettingsManagerObject.isHideDockInActivity{
             return
         }
+        guard !shouldSkipSystemEventsAppleEvent() else { return }
         var script: String = ""
         var hideVal = "true"
         if isHide{
@@ -1890,8 +2384,9 @@ func setDocBarTo(isHide:Bool){
 }
 
 func checkDocBarState()->String?{
+    guard !shouldSkipSystemEventsAppleEvent() else { return nil }
     var script: String = ""
-    
+
     script =
     """
     tell application "System Events"
@@ -1974,6 +2469,28 @@ struct fontStyle{
 let intelOneMonoFontIndex = 7
 let openDyslexicFontIndex = 8
 let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex]
+
+/// A digits-only number formatter capped at three characters, used by the duration/ratio/tab-limit
+/// text fields. It lived on the old pomodoro start screen; that screen is SwiftUI now, so it moved
+/// here to the other shared helpers rather than being deleted with the scene.
+class IntegerFormatter: NumberFormatter {
+    let maxLength = 3
+
+    let wrongCharacterSet = CharacterSet(charactersIn: "0123456789").inverted
+    override func isPartialStringValid(_ partialString: String, newEditingString newString: AutoreleasingUnsafeMutablePointer<NSString?>?, errorDescription error: AutoreleasingUnsafeMutablePointer<NSString?>?) -> Bool {
+
+        self.maximumFractionDigits = 2
+        self.minimumFractionDigits = 0
+
+        if partialString.count > maxLength {
+            return false
+        }
+        if partialString.rangeOfCharacter(from: wrongCharacterSet) != nil {
+            return false
+        }
+        return true
+    }
+}
 
 func getRegularFont(size: CGFloat)->NSFont{
     if SettingsManagerObject.selectedFontIndex == systemFontIndex{
@@ -2066,7 +2583,8 @@ func checkLogFileRotation(){
 
 func isAccessibilityEnabled(isPrompt: Bool) -> Bool {// if  isPrompt is true it means setting prompt will be visible
     if #available(OSX 12.0, *) {
-        if isPrompt{
+        // A UI-test app never raises the system prompt: nobody is there to answer it.
+        if isPrompt, !UITestHost.isEnabled {
             let checkOptionPromptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
             let opts = [checkOptionPromptKey: isPrompt] as CFDictionary
             return AXIsProcessTrustedWithOptions(opts)
@@ -2320,6 +2838,11 @@ var arrAllTracks = [[String:Any]]()
 /// it can be stopped when that focus session ends (music the user started manually is left alone).
 var isFocusMusicStartedFromPrompt = false
 
+/// True while focus music was started from the active Focus Session's own music controls (the side
+/// rail), so it can be stopped when that session ends (#2600). Music started from the standalone
+/// Focus Music tab isn't marked, so it keeps playing after the session.
+var isFocusMusicStartedFromSession = false
+
 func checkAllTracksDownloadState(){
     for track in arrAllTracks{
         let thumbnailLocalUrlString = track["thumbnailLocalUrl"] as? String ?? ""
@@ -2389,9 +2912,6 @@ var shouldShowPomodoroAfterBreak = false
 var shouldEndPomodoroBreakAtTime:Date?
 
 
-var arrFocusBlockNotificationShownForApps = [""]
-
-
 /// Dedicated serial queue that owns ALL AppleScript execution. NSAppleScript is NOT thread-safe —
 /// compiling/running it from more than one thread at once corrupts the shared AppleScript component
 /// (the EXC_BAD_ACCESS segfault inside Apple's AppleScript compiler). Funnelling every script through
@@ -2399,13 +2919,41 @@ var arrFocusBlockNotificationShownForApps = [""]
 /// pinning the work to the main thread (the frequent focus-timer / browser detection scripts run on
 /// this background queue and never block the UI).
 private let appleScriptSerialQueue = DispatchQueue(label: "com.focusbear.applescript")
+// exitFullScreen runs its AppleScript here when called on the main thread, so the app-switch path
+// never blocks the UI (see the App-Hang note on exitFullScreen). MUST be separate from
+// appleScriptSerialQueue — runAppleScriptSafely dispatches onto that queue and waits, so running
+// exitFullScreen there too would deadlock.
+private let fullScreenExitQueue = DispatchQueue(label: "com.focusbear.fullscreenexit", qos: .userInitiated)
+
+/// Cumulative main-thread AppleScript wait budget per runloop turn (#2315). runAppleScriptSafely caps
+/// each INDIVIDUAL main-thread wait at 1.2s, but callers that chain 2–3 scripts back-to-back (e.g.
+/// `exitFullScreen`'s warm-up + `isAppInFullScreen` + keystroke) stack those caps to ~3s and trip the 2s
+/// App Hang threshold. This bounds the TOTAL main-thread AppleScript wait within a single runloop turn:
+/// once ~1.5s has been spent this turn, further main-thread scripts are skipped (return nil) rather than
+/// adding more wait — the callers already tolerate a dropped script (they poll). A CFRunLoopObserver
+/// resets the counter each time the main runloop goes idle (`.beforeWaiting`), i.e. once per turn.
+/// All access is main-thread-only (background callers never touch it), so no locking is needed.
+private let mainThreadAppleScriptBudget: TimeInterval = 1.5
+private var mainThreadAppleScriptSpentThisTurn: TimeInterval = 0
+private var mainThreadAppleScriptBudgetObserverInstalled = false
+
+private func installMainThreadAppleScriptBudgetResetIfNeeded() {
+    guard Thread.isMainThread, !mainThreadAppleScriptBudgetObserverInstalled else { return }
+    mainThreadAppleScriptBudgetObserverInstalled = true
+    let observer = CFRunLoopObserverCreateWithHandler(nil, CFRunLoopActivity.beforeWaiting.rawValue, true, 0) { _, _ in
+        mainThreadAppleScriptSpentThisTurn = 0
+    }
+    CFRunLoopAddObserver(CFRunLoopGetMain(), observer, .commonModes)
+}
 
 /// Single safe entry point for running AppleScript. Serialised on `appleScriptSerialQueue` (see above)
 /// so it can't run concurrently from multiple threads. The source is wrapped in `with timeout of N
 /// seconds`, and we additionally guard with a wall-clock timeout so an unresponsive target app can't
 /// wedge the queue or block the caller indefinitely.
 @discardableResult
-func runAppleScriptSafely(_ source: String, timeoutSeconds: Int = 5, errors: inout NSDictionary?) -> NSAppleEventDescriptor? {
+func runAppleScriptSafely(_ source: String, timeoutSeconds: Int = 5, errors: inout NSDictionary?, authorization: @escaping () -> Bool = { true }) -> NSAppleEventDescriptor? {
+    // A UI-test app must not script the machine's browsers or apps (and would raise Automation prompts).
+    if UITestHost.suppressesEnforcement { return nil }
     // The script runs on `appleScriptSerialQueue`, but the semaphore wait below blocks the *caller*.
     // On the MAIN thread that means a frozen UI, so cap the main-thread wait hard: browser/URL and
     // focus-timer scripts return in well under 100 ms normally, and only a hung target app would ever
@@ -2413,13 +2961,36 @@ func runAppleScriptSafely(_ source: String, timeoutSeconds: Int = 5, errors: ino
     // the 1 s URL-block timer) than lock the UI. The dropped script keeps running on the queue; we just
     // don't read its result. Background callers keep the full, generous timeout.
     let onMain = Thread.isMainThread
+    // #2315: bound the cumulative main-thread AppleScript wait per runloop turn so chained callers can't
+    // stack the per-call caps into a multi-second UI freeze. Once this turn's budget is spent, skip the
+    // script entirely (the callers poll, so a dropped detection cycle is fine). Only ever touch the
+    // budget counter on the main thread.
+    var mainWaitSeconds = 1.2
+    if onMain {
+        installMainThreadAppleScriptBudgetResetIfNeeded()
+        let remaining = mainThreadAppleScriptBudget - mainThreadAppleScriptSpentThisTurn
+        if remaining <= 0 {
+            addLog(text: "runAppleScriptSafely: main-thread AppleScript budget spent this runloop turn — skipping to protect the UI")
+            errors = nil
+            return nil
+        }
+        mainWaitSeconds = min(1.2, remaining)
+    }
     let scriptTimeout = onMain ? min(timeoutSeconds, 1) : timeoutSeconds
-    let waitCap: DispatchTimeInterval = onMain ? .milliseconds(1200) : .seconds(timeoutSeconds + 2)
+    let waitCap: DispatchTimeInterval = onMain ? .milliseconds(Int(mainWaitSeconds * 1000)) : .seconds(timeoutSeconds + 2)
     let bounded = "with timeout of \(scriptTimeout) seconds\n" + source + "\nend timeout\n"
     var capturedErrors: NSDictionary?
     var result: NSAppleEventDescriptor?
     let done = DispatchSemaphore(value: 0)
-    appleScriptSerialQueue.async {
+    // The caller blocks on `done.wait` below. If the caller runs at a higher QoS than this queue's
+    // default (e.g. the main thread at user-interactive), that's a priority inversion — a high-QoS
+    // thread waiting on lower-QoS work — which Xcode's Thread Performance Checker flags (the purple
+    // "priority inversion" runtime warning). Donate the caller's QoS to the dispatched block so the
+    // AppleScript runs at (at least) the waiting thread's priority and the inversion goes away.
+    let callerQoS = DispatchQoS(qosClass: DispatchQoS.QoSClass(rawValue: qos_class_self()) ?? .default,
+                                relativePriority: 0)
+    appleScriptSerialQueue.async(qos: callerQoS, flags: .enforceQoS) {
+        guard authorization() else { done.signal(); return }
         if let appleScript = NSAppleScript(source: bounded) {
             result = appleScript.executeAndReturnError(&capturedErrors)
         }
@@ -2427,7 +2998,15 @@ func runAppleScriptSafely(_ source: String, timeoutSeconds: Int = 5, errors: ino
     }
     // Wall-clock guard a little longer than the AppleScript `with timeout`, so the script normally
     // finishes first. On timeout we return without reading the still-running block's outputs.
-    if done.wait(timeout: .now() + waitCap) == .timedOut {
+    let waitStart = Date()
+    let timedOut = done.wait(timeout: .now() + waitCap) == .timedOut
+    if onMain {
+        // #2315: charge the actual time this call blocked the main thread against the runloop-turn budget
+        // (fast successes cost ~nothing; a slow/hung call costs up to its cap), so a later chained call
+        // sees the reduced remaining budget — or is skipped once the turn's budget is exhausted.
+        mainThreadAppleScriptSpentThisTurn += Date().timeIntervalSince(waitStart)
+    }
+    if timedOut {
         errors = nil
         return nil
     }
@@ -2452,66 +3031,416 @@ func executeScriptAndReturnBool(script:String)->Bool{
     return desc?.booleanValue ?? false
 }
 
-func executeScriptAndReturnString(script:String)->String?{
-    var errors : NSDictionary? = nil
-    guard let desc = runAppleScriptSafely(script, errors: &errors) else { return nil }
-    if errors != nil {
-            print(errors!)
-            if let appName = errors?.value(forKey: "NSAppleScriptErrorAppName") as? String, let errorCode = errors?.value(forKey: "NSAppleScriptErrorNumber") as? Int{
-                let lowerCaseAppName = appName.lowercased()
-                if let browser = getCurrentBrowserFrom(browserName: lowerCaseAppName){
-                    if errorCode == -1743{
-                        if var arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
-                            for i in 0..<arrBrowsersInfo.count{
-                                let info = arrBrowsersInfo[i]
-                                let browserRawValue = info["browser"] as? Int ?? 0
-                                if browser.rawValue == browserRawValue{
-                                    arrBrowsersInfo[i]["isEnabled"] = false
-                                    break;
-                                }
-                            }
-                            UserDefaults.standard.set(arrBrowsersInfo, forKey: kUserdefaultsAllBrowsersPermissionInfo)
-                        }
-                        return nil
-                    }else if desc.stringValue == nil{// && errorCode == -1719{// doing this beacuse in gogle chrome in slect profile screen we can't get url so handle this situation and return a blank string so ask permission alert will not be visible  again for chrome
-                        return ""
-                    }
-                }
-            }
-        }
-    return desc.stringValue ?? ""
+
+/// Which RevenueCat entitlements mean the account is paid.
+///
+/// A user commonly holds several at once: a team admin's `activeEntitlements` comes back as
+/// `[team_admin, team_member, team_owner]`. The old check read only `activeEntitlements.first`, so
+/// `team_admin` sorting first marked a fully paid admin as unpaid — being an admin was itself enough
+/// to be offered an upgrade (report 2026-09-14_19-47-35). Any qualifying entitlement now counts.
+enum SubscriptionEntitlements {
+    static let paid: Set<String> = ["personal", "team_admin", "team_member", "team_owner", "team_size_5"]
+
+    /// The entitlement granting access, or nil when none of the active ones do. Returned rather than
+    /// a Bool because the caller looks the expiry up by entitlement name.
+    static func payingEntitlement(in active: [String]) -> String? {
+        active.first(where: { paid.contains($0) })
+    }
 }
 
-func showFocusAppBlockNotification(appName:String){
-    addLog(text: "show Focus App Block Notification called")
-    if arrFocusBlockNotificationShownForApps.contains(appName){
-        addLog(text: "func showFocusAppBlockNotification:- Notification already shown:- return")
-        return;
+func executeScriptAndReturnString(script:String)->String?{
+    var errors : NSDictionary? = nil
+    let desc = runAppleScriptSafely(script, errors: &errors)
+    switch BrowserScriptStringResult.interpret(value: desc?.stringValue, hasDescriptor: desc != nil, errors: errors) {
+    case .value(let value):
+        return value
+    case .automationDenied(let application):
+        if let browser = getCurrentBrowserFrom(browserName: application.lowercased()) {
+            recordBrowserAutomationPermission(browser: browser, enabled: false)
+        }
+        return nil
+    case .unavailable:
+        return nil
     }
+}
+
+/// `isQuickLookPreview`: the block is a Quick Look preview and `appName` is the previewed file's name,
+/// so the card says "Previewing <file> …" instead of treating the file as an app.
+func showFocusAppBlockNotification(appName: String, runningApp: NSRunningApplication? = nil, isQuickLookPreview: Bool = false){
+    addLog(text: "show Focus App Block Notification called")
     let arrAppsAvoidNotification = ["loginwindow", "screensaverengine"]//lowercased
-    
     if arrAppsAvoidNotification.contains(appName.lowercased()){
         addLog(text: "func showFocusAppBlockNotification:- AppsAvoidNotification contain app:- return")
         return;
     }
-    arrFocusBlockNotificationShownForApps.append(appName)
-    var msg = "<APP_NAME> isn't allowed in the <FOCUS_NAME> focus mode."
-    if let common = configjson.value(forKey: "common") as? NSDictionary{
-        msg = common.value(forKey: "appBlockNotificationTitle") as? String ?? msg
+
+    // Teacher-controlled class session: the student can't unblock apps themselves, so the card shows a
+    // class-session message + a "Request unlock" button. A normal focus session keeps the old message
+    // and has no button.
+    let isTeacherSession = teacherSessionManagerObject.isTeacherSessionActive()
+    var msg: String
+    if isTeacherSession {
+        if isQuickLookPreview {
+            msg = "Previewing <FILE_NAME> is blocked during your class session. Ask your teacher to unlock it."
+        } else {
+            msg = "<APP_NAME> is blocked during your class session. Ask your teacher to unlock it."
+        }
+        if let teacherInfo = configjson.value(forKey: "teacherSessionInfo") as? NSDictionary{
+            let key = isQuickLookPreview ? "quickLookBlockedRequestUnlockText" : "appBlockedRequestUnlockText"
+            msg = teacherInfo.value(forKey: key) as? String ?? msg
+        }
+    } else {
+        if isQuickLookPreview {
+            msg = "Previewing <FILE_NAME> isn't allowed in the <FOCUS_NAME> focus mode."
+        } else {
+            msg = "<APP_NAME> isn't allowed in the <FOCUS_NAME> focus mode."
+        }
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            let key = isQuickLookPreview ? "quickLookBlockNotificationTitle" : "appBlockNotificationTitle"
+            msg = common.value(forKey: key) as? String ?? msg
+        }
+        var focusMode = ""
+        for dic in arrFocusType{
+            if dic["isOn"] as? Bool == true{
+                focusMode = dic["name"] as? String ?? ""
+                break;
+            }
+        }
+        msg = msg.replacingOccurrences(of: "<FOCUS_NAME>", with: focusMode)
     }
-    
-    var focusMode = ""
-    
-    for dic in arrFocusType{
-        if dic["isOn"] as? Bool == true{
-            focusMode = dic["name"] as? String ?? ""
-            break;
+    msg = msg.replacingOccurrences(of: isQuickLookPreview ? "<FILE_NAME>" : "<APP_NAME>", with: appName)
+    addLog(text: "func showFocusAppBlockNotification:- show notification for app:- \(appName)")
+    // Show a custom top-right notification every time the app is blocked. Unlike the old
+    // NSUserNotification path there is NO one-time-per-session limit; the manager only suppresses a
+    // duplicate while this app's card is still on screen (see FocusBlockNotificationManager).
+    FocusBlockNotificationManager.shared.show(appName: appName, message: msg, isTeacherSession: isTeacherSession, runningApp: runningApp)
+}
+
+/// Shows the custom "app blocked by Focus Mode" notification in the top-right corner of the main
+/// screen. Replaces the deprecated `NSUserNotification` path, which stopped delivering reliably on
+/// modern macOS. The notification is a borderless overlay card that fades in, counts down, then fades
+/// out. Only ONE notification is ever visible: a block of a DIFFERENT app replaces the current one; a
+/// block of the SAME app that's already showing is ignored (so its countdown isn't restarted). There
+/// is deliberately no per-session restriction.
+final class FocusBlockNotificationManager {
+    static let shared = FocusBlockNotificationManager()
+    private init() {}
+
+    private let visibleDuration: TimeInterval = 5
+    private let cardWidth: CGFloat = 340        // height is derived per-card from its content
+    private let edgeMargin: CGFloat = 16
+
+    // The single on-screen notification, if any.
+    private var currentCard: FocusBlockNotificationCard?
+
+    func show(appName: String, message: String, isTeacherSession: Bool, runningApp: NSRunningApplication? = nil) {
+        // UI work — hop to the main thread (the app-blocking monitor runs off-main).
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { self.show(appName: appName, message: message, isTeacherSession: isTeacherSession, runningApp: runningApp) }
+            return
+        }
+        // Same app already showing → leave it be (don't restart its countdown).
+        if currentCard?.appName == appName { return }
+        guard let screen = NSScreen.main else { return }
+
+        // Only one notification at a time — drop any existing (different-app) card immediately.
+        removeCurrent()
+
+        // Brand title shown at the top of the card (e.g. "Focus Bear").
+        var brandTitle = "Focus Bear"
+        if let common = configjson.value(forKey: "common") as? NSDictionary {
+            brandTitle = common.value(forKey: "appName") as? String ?? brandTitle
+        }
+        // The card carries one optional action button:
+        //   • Teacher session → "Request unlock" opens the unlock-request window pre-filled with this app.
+        //   • Normal focus session → "Oops I actually need it" re-presents the app block-confirm popup (the
+        //     same allow/set-intention flow the URL block page offers via its cuddly "unblock it" button),
+        //     letting the user through the app.
+        var actionTitle: String? = nil
+        if isTeacherSession {
+            var title = "Request unlock"
+            if let teacherInfo = configjson.value(forKey: "teacherSessionInfo") as? NSDictionary {
+                title = teacherInfo.value(forKey: "buttonRequestUnlock") as? String ?? title
+            }
+            actionTitle = title
+        } else if runningApp != nil && SettingsManagerObject.isCuddlyModeEnabled {
+            // "Oops I actually need it" re-presents the app block-confirm popup (allow / set intention).
+            // That popup is only the block flow in cuddly mode — in strict (non-cuddly) mode an unwanted
+            // app is hard-blocked with just this notification and NO confirm popup, so offering the button
+            // there would hand the user an escape hatch strict mode deliberately withholds. Gate it on
+            // cuddly mode: show the button only where the confirm popup is actually part of the flow.
+            var title = "Oops I actually need it"
+            if let common = configjson.value(forKey: "common") as? NSDictionary {
+                title = common.value(forKey: "appBlockNotificationAllowButton") as? String ?? title
+            }
+            actionTitle = title
+        }
+
+        let card = FocusBlockNotificationCard(appName: appName, brandTitle: brandTitle, message: message,
+                                              actionTitle: actionTitle,
+                                              seconds: Int(visibleDuration), width: cardWidth)
+        card.onAction = { [weak self, weak card] in
+            if isTeacherSession {
+                teacherSessionManagerObject.showTeacherUnlockRequestWindow(prefillAppOrUrl: appName)
+            } else if let runningApp = runningApp {
+                // "Oops I actually need it" — mirror the URL block's "unblock it for me" (checkUrlIsUnlock):
+                // drop the app from the per-session blocked list so it's treated as fresh, then bring it
+                // back to the front. When it becomes the running context again, the app-blocking monitor
+                // re-runs focusTryToBlockUnwantedApp — which, no longer finding it in
+                // arrBlockedAppsInCuddlyModeCurrentFocus, presents popUpBlockConfirmVc (allow / set
+                // intention) through the normal flow. We don't force-show that popup ourselves here.
+                if let idx = arrBlockedAppsInCuddlyModeCurrentFocus.firstIndex(of: runningApp) {
+                    arrBlockedAppsInCuddlyModeCurrentFocus.remove(at: idx)
+                }
+                allApiObject.capturePosthog(event: "unblock-it-for-me-worked", metadata: [:])
+                runningApp.unhide()
+                runningApp.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+            }
+            guard let self = self, let card = card else { return }
+            self.dismiss(card)
+        }
+        card.onExpire = { [weak self, weak card] in
+            guard let self = self, let card = card else { return }
+            self.dismiss(card)
+        }
+        currentCard = card
+
+        let area = screen.visibleFrame
+        let frame = card.window.frame
+        card.window.setFrameOrigin(NSPoint(x: area.maxX - frame.width - edgeMargin,
+                                           y: area.maxY - edgeMargin - frame.height))
+        card.window.alphaValue = 0
+        card.window.orderFrontRegardless()
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.25
+            card.window.animator().alphaValue = 1
+        }
+        card.startCountdown()
+    }
+
+    /// Instantly tear down the current card (used when a new notification replaces it).
+    private func removeCurrent() {
+        guard let card = currentCard else { return }
+        card.stopCountdown()
+        card.window.orderOut(nil)
+        currentCard = nil
+    }
+
+    /// Fade out and remove `card` when it expires or is dismissed via its button.
+    private func dismiss(_ card: FocusBlockNotificationCard) {
+        guard currentCard === card else { return }   // already replaced/removed
+        card.stopCountdown()
+        currentCard = nil
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.25
+            card.window.animator().alphaValue = 0
+        }, completionHandler: {
+            card.window.orderOut(nil)
+        })
+    }
+}
+
+/// One notification card + its overlay window. Built in AppKit (NSVisualEffectView) so it renders a
+/// native blurred, rounded card and works on the app's macOS 11 deployment target. Layout: the Focus
+/// Bear icon on the left, a bold brand title, the (multi-line) message, and a bottom row with a
+/// live seconds countdown on the right — plus, in a teacher session, an orange "Request unlock" button.
+private final class FocusBlockNotificationCard: NSObject {
+    let appName: String
+    let window: NSWindow
+    private let actionButton: NSButton?
+    private let secondsLabel: NSTextField
+    private var secondsRemaining: Int
+    private var countdownTimer: Timer?
+    var onAction: (() -> Void)?
+    var onExpire: (() -> Void)?
+
+    init(appName: String, brandTitle: String, message: String, actionTitle: String?,
+         seconds: Int, width: CGFloat) {
+        self.appName = appName
+        self.secondsRemaining = seconds
+
+        let padding: CGFloat = 14
+        let iconSize: CGFloat = 40
+        let gap: CGFloat = 12
+        let cornerRadius: CGFloat = 14
+        let textX = padding + iconSize + gap
+        let textRight = width - padding
+        let textWidth = textRight - textX
+
+        // Title ("Focus Bear").
+        let titleFont = NSFont.systemFont(ofSize: 14, weight: .bold)
+        let titleHeight = ceil((brandTitle as NSString).size(withAttributes: [.font: titleFont]).height)
+
+        // Message — smaller than the title. Measure the WRAPPED height for the fixed text width so it
+        // wraps instead of running off the right edge (sizeToFit would instead widen it to one line).
+        let messageFont = NSFont.systemFont(ofSize: 12, weight: .regular)
+        let messageHeight = ceil((message as NSString).boundingRect(
+            with: NSSize(width: textWidth, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: [.font: messageFont]).height)
+
+        // Optional action button ("Request unlock" in a teacher session, "Oops I actually need it" in a
+        // normal session). Reuses the app's `Button` for the brand-orange fill + pointing-hand cursor on
+        // hover. Created in code, so its awakeFromNib visual setup (layer, tracking area for the cursor) is
+        // replicated here.
+        var button: FocusBlockUnlockButton? = nil
+        var buttonSize = NSSize.zero
+        if let unlockTitle = actionTitle {
+            let buttonFont = NSFont.systemFont(ofSize: 12, weight: .semibold)
+            let b = FocusBlockUnlockButton(title: "", target: nil, action: nil)
+            b.font = buttonFont
+            b.horizontalPadding = 0
+            b.verticalPadding = 0
+            b.wantsLayer = true
+            b.isBordered = false
+            b.title = unlockTitle                      // Button.title didSet → centered white title
+            b.layer?.cornerRadius = 6
+            b.layer?.backgroundColor = b.buttonColor   // brand orange
+            b.contentTintColor = b.titleColor
+            b.addTrackingArea(NSTrackingArea(rect: .zero,
+                                             options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited],
+                                             owner: b, userInfo: nil))
+            let titleWidth = (unlockTitle as NSString).size(withAttributes: [.font: buttonFont]).width
+            buttonSize = NSSize(width: ceil(titleWidth) + 34, height: 28)
+            button = b
+        }
+        self.actionButton = button
+
+        // Countdown (hourglass + "Ns"), bottom-right.
+        let countdownHeight: CGFloat = 18
+        let hourglassSize = NSSize(width: 11, height: 16)
+        let secondsFont = NSFont.systemFont(ofSize: 12, weight: .medium)
+        let secondsWidth = ceil(("00s" as NSString).size(withAttributes: [.font: secondsFont]).width)
+        let secLabel = NSTextField(labelWithString: "\(seconds)s")
+        secLabel.font = secondsFont
+        secLabel.textColor = .secondaryLabelColor
+        self.secondsLabel = secLabel
+        let countdownWidth = hourglassSize.width + 3 + secondsWidth
+
+        let bottomRowHeight = max(buttonSize.height, countdownHeight)
+
+        let titleToMsg: CGFloat = 6      // clear separation between title and the smaller subtitle
+        let msgToBottom: CGFloat = 8
+        let contentHeight = titleHeight + titleToMsg + messageHeight + msgToBottom + bottomRowHeight
+        let cardHeight = max(iconSize, contentHeight) + padding * 2
+        let size = NSSize(width: width, height: cardHeight)
+
+        let container = NSVisualEffectView(frame: NSRect(origin: .zero, size: size))
+        container.material = .popover      // adapts to light/dark so .labelColor text stays legible
+        container.blendingMode = .behindWindow
+        container.state = .active
+        container.maskImage = FocusBlockNotificationCard.roundedMaskImage(cornerRadius: cornerRadius)
+
+        // Icon — the Focus Bear app icon (branded), not the blocked app's icon.
+        let iconView = NSImageView(frame: NSRect(x: padding, y: cardHeight - padding - iconSize,
+                                                 width: iconSize, height: iconSize))
+        iconView.image = NSImage(named: NSImage.applicationIconName)
+        iconView.imageScaling = .scaleProportionallyUpOrDown
+        container.addSubview(iconView)
+
+        // Title.
+        let titleY = cardHeight - padding - titleHeight
+        let titleLabel = NSTextField(labelWithString: brandTitle)
+        titleLabel.font = titleFont
+        titleLabel.textColor = .labelColor
+        titleLabel.frame = NSRect(x: textX, y: titleY, width: textWidth, height: titleHeight)
+        container.addSubview(titleLabel)
+
+        // Message (wraps within the fixed text width).
+        let messageY = titleY - titleToMsg - messageHeight
+        let messageLabel = NSTextField(wrappingLabelWithString: message)
+        messageLabel.font = messageFont
+        messageLabel.textColor = .labelColor
+        messageLabel.isEditable = false
+        messageLabel.isSelectable = false
+        messageLabel.drawsBackground = false
+        messageLabel.maximumNumberOfLines = 0
+        messageLabel.frame = NSRect(x: textX, y: messageY, width: textWidth, height: messageHeight)
+        container.addSubview(messageLabel)
+
+        // Bottom row: button (left, teacher only) + countdown (right).
+        let bottomRowY = messageY - msgToBottom - bottomRowHeight
+        if let button = button {
+            button.frame = NSRect(x: textX, y: bottomRowY + (bottomRowHeight - buttonSize.height) / 2,
+                                  width: buttonSize.width, height: buttonSize.height)
+            container.addSubview(button)
+        }
+        let cy = bottomRowY + (bottomRowHeight - countdownHeight) / 2
+        let hourglass = NSImageView(frame: NSRect(x: textRight - countdownWidth,
+                                                  y: cy + (countdownHeight - hourglassSize.height) / 2,
+                                                  width: hourglassSize.width, height: hourglassSize.height))
+        hourglass.image = NSImage(systemSymbolName: "hourglass", accessibilityDescription: nil)
+        hourglass.contentTintColor = .secondaryLabelColor
+        hourglass.imageScaling = .scaleProportionallyUpOrDown
+        container.addSubview(hourglass)
+        secLabel.frame = NSRect(x: textRight - secondsWidth, y: cy, width: secondsWidth, height: countdownHeight)
+        container.addSubview(secLabel)
+
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: .borderless,
+                              backing: .buffered, defer: true)
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.hasShadow = true
+        // Click-through unless there's a button — then the card must receive the click.
+        window.ignoresMouseEvents = (button == nil)
+        window.level = .statusBar                  // above other apps' normal windows
+        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+        window.isExcludedFromWindowsMenu = true
+        window.hidesOnDeactivate = false
+        window.isRestorable = false
+        window.animationBehavior = .none
+        window.contentView = container
+        self.window = window
+
+        super.init()
+        button?.target = self
+        button?.action = #selector(actionClicked)
+    }
+
+    @objc private func actionClicked() { onAction?() }
+
+    /// Start the 1-second countdown that updates the "Ns" label and fires `onExpire` at zero.
+    func startCountdown() {
+        let t = Timer(timeInterval: 1, target: self, selector: #selector(countdownTick), userInfo: nil, repeats: true)
+        RunLoop.main.add(t, forMode: .common)
+        countdownTimer = t
+    }
+
+    func stopCountdown() {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+    }
+
+    @objc private func countdownTick() {
+        secondsRemaining -= 1
+        if secondsRemaining <= 0 {
+            stopCountdown()
+            onExpire?()
+        } else {
+            secondsLabel.stringValue = "\(secondsRemaining)s"
         }
     }
-    addLog(text: "func showFocusAppBlockNotification:- show notification for app:- \(appName)")
-    msg = msg.replacingOccurrences(of: "<APP_NAME>", with: appName)
-    msg = msg.replacingOccurrences(of: "<FOCUS_NAME>", with: focusMode)
-    showNotificationWithMessage(msg: msg)
+
+    /// A resizable rounded-rect mask — the reliable way to round an NSVisualEffectView's blur (a plain
+    /// layer cornerRadius doesn't clip the vibrancy).
+    private static func roundedMaskImage(cornerRadius r: CGFloat) -> NSImage {
+        let d = r * 2 + 1
+        let image = NSImage(size: NSSize(width: d, height: d), flipped: false) { rect in
+            NSColor.black.setFill()
+            NSBezierPath(roundedRect: rect, xRadius: r, yRadius: r).fill()
+            return true
+        }
+        image.capInsets = NSEdgeInsets(top: r, left: r, bottom: r, right: r)
+        image.resizingMode = .stretch
+        return image
+    }
+}
+
+/// The app's `Button` (brand-orange fill, pointing-hand cursor on hover) that additionally fires on
+/// the FIRST click even when its window isn't key — the notification window is shown non-activating
+/// (orderFrontRegardless), so without this the first click would just be swallowed activating the window.
+private final class FocusBlockUnlockButton: Button {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 
 //*******************GET APP APPEARANCE******************//
@@ -2750,7 +3679,7 @@ func shouldAskPassword(forPostpone:Bool = false)->Bool{
             }
         }
     }
-    if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+    if SettingsManagerObject.isAppPasswordSet{
         if bypassGrace{
             return true
         }
@@ -2774,7 +3703,7 @@ func isPasswordRequireInOpenSettings() -> Bool{
             return false
         }
     }
-    if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+    if SettingsManagerObject.isAppPasswordSet{
         if let lastAppUnlockTime = lastAppUnlockTime{
             let diffSeconds = Calendar.current.dateComponents([.second], from: lastAppUnlockTime, to: Date()).second ?? 0
             if diffSeconds > 120{
@@ -2802,12 +3731,45 @@ func isPasswordRequireInOpenSettingsEnabled() -> Bool{
         if SettingsManagerObject.isPasswordRequireInPreferencesAfterCutoff{
             return true
         }
-    }else{
-        if SettingsManagerObject.isPasswordRequireInChangeSettings{
-            return true
-        }
     }
-    return false
+    return SettingsManagerObject.isPasswordRequireInChangeSettings
+}
+
+/// Whether shortening a habit from the Day Plan (its one-day "Shorten" trim) must ask for the password,
+/// reading the app's live state. Honours the same recent-unlock grace (~2 min) and accountability-buddy
+/// unlock as `isPasswordRequireInOpenSettings()`.
+func isPasswordRequireInShortenHabit() -> Bool {
+    var withinUnlockGrace = false
+    if let lastAppUnlockTime = lastAppUnlockTime {
+        let diffSeconds = Calendar.current.dateComponents([.second], from: lastAppUnlockTime, to: Date()).second ?? 0
+        withinUnlockGrace = diffSeconds <= ShortenHabitPasswordPolicy.unlockGraceSeconds
+    }
+    let unlockedByBuddy = lastUnlockTimeByAccountabilityBuddy.map { Date() < $0 } ?? false
+    return ShortenHabitPasswordPolicy.requiresPassword(
+        isPasswordSet: SettingsManagerObject.isAppPasswordSet,
+        isWithinUnlockGrace: withinUnlockGrace,
+        isUnlockedByAccountabilityBuddy: unlockedByBuddy,
+        isShortenRuleOn: SettingsManagerObject.isPasswordRequireInShortenHabits)
+}
+
+/// The pure decision behind `isPasswordRequireInShortenHabit()`, kept free of globals so it is unit-tested.
+/// Mirrors the Windows app's rule (settings key `kIsPasswordRequireInShortenHabits`). Only this rule gates
+/// Shorten: "Changing settings", "opening Preferences after cutoff" and super-strict focus deliberately do
+/// NOT, so with the Shorten rule off the prompt never appears (e.g. after cutoff).
+enum ShortenHabitPasswordPolicy {
+    /// Same window `isPasswordRequireInOpenSettings()` / `shouldAskPassword()` use after a successful unlock.
+    static let unlockGraceSeconds = 120
+
+    /// True when the Shorten sheet must be gated behind the password prompt: a password is set, the user
+    /// hasn't just unlocked (recent-unlock grace or an accountability-buddy unlock), and the
+    /// "Shortening habits on the Day Plan" rule is on.
+    static func requiresPassword(isPasswordSet: Bool,
+                                 isWithinUnlockGrace: Bool,
+                                 isUnlockedByAccountabilityBuddy: Bool,
+                                 isShortenRuleOn: Bool) -> Bool {
+        guard isPasswordSet, isShortenRuleOn else { return false }
+        return !(isUnlockedByAccountabilityBuddy || isWithinUnlockGrace)
+    }
 }
 
 
@@ -2998,54 +3960,25 @@ func getGoalsAndFocusdJsonForBlockedScript()-> String{
 }
 
 
-func exitFullScreen(runningApp:NSRunningApplication){
-    var script: String = ""
+// Reads whether the app currently has a native-fullscreen window. A fullscreen window sits on its own
+// Space, so from a background query `count of windows` can report 0. Reading AXFocusedWindow first primes
+// the AX window list; the sweep of any enumerable windows then catches the fullscreen one. Must be called
+// after a warm-up read (see exitFullScreen) — the first cold AX query returns empty.
+func isAppInFullScreen(runningApp:NSRunningApplication) -> Bool {
+    guard !shouldSkipSystemEventsAppleEvent() else { return false }
     let appName = runningApp.localizedName ?? ""
-    script =
-        """
-        tell application "System Events" to tell process "\(appName)"
-        set fullScreenStatus to value of attribute "AXFullScreen" of window 1
-        if fullScreenStatus then
-        tell application "System Events" to tell process "\(appName)"
-        set value of attribute "AXFullScreen" of window 1 to false
-        end tell
-        end if
-        end tell
-        """
-    
-    
-    executeScript(script: script)
-}
-
-func isRunningAppFullScreen(runningApp:NSRunningApplication, browser: BROWSER?)->Bool{
-    if let browser = browser {
-        if browser == ._GOOGLE_CHROME_{
-            return isChromeFullScreen(runningApp:runningApp)
-        }
-    }
-    var script: String = ""
-    let appName = runningApp.localizedName ?? ""
-    script =
-        """
-        tell application "System Events" to tell process "\(appName)"
-        set fullScreenStatus to value of attribute "AXFullScreen" of window 1
-        end tell
-        """
-    return executeScriptAndReturnBool(script: script)
-}
-
-func isChromeFullScreen(runningApp:NSRunningApplication) -> Bool {
-    var script: String = ""
-    let appName = runningApp.localizedName ?? ""
-    script =
+    let script =
     """
     tell application "System Events"
     tell process "\(appName)"
-    set windowCount to count of windows
-    repeat with i from 1 to windowCount
     try
-    set fullScreenStatus to value of attribute "AXFullScreen" of window i
-    if fullScreenStatus is true then
+    if value of attribute "AXFullScreen" of (value of attribute "AXFocusedWindow") is true then
+    return true
+    end if
+    end try
+    repeat with i from 1 to (count of windows)
+    try
+    if value of attribute "AXFullScreen" of window i is true then
     return true
     end if
     end try
@@ -3054,14 +3987,93 @@ func isChromeFullScreen(runningApp:NSRunningApplication) -> Bool {
     end tell
     return false
     """
-                        
     return executeScriptAndReturnBool(script: script)
+}
+
+// Exits an app's native fullscreen with the system-standard ⌃⌘F toggle — the one method every
+// fullscreen-capable app honors. An Accessibility *write* to AXFullScreen is unreliable: Safari accepts
+// it, but Chrome, Calendar and others silently ignore it, so `set AXFullScreen to false` is a no-op for
+// them. We only send the toggle when the app is ACTUALLY fullscreen (else ⌃⌘F would send it INTO
+// fullscreen), and activate it first so the keystroke lands on the right app.
+func exitFullScreen(runningApp:NSRunningApplication){
+    // A Quick Look preview isn't an app window in fullscreen; skip the AppleScript round trips.
+    if isQuickLookService(runningApp) { return }
+    guard !shouldSkipSystemEventsAppleEvent() else { return }
+    // The AX warm-up + isAppInFullScreen (+ the ⌃⌘F keystroke) are 2–3 blocking AppleScript reads,
+    // each capped at ~1.2s on the main thread by runAppleScriptSafely. exitFullScreen runs on EVERY
+    // app switch (frontApplicationChanged → block checks), so on the main thread those reads stack into
+    // a >2s UI freeze — the "App Hanging: App hanging for at least 2000 ms" reported in Sentry. The exit
+    // is fire-and-forget (no caller reads a result — it just sends ⌃⌘F), so run the AppleScript off the
+    // main thread. See fullScreenExitQueue for why it can't be appleScriptSerialQueue.
+    guard Thread.isMainThread else { performExitFullScreen(runningApp: runningApp); return }
+    fullScreenExitQueue.async { performExitFullScreen(runningApp: runningApp) }
+}
+
+private func performExitFullScreen(runningApp:NSRunningApplication){
+    let appName = runningApp.localizedName ?? ""
+    // Warm up Accessibility first. The FIRST AX query to an app whose fullscreen window is on its own
+    // Space comes back "cold" — `count of windows` = 0 and `window 1` throws -1719 — and only the NEXT
+    // query returns the real state. This throwaway read that touches `count of windows`, AXFocusedWindow
+    // AND `window 1` primes the AX window list so the detection below is accurate. Without it, detection
+    // always reads cold, returns false, and the block never exits fullscreen (verified: builds that
+    // issued this extra AX read first worked for every app; removing it broke all of them).
+    let warmUp =
+        """
+        tell application "System Events" to tell process "\(appName)"
+        try
+        set warmCount to (count of windows)
+        end try
+        try
+        set warmFocused to value of attribute "AXFocusedWindow"
+        set warmRole to (role of warmFocused)
+        set warmFS to (value of attribute "AXFullScreen" of warmFocused)
+        end try
+        try
+        set warmWin1 to (value of attribute "AXFullScreen" of window 1)
+        end try
+        end tell
+        """
+    _ = executeScriptAndReturnString(script: warmUp)
+    guard isAppInFullScreen(runningApp: runningApp) else { return }
+    runningApp.activate(options: [.activateIgnoringOtherApps])
+    let script =
+        """
+        tell application "System Events"
+        keystroke "f" using {command down, control down}
+        end tell
+        """
+    executeScript(script: script)
+}
+
+func isRunningAppFullScreen(runningApp:NSRunningApplication, browser: BROWSER?)->Bool{
+    // One generic AXFocusedWindow-based read for every app (Safari, Chrome/Chromium, native apps),
+    // replacing the old per-browser split and the hard-coded `window 1` that threw -1719 when the
+    // fullscreen window was on its own Space with no windows enumerable.
+    return isAppInFullScreen(runningApp: runningApp)
 }
 
 
 
 
 
+
+// Whether the running app (its lowercased localized name) is in a focus mode's allowed_apps list.
+// allowed_apps entries are usually app paths ("/Applications/Google Chrome.app"), so we match on the
+// app-name component. During a TEACHER session we also accept the case where the running app's name
+// CONTAINS the allow-list entry — e.g. an allowed "Chrome" permits the running "Google Chrome".
+// Outside a teacher session we keep the strict exact-name match to avoid over-allowing
+// (e.g. "Notes" must not allow "Notes Plus").
+func isRunningAppInAllowedApps(_ allowedAppPaths: [String], runningAppNameLowercased name: String) -> Bool {
+    if name.isEmpty { return false }
+    let teacherSession = teacherSessionManagerObject.isTeacherSessionActive()
+    for path in allowedAppPaths {
+        let allowedName = URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent.lowercased()
+        if allowedName.isEmpty { continue }
+        if allowedName == name { return true }
+        if teacherSession && name.contains(allowedName) { return true }
+    }
+    return false
+}
 
 func shutDownMac() {
     addLog(text: "shut Down Mac")
@@ -3096,17 +4108,135 @@ func sleepMac() {
     }
 }
 
+/// Compatibility name for the onboarding callers. Permission is read directly, without an
+/// AppleScript, so a prompt timeout or an unavailable Dock property is not mistaken for denial.
 func checkAutomationPermissionWithAppleScript() -> Bool {
-    if checkDocBarState() == nil{
-        return false
-    }else{
-        return true
+    !shouldSkipSystemEventsAppleEvent()
+}
+
+// MARK: - System Events permission gates
+
+enum SystemEventsAutomationResult: String {
+    case granted, denied, consentRequired, unknown
+
+    init(status: Int32) {
+        switch status {
+        case 0: self = .granted
+        case -1743: self = .denied
+        case -1744: self = .consentRequired
+        default: self = .unknown
+        }
+    }
+
+    func permitsRuntimeScript(requestInFlight: Bool) -> Bool {
+        self == .granted && !requestInFlight
     }
 }
 
+private enum SystemEventsAutomationObservation {
+    static let lock = NSLock()
+    static var requestInFlight = false
+    static var lastStatus: Int32?
+    static var launchInFlight = false
+    static var lastLaunchAttempt: TimeInterval?
+}
 
+var isSystemEventsAutomationRequestInFlight: Bool {
+    SystemEventsAutomationObservation.lock.lock()
+    defer { SystemEventsAutomationObservation.lock.unlock() }
+    return SystemEventsAutomationObservation.requestInFlight
+}
 
+/// Only the wizard's explicit button invokes this. Runtime probes never request consent.
+func beginSystemEventsAutomationRequest() -> Bool {
+    SystemEventsAutomationObservation.lock.lock()
+    defer { SystemEventsAutomationObservation.lock.unlock() }
+    guard !SystemEventsAutomationObservation.requestInFlight else { return false }
+    SystemEventsAutomationObservation.requestInFlight = true
+    return true
+}
 
+func finishSystemEventsAutomationRequest(status: Int32) {
+    SystemEventsAutomationObservation.lock.lock()
+    SystemEventsAutomationObservation.requestInFlight = false
+    SystemEventsAutomationObservation.lock.unlock()
+    recordSystemEventsAutomationStatus(status)
+}
+
+func recordSystemEventsAutomationStatus(_ status: Int32) {
+    SystemEventsAutomationObservation.lock.lock()
+    let changed = SystemEventsAutomationObservation.lastStatus != status
+    SystemEventsAutomationObservation.lastStatus = status
+    SystemEventsAutomationObservation.lock.unlock()
+    if changed {
+        addLog(text: "System Events permission: pid=\(ProcessInfo.processInfo.processIdentifier) status=\(status) result=\(SystemEventsAutomationResult(status: status).rawValue)")
+    }
+}
+
+func shouldSkipSystemEventsAppleEvent() -> Bool {
+    // Do not query or send an AppleScript while the explicit blocking consent request is pending.
+    guard !isSystemEventsAutomationRequestInFlight else { return true }
+    let status: Int32
+    if let process = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.systemevents").first {
+        let target = NSAppleEventDescriptor(processIdentifier: process.processIdentifier)
+        status = AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, false)
+    } else {
+        status = -600 // target not running: unknown, not evidence of a denied grant
+        launchSystemEventsForNonpromptingProbeIfNeeded()
+    }
+    recordSystemEventsAutomationStatus(status)
+    return !SystemEventsAutomationResult(status: status)
+        .permitsRuntimeScript(requestInFlight: isSystemEventsAutomationRequestInFlight)
+}
+
+/// System Events can exit while idle. Launching its background process restores the old
+/// AppleEvent auto-launch behavior, without granting access or opening a consent dialog.
+/// One launch may be pending, with a ten-second retry interval and bounded registration wait.
+private func launchSystemEventsForNonpromptingProbeIfNeeded() {
+    let now = ProcessInfo.processInfo.systemUptime
+    SystemEventsAutomationObservation.lock.lock()
+    guard !SystemEventsAutomationObservation.requestInFlight,
+          !SystemEventsAutomationObservation.launchInFlight,
+          SystemEventsAutomationObservation.lastLaunchAttempt.map({ now - $0 >= 10 }) ?? true else {
+        SystemEventsAutomationObservation.lock.unlock()
+        return
+    }
+    SystemEventsAutomationObservation.launchInFlight = true
+    SystemEventsAutomationObservation.lastLaunchAttempt = now
+    SystemEventsAutomationObservation.lock.unlock()
+    DispatchQueue.global().async {
+        defer {
+            SystemEventsAutomationObservation.lock.lock()
+            SystemEventsAutomationObservation.launchInFlight = false
+            SystemEventsAutomationObservation.lock.unlock()
+        }
+        ensureSystemEventsRunningForAutomation()
+        guard !isSystemEventsAutomationRequestInFlight,
+              let process = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.systemevents").first else { return }
+        let target = NSAppleEventDescriptor(processIdentifier: process.processIdentifier)
+        let status = AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, false)
+        recordSystemEventsAutomationStatus(status)
+    }
+}
+
+/// Runs off the main thread for either the explicit wizard request or the nonprompting runtime
+/// recovery. Opening this LSUIElement does not activate an app window or request Automation.
+func ensureSystemEventsRunningForAutomation() {
+    let bundleID = "com.apple.systemevents"
+    if !NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty { return }
+    if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = false
+        let completion = DispatchSemaphore(value: 0)
+        NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, _ in completion.signal() }
+        _ = completion.wait(timeout: .now() + 5)
+    }
+    var attempts = 0
+    while NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty && attempts < 30 {
+        usleep(100_000)
+        attempts += 1
+    }
+}
 
 func getWindowFrame(pid: pid_t) -> CGRect? {
     var windowFrame: CGRect?
@@ -3216,6 +4346,60 @@ func runCommandAsRoot(command: String, arguments: [String]) {
 
 
 
+/// True when the frontmost OTHER app occupies a native (green-button) full-screen Space on the
+/// main (menu-bar) display. A native full-screen window covers the entire display INCLUDING the
+/// menu-bar strip, whereas a merely-maximised window stops below the menu bar — so a full-height,
+/// full-width layer-0 window owned by the frontmost app means we're on its full-screen Space.
+/// Used to fall back from the popover (which renders on Focus Bear's own Space and stays hidden
+/// there) to the detached window menu, which shows correctly over another app's full-screen Space.
+func isFrontmostAppInNativeFullScreen() -> Bool {
+    guard let frontApp = NSWorkspace.shared.frontmostApplication,
+          frontApp.bundleIdentifier != Bundle.main.bundleIdentifier else { return false }
+    let pid = frontApp.processIdentifier
+    guard let mainScreen = NSScreen.main,
+          let infoList = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]]
+    else { return false }
+    let screenH = mainScreen.frame.height
+    let screenW = mainScreen.frame.width
+    for info in infoList {
+        guard let ownerPID = info[kCGWindowOwnerPID as String] as? Int, pid_t(ownerPID) == pid,
+              let layer = info[kCGWindowLayer as String] as? Int, layer == 0,
+              let boundsDict = info[kCGWindowBounds as String] as? [String: Any],
+              let bounds = CGRect(dictionaryRepresentation: boundsDict as CFDictionary)
+        else { continue }
+        if bounds.height >= screenH - 1 && bounds.width >= screenW - 1 { return true }
+    }
+    return false
+}
+
+/// True when the frontmost OTHER app is covering the whole main screen — EITHER native full-screen (window
+/// at y=0 over the menu bar) OR non-native full-screen / a maximised window that fills everything BELOW the
+/// menu bar (y≈menuBarHeight). In both cases the popover and a plain window can't reliably render above the
+/// app, so the menu must be shown in the overlay NSPanel. Broader than `isFrontmostAppInNativeFullScreen`.
+func isFrontmostAppCoveringScreen() -> Bool {
+    guard let frontApp = NSWorkspace.shared.frontmostApplication,
+          frontApp.bundleIdentifier != Bundle.main.bundleIdentifier else { return false }
+    let pid = frontApp.processIdentifier
+    guard let mainScreen = NSScreen.main,
+          let infoList = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]]
+    else { return false }
+    let screenH = mainScreen.frame.height
+    let screenW = mainScreen.frame.width
+    let menuBarHeight = max(0, mainScreen.frame.maxY - mainScreen.visibleFrame.maxY)
+    for info in infoList {
+        guard let ownerPID = info[kCGWindowOwnerPID as String] as? Int, pid_t(ownerPID) == pid,
+              let layer = info[kCGWindowLayer as String] as? Int, layer == 0,
+              let boundsDict = info[kCGWindowBounds as String] as? [String: Any],
+              let bounds = CGRect(dictionaryRepresentation: boundsDict as CFDictionary)
+        else { continue }
+        let coversWidth = bounds.width >= screenW - 1
+        let coversHeightBelowMenuBar = bounds.height >= screenH - menuBarHeight - 1
+        let flushToTop = bounds.minY <= menuBarHeight + 1
+        if coversWidth && coversHeightBelowMenuBar && flushToTop { return true }
+    }
+    return false
+}
+
 func isFocusBearMenuVisible()->Bool{
     if SettingsManagerObject.isMenuPopoverEnabled{
         return appdelegate?.popover.isShown ?? false
@@ -3317,17 +4501,20 @@ func quitApplicationSmoothly() {
 
 func disableAllAlertsBeforeQuit(){
     addLog(text: "func :-disableAllAlertsBeforeQuit")
-    for window in NSApp.windows {
+    // Snapshot the windows — ending a sheet can mutate NSApp.windows mid-iteration.
+    for window in Array(NSApp.windows) {
         // End any sheet attached to the window
         if let sheet = window.attachedSheet {
             window.endSheet(sheet)
         }
+    }
 
-        // Abort any modal session running on this window
-        if window == NSApp.modalWindow {
-            NSApp.abortModal()
-            NSApp.stopModal()
-        }
+    // End the modal session ONCE, only if one is actually running. Calling abortModal() AND
+    // stopModal() (the second with no live session) makes AppKit throw NSWindowEndWindowModalSession —
+    // an uncatchable Obj-C exception in Swift → SIGABRT. Crashed here when a Pusher-initiated
+    // quitAndRestartApp fired while a modal was up (see AppDelegate.quitAndRestartApp / pusherEvents).
+    if NSApp.modalWindow != nil {
+        NSApp.abortModal()
     }
 }
 
@@ -3345,6 +4532,18 @@ func startMainAppForceQuitMonitoring(){
     appdelegate!.sharedDefaults?.synchronize()
     let startMainAppForceQuitMonitoring = Notification.Name("startMainAppForceQuitMonitoring")
     DistributedNotificationCenter.default().post(name: startMainAppForceQuitMonitoring,object: mainAppBundelId)
+}
+
+/// #2575: schedule the always-running helper (FBHelper) to relaunch the main app at `date`. Stores the
+/// target in the shared suite and pokes the helper via a distributed notification so it starts watching
+/// immediately; the helper also reads the key on its own launch (the reboot case) and clears it once it
+/// has relaunched us. This is how "turn everything off until tomorrow" brings the app back on its own
+/// without adding a LaunchAgent.
+func scheduleMainAppRestart(at date: Date){
+    appdelegate!.sharedDefaults?.setValue(date, forKeyPath: kUserdefaultsMainAppScheduledRestartDate)
+    appdelegate!.sharedDefaults?.synchronize()
+    let scheduleMainAppRestart = Notification.Name("scheduleMainAppRestart")
+    DistributedNotificationCenter.default().post(name: scheduleMainAppRestart, object: mainAppBundelId)
 }
 
 func stopMainAppForceQuitMonitoring(){
@@ -3374,6 +4573,37 @@ func getWindowTheme()->String{
 
 // blocking helpers
 let validation = urlValidation()
+/// The loopback ports Focus Bear's own embedded servers can occupy. `firstAvailablePort(from:)`
+/// starts at 50501 and tries 50 ports, so this is that whole span rather than one number.
+let focusBearLocalPortRange = 50501...50550
+
+/// Whether a URL is a page Focus Bear itself is serving — the block page, the focus-block reminder,
+/// the Firefox helper.
+///
+/// Exempting only the CURRENT port is not enough, and that is what caused report
+/// 2026-09-21_10-04-40. A previous run's server keeps its port until it is reaped, so each launch
+/// picks a higher one. A block page a browser is still showing from an earlier run then has a
+/// different port from the running app's, stops being recognised as ours, and gets blocked — by a
+/// block page that carries the first one as `old_url`. The user's screenshot is that recursion:
+/// 50504 blocking 50503, which was itself blocking ankiweb.net.
+///
+/// Matched on the parsed HOST and PORT, never as a substring, so a hostile URL that merely mentions
+/// `localhost:50504` inside its query string is not let through.
+func isFocusBearLocalPage(_ url: String) -> Bool {
+    let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return false }
+    // URLComponents needs a scheme to find a host; browsers hand us both spellings.
+    // The "://" is required, not optional: a bare "localhost:50504/?old_url=x" otherwise matches
+    // a scheme pattern, and Foundation then parses "localhost" AS the scheme and reports no host
+    // at all — so the app's own block page would be treated as somebody else's page.
+    let hasScheme = trimmed.range(of: "^[A-Za-z][A-Za-z0-9+.-]*://", options: .regularExpression) != nil
+    guard let components = URLComponents(string: hasScheme ? trimmed : "http://" + trimmed),
+          let host = components.host?.lowercased(),
+          let port = components.port else { return false }
+    guard ["localhost", "127.0.0.1", "::1", "0.0.0.0"].contains(host) else { return false }
+    return focusBearLocalPortRange.contains(port)
+}
+
 var defaultAllowedUrl = ["focus-block.html",
                          "earnyourscreentime.com",
                          "devtools://",
@@ -3408,6 +4638,5 @@ func reloadPermissionsIfNeeded() {
 
     customVC.checkPermissions()
 }
-
 
 

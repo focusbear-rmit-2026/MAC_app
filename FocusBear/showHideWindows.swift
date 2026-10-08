@@ -53,6 +53,15 @@ func showPopUpCheckListWindow(title: String, list: [String]){
 
 
 //***********SHOW ToDoList window***************//
+/// Show the to-do window and start the reschedule plan on it. The Day Plan's over-capacity banner
+/// links here rather than duplicating the plan, so there is one screen that reschedules.
+/// `focusing` names the day the user asked to fix, when they arrived from that day's "Fix" rather
+/// than from the menu. `nil` is the general whole-backlog case and changes nothing.
+func showReprioritisePlanWindow(focusing target: ForecastDayFocus.Target? = nil) {
+    showToDoListWindow()
+    getTodoListToolVcObject().openReprioritisePlan(focusing: target)
+}
+
 func showToDoListWindow(){
     addLog(text:"show To Do List Window")
     if !(mainWindowControllerObj?.window?.isVisible ?? false){
@@ -61,6 +70,157 @@ func showToDoListWindow(){
     leftMenuVcObj?.showTaskPlayer()
     allApiObject.capturePosthog(event: "todo-list-popup-shown", metadata: [:])
 }
+
+
+//***********SHOW the running focus session***************//
+/// Brings the main window to the Focus Session screen — the session itself, not a list of tasks.
+/// Used when something interrupted a session and then hands control back (a micro break ending), so
+/// the person lands back in the session they were pulled out of. `showToDoListWindow()` remains the
+/// genuine "open my to-do list" entry point.
+func showRunningFocusSessionWindow(){
+    addLog(text:"show Running Focus Session Window")
+    if !(mainWindowControllerObj?.window?.isVisible ?? false){
+        mainWindowControllerObj?.showWindow(nil)
+    }
+    leftMenuVcObj?.showFocusModeStateView()
+}
+
+
+//***********RESTORE the main window when the app is activated***************//
+
+/// The app's windows other than the main one that are on screen right now.
+///
+/// Three kinds are not windows in the sense that matters here, and are left out:
+/// the menu-bar status item's, which is always there; the floating focus bar, which deliberately sits
+/// alongside the main window for the whole of a focus session; and the blank covers `showExtraWindows()`
+/// paints over the secondary displays in full-screen mode (`arrWindows`) — a backdrop, not something
+/// the app came forward to show anyone. The cover is not a hypothetical: it is what was actually in the
+/// way in report 2026-09-16_16-01-15, confirmed by the named log line
+/// `opened=none other=blankController` on the build that added the naming.
+///
+/// Sampled twice: once at the instant of activation, once when the decision is made. The difference
+/// between the two is the only thing this is used for, because it answers the one question worth
+/// asking — did the app come to the front in order to put a window up?
+///
+/// What is on screen *already* is deliberately not consulted. Treating "anything visible" as "the app
+/// has already shown you something" is what made ⌘-Tab do nothing for four rounds of that report — any
+/// second window the app happened to have up was enough — and the instruction on the report is explicit
+/// that an alert or a nudge must not stop the window opening.
+private func nonMainWindowsOnScreen() -> [NSWindow] {
+    let ignored: [NSWindow?] = [mainWindowControllerObj?.window,
+                                appdelegate?.statusbutton?.window,
+                                floatingTopBarWcObj?.window]
+    // Same reason the main window gets this test: `isVisible` survives the display it was on being
+    // unplugged, and a window the user cannot see must not be the reason they are shown nothing.
+    let screenFrames = NSScreen.screens.map { $0.visibleFrame }
+    return NSApp.windows.filter { window in
+        window.isVisible
+            && AppActivationRestore.isOnVisibleScreen(windowFrame: window.frame, screenFrames: screenFrames)
+            && !ignored.contains { $0 === window }
+            && !arrWindows.contains { $0 === window }
+    }
+}
+
+/// Identities of those windows, so the same window can be recognised across the settle period.
+func nonMainWindowIdentitiesOnScreen() -> Set<ObjectIdentifier> {
+    Set(nonMainWindowsOnScreen().map(ObjectIdentifier.init))
+}
+
+/// Names windows for the decision log — the content view controller's class, not the title, because
+/// nearly every one of these windows is titled "Focus Bear". Rounds two and three of this report were
+/// spent guessing which window the decision had seen; it should never be a guess again.
+private func describeWindows(_ windows: [NSWindow]) -> String {
+    guard !windows.isEmpty else { return "none" }
+    return windows.map { window in
+        window.contentViewController.map { String(describing: type(of: $0)) }
+            ?? String(describing: type(of: window))
+    }.joined(separator: ",")
+}
+
+/// Puts the main window back when the user switches to Focus Bear and finds it has none.
+///
+/// Shared by ⌘-Tab / app-switcher activation (`applicationDidBecomeActive`, one settle period later) and
+/// Dock clicks (`applicationShouldHandleReopen`, immediately — a reopen is unambiguously the user) so the
+/// two agree: they are the same request, "show me Focus Bear". `AppActivationRestore` owns the decision;
+/// this only carries it out.
+///
+/// - Returns: true when it put the main window on screen.
+@discardableResult
+func restoreMainWindowOnActivationIfNeeded() -> Bool {
+    let secondsSinceLaunch = appdelegate?.secondsSinceLaunch ?? 0
+    // Checked ahead of the decision as well as inside it: reading `mainWindowControllerObj?.window`
+    // loads the main window from the storyboard, and the launch activation must not be what does that.
+    guard secondsSinceLaunch >= AppActivationRestore.launchSettlingSeconds else { return false }
+    // #2580: while the browser-permissions explainer window is open (e.g. reached from the Start Focus
+    // "grant permissions" banner), don't foreground the main window on activation. The user grants
+    // per-browser automation permissions in System Settings and returns to the app between each — every
+    // return was popping the Start Focus screen over the permissions window. `applicationDidResignActive`
+    // already keeps this window focused during those prompts; this stops the restore from fighting it.
+    if permissionBlockDistractionWcObj?.window?.isVisible == true { return false }
+    // A window ordered in on a monitor that is no longer attached is `isVisible` but unreachable, and
+    // reading it as "already on screen" is what made the third round of this report fail.
+    let mainWindow = mainWindowControllerObj?.window
+    let isMainWindowStranded = (mainWindow?.isVisible ?? false)
+        && !AppActivationRestore.isOnVisibleScreen(windowFrame: mainWindow?.frame ?? .zero,
+                                                   screenFrames: NSScreen.screens.map { $0.visibleFrame })
+    let isSelfActivation = appdelegate?.consumeSelfActivationMarker() ?? false
+    let isMainWindowVisible = (mainWindow?.isVisible ?? false) && !isMainWindowStranded
+    // A Dock reopen has no snapshot to compare against, and needs none: clicking the Dock icon is
+    // unambiguously the user, never the app activating itself.
+    let windowsAtActivation = appdelegate?.consumeWindowsOnScreenAtActivation()
+    let otherWindows = nonMainWindowsOnScreen()
+    let windowsOpenedSinceActivation = windowsAtActivation
+        .map { atActivation in otherWindows.filter { !atActivation.contains(ObjectIdentifier($0)) } } ?? []
+    // The same snapshot, read the other way: a non-main Focus Bear window that WAS on screen at activation
+    // but is gone now — a popup the user just dismissed. Dismissing a popup while the app is in the
+    // background activates the app and closes the popup in one click, and by decision time the front-window
+    // check can't see it. A window that merely stays open across the settle (a nudge on a ⌘-Tab) is NOT in
+    // this set, so it can't re-break report 2026-09-16.
+    let currentOtherWindowIds = Set(otherWindows.map(ObjectIdentifier.init))
+    let didAnotherWindowCloseSinceActivation = windowsAtActivation
+        .map { !$0.subtracting(currentOtherWindowIds).isEmpty } ?? false
+    let isMenuVisible = isFocusBearMenuVisible() || (appdelegate?.menuShownInOverlayPanel ?? false)
+    // Is the window the user is actually focused on one of our OWN non-main windows (the quit window, or
+    // any future window)? If so they switched back to THAT, not to summon the main window. Keyed off the
+    // front (key/main) window rather than "anything visible", so an incidental nudge/alert still lets a
+    // ⌘-Tab open the main window, and a new window that hits this bug is handled with no special case
+    // (#2585). `otherWindows` already excludes the main window, status item, floating bar and blank covers.
+    let frontFocusBearWindows: [NSWindow?] = [NSApp.keyWindow, NSApp.mainWindow]
+    let isAnotherFocusBearWindowFront = otherWindows.contains { window in
+        frontFocusBearWindows.contains { $0 === window }
+    }
+    let action = AppActivationRestore.action(
+        secondsSinceLaunch: secondsSinceLaunch,
+        isSelfActivation: isSelfActivation,
+        isMainWindowVisible: isMainWindowVisible,
+        didAnotherWindowOpenSinceActivation: !windowsOpenedSinceActivation.isEmpty,
+        didAnotherWindowCloseSinceActivation: didAnotherWindowCloseSinceActivation,
+        isMenuVisible: isMenuVisible,
+        isAnotherFocusBearWindowFront: isAnotherFocusBearWindowFront,
+        state: currentState,
+        isMainWindowConfiguredBorderless: mainWindowControllerObj?.isFullScreenVisible ?? false,
+        isAllowedActivityHabit: isAllowedActivityHabitPlaying)
+    // Logged whichever way it goes, and with the windows named: a silent `doNothing` is
+    // indistinguishable from the feature being absent, and an unnamed "something else is up" is
+    // indistinguishable from a wrong guess. Both cost this report a round trip.
+    addLog(text: "activation restore: \(action) state=\(currentState) self=\(isSelfActivation) "
+        + "main=\(isMainWindowVisible) stranded=\(isMainWindowStranded) "
+        + "opened=\(describeWindows(windowsOpenedSinceActivation)) "
+        + "other=\(describeWindows(otherWindows)) menu=\(isMenuVisible) "
+        + "otherFront=\(isAnotherFocusBearWindowFront) closed=\(didAnotherWindowCloseSinceActivation)")
+    guard action != .doNothing else { return false }
+    mainWindowControllerObj?.showWindow(nil)
+    if action == .showMainWindowAsSmallWindow || isMainWindowStranded {
+        // Same reopen as the login screen's: drop the borderless full-screen configuration left over
+        // from a routine that has since been postponed, and give the window a sane size and position.
+        // A stranded window needs the centring too — showing it where it already is shows nothing.
+        mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+        mainWindowControllerObj?.window?.center()
+    }
+    mainWindowControllerObj?.window?.makeKeyAndOrderFront(nil)
+    return true
+}
+//-------------------------------------------------//
 
 
 //***********SHOW Create Task window***************//
@@ -122,20 +282,7 @@ func showConfirmRunScriptWindow(focusMode:String, scriptPath:String?, shellComma
 func showBrainDumpWindow(){
     addLog(text: "func:- showBrainDumpWindow")
     mainWindowControllerObj?.showWindow(nil)
-    // #2190: on the FIRST open the VC isn't loaded yet, so showBrainDump()'s viewWillAppear → resetData
-    // (webView.isHidden = false) ran BEFORE viewDidLoad (webView.isHidden = true) re-hid it → blank page.
-    // Touch .view to run viewDidLoad first, then defer showBrainDump so resetData runs after it.
-    if brainDumpVcObj == nil{
-        // Accessing .view forces the VC to load first (loadView + viewDidLoad run now).
-        let _ = getBrainDumpVcObject().view
-        DispatchQueue.global().async {
-            DispatchQueue.main.async {
-                leftMenuVcObj?.showBrainDump()
-            }
-        }
-    }else{
-        leftMenuVcObj?.showBrainDump()
-    }
+    leftMenuVcObj?.showBrainDump()
 }
 //-------------------------------------------------//
 
@@ -149,26 +296,42 @@ func showBrowsersTabAuditView(){
 //-------------------------------------------------//
 
 
-func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningApplication?, url:String, script:String, isBlockApp:Bool, browser:BROWSER?, tabTitle:String?, fullUrl:String, aiBlockReason:String?, isTimeOut:Bool, isBlockByAi:Bool, scoreForThisSiteApp: Double?, payload: [String : Any]?, isBrowser:Bool, suggestedTask:String?, suggestedTaskId:String?){
+func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningApplication?, url:String, script:String, isBlockApp:Bool, browser:BROWSER?, tabTitle:String?, fullUrl:String, aiBlockReason:String?, isTimeOut:Bool, isBlockByAi:Bool, scoreForThisSiteApp: Double?, payload: [String : Any]?, isBrowser:Bool, suggestedTask:String?, suggestedTaskId:String?, isTaskMisalignedWithIntention: Bool? = nil){
     addLog(text: "func:- PopupBlockConfirmWindow")
+    // Exit the app's fullscreen so this block-confirm popup is actually visible. Done here (rather than
+    // before the block/allow decision) so an app that ends up allowed is never pulled out of fullscreen.
+    // Only for app blocks — URL popups pass currentApp: nil and exit fullscreen on their own paths.
+    if let currentApp = currentApp {
+        exitFullScreen(runningApp: currentApp)
+    }
     var currentPid: pid_t?
     if let runningApp = NSWorkspace.shared.frontmostApplication{
         let pid = runningApp.processIdentifier
         currentPid = pid
-        
+        // For Chrome, place the blur/popup over the REAL browsing window (the one whose active tab
+        // was blocked), not the front "about:blank" window a Meet call opens — see
+        // getGoogleChromeBlockingWindowBounds. nil (other browsers / read failed) keeps the old
+        // "first sizeable frontmost window" behaviour.
+        let chromeTargetBounds = (browser == ._GOOGLE_CHROME_) ? getGoogleChromeBlockingWindowBounds() : nil
+
         let options = CGWindowListOption(arrayLiteral: CGWindowListOption.excludeDesktopElements, CGWindowListOption.optionOnScreenOnly)
         let windowListInfo = CGWindowListCopyWindowInfo(options, CGWindowID(0))
         let windowInfoList = windowListInfo as NSArray? as? [[String: AnyObject]]
-        
+
         for info in windowInfoList! {
             let windowPID = info["kCGWindowOwnerPID"] as! UInt32
             if  windowPID == pid {
                 if let windowFrame = info["kCGWindowBounds"] as? NSDictionary{
                     let height = windowFrame.value(forKey: "Height") as? Int ?? 0
+                    let width = windowFrame.value(forKey: "Width") as? Int ?? 0
+                    let x = windowFrame.value(forKey: "X") as? Int ?? 0
+                    let y = windowFrame.value(forKey: "Y") as? Int ?? 0
+                    // Skip any window that isn't the blocked Chrome browsing window (e.g. the front
+                    // about:blank call window).
+                    if let t = chromeTargetBounds, (abs(x - t.x) > 30 || abs(y - t.y) > 30) {
+                        continue
+                    }
                     if height > 250{
-                        let width = windowFrame.value(forKey: "Width") as? Int ?? 0
-                        let x = windowFrame.value(forKey: "X") as? Int ?? 0
-                        let y = windowFrame.value(forKey: "Y") as? Int ?? 0
                         var frame = NSRect(x: x, y: y, width: width, height: height)
                         if browser != nil{
                             frame = getBlurFrameForBrowser(x: x, y: y, width: width, height: height, browser: browser!)
@@ -176,11 +339,43 @@ func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningAppl
                         showBlurWindow(frame: frame, browser: browser)
                         break;
                     }
-                    
+
                 }
             }
         }
     }
+    // AI-block redesign: when the AI relevance check decides the current app/site is NOT relevant to the
+    // focus intention + top task, route the moment through the SwiftUI accountability-buddy screen
+    // (top-3 Day Plan tasks, save-side-quest, argue-with-AI) instead of the legacy popup. Everything
+    // else (non-AI block-list blocks, super-distracting mode) still uses the legacy popup below.
+    if shouldUseAiBlockBuddy(isBlockByAi: isBlockByAi, isBrowser: isBrowser) {
+        // The AI relevance verdict is async — the app was captured when the check STARTED, but by the time
+        // it returns the user may have switched away. Presenting the check-in then flags the WRONG window
+        // (e.g. iTerm while Chrome is now frontmost). For an app block, only present if the flagged app is
+        // still the one the user is actually on; otherwise drop it and let the focus loop re-check whatever
+        // they moved to. (URL blocks keep their own handling — the caught page can persist in a background
+        // browser tab.)
+        if isBlockApp, let flagged = currentApp?.bundleIdentifier,
+           let nowFront = currentUserFacingApp()?.bundleIdentifier, flagged != nowFront {
+            addLog(text: "AI-block buddy: dropping stale app nudge for \(blockedAppName) — user is now on \(nowFront)")
+            // The block flow already raised the blur backdrop before we got here. Dropping the nudge without
+            // tearing it down left the blur orphaned on screen — no popup on top and nothing owning it to
+            // dismiss, so it got stuck (user had to force-quit). Close it as we bail.
+            blurWcObj?.window?.close()
+            return
+        }
+        let context = AiBlockContext(blockedAppName: blockedAppName, currentApp: currentApp, url: url,
+                                     fullUrl: fullUrl, script: script, browser: browser,
+                                     isAppBlocking: isBlockApp, isBrowser: isBrowser,
+                                     aiBlockReason: aiBlockReason, scoreForThisSiteApp: scoreForThisSiteApp,
+                                     payload: payload, isTaskMisalignedWithIntention: isTaskMisalignedWithIntention)
+        // A meeting is happening now and this is a meeting app/site — allow it silently, never block a
+        // live call. Read LIVE (meeting state changes). Otherwise present the buddy.
+        if autoAllowMeetingRelatedIfNeeded(context: context) { return }
+        showAiBlockBuddyWindow(context: context)
+        return
+    }
+
     if popUpBlockConfirmWcObj == nil{
         getPopUpBlockConfirmWindowObject().contentViewController = getPopUpBlockConfirmVcObject()
         popUpBlockConfirmWcObj?.window?.styleMask.remove(.closable)
@@ -215,33 +410,45 @@ func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningAppl
         }
     }
     popUpBlockConfirmWcObj!.showWindow(nil)
+    BrowsingHistory.shared.record(.checkInShown, url: isBlockApp ? nil : (fullUrl.isEmpty ? url : fullUrl), title: tabTitle,
+                                  app: currentApp?.bundleIdentifier ?? (isBlockApp ? blockedAppName : nil),
+                                  reason: BrowsingReason.blockConfirmPopup, focusMode: runningFocusModeName,
+                                  aiScore: scoreForThisSiteApp, aiReason: aiBlockReason)
 }
 //-------------------------------------------------//
 
 //***********Popup Set Intention Blocked urls Window***************//
 func showSetIntentionBlockedUrlsWindow(script: String, url:String, browser:BROWSER?, allreadyCheckedIndex:Int, isAppBlocking:Bool, currentApp:NSRunningApplication?, blockedAppName:String, blockItem:String){
-    addLog(text: "func:- showSetIntentionBlockedUrlsWindow :- currentApp: \(currentApp?.localizedName ?? ""), url: \(url)")
+    addLog(text: "func:- showSetIntentionBlockedUrlsWindow :- currentApp: \(currentApp?.localizedName ?? ""), url: \(LogPrivacy.site(url))")
+    BrowsingHistory.shared.record(.checkInShown, url: url, app: currentApp?.bundleIdentifier ?? blockedAppName,
+                                  reason: BrowsingReason.intentionPrompt, focusMode: runningFocusModeName)
     print("showSetIntentionBlockedUrlsWindow*************")
     var currentPid: pid_t?
     if let runningApp = NSWorkspace.shared.frontmostApplication{
 
         let pid = runningApp.processIdentifier
         currentPid = pid
-        
+        // See showBlockConfirmWindow: for Chrome, place the blur/popup over the real blocked browsing
+        // window, not the front about:blank Meet call window.
+        let chromeTargetBounds = (browser == ._GOOGLE_CHROME_) ? getGoogleChromeBlockingWindowBounds() : nil
+
         let options = CGWindowListOption(arrayLiteral: CGWindowListOption.excludeDesktopElements, CGWindowListOption.optionOnScreenOnly)
         let windowListInfo = CGWindowListCopyWindowInfo(options, CGWindowID(0))
         let windowInfoList = windowListInfo as NSArray? as? [[String: AnyObject]]
-        
+
         for info in windowInfoList! {
             let windowPID = info["kCGWindowOwnerPID"] as! UInt32
             if  windowPID == pid {
 
                 if let windowFrame = info["kCGWindowBounds"] as? NSDictionary{
                     let height = windowFrame.value(forKey: "Height") as? Int ?? 0
+                    let width = windowFrame.value(forKey: "Width") as? Int ?? 0
+                    let x = windowFrame.value(forKey: "X") as? Int ?? 0
+                    let y = windowFrame.value(forKey: "Y") as? Int ?? 0
+                    if let t = chromeTargetBounds, (abs(x - t.x) > 30 || abs(y - t.y) > 30) {
+                        continue
+                    }
                     if height > 250{
-                        let width = windowFrame.value(forKey: "Width") as? Int ?? 0
-                        let x = windowFrame.value(forKey: "X") as? Int ?? 0
-                        let y = windowFrame.value(forKey: "Y") as? Int ?? 0
                         var frame = NSRect(x: x, y: y, width: width, height: height)
                         if browser != nil{
                             frame = getBlurFrameForBrowser(x: x, y: y, width: width, height: height, browser: browser!)
@@ -260,7 +467,7 @@ func showSetIntentionBlockedUrlsWindow(script: String, url:String, browser:BROWS
         setIntentionBlockedUrlsWcObj?.window?.styleMask.remove(.closable)
         setIntentionBlockedUrlsWcObj?.window?.title = appName
         setIntentionBlockedUrlsWcObj?.window?.backgroundColor = NSColor.clear
-        
+
         setIntentionBlockedUrlsWcObj?.window?.isMovable = false
     }
     if !(setIntentionBlockedUrlsVcObj?.isViewLoaded ?? false){
@@ -415,7 +622,7 @@ func closeNaturalBreakDetectionWindowIfVisible(){// added on 9/9/25 in 2.27.413
 
 //***********show Popup Appointment Time Window***************//
 
-func showPopupAppointmentWindow(title:String, endTime:Date){
+func showPopupAppointmentWindow(title:String, startTime:Date?, endTime:Date){
     addLog(text:"showPopupAppointmentWindow")
     // Mirror the Late No More appointment reminder onto the Focus Button.
     focusButtonServiceObject.showNotification(text: title)
@@ -425,7 +632,7 @@ func showPopupAppointmentWindow(title:String, endTime:Date){
     getPopupAppointmentTimeWindowObject().window?.center()
     getPopupAppointmentTimeWindowObject().window?.title = appName
     getPopupAppointmentTimeWindowObject().showWindow(nil)
-    getPopupAppointmentTimeVcObject().resetView(title:title, endTime:endTime)
+    getPopupAppointmentTimeVcObject().resetView(title:title, startTime:startTime, endTime:endTime)
 }
 //-------------------------------------------------//
 
@@ -454,7 +661,10 @@ func showBlurWindow(frame:NSRect, browser:BROWSER?){
         
         blurWcObj?.window?.backgroundColor = NSColor.clear
         blurWcObj?.window?.isOpaque = false
-        blurWcObj?.window?.alphaValue = 0.98
+        // MUST stay 1. NSVisualEffectView's `behindWindow` blur is disabled whenever the window's
+        // alphaValue < 1, so at 0.98 the frosted panel wasn't actually blurring and the blocked site
+        // stayed readable through it ("it doesn't blur enough"). Full opacity re-enables the real blur.
+        blurWcObj?.window?.alphaValue = 1
     }
     guard let screen = NSScreen.main else{
         return;
@@ -474,11 +684,41 @@ func showBlurWindow(frame:NSRect, browser:BROWSER?){
         }else{
             blockBlurVcObj?.visualEffectView.layer?.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
         }
-        
+
     }else{
         blockBlurVcObj?.visualEffectView.layer?.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
     }
-    
+
+}
+//-------------------------------------------------//
+
+//***********show Blur Backdrop For Frontmost App***************//
+
+/// Raise the blur backdrop sized to the frontmost app's main window — the same backdrop the block popup
+/// shows. Used by the AI-block buddy's time-boxed re-prompt to re-raise the backdrop when a temporary
+/// allow expires (the original entry computes this inline alongside `currentPid`, which the re-prompt
+/// doesn't need).
+func showBlurBackdropForFrontmostApp(browser: BROWSER?) {
+    guard let runningApp = NSWorkspace.shared.frontmostApplication else { return }
+    let pid = runningApp.processIdentifier
+    let options = CGWindowListOption(arrayLiteral: .excludeDesktopElements, .optionOnScreenOnly)
+    guard let windowListInfo = CGWindowListCopyWindowInfo(options, CGWindowID(0)),
+          let windowInfoList = windowListInfo as NSArray? as? [[String: AnyObject]] else { return }
+    for info in windowInfoList {
+        guard let windowPID = info["kCGWindowOwnerPID"] as? UInt32, windowPID == pid,
+              let windowFrame = info["kCGWindowBounds"] as? NSDictionary else { continue }
+        let height = windowFrame.value(forKey: "Height") as? Int ?? 0
+        guard height > 250 else { continue }
+        let width = windowFrame.value(forKey: "Width") as? Int ?? 0
+        let x = windowFrame.value(forKey: "X") as? Int ?? 0
+        let y = windowFrame.value(forKey: "Y") as? Int ?? 0
+        var frame = NSRect(x: x, y: y, width: width, height: height)
+        if let browser = browser {
+            frame = getBlurFrameForBrowser(x: x, y: y, width: width, height: height, browser: browser)
+        }
+        showBlurWindow(frame: frame, browser: browser)
+        break
+    }
 }
 //-------------------------------------------------//
 
@@ -569,6 +809,58 @@ func showSurveyWindow(){
 //-------------------------------------------------//
 
 
+//***********showAudhdResultsWindow***************//
+// Retained so the window/controller isn't deallocated while shown.
+var audhdResultsVcObj: AudhdResultsWebViewVc?
+private var audhdResultsWindow: NSWindow?
+
+// Opens the gated "advanced AuDHD results" in a full-screen WKWebView with no URL bar.
+// Reached from the `focusbear://view-audhd-results?test-code=<CODE>` deep link.
+func showAudhdResultsWindow(testCode: String, onClose: (() -> Void)? = nil) {
+    addLog(text: "showAudhdResultsWindow")
+
+    let vc = audhdResultsVcObj ?? AudhdResultsWebViewVc()
+    audhdResultsVcObj = vc
+    vc.onClose = onClose
+
+    let window = audhdResultsWindow ?? NSWindow(
+        contentRect: (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1200, height: 800),
+        styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
+        backing: .buffered,
+        defer: false
+    )
+    audhdResultsWindow = window
+    // NSWindow.isReleasedWhenClosed defaults to true, so closing the window would deallocate it while the
+    // audhdResultsWindow global still points at it — reopening then dereferences a dangling pointer and
+    // crashes (EXC_BAD_ACCESS). Keep it alive so it can be reused; the global holds the only strong ref.
+    window.isReleasedWhenClosed = false
+    window.titlebarAppearsTransparent = true
+    window.titleVisibility = .hidden
+    window.title = appName
+    window.contentViewController = vc
+    // The VC is the window's delegate so it can fire the "results closed" analytics event on ✕
+    // (see AudhdResultsWebViewVc.windowWillClose). NSWindow.delegate is weak; the globals hold the strong refs.
+    window.delegate = vc
+    if let screen = NSScreen.main ?? NSScreen.screens.first {
+        window.setFrame(screen.visibleFrame, display: true)
+    }
+    window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.maximumWindow)))
+    vc.present(testCode: testCode)
+    window.makeKeyAndOrderFront(nil)
+    NSApplication.shared.activate(ignoringOtherApps: true)
+    allApiObject.capturePosthog(event: AudhdResults.resultsShownEvent, metadata: [:])
+
+    // Stitch the web-quiz PostHog identity onto this app's person. The public
+    // AuDHD test identifies its PostHog person by the retest code, so aliasing the
+    // same test-code here merges the two — otherwise the quiz -> download -> sign-up
+    // journey shows up as two disjoint people and looks like nobody converts.
+    // capturePosthogIdentify sends $create_alias(alias = testCode, distinct_id =
+    // current app user), matching the mobile and Windows stitches.
+    allApiObject.capturePosthogIdentify(sAliasID: testCode, completionHandler: { _ in })
+}
+//-------------------------------------------------//
+
+
 //***********showTimeTrackerWindow***************//
 func showTimeTrackerWindow(showingAutomatically:Bool){
     addLog(text:"showTimeTrackerWindow")
@@ -587,22 +879,28 @@ func showTimeTrackerWindow(showingAutomatically:Bool){
 //-------------------------------------------------//
 
 var shouldReloadTaskPlayer = true
-//***********showTaskPlayerWindow***************//
-func showTaskPlayerWindow(totalDuration:Int, intention:String, automatically:Bool){
-    addLog(text:"func call:- showTaskPlayerWindow")
-    if !getHabitsVcObject().isViewLoaded{
-        getHabitsVcObject().loadView()
+
+/// Refreshes the To-do Player webview when a session-start path has asked for it.
+///
+/// The player has no screen of its own any more, but it is still the JS bridge that syncs
+/// `focusModeTaskString`, so it has to be reloaded when a session starts, resumes or changes length.
+/// That reload used to happen as a side effect of *displaying* the player; now that nothing displays
+/// it, the session lifecycle drives it directly.
+func reloadHeadlessToDoPlayerIfPending(){
+    // "Anything is blocking", not "a session is running": the player has to be in sync for a blocking
+    // schedule too. `isFocusModeRunning` (rather than `isFocusModeOn()`) keeps a *paused* session out,
+    // which is what this path has always done.
+    let isBlockingActive = FocusSessionPresence.isBlockingActive(
+        isInSession: isFocusModeRunning,
+        isAllowedActivityRunning: isAnyAllowedFocusModeActivityRunning,
+        isCustomScheduleOn: customBlockingScheduleManagerObj.isAnyCustomScheduleOn)
+    guard FocusSessionRouting.shouldReloadHeadlessPlayer(isReloadPending: shouldReloadTaskPlayer,
+                                                        isBlockingActive: isBlockingActive) else { return }
+    if !getTaskPlayerVcObject().isViewLoaded{
+        getTaskPlayerVcObject().loadView()// handled in v2.27.435 otherwise app can crash when focus resumes automatically after app opens
     }
-    
-    if !(mainViewControllerObj?.isViewLoaded ?? false){
-        mainViewControllerObj?.loadView()
-    }
-    if !(mainWindowControllerObj?.window?.isVisible ?? false){
-        mainWindowControllerObj?.showWindow(nil)
-    }
-    leftMenuVcObj?.showTaskPlayer()
-    allApiObject.capturePosthog(event: "todo-player-popup-shown", metadata: [:])
-    
+    shouldReloadTaskPlayer = false
+    taskPlayerVcObj?.reloadData(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock)
 }
 //-------------------------------------------------//
 
@@ -757,9 +1055,11 @@ func showAskLoginWindow(){
         }
         
         mainViewControllerObj!.showAskLogInVc()
+        // Set the login state BEFORE disabling tabs, so the alwaysEnabled guard (Todo List) sees
+        // ._LOGIN_ and lets disableAllTabForOnboarding() actually keep it disabled.
+        currentState = ._LOGIN_
         leftMenuVcObj?.disableAllTabForOnboarding()
         mainViewControllerObj?.collapseLeftPanel()
-        currentState = ._LOGIN_
         // Logged out: the menu-bar click must foreground this window (it was a no-op because the
         // action stayed nil on this screen). Set target + action explicitly so dispatch is guaranteed.
         appdelegate!.statusbutton?.target = appdelegate
@@ -788,12 +1088,16 @@ func showCustomLoginWindow(isLogin:Bool){
             mainWindowControllerObj?.window?.center()
         }
         
+        // Before showing it: the form lays itself out as sign-in or sign-up as it appears, so set
+        // late, "Sign up with email" after a logout opened the sign-in form.
+        customLoginVcObj?.isLogin = isLogin
         mainViewControllerObj!.showCustomLoginVc()
+        // Set the login state BEFORE disabling tabs, so the alwaysEnabled guard (Todo List) sees
+        // ._LOGIN_ and lets disableAllTabForOnboarding() actually keep it disabled.
+        currentState = ._LOGIN_
         leftMenuVcObj?.disableAllTabForOnboarding()
         mainViewControllerObj?.collapseLeftPanel()
-        customLoginVcObj?.isLogin = isLogin
         appdelegate!.statusbutton?.action = #selector(AppDelegate.bringMainWindowToForeground(_:))
-        currentState = ._LOGIN_
         return;
     }
 
@@ -913,6 +1217,24 @@ func showUpgradeToProNagWindow(titleText:String, reason:String){
 //***********SHOW Welcome window ***************//
 
 
+/// Fresh-install entry point used in place of a direct `showWelcomeWindow()` call. If a Focus Bear AuDHD
+/// retest code is sitting on the clipboard (checked exactly once — see
+/// `AudhdResults.clipboardCheckedDefaultsKey`), show the gated results window first and only proceed to
+/// the welcome window (and everything downstream: signup, onboarding) once the user closes it. With no
+/// code on the clipboard — the common case — this is identical to calling `showWelcomeWindow()` directly.
+func showWelcomeWindowOrAudhdResultsFirst(){
+    if !UserDefaults.standard.bool(forKey: AudhdResults.clipboardCheckedDefaultsKey) {
+        UserDefaults.standard.set(true, forKey: AudhdResults.clipboardCheckedDefaultsKey)
+        if let clip = NSPasteboard.general.string(forType: .string),
+           let testCode = AudhdResults.testCode(fromClipboard: clip) {
+            showAudhdResultsWindow(testCode: testCode, onClose: { showWelcomeWindow() })
+            return
+        }
+    }
+    showWelcomeWindow()
+}
+//-------------------------------------------------//
+
 func showWelcomeWindow(){
     addLog(text:"showWelcomeOnboardingWindow")
     if !getHabitsVcObject().isViewLoaded{
@@ -933,7 +1255,15 @@ func showWelcomeWindow(){
 
 func showQuitWindow(){
     addLog(text: "[user-action] - func showQuitWindow")
-    
+
+    // Teacher session:- the student can't quit the app to escape a class focus session. Show the
+    // teacher-locked alert (with Request unlock) instead of the quit flow.
+    if teacherSessionManagerObject.isTeacherSessionActive(){
+        addLog(text: "[user-action] quit blocked during teacher session — showing locked alert")
+        teacherSessionManagerObject.showTeacherSessionLockedAlert()
+        return
+    }
+
     showQuittingConfirmView()
     quittingWcObj?.showWindow(appdelegate!)
     quittingWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))//modalPanelWindow
@@ -945,17 +1275,15 @@ func showQuittingConfirmView(){
     let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
     let diffDays = Calendar.current.dateComponents([.day], from: firstRunDate, to: currentDate).day ?? 0
     
-    if diffDays > 2{
-        addLog(text: "[user-action] - Show QuittingConfirmVc")
-        allApiObject.capturePosthog(event: "show-quit-confirm-screen", metadata: [:])
-        getQuittingWindowObject().contentViewController = getQuittingConfirmVcObject()
-        getQuittingConfirmVcObject().resetData()
-    }else{
-        addLog(text: "[user-action] - Show InitialQuitFeedbackVc")
-        allApiObject.capturePosthog(event: "show-quit-within-48-hrs-feedback-screen", metadata: [:])
-        getQuittingWindowObject().contentViewController = getInitialQuitFeedbackVcObject()
-        getInitialQuitFeedbackVcObject().resetData()
-    }
+    // The new two-step quit popup is the single front door for every user (regardless of how long they've
+    // had the app installed). The historic "shown" events still fire, keyed on install age, so the
+    // existing dashboards keep working; the popup itself routes broken/annoying quits into the reason
+    // capture and "just turning off" into the pause/off-until-tomorrow choice.
+    let shownEvent = diffDays > 2 ? "show-quit-confirm-screen" : "show-quit-within-48-hrs-feedback-screen"
+    addLog(text: "[user-action] - Show quit popup (diffDays: \(diffDays))")
+    allApiObject.capturePosthog(event: shownEvent, metadata: [:])
+    getQuittingWindowObject().contentViewController = getInitialQuitFeedbackVcObject()
+    getInitialQuitFeedbackVcObject().resetData()
 }
 
 
@@ -1158,11 +1486,11 @@ func closeNudgeFocusAlignmentScoreWindow(){
 
 
 
-func showReportBadAIResponseWindow(url:String?, app:String?, payload:[String:Any]?){
+func showReportBadAIResponseWindow(url:String?, app:String?, payload:[String:Any]?, onReported:(() -> Void)? = nil){
     getReportBadAIResponseWindowObject().contentViewController = getReportBadAIResponseVcObject()
     getReportBadAIResponseWindowObject().window?.center()
     getReportBadAIResponseWindowObject().showWindow(nil)
-    getReportBadAIResponseVcObject().resetData(url: url, app: app, payload: payload)
+    getReportBadAIResponseVcObject().resetData(url: url, app: app, payload: payload, onReported: onReported)
 }
 
 
@@ -1206,10 +1534,120 @@ func closeSplashWindow(){
 }
 
 
+/// Remembers what the last full-screen entry was anchored to — the macOS primary display and any
+/// explicitly requested host — so a later display-topology change can tell "the primary changed"
+/// (follow it) from "the same displays were re-arranged" (stay put). Entry decides with
+/// `FullScreenDisplays.preferredHosts`; reconfiguration with `preferencesAfterReconfiguration`.
+struct FullScreenDisplaySelection<DisplayID: Equatable> {
+    private(set) var primaryID: DisplayID?
+    private(set) var requestedID: DisplayID?
+
+    mutating func beginEntry(primaryID: DisplayID?, requestedID: DisplayID?, continuing: Bool) {
+        if !continuing || self.primaryID == nil { self.primaryID = primaryID }
+        if !continuing || requestedID != nil { self.requestedID = requestedID }
+    }
+
+    mutating func preferencesAfterReconfiguration(primaryID: DisplayID?, rememberedID: DisplayID?,
+                                                  currentID: DisplayID?) -> [DisplayID?] {
+        let changedPrimary = self.primaryID != nil && primaryID != self.primaryID
+        self.primaryID = primaryID
+        // Explicit allowed-activity returns/manual choices survive topology updates. Automatic
+        // placement follows a changed primary; geometry-only updates keep the current physical host.
+        return [requestedID, changedPrimary ? primaryID : nil, rememberedID, currentID]
+    }
+}
+
+/// Which display the routine's borderless full-screen window takes, and which displays get the blank
+/// covers. One rule for both, so a cover can never land on the display the routine is on.
+///
+/// They used to disagree: the covers went on every display except `NSScreen.screens[0]`, while the
+/// window sized itself to whatever display it was on. With the window on a secondary display, a cover
+/// at `.maximumWindow` level went over it — and over the "Why do you want to skip?" sheet in it — so
+/// skipping from the menu blanked the left screen and hid the question (report 2026-09-25_14-51-33).
+enum FullScreenDisplays {
+    /// The first of `preferred` that is still connected, else the primary display. Callers pass the
+    /// display to use in priority order — e.g. the one with keyboard focus, then the window's own.
+    static func host<Screen: Equatable>(preferred: [Screen?], all: [Screen]) -> Screen? {
+        preferred.compactMap { $0 }.first(where: { all.contains($0) }) ?? all.first
+    }
+
+    /// Screen objects and geometry can be replaced when a monitor is connected or rearranged.
+    /// Resolve remembered identities against the new inventory before framing either host or covers.
+    static func reconfiguredHost<Screen, DisplayID: Equatable>(preferredIDs: [DisplayID?], all: [Screen],
+                                                               displayID: (Screen) -> DisplayID?) -> Screen? {
+        for identifier in preferredIDs.compactMap({ $0 }) {
+            if let screen = all.first(where: { displayID($0) == identifier }) { return screen }
+        }
+        return all.first
+    }
+
+    /// Every display except the host. A host that is no longer connected falls back to the primary.
+    static func screensToCover<Screen: Equatable>(all: [Screen], host: Screen?) -> [Screen] {
+        guard let host = host, all.contains(host) else { return Array(all.dropFirst()) }
+        return all.filter { $0 != host }
+    }
+
+    /// The displays to try, in order, when the borderless window is shown.
+    ///
+    /// - `requested` wins when there is one: an allowed-activity habit that is over sends the routine
+    ///   back to the display it was on before the habit (see `hostAfterAllowedActivityHabit`).
+    /// - Fresh morning/evening routine entry uses the current primary display.
+    /// - Other entries go to the display with keyboard focus, where the user is
+    ///   working — e.g. the menu they just clicked Skip in — so the skip question appears there.
+    /// - An automatic focus summary retains the current display instead of following keyboard focus.
+    /// - A re-assert of a window that is already full screen keeps its display rather than jumping.
+    static func preferredHosts<Screen>(requested: Screen?, isAlreadyFullScreen: Bool,
+                                       focused: Screen?, current: Screen?, state: CURRENTSTATE = ._NOTHING_,
+                                       primary: Screen? = nil, isWindowVisible: Bool = true) -> [Screen?] {
+        let isRoutine = state == ._MORNING_HABIT_ || state == ._EVENING_HABIT_
+        // A closed nested-break window still carries its fullscreen flag. Returning to a routine
+        // is a fresh entry, and NSScreen.main identifies keyboard focus, not the macOS primary.
+        let isActiveFullScreen = isAlreadyFullScreen && (!isRoutine || isWindowVisible)
+        if isRoutine && !isActiveFullScreen {
+            return [requested, primary, focused, current]
+        }
+        let shouldKeepCurrentDisplay = isActiveFullScreen || state == ._FOCUS_SUMMARY_
+        return [requested] + (shouldKeepCurrentDisplay ? [current, focused] : [focused, current])
+    }
+
+    /// Where the routine goes once an allowed-activity habit is skipped or ends: back to the display it
+    /// was on before the habit started, found by its display identifier. Skipping put the skip question
+    /// on the display the user clicked in, and the routine used to stay there — so with the menu on the
+    /// laptop screen, the Day Plan moved off the primary external monitor for good (report
+    /// 2026-09-25_14-51-33, follow-up 2026-09-28). A display unplugged since then falls back to the
+    /// focused one, and failing that the primary.
+    static func hostAfterAllowedActivityHabit<Screen: Equatable, DisplayID: Equatable>(
+        displayBeforeHabit: DisplayID?, focused: Screen?, all: [Screen],
+        displayID: (Screen) -> DisplayID?) -> Screen? {
+        let screenBeforeHabit = displayBeforeHabit.flatMap { id in all.first { displayID($0) == id } }
+        return host(preferred: [screenBeforeHabit, focused], all: all)
+    }
+}
+
+extension NSScreen {
+    private static let screenNumberKey = NSDeviceDescriptionKey("NSScreenNumber")
+
+    /// Stable for as long as the display stays connected, unlike the `NSScreen` object itself, which
+    /// AppKit replaces whenever the display arrangement changes.
+    var displayID: CGDirectDisplayID? {
+        deviceDescription[Self.screenNumberKey] as? CGDirectDisplayID
+    }
+}
+
+func displayLogName(_ displayID: CGDirectDisplayID?) -> String {
+    displayID.map { "\($0)" } ?? "none"
+}
+
 var arrWindows = [NSWindow]()
 func showBlankWindowInSecondaryMonitor(){
     addLog(text: "func:- showBlankWindowInSecondaryMonitor")
-    
+    // Late routine callbacks must not recreate covers or dismiss unrelated Help sheets after
+    // the main window becomes a normal window or closes.
+    guard checkIsFullScreenEnabled(), mainWindowControllerObj?.shouldCoverSecondaryScreens == true else {
+        hideBlankWindowInSecondaryMonitor()
+        return
+    }
+
     // Luisa App broken bug fix 28/6/22
     let windows = NSApp.windows
     for win in windows{
@@ -1220,9 +1658,6 @@ func showBlankWindowInSecondaryMonitor(){
         }
     }
     //  /////////////////////////////////
-    if !checkIsFullScreenEnabled(){//Blank Window In Secondary Monitor is not required if full screen is not enabled
-        return;
-    }
     appdelegate?.showExtraWindows()
 }
 
@@ -1301,6 +1736,12 @@ func showFloatingTopBarWindow(windowTopMidPoint:NSPoint){
 
 
 func closeMenuWindowIsVisible(){
+    // The menu may currently be shown in the full-screen overlay panel (a separate window from the
+    // popover/detached window) — dismiss that first so a menu action closes it too.
+    if appdelegate?.menuShownInOverlayPanel == true {
+        appdelegate?.hideMenuOverlayPanel()
+        return
+    }
     appdelegate?.removeMenuOutsideClickMonitors()
     if !SettingsManagerObject.isMenuPopoverEnabled{
         if menuWcObj != nil{
@@ -1330,8 +1771,14 @@ func closeMainMenuIfVisible(){
 func showSmallTimerWindow(durationSeconds: Int, msg: String, isFocusBreak:Bool, currentTimerValue:Int){
     addLog(text:"show Top Small Timer Window for:- \(durationSeconds) seconds")
     closeMainMenuIfVisible()
-    floatingTopBarVcObj?.showTimerWindow(durationSeconds: durationSeconds, msg: msg, isFocusBreak: isFocusBreak, currentTimerValue: currentTimerValue)
-    
+    // Suppress the floating timer popup for allowed-app habits — their progress + Skip/Postpone are in
+    // the menu now, so the popup is redundant. Breaks and ordinary habits still show it. Covers every
+    // call site centrally (rather than gating each one) by keying off the habit currently playing.
+    let hideWindow = !isFocusBreak && (currentHabitPlaying?.openSpecificApps ?? false)
+    floatingTopBarVcObj?.showTimerWindow(durationSeconds: durationSeconds, msg: msg, isFocusBreak: isFocusBreak, currentTimerValue: currentTimerValue, hideWindow: hideWindow)
+
+    // Lay these out normally even when suppressed — showTimerWindow only makes the window invisible
+    // (alpha 0), so the 2-minutes-left reminder reveals the whole bar.
     if floatingTopBarVcObj != nil {
         floatingTopBarVcObj?.boxMain.isHidden = false
         floatingTopBarVcObj?.boxMoreItems.isHidden = false
@@ -1450,6 +1897,39 @@ func closeIntentionBlockedAppsWinddowIfVisible(){
     if intentionBlockedAppsWcObj != nil{
         if intentionBlockedAppsWcObj?.window?.isVisible ?? false{
             intentionBlockedAppsWcObj?.window?.close()
+        }
+    }
+}
+
+/// Which windows count as "inside" the menu when deciding whether a click dismissed it.
+///
+/// The menu's outside-click dismissal compared the clicked window against the menu window itself.
+/// A sheet (the to-do task editor), a child window or an attached popover is a *different* NSWindow,
+/// so the first click inside one of them read as a click outside the menu and tore the whole menu
+/// down — which is what made typing a due date impossible: clicking the field closed the editor
+/// before a character could be typed (report 2026-09-11_21-40-57).
+///
+/// Written against an opaque parent lookup so the walk is testable without real windows.
+enum MenuWindowOwnership {
+    /// Guards against a cycle in a malformed parent chain; menu sheets nest no deeper than this.
+    static let maxDepth = 8
+
+    static func isOwned(_ window: AnyObject, by menu: AnyObject, parent: (AnyObject) -> AnyObject?) -> Bool {
+        var current: AnyObject? = window
+        for _ in 0...maxDepth {
+            guard let candidate = current else { return false }
+            if candidate === menu { return true }
+            current = parent(candidate)
+        }
+        return false
+    }
+
+    /// A window's owner for this purpose: the window it is a sheet on, else its parent window.
+    static func owner(of window: NSWindow) -> NSWindow? { window.sheetParent ?? window.parent }
+
+    static func isOwned(_ window: NSWindow, by menu: NSWindow) -> Bool {
+        isOwned(window as AnyObject, by: menu as AnyObject) { candidate in
+            (candidate as? NSWindow).flatMap(owner(of:))
         }
     }
 }

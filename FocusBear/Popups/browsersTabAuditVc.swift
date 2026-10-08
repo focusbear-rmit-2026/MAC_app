@@ -22,6 +22,7 @@ class browsersTabAuditVc: NSViewController {
  
     override func viewDidLoad() {
         super.viewDidLoad()
+        btnExtractTabURLs.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.tabAuditExtractButton)
         // Do view setup here.
         lblTitle.stringValue = "Tab Audit"
         lblSubtile.stringValue = "Focus Bear can extract all the open browser tabs you have and put them in a CSV so you can decide if you need them."

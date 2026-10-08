@@ -38,7 +38,8 @@ jobs:
         run: |
           set -o pipefail
           BASE="origin/${{ github.event.pull_request.base.ref }}"
-          git fetch --no-tags --depth=1 origin "${{ github.event.pull_request.base.ref }}"
+          # Preserve checkout history so an advancing base still has a merge base.
+          git fetch --no-tags origin "${{ github.event.pull_request.base.ref }}"
           # Both pathspecs: 'FocusBear/**/*.swift' alone skips top-level files (AppDelegate.swift, …).
           git diff "$BASE"...HEAD -- 'FocusBear/*.swift' 'FocusBear/**/*.swift' \
             | python3 scripts/check-hardcoded-strings.py

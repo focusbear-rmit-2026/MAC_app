@@ -33,6 +33,9 @@ class alwaysAllowedAppsVc: NSViewController {
             btnAddApp.image = NSImage(systemSymbolName: "plus.square.fill", accessibilityDescription: nil)
             btnRemoveApp.image = NSImage(systemSymbolName: "minus.square.fill", accessibilityDescription: nil)
         }
+        tblView.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.alwaysAllowedAppsTable)
+        btnAddApp.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.alwaysAllowedAppsAddButton)
+        btnRemoveApp.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.alwaysAllowedAppsRemoveButton)
         arrForSearchFromSettings.append(["title": lblTitle.stringValue, "tabId": idAlwaysAllowedApps, "object": lblTitle as Any])
         arrForSearchFromSimpleModeSettings.append(["title": lblTitle.stringValue, "tabId": idAlwaysAllowedApps, "object": lblTitle as Any])
     }
@@ -95,7 +98,7 @@ class alwaysAllowedAppsVc: NSViewController {
             self.tblView.reloadData()
             self.tblView.selectRowIndexes(IndexSet(arrayLiteral: (SettingsManagerObject.arrAlwaysAllowedApps.count - 1)), byExtendingSelection: false)
             self.tblView.scrollRowToVisible(SettingsManagerObject.arrAlwaysAllowedApps.count - 1)
-            UserDefaults.standard.set(SettingsManagerObject.arrAlwaysAllowedApps, forKey: SettingsManagerObject.kUserdefaultsArrAlwaysAllowedApps)
+            SensitiveDefaults.set(SettingsManagerObject.arrAlwaysAllowedApps, forKey: SettingsManagerObject.kUserdefaultsArrAlwaysAllowedApps)
             if isContainAlready{
                 self.showAlertAppAlreadyAdded()
             }
@@ -129,7 +132,7 @@ class alwaysAllowedAppsVc: NSViewController {
         if selectedAppsRow < SettingsManagerObject.arrAlwaysAllowedApps.count{
             SettingsManagerObject.arrAlwaysAllowedApps.remove(at: selectedAppsRow)
             tblView.reloadData()
-            UserDefaults.standard.set(SettingsManagerObject.arrAlwaysAllowedApps, forKey: SettingsManagerObject.kUserdefaultsArrAlwaysAllowedApps)
+            SensitiveDefaults.set(SettingsManagerObject.arrAlwaysAllowedApps, forKey: SettingsManagerObject.kUserdefaultsArrAlwaysAllowedApps)
         }
         SettingsManagerObject.isSettingsChanged = true
         allApiObject.capturePosthog(event: "remove-always-allowed-app", metadata: [:])

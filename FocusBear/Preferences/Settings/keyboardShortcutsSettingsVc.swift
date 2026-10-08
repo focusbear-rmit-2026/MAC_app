@@ -96,6 +96,9 @@ class keyboardShortcutsSettingsVc: NSViewController {
         
         buildUI()
         refreshLabels()
+        lblShortcutBrainDump.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.brainDumpShortcutLabel)
+        lblShortcutFocusMusic.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.focusMusicShortcutLabel)
+        lblShortcutTaskList.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.taskListShortcutLabel)
         arrForSearchFromSettings.append(["title": keyboardShortcutsSettingTitle, "tabId": idKeyboardShortcuts, "object": self.lblHeader as Any])
         addLog(text: "keyboardShortcutsSettingsVc viewDidLoad")
     }

@@ -33,7 +33,6 @@ final class BreakFrequencyStreakTracker {
     // they read the current per-user value — this singleton can be created before the login-keying runs.
     private var kBreakOffDates: String          { kUserdefaultsBreakOffDates }         // [String] — "yyyy-MM-dd"
     private var kBreakOffPromptShown: String    { kUserdefaultsBreakOffPromptShown }   // String — last date prompt shown
-    private var kBreakFrequencyMinutes: String  { kUserdefaultsBreakFrequencyMinutes } // Int — overridden frequency
 
     private let dateFormatter: DateFormatter = {
         let df = DateFormatter()
@@ -102,8 +101,9 @@ final class BreakFrequencyStreakTracker {
 
     /// Persist the new break frequency, sync it to the server, and reload it for the break timer.
     func saveNewBreakFrequency(_ minutes: Int) {
-        UserDefaults.standard.set(minutes, forKey: kBreakFrequencyMinutes)
-        // Update the live global used by the break timer
+        // Update the live global used by the break timer. The value is persisted only to
+        // break_after_minutes (server + cached settings blob below) — the single source of truth — so we
+        // never keep a separate local frequency key that would shadow the server value on the next read.
         breakAfterMinutes = minutes
         addLog(text: "BreakFrequencyStreakTracker: new break frequency saved — \(minutes) min")
 
@@ -111,7 +111,7 @@ final class BreakFrequencyStreakTracker {
         // load the cached settings blob, mutate the one field, PUT via isSettingsValid,
         // then re-cache whatever the server returns.
         var jsonResult = NSDictionary()
-        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String,
+        if let stringDic = SensitiveDefaults.object(forKey: kUserdefaultsSelectedJson) as? String,
             let data = stringDic.data(using: .utf8) {
             do {
                 jsonResult = try JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? NSDictionary()
@@ -128,7 +128,7 @@ final class BreakFrequencyStreakTracker {
                     do {
                         let jsonData = try JSONSerialization.data(withJSONObject: dic, options: [])
                         if let backToString = String(data: jsonData, encoding: .utf8) {
-                            UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                            SensitiveDefaults.set(backToString, forKey: kUserdefaultsSelectedJson)
                         }
                     } catch {
                         addLog(text: "BreakFrequencyStreakTracker: failed to re-cache settings JSON — \(error.localizedDescription)")

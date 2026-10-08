@@ -25,7 +25,8 @@ class welcomeVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        btnLetsDoIt.setAccessibilityIdentifier(UITestContract.Identifier.Onboarding.welcomeContinueButton)
+        btnAlreadyHaveAccount.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.welcomeAlreadyHaveAccountButton)
         btnAlreadyHaveAccount.title = "I already have a Focus Bear account"
         lblTitleAppName.stringValue = appName
         lblSubTitle.stringValue = "Welcome aboard!"

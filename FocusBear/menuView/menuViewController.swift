@@ -7,10 +7,16 @@
 //
 
 import Cocoa
+import CoreServices
 import SwiftUI
 
 class menuViewController: NSViewController {
 
+    /// The focus mode id whose default duration was last written into `model.focusMinutes` while the focus
+    /// starter was open. Lets `updateLiveMenuFields` re-sync the duration ONLY on a real mode change, so a
+    /// live refresh never overwrites the user's in-progress −/+ adjustment. (Stored properties can't live in
+    /// an extension, so it sits here on the class.)
+    private var lastSyncedExpandedModeId: String = ""
 
     @IBOutlet weak var boxLblTitleFocusStatus: NSView!
     @IBOutlet weak var boxSectionFocusMode: NSBox!
@@ -194,7 +200,13 @@ class menuViewController: NSViewController {
     // The storyboard outlets/logic stay intact (kept up to date in the background); the
     // SwiftUI view reads a MenuModel that we refresh on each appearance.
     var menuHostingView: NSView?
+    /// In-flight uploads of images pasted into the menu's quick-add composer. The store owns the
+    /// request, so it has to be held here until it reports back — see `attachPastedImage`.
+    var quickAddAttachmentUploads: [ToDoAttachmentsStore] = []
     var menuModelRef: AnyObject?
+    /// Last height applied to the popover/window by `applyMenuHeight`, used to damp a resize→measure→resize
+    /// feedback loop (see `applyMenuHeight`). 0 = nothing applied yet this presentation.
+    var lastAppliedMenuHeight: CGFloat = 0
     var menuRefreshTimer: Timer?
     /// #2025: a device-mic (LISTEN|START) recording is starting — the recorder starts async, so it may
     /// not be `isRecording` yet when the popover appears and refreshSwiftUIMenu() runs. This one-shot flag
@@ -213,6 +225,9 @@ class menuViewController: NSViewController {
         // Do view setup here.
         addLog(text: "menuViewController viewdidload start")
         if #available(macOS 11.0, *) { setupSwiftUIMenu() }
+        view.setAccessibilityIdentifier(UITestContract.Identifier.MenuBar.popover)
+        btnPreferences.setAccessibilityIdentifier(UITestContract.Identifier.MenuBar.preferencesButton)
+        btnQuit.setAccessibilityIdentifier(UITestContract.Identifier.MenuBar.quitButton)
         
         lblTitleHabitStatus.stringValue = "✋Postponed"
         
@@ -220,7 +235,12 @@ class menuViewController: NSViewController {
         lblRemaining.stringValue = "remaining"
         
         lblTotalFocusedTimeToday.stringValue = ""
-        
+        // Clear the storyboard placeholder ("xxFocus Alignment score"). setFocusAlignmentScore() fills
+        // it in with the real value; until then it's read into the SwiftUI menu's focusOnTaskText, so an
+        // uncleared placeholder leaks through as "xx..." when the menu renders before the score is
+        // computed (e.g. under memory pressure). Blank passes the !isEmpty guard → nothing is shown. #2205
+        lblFocusAlignmentScore.stringValue = ""
+
         boxTipPermissions.isHidden = true
         lblTitleBlockingDisabledFirstTime.stringValue = "Get the most out of Focus Bear"
         
@@ -280,7 +300,7 @@ class menuViewController: NSViewController {
         var menuItemFocusMusicTitle = "Focus Music"
         
         var titleStartBreak = "Start Break"
-        lblTitleBrainDump.stringValue = "Brain Dump"
+        lblTitleBrainDump.stringValue = "Notes"   // i18n-ignore: last-resort default; the real string comes from config (menuItemNotesTitle)
         
         lblMeetingDetection.stringValue = "Meeting active - breaks off"
         btnFalseDetection.title = "False positive: I'm not in a meeting"
@@ -316,7 +336,7 @@ class menuViewController: NSViewController {
             menuItemUpgradeNowTitle = menuInfo.value(forKey: "menuItemUpgradeNowTitle") as? String ?? menuItemUpgradeNowTitle
             subscriptionExpiredText = menuInfo.value(forKey: "subscriptionExpiredText") as? String ?? subscriptionExpiredText
             titleStartBreak = menuInfo.value(forKey: "menuItemStartBreakTitle") as? String ?? titleStartBreak
-            lblTitleBrainDump.stringValue = menuInfo.value(forKey: "menuItemBrainDumpTitle") as? String ?? lblTitleBrainDump.stringValue
+            lblTitleBrainDump.stringValue = menuInfo.value(forKey: "menuItemNotesTitle") as? String ?? lblTitleBrainDump.stringValue
             toolTipOfficeMode = menuInfo.value(forKey: "toolTipOfficeMode") as? String ?? toolTipOfficeMode
             toolTipWfhMode = menuInfo.value(forKey: "toolTipWfhMode") as? String ?? toolTipWfhMode
             lblTitleTools.stringValue = menuInfo.value(forKey: "menuItemToolsTitle") as? String ?? lblTitleTools.stringValue
@@ -649,6 +669,7 @@ class menuViewController: NSViewController {
     
     
     override func viewWillAppear() {//will not call if view is inside nsmenu but noe using popover so view will appear will work
+        showFocusModeCountDownIfNeeded()
         if floatingTopBarWcObj != nil{
             if getFloatingTopBarWObject().window?.isVisible ?? false{
                 getFloatingTopBarVObject().boxMain.isHidden = true
@@ -674,6 +695,12 @@ class menuViewController: NSViewController {
         super.viewDidDisappear()
         menuRefreshTimer?.invalidate()
         menuRefreshTimer = nil
+        // Don't leave an uncommitted quick-add draft (or the open composer) waiting in the popover —
+        // the next open should start from the plain "+ Add task" row.
+        if #available(macOS 11.0, *) {
+            menuModel?.quickAddExpanded = false
+            menuModel?.quickAddText = ""
+        }
     }
     
     func checkPurchaseState(){
@@ -801,53 +828,8 @@ class menuViewController: NSViewController {
             }
         }
         
-        if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
-//            boxTipPermissions.isHidden = false
-            browserPermissionGiven = false
-            accessibilityPermissionGiven = false
-            systemEventsPermissionGiven = false
-        }else{
-//            if !browserPermissionGiven || !accessibilityPermissionGiven || !systemEventsPermissionGiven{
-//                boxTipPermissions.isHidden = false
-//            }else{
-//                boxTipPermissions.isHidden = true
-//            }
-            DispatchQueue.global().async {
-                var isPermissionGiven = false
-                if let arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
-                    for i in 0..<arrBrowsersInfo.count{
-                        let info = arrBrowsersInfo[i]
-                        let isEnabled = info["isEnabled"] as? Bool ?? false
-                        if isEnabled{
-                            isPermissionGiven = true
-                            break;
-                        }
-                    }
-                }
-                self.browserPermissionGiven = isPermissionGiven
+        refreshBlockingPermissionHealth()
 
-                if !isAccessibilityEnabled(isPrompt: false){
-                    self.accessibilityPermissionGiven = false
-                }else{
-                    self.accessibilityPermissionGiven = true
-                }
-                
-                if !checkAutomationPermissionWithAppleScript(){
-                    self.systemEventsPermissionGiven = false
-                }else{
-                    self.systemEventsPermissionGiven = true
-                }
-                
-                DispatchQueue.main.async {
-                    if !self.browserPermissionGiven || !self.accessibilityPermissionGiven || !self.systemEventsPermissionGiven{
-//                        self.boxTipPermissions.isHidden = false
-                    }else{
-                        self.browserPermissionGiven = true
-                    }
-                }
-            }
-        }
-        
         boxToDoPlayer.isHidden = false
         if isFocusModeRunning || ((currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && isAnyAllowedFocusModeActivityRunning){
             menuItemToDoList.title = menuItemToDoPlayerTitle
@@ -1351,6 +1333,10 @@ class menuViewController: NSViewController {
     }
     
     func showFocusModeCountDownIfNeeded(){
+        // A session that starts before the popover's view has loaded (a class session already running
+        // at launch) reached the outlets below while they were still nil and crashed. The countdown is
+        // brought up to date in viewWillAppear instead.
+        guard isViewLoaded else { return }
         if (isFocusModeRunning || isAnyAllowedFocusModeActivityRunning) && endFocusModeTime != nil{
             setFocusModeCoundDownTimer()
         }else{
@@ -1372,6 +1358,7 @@ class menuViewController: NSViewController {
     func stopFocusModeCountDownTimer(){
         self.timerFocusModeCoundDown?.invalidate()
         self.timerFocusModeCoundDown = nil
+        guard isViewLoaded else { return }
         boxFocusModeRemainingTime.isHidden = true
     }
     
@@ -1544,8 +1531,11 @@ class menuViewController: NSViewController {
     
     @objc func openToDoListClicked(){
         addLog(text: "[user-action] openToDoListClicked")
-        if isFocusModeOn() || ((currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && isAnyAllowedFocusModeActivityRunning) || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-            showTaskPlayerWindow(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock, automatically:false)
+        // "My tasks" goes to the session's queue only while there IS a session (or a routine activity
+        // with one). A custom blocking schedule used to qualify — which sent the user to the
+        // ongoing-session screen, for a session that was never running (report 2026-09-16_15-13-57).
+        if isFocusModeOn() || ((currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && isAnyAllowedFocusModeActivityRunning){
+            showRunningFocusSessionWindow()
             closeMenuWindowIsVisible()
         }else{
             showToDoListWindow()
@@ -1776,8 +1766,17 @@ class menuViewController: NSViewController {
             closeMenuWindowIsVisible()
             return;
         }
+        if currentFocusModeStrictness == ._SUPER_STRICT_, !currentFocusSessionRequiresPasswordToStop() {
+            // Same rule Stop follows: an AUTO-started meeting/accountability session must never
+            // password-gate Pause either. The user never opted into a strict session — it started itself
+            // (e.g. Late No More starting a meeting session), so pausing it is theirs to do. Scoped to
+            // super-strict so a ._STRICT_ session keeps its abort-confirmation screen.
+            addLog(text: "[user-action] Pause auto-started meeting/accountability session:- skip password")
+            pauseFocusMode()
+            return;
+        }
         if currentFocusModeStrictness == ._SUPER_STRICT_{
-            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+            if SettingsManagerObject.isAppPasswordSet{
                 if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{// if no password is set  then chance of getting lastUnlockTimeByAccountabilityBuddy is 0% but if password is set then check this
                     if Date() < lastUnlockTimeByAccountabilityBuddy{
                         pauseFocusMode()
@@ -1829,10 +1828,34 @@ class menuViewController: NSViewController {
             closeMenuWindowIsVisible()
             return;
         }
+        if resumeFocusInterruptedByMeetingIfAvailable() {
+            closeMenuWindowIsVisible()
+            return
+        }
+        if wasFocusSessionStartedFromPostpone(){
+            // A focus session started by postponing the routine isn't a "real" strict session to gate
+            // behind a password — stopping it should just hand the user back to the habits they postponed.
+            addLog(text: "[user-action] Stop focus session started from postpone:- skip password + resume routine")
+            stopFocusModeAndResumeRoutine(for: .userRequested)
+            return;
+        }
+        if isCurrentFocusSessionAutoStarted() {
+            // An AUTO-started accountability/meeting session must never password-gate Stop — the user never
+            // opted into a strict session, it started itself (e.g. LNM starting a meeting session), so it
+            // just stops without a password. (A meeting that displaced an incomplete routine leaves the
+            // routine's postpone timer running, which brings the habits back when it elapses.)
+            // Keyed on the PERSISTED marker, not just the in-memory buddy session: after a relaunch the
+            // session comes back super-strict from UserDefaults while the buddy globals are still empty,
+            // which used to make a resumed meeting session impossible to stop.
+            addLog(text: "[user-action] Stop auto-started meeting/accountability session:- skip password")
+            showAbortingFocusModeVc(forPause: false)
+            closeMenuWindowIsVisible()
+            return;
+        }
         var needToShowPassword = false
         if currentFocusModeStrictness == ._SUPER_STRICT_{
             needToShowPassword = true// show without checking . if password not there then show enter random characters view
-            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+            if SettingsManagerObject.isAppPasswordSet{
                 if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{// if no password is set  then chance of getting lastUnlockTimeByAccountabilityBuddy is 0% but if password is set then check this
                     if Date() < lastUnlockTimeByAccountabilityBuddy{
                         needToShowPassword = false
@@ -1864,6 +1887,87 @@ class menuViewController: NSViewController {
         }
     }
     
+    /// True when the currently running/paused focus session was itself started from the "postpone my
+    /// routine → set intention → start a focus mode" flow. Used to drop the password gate on Stop and
+    /// return the user to the routine they postponed.
+    ///
+    /// #2571 (5): this must reflect how THIS session started, not merely that a routine is still
+    /// postponed. It previously derived purely from `routinePostponeStateToReCoverOnExtend()`, so a
+    /// fresh session (e.g. started after leaving and returning to the Start Focus screen with a
+    /// different intention) wrongly resumed the routine on stop. Gate on the session-lifetime
+    /// `isFocusSessionStartedFromPostponeIntention` (stamped at session start in pomodoroVc, cleared at
+    /// every session start), and still require a postpone state to recover — that's what
+    /// `stopFocusModeAndResumeRoutine()` reads to know which routine to bring back.
+    func wasFocusSessionStartedFromPostpone() -> Bool {
+        guard isFocusModeRunning || isFocusModePaused() else { return false }
+        return isFocusSessionStartedFromPostponeIntention && routinePostponeStateToReCoverOnExtend() != nil
+    }
+
+    /// Ends a postpone-started focus session without a password prompt and jumps straight back into
+    /// the routine the user postponed. Reuses the postpone-timer resume path
+    /// (`resumeMorningHabit`/`resumeEveningHabit`/`resumeFocusSummary`) but fires it now instead of
+    /// waiting for the timer to elapse.
+    func stopFocusModeAndResumeRoutine(for trigger: RoutineResumeTrigger = .postponeElapsed){
+        // Capture the validated saved postpone too: a timer may already have unwound a nested
+        // break to idle while the meeting session was still running.
+        let postponeState = routinePostponeStateToReCoverOnExtend()
+        let now = Date()
+        let preservePostpone = RoutineResume.shouldPreservePostponeOnFocusStop(
+            trigger: trigger,
+            isMeetingSession: currentAccountabilityBuddySession?.isMeeting == true,
+            hasMeetingCoverage: MeetingCoverage.extensionSecondsToCoverMeeting(
+                now: now, meetings: AnnouncedMeetingRegister.shared.activeMeetings(now: now)) != nil,
+            postponeEnd: currentRoutinePostponeEndDate(), now: now)
+        // #2571 (4): stopping the session must clear the hardcore/super-focus flag. The abort path
+        // (abortingFocusModeVc) already does; this postpone-resume stop path did not, so a super
+        // pomodoro that auto-started from the morning routine left `isHardCorePomodoroModeOn` true —
+        // then the next postpone auto-started another session (pomodoroVc.viewWillAppear's
+        // `else if isHardCorePomodoroModeOn` branch), looping routine ↔ focus session.
+        isHardCorePomodoroModeOn = false
+        // We're resuming right now, so cancel the pending timed resume.
+        if !preservePostpone { getHabitsVcObject().stopPostponeEndTimer() }
+        // Silent finish: log/close the session (no completion screen, no password) so we can drop
+        // the user back into the routine rather than the idle/menu state.
+        appdelegate?.tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend: false, isCustomRoutineTime: false, shouldUpdateFocusButton: true)
+        if preservePostpone {
+            let retainedState = RoutineResume.stateForExplicitResume(
+                currentState: currentState, recoverablePostponeState: postponeState,
+                isMeetingSessionLive: false)
+            if retainedState != currentState { currentState = retainedState }
+            addLog(text: "Stop focus session: retaining routine postpone covered by an announced meeting")
+            closeMenuWindowIsVisible()
+            return
+        }
+        // A meeting that this call just ended no longer protects the postpone. Sampling before
+        // finishing vetoed routine recovery even after the meeting's automatic end.
+        let isMeetingSessionLive = currentAccountabilityBuddySession?.isMeeting == true
+        let recoveredState = RoutineResume.stateForExplicitResume(
+            currentState: currentState, recoverablePostponeState: postponeState,
+            isMeetingSessionLive: isMeetingSessionLive)
+        if recoveredState != currentState {
+            currentState = recoveredState
+        }
+        if currentState.isRoutinePostponed && currentState == postponeState && !isMeetingSessionLive {
+            // backgroundThread waits while this popup is visible. An explicit return to habits
+            // must dismiss it locally, without marking the calendar meeting skipped on other devices.
+            popupAppointmentTimeVcObj?.dismissForRoutineResume()
+        }
+        // `.userRequested`: the meeting guard inside these must not swallow an explicit ask. Without it,
+        // an announced calendar meeting silently re-postponed the routine the user had just asked for
+        // (report 2026-09-17_12-03-44).
+        switch postponeState {
+        case ._POSTPONE_EVENING_HABIT_:
+            getHabitsVcObject().resumePostponedEveningRoutine(for: .userRequested, isMeetingSessionLive: isMeetingSessionLive)
+        case ._POSTPONE_FOCUS_SUMMARY_:
+            getHabitsVcObject().resumeFocusSummary()
+        default:
+            getHabitsVcObject().resumePostponedMorningRoutine(for: .userRequested, isMeetingSessionLive: isMeetingSessionLive)
+        }
+        // resume* only flips currentState back to ._NOTHING_; backgroundThread re-renders the routine.
+        appdelegate?.backgroundThread()
+        closeMenuWindowIsVisible()
+    }
+
     @objc func resumeFocusMode(){
         for index in 0..<arrFocusType.count{
             if arrFocusType[index]["isPaused"] as? Bool == true{
@@ -1897,7 +2001,7 @@ class menuViewController: NSViewController {
     func addOfficeFriendlyActivityInSettings(){
         addLog(text: "addOfficeFriendlyActivityInSettings")//
         var jsonResult = NSDictionary()
-        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+        if let stringDic = SensitiveDefaults.object(forKey: kUserdefaultsSelectedJson) as? String {
             //            jsonResult = dic
             if let data = stringDic.data(using: String.Encoding.utf8) {
                 
@@ -1966,7 +2070,7 @@ class menuViewController: NSViewController {
                                 print(jsonResultData)
                                 
                                 if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
-                                    UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                    SensitiveDefaults.set(backToString, forKey: kUserdefaultsSelectedJson)
                                     
                                 }
                                 
@@ -2200,6 +2304,110 @@ class menuViewController: NSViewController {
         closeMenuWindowIsVisible()
     }
     
+    /// Logged only when inputs change; no browsing content is included.
+    private var lastLoggedBlockingStatus = ""
+    private var systemEventsPermissionProbe = BlockingPermissionProbeCache()
+
+    /// These are capability checks, not proof that all blocking is on or off. The onboarding
+    /// marker and enabled-browser list are setup preferences, not macOS authorization evidence.
+    private var blockingPermissionHealth: BlockingPermissionHealth {
+        BlockingPermissionHealth(
+            accessibilityGranted: isAccessibilityEnabled(isPrompt: false),
+            systemEvents: systemEventsPermissionProbe.state(at: ProcessInfo.processInfo.systemUptime)
+        )
+    }
+
+    var blockingPermissionsState: BlockingPermissionsState { blockingPermissionHealth.state }
+
+    /// Run on every menu tick as well as legacy reloads. Only one read-only automation query can
+    /// be pending; all cached/legacy UI state is applied on the main thread. No AppleScript is sent,
+    /// no app is launched and no permission prompt is requested by this status check.
+    private func refreshBlockingPermissionHealth() {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in self?.refreshBlockingPermissionHealth() }
+            return
+        }
+        accessibilityPermissionGiven = isAccessibilityEnabled(isPrompt: false)
+        let browsers = UserDefaults.standard.array(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String: Any]] ?? []
+        browserPermissionGiven = browsers.contains { $0["isEnabled"] as? Bool == true }
+
+        let startedAt = ProcessInfo.processInfo.systemUptime
+        guard systemEventsPermissionProbe.begin(at: startedAt) else { return }
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            let state = Self.probeSystemEventsPermissionState()
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.systemEventsPermissionProbe.complete(state, startedAt: startedAt)
+                // Preserve a legacy Bool on inconclusive/expired evidence; the menu uses the
+                // expiring tri-state above and never reads this Bool as a current denial.
+                switch self.systemEventsPermissionProbe.state(at: ProcessInfo.processInfo.systemUptime) {
+                case .granted: self.systemEventsPermissionGiven = true
+                case .missing: self.systemEventsPermissionGiven = false
+                case .unknown: break
+                }
+            }
+        }
+    }
+
+    /// Whether any browser has been set up for blocking, per the app's own per-browser store.
+    ///
+    /// This is NOT a macOS grant, and conflating the two is what let an empty or unloaded browser
+    /// list read as "missing permissions". An unreadable or empty list means we haven't been told
+    /// anything, so it answers `true` and the menu says nothing about browsers.
+    var isAnyBrowserEnabledForBlocking: Bool {
+        guard let browsers = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String: Any]],
+              !browsers.isEmpty else { return true }
+        return browsers.contains { $0["isEnabled"] as? Bool ?? false }
+    }
+
+    /// Whether a routine is running. Mirrors the states `checkCustomBlockingScheduleTime()` skips:
+    /// while any of them is current no blocking schedule is ever switched on, so the schedule flags
+    /// say nothing about the user's schedules — and the routine is doing the blocking anyway.
+    var isRoutineRunningForBlocking: Bool {
+        currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_
+            || currentState == ._CUSTOM_ROUTINE_ || currentState == ._MICRO_BREAK_
+    }
+
+    /// Query only a running System Events process. The permission belongs to Focus Bear's
+    /// current process identity; a helper/CLI probe would report that other executable's grants.
+    private static func probeSystemEventsPermissionState() -> BlockingPermissionsState {
+        guard let process = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.systemevents").first else {
+            return .unknown
+        }
+        let target = NSAppleEventDescriptor(processIdentifier: process.processIdentifier)
+        let status = AEDeterminePermissionToAutomateTarget(target.aeDesc, AEEventClass(typeWildCard), AEEventID(typeWildCard), false)
+        return .automationAuthorizationStatus(status)
+    }
+
+    /// Sends the user to wherever a given "blocking is off" reason is fixed.
+    func fixBlockingOff(_ reason: BlockingOffReason) {
+        addLog(text: "[user-action] menuViewController:- blocking-off fix tapped: \(reason.rawValue)")
+        switch reason {
+        case .appDeactivated:      btnReactivateClicked(self as Any)
+        case .permissionsMissing:
+            showExplainingPermissionsWindow(showingFromPomodoro: false)
+            closeMenuWindowIsVisible()
+        case .noSchedule:          btnSetBlockingScheduleFirstTimeClicked(self as Any)
+        case .schedulePaused:      btnCustomBlockingClicked(self as Any)
+        case .noScheduleRightNow:  btnEditBlockingScheduleClicked(self as Any)
+        // Same destination as a browser that was never set up: the browser list is where its
+        // blocking state is shown and re-checked.
+        case .noBrowserEnabled, .browserNotResponding: showBrowserBlockingSettings()
+        }
+    }
+
+    /// Settings → Permissions, which lists every installed browser and its blocking status. The
+    /// browser list is what a `.noBrowserEnabled` user has to change, not the permissions wizard.
+    private func showBrowserBlockingSettings() {
+        if !(mainWindowControllerObj?.window?.isVisible ?? false) {
+            mainWindowControllerObj?.showWindow(self)
+        }
+        leftMenuVcObj?.showSettingsView()
+        settingsContainerVcObj?.showPermissionsView()
+        NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
+        closeMenuWindowIsVisible()
+    }
+
     @IBAction func btnSetPermissionsClicked(_ sender: Any) {
         addLog(text:"[user-action] menuViewController:- btnSetPermissionsClicked")// 23/7/25  v 1.26.393
         if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
@@ -2245,7 +2453,7 @@ class menuViewController: NSViewController {
                         btnCustomBlocking.state = .on
                     }else if customBlockingScheduleManagerObj.arrBlockingSchedule[i].blockLevel == ._SUPER_STRICT_{
                         
-                        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                        if SettingsManagerObject.isAppPasswordSet{
                             if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{// if no password is set  then chance of getting lastUnlockTimeByAccountabilityBuddy is 0% but if password is set then check this
                                 if Date() < lastUnlockTimeByAccountabilityBuddy{
                                     customBlockingScheduleManagerObj.customBlockingSchedulePaused()
@@ -2286,6 +2494,18 @@ class menuViewController: NSViewController {
     func openDayPlanSchedule() {
         if !(mainWindowControllerObj?.window?.isVisible ?? false){
             mainWindowControllerObj?.showWindow(self)
+        }
+        // While an allowed-app habit is playing, the Day Plan the user can actually reach is the tab
+        // inside the habit player: the sidebar dispatch below early-returns during a live routine,
+        // leaving them on the Habit Player tab. Route to that tab instead. See DayPlanDestination.
+        let destination = DayPlanDestination.target(hasAllowedActivityTabs: timerViewcontrollerObj?.hasAllowedActivityTabs ?? false)
+        // Which pane the Day Plan went to — a wrong pick here shows up only as a blank window.
+        addLog(text: "openDayPlanSchedule: destination=\(destination) state=\(currentState)")
+        if destination == .allowedActivityDayPlanTab,
+           timerViewcontrollerObj?.showAllowedActivityDayPlanTab() == true {
+            NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
+            closeMenuWindowIsVisible()
+            return
         }
         // Select the sidebar's Day Plan row. The sidebar path gets this from the user's click; opening
         // from the menu is programmatic, so without it the Day Plan showed with no tab selected. The
@@ -2423,12 +2643,15 @@ extension menuViewController {
         wireMenuModel(model)
         observeVoiceEvents(model)
         menuModelRef = model
+        lastAppliedMenuHeight = 0   // fresh presentation: don't damp against a stale height
 
         // The SwiftUI view reports its own height; we resize the popover to match so nothing clips
         // (incl. when an accordion expands). Pin the host to all four edges and let the reported
         // height drive the popover/window content size.
         let root = FocusBearMenuView(model: model, onHeight: { [weak self] h in self?.applyMenuHeight(h) })
-        let host = NSHostingView(rootView: root)
+        // AppKit already places this host inside the window's content area. SwiftUI applying the
+        // title-bar safe inset again leaves an empty grey strip above the menu in detached mode.
+        let host = NSHostingView(rootView: root.ignoresSafeArea())
         host.translatesAutoresizingMaskIntoConstraints = false
         for sub in view.subviews { sub.isHidden = true }
         // Drop the storyboard's view-level constraints so the (hidden) storyboard subviews no longer
@@ -2452,17 +2675,57 @@ extension menuViewController {
 
     private var menuWidth: CGFloat { FocusBearMenuView.width }
 
+    /// Max shrink (points) that `applyMenuHeight` will ignore to break a resize→measure→resize bounce.
+    /// Sized to absorb the observed 15pt bounce with headroom; well below any real content change.
+    private var menuHeightFeedbackTolerance: CGFloat { 24 }
+
     /// Resize the popover/window to the height the SwiftUI view reports (also on accordion expand).
     func applyMenuHeight(_ height: CGFloat) {
-        let size = NSSize(width: menuWidth, height: max(height.rounded(.up), 120))
+        let target = max(height.rounded(.up), 120)
+        // Anti-feedback-loop guard. Resizing the window to the SwiftUI-reported height re-lays out the
+        // hosting view, which can report a slightly different height, which resizes again — an infinite
+        // ping-pong. Seen in the wild (report 2026-09-22, v3.36.545): the reported height bounced
+        // between 698 and 683 (a fixed 15pt gap) 546 times each in ~1s, pegging the main thread until the
+        // app was force-restarted. The exact cause of the 15pt gap is not yet identified — it only
+        // reproduces for some users — so this is a robustness clamp on the resize path, not a fix for
+        // whatever makes the measurement flip: never apply a *shrink* smaller than the tolerance, so we
+        // settle on the taller value (no clipping) and the bounce can't continue. Genuine changes
+        // (accordion expand/collapse, screen switch) are far larger and still apply. lastAppliedMenuHeight
+        // resets to 0 in setupSwiftUIMenu so each presentation starts clean.
+        if lastAppliedMenuHeight > 0,
+           target < lastAppliedMenuHeight,
+           lastAppliedMenuHeight - target <= menuHeightFeedbackTolerance {
+            return
+        }
+        lastAppliedMenuHeight = target
+        let size = NSSize(width: menuWidth, height: target)
         preferredContentSize = size
-        // Popover path: setting contentSize re-anchors + grows the popover automatically.
-        appdelegate?.popover.contentSize = size
-        // Window path: resize and keep the top edge pinned under the status bar.
-        if let win = view.window {
+        // Size ONLY the presentation that is actually on screen. Sizing the popover (contentSize) AND the
+        // popover's private backing window (setContentSize) at the same time put two competing sizing
+        // authorities on one window; they fought over the popover's arrow/chrome (~15pt) and could
+        // ping-pong the reported height forever → main-thread hang (report 2026-09-22, v3.36.545). The
+        // window path exists only for the DETACHED standalone-window menu (getMenuWindowObject — used when
+        // the popover is off, or temporarily flipped off to show over another app's full-screen Space); it
+        // must never run against the popover's own window. `isMenuPopoverEnabled` is the same flag
+        // showPopover() uses to choose the presentation, so it always reflects what is currently on screen.
+        if SettingsManagerObject.isMenuPopoverEnabled {
+            // Popover mode: NSPopover owns geometry — setting contentSize re-anchors + grows it. Do NOT
+            // also touch its window.
+            appdelegate?.popover.contentSize = size
+            addLog(text: "[menu-height] popover applied=\(Int(size.height)) popoverContentH=\(Int(appdelegate?.popover.contentSize.height ?? -1))")
+        } else if let win = view.window {
+            // Detached standalone window: the storyboard window caps its (content) max height, so
+            // setContentSize was clamped and taller states clipped. Lift the caps and resize, keeping the
+            // top edge pinned under the status bar.
+            win.styleMask.insert(.resizable)
+            win.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+            win.contentMaxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
             let topLeft = NSPoint(x: win.frame.minX, y: win.frame.maxY)
             win.setContentSize(size)
             win.setFrameTopLeftPoint(topLeft)
+            addLog(text: "[menu-height] applied=\(Int(size.height)) winAfter=\(Int(win.frame.height)) contentAfter=\(Int(win.contentView?.frame.height ?? -1)) maxH=\(win.maxSize.height > 1_000_000 ? -1 : Int(win.maxSize.height)) contentMaxH=\(win.contentMaxSize.height > 1_000_000 ? -1 : Int(win.contentMaxSize.height)) resizable=\(win.styleMask.contains(.resizable))")
+        } else {
+            addLog(text: "[menu-height] no-surface applied=\(Int(size.height))")
         }
     }
 
@@ -2505,9 +2768,33 @@ extension menuViewController {
         // popup menu used, so strictness / teacher-session / password checks are preserved.
         model.onPauseFocus     = { [weak self] in self?.pauseFocusModeClicked() }
         model.onResumeFocus    = { [weak self] in self?.resumeFocusMode() }
+        // Report 2026-09-15_16-43-04: finish the playing task without leaving the menu, and reach the
+        // task picker via the focus screen. Completion goes through the focus session's own single
+        // write path so the Day Plan, the to-do list and the focus screen all follow.
+        model.onCompleteCurrentTask = { [weak self] in
+            guard !FocusSessionQueueWriter.isTaskEditingLocked,
+                  let active = FocusSessionQueueWriter.activeTask else { return }
+            FocusSessionQueueWriter.complete(id: active.id, in: FocusSessionQueueWriter.tasks)
+            self?.refreshSwiftUIMenu()
+        }
+        model.onChangeTask     = {
+            showRunningFocusSessionWindow()
+            NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
+            closeMenuWindowIsVisible()
+        }
         model.onTogglePin      = { [weak self] in self?.btnPinClicked(self as Any) }   // popover <-> window
         model.onOpenBreaks     = { [weak self] in self?.btnStartBreakClicked(self as Any) }
         model.onOpenDayPlan    = { [weak self] in self?.openDayPlanSchedule() }
+        // #777: when the focus starter expands, default the duration to the selected mode's last-used
+        // duration (fallback: last focus mode's duration, then 20).
+        model.onFocusStarterExpanded = { [weak self, weak model] in
+            guard let self = self, let model = model else { return }
+            let minutes = self.menuDefaultDurationMinutes(forFocusModeId: model.selectedBlockListId)
+            model.focusMinutes = min(180, max(5, minutes))
+            // Record the mode we just synced the duration for, so the live refresh in
+            // updateLiveMenuFields only re-syncs on an actual mode change (not on every tick).
+            self.lastSyncedExpandedModeId = model.selectedBlockListId
+        }
         model.onOpenFocusMusic = { [weak self] in self?.btnFocusMusicClicked(self as Any) }
         model.onToggleMusic    = { [weak self] in
             // A built-in track (in arrAllTracks) uses the local play/pause. Otherwise toggle the
@@ -2529,11 +2816,19 @@ extension menuViewController {
             DayPlanTaskStore.shared.update(t, for: Date())
             self?.refreshSwiftUIMenu()
         }
+        model.onQuickAddTask   = { [weak self] raw, pasted in self?.quickAddDayPlanTask(raw, pastedImage: pasted) }
         model.onStartNextHabit = { [weak self] in self?.startNextDayPlanHabit() }
         model.onSetUpBlocking  = { [weak self] in self?.btnSetBlockingScheduleFirstTimeClicked(self as Any) }
         model.onDismissBlocking = { UserDefaults.standard.set(true, forKey: kUserDefaultsBlockingScheduleAddedFirstTime) }
         model.onToggleBlockingSchedule = { [weak self] in self?.btnCustomBlockingClicked(self as Any) }
         model.onOpenBlockingScheduleConfig = { [weak self] in self?.btnEditBlockingScheduleClicked(self as Any) }
+        model.onFixBlockingOff = { [weak self] reason in self?.fixBlockingOff(reason) }
+        model.onJoinClassSession = {
+            // Re-join the declined class session (#2267), then dismiss the menu — startTeacherSession
+            // takes over the UI on success, or an alert shows if the session is no longer joinable.
+            closeMenuWindowIsVisible()
+            teacherSessionManagerObject.joinDeclinedSession()
+        }
         model.onSaveIntention = { [weak self] newIntention in
             // Persist via the canonical setter (updates whatToAchieveInFocusBlock + resets the
             // convince-AI caches), then refresh the legacy label that feeds the menu and the in-focus
@@ -2563,6 +2858,14 @@ extension menuViewController {
     }
 
     /// Pull the latest values out of the (hidden) storyboard labels / app state into the model.
+    func startVoiceInputFromShortcut() {
+        guard isPurchased || daysLeft > 0 else { return }
+        _ = view // Create the same model and recorder callbacks as opening the menu.
+        if !isFocusBearMenuVisible() { appdelegate?.showPopover() }
+        guard !recorder.isRecording else { return }
+        menuModel?.beginVoiceInput()
+    }
+
     /// Observe recorder notifications so the voice screen can show progress + results.
     private func observeVoiceEvents(_ model: MenuModel) {
         let nc = NotificationCenter.default
@@ -2574,7 +2877,7 @@ extension menuViewController {
             // Safety net: if transcription/intent never returns, don't hang on "Thinking…".
             DispatchQueue.main.asyncAfter(deadline: .now() + 25) {
                 if model.voiceStatus == .processing {
-                    model.voiceResult = "Timed out. Please try again."
+                    model.voiceResult = VoiceCommandMessage.timedOut
                     model.voiceStatus = .error
                 }
             }
@@ -2583,11 +2886,11 @@ extension menuViewController {
             model.voiceTranscript = note.userInfo?["text"] as? String ?? ""
         }
         nc.addObserver(forName: VoiceEvents.actionDone, object: nil, queue: .main) { note in
-            model.voiceResult = note.userInfo?["text"] as? String ?? "Done"
+            model.voiceResult = note.userInfo?["text"] as? String ?? menuLocalized("voiceDone", "Done")
             model.voiceStatus = .done
         }
         nc.addObserver(forName: VoiceEvents.error, object: nil, queue: .main) { note in
-            model.voiceResult = note.userInfo?["text"] as? String ?? "Something went wrong"
+            model.voiceResult = note.userInfo?["text"] as? String ?? VoiceCommandMessage.generic
             model.voiceStatus = .error
         }
         nc.addObserver(forName: VoiceEvents.deviceListening, object: nil, queue: .main) { [weak self] _ in
@@ -2621,6 +2924,14 @@ extension menuViewController {
             model.inVoiceMode = false   // opening the menu always starts on the menu, never a stale voice screen
         }
         updateLiveMenuFields(model)
+        // #777: on every menu open, reflect the last-started focus mode (from menu OR pomodoro) as the
+        // selected one — even if the focus starter is currently expanded (updateLiveMenuFields only sets
+        // it while collapsed), so a session started from the pomodoro screen shows up here.
+        let lastPomodoroModeId = UserDefaults.standard.string(forKey: kUserdefaultsLastPomodoroFocusModeId) ?? ""
+        if let id = model.focusBlockLists.first(where: { $0.id == lastPomodoroModeId })?.id {
+            model.selectedBlockListId = id
+            model.focusMinutes = min(180, max(5, menuDefaultDurationMinutes(forFocusModeId: id)))
+        }
         model.micAvailable = isPurchased || daysLeft > 0
         // Show the "set up distraction blocking" card only when there's no schedule AND the user
         // hasn't already set one up or dismissed the card (persisted via the first-time flag) — so
@@ -2711,7 +3022,23 @@ extension menuViewController {
         return nextBreakText.replacingOccurrences(of: "<DURATION>", with: timeText)
     }
 
+    /// #777: default duration (minutes) for the focus mode `id` — its own last-used duration, else the
+    /// last duration used for any focus mode, else 20 (spec default when nothing has ever run).
+    private func menuDefaultDurationMinutes(forFocusModeId id: String) -> Int {
+        var focusTypes = arrFocusType
+        if focusTypes.isEmpty {
+            focusTypes = (SensitiveDefaults.object(forKey: kUserdefaultsArrFocusTypes) as? [[String: Any]]) ?? []
+        }
+        if let ft = focusTypes.first(where: { ($0["id"] as? String) == id }),
+           let perMode = ft["lastDurationUsed"] as? Int, perMode > 0 {
+            return perMode
+        }
+        let lastAny = UserDefaults.standard.integer(forKey: kUserdefaultsLastFocusModeMinutes)
+        return lastAny > 0 ? lastAny : 20
+    }
+
     private func updateLiveMenuFields(_ model: MenuModel) {
+        refreshBlockingPermissionHealth()
         // Reflect the current menu presentation so the header's pin icon matches reality
         // (window/pinned vs popover). The pin button toggles between the two via btnPinClicked.
         model.menuPinnedAsWindow = !SettingsManagerObject.isMenuPopoverEnabled
@@ -2739,6 +3066,8 @@ extension menuViewController {
         model.focusRemaining   = formatFocusRemaining(lblTimerFocusMode?.stringValue ?? "")
         model.focusedTodayText = lblTotalFocusedTimeToday?.stringValue ?? ""
         model.focusTaskTitle   = lblFocusModeIntention?.stringValue ?? ""
+        model.focusCurrentTaskTitle = running ? (FocusSessionQueueWriter.activeTask?.title ?? "") : ""
+        model.focusTaskActionable = running && !FocusSessionQueueWriter.isTaskEditingLocked
         model.focusModeName    = currentRunningFocusType["name"] as? String ?? ""
         // Super-strict sessions lock the focus goal (mirrors focusModeStateVc making the field read-only).
         model.focusGoalEditable = (currentFocusModeStrictness != ._SUPER_STRICT_)
@@ -2750,23 +3079,37 @@ extension menuViewController {
         // pomodoro screen appears), so fall back to UserDefaults — otherwise the dropdown is empty.
         var focusTypes = arrFocusType
         if focusTypes.isEmpty {
-            focusTypes = (UserDefaults.standard.object(forKey: kUserdefaultsArrFocusTypes) as? [[String: Any]]) ?? []
+            focusTypes = (SensitiveDefaults.object(forKey: kUserdefaultsArrFocusTypes) as? [[String: Any]]) ?? []
         }
         model.focusBlockLists = focusTypes.compactMap { ft in
             guard let id = ft["id"] as? String, let name = ft["name"] as? String, !name.isEmpty else { return nil }
             return MenuBlockList(id: id, name: name)
         }
         if !model.focusStarterExpanded {
-            if model.selectedBlockListId.isEmpty || !model.focusBlockLists.contains(where: { $0.id == model.selectedBlockListId }) {
-                let lastId = UserDefaults.standard.string(forKey: kUserdefaultsLastFocusModeId) ?? ""
-                let defaultId = focusTypes.first(where: { ($0["isDefault"] as? Bool) == true })?["id"] as? String ?? ""
-                model.selectedBlockListId = model.focusBlockLists.first(where: { $0.id == lastId })?.id
-                    ?? model.focusBlockLists.first(where: { $0.id == defaultId })?.id
-                    ?? model.focusBlockLists.first?.id ?? ""
-            }
-            let lastMinutes = UserDefaults.standard.integer(forKey: kUserdefaultsLastFocusModeMinutes)
-            if lastMinutes > 0 { model.focusMinutes = min(180, max(5, lastMinutes)) }
+            // #777: reflect the last-started focus mode as the selected one every time the menu shows.
+            // kUserdefaultsLastPomodoroFocusModeId is set by BOTH the menu and pomodoro start paths and
+            // isn't clobbered by scheduled blocking (unlike kUserdefaultsLastFocusModeId), so a session
+            // started from the pomodoro screen is now reflected here too. Always re-apply (not just when
+            // the current selection is empty/invalid) so it stays in sync.
+            let lastId = UserDefaults.standard.string(forKey: kUserdefaultsLastPomodoroFocusModeId) ?? ""
+            let defaultId = focusTypes.first(where: { ($0["isDefault"] as? Bool) == true })?["id"] as? String ?? ""
+            model.selectedBlockListId = model.focusBlockLists.first(where: { $0.id == lastId })?.id
+                ?? model.focusBlockLists.first(where: { $0.id == defaultId })?.id
+                ?? model.focusBlockLists.first?.id ?? ""
+            // Default the duration to that mode's last-used value (per-mode → global last → 20).
+            model.focusMinutes = min(180, max(5, menuDefaultDurationMinutes(forFocusModeId: model.selectedBlockListId)))
+        } else if lastSyncedExpandedModeId != model.selectedBlockListId {
+            // #777: while the focus starter is OPEN, only refresh the duration when the selected mode
+            // actually changed — NOT on every live refresh (~1s). The unconditional reset here used to
+            // wipe an in-progress −/+ adjustment ~0.5s after the user clicked it, snapping back to the
+            // mode default. The initial default is applied once in onFocusStarterExpanded.
+            lastSyncedExpandedModeId = model.selectedBlockListId
+            model.focusMinutes = min(180, max(5, menuDefaultDurationMinutes(forFocusModeId: model.selectedBlockListId)))
         }
+        // While the starter is expanded, DON'T touch the selection or duration here — this runs every
+        // tick (tickMenu), so re-defaulting focusMinutes would instantly wipe the user's in-progress
+        // +/- adjustment. The duration is (re)defaulted only when the starter first expands and when the
+        // selected mode changes — both via onFocusStarterExpanded() (see the selectedBlockListId onChange).
         // The focus-alignment score exists whenever AI blocking is on — including during a
         // super-distracting session (no special-case for it; it's shown just like the nudge does). The
         // storyboard label is a cache the gated reloadData() paths refresh; it's never cleared when AI
@@ -2802,7 +3145,7 @@ extension menuViewController {
         // Active blocking-schedule card — refreshed every tick so it appears/updates as soon as a
         // schedule turns on (or is loaded after the menu opened), not just on the initial open.
         let blockingMgr = customBlockingScheduleManagerObj
-        if blockingMgr.isAnyCustomScheduleOn, let s = blockingMgr.arrBlockingSchedule.first(where: { $0.state == .on }) {
+        if let s = blockingMgr.runningSchedule {
             model.blockingScheduleActive = true
             model.blockingSchedulePaused = false
             model.blockingScheduleName = s.name
@@ -2815,6 +3158,38 @@ extension menuViewController {
         } else {
             model.blockingScheduleActive = false
         }
+
+        // Why blocking is off (#1978): the menu names the actual cause — missing macOS grants, no
+        // schedule, a paused one, nothing scheduled for right now, or a deactivated app — instead of
+        // leaving a user whose blocking is silently dead with nowhere to look.
+        let permissionHealth = blockingPermissionHealth
+        let blockingStatus = BlockingStatus(
+            isAppEnabled: isAppEnable,
+            permissions: permissionHealth.state,
+            isAnyBrowserEnabled: isAnyBrowserEnabledForBlocking,
+            scheduleCount: blockingMgr.arrBlockingSchedule.count,
+            isAnyScheduleOn: blockingMgr.isAnyCustomScheduleOn,
+            isAnySchedulePaused: blockingMgr.isAnyCustomSchedulePaused,
+            isAnyScheduleCoveringNow: blockingMgr.arrBlockingSchedule.contains { $0.isBlockingActive() },
+            isFocusSessionRunning: isFocusModeOn() || isAnyAllowedFocusModeActivityRunning,
+            isRoutineRunning: isRoutineRunningForBlocking,
+            isBrowserUrlReadFailing: isBrowserUrlReadFailing
+        )
+        model.blockingOffReasons = blockingStatus.offReasons
+        model.blockingPermissionIssues = permissionHealth.issues
+        // Logged on every change (this runs each menu tick) so a "blocking is off but it isn't"
+        // report can be answered from the log instead of re-deriving it from the source.
+        let blockingStatusLine = blockingStatus.logDescription
+            + " accessibility=\(permissionHealth.accessibilityGranted) systemEvents=\(permissionHealth.systemEvents)"
+        if blockingStatusLine != lastLoggedBlockingStatus {
+            lastLoggedBlockingStatus = blockingStatusLine
+            addLog(text: "blockingOffReasons: \(blockingStatusLine)")
+        }
+
+        // Re-join card (#2267): show when the student declined a class session that's still live and no
+        // session is currently active. Evaluated every tick / open so it appears and disappears in step.
+        model.classSessionJoinable = teacherSessionManagerObject.hasJoinableSession()
+        model.classSessionName = teacherSessionManagerObject.declinedJoinableSessionName
 
         // Focus music: current track name + playing/paused state (drives the play/pause control).
         // Built-in tracks live in arrAllTracks; Spotify / YouTube-Music tracks are stored separately and
@@ -2974,8 +3349,78 @@ extension menuViewController {
             model.dayPlanNextEventRelative = ""
         }
 
-        // Today's tasks, shown with tickable checkboxes (matches the Day Plan panel's order).
-        model.dayPlanTasks = topDayPlanTasks(limit: 4)
+        // The running-habit card already takes vertical room: keep only the top task below it
+        // so the expanded menu fits a laptop screen. Completion advances to the next task.
+        model.dayPlanTasks = topDayPlanTasks(limit: model.habitPlaying ? 1 : 4)
+        // Feeds the quick-add field's `#project` preview so an existing project keeps its casing.
+        model.quickAddProjectNames = DayPlanTaskStore.shared.allProjectNames()
+    }
+
+    /// Add a task typed in the menu's inline quick-add row to TODAY's Day Plan. Deliberately routed
+    /// through the SAME store calls the Day Plan's own composer uses (`add` + `syncNameOnCommit`), so
+    /// a from-scratch task gets its backend to-do minted, planned for today, and its `#project`
+    /// created/attached server-side — no second code path to keep in sync.
+    private func quickAddDayPlanTask(_ raw: String, pastedImage: ToDoPastedImage? = nil) {
+        let today = Date()
+        // Same rule the Day Plan composer commits by: a line of nothing but tokens has no name to add.
+        guard case .save(let parsed) = TaskNameCommit.forQuickAdd(raw, knownProjects: DayPlanTaskStore.shared.allProjectNames())
+        else { return }
+        DayPlanAnalytics.capture(DayPlanAnalytics.taskAdded,
+                                 ["source": "menu_quick_add", "has_project": parsed.project != nil])
+        let task = DayPlanTask(title: parsed.title,
+                               durationMinutes: parsed.durationMinutes ?? QuickAddTaskParser.defaultDurationMinutes,
+                               project: parsed.project,
+                               outcome: parsed.outcome)
+        DayPlanTaskStore.shared.add(task, for: today)
+        DayPlanTaskStore.shared.syncNameOnCommit(task, on: today)
+        if let pastedImage = pastedImage { attachPastedImage(pastedImage, toLocalTask: task.id) }
+        requestDayPlanRefresh()     // the Day Plan window, if open, picks the new task up
+        refreshSwiftUIMenu()        // and it appears in TASKS FOR TODAY without closing the menu
+    }
+
+    /// Upload an image pasted into the quick-add composer, once the task it belongs to has a backing
+    /// to-do to hang it off — the mint is a round trip, so this is the one place that has to wait.
+    ///
+    /// The upload itself goes through `ToDoAttachmentsStore`, the same path the editors use, so the
+    /// 20 MB limit, the per-task cap and the failure message are the ones everywhere else applies.
+    /// A failed mint (offline) simply never calls back and the picture is dropped, which is why the
+    /// user is told here rather than left watching a chip that quietly disappeared.
+    private func attachPastedImage(_ image: ToDoPastedImage, toLocalTask localId: String) {
+        DayPlanTaskStore.shared.whenBackedByTodo(localId: localId) { [weak self] todoId in
+            guard let self = self else { return }
+            let strings = ToDoStrings()
+            // The to-do could not be created — offline, most likely. Say so: the composer already
+            // showed a chip promising this picture would be attached.
+            guard let todoId = todoId else {
+                self.showQuickAddAttachmentProblem(strings[.attachmentFailed],
+                                                   titled: strings[.attachments])
+                return
+            }
+            let store = ToDoAttachmentsStore(taskId: todoId, strings: strings) { [weak self] message in
+                self?.showQuickAddAttachmentProblem(message, titled: strings[.attachments])
+            }
+            // The store owns the in-flight upload; nothing else here references it, so it has to be
+            // held until the upload reports back or it is deallocated mid-request and the picture is
+            // silently dropped.
+            self.quickAddAttachmentUploads.append(store)
+            // Cleanup only. Every way this can fail already goes through the store's own status
+            // callback above, and reporting again here would put two alerts on screen for one paste.
+            store.attach(pasted: image) { [weak self] _ in
+                self?.quickAddAttachmentUploads.removeAll { $0 === store }
+            }
+        }
+    }
+
+    /// The menu has no attachment list to show a problem in, and by now it has usually been dismissed,
+    /// so a rejected or failed paste gets an alert rather than vanishing without trace.
+    private func showQuickAddAttachmentProblem(_ message: String, titled title: String) {
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.messageText = title
+            alert.informativeText = message
+            alert.alertStyle = .warning
+            alert.runModal()
+        }
     }
 
     /// The first N "Tasks for today" in the same order the Day Plan side-panel shows them:
@@ -3070,15 +3515,24 @@ extension menuViewController {
 
     /// Start the Day Plan "next habit" from its play button (mirrors the device-button habit start).
     func startNextDayPlanHabit() {
+        // #2787: a class session is in control — the routine is blocked/postponed for its duration, so the
+        // student must not start a morning/evening habit from the popover (parity with Start break / Pause
+        // / Stop, which all route to the locked alert instead of acting).
+        if teacherSessionManagerObject.isTeacherSessionActive(){
+            addLog(text: "start day-plan habit blocked:- teacher session is active")
+            teacherSessionManagerObject.showTeacherSessionLockedAlert()
+            closeMenuWindowIsVisible()
+            return
+        }
         guard let name = nextDayPlanHabitName?.lowercased(), !name.isEmpty else {
             btnEditHabitsClicked(self as Any)   // no startable habit — open the full Day Plan instead
             return
         }
         switch currentState {
         case ._MORNING_HABIT_, ._POSTPONE_MORNING_HABIT_:
-            getHabitsVcObject().startMorningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
+            getHabitsVcObject().startMorningRoutineHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
         case ._EVENING_HABIT_, ._POSTPONE_EVENING_HABIT_:
-            getHabitsVcObject().startEveningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
+            getHabitsVcObject().startEveningRoutineHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: true)
         default:
             btnEditHabitsClicked(self as Any)
             return
@@ -3093,7 +3547,6 @@ extension menuViewController {
         }
     }
 }
-
 
 
 

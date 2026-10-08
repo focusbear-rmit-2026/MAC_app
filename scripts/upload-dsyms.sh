@@ -58,6 +58,14 @@ if ! command -v sentry-cli >/dev/null 2>&1; then
   exit 1
 fi
 
+# Xcode launched from the Dock/Finder often does NOT inherit vars set via `launchctl setenv`
+# (e.g. by ~/Library/LaunchAgents/io.focusbear.sentry-token.plist) — it captures its environment
+# at launch. Fall back to reading the token straight from the launchd user domain so archiving
+# works without having to relaunch Xcode from a shell. CI still supplies it via env/secrets.
+if [[ -z "${SENTRY_AUTH_TOKEN:-}" ]] && command -v launchctl >/dev/null 2>&1; then
+  SENTRY_AUTH_TOKEN="$(launchctl getenv SENTRY_AUTH_TOKEN 2>/dev/null || true)"
+fi
+
 if [[ -z "${SENTRY_AUTH_TOKEN:-}" ]]; then
   MSG="SENTRY_AUTH_TOKEN is not set — required to upload dSYMs to Sentry."
   if is_xcode_build_phase; then

@@ -30,6 +30,10 @@ class onboardingBlockedUrlsVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        textFieldUrl.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedUrlField)
+        btnAddUrl.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedUrlAddButton)
+        lblBlockedCount.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedUrlsCount)
+        btnContinue.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedUrlsProceedButton)
         // Do view setup here.
         btnAddUrl.keyEquivalent = "\r"
         
@@ -38,57 +42,21 @@ class onboardingBlockedUrlsVc: NSViewController {
         var textFieldPlaceholder = "Enter URL or keyword to block"
         
         btnAddUrl.title = "Add"
-        var categorySocialMedia = "Social Media"
-        var categoryNews = "News"
-        var categoryStreamingServices = "Streaming services"
-        
+
         if let onboardingBlockedUrlsInfo = configjson.value(forKey: "onboardingBlockedUrlsInfo") as? NSDictionary{
-            categorySocialMedia = onboardingBlockedUrlsInfo.value(forKey: "categorySocialMedia") as? String ?? categorySocialMedia
-            categoryNews = onboardingBlockedUrlsInfo.value(forKey: "categoryNews") as? String ?? categoryNews
-            categoryOthers = onboardingBlockedUrlsInfo.value(forKey: "categoryOthers") as? String ?? categoryOthers
-            categoryStreamingServices = onboardingBlockedUrlsInfo.value(forKey: "categoryStreamingServices") as? String ?? categoryStreamingServices
             lblTitle.stringValue = onboardingBlockedUrlsInfo.value(forKey: "titleNew") as? String ?? lblTitle.stringValue
             btnContinue.title = onboardingBlockedUrlsInfo.value(forKey: "buttonProceedText") as? String ?? btnContinue.title
             textFieldPlaceholder = onboardingBlockedUrlsInfo.value(forKey: "textFieldPlaceholder") as? String ?? textFieldPlaceholder
         }
-        
+        categoryOthers = DistractionCategory.fallback.displayName
+
         if let info = configjson.value(forKey: "onboardingBlockedAppsVcInfo") as? NSDictionary{
             btnAddUrl.title = info.value(forKey: "buttonAdd") as? String ?? btnAddUrl.title
         }
-        
+
         textFieldUrl.delegate = self
 
-        //**//
-        var dic:NSMutableDictionary = ["category":categorySocialMedia,"isSelected":false,"tag":777,"arrUrls":[NSMutableDictionary](),"isParent":true]
-        var arrSocialMediaUrls: [NSMutableDictionary] = [["url":"facebook.com", "isSelected":true, "tag":2], ["url":"x.com", "isSelected":true, "tag":3], ["url":"instagram.com", "isSelected":true, "tag":4], ["url":"tiktok.com", "isSelected":true, "tag":5], ["url":"youtube.com", "isSelected":true, "tag":6], ["url":"reddit.com", "isSelected":true, "tag":9], ["url":"www.linkedin.com/feed/", "isSelected":true, "tag":10]]// if any change in urls inside above block then below code needs to check again
-        
-        // remove youtube.com if occupation is student
-        let selectedIndex = UserDefaults.standard.object(forKey: kUserDefaultsSelectedOccupationIndex) as? Int ?? 0
-        if selectedIndex == occupationStudentIndex{
-            arrSocialMediaUrls.remove(at: 4)
-        }
-        //**//
-        
-        dic["arrUrls"] = arrSocialMediaUrls
-        
-        arrBlockedUrlsStructure.append(dic)
-        
-        dic = ["category":categoryNews,"isSelected":false,"tag":888,"arrUrls":[NSMutableDictionary](),"isParent":true]
-        let arrNewsUrls: [NSMutableDictionary] = [["url":"bbc.com", "isSelected":true, "tag":7], ["url":"cnn.com", "isSelected":true, "tag":8], ["url":"theguardian.com", "isSelected":true, "tag":11], ["url":"abc.net.au", "isSelected":true, "tag":12], ["url":"news", "isSelected":true, "tag":13]]//if any item added set last item tag
-        
-        dic["arrUrls"] = arrNewsUrls
-        
-        arrBlockedUrlsStructure.append(dic)
-        
-        
-        dic = ["category":categoryStreamingServices,"isSelected":false,"tag":999,"arrUrls":[NSMutableDictionary](),"isParent":true]
-        let arrStreamingUrls: [NSMutableDictionary] = [["url":"netflix", "isSelected":true, "tag":14], ["url":"disney", "isSelected":true, "tag":15], ["url":"hulu", "isSelected":true, "tag":16]]//if any item added set last item tag
-        
-        dic["arrUrls"] = arrStreamingUrls
-        
-        arrBlockedUrlsStructure.append(dic)
-        
-        lastItemTag = 17
+        buildCategoryTree()
         outlineView.reloadData()
         
         //progress
@@ -106,6 +74,46 @@ class onboardingBlockedUrlsVc: NSViewController {
         recheckBlockedUrlsCount()
     }
     
+    /// Builds the outline tree from the shared `DistractionCategoryCatalog`, so this screen and the
+    /// block-list screen offer the same categories and the same seed sites instead of two copies.
+    private func buildCategoryTree() {
+        arrBlockedUrlsStructure.removeAll()
+
+        // Students legitimately study on YouTube, so it isn't pre-ticked for them. Matched by value:
+        // the old index-based removal silently dropped the wrong site whenever the list was reordered.
+        let selectedOccupation = UserDefaults.standard.object(forKey: kUserDefaultsSelectedOccupationIndex) as? Int ?? 0
+        let isStudent = selectedOccupation == occupationStudentIndex
+
+        var nextUrlTag = 1
+        for (offset, category) in DistractionCategory.orderedForFiltering
+            .filter({ $0.appearsInOnboarding }).enumerated() {
+
+            var seeds = DistractionCategoryCatalog.seedEntries(for: category)
+            if isStudent, category == .socialMedia {
+                seeds.removeAll { $0 == DistractionCategoryCatalog.studentExcludedSeed }
+            }
+            guard !seeds.isEmpty else { continue }
+
+            let urls: [NSMutableDictionary] = seeds.map { seed in
+                defer { nextUrlTag += 1 }
+                return ["url": seed, "isSelected": true, "tag": nextUrlTag]
+            }
+            let node: NSMutableDictionary = [
+                "category": category.displayName,
+                "isSelected": false,
+                "tag": Self.parentTagBase + offset,
+                "arrUrls": urls,
+                "isParent": true,
+            ]
+            arrBlockedUrlsStructure.append(node)
+        }
+        lastItemTag = nextUrlTag
+    }
+
+    /// Parent rows are tagged well above the per-URL tags (and above the 1111 the "Others" node uses)
+    /// so the two tag spaces can never collide in `checkForState`.
+    private static let parentTagBase = 10000
+
     override func viewDidAppear() {
         // Show bubble
         
@@ -221,7 +229,7 @@ class onboardingBlockedUrlsVc: NSViewController {
                 }
             }
         }
-        UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)//
+        SensitiveDefaults.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)//
 
         
         getOnboardingVcObject().navigate(to: ._BLOCKED_APPS_)
@@ -433,8 +441,11 @@ extension onboardingBlockedUrlsVc: NSOutlineViewDelegate, NSOutlineViewDataSourc
             
             if let url = data["url"] as? String {
                 cell.btnCheckBox.title = url
+                cell.btnCheckBox.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedUrlCheckboxPrefix + url)
             }else if let category = data["category"] as? String{
                 cell.btnCheckBox.title = category
+                // Reused cells: a category row must not keep the site identifier of its last use.
+                cell.btnCheckBox.setAccessibilityIdentifier(nil)
             }
 
             return cell

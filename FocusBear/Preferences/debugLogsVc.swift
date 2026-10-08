@@ -8,7 +8,7 @@
 
 import Cocoa
 
-struct AIBlockingLogEntry {
+struct AIBlockingLogEntry: Codable {
     let timestamp: Date
     let urlOrApp: String
     let isApp: Bool
@@ -19,11 +19,87 @@ struct AIBlockingLogEntry {
     let score: Double
     let reason: String
     let payload: [String: Any]?
+
+    // `payload` is a raw [String: Any] API body, not natively Codable — persist it as JSON Data so the
+    // whole entry survives an app restart (see load/persist below), and decode it back on load.
+    private enum CodingKeys: String, CodingKey {
+        case timestamp, urlOrApp, isApp, focusMode, intention, tabTitle, currentTask, score, reason, payloadData
+    }
+
+    init(timestamp: Date, urlOrApp: String, isApp: Bool, focusMode: String, intention: String,
+         tabTitle: String, currentTask: String, score: Double, reason: String, payload: [String: Any]?) {
+        self.timestamp = timestamp; self.urlOrApp = urlOrApp; self.isApp = isApp; self.focusMode = focusMode
+        self.intention = intention; self.tabTitle = tabTitle; self.currentTask = currentTask
+        self.score = score; self.reason = reason; self.payload = payload
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        timestamp = try c.decode(Date.self, forKey: .timestamp)
+        urlOrApp = try c.decode(String.self, forKey: .urlOrApp)
+        isApp = try c.decode(Bool.self, forKey: .isApp)
+        focusMode = try c.decode(String.self, forKey: .focusMode)
+        intention = try c.decode(String.self, forKey: .intention)
+        tabTitle = try c.decode(String.self, forKey: .tabTitle)
+        currentTask = try c.decode(String.self, forKey: .currentTask)
+        score = try c.decode(Double.self, forKey: .score)
+        reason = try c.decode(String.self, forKey: .reason)
+        if let data = try c.decodeIfPresent(Data.self, forKey: .payloadData) {
+            payload = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        } else { payload = nil }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(timestamp, forKey: .timestamp)
+        try c.encode(urlOrApp, forKey: .urlOrApp)
+        try c.encode(isApp, forKey: .isApp)
+        try c.encode(focusMode, forKey: .focusMode)
+        try c.encode(intention, forKey: .intention)
+        try c.encode(tabTitle, forKey: .tabTitle)
+        try c.encode(currentTask, forKey: .currentTask)
+        try c.encode(score, forKey: .score)
+        try c.encode(reason, forKey: .reason)
+        if let payload = payload,
+           let data = try? JSONSerialization.data(withJSONObject: payload) {
+            try c.encode(data, forKey: .payloadData)
+        }
+    }
 }
 
-let maxAIBlockingLogEntries = 20
+let maxAIBlockingLogEntries = 50
 private let aiBlockingLogQueue = DispatchQueue(label: "com.focusbear.aiBlockingLog")
 var arrAIBlockingLogEntries = [AIBlockingLogEntry]()
+
+private let aiBlockingLogDefaultsKey = kUserdefaultsAiBlockingLogEntries
+private var didLoadPersistedAiBlockingLog = false
+
+/// Hydrate the in-memory log from disk once per launch — the store used to be memory-only, so it was
+/// wiped on every restart (and the app restarts often: habit edits, Pusher). MUST be called on
+/// `aiBlockingLogQueue`.
+private func loadPersistedAiBlockingLogIfNeeded() {
+    guard !didLoadPersistedAiBlockingLog else { return }
+    didLoadPersistedAiBlockingLog = true
+    if let data = SensitiveDefaults.data(forKey: aiBlockingLogDefaultsKey),
+       let entries = try? JSONDecoder().decode([AIBlockingLogEntry].self, from: data) {
+        arrAIBlockingLogEntries = entries
+    }
+}
+
+/// Persist the (trimmed) log so it survives a restart. MUST be called on `aiBlockingLogQueue`.
+private func persistAiBlockingLog() {
+    if let data = try? JSONEncoder().encode(arrAIBlockingLogEntries) {
+        SensitiveDefaults.set(data, forKey: aiBlockingLogDefaultsKey)
+    }
+}
+
+/// Run a read/write against the log store on its serial queue, hydrating from disk first.
+func withAiBlockingLog<T>(_ body: () -> T) -> T {
+    aiBlockingLogQueue.sync {
+        loadPersistedAiBlockingLogIfNeeded()
+        return body()
+    }
+}
 
 func addAIBlockingLogEntry(urlOrApp: String, isApp: Bool, focusMode: String, intention: String, tabTitle: String, currentTask: String, score: Double, reason: String, payload: [String: Any]?) {
     let entry = AIBlockingLogEntry(
@@ -39,10 +115,12 @@ func addAIBlockingLogEntry(urlOrApp: String, isApp: Bool, focusMode: String, int
         payload: payload
     )
     aiBlockingLogQueue.async {
+        loadPersistedAiBlockingLogIfNeeded()
         arrAIBlockingLogEntries.append(entry)
         if arrAIBlockingLogEntries.count > maxAIBlockingLogEntries {
             arrAIBlockingLogEntries.removeFirst(arrAIBlockingLogEntries.count - maxAIBlockingLogEntries)
         }
+        persistAiBlockingLog()
     }
 }
 
@@ -205,7 +283,7 @@ class DebugLogsVc: NSViewController {
     }
 
     func updateNoLogsVisibility() {
-        let hasEntries = aiBlockingLogQueue.sync { !arrAIBlockingLogEntries.isEmpty }
+        let hasEntries = withAiBlockingLog { !arrAIBlockingLogEntries.isEmpty }
         lblNoLogs.isHidden = hasEntries
         scrollView.isHidden = !hasEntries
     }
@@ -216,7 +294,7 @@ class DebugLogsVc: NSViewController {
 
     @objc func btnReportBadDecisionClicked(_ sender: NSButton) {
         let row = sender.tag
-        let entry: AIBlockingLogEntry? = aiBlockingLogQueue.sync {
+        let entry: AIBlockingLogEntry? = withAiBlockingLog {
             guard row >= 0 && row < arrAIBlockingLogEntries.count else { return nil }
             return arrAIBlockingLogEntries[row]
         }
@@ -233,11 +311,11 @@ class DebugLogsVc: NSViewController {
 extension DebugLogsVc: NSTableViewDelegate, NSTableViewDataSource {
     
     func numberOfRows(in tableView: NSTableView) -> Int {
-        return aiBlockingLogQueue.sync { arrAIBlockingLogEntries.count }
+        return withAiBlockingLog { arrAIBlockingLogEntries.count }
     }
     
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        let entries = aiBlockingLogQueue.sync { arrAIBlockingLogEntries }
+        let entries = withAiBlockingLog { arrAIBlockingLogEntries }
         let entry = entries[entries.count - 1 - row]
         let identifier = tableColumn?.identifier.rawValue ?? ""
         

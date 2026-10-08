@@ -156,6 +156,8 @@ func cancelRoutineForToday(openedFromDayPlan: Bool) {
     // #2050: routine skipped for today — clear so a playing allowed-activity habit doesn't leave
     // isAllowedActivityHabitPlaying stale in ._NOTHING_ (minimise would background without postpone).
     isAllowedActivityHabitPlaying = false
+    // The routine is over for today, so forget any step-aside made for an allowed-activity habit.
+    allowedActivityFullScreenCoordinator.reset()
     getHabitsVcObject().setActivityTimer()
     leftMenuVcObj?.habitOver()
     // Re-run the host's reloadData so the "Uncancel <routine>" state is recomputed and its button
@@ -378,8 +380,12 @@ func startCustomRoutine(index:Int, isOnDemand:Bool){
         addLog(text: "isUserOnMeeting True: Morning Habits skipped for some time.")
     }
     
+    // A custom routine is day-gated as a whole, so its habits carry no weekday rule of their own —
+    // only the skip-ahead half of `RoutineHabitSchedule` applies here. Pre-filter keeps every habit:
+    // it is what "I don't have time for all these" restores from.
     arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllHabits
     arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllHabits
+        .filter { !DayPlanHabitSkips.isSkipped($0.id, on: Date()) }
     if arrAllCustomRoutine.count != 0 {
         //        if need to get last saved habits then we need to comment line below
         appdelegate!.abortAllProcess()
@@ -809,8 +815,12 @@ func startCustomRoutmieHabitsCall(routineIndex:Int, activityId:String?, skippedA
     if completedActivities.count == 0 && skippedActivities.count == 0{
         needToCreateActivityId = false
     }
+    // A custom routine is day-gated as a whole, so its habits carry no weekday rule of their own —
+    // only the skip-ahead half of `RoutineHabitSchedule` applies here. Pre-filter keeps every habit:
+    // it is what "I don't have time for all these" restores from.
     arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllHabits
     arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllHabits
+        .filter { !DayPlanHabitSkips.isSkipped($0.id, on: Date()) }
     if activityId == nil && !needToCreateActivityId{
         mainWindowControllerObj?.showWindow(appdelegate)
         showBlankWindowInSecondaryMonitor()
@@ -1009,6 +1019,14 @@ func getNextRoutineInfo()->(Date, String, Bool){
     if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
         nextRoutineName = habitsStateVcInfo.value(forKey: "titleEveningRoutine") as? String ?? nextRoutineName
     }
+    // Settings may not be loaded yet (e.g. right after onboarding, before readSettingsJsonDictionary
+    // populates startTime/shutOffTime), or the user may simply have no routine times set. Bail with a
+    // safe placeholder instead of force-unwrapping shutOffTime, which traps (Sentry EXC_BREAKPOINT in
+    // getNextRoutineInfo, hit by jumping to the Day Plan before settings finish loading).
+    guard startTime != nil, shutOffTime != nil else {
+        addLog(text: "getNextRoutineInfo: startTime/shutOffTime nil (settings not loaded) — returning placeholder")
+        return (nextRoutineTime, nextRoutineName, nextRoutineIsEveningRoutine)
+    }
     var shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
     let calendar = Calendar.current
     // Get today's 11:59 PM
@@ -1166,7 +1184,38 @@ func isCutOffTimeAboutToReach() -> Bool {
 
 
 
+/// The routine-postpone state that extending a focus session should re-cover, or nil if none.
+/// Returns the live `currentState` while habits are still postponed. It also covers the race where a
+/// focus session that was running *under* a postpone completes on its own: the postpone timer resumes
+/// the routine and flips `currentState` back to `._NOTHING_` a moment before the user clicks "Extend"
+/// on the completion popup — so the live guard misses it. In that window the persisted last-postpone
+/// state is still present (it's cleared only when the routine actually shows), so fall back to it,
+/// as long as the saved postpone hasn't already ended well in the past (don't resurrect a stale save).
+func routinePostponeStateToReCoverOnExtend() -> CURRENTSTATE? {
+    if currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_ {
+        return currentState
+    }
+    guard currentState == ._NOTHING_,
+          let raw = UserDefaults.standard.object(forKey: kUserDefaultsLastRoutinePostponeState) as? Int,
+          let state = CURRENTSTATE(rawValue: raw),
+          state == ._POSTPONE_MORNING_HABIT_ || state == ._POSTPONE_EVENING_HABIT_ || state == ._POSTPONE_FOCUS_SUMMARY_
+    else { return nil }
+    if let endDate = UserDefaults.standard.object(forKey: kUserDefaultsLastRoutinePostponeEndDate) as? Date,
+       endDate.timeIntervalSinceNow < -stalePostponeResurrectionSeconds {
+        return nil
+    }
+    return state
+}
+
+/// A persisted postpone that ended more than this long ago is stale — don't resurrect it.
+private let stalePostponeResurrectionSeconds: TimeInterval = 5 * 60
+
 func restorePostponeStateIfNeeded() {
+    if PersistedPostponeRestore.discardInvalidPostpone(in: .standard, now: Date(),
+                                                       meetingSessionEnd: persistedMeetingSessionEnd()) {
+        addLog(text: "Restored postpone discarded: a meeting postpone with no meeting session running, or an uncapped one saved by an older build; resuming the routine")
+        return
+    }
     guard
         let endDate = UserDefaults.standard.object(
             forKey: kUserDefaultsLastRoutinePostponeEndDate

@@ -980,7 +980,7 @@
 //            arrFocusType[i]["lastStartedDate"] = nil
 //            arrFocusType[i]["lastScheduledEndDate"] = nil
 //        }
-//        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+//        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
 //
 //        focusModeFinishedCapturePosthog()
 //        var currentFocusModeId = ""

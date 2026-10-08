@@ -1,0 +1,34 @@
+# Dependabot configuration for the Focus Bear macOS app.
+# Docs: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# Only GitHub Actions is managed here. The app's other dependencies are not
+# supported by Dependabot:
+#   - Swift Package Manager deps are managed by Xcode (Package.resolved lives in
+#     FocusBear.xcworkspace, and there is no root Package.swift), which Dependabot's
+#     `swift` ecosystem cannot parse — it requires a Package.swift manifest.
+#   - CocoaPods (Podfile) is not a Dependabot-supported ecosystem.
+# Those two are updated manually / via their own tooling.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    reviewers:
+      - "jeznag"
+    commit-message:
+      prefix: "chore(deps)"
+    # Batch routine minor/patch action bumps into a single weekly PR to cut noise.
+    # Major bumps are intentionally left out of the group so each arrives as its own
+    # PR and can be reviewed individually.
+    groups:
+      github-actions-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"

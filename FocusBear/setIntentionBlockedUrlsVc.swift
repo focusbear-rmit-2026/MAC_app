@@ -59,6 +59,7 @@ class setIntentionBlockedUrlsVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.setUITestLandmark(UITestContract.Identifier.Blocking.intentionPrompt)
         
         btnAllow.title = "Allow"
         lblTitleSetIntention.stringValue = "What do you want to achieve during your time here?"
@@ -459,20 +460,25 @@ class setIntentionBlockedUrlsVc: NSViewController {
         }
 
         if let pid = self.currentPid{
+            // Keep the blur over the real blocked Chrome window, not the front about:blank Meet call
+            // window (see getGoogleChromeBlockingWindowBounds / showBlockConfirmWindow).
+            let chromeTargetBounds = (self.browser == ._GOOGLE_CHROME_) ? getGoogleChromeBlockingWindowBounds() : nil
             let options = CGWindowListOption(arrayLiteral: CGWindowListOption.excludeDesktopElements, CGWindowListOption.optionOnScreenOnly)
             let windowListInfo = CGWindowListCopyWindowInfo(options, CGWindowID(0))
             let windowInfoList = windowListInfo as NSArray? as? [[String: AnyObject]]
-            
+
             for info in windowInfoList! {
                 let windowPID = info["kCGWindowOwnerPID"] as! UInt32
                 if  windowPID == pid {
                     if let windowFrame = info["kCGWindowBounds"] as? NSDictionary{
                         let height = windowFrame.value(forKey: "Height") as? Int ?? 0
+                        let width = windowFrame.value(forKey: "Width") as? Int ?? 0
+                        let x = windowFrame.value(forKey: "X") as? Int ?? 0
+                        let y = windowFrame.value(forKey: "Y") as? Int ?? 0
+                        if let t = chromeTargetBounds, (abs(x - t.x) > 30 || abs(y - t.y) > 30) {
+                            continue
+                        }
                         if height > 250{
-                            let width = windowFrame.value(forKey: "Width") as? Int ?? 0
-                            let x = windowFrame.value(forKey: "X") as? Int ?? 0
-                            let y = windowFrame.value(forKey: "Y") as? Int ?? 0
-                            
                             if self.view.window?.isVisible ?? false{
                                 var frame = NSRect(x: x, y: y, width: width, height: height)
                                 if self.browser != nil{

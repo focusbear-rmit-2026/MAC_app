@@ -25,10 +25,14 @@ class customAlertVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
         btnCancel.isSecondaryButton = true
+        btnOk.setAccessibilityIdentifier(UITestContract.Identifier.CustomAlert.okButton)
+        btnCancel.setAccessibilityIdentifier(UITestContract.Identifier.CustomAlert.cancelButton)
     }
     
     func resetData(title:String, body:String?, buttonOkText:String, buttonCancelText:String?, checkBoxText: String?, autoClose:Bool, buttonLinkUrl:String?, buttonLinkText:String?, completionHandler: @escaping (Bool) -> Void){
         self.buttonLinkUrl = buttonLinkUrl
+        // One window serves every alert; a caller that names its alert does so after this.
+        view.setUITestLandmark(UITestContract.Identifier.CustomAlert.view)
         if buttonLinkUrl != nil{
             boxLinkButton.isHidden = false
         }else{

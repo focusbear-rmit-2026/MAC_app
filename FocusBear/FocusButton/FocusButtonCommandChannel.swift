@@ -51,12 +51,24 @@ final class FocusButtonCommandChannel {
         addLog(text: "FocusButtonCommandChannel: watching \(commandPath)")
     }
 
-    private func poll() {
-        guard let raw = try? String(contentsOfFile: commandPath, encoding: .utf8) else { return }
-        let cmd = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        // Consume the command up front so a slow action can't cause it to run twice.
-        try? FileManager.default.removeItem(atPath: commandPath)
+    /// Serial queue for the command-file read so it never blocks the main-thread poll timer.
+    private let pollQueue = DispatchQueue(label: "com.focusbear.focusButtonCommandPoll")
 
+    private func poll() {
+        // Read + consume the command file OFF the main thread: this runs on a main-thread timer and
+        // `String(contentsOfFile:)` is a blocking read (Sentry FOCUS-BEAR-MACOS-17Q, "App hanging").
+        // The parsed command is handled back on main, where the service state + status write belong.
+        pollQueue.async { [weak self] in
+            guard let self = self else { return }
+            guard let raw = try? String(contentsOfFile: self.commandPath, encoding: .utf8) else { return }
+            // Consume the command up front so a slow action can't cause it to run twice.
+            try? FileManager.default.removeItem(atPath: self.commandPath)
+            let cmd = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            DispatchQueue.main.async { self.handleCommand(cmd) }
+        }
+    }
+
+    private func handleCommand(_ cmd: String) {
         switch cmd {
         case "disconnect":
             addLog(text: "FocusButtonCommandChannel: external disconnect request")

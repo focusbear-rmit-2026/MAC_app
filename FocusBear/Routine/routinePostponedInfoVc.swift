@@ -45,12 +45,16 @@ class routinePostponedInfoVc: NSViewController {
             if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
                 lblTitle.stringValue = activityInfo.value(forKey: "titleMorningRoutinePostponed") as? String ?? lblTitle.stringValue
             }
+            applyMeetingHoldTitle(templateKey: "titleMorningRoutinePausedForMeeting",
+                                  fallback: "Your morning routine is paused for <MEETING>. It resumes at <TIME>, or begin a habit to resume it now.")
         }else if lCurrentState == ._EVENING_HABIT_{
             sourceHabits = arrAllDaysEveningHabits
             lblTitle.stringValue = "Evening routine postponed. Begin a habit to resume the evening routine."
             if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
                 lblTitle.stringValue = activityInfo.value(forKey: "titleEveningRoutinePostponed") as? String ?? lblTitle.stringValue
             }
+            applyMeetingHoldTitle(templateKey: "titleEveningRoutinePausedForMeeting",
+                                  fallback: "Your evening routine is paused for <MEETING>. It resumes at <TIME>, or begin a habit to resume it now.")
         }
         
         if let arrIds = UserDefaults.standard.object(
@@ -84,6 +88,17 @@ class routinePostponedInfoVc: NSViewController {
         }
     }
     
+    /// When the postpone is being held open for a meeting, say so and say when the routine comes back,
+    /// rather than the plain "routine postponed" (report 2026-09-25_15-36-42).
+    private func applyMeetingHoldTitle(templateKey: String, fallback: String) {
+        guard let hold = MeetingCoverage.hold(now: Date(), meetings: AnnouncedMeetingRegister.shared.activeMeetings(),
+                                              postponeEnd: currentRoutinePostponeEndDate()) else { return }
+        let template = (configjson.value(forKey: "activityInfo") as? NSDictionary)?.value(forKey: templateKey) as? String ?? fallback
+        lblTitle.stringValue = template
+            .replacingOccurrences(of: "<MEETING>", with: hold.meeting.title)
+            .replacingOccurrences(of: "<TIME>", with: getDisplayStringFromDate(date: hold.resumesAt, dateFormat: getSystemTimeFormat()))
+    }
+
     override func viewDidAppear() {
         tblViewHabits.reloadData()
         // viewWillAppear re-shows the habit list; re-hide it behind the Day Plan so its occluded
@@ -116,10 +131,10 @@ class routinePostponedInfoVc: NSViewController {
                     
                     arrFilteredMorningHabits.removeAll()
                     arrPreFilteredMorningHabits.removeAll()
-                    let currentWeekDay = Date().dayOfWeek()
-                    
+                    let today = Date()
+
                     for habit in arrAllDaysMorningHabits{
-                        if isScheduledForWeekday(habit.days_of_week, currentWeekDay: currentWeekDay) {
+                        if RoutineHabitSchedule.shouldPlay(habitId: habit.id, daysOfWeek: habit.days_of_week, on: today) {
                             arrFilteredMorningHabits.append(habit)
                         }
                     }
@@ -254,7 +269,7 @@ class routinePostponedInfoVc: NSViewController {
                     arrFilteredEveningHabits.removeAll()
                     arrPreFilteredEveningHabits.removeAll()
                     
-                    let currentWeekDay = Date().dayOfWeek()
+                    let today = Date()
                     let isCutOffTimeGoing = isCutOffTimeGoing()
                     for habit in arrAllDaysEveningHabits{
                         
@@ -264,20 +279,20 @@ class routinePostponedInfoVc: NSViewController {
                                     let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
                                     let currentDate = Date()
                                     if currentDate > cutOffDate{
-                                        addLog(text: "evening habit skipped:- running late cutoff time passed for this habit:- \(habit.name)  \(habit.id)") // remove this
+                                        addLog(text: "evening habit skipped:- running late cutoff time passed for this habit:- \(LogPrivacy.text(habit.name))  \(habit.id)") // remove this
                                         continue;
                                     }
                                 }
                             }else{
-                                addLog(text: "evening habit skipped:- Global cutoffTime passed and this habit is not high priority habit:- \(habit.name)  \(habit.id)")
+                                addLog(text: "evening habit skipped:- Global cutoffTime passed and this habit is not high priority habit:- \(LogPrivacy.text(habit.name))  \(habit.id)")
                                 continue
                             }
                         }
                         
-                        if isScheduledForWeekday(habit.days_of_week, currentWeekDay: currentWeekDay) {
+                        if RoutineHabitSchedule.shouldPlay(habitId: habit.id, daysOfWeek: habit.days_of_week, on: today) {
                             arrFilteredEveningHabits.append(habit)
                         }else{
-                            addLog(text: "evening habit skipped:- current day is not from selected days \(habit.days_of_week):- \(habit.name)  \(habit.id)") // remove this
+                            addLog(text: "evening habit skipped:- not scheduled for today or skipped ahead \(habit.days_of_week):- \(LogPrivacy.text(habit.name))  \(habit.id)") // remove this
                         }
                     }
                     
@@ -528,8 +543,8 @@ class routinePostponedInfoVc: NSViewController {
             
             
             UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
-            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
-            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
+            SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+            SensitiveDefaults.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
             currentHabitIndex = -1
             habitsVcObj?.showHabitState()
         }
@@ -667,8 +682,8 @@ class routinePostponedInfoVc: NSViewController {
             
             
             UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
-            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
-            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
+            SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+            SensitiveDefaults.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
             currentHabitIndex = -1
             habitsVcObj?.showHabitState()
         }
@@ -720,7 +735,7 @@ class routinePostponedInfoVc: NSViewController {
                             let currentDate = Date()
                             if currentDate > cutOffDate{
                                 addLog(text: "routinePostponedInfoVc func btnPlayClicked")// remove this
-                                addLog(text: "routinePostponedInfoVc evening habit skipped:- this first habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[i].name)  \(arrFilteredEveningHabits[i].id)") // remove this
+                                addLog(text: "routinePostponedInfoVc evening habit skipped:- this first habit is high priority habit but cutoff time of this habit has passed:- \(LogPrivacy.text(arrFilteredEveningHabits[i].name))  \(arrFilteredEveningHabits[i].id)") // remove this
                                 continue;
                             }
                         }

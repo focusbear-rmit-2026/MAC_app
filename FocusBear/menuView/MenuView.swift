@@ -110,6 +110,69 @@ final class HoverTooltipIconView: NSImageView {
     }
 }
 
+/// The app's INSTANT tooltip on any SwiftUI view, not just an icon.
+///
+/// `InstantTooltipIcon` above solves this for SF Symbols, and the reason it exists applies just as
+/// much to truncated text: SwiftUI's `.help` only appears after the system's slow hover delay, which
+/// is no use for "what does that cut-off goal actually say?" (report 2026-09-21_16-29-14).
+///
+/// A transparent overlay that reports hover but never takes a click — `hitTest` returns nil, so the
+/// editable goal row underneath is still a working button. Tracking areas keep firing regardless,
+/// which is what makes the two compatible.
+@available(macOS 11.0, *)
+struct InstantTooltipOverlay: NSViewRepresentable {
+    let message: String
+    var preferredEdge: NSRectEdge = .minY
+
+    func makeNSView(context: Context) -> HoverTooltipOverlayView {
+        HoverTooltipOverlayView(message: message, preferredEdge: preferredEdge)
+    }
+    func updateNSView(_ nsView: HoverTooltipOverlayView, context: Context) {
+        nsView.message = message
+    }
+}
+
+@available(macOS 11.0, *)
+final class HoverTooltipOverlayView: NSView {
+    var message: String
+    private let preferredEdge: NSRectEdge
+
+    init(message: String, preferredEdge: NSRectEdge) {
+        self.message = message
+        self.preferredEdge = preferredEdge
+        super.init(frame: .zero)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    /// Invisible to clicks. Without this the overlay would sit on top of the goal row and swallow
+    /// the tap that opens it for editing.
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        trackingAreas.forEach(removeTrackingArea)
+        addTrackingArea(NSTrackingArea(rect: bounds,
+                                       options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+                                       owner: self, userInfo: nil))
+    }
+    override func mouseEntered(with event: NSEvent) {
+        guard !message.isEmpty else { return }
+        showTooltipWithOsTahoe(sender: self, msg: message, preferredEdge: preferredEdge,
+                               maxWidthVal: 320, autoCloseOnMouseExit: true)
+    }
+    override func mouseExited(with event: NSEvent) {
+        closePopoverTooltipIfVisible()
+    }
+}
+
+@available(macOS 11.0, *)
+extension SwiftUI.View {
+    /// Shows `message` the instant the pointer enters. No-op for an empty message.
+    func instantTooltip(_ message: String, preferredEdge: NSRectEdge = .minY) -> some View {
+        overlay(InstantTooltipOverlay(message: message, preferredEdge: preferredEdge))
+    }
+}
+
 /// Time-Tracker "today" view strings, resolved from the `timeTrackerViewInfo` config section (keyed
 /// per language) with an English fallback. Kept separate from `menuLocalized`/`menuView` so the
 /// Time-Tracker view's copy lives in its own dictionary rather than being mixed into the menu's.
@@ -163,6 +226,241 @@ extension Color {
     }
 }
 
+// MARK: - Why blocking is off
+
+/// A specific, fixable blocking issue. #1978: users who skip the macOS
+/// permission prompts end up with blocking silently doing nothing, and the menu never said why.
+enum BlockingOffReason: String, CaseIterable {
+    /// The whole app was deactivated / aborted — the "OFF" badge in the menu bar.
+    case appDeactivated
+    /// A confirmed macOS permission issue. Other blocking mechanisms can still work.
+    case permissionsMissing
+    /// No blocking schedule has ever been created.
+    case noSchedule
+    /// A schedule exists but the user paused it.
+    case schedulePaused
+    /// A schedule exists and isn't paused, but its day/time window doesn't cover right now.
+    case noScheduleRightNow
+    /// The macOS grants are in place, but no browser has been set up for blocking, so websites
+    /// can't be blocked. Kept apart from `permissionsMissing`: the fix is the browser list, not the
+    /// permissions wizard.
+    case noBrowserEnabled
+    /// A browser is set up, but the per-second "what is the active tab?" read has been failing, so
+    /// no website can be checked at all (report 2026-09-11_16-56-33). Usually the browser has
+    /// stopped answering AppleScript — quitting and reopening it restores the reads.
+    case browserNotResponding
+
+    /// The sentence shown under "Blocking is off".
+    var explanation: String {
+        switch self {
+        case .appDeactivated:
+            return menuLocalized("blockingOffDeactivated", "Focus Bear is deactivated, so nothing is being blocked.")
+        case .permissionsMissing:
+            return menuLocalized("blockingPermissionsLimited", "Some blocking features may be unavailable because a macOS permission is missing. Other blocking can continue.")
+        case .noSchedule:
+            return menuLocalized("blockingOffNoSchedule", "You haven't set up a blocking schedule yet.")
+        case .schedulePaused:
+            return menuLocalized("blockingOffPaused", "Your blocking schedule is paused.")
+        case .noScheduleRightNow:
+            return menuLocalized("blockingOffNoScheduleNow", "No blocking schedule covers right now, and no focus session is running.")
+        case .noBrowserEnabled:
+            return menuLocalized("blockingOffNoBrowser", "No browser is set up for blocking, so websites won't be blocked.")
+        case .browserNotResponding:
+            return menuLocalized("blockingOffBrowserNotResponding", "Your browser has stopped telling Focus Bear which page is open, so websites aren't being checked. Quitting and reopening the browser usually fixes it.")
+        }
+    }
+
+    /// The button that takes the user to where this reason is fixed.
+    var fixTitle: String {
+        switch self {
+        case .appDeactivated:    return menuLocalized("blockingOffFixDeactivated", "Reactivate Focus Bear")
+        case .permissionsMissing: return menuLocalized("blockingOffFixPermissions", "Grant permissions")
+        case .noSchedule:        return menuLocalized("blockingOffFixNoSchedule", "Set up blocking")
+        case .schedulePaused:    return menuLocalized("blockingOffFixPaused", "Resume blocking")
+        case .noScheduleRightNow: return menuLocalized("blockingOffFixNoScheduleNow", "Edit blocking schedules")
+        case .noBrowserEnabled:  return menuLocalized("blockingOffFixNoBrowser", "Set up browsers")
+        case .browserNotResponding: return menuLocalized("blockingOffFixBrowserNotResponding", "Check browser setup")
+        }
+    }
+}
+
+/// Permission/browser setup gaps do not establish that all blocking has stopped: browser-specific
+/// Apple Events and the Firefox extension are independent of Accessibility and System Events.
+enum BlockingStatusCardKind: Equatable {
+    case off, attention
+
+    init(reasons: [BlockingOffReason]) {
+        self = reasons.contains { reason in
+            switch reason {
+            case .permissionsMissing, .noBrowserEnabled: return false
+            default: return true
+            }
+        } ? .off : .attention
+
+    }
+
+    var title: String {
+        self == .off
+            ? menuLocalized("blockingOffTitle", "Blocking is off")
+            : menuLocalized("blockingAttentionTitle", "Blocking needs attention")
+    }
+}
+
+enum BlockingPermissionIssue: Equatable {
+    case accessibility, systemEvents
+
+    var explanation: String {
+        switch self {
+        case .accessibility:
+            return menuLocalized("blockingAccessibilityLimited", "macOS reports that Accessibility access is missing. Full-screen window blocking may be affected; browser blocking can still work.")
+        case .systemEvents:
+            return menuLocalized("blockingSystemEventsLimited", "macOS reports that System Events access is missing. Some window controls may be affected; browser blocking can still work.")
+        }
+    }
+}
+
+struct BlockingPermissionHealth {
+    var accessibilityGranted: Bool
+    var systemEvents: BlockingPermissionsState
+
+    var issues: [BlockingPermissionIssue] {
+        var result: [BlockingPermissionIssue] = []
+        if !accessibilityGranted { result.append(.accessibility) }
+        if systemEvents == .missing { result.append(.systemEvents) }
+        return result
+    }
+
+    var state: BlockingPermissionsState {
+        if !issues.isEmpty { return .missing }
+        return systemEvents
+    }
+}
+
+/// What we actually know about the macOS grants blocking needs.
+///
+/// A read-only automation query can be inconclusive (for example, System Events is not running).
+/// Old evidence also expires. Neither case warrants claiming that a permission is missing.
+enum BlockingPermissionsState: Equatable {
+    /// A check confirmed the grants are there.
+    case granted
+    /// macOS refused or reports that consent is required. A setup preference cannot establish this.
+    case missing
+    /// Not probed yet, or the probe was inconclusive. Never worth a claim either way.
+    case unknown
+
+    /// Read-only AEDeterminePermissionToAutomateTarget result. A target that isn't running,
+    /// a timeout, and unexpected failures cannot establish a denied grant.
+    static func automationAuthorizationStatus(_ status: Int32) -> Self {
+        switch status {
+        case 0: return .granted
+        case -1743, -1744: return .missing // refused, or consent has not yet been granted
+        default: return .unknown
+        }
+    }
+}
+
+/// One in-flight check, with monotonic expiry measured from when the observation began. A slow
+/// completion must not turn old permission evidence into a fresh denial when the menu reopens.
+struct BlockingPermissionProbeCache {
+    static let refreshInterval: TimeInterval = 10
+    static let validityInterval: TimeInterval = 30
+    private var inFlightAt: TimeInterval?
+    private var sampledAt: TimeInterval?
+    private var sample: BlockingPermissionsState = .unknown
+
+    mutating func begin(at now: TimeInterval) -> Bool {
+        guard inFlightAt == nil else { return false }
+        if let sampledAt = sampledAt, now >= sampledAt,
+           now - sampledAt < Self.refreshInterval { return false }
+        inFlightAt = now
+        return true
+    }
+
+    mutating func complete(_ state: BlockingPermissionsState, startedAt: TimeInterval) {
+        guard inFlightAt == startedAt else { return }
+        inFlightAt = nil
+        sampledAt = startedAt
+        sample = state
+    }
+
+    func state(at now: TimeInterval) -> BlockingPermissionsState {
+        guard let sampledAt = sampledAt, now >= sampledAt,
+              now - sampledAt <= Self.validityInterval else { return .unknown }
+        return sample
+    }
+}
+
+/// Everything the reasons depend on, passed in rather than read from the app's globals so the
+/// answer can be unit-tested. Built once per menu tick in `menuViewController`.
+struct BlockingStatus {
+    var isAppEnabled: Bool
+    var permissions: BlockingPermissionsState
+    /// Whether any browser has been set up for blocking. `true` when we can't tell (the store is
+    /// missing or hasn't loaded) — an unread list is not evidence against the user.
+    var isAnyBrowserEnabled: Bool
+    var scheduleCount: Int
+    var isAnyScheduleOn: Bool
+    var isAnySchedulePaused: Bool
+    /// Whether some schedule's day/time window covers this moment — which is a different question
+    /// from `isAnyScheduleOn` (whether one has actually been switched on).
+    var isAnyScheduleCoveringNow: Bool
+    var isFocusSessionRunning: Bool
+    /// Whether a routine (morning/evening/custom, or a micro break) is running. Routines block on
+    /// their own AND make `isAnyScheduleOn` meaningless — see `offReasons`.
+    var isRoutineRunning: Bool
+    /// Whether the active-tab reads that every website check depends on have stopped answering.
+    var isBrowserUrlReadFailing = false
+
+    /// Known blocking issues, most severe first. Permission/browser-only issues use an attention
+    /// headline because some blocking mechanisms can continue independently.
+    ///
+    /// A reason is only listed when the inputs actually establish it. Anything we can't determine
+    /// — an unfinished permission probe, a schedule that covers now but isn't on — is left unsaid:
+    /// silence is recoverable, but sending someone to fix a thing that isn't broken is not.
+    var offReasons: [BlockingOffReason] {
+        // A deactivated app is the whole story — the schedule gaps below are its consequence, and
+        // listing them too would bury the one thing the user has to undo.
+        guard isAppEnabled else { return [.appDeactivated] }
+        var reasons: [BlockingOffReason] = []
+        // Missing grants limit some blocking features even mid-session, so retain the warning.
+        // `.unknown` says nothing: the probe is async and the menu renders before it lands.
+        if permissions == .missing { reasons.append(.permissionsMissing) }
+        // Granted permissions with no browser set up still means no website blocking — but it's a
+        // gap in the browser list, not in the macOS grants, so it gets its own reason and its own fix.
+        if permissions != .missing && !isAnyBrowserEnabled { reasons.append(.noBrowserEnabled) }
+        // A browser that has stopped answering is a live failure of the thing the user set up, so
+        // it is reported whether or not a schedule is on — the reads are what blocking runs on.
+        if isAnyBrowserEnabled && isBrowserUrlReadFailing { reasons.append(.browserNotResponding) }
+        // A running focus session blocks on its own, and so does a routine — which additionally
+        // suppresses schedule activation while it runs (`checkCustomBlockingScheduleTime` skips
+        // every routine state), so during one `isAnyScheduleOn` is false whatever the schedules say
+        // and none of the gaps below can be concluded from it.
+        if !isFocusSessionRunning && !isRoutineRunning && !isAnyScheduleOn {
+            if scheduleCount == 0 {
+                reasons.append(.noSchedule)
+            } else if isAnySchedulePaused {
+                reasons.append(.schedulePaused)
+            } else if !isAnyScheduleCoveringNow {
+                reasons.append(.noScheduleRightNow)
+            }
+            // A schedule covers right now yet none is on: real, but we can't name the cause from
+            // here, and "no schedule covers right now" would be a plain falsehood. Say nothing.
+        }
+        return reasons
+    }
+
+    /// One line naming the inputs and the conclusion, for the debug log — so the next report of
+    /// "it says blocking is off but it isn't" is answered by reading a log instead of the source.
+    var logDescription: String {
+        let reasons = offReasons.map(\.rawValue).joined(separator: ",")
+        return "appEnabled=\(isAppEnabled) permissions=\(permissions) browserEnabled=\(isAnyBrowserEnabled) "
+            + "schedules=\(scheduleCount) scheduleOn=\(isAnyScheduleOn) schedulePaused=\(isAnySchedulePaused) "
+            + "scheduleCoversNow=\(isAnyScheduleCoveringNow) focusSession=\(isFocusSessionRunning) "
+            + "routine=\(isRoutineRunning) urlReadFailing=\(isBrowserUrlReadFailing) "
+            + "→ \(reasons.isEmpty ? "no confirmed blocking issue" : reasons)"
+    }
+}
+
 // MARK: - View model
 
 @available(macOS 11.0, *)
@@ -176,6 +474,13 @@ final class MenuModel: ObservableObject {
     @Published var focusOnTaskText = ""
     @Published var focusRemaining = ""
     @Published var focusedTodayText = ""
+    /// The task the running session is actually working on (the focus queue's active entry), so the
+    /// menu answers "what am I meant to be doing?" without opening the focus screen.
+    @Published var focusCurrentTaskTitle = ""
+    /// False during a class session, where the teacher's frontend owns the checklist.
+    @Published var focusTaskActionable = false
+    var onCompleteCurrentTask: () -> Void = {}
+    var onChangeTask: () -> Void = {}
 
     @Published var breaksSummary = ""       // subtitle: "Next break in 28 minutes"
     @Published var lastBreakText = ""       // expanded body: "Last break 5m ago"
@@ -201,6 +506,34 @@ final class MenuModel: ObservableObject {
     @Published var dayPlanCurrentHabit = "" // the habit currently in progress (header only); empty when no habit is running
     @Published var habitsPostponedUntil = ""  // "Habits postponed until 10:07 PM" while a routine is postponed; empty otherwise
     @Published var dayPlanTasks: [DayPlanMenuTask] = []
+
+    // Inline quick-add for today's Day Plan: "+ Add task" expands into a one-line composer that
+    // understands the Day Plan's own `#project` / `!priority` tokens plus a duration (see
+    // `QuickAddTaskParser`). Enter adds and keeps the field open so several can be typed in a row.
+    @Published var quickAddExpanded = false
+    @Published var quickAddText = "" {
+        // Every keystroke changes which projects match, so the highlight goes back to the best one.
+        didSet { quickAddSuggestionIndex = 0 }
+    }
+    /// Existing project names, so a typed `#project` reuses their canonical casing in the preview.
+    @Published var quickAddProjectNames: [String] = []
+    /// Which `#project` suggestion Tab accepts. ↑/↓ move it; it always starts on the first (best) match.
+    @Published var quickAddSuggestionIndex = 0
+    /// An image pasted into the composer before the task exists. Attachments hang off a to-do, and a
+    /// task being typed has none yet, so it waits here and is uploaded once the task has been minted.
+    @Published var quickAddPastedImage: ToDoPastedImage?
+    /// Set when the shortcut card's ✕ is clicked, purely so SwiftUI re-renders. Whether the card shows
+    /// is re-read from the stored preference on every render rather than cached here, because this
+    /// model is built before the signed-in user has been restored and the preference is per account.
+    @Published private var quickAddShortcutCardClosed = false
+    var showsQuickAddShortcutCard: Bool {
+        !quickAddShortcutCardClosed && !TaskShortcutCardPreference.isDismissedForCurrentUser
+    }
+    func dismissQuickAddShortcutCard() {
+        TaskShortcutCardPreference.dismissForCurrentUser()
+        quickAddShortcutCardClosed = true
+    }
+    var onQuickAddTask: (String, ToDoPastedImage?) -> Void = { _, _ in }
 
     // Focus music
     @Published var musicTrackName = ""      // non-empty when a track is loaded (playing or paused)
@@ -228,12 +561,35 @@ final class MenuModel: ObservableObject {
     var onToggleBlockingSchedule: () -> Void = {}
     var onOpenBlockingScheduleConfig: () -> Void = {}   // tap the card → blocking-schedule settings
 
+    // Blocking health card: partial capability warnings must not claim that all blocking is off.
+    @Published var blockingOffReasons: [BlockingOffReason] = []
+    @Published var blockingPermissionIssues: [BlockingPermissionIssue] = []
+    var onFixBlockingOff: (BlockingOffReason) -> Void = { _ in }
+
+    // Re-join card (#2267):- shown when the student declined a class focus session that's still live and
+    // no session is currently active. The "Join session" button re-joins it.
+    @Published var classSessionJoinable = false
+    @Published var classSessionName = ""
+    var onJoinClassSession: () -> Void = {}
+
     // Voice screen state
     @Published var inVoiceMode = false
     @Published var voicePermissionDenied = false
     @Published var voiceStatus: VoiceStatus = .listening
     @Published var voiceTranscript = ""
     @Published var voiceResult = ""          // action description or error message
+
+    /// Shared by the menu microphone and the global voice shortcut.
+    func beginVoiceInput() {
+        guard micAvailable else { return }
+        guard !inVoiceMode || (voiceStatus != .listening && voiceStatus != .processing) else { return }
+        inVoiceMode = true
+        voicePermissionDenied = false
+        voiceStatus = .listening
+        voiceTranscript = ""
+        voiceResult = ""
+        onMic()
+    }
 
     var onMic: () -> Void = {}              // start voice recording
     var onStopRecording: () -> Void = {}    // stop + transcribe + act
@@ -267,6 +623,9 @@ final class MenuModel: ObservableObject {
     var onPreferences: () -> Void = {}
     var onQuit: () -> Void = {}
     var onTogglePin: () -> Void = {}            // switch the menu between popover and window (pinned) mode
+    // #777: recompute the duration for the currently-selected focus mode when the starter expands, so it
+    // defaults to that mode's last-used duration. Implemented in menuViewController (needs the mode data).
+    var onFocusStarterExpanded: () -> Void = {}
     @Published var menuPinnedAsWindow = false   // true = shown as a detached window; false = popover
 }
 
@@ -327,61 +686,220 @@ private struct HoldRepeatButton: View {
     }
 }
 
-/// A typeahead block-list picker backed by AppKit's NSComboBox — type to autocomplete a block list
-/// (or open the dropdown). Nicer than a plain menu when there are several lists.
+/// The "Select Focus Mode" picker: type to narrow the list of block lists, or open the dropdown.
+///
+/// Backed by `searchableComboBox` — the app's shared type-to-filter combo box, also behind the
+/// Create Task and Notes project pickers — rather than a bare `NSComboBox`. A plain `NSComboBox`
+/// with `completes = true` only does *inline prefix completion inside the field editor*: it never
+/// opens the menu as you type, and it never matches mid-name. So with lists called "Work — deep"
+/// typing "deep" showed nothing at all, which read as the picker being broken
+/// (report 2026-09-16_10-20-39). `searchableComboBox` substring-filters and pops the menu open on
+/// every keystroke, which is the behaviour that was missing.
 @available(macOS 11.0, *)
 struct BlockListComboBox: NSViewRepresentable {
     let items: [MenuBlockList]
-    @Binding var selectedId: String
+    @SwiftUI.Binding var selectedId: String
 
-    func makeNSView(context: Context) -> NSComboBox {
-        let box = NSComboBox()
-        box.completes = true                 // typeahead autocomplete as you type
+    private static let fontSize: CGFloat = 13
+    private static let visibleItems = 8
+
+    func makeNSView(context: Context) -> searchableComboBox {
+        let box = searchableComboBox()
+        box.usesDataSource = true            // the filtered list is the data source, not objectValues
+        box.completes = true
         box.isEditable = true
-        box.usesDataSource = false
         box.isBordered = false
         box.drawsBackground = false
         box.focusRingType = .none
-        box.font = .systemFont(ofSize: 13)
-        box.numberOfVisibleItems = 8
-        box.delegate = context.coordinator
+        box.font = .systemFont(ofSize: BlockListComboBox.fontSize)
+        box.hasVerticalScroller = true
+        box.numberOfVisibleItems = BlockListComboBox.visibleItems
         box.placeholderString = "Block list"
+        // searchableComboBox is its own delegate/data source — that is what filters the list and
+        // expands the menu on each keystroke. The SwiftUI side listens through `customDelegate`.
+        box.delegate = box
+        box.dataSource = box
+        (box.cell as? NSComboBoxCell)?.dataSource = box
+        box.customDelegate = context.coordinator
+        box.target = context.coordinator
+        box.action = #selector(Coordinator.comboCommitted(_:))
         return box
     }
 
-    func updateNSView(_ box: NSComboBox, context: Context) {
+    func updateNSView(_ box: searchableComboBox, context: Context) {
         context.coordinator.parent = self
         let names = items.map { $0.name }
-        if (box.objectValues as? [String]) != names {
-            box.removeAllItems()
-            box.addItems(withObjectValues: names)
+        // `currentEditor()` is non-nil only while the field has focus, i.e. the user is typing. The
+        // menu model reassigns its block lists about once a second, so without this guard every
+        // refresh would stamp the selection back over a half-typed name — the "typing 'Deep' reverted
+        // to 'Meetings' letter by letter" bug this control family keeps rediscovering.
+        let isEditing = box.currentEditor() != nil
+        if box.items != names {
+            box.items = names
+            // Re-apply the in-progress query, so a list arriving mid-word doesn't silently re-expand
+            // the menu to every block list.
+            box.filterData(comboBox: box, selectedText: isEditing ? box.stringValue : "")
         }
-        if let name = items.first(where: { $0.id == selectedId })?.name, box.stringValue != name {
+        if let name = items.first(where: { $0.id == selectedId })?.name,
+           BlockListComboBox.shouldOverwriteText(isEditing: box.currentEditor() != nil,
+                                                 current: box.stringValue, selectedName: name) {
             box.stringValue = name
+        }
+    }
+
+    /// The rule that stops a SwiftUI refresh overwriting what the user is typing, shared with every
+    /// other combo-box wrapper — see `ComboBoxTextSync` for why it exists.
+    static func shouldOverwriteText(isEditing: Bool, current: String, selectedName: String) -> Bool {
+        ComboBoxTextSync.shouldOverwriteText(isEditing: isEditing, current: current, selectedName: selectedName)
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    // MARK: - Pure helper (tested without a window)
+
+    /// Which block list the text in the field means. An exact name wins; otherwise text that narrows
+    /// the list to exactly one match picks that one, which is what the user is looking at. Anything
+    /// ambiguous — or empty — means "no answer", and the current selection is left alone rather than
+    /// being cleared out from under them.
+    static func resolve(text: String, items: [MenuBlockList]) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        if let exact = items.first(where: { $0.name.caseInsensitiveCompare(trimmed) == .orderedSame }) {
+            return exact.id
+        }
+        let matches = items.filter { $0.name.localizedCaseInsensitiveContains(trimmed) }
+        return matches.count == 1 ? matches[0].id : nil
+    }
+
+    final class Coordinator: NSObject, SearchableComboBoxDelegate {
+        var parent: BlockListComboBox
+        init(_ parent: BlockListComboBox) { self.parent = parent }
+
+        /// Return pressed, or a row picked from the menu. `stringValue` isn't committed yet at this
+        /// point, so the highlighted row is the reliable answer.
+        @objc func comboCommitted(_ sender: NSComboBox) {
+            guard let box = sender as? searchableComboBox else { return }
+            let index = box.indexOfSelectedItem
+            let picked = index >= 0 && index < box.filterdItems.count ? box.filterdItems[index] : box.stringValue
+            commit(text: picked, in: box)
+        }
+
+        /// A row chosen from the open dropdown (mouse click or arrow keys) fires this — commit it
+        /// immediately. Without it, picking a block list from the menu overlay never wrote the binding,
+        /// so `comboCommitted`/`itemSelectedByUser` only ran on Return or when field editing ended — and
+        /// a SwiftUI "TAP TO START" click doesn't end AppKit field editing first. The binding stayed on
+        /// the pre-selected default, so a session started from the menu always used "Block super
+        /// distracting sites" regardless of the pick (#2657). Mirrors searchableComboBox's own coordinator.
+        func listSelectionChangedByUser(comboBox: searchableComboBox) {
+            comboCommitted(comboBox)
+        }
+
+        /// Editing finished without a pick (the user clicked away). Their text is what they meant.
+        func itemSelectedByUser(comboBox: searchableComboBox) {
+            commit(text: comboBox.stringValue, in: comboBox)
+        }
+
+        /// Every keystroke, so the binding always means what the field visibly says — a SwiftUI button
+        /// click doesn't end AppKit field editing, so a user who types a name and goes straight to
+        /// "Start" would otherwise start the previous mode. Only the binding is written here, never
+        /// `stringValue`: replacing the text mid-word is the other trap this control family avoids.
+        func itemEditedByUser(comboBox: searchableComboBox) {
+            guard let resolved = BlockListComboBox.resolve(text: comboBox.stringValue, items: parent.items),
+                  parent.selectedId != resolved else { return }
+            parent.selectedId = resolved
+        }
+
+        private func commit(text: String, in box: searchableComboBox) {
+            guard let resolved = BlockListComboBox.resolve(text: text, items: parent.items),
+                  let name = parent.items.first(where: { $0.id == resolved })?.name else { return }
+            if box.stringValue != name { box.stringValue = name }
+            if parent.selectedId != resolved { parent.selectedId = resolved }
+        }
+    }
+}
+
+/// The menu's inline quick-add task field. AppKit-backed because it needs three things SwiftUI on
+/// macOS 11 can't give: programmatic first-responder focus (no `@FocusState` before macOS 12),
+/// a Return that commits WITHOUT dismissing the popover, and an Escape that collapses the row
+/// instead of closing the popover (the field consumes `cancelOperation` before the popover sees it).
+@available(macOS 11.0, *)
+struct QuickAddTaskField: NSViewRepresentable {
+    @Binding var text: String
+    let placeholder: String
+    let onCommit: () -> Void
+    let onCancel: () -> Void
+    /// Tab: accept the highlighted `#project` suggestion. Returns false when there is nothing to
+    /// accept, so Tab keeps its usual "move to the next control" meaning.
+    let onAcceptProjectSuggestion: () -> Bool
+    /// ↑/↓: move the highlight within the suggestion list. Returns false when there is no list to move in.
+    let onMoveProjectSuggestion: (Int) -> Bool
+
+    func makeNSView(context: Context) -> NSTextField {
+        let field = NSTextField()
+        field.placeholderString = placeholder
+        field.isBordered = false
+        field.drawsBackground = false
+        field.focusRingType = .none
+        field.font = .systemFont(ofSize: 13)
+        field.lineBreakMode = .byTruncatingTail
+        field.cell?.usesSingleLineMode = true
+        field.cell?.wraps = false
+        field.delegate = context.coordinator
+        field.stringValue = text
+        return field
+    }
+
+    func updateNSView(_ field: NSTextField, context: Context) {
+        context.coordinator.parent = self
+        if field.stringValue != text { field.stringValue = text }
+        if field.placeholderString != placeholder { field.placeholderString = placeholder }
+        // The field is only ever mounted while the row is expanded, so taking focus once on mount is
+        // exactly "focus when the user opens the composer".
+        guard !context.coordinator.didTakeFocus, let window = field.window else { return }
+        context.coordinator.didTakeFocus = true
+        DispatchQueue.main.async {
+            // The menu can be hosted in a window that isn't key yet — the full-screen overlay panel is
+            // deliberately `becomesKeyOnlyIfNeeded`, and the popover is shown without activating the
+            // app. A first responder in a non-key window shows no caret and receives no keys, so ask
+            // for the keyboard first: opening the composer IS the user asking to type
+            // (report 2026-09-14_12-13-25).
+            if !window.isKeyWindow { window.makeKey() }
+            window.makeFirstResponder(field)
         }
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
-    final class Coordinator: NSObject, NSComboBoxDelegate {
-        var parent: BlockListComboBox
-        init(_ parent: BlockListComboBox) { self.parent = parent }
+    final class Coordinator: NSObject, NSTextFieldDelegate {
+        var parent: QuickAddTaskField
+        var didTakeFocus = false
+        init(_ parent: QuickAddTaskField) { self.parent = parent }
 
-        func comboBoxSelectionDidChange(_ notification: Notification) {
-            guard let box = notification.object as? NSComboBox else { return }
-            // The selection isn't reflected in stringValue until the run loop turns; read the index next tick.
-            DispatchQueue.main.async {
-                let idx = box.indexOfSelectedItem
-                if idx >= 0 && idx < self.parent.items.count {
-                    self.parent.selectedId = self.parent.items[idx].id
-                }
-            }
+        func controlTextDidChange(_ obj: Notification) {
+            guard let field = obj.object as? NSTextField else { return }
+            parent.text = field.stringValue
         }
 
-        func controlTextDidEndEditing(_ obj: Notification) {
-            guard let box = obj.object as? NSComboBox else { return }
-            if let match = parent.items.first(where: { $0.name.caseInsensitiveCompare(box.stringValue) == .orderedSame }) {
-                parent.selectedId = match.id
+        func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
+            switch selector {
+            case #selector(NSResponder.insertNewline(_:)):
+                parent.onCommit()
+                return true
+            case #selector(NSResponder.cancelOperation(_:)):
+                parent.onCancel()
+                return true
+            case #selector(NSResponder.insertTab(_:)):
+                // Accepting the project name is ALL Tab does here — it never commits, so a line that is
+                // still only a `#token` can't be filed as a task with an empty title. With nothing to
+                // accept it returns false and AppKit moves the focus as it always did; swallowing Tab
+                // unconditionally would be the worse bug (report 2026-09-15_12-24-31).
+                return parent.onAcceptProjectSuggestion()
+            case #selector(NSResponder.moveDown(_:)):
+                return parent.onMoveProjectSuggestion(1)
+            case #selector(NSResponder.moveUp(_:)):
+                return parent.onMoveProjectSuggestion(-1)
+            default:
+                return false
             }
         }
     }
@@ -408,6 +926,7 @@ struct FocusBearMenuView: View {
     @SwiftUI.State private var expanded: Section?
     @SwiftUI.State private var mode: Mode = .menu
     @SwiftUI.State private var blockingBannerDismissed = false
+    @SwiftUI.State private var blockingOffExpanded = false
     @SwiftUI.State private var editingIntention = false
     @SwiftUI.State private var intentionDraft = ""
 
@@ -455,13 +974,8 @@ struct FocusBearMenuView: View {
     }
 
     private func startVoice() {
-        model.inVoiceMode = true
-        model.voicePermissionDenied = false
-        model.voiceStatus = .listening
-        model.voiceTranscript = ""
-        model.voiceResult = ""
-        model.onMic()
-        mode = .voice
+        model.beginVoiceInput()
+        mode = model.inVoiceMode ? .voice : .menu
     }
 
     /// The accordion that currently shows the orange highlight: whichever one is open, or — when
@@ -474,10 +988,18 @@ struct FocusBearMenuView: View {
         VStack(alignment: .leading, spacing: 8) {
             header
 
+            if !model.habitsPostponedUntil.isEmpty {
+                MenuPostponeNotice(text: model.habitsPostponedUntil, scheme: scheme)
+            }
+
             if model.showBlockingBanner && !blockingBannerDismissed {
                 BlockingBanner(scheme: scheme,
                                onSetUp: model.onSetUpBlocking,
                                onDismiss: { blockingBannerDismissed = true; model.onDismissBlocking() })
+            } else if !model.blockingOffReasons.isEmpty {
+                // Only when the onboarding banner isn't already up — it covers the same ground for a
+                // user who has never set blocking up, and two cards saying it would be shouting.
+                blockingOffCard
             }
 
             if model.focusRunning {
@@ -492,10 +1014,15 @@ struct FocusBearMenuView: View {
                 blockingScheduleCard
             }
 
+            if model.classSessionJoinable {
+                classSessionCard
+            }
+
             AccordionRow(icon: "cup.and.saucer.fill",
                          title: menuLocalized("menuBreaks", "Breaks"),
                          subtitle: model.breaksSummary.isEmpty ? menuLocalized("menuTakeBreak", "Take a mindful break") : model.breaksSummary,
                          solid: highlightedSection == .breaks,
+                         identifier: UITestContract.Identifier.SettingsRegression.menuBreaksRow,
                          isOpen: binding(.breaks), scheme: scheme) {
                 VStack(alignment: .leading, spacing: 8) {
                     if !model.lastBreakText.isEmpty {
@@ -504,7 +1031,8 @@ struct FocusBearMenuView: View {
                             .foregroundColor(MenuTheme.subtitle(scheme))
                     }
                     if model.canStartBreak {
-                        LinkButton(title: menuLocalized("menuStartBreak", "Start a break now"), scheme: scheme, action: model.onOpenBreaks)
+                        LinkButton(title: menuLocalized("menuStartBreak", "Start a break now"), scheme: scheme,
+                                   identifier: UITestContract.Identifier.SettingsRegression.menuStartBreakLink, action: model.onOpenBreaks)
                     }
                 }
             }
@@ -513,6 +1041,7 @@ struct FocusBearMenuView: View {
                          title: menuLocalized("menuDayPlan", "Day Plan"),
                          subtitle: dayPlanSubtitle,
                          solid: highlightedSection == .dayPlan,
+                         identifier: UITestContract.Identifier.SettingsRegression.menuDayPlanRow,
                          isOpen: binding(.dayPlan), scheme: scheme) {
                 dayPlanBody
             }
@@ -522,23 +1051,27 @@ struct FocusBearMenuView: View {
                          // When a focus-music track is loaded, surface it (and a pause control) at the
                          // top level so it's identifiable/pausable without opening the accordion.
                          subtitle: model.musicTrackName.isEmpty
-                            ? menuLocalized("menuFocusToolsSubtitle", "Music, brain dump & to-dos")
+                            ? menuLocalized("menuFocusToolsSubtitleNotes", "Music, notes & to-dos")
                             : "♪ " + model.musicTrackName,
                          solid: highlightedSection == .tools,
                          accessory: model.musicTrackName.isEmpty ? nil : AnyView(
                             MusicToggleButton(playing: model.musicPlaying, scheme: scheme, action: model.onToggleMusic)
                          ),
+                         identifier: UITestContract.Identifier.SettingsRegression.menuToolsRow,
                          isOpen: binding(.tools), scheme: scheme) {
                 VStack(spacing: 8) {
                     if model.musicTrackName.isEmpty {
-                        ToolButton(icon: "music.note", title: menuLocalized("menuFocusMusic", "Focus Music"), scheme: scheme, action: model.onOpenFocusMusic)
+                        ToolButton(icon: "music.note", title: menuLocalized("menuFocusMusic", "Focus Music"), scheme: scheme,
+                                   identifier: UITestContract.Identifier.SettingsRegression.menuFocusMusicButton, action: model.onOpenFocusMusic)
                     } else {
                         // A track is loaded: play/pause icon on the left + the track name.
                         ToolButton(icon: model.musicPlaying ? "pause.fill" : "play.fill",
                                    title: model.musicTrackName, scheme: scheme, action: model.onToggleMusic)
                     }
-                    ToolButton(icon: "brain", title: menuLocalized("menuBrainDump", "Brain Dump"), scheme: scheme, action: model.onOpenBrainDump)
-                    ToolButton(icon: "checklist", title: menuLocalized("menuToDoPlayer", "To-Do Player"), scheme: scheme, action: model.onOpenToDoPlayer)
+                    ToolButton(icon: "note.text", title: menuLocalized("menuNotes", "Notes"), scheme: scheme,
+                               identifier: UITestContract.Identifier.SettingsRegression.menuNotesButton, action: model.onOpenBrainDump)
+                    ToolButton(icon: "checklist", title: menuLocalized("menuToDoPlayer", "To-Do Player"), scheme: scheme,
+                               identifier: UITestContract.Identifier.SettingsRegression.menuToDoPlayerButton, action: model.onOpenToDoPlayer)
                 }
             }
 
@@ -551,7 +1084,10 @@ struct FocusBearMenuView: View {
             }
         }
         .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        // Measure at the REAL popover width, not maxWidth:.infinity — otherwise the GeometryReader below
+        // measures during an unbounded-width pass where wrapping subtitles collapse to one line, under-
+        // reporting the height, so the popover/window is sized too short and clips (top icons + bottom row).
+        .frame(width: FocusBearMenuView.width, alignment: .leading)
         .background(GeometryReader { g in
             Color.clear.preference(key: MenuHeightKey.self, value: g.size.height)
         })
@@ -575,11 +1111,26 @@ struct FocusBearMenuView: View {
                 .foregroundColor(MenuTheme.primaryText(scheme))
             Spacer()
             if model.micAvailable {
-                IconButton(systemName: "mic", scheme: scheme, action: startVoice)
+                IconButton(systemName: "mic", scheme: scheme, identifier: UITestContract.Identifier.SettingsRegression.menuMicButton, action: startVoice)
+                    .help(HotkeyService.voiceInputShortcutDisplay)
             }
-            IconButton(systemName: model.menuPinnedAsWindow ? "pin.fill" : "pin", scheme: scheme, action: model.onTogglePin)
-            IconButton(systemName: "gearshape", scheme: scheme, action: model.onPreferences)
-            IconButton(systemName: "power", scheme: scheme, action: model.onQuit)
+            IconButton(systemName: model.menuPinnedAsWindow ? "pin.fill" : "pin", scheme: scheme,
+                       identifier: UITestContract.Identifier.SettingsRegression.menuPinButton, action: model.onTogglePin)
+            // Expand, not a cog: the popover is a summary of the day, so the natural thing to reach for
+            // from its header is the full Day Plan (report 2026-09-15_17-46-04). Preferences is still a
+            // click away once the main window is open — the Day Plan opens it, and its left menu has
+            // Settings. Same action as the "View full day plan" link below.
+            // Mirrored so the arrows run bottom-left to top-right, which is the direction the PO asked
+            // for. The symbol that draws that diagonal natively (arrow.down.left.and.arrow.up.right) is
+            // macOS 14+, and on macOS 11-13 a missing symbol draws nothing at all, so the icon would
+            // simply vanish for those users.
+            IconButton(systemName: "arrow.up.left.and.arrow.down.right", scheme: scheme,
+                       help: menuLocalized("menuViewFullDayPlan", "View full day plan"),
+                       mirroredHorizontally: true,
+                       identifier: UITestContract.Identifier.MenuBar.openDayPlanButton,
+                       action: model.onOpenDayPlan)
+            IconButton(systemName: "power", scheme: scheme, identifier: UITestContract.Identifier.MenuBar.quitButton,
+                       action: model.onQuit)
         }
         .padding(.bottom, 2)
     }
@@ -596,6 +1147,7 @@ struct FocusBearMenuView: View {
                         TextField(menuLocalized("menuFocusGoalPlaceholder", "Enter Focus Goal here"),
                                   text: $model.focusIntentionDraft)
                             .textFieldStyle(PlainTextFieldStyle())
+                            .accessibilityIdentifier(UITestContract.Identifier.SettingsRegression.menuFocusGoalField)
                             .font(MenuTheme.font(13, .regular))
                             .foregroundColor(MenuTheme.primaryText(scheme))
                         // Advanced (icon only): open the main window's Start Focus Session view for the
@@ -622,6 +1174,9 @@ struct FocusBearMenuView: View {
                                 // Typeahead combo box: type to autocomplete a block list, or open the dropdown.
                                 BlockListComboBox(items: model.focusBlockLists, selectedId: $model.selectedBlockListId)
                                     .frame(height: 24)
+                                    // #777: switching mode in the expanded list re-defaults the duration to
+                                    // the newly-selected mode's last-used value (same handler as expand).
+                                    .onChange(of: model.selectedBlockListId) { _ in model.onFocusStarterExpanded() }
                             }
                         }
                         .padding(10)
@@ -668,7 +1223,7 @@ struct FocusBearMenuView: View {
                 // Initial state: the plain button. Tapping it reveals the goal box + duration stepper.
                 // Collapse any open accordion (Day Plan / Breaks / Tools) so the focus starter takes
                 // over cleanly and nothing else keeps refreshing underneath it.
-                SwiftUI.Button(action: { withAnimation(.easeInOut(duration: 0.15)) { expanded = nil; model.focusStarterExpanded = true } }) {
+                SwiftUI.Button(action: { withAnimation(.easeInOut(duration: 0.15)) { expanded = nil; model.focusStarterExpanded = true; model.onFocusStarterExpanded() } }) {
                     HStack(spacing: 8) {
                         Image(systemName: "play.fill").font(.system(size: 12, weight: .bold))
                         Text(menuLocalized("menuStartFocus", "START FOCUS SESSION"))
@@ -683,6 +1238,7 @@ struct FocusBearMenuView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 .pointingHandCursor()
+                .accessibilityIdentifier(UITestContract.Identifier.SettingsRegression.menuStartFocusButton)
             }
         }
     }
@@ -729,6 +1285,57 @@ struct FocusBearMenuView: View {
         .background(MenuTheme.orange.opacity(scheme == .dark ? 0.18 : 0.10))
         .cornerRadius(13)
         .overlay(RoundedRectangle(cornerRadius: 13).stroke(MenuTheme.orange.opacity(0.3), lineWidth: 1))
+    }
+
+    /// Blocking health card: the headline distinguishes inactive blocking from limited capabilities,
+    /// clicking it reveals WHY — every reason that currently applies, each with the button that
+    /// fixes it (permissions wizard, blocking-schedule settings, resume, reactivate). #1978
+    private var blockingOffCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            SwiftUI.Button(action: { blockingOffExpanded.toggle() }) {
+                HStack(spacing: 10) {
+                    Image(systemName: BlockingStatusCardKind(reasons: model.blockingOffReasons) == .off ? "shield.slash" : "exclamationmark.shield")
+                        .font(.system(size: 18))
+                        .foregroundColor(MenuTheme.subtitle(scheme))
+                    Text(BlockingStatusCardKind(reasons: model.blockingOffReasons).title)
+                        .font(MenuTheme.font(14, .semibold))
+                        .foregroundColor(MenuTheme.primaryText(scheme))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                    Spacer(minLength: 8)
+                    Text(menuLocalized("blockingOffWhy", "Why?"))
+                        .font(MenuTheme.font(12, .semibold))
+                        .foregroundColor(MenuTheme.orange)
+                    Image(systemName: blockingOffExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(MenuTheme.orange)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(PlainButtonStyle())
+            .pointingHandCursor()
+
+            if blockingOffExpanded {
+                ForEach(model.blockingOffReasons, id: \.self) { reason in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(reason == .permissionsMissing && !model.blockingPermissionIssues.isEmpty
+                             ? model.blockingPermissionIssues.map(\.explanation).joined(separator: "\n\n")
+                             : reason.explanation)
+                            .font(MenuTheme.font(12, .regular))
+                            .foregroundColor(MenuTheme.subtitle(scheme))
+                            .fixedSize(horizontal: false, vertical: true)
+                            .multilineTextAlignment(.leading)
+                        LinkButton(title: reason.fixTitle, scheme: scheme) { model.onFixBlockingOff(reason) }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity)
+        .background(MenuTheme.cardBg(scheme))
+        .cornerRadius(13)
+        .overlay(RoundedRectangle(cornerRadius: 13).stroke(MenuTheme.border(scheme), lineWidth: 1))
     }
 
     /// Active blocking-schedule card: name + day/time + a Pause/Resume toggle. Shown whenever a
@@ -793,6 +1400,68 @@ struct FocusBearMenuView: View {
         .overlay(RoundedRectangle(cornerRadius: 13).stroke(MenuTheme.orange.opacity(0.3), lineWidth: 1))
     }
 
+    // "A class focus session is running" + a "Join session" button, for a student who declined/dismissed
+    // the join prompt while the session is still live (#2267). Styled like blockingScheduleCard.
+    private var classSessionCard: some View {
+        HStack(spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "graduationcap.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(MenuTheme.orange)
+                // Title wraps to as many lines as it needs (no truncation) so it's fully visible even
+                // when the Join button narrows the column; the session name sits below in a smaller font.
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(classSessionRunningTitleText)
+                        .font(MenuTheme.font(14, .semibold))
+                        .foregroundColor(MenuTheme.primaryText(scheme))
+                        .fixedSize(horizontal: false, vertical: true)
+                    if !model.classSessionName.isEmpty {
+                        Text(model.classSessionName)
+                            .font(MenuTheme.font(11, .regular))
+                            .foregroundColor(MenuTheme.subtitle(scheme))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer(minLength: 8)
+            }
+
+            SwiftUI.Button(action: model.onJoinClassSession) {
+                Text(classSessionJoinButtonText)
+                    .font(MenuTheme.font(12, .semibold))
+                    .foregroundColor(MenuTheme.orange)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(MenuTheme.orange.opacity(0.15))
+                    .cornerRadius(8)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .pointingHandCursor()
+            .fixedSize()
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity)
+        .background(MenuTheme.cardBg(scheme))
+        .cornerRadius(13)
+        .overlay(RoundedRectangle(cornerRadius: 13).stroke(MenuTheme.orange.opacity(0.3), lineWidth: 1))
+    }
+
+    // Card title + button read from the teacherSessionInfo config block (same block the join prompt uses),
+    // so they localize consistently and fall back to English if the block/key isn't present.
+    private var classSessionRunningTitleText: String {
+        if let info = configjson.value(forKey: "teacherSessionInfo") as? NSDictionary,
+           let s = info.value(forKey: "classSessionRunningTitle") as? String, !s.isEmpty {
+            return s
+        }
+        return "A class focus session is running"
+    }
+
+    private var classSessionJoinButtonText: String {
+        if let info = configjson.value(forKey: "teacherSessionInfo") as? NSDictionary,
+           let s = info.value(forKey: "buttonJoin") as? String, !s.isEmpty {
+            return s
+        }
+        return "Join session"
+    }
+
     private func habitActionButton(_ title: String, action: @escaping () -> Void) -> some View {
         SwiftUI.Button(action: action) {
             Text(title)
@@ -815,9 +1484,11 @@ struct FocusBearMenuView: View {
                      title: focusAccordionTitle,
                      subtitle: focusSubtitle,
                      solid: highlightedSection == .focus,
+                     identifier: UITestContract.Identifier.MenuBar.focusSection,
                      isOpen: binding(.focus), scheme: scheme) {
             VStack(alignment: .leading, spacing: 8) {
                 intentionEditor
+                currentTaskRow
                 if !model.focusOnTaskText.isEmpty {
                     Text(model.focusOnTaskText)
                         .font(MenuTheme.font(12, .regular))
@@ -855,6 +1526,46 @@ struct FocusBearMenuView: View {
         }
     }
 
+    /// The task the session is playing, with a tick to finish it here and a link out to the focus
+    /// screen to pick a different one ("show the current task playing in the focus UI with an option
+    /// for me to mark it as complete… also a 'Change task' link", report 2026-09-15_16-43-04).
+    /// Completing routes through `FocusSessionQueueWriter`, the same path the focus screen uses, so
+    /// the Day Plan and the to-do list follow along.
+    @ViewBuilder private var currentTaskRow: some View {
+        HStack(alignment: .center, spacing: 6) {
+            if model.focusCurrentTaskTitle.isEmpty {
+                Text(menuLocalized("menuNoCurrentTask", "No task chosen"))
+                    .font(MenuTheme.font(13, .medium))
+                    .foregroundColor(MenuTheme.subtitle(scheme))
+            } else {
+                if model.focusTaskActionable {
+                    SwiftUI.Button(action: model.onCompleteCurrentTask) {
+                        // The same tick-off affordance the day-plan rows below use.
+                        Image(systemName: "circle")
+                            .font(.system(size: 15))
+                            .foregroundColor(MenuTheme.subtitle(scheme))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .pointingHandCursor()
+                    .help(menuLocalized("menuMarkTaskComplete", "Mark as complete"))
+                }
+                Text(model.focusCurrentTaskTitle)
+                    .font(MenuTheme.font(13, .medium))
+                    .foregroundColor(MenuTheme.primaryText(scheme))
+                    .lineLimit(2)
+            }
+            Spacer(minLength: 6)
+            SwiftUI.Button(action: model.onChangeTask) {
+                Text(menuLocalized("menuChangeTask", "Change task"))
+                    .font(MenuTheme.font(12, .medium))
+                    .foregroundColor(MenuTheme.orange)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .pointingHandCursor()
+            .help(menuLocalized("menuOpenFocusScreen", "Open the full focus screen"))
+        }
+    }
+
     /// The focus-session intention: tap it (dotted underline signals it's editable) to type a new one,
     /// confirm with the tick. Saving routes through onSaveIntention → updateFocusModeIntention.
     @ViewBuilder private var intentionEditor: some View {
@@ -870,6 +1581,8 @@ struct FocusBearMenuView: View {
                         .font(MenuTheme.font(13, .medium))
                         .foregroundColor(MenuTheme.primaryText(scheme))
                         .lineLimit(2)
+                        // Two lines is not always enough — hover for the whole goal.
+                        .instantTooltip(model.focusTaskTitle)
                 }
                 Spacer(minLength: 0)
                 // AppKit-backed so the tooltip shows the instant the pointer enters (SwiftUI `.help` is slow).
@@ -918,6 +1631,8 @@ struct FocusBearMenuView: View {
                                     .frame(height: 1),
                                 alignment: .bottom
                             )
+                            // The overlay never takes a click, so the row still opens for editing.
+                            .instantTooltip(model.focusTaskTitle)
                     }
                     Spacer(minLength: 6)
                     // Pencil (kept right-aligned) so the row reads as editable even when no goal is set.
@@ -1043,18 +1758,6 @@ struct FocusBearMenuView: View {
                 }
             }
 
-            // Habits postponed until <time> — shown while a morning/evening routine is postponed.
-            if !model.habitsPostponedUntil.isEmpty {
-                HStack(spacing: 8) {
-                    Image(systemName: "clock")
-                        .font(.system(size: 11))
-                        .foregroundColor(MenuTheme.subtitle(scheme))
-                    Text(model.habitsPostponedUntil)
-                        .font(MenuTheme.font(12, .regular))
-                        .foregroundColor(MenuTheme.subtitle(scheme))
-                }
-            }
-
             // TASKS FOR TODAY (uncompleted only)
             if !model.dayPlanTasks.isEmpty {
                 Divider().padding(.vertical, 1)
@@ -1081,13 +1784,250 @@ struct FocusBearMenuView: View {
                 }
             }
 
+            // "+ Add task" — always offered (also when the list is empty, so the first task of the
+            // day can be typed here) and always directly above "View full day plan".
+            quickAddSection
+
             if model.dayPlanNextEventTitle.isEmpty && model.dayPlanNextHabit.isEmpty && model.dayPlanTasks.isEmpty {
                 Text(menuLocalized("menuNothingScheduled", "Nothing scheduled right now"))
                     .font(MenuTheme.font(12, .regular))
                     .foregroundColor(MenuTheme.subtitle(scheme))
             }
-            LinkButton(title: menuLocalized("menuViewFullDayPlan", "View full day plan"), scheme: scheme, action: model.onOpenDayPlan)
+            LinkButton(title: menuLocalized("menuViewFullDayPlan", "View full day plan"), scheme: scheme,
+                       identifier: UITestContract.Identifier.SettingsRegression.menuViewFullDayPlanLink, action: model.onOpenDayPlan)
         }
+    }
+
+    // MARK: Inline quick-add task
+
+    /// What the typed line currently means. Recomputed per keystroke (the parser is pure and cheap)
+    /// so the chips below the field always describe what would actually be added.
+    private var quickAddParsed: ParsedQuickAddTask {
+        QuickAddTaskParser.parse(model.quickAddText, knownProjects: model.quickAddProjectNames)
+    }
+
+    /// Whether the typed line is addable, decided by the same rule the Day Plan composer commits by,
+    /// so a line that is nothing but tokens is refused identically on both.
+    private var quickAddCommit: TaskNameCommit {
+        TaskNameCommit.forQuickAdd(model.quickAddText, knownProjects: model.quickAddProjectNames)
+    }
+
+    private var quickAddIsAddable: Bool {
+        if case .save = quickAddCommit { return true }
+        return false
+    }
+
+    private var quickAddSection: some View {
+        Group {
+            if model.quickAddExpanded {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(MenuTheme.orange)
+                        QuickAddTaskField(text: $model.quickAddText,
+                                          placeholder: menuLocalized("menuAddTaskPlaceholder",
+                                                                     "Task name #project 30m"),
+                                          onCommit: commitQuickAdd,
+                                          onCancel: collapseQuickAdd,
+                                          onAcceptProjectSuggestion: acceptHighlightedProjectSuggestion,
+                                          onMoveProjectSuggestion: moveProjectSuggestionHighlight)
+                            .frame(height: 18)
+                        SwiftUI.Button(action: commitQuickAdd) {
+                            Image(systemName: "return")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(quickAddIsAddable ? MenuTheme.orange : MenuTheme.subtitle(scheme))
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .pointingHandCursor()
+                        .disabled(!quickAddIsAddable)
+                        .help(menuLocalized("menuAddTask", "Add task"))
+                    }
+                    .padding(.horizontal, 10).padding(.vertical, 8)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(MenuTheme.orange.opacity(0.10)))
+                    // The same ⌘V handler the task editors use. Here the picture cannot be uploaded
+                    // yet — there is no task — so it is held and sent the moment one exists.
+                    .attachesPastedImages(label: "menu-quick-add") { model.quickAddPastedImage = $0 }
+                    quickAddProjectSuggestions
+                    quickAddPreview
+                    quickAddShortcutCard
+                }
+            } else {
+                SwiftUI.Button(action: { model.quickAddExpanded = true }) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "plus.circle")
+                            .font(.system(size: 15))
+                            .foregroundColor(MenuTheme.orange)
+                        Text(menuLocalized("menuAddTask", "Add task"))
+                            .font(MenuTheme.font(13, .medium))
+                            .foregroundColor(MenuTheme.orange)
+                        Spacer(minLength: 0)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(PlainButtonStyle())
+                .pointingHandCursor()
+            }
+        }
+    }
+
+    /// Known project names matching the `#token` being typed. Without these the composer took any text
+    /// after `#` and a typo minted a new project (report 2026-09-14_16-17-22). Clicking one accepts it;
+    /// the field keeps the keyboard, so typing can continue straight away. The highlighted row — the one
+    /// Tab accepts — is tinted, so "the highlighted suggestion" means something on screen.
+    @ViewBuilder
+    private var quickAddProjectSuggestions: some View {
+        let matches = quickAddProjectMatches
+        if !matches.isEmpty {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(matches.enumerated()), id: \.element) { index, name in
+                    SwiftUI.Button(action: { acceptProjectSuggestion(at: index) }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "folder").font(.system(size: 10))
+                            Text(name).font(MenuTheme.font(11, .regular)).lineLimit(1)   // i18n-ignore: the user's own project name
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(index == model.quickAddSuggestionIndex ? MenuTheme.orange.opacity(0.18) : Color.clear)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .pointingHandCursor()
+                }
+            }
+            .foregroundColor(MenuTheme.orange)
+            .background(RoundedRectangle(cornerRadius: 6).fill(MenuTheme.chipBg(scheme)))
+        }
+    }
+
+    /// The project names offered for the `#token` being typed — the single list the highlight, the
+    /// clickable rows and Tab all read, so they can never disagree about what "the first match" is.
+    private var quickAddProjectMatches: [String] {
+        QuickAddProjectSuggestions.matches(for: model.quickAddText, knownProjects: model.quickAddProjectNames)
+    }
+
+    /// The one way a `#project` suggestion is accepted: a click passes the row it was on, Tab passes the
+    /// highlighted row. Both land here, so the two can't drift apart — and neither commits the task, so
+    /// the empty-title guard still has the last word on Enter.
+    @discardableResult
+    private func acceptProjectSuggestion(at index: Int) -> Bool {
+        guard let accepted = QuickAddProjectSuggestions.accepting(model.quickAddText,
+                                                                 knownProjects: model.quickAddProjectNames,
+                                                                 suggestion: index)
+        else { return false }
+        model.quickAddText = accepted
+        return true
+    }
+
+    /// Tab accepts the highlighted suggestion (report 2026-09-15_12-24-31). It reports whether it had
+    /// anything to do: with no suggestion showing, Tab falls through to normal focus movement.
+    private func acceptHighlightedProjectSuggestion() -> Bool {
+        acceptProjectSuggestion(at: model.quickAddSuggestionIndex)
+    }
+
+    private func moveProjectSuggestionHighlight(by delta: Int) -> Bool {
+        let matches = quickAddProjectMatches
+        guard matches.count > 1 else { return false }
+        let moved = max(0, min(matches.count - 1, model.quickAddSuggestionIndex + delta))
+        guard moved != model.quickAddSuggestionIndex else { return true }
+        model.quickAddSuggestionIndex = moved
+        return true
+    }
+
+    /// The same shortcut explainer the Day Plan row shows, in the menu's own idiom. Dismissing either
+    /// one dismisses both: what the ✕ retires is the explanation, not one surface of it. The list is
+    /// the MENU grammar, which has one token more than the row's — a spelled "30m" counts here.
+    @ViewBuilder
+    private var quickAddShortcutCard: some View {
+        if model.showsQuickAddShortcutCard {
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(alignment: .top, spacing: 6) {
+                    Text(TaskShortcutCard.title)
+                        .font(MenuTheme.font(10, .semibold))
+                        .foregroundColor(MenuTheme.primaryText(scheme))
+                    Spacer(minLength: 0)
+                    SwiftUI.Button(action: model.dismissQuickAddShortcutCard) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(MenuTheme.subtitle(scheme))
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .pointingHandCursor()
+                    .help(TaskShortcutCard.dismissTooltip)
+                }
+                ForEach(TaskShortcutCard.hints(for: .menuQuickAdd), id: \.self) { hint in
+                    Text(hint)
+                        .font(MenuTheme.font(10, .regular))
+                        .foregroundColor(MenuTheme.subtitle(scheme))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.horizontal, 8).padding(.vertical, 6)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 6).fill(MenuTheme.chipBg(scheme)))
+        }
+    }
+
+    /// Chips echoing back what the typed tokens were understood as; falls back to the key hint so the
+    /// row always explains itself.
+    private var quickAddPreview: some View {
+        HStack(spacing: 6) {
+            if let project = quickAddParsed.project, !project.isEmpty {
+                quickAddChip(text: "#\(project)", icon: "folder")   // i18n-ignore: the user's own project name
+            }
+            if let minutes = quickAddParsed.durationMinutes {
+                quickAddChip(text: QuickAddTaskParser.durationLabel(minutes), icon: "clock")
+            }
+            if let outcome = quickAddParsed.outcome {
+                quickAddChip(text: "\(outcome)", icon: "star")
+            }
+            // A pasted image is invisible otherwise, and a silent ⌘V is worse than no ⌘V at all.
+            if model.quickAddPastedImage != nil {
+                quickAddChip(text: menuLocalized("menuQuickAddImagePending", "Image attached"),
+                             icon: "paperclip")
+            }
+            // Tokens but no name: Enter is disabled, so say why rather than leaving it dead.
+            if case .refuseTokensOnly = quickAddCommit {
+                Text(ScheduleText.tasksNameNeeded)
+                    .font(MenuTheme.font(10, .regular))
+                    .foregroundColor(MenuTheme.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if quickAddParsed.project == nil && quickAddParsed.durationMinutes == nil && quickAddParsed.outcome == nil {
+                Text(menuLocalized("menuAddTaskHint", "Enter to add, Esc to cancel"))
+                    .font(MenuTheme.font(10, .regular))
+                    .foregroundColor(MenuTheme.subtitle(scheme))
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func quickAddChip(text: String, icon: String) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: icon).font(.system(size: 9))
+            Text(text).font(MenuTheme.font(10, .medium)).lineLimit(1)
+        }
+        .foregroundColor(MenuTheme.orange)
+        .padding(.horizontal, 6).padding(.vertical, 2)
+        .background(Capsule().fill(MenuTheme.chipBg(scheme)))
+    }
+
+    /// Enter: add the task to TODAY's Day Plan and clear the field, leaving it open and focused so a
+    /// run of tasks can be typed without re-opening the menu.
+    private func commitQuickAdd() {
+        guard quickAddIsAddable else { return }
+        let raw = model.quickAddText
+        let pasted = model.quickAddPastedImage
+        model.quickAddText = ""
+        model.quickAddPastedImage = nil
+        model.onQuickAddTask(raw, pasted)
+    }
+
+    private func collapseQuickAdd() {
+        model.quickAddText = ""
+        model.quickAddPastedImage = nil
+        model.quickAddExpanded = false
     }
 }
 
@@ -1110,7 +2050,10 @@ private struct VoiceView: View {
             }
         }
         .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        // Measure at the REAL popover width, not maxWidth:.infinity — otherwise the GeometryReader below
+        // measures during an unbounded-width pass where wrapping subtitles collapse to one line, under-
+        // reporting the height, so the popover/window is sized too short and clips (top icons + bottom row).
+        .frame(width: FocusBearMenuView.width, alignment: .leading)
         .background(GeometryReader { g in
             Color.clear.preference(key: MenuHeightKey.self, value: g.size.height)
         })
@@ -1124,9 +2067,12 @@ private struct VoiceView: View {
                 .foregroundColor(MenuTheme.primaryText(scheme))
             Spacer()
             IconButton(systemName: "house", scheme: scheme, action: onClose)
-            IconButton(systemName: model.menuPinnedAsWindow ? "pin.fill" : "pin", scheme: scheme, action: model.onTogglePin)
-            IconButton(systemName: "gearshape", scheme: scheme, action: model.onPreferences)
-            IconButton(systemName: "power", scheme: scheme, action: model.onQuit)
+            IconButton(systemName: model.menuPinnedAsWindow ? "pin.fill" : "pin", scheme: scheme,
+                       identifier: UITestContract.Identifier.SettingsRegression.menuPinButton, action: model.onTogglePin)
+            IconButton(systemName: "gearshape", scheme: scheme,
+                       identifier: UITestContract.Identifier.MenuBar.preferencesButton, action: model.onPreferences)
+            IconButton(systemName: "power", scheme: scheme, identifier: UITestContract.Identifier.MenuBar.quitButton,
+                       action: model.onQuit)
         }
     }
 
@@ -1471,6 +2417,8 @@ private struct AccordionRow<Body: View>: View {
     // Optional control shown in the header before the chevron (e.g. the focus-music play/pause button),
     // tappable without expanding the row.
     var accessory: AnyView? = nil
+    /// For UI tests to find the row's header by.
+    var identifier: String = ""
     @Binding var isOpen: Bool
     let scheme: ColorScheme
     @ViewBuilder var content: () -> Body
@@ -1513,6 +2461,7 @@ private struct AccordionRow<Body: View>: View {
             }
             .buttonStyle(PlainButtonStyle())
             .pointingHandCursor()
+            .accessibilityIdentifier(identifier)
 
             if isOpen {
                 content()
@@ -1551,6 +2500,8 @@ private struct IconChip: View {
 private struct LinkButton: View {
     let title: String
     let scheme: ColorScheme
+    /// For UI tests to find it by.
+    var identifier: String = ""
     let action: () -> Void
     var body: some View {
         SwiftUI.Button(action: action) {
@@ -1560,6 +2511,7 @@ private struct LinkButton: View {
         }
         .buttonStyle(PlainButtonStyle())
         .pointingHandCursor()
+        .accessibilityIdentifier(identifier)
     }
 }
 
@@ -1568,6 +2520,8 @@ private struct ToolButton: View {
     let icon: String
     let title: String
     let scheme: ColorScheme
+    /// For UI tests to find it by.
+    var identifier: String = ""
     let action: () -> Void
     var body: some View {
         SwiftUI.Button(action: action) {
@@ -1586,6 +2540,7 @@ private struct ToolButton: View {
         }
         .buttonStyle(PlainButtonStyle())
         .pointingHandCursor()
+        .accessibilityIdentifier(identifier)
     }
 }
 
@@ -1593,18 +2548,36 @@ private struct ToolButton: View {
 private struct IconButton: View {
     let systemName: String
     let scheme: ColorScheme
+    /// Tooltip + accessibility label. Optional because the long-standing icons (mic, pin, power) read
+    /// unambiguously on their own; icons whose meaning isn't obvious should always pass one.
+    var help: String? = nil
+    /// Flips the glyph left-to-right (the glyph only — the circular background is symmetric). The one
+    /// user is the expand arrow, whose bottom-left-to-top-right diagonal only exists as its own SF
+    /// Symbol from macOS 14 and this app still runs on macOS 11; mirroring the macOS 10.15 symbol
+    /// gives that exact glyph on every version, from one code path.
+    var mirroredHorizontally: Bool = false
+    /// For UI tests to find it by.
+    var identifier: String = ""
     let action: () -> Void
-    var body: some View {
-        SwiftUI.Button(action: action) {
+
+    @ViewBuilder var body: some View {
+        let button = SwiftUI.Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(MenuTheme.primaryText(scheme).opacity(0.7))
+                .scaleEffect(x: mirroredHorizontally ? -1 : 1, y: 1)
                 .frame(width: 30, height: 30)
                 .background(MenuTheme.iconButtonBg(scheme))
                 .clipShape(Circle())
         }
         .buttonStyle(PlainButtonStyle())
         .pointingHandCursor()
+        .accessibilityIdentifier(identifier)
+        if let help = help {
+            button.help(help).accessibilityLabel(Text(help))
+        } else {
+            button
+        }
     }
 }
 
@@ -1614,7 +2587,7 @@ private struct IconButton: View {
 @MainActor
 enum MenuSnapshot {
     static func renderIfRequested() {
-        guard ProcessInfo.processInfo.environment["FB_SNAPSHOT_MENU"] == "1" else { return }
+        guard OffscreenRenderLaunch.isMenuSnapshot else { return }
         let dir = ProcessInfo.processInfo.environment["FB_SNAPSHOT_DIR"] ?? NSTemporaryDirectory()
         render(running(), expand: .focus, to: dir + "/menu_running.png")
         render(idle(), expand: nil, to: dir + "/menu_idle.png")
@@ -1681,6 +2654,8 @@ enum MenuSnapshot {
         m.focusRunning = true
         m.focusTaskTitle = "systematic review"
         m.focusOnTaskText = "100% on task"
+        m.focusCurrentTaskTitle = "Write the release notes"
+        m.focusTaskActionable = true
         m.focusRemaining = "00:13:43"
         m.focusedTodayText = "0h 35m"
         m.breaksSummary = "Last break 12m ago"
@@ -1722,7 +2697,7 @@ enum ShortcutTeachableAction {
     var featureName: String {
         switch self {
         case .focusMusic: return menuLocalized("menuFocusMusic", "Focus Music")
-        case .brainDump:  return menuLocalized("menuBrainDump", "Brain Dump")
+        case .brainDump:  return menuLocalized("menuNotes", "Notes")
         case .taskList:   return menuLocalized("menuToDoPlayer", "To-Do Player")
         case .startFocus: return menuLocalized("menuStartFocusSession", "Start Focus Session")
         }
@@ -1881,5 +2856,30 @@ private struct ShortcutHintToastView: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(MenuTheme.orange.opacity(0.35), lineWidth: 1)
         )
+    }
+}
+
+/// Routine status stays visible even when Day Plan is collapsed.
+@available(macOS 11.0, *)
+struct MenuPostponeNotice: View {
+    let text: String
+    let scheme: ColorScheme
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "clock")
+                .font(.system(size: 15, weight: .semibold))
+                .accessibilityHidden(true)
+            Text(text)
+                .font(MenuTheme.font(13, .semibold))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .foregroundColor(MenuTheme.primaryText(scheme))
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 12).fill(MenuTheme.chipBg(scheme)))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(MenuTheme.orange, lineWidth: 1))
+        .accessibilityElement(children: .combine)
     }
 }

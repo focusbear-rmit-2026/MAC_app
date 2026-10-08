@@ -183,10 +183,21 @@ func getInitialQuitFeedbackVcObject()->initialQuitFeedbackVc{
 }
 
 
+//breakStartVc — the SwiftUI break start screen (the micro-break habit list + office/WFH toggle).
+var breakStartVcObj:breakStartVc?
+func getBreakStartVcObject()->breakStartVc{
+    if breakStartVcObj == nil{
+        // Built in code (SwiftUI-hosted), not from the storyboard.
+        breakStartVcObj = breakStartVc()
+    }
+    return breakStartVcObj!
+}
+
 var brainDumpVcObj:brainDumpVc?
 func getBrainDumpVcObject()->brainDumpVc{
     if brainDumpVcObj == nil{
-        brainDumpVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("brainDumpVc")) as? brainDumpVc
+        // Built in code (SwiftUI-hosted), not from the storyboard.
+        brainDumpVcObj = brainDumpVc()
     }
     return brainDumpVcObj!
 }
@@ -742,7 +753,8 @@ func getFocusStartHelpImgVcObject()->focusStartHelpImgVc{
 var todoListToolVcObj:todoListToolVc?
 func getTodoListToolVcObject()->todoListToolVc{
     if todoListToolVcObj == nil{
-        todoListToolVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("todoListToolVc")) as? todoListToolVc
+        // Built in code (SwiftUI-hosted), not from the storyboard.
+        todoListToolVcObj = todoListToolVc()
     }
     return todoListToolVcObj!
 }
@@ -1479,6 +1491,14 @@ func getCreateFirstBlockingScheduleVcObj()->createFirstBlockingScheduleVc{
     return createFirstBlockingScheduleVcObj!
 }
 
+var onboardingBlockingSchedulePresetsVcObj: onboardingBlockingSchedulePresetsVc?
+func getOnboardingBlockingSchedulePresetsVcObject() -> onboardingBlockingSchedulePresetsVc {
+    if onboardingBlockingSchedulePresetsVcObj == nil {
+        onboardingBlockingSchedulePresetsVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("onboardingBlockingSchedulePresetsVc")) as? onboardingBlockingSchedulePresetsVc
+    }
+    return onboardingBlockingSchedulePresetsVcObj!
+}
+
 var askPermissionsVcObj:askPermissionsVc?
 func getAskPermissionsVcObj()->askPermissionsVc{
     if askPermissionsVcObj == nil{
@@ -1796,7 +1816,10 @@ func getMenuWindowObject()->commonWindowController{
         menuWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
         menuWcObj?.window?.standardWindowButton(.zoomButton)?.isHidden = true
         menuWcObj?.window?.standardWindowButton(.miniaturizeButton)?.isHidden = true
-        menuWcObj?.window?.collectionBehavior = .stationary // make it visible even if stage manager is on // 19/6/25
+        // canJoinAllSpaces + fullScreenAuxiliary so the menu also appears over another app's native
+        // full-screen space (Chrome/etc. green-button full screen); canJoinAllSpaces also keeps it
+        // visible under Stage Manager. // 19/6/25, full-screen fix
+        menuWcObj?.window?.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
     }
     return menuWcObj!
 }
@@ -1980,7 +2003,8 @@ func getHabitsVcObject()->habitsVc{
 var setUpVcObj:setUpVc?
 func getSetUpVcObject()->setUpVc{
     if setUpVcObj == nil{
-        setUpVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("setUpVc")) as? setUpVc
+        // Built in code (SwiftUI-hosted Stats screen), not from the storyboard.
+        setUpVcObj = setUpVc()
     }
     return setUpVcObj!
 }
@@ -2068,7 +2092,8 @@ func getHelpVcObject()->helpVc{
 var focusModeStateVcObj:focusModeStateVc?
 func getFocusModeStateVcObject()->focusModeStateVc{
     if focusModeStateVcObj == nil{
-        focusModeStateVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusModeStateVc")) as? focusModeStateVc
+        // Built in code, not from the storyboard — the screen is SwiftUI hosted in loadView().
+        focusModeStateVcObj = focusModeStateVc()
     }
     return focusModeStateVcObj!
 }

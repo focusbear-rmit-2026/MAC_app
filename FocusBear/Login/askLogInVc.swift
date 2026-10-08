@@ -12,6 +12,7 @@ import AuthenticationServices
 
 class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
     
+    @IBOutlet weak var lblSubTitle: NSTextField!
     @IBOutlet weak var customViewMessageBox: NSView!
     @IBOutlet weak var imgViewBear: NSImageView!
     @IBOutlet weak var lblOr: NSTextField!
@@ -38,6 +39,7 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
         var buttonSignInOldAccountText = "¿Ya tienes una cuenta de Focus Bear? Inicia sesión"
         var buttonCreateAccount = "Crea tu cuenta"
         
+        lblSubTitle.stringValue = "We use Auth0, our secure login partner, to sign you in."
         
         if let askLogInVcInfo = configjson.value(forKey: "askLogInVcInfo") as? NSDictionary{
             buttonSignUpWithGoogle = askLogInVcInfo.value(forKey: "buttonSignUpWithGoogle") as? String ?? buttonSignUpWithGoogle
@@ -46,6 +48,7 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
             buttonSignInOldAccountText = askLogInVcInfo.value(forKey: "buttonSignInOldAccountText") as? String ?? buttonSignInOldAccountText
             buttonCreateAccount = askLogInVcInfo.value(forKey: "buttonCreateAccount") as? String ?? buttonCreateAccount
             lblOr.stringValue = askLogInVcInfo.value(forKey: "orText") as? String ?? lblOr.stringValue
+            lblSubTitle.stringValue = askLogInVcInfo.value(forKey: "subTitleText") as? String ?? lblSubTitle.stringValue
         }
         allApiObject.capturePosthog(event: "pre-signin-view-shown", metadata: [:])
         boxButtonSignUpWithGoogle.setTitle(buttonSignUpWithGoogle)
@@ -66,6 +69,10 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
         
         btnSignIn.title = buttonSignInOldAccountText
         lblTitleCreateAccount.stringValue = buttonCreateAccount
+        btnSignIn.setAccessibilityIdentifier(UITestContract.Identifier.Login.goToSignInButton)
+        boxButtonSignUpWithEmail.setAccessibilityIdentifier(UITestContract.Identifier.Login.signUpWithEmailButton)
+        boxButtonSignUpWithGoogle.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.signUpWithGoogleButton)
+        boxButtonSignUpWithApple.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.signUpWithAppleButton)
     }
     
     override func viewWillAppear() {
@@ -75,7 +82,11 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
         }
         
         //remember email address #1308   15/3/25
-        if UserDefaults.standard.object(forKey: kUserDefaultsLastUserLoginWithGoogle) != nil{
+        // Only auto-retrigger Google sign-in for the Old user logout case — NOT
+        // during onboarding. A fresh Google sign-up sets kUserDefaultsLastUserLoginWithGoogle, and
+        // completeRemainingOnboarding re-attaches askLogInVc, so this viewWillAppear fires again and
+        // would pop the Auth0 prompt a second time. Guard it out while onboarding is active.
+        if currentState != ._ONBOARDING_, UserDefaults.standard.object(forKey: kUserDefaultsLastUserLoginWithGoogle) != nil{
             addLog(text:"trySignInWithGoogle:- because last user was logged in with google and it was a automatic logged out")
             trySignInWithGoogle()
             UserDefaults.standard.removeObject(forKey: kUserDefaultsLastUserLoginWithGoogle)

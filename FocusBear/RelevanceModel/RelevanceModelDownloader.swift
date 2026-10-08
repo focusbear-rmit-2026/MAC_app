@@ -13,6 +13,13 @@ import Foundation
 enum RelevanceModelArtifacts {
 
     static let activeVersion = "v2"
+    // Existing client/backend relevance contract remains V1.
+    // V2 is currently shadow-only.
+    static let version = "v1"
+    static let textcnn = "textcnn_cosine.onnx"
+    static let minilm = "minilm_quantized.onnx"
+    static let wordIndex = "tokenizer_word_index.json"
+    static let vocab = "minilm_vocab.txt"
 
     static let baseURL = "https://pub-a0f25f0d306d4d63bbfc52aa624ae389.r2.dev"
 

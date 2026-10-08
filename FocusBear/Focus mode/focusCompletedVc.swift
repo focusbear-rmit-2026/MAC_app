@@ -295,6 +295,22 @@ class focusCompletedVc: NSViewController {
         pinButtonTrackingArea = NSTrackingArea.init(rect: btnPin.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         btnPin.addTrackingArea(pinButtonTrackingArea!)
         btnStartAnotherFocusBlock.isSecondaryButton = true
+        setUITestIdentifiers()
+    }
+
+    private func setUITestIdentifiers() {
+        typealias Ids = UITestContract.Identifier.SessionsRegression
+        view.setUITestLandmark(Ids.completedScreen)
+        btnStartAnotherFocusBlock.setAccessibilityIdentifier(Ids.completedStartAnotherButton)
+        btnTakeBreak.setAccessibilityIdentifier(Ids.completedCloseButton)
+        textFieldAchieve.setAccessibilityIdentifier(Ids.completedAchievementField)
+        // The accordion's button has no outlet: it is the one button laid over the header box.
+        boxAccordinMoreOptions.contentView?.subviews.compactMap { $0 as? NSButton }.first?
+            .setAccessibilityIdentifier(Ids.completedAchievementToggle)
+        let stars = [btnStarFirst, btnStarSecond, btnStarThird, btnStarFourth, btnStarFifth]
+        for (index, star) in stars.enumerated() {
+            star?.setAccessibilityIdentifier(Ids.completedRatingStarPrefix + String(index + 1))
+        }
     }
     
     override func viewWillDisappear() {
@@ -322,20 +338,13 @@ class focusCompletedVc: NSViewController {
                     arrFocusType[i]["lastStartedDate"] = nil
                     arrFocusType[i]["lastScheduledEndDate"] = nil
                 }
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 
                 updateAllFocusModeTags()
                 addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
 
                 isFinishFocusModeApiCalled = true
-                allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), rating:currentRatingCount, completionHandler: {newDic in
-                    DispatchQueue.main.async {
-                        if self.isShutOffTime{
-                            currentState = ._NOTHING_
-                            appdelegate?.shutOffMac()
-                        }
-                    }
-                })
+                reportEndScreenClosed(completion: shutOffMacIfShutOffTime)
                 addEntryInUsageTimingsExplanationCsv()
                 
                 focusModeFinishedResetAllData()
@@ -669,7 +678,7 @@ class focusCompletedVc: NSViewController {
                     }
                 }else{
                     if pomodoroVcObj?.isBreakDurationComesFromBreakRatio ?? false {
-                        let workRatio = simplePomodoroVcObj?.workRatio ?? 5
+                        let workRatio = 5   // the simple start screen derives its break from a fixed 5:1 ratio
                         let breakRatio = simplePomodoroVcObj?.breakRatio ?? 1
                         
                         var breakDuration =  Int(((Double(focusModeActualDurationPerformed) / 60) / Double(workRatio)) * Double(breakRatio))
@@ -766,7 +775,7 @@ class focusCompletedVc: NSViewController {
             arrFocusType[i]["lastStartedDate"] = nil
             arrFocusType[i]["lastScheduledEndDate"] = nil
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         
         updateAllFocusModeTags()
        
@@ -774,11 +783,7 @@ class focusCompletedVc: NSViewController {
         addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
 
         
-        allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), rating:currentRatingCount, completionHandler: {newDic in
-            DispatchQueue.main.async {
-                
-            }
-        })
+        reportEndScreenClosed()
         addEntryInUsageTimingsExplanationCsv()
         focusModeFinishedResetAllData()
         nextFocusSessionIntention = textFieldNextSessionIntention.stringValue
@@ -803,16 +808,10 @@ class focusCompletedVc: NSViewController {
     func workDone(){
         isFinishFocusModeApiCalled = true// perfect place this will ensure that api will called 100%
         whatToAchieveInFocusBlock = ""
-        if !isShutOffTime{
-            if currentState != ._MORNING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && isMicroBreaksRunning(){
-                if let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String {
-                    if !notes.isEmpty{
-                        showBrainDumpWindow()
-                    }
-                }
-            }
-            
-        }else{
+        // #2142: the brain dump is now webview/API-backed. The old post-focus auto-open, gated on the
+        // legacy local `kUserdefaultsFocusModeNotes`, has been removed — that key is no longer the source
+        // of truth for the brain dump.
+        if isShutOffTime{
             btnTakeBreak.isEnabled = false
             loader.isHidden = false
             loader.startAnimation(self)
@@ -828,20 +827,13 @@ class focusCompletedVc: NSViewController {
             arrFocusType[i]["lastStartedDate"] = nil
             arrFocusType[i]["lastScheduledEndDate"] = nil
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         
         updateAllFocusModeTags()
         addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
 
         
-        allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), rating:currentRatingCount, completionHandler: {newDic in
-            DispatchQueue.main.async {
-                if self.isShutOffTime{
-                    currentState = ._NOTHING_
-                    appdelegate?.shutOffMac()
-                }
-            }
-        })
+        reportEndScreenClosed(completion: shutOffMacIfShutOffTime)
         
         
         addEntryInUsageTimingsExplanationCsv()
@@ -887,6 +879,37 @@ class focusCompletedVc: NSViewController {
     }
     
 
+    /// Sends what closing the end screen owes the server and clears the session's task queue. The
+    /// session itself was finished when it ended (#2678), so normally this only attaches the
+    /// achievements; the full finish with the end screen's details is sent only if that one failed.
+    private func reportEndScreenClosed(completion: @escaping () -> Void = {}) {
+        let achievements = textFieldAchieve.stringValue
+        let distractions = textFieldDistractions.stringValue
+        let rating = currentRatingCount
+        let focusModeId = currentFocusModeId
+        let finishTime = finish_time ?? Date()
+        let sessionTasks = focusModeTaskString
+        focusModeTaskString = ""
+        FocusSessionFinishReporter.shared.endScreenClosed(
+            achievements: achievements,
+            finishWithDetails: { done in
+                allApiObject.finishFocusMode(id: focusModeId, achievements: achievements, distractions: distractions,
+                                             finish_time: finishTime, rating: rating, sessionTasks: sessionTasks) { _ in
+                    done()
+                }
+            },
+            completion: completion)
+    }
+
+    /// The shut-off end screen turns the Mac off once its session report has been answered.
+    private func shutOffMacIfShutOffTime() {
+        DispatchQueue.main.async {
+            guard self.isShutOffTime else { return }
+            currentState = ._NOTHING_
+            appdelegate?.shutOffMac()
+        }
+    }
+
     @IBAction func btnDoBreakActivityClicked(_ sender: Any) {
         addLog(text: "[user-action] focusCompletedVc - btnDoBreakActivityClicked")
         workDone()
@@ -923,16 +946,12 @@ class focusCompletedVc: NSViewController {
                 arrFocusType[i]["lastStartedDate"] = nil
                 arrFocusType[i]["lastScheduledEndDate"] = nil
             }
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
             
             updateAllFocusModeTags()
             addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
 
-            allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), rating:currentRatingCount, completionHandler: {newDic in
-                DispatchQueue.main.async {
-
-                }
-            })
+            reportEndScreenClosed()
             addEntryInUsageTimingsExplanationCsv()
             
             focusModeFinishedResetAllData()

@@ -6,16 +6,55 @@
 //  Copyright © 2022 Focus Bear. All rights reserved.
 
 import Cocoa
-import WebKit
+import SwiftUI
+import Combine
 
-class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate {
+/// Routine-start screen: countdown / visual-focus prompt, star rating, and the Stats screen opened on
+/// its Pep Talk tab. The pep talk used to be the dashboard.focusbear.io/webview/motivational-summary
+/// webview (token bridge + load-failed overlay); the native StatsScreen now streams
+/// /user/motivational-summary and gives the other stats tabs a look while the routine is pending.
+/// How often the routine's pep talk should appear.
+///
+/// It lives on the "visualize" screen, which is shown for EVERY habit — so completing a habit and
+/// coming back brought it round again. On one day 15 of 26 pep-talk requests were immediately
+/// preceded by "Showing morning/evening habits from habit completed back button". The intended
+/// behaviour is once per routine start per day: once in the morning, once in the evening
+/// (report 2026-09-22_07-45-26, follow-up: "How could it be 26 times?").
+///
+/// Keyed by routine AND day, so postponing and resuming the morning routine does not earn a second
+/// one, while the evening routine still gets its own.
+enum PepTalkRoutineDisplay {
+
+    static func shouldShow(routine: CURRENTSTATE,
+                           now: Date = Date(),
+                           lastShown: [CURRENTSTATE: Date],
+                           calendar: Calendar = .current) -> Bool {
+        guard let shown = lastShown[routine] else { return true }
+        return !calendar.isDate(shown, inSameDayAs: now)
+    }
+
+    static func recording(_ routine: CURRENTSTATE,
+                          at now: Date = Date(),
+                          into lastShown: [CURRENTSTATE: Date]) -> [CURRENTSTATE: Date] {
+        var updated = lastShown
+        updated[routine] = now
+        return updated
+    }
+}
+
+/// Per-routine, per-day record of when the pep talk was last shown. A global because the screen it
+/// lives on is rebuilt for every habit — instance state cannot outlive the thing being limited.
+var pepTalkLastShownByRoutine: [CURRENTSTATE: Date] = [:]
+
+class visualizeInstructionsVc: NSViewController {
 
     @IBOutlet weak var boxStarRating: NSBox!
     @IBOutlet weak var stackViewStarRating: NSStackView!
     @IBOutlet weak var btnSkipTimer: underLineButton!
     @IBOutlet weak var imgView: NSImageView!
     @IBOutlet weak var loader: NSProgressIndicator!
-    @IBOutlet weak var webView: WKWebView!
+    /// The container the WKWebView used to fill; hosts the StatsScreen (Pep Talk tab first).
+    @IBOutlet weak var pepTalkContainer: NSView!
     @IBOutlet weak var btnSkipHabit: underLineButton!
     @IBOutlet weak var btnMain: Button!
     @IBOutlet weak var lblTimer: NSTextField!
@@ -30,6 +69,12 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
     @IBOutlet weak var textFieldRating: NSTextField!
     
     var isMotivationalMessageShowing = false
+    /// Created when the pep talk is shown and torn down when the screen hides, so each routine start
+    /// opens one fresh Stats screen (one SSE stream) rather than piling up streams and loaded tabs.
+    private var statsStore: StatsStore?
+    private var statsHostingView: NSView?
+    private var pepTalkObservers = Set<AnyCancellable>()
+    private var isPepTalkVisible: Bool { !pepTalkContainer.isHidden }
     
     var arrOptions = ["I'm feeling energized - time to begin my habits",
                       "Let's kick things off - I'm motivated to start my habits",
@@ -63,12 +108,11 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
             btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
         }
-        webView.isHidden = true
+        pepTalkContainer.isHidden = true
         
         if let inspirations = configjson.value(forKey: "inspirations") as? [String]{
             arrOptions = inspirations
         }
-        self.webView.navigationDelegate = self
         btnSkipTimer.title = "Skip"
         if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
             btnSkipTimer.title = dic.value(forKey: "buttonSkipText") as? String ?? btnSkipTimer.title
@@ -78,74 +122,53 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
     
     override func viewWillDisappear() {
         isMotivationalMessageShowing = false
+        tearDownStatsScreen()
     }
 
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        print("*************didFinish navigation**************")
-        DispatchQueue.global().async {
-            //sleep(1)
-            DispatchQueue.main.async {
-                self.removeWebViewLoadFailedView(webView: webView)
-                self.setAccessTokenToWebView()
-                self.loader.stopAnimation(self)
-                self.webView.isHidden = false
-                self.boxStarRating.isHidden = false
-            }
+    /// A fresh Stats screen on the Pep Talk tab, filling the old webview container. `screenAppeared()`
+    /// starts the pep talk stream (the Pep Talk tab loads on selection, as in the Stats tool); the other
+    /// tabs load when the user visits them.
+    private func showStatsScreen() {
+        tearDownStatsScreen()
+        let store = StatsStore(strings: StatsStrings.load(), initialTab: .pepTalk)
+        let hosting = NSHostingView(rootView: StatsScreen(store: store))
+        hosting.translatesAutoresizingMaskIntoConstraints = false
+        // Let the container's size win over the hosted content's ideal size (see setUpVc): the tabs
+        // scroll inside the container instead of pushing the Start button off the screen.
+        if #available(macOS 13.0, *) {
+            hosting.sizingOptions = []
         }
-    }
-
-    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        handleLoadError(webView: webView)
-    }
-    
-    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        handleLoadError(webView: webView)
-    }
-  
-
-    var webViewLoadFailedVcObj:webViewLoadFailedVc?
-    func removeWebViewLoadFailedView(webView: WKWebView) {
-        if webViewLoadFailedVcObj != nil{
-            if webView.subviews.contains(webViewLoadFailedVcObj!.view){
-                webViewLoadFailedVcObj?.view.removeFromSuperview()
+        hosting.setContentCompressionResistancePriority(.init(1), for: .vertical)
+        hosting.setContentCompressionResistancePriority(.init(1), for: .horizontal)
+        hosting.setContentHuggingPriority(.init(1), for: .vertical)
+        hosting.setContentHuggingPriority(.init(1), for: .horizontal)
+        pepTalkContainer.addSubview(hosting)
+        NSLayoutConstraint.activate([
+            hosting.topAnchor.constraint(equalTo: pepTalkContainer.topAnchor),
+            hosting.leadingAnchor.constraint(equalTo: pepTalkContainer.leadingAnchor),
+            hosting.trailingAnchor.constraint(equalTo: pepTalkContainer.trailingAnchor),
+            hosting.bottomAnchor.constraint(equalTo: pepTalkContainer.bottomAnchor),
+        ])
+        // The storyboard spinner sits over the container: spin until the first streamed chunk lands.
+        store.pepTalk.$isStreaming.combineLatest(store.pepTalk.$text)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isStreaming, text in
+                guard let self = self else { return }
+                if isStreaming && text.isEmpty { self.loader.startAnimation(self) } else { self.loader.stopAnimation(self) }
             }
-        }
-    }
-   
-    func handleLoadError(webView: WKWebView) {
-        if webViewLoadFailedVcObj != nil{
-            if webView.subviews.contains(webViewLoadFailedVcObj!.view){
-                webViewLoadFailedVcObj?.reloadData()
-                return;
-            }
-        }
-        webViewLoadFailedVcObj = getWebViewLoadFailedVcObject()
-        webViewLoadFailedVcObj!.customDelegate = self
-        webViewLoadFailedVcObj?.webView = webView
-        webView.addSubview(webViewLoadFailedVcObj!.view)
-        webView.addConstraints(subView: webViewLoadFailedVcObj!.view)
-        webViewLoadFailedVcObj?.reloadData()
+            .store(in: &pepTalkObservers)
+        statsStore = store
+        statsHostingView = hosting
+        store.screenAppeared()
     }
 
-    func reloadClicked(webView:WKWebView) {
-        loadWebView()
-    }
-    
-    func setAccessTokenToWebView(){
-        let theme = getWindowTheme()
-        
-        let flags = "[\"migrate-stats-to-motivational-summary\"]"
-        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
-        let stringJson = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"motivation_type\":\"desktop\",\"flags\":\(flags)}"
-        
-//        let javascript = "loadAccessTokenForInspirationPage(\(stringJson));"
-        let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadAccessTokenForInspirationPage) { loadAccessTokenForInspirationPage(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
-        
-        webView.evaluateJavaScript(settingsFunc,completionHandler: { (html: Any?, error: Error?) in
-            print(error)
-            print("****error")
-            print(html)
-        })
+    private func tearDownStatsScreen() {
+        pepTalkObservers = []
+        loader.stopAnimation(self)
+        statsStore?.screenDisappeared()
+        statsStore = nil
+        statsHostingView?.removeFromSuperview()
+        statsHostingView = nil
     }
 
     var currentRatingCount = 0
@@ -203,11 +226,19 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
         }
         
         if !isMotivationalMessageShowing{
-            if SettingsManagerObject.isMotivationalMessageEnabled{
+            // #2617: the VISIBLE visualize screen is already shown at most once per routine per day — its
+            // caller (firstViewController) only reaches here when RoutineVisualizePrompt.shouldShow(for:)
+            // is true and calls markShown(for:) immediately after. So the pep talk on this visible path
+            // must NOT add its own PepTalkRoutineDisplay once-per-day check: doing so created a race where
+            // the background pre-load could record the slot first (even into a detached, never-seen view)
+            // and then deny this visible screen its pep talk, leaving the plain 30-second target. When the
+            // screen shows, the pep talk shows. (The PRE-LOAD keeps PepTalkRoutineDisplay to throttle its
+            // own streaming; only the once-a-day visible screen is unconditional here.)
+            if SettingsManagerObject.isMotivationalMessageEnabled {
                 allApiObject.isInternetOn(completionHandler: {isInternetOn in
                     DispatchQueue.main.async {
                         if isInternetOn{
-                            self.showWebView()
+                            self.showPepTalk()
                         }else{
                             self.startTimer(duration: 30)
                         }
@@ -227,24 +258,46 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
     func tryPreLoadMotivationalMessage(){
         self.isMotivationalMessageShowing = false
         self.imgView.isHidden = false
-        webView.isHidden = true
+        pepTalkContainer.isHidden = true
         btnMain.isHidden = true
         btnSkipHabit.isHidden = true
         lblTimer.stringValue = ""
         lblVisualizeText.isHidden = false
-        if SettingsManagerObject.isMotivationalMessageEnabled{
+        // The pre-load path has to ask the same question, or it reintroduces the per-habit pep talk
+        // through the back door.
+        //
+        // #2617: it must ALSO honour shouldIgnoreVisualizeInstructions. Returning from a completed habit
+        // sets that flag true and re-runs the morning/evening setup — which calls this pre-load — while
+        // the *visible* visualize screen is deliberately skipped (firstViewController gates it on the
+        // same flag). Without this guard the pre-load still ran, calling showPepTalk() on a screen that
+        // never becomes visible: it streamed into a detached view AND recorded the once-per-day slot, so
+        // the real routine-start visualize screen was then denied the pep talk and fell through to the
+        // 30-second target. Don't pre-load (or consume the slot) when the screen won't be shown.
+        if firstViewControllerObj?.shouldIgnoreVisualizeInstructions == true { return }
+        // Nor when this routine's visualize screen has already had today's showing, so it will not appear
+        // again. `pepTalkLastShownByRoutine` below is in memory, so after a relaunch into such a routine
+        // the pre-load streamed a pep talk nobody could see (2026-09-24 19:46). The screen's own record is
+        // persisted, and it is the one that decides whether the screen shows at all.
+        if let routine = RoutineVisualizePrompt.Routine.current(state: currentState, customRoutineIndex: currentRoutineIndex),
+           !RoutineVisualizePrompt.shouldShow(for: routine) { return }
+        if SettingsManagerObject.isMotivationalMessageEnabled,
+           PepTalkRoutineDisplay.shouldShow(routine: currentState, lastShown: pepTalkLastShownByRoutine) {
             allApiObject.isInternetOn(completionHandler: {isInternetOn in
                 DispatchQueue.main.async {
                     if isInternetOn{
-                        self.showWebView()
+                        self.showPepTalk()
                     }
                 }
             })
         }
     }
     
-    func showWebView(){
+    /// Reveal the Stats screen (Pep Talk tab, random tone like the web page) in place of the countdown
+    /// and start streaming. The container shows straight away; the spinner covers it until text arrives.
+    func showPepTalk(){
         isMotivationalMessageShowing = true
+        pepTalkLastShownByRoutine = PepTalkRoutineDisplay.recording(currentState,
+                                                                    into: pepTalkLastShownByRoutine)
         self.boxStarRating.isHidden = true
         self.imgView.isHidden = true
         self.timer?.invalidate()
@@ -254,18 +307,10 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
         self.lblTimer.isHidden = true
         self.isTimerGoingOn = false
         lblTimer.stringValue = ""
-        webView.isHidden = true
         lblVisualizeText.isHidden = true
-        loadWebView()
+        pepTalkContainer.isHidden = false
+        showStatsScreen()
         self.btnMain.title = self.arrOptions.randomElement() ?? ""
-    }
-    
-    func loadWebView(){
-        let url = "http://dashboard.focusbear.io/webview/motivational-summary?bust_cache=\(getUuid())"
-        let link = URL(string:url)!
-        let request = URLRequest(url: link)
-        self.webView.load(request)
-        loader.startAnimation(self)
     }
     var timer:Timer?
     var currentTimer = 0
@@ -275,7 +320,7 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
     func startTimer(duration:Int) {
         btnSkipTimer.isHidden = false
         self.imgView.isHidden = false
-        webView.isHidden = true
+        pepTalkContainer.isHidden = true
         btnMain.isHidden = true
         btnSkipHabit.isHidden = true
         lblTimer.stringValue = ""
@@ -353,7 +398,7 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
                                         let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
                                         let currentDate = Date()
                                         if currentDate > cutOffDate{
-                                            addLog(text: "evening habit skipped:- this next habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[i].name)  \(arrFilteredEveningHabits[i].id)") // remove this
+                                            addLog(text: "evening habit skipped:- this next habit is high priority habit but cutoff time of this habit has passed:- \(LogPrivacy.text(arrFilteredEveningHabits[i].name))  \(arrFilteredEveningHabits[i].id)") // remove this
                                             continue;
                                         }
                                     }
@@ -379,7 +424,7 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
                     }
                 }
                 
-                if self.webView.isHidden == false{
+                if self.isPepTalkVisible{
                     self.btnMain.title = self.arrOptions.randomElement() ?? ""
                 }
             }
@@ -398,10 +443,8 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
             allApiObject.capturePosthog(event: "routine-motivation-level", metadata: ["routine-type":"custom_routine", "motivation-level":currentRatingCount, "motivation-comments":textFieldRating.stringValue])
             getHabitsVcObject().startFirstCustomRoutineHabit()
         }
-        if self.webView.isHidden == false{
-            let link = URL(string:"about:blank")!
-            let request = URLRequest(url: link)
-            self.webView.load(request)
+        if isPepTalkVisible{
+            tearDownStatsScreen()
         }
     }
     

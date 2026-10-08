@@ -58,6 +58,9 @@ class SettingsManager:NSObject{
     var isPasswordRequireInPostponeMorning = false
     var isPasswordRequireInPostponeEvening = false
     var isPasswordRequireInPostponeEveningAfterCutOff = false
+    // Password rule for SHORTENING a habit from the Day Plan (its one-day "Shorten" trim). Default OFF.
+    // Synced under kIsPasswordRequireInShortenHabits — the Windows app reads/writes that exact key.
+    var isPasswordRequireInShortenHabits = false
     var isPasswordRequireInAbortShutoff = true
     var isPasswordRequireInStopPomodoro = true
     var isPasswordRequireInQuitApp = true
@@ -97,6 +100,21 @@ class SettingsManager:NSObject{
 
     var isMotivationalMessageEnabled = true
     var isAiCheckUrlEnabled = true
+    /// AI accountability buddy: on postpone, an LLM vets the user's stated goal and (if legit) starts a
+    /// super-strict AI session allowing only the apps/sites it needs. Off by default — the user opts in
+    /// via the toggle in the AI settings area. Synced through user-settings and stored under a per-user
+    /// key (see kUserdefaultsAccountabilityBuddyEnabled), exactly like isAiCheckUrlEnabled — so it follows
+    /// the account across devices and doesn't leak between accounts on a shared Mac (#2590).
+    var isAccountabilityBuddyEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: kUserdefaultsAccountabilityBuddyEnabled) }
+        set { UserDefaults.standard.set(newValue, forKey: kUserdefaultsAccountabilityBuddyEnabled) }
+    }
+
+    /// Connectivity failures use the buddy's deliberate held-confirmation fallback. Disconnecting
+    /// must not silently restore the ordinary postpone path when the user enabled accountability.
+    var isAccountabilityBuddyActive: Bool {
+        return isAccountabilityBuddyEnabled
+    }
 
     // **blocked urls**
     var arrBlockedUrls = [String]()
@@ -104,7 +122,16 @@ class SettingsManager:NSObject{
     
     // **always allowed apps (global whitelist)**
     var arrAlwaysAllowedApps = [String]()
-    
+
+    // The global whitelist that currently applies to app-blocking enforcement. During a teacher class
+    // session it's empty: the student's personal "Always Allowed Apps" must NOT override the teacher's
+    // allow-list — only teacher-allowed apps are permitted (#2266, mirrors the Windows fix). Outside a
+    // teacher session it's the normal whitelist. Use this (not arrAlwaysAllowedApps) in blocking checks;
+    // the Settings UI / storage still use arrAlwaysAllowedApps directly.
+    var effectiveAlwaysAllowedApps: [String] {
+        teacherSessionManagerObject.isTeacherSessionActive() ? [] : arrAlwaysAllowedApps
+    }
+
     
     var isOfficeModeEnabled = true
     var kIsReducedMotion = false
@@ -131,6 +158,9 @@ class SettingsManager:NSObject{
     var showToDoPlayerAutomaticallyEnabled = true
     var showBrainDumpAfterMorningRoutineEnabled = false
     var isMicroBreaksEnabled = true
+    /// Opt-in: when false (the default) a break activity screen appears and waits for the person to
+    /// press Start instead of running its countdown and video the moment it opens.
+    var isBreakAutoStartEnabled = false
     
     var isSkipBreakActivityDuringPomodoro = false
 
@@ -144,7 +174,17 @@ class SettingsManager:NSObject{
     var maxTabLimitCount = 5
     
     
+    /// Legacy key for the settings/quit password and its keychain account; the value itself now lives
+    /// in `appPassword` (a verifier plus a keychain copy), never in this plaintext key.
     var kUserdefaultsAppPassword = "kUserdefaultsAppPassword"
+
+    var appPassword: AppPasswordStore {
+        AppPasswordStore(defaults: .standard,
+                         secrets: LogicTestHost.isEnabled ? InMemorySecretItemStore.shared : KeychainSecretItemStore(),
+                         legacyKey: kUserdefaultsAppPassword)
+    }
+
+    var isAppPasswordSet: Bool { appPassword.isSet }
     
     var kUserdefaultsPasswordRequireInChangeSettings = "kUserdefaultsPasswordRequireInChangeSettings"
     var kUserdefaultsPasswordRequireInSkipMorning = "kUserdefaultsPasswordRequireInSkipMorning"
@@ -153,6 +193,7 @@ class SettingsManager:NSObject{
     var kUserdefaultsPasswordRequireInPostponeMorning = "kUserdefaultsPasswordRequireInPostponeMorning"
     var kUserdefaultsPasswordRequireInPostponeEvening = "kUserdefaultsPasswordRequireInPostponeEvening"
     var kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff = "kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff"
+    var kUserdefaultsPasswordRequireInShortenHabits = "kUserdefaultsPasswordRequireInShortenHabits"
     var kUserdefaultsPasswordRequireInAbortShutoff = "kUserdefaultsPasswordRequireInAbortShutoff"
     var kUserdefaultsPasswordRequireInStopPomodoro = "kUserdefaultsPasswordRequireInStopPomodoro"
     var kUserdefaultsPasswordRequireInQuitApp = "kUserdefaultsPasswordRequireInQuitApp"
@@ -160,10 +201,10 @@ class SettingsManager:NSObject{
     
     
     
-    var kUserdefaultsArrBlockedUrls = "kUserdefaultsArrBlockedUrls"
+    var kUserdefaultsArrBlockedUrls = kUserdefaultsArrBlockedUrlsBase
     
-    var kUserdefaultsArrBlockedApps = "kUserdefaultsArrBlockedApps"
-    var kUserdefaultsArrAlwaysAllowedApps = "kUserdefaultsArrAlwaysAllowedApps"
+    var kUserdefaultsArrBlockedApps = kUserdefaultsArrBlockedAppsBase
+    var kUserdefaultsArrAlwaysAllowedApps = kUserdefaultsArrAlwaysAllowedAppsBase
     
     var kUserdefaultsOfficeModeEnabled = "kUserdefaultsOfficeModeEnabled"
     var kUserdefaultsReducedMotion = "kUserdefaultsReducedMotion"
@@ -214,8 +255,9 @@ class SettingsManager:NSObject{
 
     var kUserdefaultsMotivationalMessageEnabled = "kUserdefaultsMotivationalMessageEnabled"
     var kUserdefaultsAiCheckUrlEnabled = "kUserdefaultsAiCheckUrlEnabled"
-    
-    var kUserdefaultsLocalDeviceSettings = "kUserdefaultsLocalDeviceSettings"
+    var kUserdefaultsAccountabilityBuddyEnabled = "kUserdefaultsAccountabilityBuddyEnabled"
+
+    var kUserdefaultsLocalDeviceSettings = kUserdefaultsLocalDeviceSettingsBase
     
     //    var kUserdefaultsAiAllowUrlShowAlertEnabled = "kUserdefaultsAiAllowUrlShowAlertEnabled"
     
@@ -268,6 +310,16 @@ class SettingsManager:NSObject{
         }
     }
     
+    /// True once `resetAllKeys()` has appended the signed-in user's id to a settings key.
+    ///
+    /// Every per-user key here is built as `name + (userId ?? "")`, so before the account is
+    /// restored the key is the bare name — shared by every account that has ever used this Mac, and
+    /// belonging to none of them. A default written under it is not this user's preference.
+    func isUserScopedKey(_ key: String) -> Bool {
+        guard let userId = appdelegate?.user?.userId, !userId.isEmpty else { return false }
+        return key.hasSuffix(userId)
+    }
+
     func resetAllKeys() {
         kUserdefaultsLocalDeviceSettings = kUserdefaultsLocalDeviceSettings + (appdelegate?.user?.userId ?? "")
         // Per-user so the evening shutdown prompt doesn't leak across accounts on the same device.
@@ -282,6 +334,7 @@ class SettingsManager:NSObject{
         kUserdefaultsPasswordRequireInPostponeMorning = kUserdefaultsPasswordRequireInPostponeMorning + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInPostponeEvening = kUserdefaultsPasswordRequireInPostponeEvening + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff = kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsPasswordRequireInShortenHabits = kUserdefaultsPasswordRequireInShortenHabits + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInAbortShutoff = kUserdefaultsPasswordRequireInAbortShutoff + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInStopPomodoro = kUserdefaultsPasswordRequireInStopPomodoro + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInQuitApp = kUserdefaultsPasswordRequireInQuitApp + (appdelegate?.user?.userId ?? "")
@@ -330,6 +383,7 @@ class SettingsManager:NSObject{
         kUserdefaultsMotivationalMessageEnabled = kUserdefaultsMotivationalMessageEnabled + (appdelegate?.user?.userId ?? "")
         
         kUserdefaultsAiCheckUrlEnabled = kUserdefaultsAiCheckUrlEnabled + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsAccountabilityBuddyEnabled = kUserdefaultsAccountabilityBuddyEnabled + (appdelegate?.user?.userId ?? "")
         //        kUserdefaultsAiAllowUrlShowAlertEnabled = kUserdefaultsAiAllowUrlShowAlertEnabled + (appdelegate?.user?.userId ?? "")
         
         kUserdefaultsPomodoroDurationMinutes = kUserdefaultsPomodoroDurationMinutes + (appdelegate?.user?.userId ?? "")
@@ -389,7 +443,7 @@ class SettingsManager:NSObject{
                 }
             }else{
                 addLog(text: "Local Device Settings json is nil)")
-                if let dic = UserDefaults.standard.value(forKey: kUserdefaultsLocalDeviceSettings) as? NSDictionary{
+                if let dic = SensitiveDefaults.value(forKey: kUserdefaultsLocalDeviceSettings) as? NSDictionary{
                     settings = dic
                 }
             }
@@ -402,7 +456,7 @@ class SettingsManager:NSObject{
 //                if settings.value(forKey: kAppPassword) == nil{
 //                    settings[kAppPassword] = ""
 //                }
-               // UserDefaults.standard.set(settings, forKey: kUserdefaultsLocalDeviceSettings)
+               // SensitiveDefaults.set(settings, forKey: kUserdefaultsLocalDeviceSettings)
                 
                 if let rawSettings = settings as? [String: Any] {// this will remove <null> values so saving in userdefaults will not crash app
                     // Remove NSNull and invalid values
@@ -417,7 +471,7 @@ class SettingsManager:NSObject{
                     }
 
                     // Now safe to save
-                    UserDefaults.standard.set(cleanedSettings, forKey: kUserdefaultsLocalDeviceSettings)
+                    SensitiveDefaults.set(cleanedSettings, forKey: kUserdefaultsLocalDeviceSettings)
                 }
                 
                 print(settings)
@@ -437,6 +491,7 @@ class SettingsManager:NSObject{
                 let kIsPasswordRequireInPostponeMorning = "kIsPasswordRequireInPostponeMorning"
                 let kIsPasswordRequireInPostponeEvening = "kIsPasswordRequireInPostponeEvening"
                 let kIsPasswordRequireInPostponeEveningAfterCutOff = "kIsPasswordRequireInPostponeEveningAfterCutOff"
+                let kIsPasswordRequireInShortenHabits = "kIsPasswordRequireInShortenHabits"
                 let kIsPasswordRequireInAbortShutoff = "kIsPasswordRequireInAbortShutoff"
                 let kIsPasswordRequireInStopPomodoro = "kIsPasswordRequireInStopPomodoro"
                 let kIsPasswordRequireInQuitApp = "kIsPasswordRequireInQuitApp"
@@ -493,7 +548,8 @@ class SettingsManager:NSObject{
                 
                 let kMotivationalMessageEnabled = "kMotivationalMessageEnabled"
                 let kAiCheckUrlEnabled = "kAiCheckUrlEnabled"
-                
+                let kAccountabilityBuddyEnabled = "kAccountabilityBuddyEnabled"
+
                 let kShowToDoPlayerAutomatically = "kShowToDoPlayerAutomatically"
                 let kIsMenuPopoverEnabled = "kIsMenuPopoverEnabled"
                 let kIsAdvancedAnalyticsInFocusModeEnabled = "kIsAdvancedAnalyticsInFocusModeEnabled"
@@ -505,6 +561,7 @@ class SettingsManager:NSObject{
                 let kFocusMusicAutoStartPreference = "kFocusMusicAutoStartPreference"
                 let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
                 let kMicroBreaksEnabled = "kMicroBreaksEnabled"
+                let kBreakAutoStartEnabled = "kBreakAutoStartEnabled"
                 
                 let kSkipBreakActivityDuringFocusSession = "kSkipBreakActivityDuringFocusSession"
 
@@ -571,6 +628,9 @@ class SettingsManager:NSObject{
                 }
                 if let val = settings.value(forKey: kIsPasswordRequireInPostponeEveningAfterCutOff) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff)
+                }
+                if let val = settings.value(forKey: kIsPasswordRequireInShortenHabits) as? Bool{
+                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInShortenHabits)
                 }
 
                 if let val = settings.value(forKey: kIsPasswordRequireInAbortShutoff) as? Bool{
@@ -704,26 +764,21 @@ class SettingsManager:NSObject{
                 }
                 
                 if let val = settings.value(forKey: kArrBlockedUrls) as? [String]{
-                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsArrBlockedUrls)
+                    SensitiveDefaults.set(val, forKey: self.kUserdefaultsArrBlockedUrls)
                 }
                 if let val = settings.value(forKey: kArrBlockedApps) as? [String]{
-                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsArrBlockedApps)
+                    SensitiveDefaults.set(val, forKey: self.kUserdefaultsArrBlockedApps)
                 }
                 if let val = settings.value(forKey: kArrAlwaysAllowedApps) as? [String]{
-                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsArrAlwaysAllowedApps)
+                    SensitiveDefaults.set(val, forKey: self.kUserdefaultsArrAlwaysAllowedApps)
                 }
                 
 
                 addLog(text: "Local AppPassword")
-                if let val = settings.value(forKey: kAppPassword) as? String{
-                    if val.isEmpty{
-                        UserDefaults.standard.removeObject(forKey: kUserdefaultsAppPassword)
-                    }else{
-                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsAppPassword)
-                    }
-                    
+                if let val = settings.value(forKey: kAppPassword) as? String, !val.isEmpty{
+                    self.appPassword.adoptServerValue(val)
                 }else{
-                    UserDefaults.standard.removeObject(forKey: kUserdefaultsAppPassword)
+                    self.appPassword.clear()
                 }
                 addLog(text: "Local CuddlyModeEnabled")
                 if let val = settings.value(forKey: kCuddlyModeEnabled) as? Bool{
@@ -771,7 +826,10 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kAiCheckUrlEnabled) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsAiCheckUrlEnabled)
                 }
-                
+                if let val = settings.value(forKey: kAccountabilityBuddyEnabled) as? Bool{
+                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsAccountabilityBuddyEnabled)
+                }
+
                 if let val = settings.value(forKey: kSkipBreakActivityDuringFocusSession) as? Bool{
                     isSkipBreakActivityDuringPomodoro = val
                 }
@@ -825,6 +883,10 @@ class SettingsManager:NSObject{
                     if let breaksEnabled = UserDefaults.standard.object(forKey: kUserdefaultsBreaksEnabledFromOnboarding) as? Bool{
                         isMicroBreaksEnabled = breaksEnabled
                     }
+                }
+
+                if let val = settings.value(forKey: kBreakAutoStartEnabled) as? Bool{
+                    isBreakAutoStartEnabled = val
                 }
             }
             
@@ -993,6 +1055,12 @@ class SettingsManager:NSObject{
             } else {
                 UserDefaults.standard.set(isPasswordRequireInPostponeEveningAfterCutOff, forKey: kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff)
             }
+            // Day Plan "Shorten" password rule (default OFF), same local-device-setting pattern.
+            if let v = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInShortenHabits) as? Bool {
+                isPasswordRequireInShortenHabits = v
+            } else {
+                UserDefaults.standard.set(isPasswordRequireInShortenHabits, forKey: kUserdefaultsPasswordRequireInShortenHabits)
+            }
 
             
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInAbortShutoff) as? Bool{
@@ -1036,11 +1104,12 @@ class SettingsManager:NSObject{
             }
             
             if let password = UserDefaults.standard.object(forKey: kUserdefaultsPasswordSetInOnboarding) as? String{
-                if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) == nil{
-                    UserDefaults.standard.set(password, forKey: self.kUserdefaultsAppPassword)
+                if !isAppPasswordSet{
+                    appPassword.set(encoded: password)
                 }
                 UserDefaults.standard.removeObject(forKey: kUserdefaultsPasswordSetInOnboarding)
             }
+            appPassword.migrateLegacyValue()
             
             //  ---------------------------SETTINGS Prompt To Remember next Habit--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPromptToRememberHabit) as? Bool{
@@ -1110,10 +1179,16 @@ class SettingsManager:NSObject{
             //  ---------------------------SETTINGS Full Screen--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsisFullScreenEnabled) as? Bool{
                 isFullScreenEnabled = isEnabled
-            }else{
+            } else if isUserScopedKey(kUserdefaultsisFullScreenEnabled) {
                 isFullScreenEnabled = false
                 UserDefaults.standard.set(isFullScreenEnabled, forKey: kUserdefaultsisFullScreenEnabled)
             }
+            // No else: reaching here means `resetAllKeys()` has not appended the user id yet, so the
+            // key is the bare one and says nothing about this account. Writing a default here
+            // fabricates a decision — it turned a user's full screen off, because their real value
+            // sat under the suffixed key being ignored — and persists it, so the next launch reads
+            // the fabrication back as if they had chosen it. Leave the setting alone; the suffixed
+            // read will run once the account is known.
             
             //  ---------------------------SETTINGS Reload After Force Quit--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsShouldReloadAfterForceQuitEnabled) as? Bool{
@@ -1317,22 +1392,22 @@ class SettingsManager:NSObject{
                 UserDefaults.standard.set(false, forKey: kUserdefaultsHardcorePomodoroEnabled)
             }
             addLog(text: "Parse BlockedUrls")
-            if let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrBlockedUrls) as? [String]{
+            if let arr = SensitiveDefaults.object(forKey: kUserdefaultsArrBlockedUrls) as? [String]{
                 arrBlockedUrls = arr
             }else{
-                UserDefaults.standard.set(arrBlockedUrls, forKey: kUserdefaultsArrBlockedUrls)
+                SensitiveDefaults.set(arrBlockedUrls, forKey: kUserdefaultsArrBlockedUrls)
             }
             
-            if let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrBlockedApps) as? [String]{
+            if let arr = SensitiveDefaults.object(forKey: kUserdefaultsArrBlockedApps) as? [String]{
                 arrBlockedApps = arr
             }else{
-                UserDefaults.standard.set(arrBlockedApps, forKey: kUserdefaultsArrBlockedApps)
+                SensitiveDefaults.set(arrBlockedApps, forKey: kUserdefaultsArrBlockedApps)
             }
             
-            if let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrAlwaysAllowedApps) as? [String]{
+            if let arr = SensitiveDefaults.object(forKey: kUserdefaultsArrAlwaysAllowedApps) as? [String]{
                 arrAlwaysAllowedApps = arr
             }else{
-                UserDefaults.standard.set(arrAlwaysAllowedApps, forKey: kUserdefaultsArrAlwaysAllowedApps)
+                SensitiveDefaults.set(arrAlwaysAllowedApps, forKey: kUserdefaultsArrAlwaysAllowedApps)
             }
             
             if let id = UserDefaults.standard.object(forKey: kUserdefaultsLastFocusModeId) as? String{
@@ -1392,6 +1467,7 @@ class SettingsManager:NSObject{
         let kIsPasswordRequireInPostponeMorning = "kIsPasswordRequireInPostponeMorning"
         let kIsPasswordRequireInPostponeEvening = "kIsPasswordRequireInPostponeEvening"
         let kIsPasswordRequireInPostponeEveningAfterCutOff = "kIsPasswordRequireInPostponeEveningAfterCutOff"
+        let kIsPasswordRequireInShortenHabits = "kIsPasswordRequireInShortenHabits"
         let kIsPasswordRequireInAbortShutoff = "kIsPasswordRequireInAbortShutoff"
         let kIsPasswordRequireInStopPomodoro = "kIsPasswordRequireInStopPomodoro"
         let kIsPasswordRequireInQuitApp = "kIsPasswordRequireInQuitApp"
@@ -1413,6 +1489,7 @@ class SettingsManager:NSObject{
         
         let kMotivationalMessageEnabled = "kMotivationalMessageEnabled"
         let kAiCheckUrlEnabled = "kAiCheckUrlEnabled"
+        let kAccountabilityBuddyEnabled = "kAccountabilityBuddyEnabled"
         let kShowToDoPlayerAutomatically = "kShowToDoPlayerAutomatically"
         let kIsMenuPopoverEnabled = "kIsMenuPopoverEnabled"
         let kIsAdvancedAnalyticsInFocusModeEnabled = "kIsAdvancedAnalyticsInFocusModeEnabled"
@@ -1423,6 +1500,7 @@ class SettingsManager:NSObject{
         let kFocusMusicAutoStartPreference = "kFocusMusicAutoStartPreference"
         let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
         let kMicroBreaksEnabled = "kMicroBreaksEnabled"
+        let kBreakAutoStartEnabled = "kBreakAutoStartEnabled"
         let kSkipBreakActivityDuringFocusSession = "kSkipBreakActivityDuringFocusSession"
 
         // Talking Clock — synced to the user's account (cross-device) like the other settings,
@@ -1490,6 +1568,7 @@ class SettingsManager:NSObject{
             kIsPasswordRequireInPostponeMorning:isPasswordRequireInPostponeMorning,
             kIsPasswordRequireInPostponeEvening:isPasswordRequireInPostponeEvening,
             kIsPasswordRequireInPostponeEveningAfterCutOff:isPasswordRequireInPostponeEveningAfterCutOff,
+            kIsPasswordRequireInShortenHabits:isPasswordRequireInShortenHabits,
             kIsPasswordRequireInAbortShutoff:isPasswordRequireInAbortShutoff,
             kIsPasswordRequireInStopPomodoro:isPasswordRequireInStopPomodoro,
             kIsPasswordRequireInQuitApp:isPasswordRequireInQuitApp,
@@ -1498,6 +1577,7 @@ class SettingsManager:NSObject{
             kIsPasswordRequireInPreferencesAfterCutoff:isPasswordRequireInPreferencesAfterCutoff,
             kMotivationalMessageEnabled:isMotivationalMessageEnabled,
             kAiCheckUrlEnabled:isAiCheckUrlEnabled,
+            kAccountabilityBuddyEnabled:isAccountabilityBuddyEnabled,
             kShowToDoPlayerAutomatically:showToDoPlayerAutomaticallyEnabled,
             kIsMenuPopoverEnabled: isMenuPopoverEnabled,
             kIsAdvancedAnalyticsInFocusModeEnabled:isAdvancedAnalyticsInFocusModeEnabled,
@@ -1508,6 +1588,7 @@ class SettingsManager:NSObject{
             kFocusMusicAutoStartPreference:focusMusicAutoStart.rawValue,
             kShowBrainDumpAfterMorningRoutine:showBrainDumpAfterMorningRoutineEnabled,
             kMicroBreaksEnabled:isMicroBreaksEnabled,
+            kBreakAutoStartEnabled:isBreakAutoStartEnabled,
             kSkipBreakActivityDuringFocusSession:isSkipBreakActivityDuringPomodoro,
             kTalkingClockEnabled:isTalkingClockEnabled,
             kTalkingClockInterval:talkingClockIntervalMinutes,
@@ -1516,10 +1597,8 @@ class SettingsManager:NSObject{
             kTalkingClockSuppressMeetings:talkingClockSuppressDuringMeetings,
             "has_edited_blocked_urls":isEditBlockedUrlsOnce
         ]
-        if let password = UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) as? String{
-            if !password.isEmpty{
-                json[kAppPassword] = password
-            }
+        if let password = appPassword.encodedValue{
+            json[kAppPassword] = password
         }
         return json
     }
@@ -1580,11 +1659,19 @@ class SettingsManager:NSObject{
         UserDefaults.standard.set(isPasswordRequireInStopPomodoro, forKey: kUserdefaultsPasswordRequireInStopPomodoro)
         UserDefaults.standard.set(isPasswordRequireInQuitApp, forKey: kUserdefaultsPasswordRequireInQuitApp)
         UserDefaults.standard.set(isPasswordRequireInUseRelaxFocusMode, forKey: kUserdefaultsPasswordRequireInUseRelaxFocusMode)
+        UserDefaults.standard.set(isPasswordRequireInShortenHabits, forKey: kUserdefaultsPasswordRequireInShortenHabits)
         
         UserDefaults.standard.set(isMotivationalMessageEnabled, forKey: kUserdefaultsMotivationalMessageEnabled)
         UserDefaults.standard.set(isAiCheckUrlEnabled, forKey: kUserdefaultsAiCheckUrlEnabled)
         //        UserDefaults.standard.set(isAiAllowUrlShowAlertEnabled, forKey: kUserdefaultsAiAllowUrlShowAlertEnabled)
-        
+
+        // Uploading without the password would tell the server (and every other device) there is none.
+        // The keychain copy comes back on the next settings download or the next correct entry.
+        guard !appPassword.isEncodedValueUnavailable else {
+            isSettingsChanged = true
+            addLog(text: "[at-rest] settings upload deferred: app password unreadable from the keychain")
+            return
+        }
         let json = getLocalJsonToUpload()
         
         let dic: [String: [String:Any]] = [
@@ -1640,6 +1727,7 @@ class SettingsManager:NSObject{
     
     
     func writeLocalSettings(){
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         var dicContent = ["totalAppEnableTime":totalAppEnableTime, "totalAppDisableTime":totalAppDisableTime] as [String : Any]
         let isAppEnable = UserDefaults.standard.object(forKey: kUserdefaultsIsAppEnabled) as? Bool ?? true
         if isAppEnable{
@@ -1820,6 +1908,9 @@ class SettingsManager:NSObject{
     }
     
     func isAIBlockingEnabled()->Bool{
+        // Quit-popup pause: the user temporarily switched off blocking pop-ups. Treat as a hard veto so
+        // every AI/relevance/block path stays quiet until the pause window passes, then resumes on its own.
+        if FeatureSnooze.isSnoozed(.blockingPopups) { return false }
         // A teacher-controlled class session takes precedence over the custom schedule and the user's
         // global setting: AI relevance-checking is on only if the teacher enabled it for the
         // allow-list (`isAiBlockingEnabledForAllowList`). This keeps every AI/block/score path in
@@ -1830,15 +1921,34 @@ class SettingsManager:NSObject{
             addLog(text: "isAIBlockingEnabled: teacher session → \(teacherAi)")
             return teacherAi
         }
-        // Fix #1584: log which code path is taken to diagnose the ~50% activation rate.
+        // An accountability-buddy session is AI-driven by design: every app/site is judged by the AI
+        // against the user's stated goal (whatToAchieveInFocusBlock), regardless of any custom schedule's
+        // own AI flag. This is what makes the session use AI rather than a fixed allow-list.
+        if currentAccountabilityBuddySession != nil {
+            return true
+        }
         let customScheduleOn = customBlockingScheduleManagerObj.isAnyCustomScheduleOn
+        // Per-focus-mode AI switch: the server sends `is_ai_enabled` on every focus mode, but the Mac app
+        // historically ignored it — so a mode the user turned AI OFF for (including an allowed-app routine
+        // habit) still ran AI relevance-checking off the GLOBAL toggle. Respect it: when a focus mode /
+        // allowed-app activity is the running context and its `is_ai_enabled` is explicitly false, AI
+        // blocking is off for that mode regardless of the global setting. Custom schedules carry their own
+        // AI flag (handled below), so this is scoped to a real focus-mode context with no schedule active.
+        // A veto only — `true`/absent falls through to the existing global/schedule logic (never forces AI
+        // on where the user globally turned it off).
+        if (isFocusModeRunning || isAnyAllowedFocusModeActivityRunning) && !customScheduleOn {
+            if let modeAiEnabled = currentRunningFocusType["is_ai_enabled"] as? Bool, !modeAiEnabled {
+                addLog(text: "isAIBlockingEnabled: running focus mode is_ai_enabled=false → false")
+                return false
+            }
+        }
+        // Fix #1584: log which code path is taken to diagnose the ~50% activation rate.
         let result = customScheduleOn ? customBlockingScheduleManagerObj.isAIBlockingEnabled() : isAiCheckUrlEnabled
         addLog(text: "isAIBlockingEnabled: customScheduleOn=\(customScheduleOn) globalAI=\(isAiCheckUrlEnabled) → \(result)")
         return result
     }
     
 }
-
 
 
 

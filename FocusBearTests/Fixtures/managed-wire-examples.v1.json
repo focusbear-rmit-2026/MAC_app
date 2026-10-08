@@ -1,0 +1,660 @@
+{
+  "schema_version": 1,
+  "identity": {
+    "student_id": "30000000-0000-4000-8000-000000000001",
+    "device_id": "50000000-0000-4000-8000-000000000001"
+  },
+  "snapshot": {
+    "school": {
+      "id": "20000000-0000-4000-8000-000000000001",
+      "school_id": "40000000-0000-4000-8000-000000000001",
+      "student_id": null,
+      "kind": "school",
+      "revision": 3,
+      "status": "published",
+      "published_revision": 3,
+      "created_at": "2026-09-01T00:00:00.000Z",
+      "updated_at": "2026-09-01T00:00:00.000Z",
+      "name": "School day",
+      "time_zone": "UTC",
+      "is_enabled": true,
+      "windows": [
+        {
+          "days_of_week": [
+            "MON",
+            "TUE",
+            "WED",
+            "THU",
+            "FRI"
+          ],
+          "start_time": "09:00",
+          "end_time": "15:00"
+        }
+      ],
+      "blocked_categories": [
+        "games"
+      ],
+      "allowlist": [],
+      "excluded_dates": [],
+      "unknown_action": "block",
+      "unavailable_action": "block"
+    },
+    "home": {
+      "id": "20000000-0000-4000-8000-000000000002",
+      "school_id": "40000000-0000-4000-8000-000000000001",
+      "student_id": "30000000-0000-4000-8000-000000000001",
+      "kind": "home",
+      "revision": 3,
+      "status": "published",
+      "published_revision": 3,
+      "created_at": "2026-09-01T00:00:00.000Z",
+      "updated_at": "2026-09-01T00:00:00.000Z",
+      "name": "Home",
+      "time_zone": "UTC",
+      "is_enabled": true,
+      "windows": [
+        {
+          "days_of_week": [
+            "SUN",
+            "MON",
+            "TUE",
+            "WED",
+            "THU",
+            "FRI",
+            "SAT"
+          ],
+          "start_time": "00:00",
+          "end_time": "00:00",
+          "all_day": true
+        }
+      ],
+      "blocked_categories": [
+        "gambling"
+      ],
+      "allowlist": [],
+      "excluded_dates": [],
+      "unknown_action": "block",
+      "unavailable_action": "block"
+    },
+    "settings_locked": true,
+    "schema_version": 1,
+    "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+    "server_time": "2026-09-09T00:00:00.000Z",
+    "offline_valid_until": "2026-09-10T00:00:00.000Z"
+  },
+  "receipt_request": {
+    "device_id": "50000000-0000-4000-8000-000000000001",
+    "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+    "applied_policies": [
+      {
+        "id": "20000000-0000-4000-8000-000000000001",
+        "kind": "school",
+        "revision": 3
+      },
+      {
+        "id": "20000000-0000-4000-8000-000000000002",
+        "kind": "home",
+        "revision": 3
+      }
+    ],
+    "client_version": "1.0.0",
+    "platform": "macos",
+    "clock_status": "trusted",
+    "permission_status": "ready",
+    "sync_status": "online",
+    "enforcement_status": "enforcing",
+    "observed_at": "2026-09-09T00:01:00.000Z"
+  },
+  "receipt_response": {
+    "device_id": "50000000-0000-4000-8000-000000000001",
+    "snapshot_id": "1111111111111111111111111111111111111111111111111111111111111111",
+    "applied_policies": [
+      {
+        "id": "20000000-0000-4000-8000-000000000001",
+        "kind": "school",
+        "revision": 3
+      },
+      {
+        "id": "20000000-0000-4000-8000-000000000002",
+        "kind": "home",
+        "revision": 3
+      }
+    ],
+    "client_version": "1.0.0",
+    "platform": "macos",
+    "clock_status": "trusted",
+    "permission_status": "ready",
+    "sync_status": "online",
+    "enforcement_status": "enforcing",
+    "observed_at": "2026-09-09T00:01:00.000Z",
+    "id": "60000000-0000-4000-8000-000000000001",
+    "student_id": "30000000-0000-4000-8000-000000000001",
+    "school_id": "40000000-0000-4000-8000-000000000001",
+    "source": "device_reported",
+    "received_at": "2026-09-09T00:01:00.500Z",
+    "snapshot_matches_current": true
+  },
+  "stale_receipt_response": {
+    "statusCode": 409,
+    "code": "managed_snapshot_stale",
+    "message": "Refresh the effective policy before reporting this device"
+  },
+  "minimal_batch_request": {
+    "events": [
+      {
+        "event_id": "70000000-0000-4000-8000-000000000001",
+        "device_id": "50000000-0000-4000-8000-000000000001",
+        "policy_id": "20000000-0000-4000-8000-000000000001",
+        "policy_revision": 3,
+        "domain": "example.org",
+        "resource_hash": "4bfe7faf53b0fc8ed6e532baed2134503efea0ca600759f6f99f03186ed8eb82",
+        "category_ids": [
+          "games"
+        ],
+        "observed_at": "2026-09-09T00:01:00.000Z"
+      },
+      {
+        "event_id": "70000000-0000-4000-8000-000000000002",
+        "device_id": "50000000-0000-4000-8000-000000000001",
+        "policy_id": "20000000-0000-4000-8000-000000000003",
+        "policy_revision": 3,
+        "domain": "example.org",
+        "resource_hash": "4bfe7faf53b0fc8ed6e532baed2134503efea0ca600759f6f99f03186ed8eb82",
+        "category_ids": [
+          "games"
+        ],
+        "observed_at": "2026-09-09T00:01:00.000Z"
+      }
+    ]
+  },
+  "minimal_batch_response": {
+    "results": [
+      {
+        "event_id": "70000000-0000-4000-8000-000000000001",
+        "status": "accepted",
+        "violation_id": "80000000-0000-4000-8000-000000000001"
+      },
+      {
+        "event_id": "70000000-0000-4000-8000-000000000002",
+        "status": "rejected",
+        "code": "policy_not_current",
+        "retryable": false
+      }
+    ]
+  },
+  "online_responses": [
+    {
+      "allowed": true,
+      "reason": "no_active_policy",
+      "policy": null,
+      "violation_id": null
+    },
+    {
+      "allowed": true,
+      "reason": "no_blocked_categories",
+      "policy": {
+        "id": "20000000-0000-4000-8000-000000000001",
+        "school_id": "40000000-0000-4000-8000-000000000001",
+        "student_id": null,
+        "kind": "school",
+        "revision": 3,
+        "status": "published",
+        "published_revision": 3,
+        "created_at": "2026-09-01T00:00:00.000Z",
+        "updated_at": "2026-09-01T00:00:00.000Z",
+        "name": "School day",
+        "time_zone": "UTC",
+        "is_enabled": true,
+        "windows": [
+          {
+            "days_of_week": [
+              "MON",
+              "TUE",
+              "WED",
+              "THU",
+              "FRI"
+            ],
+            "start_time": "09:00",
+            "end_time": "15:00"
+          }
+        ],
+        "blocked_categories": [],
+        "allowlist": [],
+        "excluded_dates": [],
+        "unknown_action": "block",
+        "unavailable_action": "block"
+      },
+      "violation_id": null
+    },
+    {
+      "allowed": true,
+      "reason": "policy_allowlist",
+      "policy": {
+        "id": "20000000-0000-4000-8000-000000000001",
+        "school_id": "40000000-0000-4000-8000-000000000001",
+        "student_id": null,
+        "kind": "school",
+        "revision": 3,
+        "status": "published",
+        "published_revision": 3,
+        "created_at": "2026-09-01T00:00:00.000Z",
+        "updated_at": "2026-09-01T00:00:00.000Z",
+        "name": "School day",
+        "time_zone": "UTC",
+        "is_enabled": true,
+        "windows": [
+          {
+            "days_of_week": [
+              "MON",
+              "TUE",
+              "WED",
+              "THU",
+              "FRI"
+            ],
+            "start_time": "09:00",
+            "end_time": "15:00"
+          }
+        ],
+        "blocked_categories": [
+          "games"
+        ],
+        "allowlist": [],
+        "excluded_dates": [],
+        "unknown_action": "block",
+        "unavailable_action": "block"
+      },
+      "violation_id": null
+    },
+    {
+      "allowed": false,
+      "reason": "policy_changed_retry",
+      "policy": null,
+      "violation_id": null
+    },
+    {
+      "active": true,
+      "allowed": false,
+      "reason": "blocked_category",
+      "matched_categories": [
+        "games"
+      ],
+      "policy": {
+        "id": "20000000-0000-4000-8000-000000000001",
+        "school_id": "40000000-0000-4000-8000-000000000001",
+        "student_id": null,
+        "kind": "school",
+        "revision": 3,
+        "status": "published",
+        "published_revision": 3,
+        "created_at": "2026-09-01T00:00:00.000Z",
+        "updated_at": "2026-09-01T00:00:00.000Z",
+        "name": "School day",
+        "time_zone": "UTC",
+        "is_enabled": true,
+        "windows": [
+          {
+            "days_of_week": [
+              "MON",
+              "TUE",
+              "WED",
+              "THU",
+              "FRI"
+            ],
+            "start_time": "09:00",
+            "end_time": "15:00"
+          }
+        ],
+        "blocked_categories": [
+          "games"
+        ],
+        "allowlist": [],
+        "excluded_dates": [],
+        "unknown_action": "block",
+        "unavailable_action": "block"
+      },
+      "classification": {
+        "taxonomy_version": "2026-09-08",
+        "model_version": "fixture-local-1",
+        "normalized_url": "https://example.org/lesson",
+        "host": "example.org",
+        "categories": [
+          "games"
+        ],
+        "category_scores": {
+          "games": 0.9
+        },
+        "evidence": [
+          {
+            "category_id": "games",
+            "source": "local_rules",
+            "confidence": 0.9,
+            "reason": "Fixture evidence"
+          }
+        ],
+        "classification_status": "classified",
+        "evaluated_categories": [
+          "games"
+        ],
+        "unsupported_categories": [],
+        "unavailable_categories": [],
+        "observed_at": "2026-09-09T00:00:00.000Z",
+        "expires_at": "2026-09-09T00:05:00.000Z"
+      },
+      "violation_id": "80000000-0000-4000-8000-000000000001"
+    },
+    {
+      "allowed": true,
+      "reason": "approved_safety_appeal",
+      "policy": {
+        "id": "20000000-0000-4000-8000-000000000001",
+        "school_id": "40000000-0000-4000-8000-000000000001",
+        "student_id": null,
+        "kind": "school",
+        "revision": 3,
+        "status": "published",
+        "published_revision": 3,
+        "created_at": "2026-09-01T00:00:00.000Z",
+        "updated_at": "2026-09-01T00:00:00.000Z",
+        "name": "School day",
+        "time_zone": "UTC",
+        "is_enabled": true,
+        "windows": [
+          {
+            "days_of_week": [
+              "MON",
+              "TUE",
+              "WED",
+              "THU",
+              "FRI"
+            ],
+            "start_time": "09:00",
+            "end_time": "15:00"
+          }
+        ],
+        "blocked_categories": [
+          "games"
+        ],
+        "allowlist": [],
+        "excluded_dates": [],
+        "unknown_action": "block",
+        "unavailable_action": "block"
+      },
+      "classification": {
+        "taxonomy_version": "2026-09-08",
+        "model_version": "fixture-local-1",
+        "normalized_url": "https://example.org/lesson",
+        "host": "example.org",
+        "categories": [
+          "games"
+        ],
+        "category_scores": {
+          "games": 0.9
+        },
+        "evidence": [
+          {
+            "category_id": "games",
+            "source": "local_rules",
+            "confidence": 0.9,
+            "reason": "Fixture evidence"
+          }
+        ],
+        "classification_status": "classified",
+        "evaluated_categories": [
+          "games"
+        ],
+        "unsupported_categories": [],
+        "unavailable_categories": [],
+        "observed_at": "2026-09-09T00:00:00.000Z",
+        "expires_at": "2026-09-09T00:05:00.000Z"
+      },
+      "appeal": {
+        "id": "90000000-0000-4000-8000-000000000001",
+        "reason": "Scoped educational access",
+        "expires_at": "2026-09-09T00:03:00.000Z"
+      },
+      "violation_id": null
+    }
+  ],
+  "settings_create_request": {
+    "device_id": "50000000-0000-4000-8000-000000000001",
+    "scope": [
+      "blocked_categories"
+    ],
+    "base_revision": 3
+  },
+  "settings_pending_response": {
+    "id": "a0000000-0000-4000-8000-000000000001",
+    "student_id": "30000000-0000-4000-8000-000000000001",
+    "device_id": "50000000-0000-4000-8000-000000000001",
+    "policy_id": "20000000-0000-4000-8000-000000000002",
+    "scope": [
+      "blocked_categories"
+    ],
+    "base_revision": 3,
+    "status": "pending",
+    "approved_by": null,
+    "committed_by": null,
+    "proposed_changes": null,
+    "changes_hash": null,
+    "expires_at": "2026-09-09T00:15:00.000Z",
+    "created_at": "2026-09-09T00:00:00.000Z",
+    "updated_at": "2026-09-09T00:00:00.000Z",
+    "before": {
+      "id": "20000000-0000-4000-8000-000000000002",
+      "school_id": "40000000-0000-4000-8000-000000000001",
+      "student_id": "30000000-0000-4000-8000-000000000001",
+      "kind": "home",
+      "revision": 3,
+      "status": "published",
+      "published_revision": 3,
+      "created_at": "2026-09-01T00:00:00.000Z",
+      "updated_at": "2026-09-01T00:00:00.000Z",
+      "name": "Home",
+      "time_zone": "UTC",
+      "is_enabled": true,
+      "windows": [
+        {
+          "days_of_week": [
+            "SUN",
+            "MON",
+            "TUE",
+            "WED",
+            "THU",
+            "FRI",
+            "SAT"
+          ],
+          "start_time": "00:00",
+          "end_time": "00:00",
+          "all_day": true
+        }
+      ],
+      "blocked_categories": [
+        "gambling"
+      ],
+      "allowlist": [],
+      "excluded_dates": [],
+      "unknown_action": "block",
+      "unavailable_action": "block"
+    }
+  },
+  "settings_approved_response": {
+    "id": "a0000000-0000-4000-8000-000000000001",
+    "student_id": "30000000-0000-4000-8000-000000000001",
+    "device_id": "50000000-0000-4000-8000-000000000001",
+    "policy_id": "20000000-0000-4000-8000-000000000002",
+    "scope": [
+      "blocked_categories"
+    ],
+    "base_revision": 3,
+    "status": "approved",
+    "approved_by": "b0000000-0000-4000-8000-000000000001",
+    "committed_by": null,
+    "proposed_changes": null,
+    "changes_hash": null,
+    "expires_at": "2026-09-09T00:07:00.000Z",
+    "created_at": "2026-09-09T00:00:00.000Z",
+    "updated_at": "2026-09-09T00:02:00.000Z",
+    "before": {
+      "id": "20000000-0000-4000-8000-000000000002",
+      "school_id": "40000000-0000-4000-8000-000000000001",
+      "student_id": "30000000-0000-4000-8000-000000000001",
+      "kind": "home",
+      "revision": 3,
+      "status": "published",
+      "published_revision": 3,
+      "created_at": "2026-09-01T00:00:00.000Z",
+      "updated_at": "2026-09-01T00:00:00.000Z",
+      "name": "Home",
+      "time_zone": "UTC",
+      "is_enabled": true,
+      "windows": [
+        {
+          "days_of_week": [
+            "SUN",
+            "MON",
+            "TUE",
+            "WED",
+            "THU",
+            "FRI",
+            "SAT"
+          ],
+          "start_time": "00:00",
+          "end_time": "00:00",
+          "all_day": true
+        }
+      ],
+      "blocked_categories": [
+        "gambling"
+      ],
+      "allowlist": [],
+      "excluded_dates": [],
+      "unknown_action": "block",
+      "unavailable_action": "block"
+    }
+  },
+  "settings_propose_request": {
+    "device_id": "50000000-0000-4000-8000-000000000001",
+    "changes": {
+      "name": "Home",
+      "time_zone": "UTC",
+      "is_enabled": true,
+      "windows": [
+        {
+          "days_of_week": [
+            "SUN",
+            "MON",
+            "TUE",
+            "WED",
+            "THU",
+            "FRI",
+            "SAT"
+          ],
+          "start_time": "00:00",
+          "end_time": "00:00",
+          "all_day": true
+        }
+      ],
+      "blocked_categories": [
+        "adult",
+        "gambling"
+      ],
+      "allowlist": [],
+      "excluded_dates": [],
+      "unknown_action": "block",
+      "unavailable_action": "block"
+    }
+  },
+  "settings_proposed_response": {
+    "id": "a0000000-0000-4000-8000-000000000001",
+    "student_id": "30000000-0000-4000-8000-000000000001",
+    "device_id": "50000000-0000-4000-8000-000000000001",
+    "policy_id": "20000000-0000-4000-8000-000000000002",
+    "scope": [
+      "blocked_categories"
+    ],
+    "base_revision": 3,
+    "status": "proposed",
+    "approved_by": "b0000000-0000-4000-8000-000000000001",
+    "committed_by": null,
+    "proposed_changes": {
+      "name": "Home",
+      "time_zone": "UTC",
+      "is_enabled": true,
+      "windows": [
+        {
+          "days_of_week": [
+            "SUN",
+            "MON",
+            "TUE",
+            "WED",
+            "THU",
+            "FRI",
+            "SAT"
+          ],
+          "start_time": "00:00",
+          "end_time": "00:00",
+          "all_day": true
+        }
+      ],
+      "blocked_categories": [
+        "adult",
+        "gambling"
+      ],
+      "allowlist": [],
+      "excluded_dates": [],
+      "unknown_action": "block",
+      "unavailable_action": "block"
+    },
+    "changes_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+    "expires_at": "2026-09-09T00:07:00.000Z",
+    "created_at": "2026-09-09T00:00:00.000Z",
+    "updated_at": "2026-09-09T00:03:00.000Z",
+    "before": {
+      "id": "20000000-0000-4000-8000-000000000002",
+      "school_id": "40000000-0000-4000-8000-000000000001",
+      "student_id": "30000000-0000-4000-8000-000000000001",
+      "kind": "home",
+      "revision": 3,
+      "status": "published",
+      "published_revision": 3,
+      "created_at": "2026-09-01T00:00:00.000Z",
+      "updated_at": "2026-09-01T00:00:00.000Z",
+      "name": "Home",
+      "time_zone": "UTC",
+      "is_enabled": true,
+      "windows": [
+        {
+          "days_of_week": [
+            "SUN",
+            "MON",
+            "TUE",
+            "WED",
+            "THU",
+            "FRI",
+            "SAT"
+          ],
+          "start_time": "00:00",
+          "end_time": "00:00",
+          "all_day": true
+        }
+      ],
+      "blocked_categories": [
+        "gambling"
+      ],
+      "allowlist": [],
+      "excluded_dates": [],
+      "unknown_action": "block",
+      "unavailable_action": "block"
+    }
+  },
+  "settings_commit_request": {
+    "expected_revision": 3,
+    "changes_hash": "2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "notes": [
+    "snapshot_id and changes_hash values are illustrative opaque tokens, not independently computed signatures",
+    "Setting requests remain locked after expires_at even if status remains approved or proposed",
+    "Only accepted parent can approve and commit; child only creates request and submits one scoped proposal",
+    "An online appeal allow never overrides independent teacher or personal blocking layers"
+  ]
+}

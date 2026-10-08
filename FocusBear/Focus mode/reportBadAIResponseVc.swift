@@ -22,6 +22,10 @@ class reportBadAIResponseVc: NSViewController {
     @IBOutlet weak var lblTitle: NSTextField!
     
     var payload:[String:Any]?
+    /// Called when the user actually submits the report. popUpBlockConfirmVc supplies this to allow the
+    /// current app/site (the AI was wrong to block it); nil when reporting a historical entry from the
+    /// debug logs, where there's no current site to allow.
+    var onReported:(() -> Void)?
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -44,8 +48,9 @@ class reportBadAIResponseVc: NSViewController {
         btnCancel.isSecondaryButton = true
     }
     
-    func resetData(url:String?, app:String?, payload:[String:Any]?){
+    func resetData(url:String?, app:String?, payload:[String:Any]?, onReported:(() -> Void)? = nil){
         self.payload = payload
+        self.onReported = onReported
         checkBoxShareLogs.state = .off
         btnReportIssue.isEnabled = false
         if let url = url{
@@ -85,6 +90,9 @@ class reportBadAIResponseVc: NSViewController {
         if checkBoxShareLogs.state == .on{
             allApiObject.capturePosthog(event: "bad-ai-blocking-decision", metadata: ["userFeedbackOnDecision": textView.string, "payloadSentToAIEndpoint": "\(payload)"])
         }
+        // Reporting a bad AI block means the AI was wrong to block this app/site — allow it for the rest
+        // of this focus session so it isn't immediately re-blocked (closure supplied by popUpBlockConfirmVc).
+        onReported?()
         self.view.window?.close()
     }
 }

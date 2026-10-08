@@ -61,7 +61,7 @@ class impactMeasurementVc: NSViewController {
                     do {
                         let data = try (JSONSerialization.data(withJSONObject: settings!, options: .prettyPrinted))
                         if let str = String(data: data, encoding: String.Encoding.utf8){
-                            UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+                            SensitiveDefaults.set(str, forKey: kUserdefaultsSelectedJson)
                         }
                         let alert = NSAlert()
                         alert.setSharingType()

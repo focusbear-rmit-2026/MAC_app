@@ -141,6 +141,10 @@ class passwordVc: NSViewController {
     private var btnInfoPostponeMorning: hoverInfoButton?
     private var btnInfoPostponeEvening: hoverInfoButton?
     private var btnInfoPostponeAfterCutOff: hoverInfoButton?
+    // "Shortening habits on the Day Plan" — added in code directly below the postpone rows. Synced
+    // under kIsPasswordRequireInShortenHabits (the same key the Windows app uses).
+    private var checkBoxShortenHabits: NSButton?
+    private var btnInfoShortenHabits: hoverInfoButton?
 
     private func setupPostponeCheckboxes() {
         // The skip/action password checkboxes are constraint-chained siblings in a plain view (NOT an
@@ -157,15 +161,20 @@ class passwordVc: NSViewController {
         var titleMorning = "Postponing morning routine"
         var titleEvening = "Postponing evening routine"
         var titleAfterCutOff = "Postponing evening routine after cutoff time"
+        var titleShorten = "Shortening habits on the Day Plan"
         if let info = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary {
             titleMorning = info.value(forKey: "buttonPostponeMorningHabitText") as? String ?? titleMorning
             titleEvening = info.value(forKey: "buttonPostponeEveningHabitText") as? String ?? titleEvening
             titleAfterCutOff = info.value(forKey: "buttonPostponeEveningHabitAfterCutOffText") as? String ?? titleAfterCutOff
+            titleShorten = info.value(forKey: "buttonShortenHabitsText") as? String ?? titleShorten
         }
         let m = make(titleMorning, #selector(checkBoxPostponeMorningClicked))
         let e = make(titleEvening, #selector(checkBoxPostponeEveningClicked))
         let c = make(titleAfterCutOff, #selector(checkBoxPostponeAfterCutOffClicked))
+        let sh = make(titleShorten, #selector(checkBoxShortenHabitsClicked))
+        sh.toolTip = titleShorten
         checkBoxPostponeMorning = m; checkBoxPostponeEvening = e; checkBoxPostponeAfterCutOff = c
+        checkBoxShortenHabits = sh
 
         // The constraint that currently hangs the next row below the anchor (anchor.bottom -> next.top).
         let followingTop = container.constraints.first {
@@ -177,10 +186,10 @@ class passwordVc: NSViewController {
         let followingSpacing = followingTop?.constant ?? spacing
         followingTop?.isActive = false
 
-        for cb in [m, e, c] { container.addSubview(cb) }
+        for cb in [m, e, c, sh] { container.addSubview(cb) }
         var constraints: [NSLayoutConstraint] = []
         var previous: NSView = anchor
-        for cb in [m, e, c] {
+        for cb in [m, e, c, sh] {
             constraints.append(cb.leadingAnchor.constraint(equalTo: anchor.leadingAnchor))
             constraints.append(cb.topAnchor.constraint(equalTo: previous.bottomAnchor, constant: spacing))
             previous = cb
@@ -198,7 +207,8 @@ class passwordVc: NSViewController {
     /// Adds an NSInfo hover-info button in the right-edge column for each postpone row, matching the
     /// skip rows. centerX aligns to an existing skip-row info button's column; centerY to each checkbox.
     private func setupPostponeInfoButtons(in container: NSView) {
-        guard let m = checkBoxPostponeMorning, let e = checkBoxPostponeEvening, let c = checkBoxPostponeAfterCutOff else { return }
+        guard let m = checkBoxPostponeMorning, let e = checkBoxPostponeEvening, let c = checkBoxPostponeAfterCutOff,
+              let sh = checkBoxShortenHabits else { return }
         let columnRef: NSView? = btnSkipEveningHabitAfterCutOff ?? btnInfoSkipEveningHabit
         func makeInfo(_ action: Selector) -> hoverInfoButton {
             let b = hoverInfoButton()
@@ -218,10 +228,12 @@ class passwordVc: NSViewController {
         let im = makeInfo(#selector(btnInfoPostponeMorningClicked))
         let ie = makeInfo(#selector(btnInfoPostponeEveningClicked))
         let ic = makeInfo(#selector(btnInfoPostponeAfterCutOffClicked))
+        let ish = makeInfo(#selector(btnInfoShortenHabitsClicked))
         btnInfoPostponeMorning = im; btnInfoPostponeEvening = ie; btnInfoPostponeAfterCutOff = ic
+        btnInfoShortenHabits = ish
 
         var cons: [NSLayoutConstraint] = []
-        for (btn, row) in [(im, m), (ie, e), (ic, c)] {
+        for (btn, row) in [(im, m), (ie, e), (ic, c), (ish, sh)] {
             container.addSubview(btn)
             cons.append(btn.widthAnchor.constraint(equalToConstant: 16))
             cons.append(btn.heightAnchor.constraint(equalToConstant: 16))
@@ -239,6 +251,7 @@ class passwordVc: NSViewController {
         checkBoxPostponeMorning?.state = SettingsManagerObject.isPasswordRequireInPostponeMorning ? .on : .off
         checkBoxPostponeEvening?.state = SettingsManagerObject.isPasswordRequireInPostponeEvening ? .on : .off
         checkBoxPostponeAfterCutOff?.state = SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff ? .on : .off
+        checkBoxShortenHabits?.state = SettingsManagerObject.isPasswordRequireInShortenHabits ? .on : .off
     }
 
     private func setPostpone(_ value: Bool, key: String, set: (Bool) -> Void) {
@@ -255,6 +268,20 @@ class passwordVc: NSViewController {
     }
     @objc private func checkBoxPostponeAfterCutOffClicked() {
         setPostpone(checkBoxPostponeAfterCutOff?.state == .on, key: SettingsManagerObject.kUserdefaultsPasswordRequireInPostponeEveningAfterCutOff) { SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff = $0 }
+    }
+
+    @objc private func checkBoxShortenHabitsClicked() {
+        let isOn = checkBoxShortenHabits?.state == .on
+        setPostpone(isOn, key: SettingsManagerObject.kUserdefaultsPasswordRequireInShortenHabits) { SettingsManagerObject.isPasswordRequireInShortenHabits = $0 }
+        allApiObject.capturePosthog(event: isOn ? "require-password-in-shorten-habits-enabled" : "require-password-in-shorten-habits-disabled", metadata: [:])
+    }
+
+    @objc private func btnInfoShortenHabitsClicked() {
+        var toolTip = "Enable this to require your password when shortening a habit from the Day Plan, so the choice stays intentional."
+        if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary {
+            toolTip = tooltips.value(forKey: "strictness_Password_ShortenHabits") as? String ?? toolTip
+        }
+        if let s = btnInfoShortenHabits { showTooltip(sender: s, msg: toolTip, preferredEdge: NSRectEdge.maxX, maxWidthVal: 350) }
     }
 
     @objc private func btnInfoPostponeMorningClicked() {
@@ -316,7 +343,7 @@ class passwordVc: NSViewController {
         lblNewPassword.stringValue = "New Password"
         lblConfirmPassword.stringValue = "Confirm Password"
 
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
+        if !SettingsManagerObject.isAppPasswordSet{
             lblTitle.stringValue = "Set Password"
             btnChangePassword.title = "Set Password"
             textFieldNewPassword.placeholderString = "New Password"
@@ -354,6 +381,7 @@ class passwordVc: NSViewController {
             checkBoxUseRelaxFocusMode.isEnabled = false
             checkBoxCircumventingBlocks.isEnabled = false
             checkBoxOpenPreferencesAfterCutOff.isEnabled = false
+            checkBoxShortenHabits?.isEnabled = false
         }else{
             lblTitle.stringValue = "Change Password"
             btnChangePassword.title = "Change Password"
@@ -391,6 +419,7 @@ class passwordVc: NSViewController {
             checkBoxUseRelaxFocusMode.isEnabled = true
             checkBoxCircumventingBlocks.isEnabled = true
             checkBoxOpenPreferencesAfterCutOff.isEnabled = true
+            checkBoxShortenHabits?.isEnabled = true
         }
         
         
@@ -587,7 +616,7 @@ class passwordVc: NSViewController {
         alert.beginSheetModal(for: view.window!, completionHandler: { (modalResponse) in
             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                 print("okclicked")
-                UserDefaults.standard.removeObject(forKey: SettingsManagerObject.kUserdefaultsAppPassword)
+                SettingsManagerObject.appPassword.clear()
                 SettingsManagerObject.isSettingsChanged = true
                 SettingsManagerObject.putUserLocalDeviceSettings()
                 self.resetView()
@@ -648,7 +677,7 @@ class passwordVc: NSViewController {
         if textFieldNewPassword.stringValue == textFieldConfirmPassword.stringValue{
             let base64password = textFieldConfirmPassword.stringValue.toBase64()
             
-            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
+            if !SettingsManagerObject.isAppPasswordSet{
                 allApiObject.capturePosthog(event: "set-password", metadata: [:])
                 var passwordSetAlertTitle = "Password successfully set."
                 if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
@@ -668,7 +697,7 @@ class passwordVc: NSViewController {
                 alertforvalidation(question: passwordChagedAlertTitle, text: "")
             }
             
-            UserDefaults.standard.set(base64password, forKey: SettingsManagerObject.kUserdefaultsAppPassword)
+            SettingsManagerObject.appPassword.set(encoded: base64password)
             SettingsManagerObject.isSettingsChanged = true
             SettingsManagerObject.putUserLocalDeviceSettings()
             

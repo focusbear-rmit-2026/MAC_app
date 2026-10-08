@@ -15,14 +15,80 @@ func focusModePayload(from event: PusherEvent) -> [String: Any]? {
     return (try? JSONSerialization.jsonObject(with: data, options: [])) as? [String: Any]
 }
 
+/// Whether a finish/pause from another device may be applied to this Mac's session, logging the
+/// sender and the answer either way. The finish path used to log nothing at all, so a session ended from
+/// another device looked, in the log, exactly like one that simply ended.
+func applyRemoteSessionChange(named eventName: String, event: PusherEvent) -> Bool {
+    let senderDeviceId = focusModePayload(from: event)?["device_id"] as? String
+    let decision = FocusSessionStopPermission.remoteChange(
+        eventDeviceId: senderDeviceId,
+        thisDeviceId: currentDeviceId,
+        isTeacherSessionActive: teacherSessionManagerObject.isTeacherSessionActive(),
+        hasLiveBuddySession: currentAccountabilityBuddySession != nil)
+    addLog(text: "Pusher \(eventName) from device \(senderDeviceId ?? "nil"): \(decision)")
+    return decision == .apply
+}
+
 /// Map the session's `block_level` to the Mac's strictness enum. Previously every remotely-started
 /// session was hardcoded to `._NORMAL_`, so a strict session started on the phone was enforced
 /// leniently on the Mac.
 func focusModeStrictness(fromBlockLevel blockLevel: String?) -> FOCUSMODESTRICTNESS {
+    // The backend's block_level enum is `gentle | strict | super-strict` (hyphen); the underscore form is
+    // kept in case an older payload still sends it.
     switch blockLevel?.lowercased() {
-    case "super_strict": return ._SUPER_STRICT_
+    case "super-strict", "super_strict": return ._SUPER_STRICT_
     case "strict":       return ._STRICT_
     default:             return ._NORMAL_   // "gentle" / null / unknown
+    }
+}
+
+enum RoutineCompletionEvent {
+    enum PayloadKey {
+        static let activitySequenceID = "activity_sequence_id"
+    }
+
+    struct SequenceIDs {
+        let morning: String?
+        let evening: String?
+        let custom: String?
+    }
+
+    /// Older events and partially loaded routine lists may omit IDs. Preserve their existing
+    /// resync behavior; only a known mismatch proves the event belongs to another routine.
+    static func shouldApply(eventSequenceID: String?, activeSequenceID: String?) -> Bool {
+        guard let eventSequenceID = eventSequenceID, !eventSequenceID.isEmpty,
+              let activeSequenceID = activeSequenceID, !activeSequenceID.isEmpty else { return true }
+        return eventSequenceID == activeSequenceID
+    }
+
+    static func activeSequenceID(state: CURRENTSTATE, sequences: SequenceIDs,
+                                 isBreakFromPostponedMorning: Bool,
+                                 isBreakFromPostponedEvening: Bool) -> String? {
+        switch state {
+        case ._MORNING_HABIT_, ._POSTPONE_MORNING_HABIT_:
+            return sequences.morning
+        case ._EVENING_HABIT_, ._POSTPONE_EVENING_HABIT_:
+            return sequences.evening
+        case ._CUSTOM_ROUTINE_:
+            return sequences.custom
+        case ._MICRO_BREAK_:
+            if isBreakFromPostponedMorning { return sequences.morning }
+            if isBreakFromPostponedEvening { return sequences.evening }
+            return nil
+        default:
+            return nil
+        }
+    }
+
+    static var currentSequenceID: String? {
+        let sequences = SequenceIDs(
+            morning: (arrFilteredMorningHabits.first ?? arrAllDaysMorningHabits.first)?.activity_sequence_id,
+            evening: (arrFilteredEveningHabits.first ?? arrAllDaysEveningHabits.first)?.activity_sequence_id,
+            custom: arrAllCustomRoutine.indices.contains(currentRoutineIndex)
+                ? arrAllCustomRoutine[currentRoutineIndex].sequenceId : nil)
+        return activeSequenceID(state: currentState, sequences: sequences,
+                                isBreakFromPostponedMorning: isBreakActivityExecuteFromPostponeMorningHabit,
+                                isBreakFromPostponedEvening: isBreakActivityExecuteFromPostponeEveningHabit)
     }
 }
 
@@ -131,28 +197,7 @@ class pusherEvents:NSObject, PusherDelegate {
                                         arrFocusType[currentFocusModeIndex]["lastStartedDate"] = getStringFromDate(date: startFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
                                         arrFocusType[currentFocusModeIndex]["lastScheduledEndDate"] = getStringFromDate(date: endFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
                                         shouldReloadTaskPlayer = true
-                                        if let isAutoDoNotDisturbEnabled = arrFocusType[currentFocusModeIndex]["isAutoDoNotDisturbEnabled"] as? Bool{
-                                            if isAutoDoNotDisturbEnabled{
-                                                if isAccessibilityEnabled(isPrompt: true){
-                                                    DNDManager.shared.setDND(true)
-                                                }
-                                            }
-                                        }
-                                        if !DNDManager.shared.isDndEnabled{
-                                            if let isDeepWorkFocus = arrFocusType[currentFocusModeIndex]["isDeepWorkFocus"] as? Bool{
-                                                if  isDeepWorkFocus{
-                                                    if isAccessibilityEnabled(isPrompt: true){
-                                                        DNDManager.shared.setDND(true)
-                                                    }
-                                                }
-                                            }else if let isDefault = arrFocusType[currentFocusModeIndex]["isDefault"] as? Bool{
-                                                if  isDefault{
-                                                    if isAccessibilityEnabled(isPrompt: true){
-                                                        DNDManager.shared.setDND(true)
-                                                    }
-                                                }
-                                            }
-                                        }
+                                        applyAutoDoNotDisturb(forFocusModeAt: currentFocusModeIndex, includingDeepWorkAndDefault: true)
                                         
                                         workBeforeFocusBegin(index: currentFocusModeIndex)
                                         isFocusModeRunning = true
@@ -177,7 +222,7 @@ class pusherEvents:NSObject, PusherDelegate {
                                             sleep(1)
                                             DispatchQueue.main.async {
                                                 if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-                                                    showTaskPlayerWindow(totalDuration: diffMinutes, intention: whatToAchieveInFocusBlock, automatically:true)
+                                                    showRunningFocusSessionWindow()
                                                 }else{
                                                     if !getTaskPlayerVcObject().isViewLoaded{
                                                         getTaskPlayerVcObject().loadView()
@@ -213,23 +258,8 @@ class pusherEvents:NSObject, PusherDelegate {
         })
         
         _ = channel.bind(eventName: "focus-mode-finished", eventCallback: { (event: PusherEvent) in
-            if let data = event.data {
-                print(data)
-                if let data = data.data(using: .utf8) {
-                    do {
-                        if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]{
-                            print(dictionary)
-                            if dictionary["device_id"] as? String == currentDeviceId{
-                                return;
-                            }
-                        }
-                    }catch{
-                        
-                    }
-                }
-                if teacherSessionManagerObject.isTeacherSessionActive(){// a teacher controlled class session only ends via class-session-ended or its scheduled finish time
-                    return;
-                }
+            if event.data != nil {
+                guard applyRemoteSessionChange(named: "focus-mode-finished", event: event) else { return }
                 if isFocusModeOnOrPaused() == false{
                     return;
                 }
@@ -275,8 +305,12 @@ class pusherEvents:NSObject, PusherDelegate {
                         arrFocusType[i]["isPaused"] = false
                         currentFocusModeName = arrFocusType[i]["name"] as? String ?? ""
 
+                        // The session is finishing, so Do Not Disturb has to come back off. This
+                        // said `setDND(true)` — a copy of the start path that landed in the finish
+                        // path — which the "already enabled" guard turned into a no-op, so a focus
+                        // session stopped from another device left DND switched on indefinitely.
                         if DNDManager.shared.isDndEnabled{
-                            DNDManager.shared.setDND(true)
+                            DNDManager.shared.setDND(false)
                         }
                         
                         workAfterFocusBegin(index: i)
@@ -329,9 +363,8 @@ class pusherEvents:NSObject, PusherDelegate {
         // arithmetic, focus-button and UI all behave exactly as a local pause — but with
         // shouldSyncToServer:false, otherwise applying the event would POST it straight back.
         _ = channel.bind(eventName: "focus-mode-paused", eventCallback: { (event: PusherEvent) in
-            guard let dictionary = focusModePayload(from: event) else { return }
-            if dictionary["device_id"] as? String == currentDeviceId{ return }        // our own echo
-            if teacherSessionManagerObject.isTeacherSessionActive(){ return }         // teacher-controlled, not user-controlled
+            guard focusModePayload(from: event) != nil,
+                  applyRemoteSessionChange(named: "focus-mode-paused", event: event) else { return }
             guard isFocusModeOn() else { return }                                     // nothing running to pause
             addLog(text: "Pause focus mode from pusher event")
             for i in 0..<arrFocusType.count{
@@ -340,6 +373,12 @@ class pusherEvents:NSObject, PusherDelegate {
                     break;
                 }
             }
+        })
+
+        // A Late No More meeting reminder was dealt with on one of the user's devices (backend#2395).
+        _ = channel.bind(eventName: LateNoMoreSyncContract.dismissedPusherEventName, eventCallback: { (event: PusherEvent) in
+            let fromAnotherDevice = LateNoMoreDismissalRelay.handleBroadcast(eventData: event.data)
+            addLog(text: "Pusher \(LateNoMoreSyncContract.dismissedPusherEventName) received (fromAnotherDevice=\(fromAnotherDevice))")
         })
 
         _ = channel.bind(eventName: "focus-mode-resumed", eventCallback: { (event: PusherEvent) in
@@ -373,6 +412,13 @@ class pusherEvents:NSObject, PusherDelegate {
                             }
                             
                             if !shouldIgnore {
+                                guard RoutineCompletionEvent.shouldApply(
+                                    eventSequenceID: dictionary[RoutineCompletionEvent.PayloadKey.activitySequenceID] as? String,
+                                    activeSequenceID: RoutineCompletionEvent.currentSequenceID) else {
+                                    addLog(text: "Pusher activity-completed ignored: different routine sequence")
+                                    return
+                                }
+                                addLog(text: "Pusher activity-completed accepted for routine resync: state=\(currentState)")
                                 if currentState == ._POSTPONE_EVENING_HABIT_ || currentState == ._POSTPONE_MORNING_HABIT_ || currentState == ._POSTPONE_FOCUS_SUMMARY_{
                                     menuViewControllerObj?.btnResumeHabitsClicked(self)
                                     return;
@@ -469,6 +515,26 @@ class pusherEvents:NSObject, PusherDelegate {
             }
         })
 
+        // #2786: the teacher amended the class checklist. Carries class_session_id, tasks_version and
+        // tasks; the Mac refetches the authoritative list + this student's ticks when the version is newer.
+        _ = channel.bind(eventName: "class-session-tasks-updated", eventCallback: { (event: PusherEvent) in
+            if let data = event.data {
+                print(data)
+                if let data = data.data(using: .utf8) {
+                    do {
+                        if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]{
+                            print(dictionary)
+                            DispatchQueue.main.async {
+                                teacherSessionManagerObject.handleClassTasksUpdated(dictionary: dictionary)
+                            }
+                        }
+                    } catch {
+                        print(error.localizedDescription)
+                    }
+                }
+            }
+        })
+
         // approvals arrive as class-allowlist-changed; this one only carries denials/expiries back to the requesting student
         _ = channel.bind(eventName: "class-unlock-resolved", eventCallback: { (event: PusherEvent) in
             if let data = event.data {
@@ -486,6 +552,14 @@ class pusherEvents:NSObject, PusherDelegate {
                     }
                 }
             }
+        })
+
+        // A to-do completed anywhere — this Mac, the phone, the web dashboard. Hand it to the same
+        // in-process bus the local screens use so the Day Plan and the To-do list both tick the row;
+        // see `TodoCompletedPusherEvent.handle` for why that's the only thing done with it.
+        _ = channel.bind(eventName: TodoCompletedPusherEvent.eventName, eventCallback: { (event: PusherEvent) in
+            let understood = TodoCompletedPusherEvent.handle(eventData: event.data)
+            addLog(text: "Pusher \(TodoCompletedPusherEvent.eventName) received (understood=\(understood))")
         })
 
         _ = channel.bind(eventName: "settings-updated", eventCallback: { (event: PusherEvent) in
@@ -508,6 +582,31 @@ class pusherEvents:NSObject, PusherDelegate {
 
                     }
 
+                }
+            }
+        })
+        // A blocking schedule was added / edited / deleted on another device (mobile or Windows). The
+        // schedules live in a separate REST resource (/blocking-schedules), not in settings, so they
+        // don't come through settings-updated — re-pull them here and, if the Blocking Schedules screen
+        // is open, refresh it live. Ignore the echo of a change this Mac itself made.
+        _ = channel.bind(eventName: "blocking-schedule-updated", eventCallback: { (event: PusherEvent) in
+            if let data = event.data, let bytes = data.data(using: .utf8),
+               let dictionary = try? JSONSerialization.jsonObject(with: bytes) as? [String: Any],
+               dictionary["device_id"] as? String == currentDeviceId {
+                return
+            }
+            DispatchQueue.main.async {
+                // Refresh focus modes (block lists) first: the changed schedule may point at a block list
+                // created on the other device that this Mac hasn't fetched, otherwise the schedule row
+                // shows the wrong / "Update block list" name. Then re-pull the schedules and refresh the UI.
+                appdelegate?.refreshFocusModesFromServer {
+                    allApiObject.getAllBlockingSchedules(completionHandler: { data in
+                        DispatchQueue.main.async {
+                            guard let data = data else { return }
+                            customBlockingScheduleManagerObj.readCustomBlockingScheduleData(jsonData: data)
+                            if #available(macOS 11.0, *) { customBlockingSchedulesVcObj?.refreshData() }
+                        }
+                    })
                 }
             }
         })

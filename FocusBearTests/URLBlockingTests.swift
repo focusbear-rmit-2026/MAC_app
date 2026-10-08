@@ -201,4 +201,178 @@ class URLBlockingTests: XCTestCase {
         )
         XCTAssertTrue(result, "Always-blocked should win even when the URL is also in the allowed list")
     }
+
+    // MARK: Focus Bear's own pages (report 2026-09-21_10-04-40)
+    //
+    // The block page blocked the block page. A previous run's embedded server keeps its port until
+    // it is reaped, so each launch picks a higher one; the exemption pinned only the CURRENT port,
+    // so a block page a browser was still showing from an earlier run stopped being recognised as
+    // ours. The screenshot caught the recursion mid-nest: localhost:50504 blocking localhost:50503,
+    // which was itself blocking ankiweb.net.
+
+    func testTheBlockPageIsOursOnEveryPortTheAppCanPick() {
+        for port in [50501, 50502, 50503, 50504, 50550] {
+            XCTAssertTrue(isFocusBearLocalPage("http://localhost:\(port)/?old_url=https%3A%2F%2Fexample.com"),
+                          "port \(port) is inside the range firstAvailablePort scans")
+        }
+    }
+
+    func testTheRecursionFromTheReport() {
+        let inner = "http://localhost:50503/?old_url=https%3A%2F%2Fapps.ankiweb.net%2F%23download"
+        let outer = "http://localhost:50504/?old_url=" + inner.addingPercentEncoding(
+            withAllowedCharacters: .alphanumerics)!
+        XCTAssertTrue(isFocusBearLocalPage(inner))
+        XCTAssertTrue(isFocusBearLocalPage(outer), "the outer page must not block the inner one")
+    }
+
+    func testLoopbackSpellingsAndSchemelessUrls() {
+        XCTAssertTrue(isFocusBearLocalPage("http://127.0.0.1:50501/"))
+        XCTAssertTrue(isFocusBearLocalPage("localhost:50504/?old_url=x"))
+        XCTAssertTrue(isFocusBearLocalPage("HTTP://LOCALHOST:50502/"))
+    }
+
+    /// The reason this is parsed rather than matched as a substring: a page that merely NAMES the
+    /// loopback address must not inherit the exemption, or any site could opt itself out of
+    /// blocking by putting `localhost:50504` in its query string.
+    func testASiteThatMerelyMentionsTheLoopbackAddressIsNotOurs() {
+        XCTAssertFalse(isFocusBearLocalPage("https://example.com/?redirect=localhost:50504"))
+        XCTAssertFalse(isFocusBearLocalPage("https://localhost.evil.com:50504/"))
+        XCTAssertFalse(isFocusBearLocalPage("https://evil.com/localhost:50504"))
+    }
+
+    func testPortsOutsideTheAppsRangeAreNotOurs() {
+        XCTAssertFalse(isFocusBearLocalPage("http://localhost:3000/"), "a dev server is not ours")
+        XCTAssertFalse(isFocusBearLocalPage("http://localhost:50500/"), "just below the range")
+        XCTAssertFalse(isFocusBearLocalPage("http://localhost:50551/"), "just above the range")
+        XCTAssertFalse(isFocusBearLocalPage("http://localhost/"), "no port at all")
+    }
+
+    func testEmptyAndMalformedInputIsNotOurs() {
+        XCTAssertFalse(isFocusBearLocalPage(""))
+        XCTAssertFalse(isFocusBearLocalPage("   "))
+        XCTAssertFalse(isFocusBearLocalPage("not a url"))
+    }
+
+}
+
+// These tests use captured AppleScript error shapes, without executing AppleScript or touching
+// the current user's Automation permissions/preferences.
+extension URLBlockingTests {
+    func testNilDescriptorStillReportsChromeAutomationDenial() {
+        let errors: NSDictionary = [
+            "NSAppleScriptErrorNumber": NSNumber(value: -1743),
+            "NSAppleScriptErrorAppName": "Google Chrome",
+            "NSAppleScriptErrorMessage": "Not authorized to send Apple events to Google Chrome."
+        ]
+        XCTAssertEqual(BrowserScriptStringResult.interpret(value: nil, hasDescriptor: false, errors: errors),
+                       .automationDenied(application: "Google Chrome"))
+    }
+
+    func testStringErrorCodeTakesPriorityOverAResultDescriptor() {
+        let errors: NSDictionary = ["NSAppleScriptErrorNumber": "-1743", "NSAppleScriptErrorAppName": "Safari"]
+        XCTAssertEqual(BrowserScriptStringResult.interpret(value: "", hasDescriptor: true, errors: errors),
+                       .automationDenied(application: "Safari"))
+    }
+
+    func testTimeoutAndMissingDescriptorRemainUnknownRatherThanDenied() {
+        XCTAssertEqual(BrowserScriptStringResult.interpret(value: nil, hasDescriptor: false, errors: nil), .unavailable)
+        let timeout: NSDictionary = ["NSAppleScriptErrorNumber": -1712, "NSAppleScriptErrorAppName": "Google Chrome"]
+        XCTAssertEqual(BrowserScriptStringResult.interpret(value: nil, hasDescriptor: false, errors: timeout), .unavailable)
+    }
+
+    func testBrowserProfilePickerWithAnEmptyDescriptorIsNotARevokedPermission() {
+        XCTAssertEqual(BrowserScriptStringResult.interpret(value: nil, hasDescriptor: true, errors: nil), .value(""))
+    }
+
+    func testPermissionDenialChangesOnlyTheAffectedBrowserAndPreservesOtherFields() throws {
+        let rows: [[String: Any]] = [
+            ["browser": BROWSER._GOOGLE_CHROME_.rawValue, "isEnabled": true, "otherSetting": "keep"],
+            ["browser": BROWSER._SAFARI_.rawValue, "isEnabled": true]
+        ]
+        let updated = try XCTUnwrap(BrowserPermissionRecords.updating(rows, browser: ._GOOGLE_CHROME_, enabled: false))
+        XCTAssertEqual(updated[0]["isEnabled"] as? Bool, false)
+        XCTAssertEqual(updated[0]["otherSetting"] as? String, "keep")
+        XCTAssertEqual(updated[1]["isEnabled"] as? Bool, true)
+        XCTAssertEqual(rows[0]["isEnabled"] as? Bool, true, "Do not mutate the caller's snapshot")
+        XCTAssertNil(BrowserPermissionRecords.updating(updated, browser: ._GOOGLE_CHROME_, enabled: false),
+                     "Repeated denied polls should not keep writing the same preference")
+    }
+
+    func testPermissionReadCanRecoverOrCreateAnAbsentBrowserRecord() throws {
+        let denied = try XCTUnwrap(BrowserPermissionRecords.updating([], browser: ._GOOGLE_CHROME_, enabled: false))
+        XCTAssertEqual(denied.count, 1)
+        XCTAssertEqual(denied[0]["isEnabled"] as? Bool, false)
+        let restored = try XCTUnwrap(BrowserPermissionRecords.updating(denied, browser: ._GOOGLE_CHROME_, enabled: true))
+        XCTAssertEqual(restored[0]["isEnabled"] as? Bool, true)
+        XCTAssertNil(BrowserPermissionRecords.updating(restored, browser: ._GOOGLE_CHROME_, enabled: true))
+    }
+
+    func testRuntimeDenialIsReportedEvenWhenPreferencesWereAlreadyDisabled() {
+        let saved: [[String: Any]] = [["browser": BROWSER._GOOGLE_CHROME_.rawValue, "isEnabled": false]]
+        XCTAssertNil(BrowserPermissionRecords.updating(saved, browser: ._GOOGLE_CHROME_, enabled: false))
+        var evidence = BrowserAutomationDenials()
+        XCTAssertTrue(evidence.browsers.isEmpty, "Saved disabled/unknown status is not a confirmed runtime denial")
+        XCTAssertTrue(evidence.record(browser: ._GOOGLE_CHROME_, enabled: false))
+        XCTAssertFalse(evidence.record(browser: ._GOOGLE_CHROME_, enabled: false), "Repeated denials must deduplicate")
+        XCTAssertEqual(evidence.browsers, [._GOOGLE_CHROME_])
+    }
+
+    func testAnotherBrowsersSuccessCannotClearChromeDenial() {
+        var evidence = BrowserAutomationDenials()
+        evidence.record(browser: ._GOOGLE_CHROME_, enabled: false)
+        evidence.record(browser: ._SAFARI_, enabled: false)
+        XCTAssertTrue(evidence.record(browser: ._SAFARI_, enabled: true))
+        XCTAssertEqual(evidence.browsers, [._GOOGLE_CHROME_])
+        XCTAssertFalse(evidence.record(browser: ._SAFARI_, enabled: true))
+        XCTAssertTrue(evidence.record(browser: ._GOOGLE_CHROME_, enabled: true))
+        XCTAssertTrue(evidence.browsers.isEmpty)
+    }
+}
+
+// The System Events gate must not turn an unknown/timeout result into a denial or send a timed
+// AppleScript while the explicit consent request is still on screen. No OS permission probes run.
+extension URLBlockingTests {
+    func testSystemEventsPermissionResultDistinguishesDeniedConsentRequiredAndUnknown() {
+        XCTAssertEqual(SystemEventsAutomationResult(status: 0), .granted)
+        XCTAssertEqual(SystemEventsAutomationResult(status: -1743), .denied)
+        XCTAssertEqual(SystemEventsAutomationResult(status: -1744), .consentRequired)
+        for status: Int32 in [-600, -1712, -1] {
+            XCTAssertEqual(SystemEventsAutomationResult(status: status), .unknown)
+            XCTAssertFalse(SystemEventsAutomationResult(status: status).permitsRuntimeScript(requestInFlight: false))
+        }
+    }
+
+    func testSystemEventsScriptsWaitForExplicitConsentRequestEvenWithAnEarlierGrant() {
+        XCTAssertTrue(SystemEventsAutomationResult.granted.permitsRuntimeScript(requestInFlight: false))
+        for result in [SystemEventsAutomationResult.granted, .denied, .consentRequired, .unknown] {
+            XCTAssertFalse(result.permitsRuntimeScript(requestInFlight: true))
+        }
+        XCTAssertFalse(SystemEventsAutomationResult.denied.permitsRuntimeScript(requestInFlight: false))
+        XCTAssertFalse(SystemEventsAutomationResult.consentRequired.permitsRuntimeScript(requestInFlight: false))
+    }
+}
+
+/// A trailing unescaped backslash makes `NSPredicate` raise `NSInvalidArgumentException`. That is an
+/// Objective-C exception, so Swift cannot catch it — the app terminates. Most callers wrap the
+/// user's entry as `*entry*` so it is never last, but `isUrlValid`'s `file://` branch passes the
+/// entry through unwrapped, so an allow-list entry ending in a backslash crashed Focus Bear.
+final class WildcardPatternSafetyTests: XCTestCase {
+    func testATrailingBackslashCannotReachNSPredicateUnescaped() {
+        XCTAssertEqual(escapedForLike("file:///Users/me/folder\\"), "file:///Users/me/folder\\\\")
+        // Already escaped, so it is left alone rather than doubled again.
+        XCTAssertEqual(escapedForLike("file:///Users/me/folder\\\\"), "file:///Users/me/folder\\\\")
+        XCTAssertEqual(escapedForLike("a\\\\\\"), "a\\\\\\\\")
+    }
+
+    func testOrdinaryPatternsAreUntouched() {
+        XCTAssertEqual(escapedForLike("*example.com*"), "*example.com*")
+        XCTAssertEqual(escapedForLike(""), "")
+        XCTAssertEqual(escapedForLike("a\\b"), "a\\b", "A backslash that is not trailing is already escaping something")
+    }
+
+    /// The crash this guards against: without the escape this call terminates the process, so a
+    /// green run of this test is the evidence.
+    func testTheUnwrappedFileBranchNoLongerCrashes() {
+        XCTAssertFalse(wildcard("file:///Users/me/x", pattern: "file:///Users/me/folder\\"))
+    }
 }

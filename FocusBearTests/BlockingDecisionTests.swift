@@ -12,9 +12,13 @@ import XCTest
 class BlockingDecisionTests: XCTestCase {
 
     private let testSuite = "BlockingDecisionTests"
+    private var originalPreferenceKey = ""
 
     override func setUp() {
         super.setUp()
+        // Exercise persisted reads against disposable keys when running on a developer's Mac.
+        originalPreferenceKey = SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks
+        SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks = "FocusBear.Tests.BlockingDecision.\(UUID().uuidString)"
         // Reset all global state to known defaults before each test
         isFocusBreakOn = false
         currentState   = ._NOTHING_
@@ -37,6 +41,7 @@ class BlockingDecisionTests: XCTestCase {
         SettingsManagerObject.arrBlockedApps = []
         UserDefaults.standard.removeObject(
             forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
+        SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks = originalPreferenceKey
         super.tearDown()
     }
 

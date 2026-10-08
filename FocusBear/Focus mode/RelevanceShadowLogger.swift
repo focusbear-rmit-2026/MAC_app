@@ -194,7 +194,10 @@ final class RelevanceShadowService {
 }
     // MARK: - Comparison + JSONL logging
 
-    private let relevanceShadowJsonlURL: URL? = applicationSupportURL?.appendingPathComponent("relevance-shadow.jsonl")
+    let kRelevanceShadowLogFileName = "relevance-shadow.jsonl"
+
+    private let relevanceShadowJsonlURL: URL? =
+    applicationSupportURL?.appendingPathComponent(kRelevanceShadowLogFileName)
     private var relevanceShadowLogger: CSVLogger?
     private let relevanceComparisonCsvURL: URL? =
     applicationSupportURL?.appendingPathComponent("relevance-comparison.csv")

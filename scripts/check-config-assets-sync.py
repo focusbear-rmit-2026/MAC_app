@@ -13,7 +13,18 @@ Usage:
 Exit codes: 0 = in sync (or all drift is ignored), 1 = drift found, 2 = bad input.
 """
 import json
+import os
 import sys
+
+# Machine-readable marker, one line per missing key, parsed back out of this job's log by
+# rerun-assets-sync-checks.py to decide whether an assets merge has since supplied every key.
+# Changing this format breaks that parser for runs already logged.
+MISSING_KEY_PREFIX = "MISSING_KEY: "
+
+
+def missing_key_line(assets_path, key):
+    """`MISSING_KEY: <assets file name>:<dotted.key>` — the file name never contains a colon."""
+    return f"{MISSING_KEY_PREFIX}{os.path.basename(assets_path)}:{key}"
 
 
 def leaf_keys(node, prefix=""):
@@ -68,6 +79,7 @@ def main(argv):
     for key in missing:
         # A GitHub Actions annotation so each one shows up in the PR checks UI.
         print(f"::error::Missing in assets repo: {key} = {local[key]!r}")
+        print(missing_key_line(assets_path, key))
     return 1
 
 

@@ -97,7 +97,11 @@ class blockingScheduleEditorVC: NSViewController {
         btnEditBlockList.title = "Edit block list"
         checkBoxSkipMicroBreaks.title = "Skip microbreaks"
         checkBoxAiEnabled.title = "Use Al to decide if websites should be allowed"
-        
+        // "Use AI" is a per-block-list setting now (owned by the block list, synced to the server — see
+        // CLAUDE.md), NOT a per-schedule option. Hide it here so schedules no longer expose it; a schedule
+        // just runs its block list, and that block list's is_ai_enabled governs AI relevance.
+        checkBoxAiEnabled.isHidden = true
+
         btnSave.title = "Save changes"
         btnDelete.title = "Delete"
         
@@ -238,36 +242,27 @@ class blockingScheduleEditorVC: NSViewController {
         guard let model = editorModel as? BlockingScheduleEditorModel else { return }
         model.reloadFocusModes()
         if shouldCreateNew {
-            model.isEditing = false
             model.name = prefillName ?? ""
             model.selectedDays = prefillDays.map { Set($0) } ?? [1, 2, 3, 4, 5, 6, 7]
-            let now = Date()
-            let from = Calendar.current.date(byAdding: .minute, value: 2, to: now) ?? now
-            let till = Calendar.current.date(byAdding: .hour, value: 1, to: from) ?? from
-            model.startMinutes = prefillStart.map { minutesFromDate($0) } ?? minutesFromDate(from)
-            model.endMinutes = prefillEnd.map { minutesFromDate($0) } ?? minutesFromDate(till)
-            if model.endMinutes <= model.startMinutes { model.endMinutes = min(1440, model.startMinutes + 60) }
-            model.strictness = prefillStrictness ?? ._NORMAL_
+            model.strictness = prefillStrictness ?? BlockingScheduleDefaults.strictness
             model.emoji = prefillEmoji
-            model.useAI = true
-            model.skipMicroBreaks = true
+            // A slot dragged on the calendar (or a preset) still wins; without one the schedule starts
+            // at the shared workday default rather than "two minutes from now, for an hour".
+            model.applyNewScheduleDefaults(startMinutes: prefillStart.map { minutesFromDate($0) },
+                                           endMinutes: prefillEnd.map { minutesFromDate($0) })
             if model.selectedFocusModeID == nil { model.selectedFocusModeID = model.focusModes.first?.id }
             prefillEmoji = nil
         } else {
             let s = customBlockingScheduleManagerObj.arrBlockingSchedule[index]
-            model.isEditing = true
             model.name = s.name
             model.selectedDays = Set(s.daysOfWeek)
-            let start = BlockingScheduleStore.minutes(from: s.startTimeString)
-            var end = BlockingScheduleStore.minutes(from: s.endTimeString)
-            if end <= start { end = 1440 } // cross-midnight: not representable on the slider; clamp to end of day
-            model.startMinutes = start
-            model.endMinutes = min(1440, max(start + 15, end))
             model.strictness = s.blockLevel
-            model.useAI = s.isAIBlockingEnabled
-            model.skipMicroBreaks = !s.isMicroBreaksEnabled
             model.emoji = s.emoji
             model.selectedFocusModeID = s.focusModeID
+            model.applySavedSchedule(startMinutes: BlockingScheduleStore.minutes(from: s.startTimeString),
+                                     endMinutes: BlockingScheduleStore.minutes(from: s.endTimeString),
+                                     isAIBlockingEnabled: s.isAIBlockingEnabled,
+                                     isMicroBreaksEnabled: s.isMicroBreaksEnabled)
         }
     }
 
@@ -367,6 +362,11 @@ class blockingScheduleEditorVC: NSViewController {
     }
     
     func reloadFocusModeList(){
+        // #2602: refresh the SwiftUI editor's block-list list so a name edited in the block-list sheet
+        // shows on the schedule's selected block list. reloadFocusModes() keeps the current selection.
+        if #available(macOS 11.0, *), let model = editorModel as? BlockingScheduleEditorModel {
+            model.reloadFocusModes()
+        }
         let selectedIndex = popUpBtnFocusMode.indexOfSelectedItem
         if selectedIndex == -1{
             return;
@@ -708,9 +708,7 @@ class blockingScheduleEditorVC: NSViewController {
     }
     
     func getTimeString(date:Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
+        MachineDateFormat.string(from: date, format: MachineDateFormat.clockTime)
     }
     
     

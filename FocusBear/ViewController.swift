@@ -25,10 +25,14 @@ class ViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        MainWindowContentLayout.attachWindowControls(boxTopButtons, to: view)
         
         topButtonsTrackingArea = NSTrackingArea.init(rect: stackViewTopButtons.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         stackViewTopButtons.addTrackingArea(topButtonsTrackingArea!)
-        boxMinimize.isHidden = true
+        // Always visible. Full screen has no traffic lights, so a minimise button that only appears
+        // when the pointer happens to cross the top bar reads as no minimise button at all — the user
+        // could see "Exit Fullscreen" and nothing else (report 2026-09-14_16-31-53).
+        boxMinimize.isHidden = false
 
         splitViewItemLeftView.subviews.removeAll()
         splitViewItemLeftView.addSubview(getLeftMenuVcObject().view)
@@ -49,6 +53,50 @@ class ViewController: NSViewController {
 
         splitViewItemLeftView.addObserver(self, forKeyPath: "frame", options: [.old, .new], context: nil)
     }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        updateFullScreenContentInsets()
+    }
+
+    /// The storyboard pins both sidebar and page content to boxContainer. Inset that shared host,
+    /// using screen coordinates so secondary monitors and already-inset content are handled once.
+    func updateFullScreenContentInsets() {
+        guard isViewLoaded else { return }
+        MainWindowContentLayout.constrainWidthToWindow(view)
+        keepFullScreenWindowWithinItsDisplay()
+        guard let content = boxContainer else { return }
+        var inset: CGFloat = 0
+        if let window = view.window, let screen = window.screen {
+            let safeAreaTop: CGFloat
+            if #available(macOS 12.0, *) { safeAreaTop = screen.safeAreaInsets.top }
+            else { safeAreaTop = 0 }
+            inset = MainWindowContentLayout.topInset(
+                contentFrameOnScreen: window.convertToScreen(view.convert(view.bounds, to: nil)),
+                screenFrame: screen.frame, visibleScreenFrame: screen.visibleFrame,
+                screenSafeAreaTop: safeAreaTop,
+                isCustomFullScreen: (window.windowController as? mainWindowController)?.isFullScreenVisible == true,
+                styleMask: window.styleMask)
+        }
+        MainWindowContentLayout.apply(topInset: inset, to: content, in: view)
+    }
+
+    /// Re-applied on every layout pass and display change, so the cap follows the display full screen
+    /// is on and comes off as soon as the window is titled again.
+    private func keepFullScreenWindowWithinItsDisplay() {
+        guard let window = view.window, window.contentView === view else {
+            MainWindowContentLayout.capFullScreenHeight(nil, on: view)
+            return
+        }
+        let host = (window.windowController as? mainWindowController)?.fullScreenDisplay
+        MainWindowContentLayout.capFullScreenHeight(fullScreenHeightCeiling(for: window, hostFrame: host?.frame), on: view)
+    }
+
+    private func fullScreenHeightCeiling(for window: NSWindow, hostFrame: NSRect?) -> CGFloat? {
+        MainWindowContentLayout.fullScreenHeightCeiling(
+            isCustomFullScreen: (window.windowController as? mainWindowController)?.isFullScreenVisible == true,
+            styleMask: window.styleMask, hostFrame: hostFrame)
+    }
     
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if keyPath == "frame" {
@@ -65,11 +113,21 @@ class ViewController: NSViewController {
 
     var shouldIgnoreViewWilDisappear = false
     var lastSmallWindowFrame:NSRect?
-    func checkIsFullScreenNeeded() {
+    /// - Parameter isRestoringAfterAllowedActivityHabit: only `AllowedActivityFullScreen`'s restore
+    ///   passes true. Every other caller is ordinary window routing — a sidebar row, the menu-bar expand
+    ///   button, the re-assert after leaving macOS's own full screen — and must not cover the screen
+    ///   while an allowed-activity habit is playing. Gating it HERE rather than at each call site is
+    ///   deliberate: this is the one door into the borderless window, so a route added later is covered
+    ///   by default instead of quietly reopening the bug (report 2026-09-16_17-05-07 follow-up, where
+    ///   the new menu-bar expand button did exactly that).
+    /// - Parameter host: the display to go full screen on, when the caller has one — see
+    ///   `mainWindowController.showFullSizeWindow(on:)`.
+    func checkIsFullScreenNeeded(isRestoringAfterAllowedActivityHabit: Bool = false, on host: NSScreen? = nil) {
+        if !isRestoringAfterAllowedActivityHabit, keepWindowedForAllowedActivityHabit() { return }
         if checkIsFullScreenEnabled(){
             if !(self.view.window?.styleMask.contains(.fullScreen) ?? false){// Don’t do this if the user is already in fullscreen. Wait until the user toggles back to a small screen, then check the setting again.
                 shouldIgnoreViewWilDisappear = true
-                mainWindowControllerObj?.showFullSizeWindow()// This will cause the viewWillDisappear function to be called
+                mainWindowControllerObj?.showFullSizeWindow(on: host)// This will cause the viewWillDisappear function to be called
                 boxTopButtons.isHidden = false
                 lastSmallWindowFrame = self.view.window?.frame
                 shouldIgnoreViewWilDisappear = false
@@ -96,30 +154,40 @@ class ViewController: NSViewController {
                     // the window must still fill the visible screen — the previous code centred it at
                     // minSize (900x450), which was too short and clipped the bottom of the break-activity
                     // content. Do NOT shrink this back to a compact size; that reintroduces the clip.
-                    let screenList = NSScreen.screens
-                    for screen in screenList {
-                        self.view.window?.setFrame(screen.visibleFrame, display: true)
-                        break;
+                    if let screen = self.view.window?.screen ?? NSScreen.screens.first {
+                        setMainWindowFrame(screen.visibleFrame)
                     }
                 }else{
-                    if let screen = self.view.window?.screen{ //
-                        self.view.window?.setFrame(screen.visibleFrame, display: true, animate: false)
-                    }else{
-                        let screenList = NSScreen.screens
-                        for screen in screenList {
-                            self.view.window?.setFrame(screen.visibleFrame, display: true)
-                            break;
-                        }
+                    if let screen = self.view.window?.screen ?? NSScreen.screens.first{ //
+                        setMainWindowFrame(screen.visibleFrame)
                     }
                 }
             }
         }
     }
     
+    /// Every programmatic resize of the main window goes through here. The viewport cap on the content
+    /// view is also AppKit's ceiling on the window itself (see `MainWindowContentLayout.allowWindowWidth`),
+    /// so a wider frame has to lift it first — otherwise Auto Layout silently clamps the window to the
+    /// width it already had, and e.g. growing into full screen from a small window keeps the small width.
+    /// The full-screen height cap is a ceiling the same way, so it is set to the new frame's height
+    /// first (and removed for a titled window).
+    private func setMainWindowFrame(_ frame: NSRect, animate: Bool = false) {
+        guard let window = view.window else { return }
+        MainWindowContentLayout.prepareContent(window.contentView, forFrame: frame,
+                                               heightCeiling: fullScreenHeightCeiling(for: window, hostFrame: frame))
+        window.setFrame(frame, display: true, animate: animate)
+    }
+
+    private func setMainWindowContentSize(_ size: NSSize) {
+        guard let window = view.window else { return }
+        MainWindowContentLayout.allowWindowWidth(size.width, on: window.contentView)
+        window.setContentSize(size)
+    }
+
     func showSmallScreen(showMinimumSize:Bool = false){
         mainWindowControllerObj?.showSmallSizeWindow()
-        let screenList = NSScreen.screens
-        
+
         if !(self.view.window?.styleMask.contains(.fullScreen) ?? false) && showMinimumSize{
             
           //  self.view.window?.center()
@@ -135,29 +203,25 @@ class ViewController: NSViewController {
 
             // Only set if difference > 100 px
             if widthDiff > 100 || heightDiff > 100 { // check added on 3/9/25 version 2.27.410
-                self.view.window?.setContentSize(newSize)
+                setMainWindowContentSize(newSize)
             }
         }else{
-            if let screen = self.view.window?.screen{ //
-                self.view.window?.setFrame(screen.visibleFrame, display: true, animate: false)
-            }else{
-                for screen in screenList {
-                    self.view.window?.setFrame(screen.visibleFrame, display: true, animate: false)
-                    break;
-                }
+            if let screen = self.view.window?.screen ?? NSScreen.screens.first{ //
+                setMainWindowFrame(screen.visibleFrame)
             }
         }
         boxTopButtons.isHidden = true
     }
 
+    /// Size the borderless full-screen window to fill its display.
+    ///
+    /// `frame` rather than `visibleFrame` is deliberate — this is the app's own kiosk full screen, which
+    /// covers the menu bar. What was NOT deliberate was resolving the display as `NSScreen.screens.first`:
+    /// that is the primary display, not the one the window is on, so a second display of a different
+    /// height got the wrong frame (see `screenChanged()` and report 2026-06-25_17-24-22).
     @objc func setframe() {
-        let screenList = NSScreen.screens
-        for screen in screenList {
-            self.view.window?.setFrame(NSMakeRect(NSMinX(screen.frame), NSMinY(screen.frame), NSWidth(screen.frame), NSHeight(screen.frame)), display: true) //  uncomment this line 
-//            self.view.window?.setFrame(NSMakeRect(100, 100, NSWidth(screen.frame) - 200, NSHeight(screen.frame) - 200) , display: true)//  comment this //  do this
-            
-            break;
-        }
+        guard let screen = mainWindowControllerObj?.fullScreenDisplay ?? view.window?.screen ?? NSScreen.screens.first else { return }
+        setMainWindowFrame(screen.frame)
     }//
     
     override func viewWillAppear() {
@@ -173,9 +237,25 @@ class ViewController: NSViewController {
             guard let self = self else { return }
             let viewsArr = self.containerView.subviews
             if viewsArr.count == 0{
-                addLog(text: "InstallHabitVC - containerView is empty, restoring last selected view")
                 if let leftMenuVcObj = leftMenuVcObj, let lastSelectedBox = leftMenuVcObj.lastSelectedBox{
+                    addLog(text: "InstallHabitVC - containerView is empty, restoring last selected view")
                     leftMenuVcObj.selectableListBoxDidChangeSelectionByUser(lastSelectedBox)
+                } else if let leftMenuVcObj = leftMenuVcObj {
+                    // #2581: a fresh session (e.g. right after login) has no lastSelectedBox yet, so the
+                    // branch above had nothing to restore and the pane stayed blank when the window was
+                    // brought up before the user had opened any view — the activation-restore / Dock-reopen
+                    // path shows the main window in state _NOTHING_ while this container is still empty.
+                    // Fall back to the Start Focus Session screen (boxFocusSession →
+                    // showFocusSessionTabContent(), which shows the start screen when no session is running
+                    // and never leaves the area blank): a fresh user most commonly wants to start a focus
+                    // session, so this is the natural landing view instead of a blank pane.
+                    addLog(text: "InstallHabitVC - containerView is empty and no lastSelectedBox — defaulting to Focus Session")
+                    leftMenuVcObj.boxFocusSession.isSelected = true
+                    leftMenuVcObj.selectableListBoxDidChangeSelectionByUser(leftMenuVcObj.boxFocusSession)
+                    // Window sizing lives in selectableListBoxSelectionDidChange, which this recovery
+                    // doesn't invoke, so size the window to the small default explicitly — a fresh session
+                    // in state _NOTHING_ is never the borderless full-screen routine window.
+                    mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
                 }
             }
         }
@@ -192,12 +272,8 @@ class ViewController: NSViewController {
             boxMinimize.isHidden = false
         }
     }
-    
-    override func mouseExited(with event: NSEvent) {
-        if event.trackingArea == topButtonsTrackingArea{
-            boxMinimize.isHidden = true
-        }
-    }
+
+    // Deliberately no mouseExited counterpart: the minimise button stays put once shown.
     
     @IBAction func btnMinimizeClicked(_ sender: Any) {
         addLog(text: "[user-action] button Minimize Clicked")// added on 10/4/25 in 1.21.356
@@ -346,17 +422,35 @@ class ViewController: NSViewController {
             // Update the view, if already loaded.
         }
     }
+    /// A page's root reaches VoiceOver as a group (a SwiftUI page's hosting view always does), and an
+    /// unnamed one is announced as just "group". Named after the sidebar item that opened it,
+    /// VoiceOver says which page focus has entered.
+    func namePageForVoiceOver(_ title: String?) {
+        guard let title, !title.isEmpty else { return }
+        for page in containerView.subviews {
+            page.setAccessibilityLabel(title)
+        }
+    }
+
+    /// Names the content area after the sidebar item that filled it, so a UI test has one landmark per
+    /// screen whatever the screen is built with. Test build only: in the shipping app the content area
+    /// stays a plain container for VoiceOver.
+    func markContentForUITests(shownBy menuItemIdentifier: String) {
+        guard UITestHost.isEnabled, !menuItemIdentifier.isEmpty else { return }
+        containerView.setUITestLandmark(UITestContract.Identifier.Screen.shown(byMenuItem: menuItemIdentifier))
+    }
+
     func removeSubViews(){
+        pendingSettingsNavigationID = nil
         let viewsArr = containerView.subviews
         for subview in viewsArr {
             subview.removeFromSuperview()
         }
-        let views = self.view.subviews
-        if views.count != 1{
-            for subview in views {
-                if subview != boxContainer{
-                    subview.removeFromSuperview()
-                }
+        // Both the page host and window chrome are permanent root children. The chrome's
+        // storyboard outlets are weak, so removing it here also destroys the minimize control.
+        for subview in view.subviews {
+            if subview !== boxContainer && subview !== boxTopButtons {
+                subview.removeFromSuperview()
             }
         }
         
@@ -439,8 +533,47 @@ class ViewController: NSViewController {
         //mainWindowControllerObj?.window?.close()
     }
     
+    private var pendingSettingsNavigationID: UUID?
+    private var isPerformingAuthorizedSettingsNavigation = false
+
+    /// Authorize before changing selection, window geometry or loading a protected pane.
+    /// A cancelled/replaced prompt must never perform its previously requested navigation.
+    @discardableResult
+    func deferSettingsNavigationUntilAuthorized(
+        _ navigation: @escaping () -> Void,
+        requiresAuthorization: () -> Bool = isPasswordRequireInOpenSettings,
+        presentAuthorization: (((@escaping () -> Void), (@escaping () -> Void)) -> Void)? = nil
+    ) -> Bool {
+        guard !isPerformingAuthorizedSettingsNavigation else { return false }
+        if pendingSettingsNavigationID != nil { return true }
+        guard requiresAuthorization() else { return false }
+        let requestID = UUID()
+        pendingSettingsNavigationID = requestID
+        let approve = { [weak self] in
+            guard let self, self.pendingSettingsNavigationID == requestID else { return }
+            self.pendingSettingsNavigationID = nil
+            self.isPerformingAuthorizedSettingsNavigation = true
+            defer { self.isPerformingAuthorizedSettingsNavigation = false }
+            navigation()
+        }
+        let cancel = { [weak self] in
+            guard self?.pendingSettingsNavigationID == requestID else { return }
+            self?.pendingSettingsNavigationID = nil
+        }
+        if let presentAuthorization {
+            presentAuthorization(approve, cancel)
+        } else {
+            askPasswordForSettings()
+            getEnterPasswordVcObjForPreferences().requestAuthorization(action: approve, onCancel: cancel)
+            if let window = view.window, !window.isVisible {
+                window.makeKeyAndOrderFront(nil)
+            }
+        }
+        return true
+    }
+
     func askPasswordForSettingsIfNeeded(){
-        if isPasswordRequireInOpenSettings(){
+        if !isPerformingAuthorizedSettingsNavigation, isPasswordRequireInOpenSettings(){
             askPasswordForSettings()
         }
     }
@@ -456,7 +589,7 @@ class ViewController: NSViewController {
     }
     
     func isEnterPasswordForPreferencesViewVisible()->Bool{
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+        if SettingsManagerObject.isAppPasswordSet{
             if self.view.subviews.contains(getEnterPasswordVcObjForPreferences().view){
                 return true
             }
@@ -468,7 +601,7 @@ class ViewController: NSViewController {
         if enterPasswordVcObj == nil{
             return false
         }
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+        if SettingsManagerObject.isAppPasswordSet{
             if self.view.subviews.contains(enterPasswordVcObj!.view){
                 return true
             }
@@ -514,23 +647,23 @@ class ViewController: NSViewController {
         containerView.addConstraints(subView: getAllTracksVcObj().view)
     }
     
+    /// The TOOLS entry always opens the native To-do list.
+    ///
+    /// It used to show the web To-do Player (`taskPlayerVc`) instead whenever a focus session, an
+    /// allowed activity or a custom blocking schedule was running — the same tool slot rendering a
+    /// different screen, complete with the web page's own "To Do Player / To Do List" tab header. The
+    /// running session now has its own native task queue (FocusBear/FocusSession), so that was two
+    /// routes to the same thing.
+    ///
+    /// `taskPlayerVc` is *not* retired: ~30 call sites still drive its webview headlessly, and its JS
+    /// bridge is what writes `focusModeTaskString` back. It simply no longer has a screen of its own,
+    /// and its deferred reload is now driven by the session lifecycle
+    /// (`reloadHeadlessToDoPlayerIfPending`) rather than by displaying a screen.
     func showTaskView(){
         self.removeSubViews()
-        if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-            if taskPlayerVcObj == nil{
-                getTaskPlayerVcObject().loadView()// handled in v2.27.435 otherwise app can be crash when focus resumes automatically after app opens(remaining focus mode)
-            }
-            containerView.addSubview(taskPlayerVcObj!.view)
-            containerView.addConstraints(subView: taskPlayerVcObj!.view)
-            if shouldReloadTaskPlayer{
-                shouldReloadTaskPlayer = false
-                taskPlayerVcObj?.reloadData(totalDuration: focusModeMinutesToPerform, intention:whatToAchieveInFocusBlock)
-            }
-        }else{
-            containerView.addSubview(getTodoListToolVcObject().view)
-            containerView.addConstraints(subView: getTodoListToolVcObject().view)
-            todoListToolVcObj?.reloadData()
-        }
+        // The native screen reloads itself in viewWillAppear (like brainDumpVc).
+        containerView.addSubview(getTodoListToolVcObject().view)
+        containerView.addConstraints(subView: getTodoListToolVcObject().view)
     }
     
     func showFocusCompletedView(){
@@ -560,9 +693,6 @@ class ViewController: NSViewController {
         self.removeSubViews()
         containerView.addSubview(getSetUpVcObject().view)
         containerView.addConstraints(subView: getSetUpVcObject().view)
-        if getSetUpVcObject().widthConstraint != nil{
-            getSetUpVcObject().widthConstraint.isActive = false
-        }
     }
     
     func showFocusModeState(){
@@ -801,14 +931,15 @@ class ViewController: NSViewController {
         })
     }
 
-    func onboardingFinishedUnlockMachine(){
-        addLog(text: "Onboarding finished")
-        removeSubViews()
-        currentState = ._NOTHING_
-        
-        mainWindowControllerObj?.window?.close()
-        hideBlankWindowInSecondaryMonitor()
-        
+    /// First half of finishing onboarding, run the moment the user taps "Start using Focus Bear".
+    /// Applies the new-user device-setting defaults (simple mode, cuddly/easy-skip, dock icon, etc.)
+    /// and kicks off getUserSubscriptionInfo up-front, so the app can settle into the right state
+    /// (and checkWindowState/loadAllWindows can run with correct flags) while the loader is shown.
+    /// The actual window hand-off — closing onboarding and landing on the Pomodoro view — happens
+    /// afterwards in onboardingFinishedUnlockMachine(), once checkWindowState has completed.
+    /// Keeping these two apart is why getUserSubscriptionInfo() guards its onboarding-teardown block
+    /// against currentOnboardingState == ._ALL_SET_ (it must not tear the window down when invoked here).
+    func onboardingFinishedGoAhedForSettings(){
         UserDefaults.standard.removeObject(forKey: kUserdefaultsPasswordSetInOnboarding)
         SettingsManagerObject.isFullScreenEnabled = false
         SettingsManagerObject.storedCuddlyModeEnabled = true
@@ -828,7 +959,18 @@ class ViewController: NSViewController {
         appdelegate!.getUserSubscriptionInfo()
         appdelegate!.statusbutton?.action = nil
         UserDefaults.standard.set(true, forKey: kUserdefaultsVideoShown)
+    }
+    
+    func onboardingFinishedUnlockMachine(){
+        addLog(text: "Onboarding finished")
+        removeSubViews()
+        currentState = ._NOTHING_
         
+        mainWindowControllerObj?.window?.close()
+        hideBlankWindowInSecondaryMonitor()
+        mainViewControllerObj?.expandLeftPanel()
+        leftMenuVcObj?.enableAllItems()
+
         DispatchQueue.global().async {
             DispatchQueue.main.async {
                 stageManagerObject.isStageManagerEnabled = stageManagerObject.checkIsStageManagerEnabled()
@@ -839,6 +981,11 @@ class ViewController: NSViewController {
         addLog(text: "Onboarding completed: Forcefully writing user local device settings for first-time setup")
         SettingsManagerObject.isSettingsChanged = true
         SettingsManagerObject.putUserLocalDeviceSettings()
+        // Land the user on the simple Pomodoro (focus) view instead of just closing the window —
+        // "Start using Focus Bear" hiding the window to nothing was confusing. Mirrors the
+        // web-onboarding completion path in AppDelegate (userHasDoneOnboardingOnWeb).
+        appdelegate?.menuShowSimplePomodoroModeView()
+        mainWindowControllerObj?.window?.center()
     }
 }
 
@@ -917,8 +1064,17 @@ final class FocusButtonToolModel: ObservableObject {
         let emoji = focusEmojiText.filter { EmojiSync.firstEmojiKey(in: String($0)) != nil }.prefix(5).map { String($0) }
         focusEmojiText = emoji.joined()   // normalise the field to just the (≤5) emoji we kept
         UserDefaults.standard.set(focusEmojiText, forKey: FocusButtonToolModel.focusEmojiKey)
-        focusIconUploadStatus = emoji.isEmpty ? "" : FocusButtonText.checkingFocusIcons
-        focusButtonServiceObject.syncFocusEmojiPool(emoji)
+        // Only show the "Checking focus icons…" spinner when an upload actually starts — otherwise
+        // (firmware too old, version still unknown, or no emoji) no progress/finished callback would ever
+        // fire and the spinner would stay up forever.
+        let syncStarted = focusButtonServiceObject.syncFocusEmojiPool(emoji)
+        // Show progress while uploading; otherwise reflect the resting state — "up to date" when there are
+        // emoji (already cached, nothing to push), or blank when the pool was cleared.
+        if syncStarted {
+            focusIconUploadStatus = FocusButtonText.checkingFocusIcons
+        } else {
+            focusIconUploadStatus = emoji.isEmpty ? "" : syncStatus(0, 0, label: FocusButtonText.focusIconsLabel)
+        }
     }
     private var timer: Timer?
     private var savedOnError: ((String) -> Void)?
@@ -926,6 +1082,11 @@ final class FocusButtonToolModel: ObservableObject {
     private var savedOnEmojiProgress: ((Int, Int) -> Void)?
     private var savedOnFocusEmojiProgress: ((Int, Int) -> Void)?
     private var savedOnFocusEmojiFinished: ((Int, Int) -> Void)?
+    private var savedOnEmojiFinished: ((Int, Int) -> Void)?
+    /// Habit + focus icons share ONE serial emoji uploader, so the focus-pool sync must wait until the
+    /// habit sync finishes — starting it early would cancel() the habit run and strand its status.
+    /// Set when the habit sync starts; cleared when it ends (onEmojiFinished chains the focus sync).
+    private var focusCheckPendingHabitSync = false
 
     /// "<label>: <synced>/<total>" while uploading, "✓ <label> up to date" when done. synced = icons
     /// actually on the device (cached + completed), not attempts.
@@ -934,12 +1095,23 @@ final class FocusButtonToolModel: ObservableObject {
     }
 
     func start() {
+        // Seed the status lines from the LAST sync result the service recorded — it keeps updating even
+        // while this screen is hidden (stop() detaches only OUR progress handler). This shows the settled
+        // "✓ … up to date" immediately on (re)show, fixing the stale "Checking…" that was left pinned when
+        // a sync finished off-screen. No re-sync, so there's no spurious "Checking…" flash on tab open.
+        if let p = focusButtonServiceObject.lastHabitEmojiProgress {
+            iconUploadStatus = syncStatus(p.done, p.total, label: FocusButtonText.habitIconsLabel)
+        }
+        if let p = focusButtonServiceObject.lastFocusEmojiProgress {
+            focusIconUploadStatus = syncStatus(p.done, p.total, label: FocusButtonText.focusIconsLabel)
+        }
         // Remember the app's existing callbacks so leaving the screen doesn't clobber them.
         savedOnError = focusButtonServiceObject.onError
         savedOnConnected = focusButtonServiceObject.onDeviceConnected
         savedOnEmojiProgress = focusButtonServiceObject.onEmojiProgress
         savedOnFocusEmojiProgress = focusButtonServiceObject.onFocusEmojiProgress
         savedOnFocusEmojiFinished = focusButtonServiceObject.onFocusEmojiFinished
+        savedOnEmojiFinished = focusButtonServiceObject.onEmojiFinished
         // HABIT icon upload progress — kept separate from the focus-emoji pool below. Unlike the
         // focus-emoji status below, this line is meant to stay visible permanently once known (see
         // checkHabitIconsIfNeeded / the view) rather than fading out — it doubles as the icon-sync
@@ -949,15 +1121,11 @@ final class FocusButtonToolModel: ObservableObject {
             self.iconUploadStatus = self.syncStatus(synced, total, label: FocusButtonText.habitIconsLabel)
         }
         // FOCUS-session emoji pool upload progress — its own line, distinct from habit icons.
+        // Like the habit-icon line, keep this visible permanently once known (including the terminal
+        // "✓ … up to date") — it's the always-on focus-icon sync status, not a transient toast.
         focusButtonServiceObject.onFocusEmojiProgress = { [weak self] synced, total in
             guard let self = self else { return }
             self.focusIconUploadStatus = self.syncStatus(synced, total, label: FocusButtonText.focusIconsLabel)
-            if synced >= total {
-                let done = self.focusIconUploadStatus
-                DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
-                    if self?.focusIconUploadStatus == done { self?.focusIconUploadStatus = "" }
-                }
-            }
         }
         // The sync ended. On success onFocusEmojiProgress already showed "✓ … up to date"; on an
         // incomplete run it left a "N/total" spinner that would otherwise stay up forever — replace it
@@ -970,6 +1138,13 @@ final class FocusButtonToolModel: ObservableObject {
                 if self?.focusIconUploadStatus == shown { self?.focusIconUploadStatus = "" }
             }
         }
+        // The HABIT-icon sync ended. onEmojiProgress already settled its status line; now that the shared
+        // uploader is free, run the deferred focus-pool sync (they can't run at once — see refresh()).
+        focusButtonServiceObject.onEmojiFinished = { [weak self] _, _ in
+            guard let self = self else { return }
+            self.focusCheckPendingHabitSync = false
+            self.checkFocusIconsIfNeeded()
+        }
         refresh()
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in self?.refresh() }
@@ -981,6 +1156,7 @@ final class FocusButtonToolModel: ObservableObject {
         focusButtonServiceObject.onEmojiProgress = savedOnEmojiProgress
         focusButtonServiceObject.onFocusEmojiProgress = savedOnFocusEmojiProgress
         focusButtonServiceObject.onFocusEmojiFinished = savedOnFocusEmojiFinished
+        focusButtonServiceObject.onEmojiFinished = savedOnEmojiFinished
     }
     func refresh() {
         // While a firmware check/flash is in flight, don't touch isConnected: the flash releases the
@@ -992,8 +1168,19 @@ final class FocusButtonToolModel: ObservableObject {
         isConnected = focusButtonServiceObject.isRunning
         firmwareVersion = focusButtonServiceObject.firmwareVersion
         iconSyncSupported = focusButtonServiceObject.supportsEmojiIcons
-        if !isConnected { hasCheckedIconsThisConnection = false }
-        checkHabitIconsIfNeeded()
+        if !isConnected {
+            hasCheckedIconsThisConnection = false
+            hasCheckedFocusIconsThisConnection = false
+            focusCheckPendingHabitSync = false
+        }
+        // Habit + focus icons share ONE serial emoji uploader (one sync at a time). Kick the habit sync
+        // first; if it started one, defer the focus-pool sync until it finishes (onEmojiFinished chains
+        // it) — starting focus now would cancel() the in-flight habit run and strand its status.
+        if checkHabitIconsIfNeeded() {
+            focusCheckPendingHabitSync = true
+        } else if !focusCheckPendingHabitSync {
+            checkFocusIconsIfNeeded()
+        }
     }
 
     private var hasCheckedIconsThisConnection = false
@@ -1001,14 +1188,37 @@ final class FocusButtonToolModel: ObservableObject {
     /// Kick off (once per connection) the habit-icon sync check so the icon-sync status line is always
     /// populated whenever a Focus Button that supports it is connected — not just after a routine loads
     /// icons. Re-armed on every fresh connection via `refresh()`.
-    private func checkHabitIconsIfNeeded() {
-        guard isConnected, iconSyncSupported, !hasCheckedIconsThisConnection else { return }
+    /// Returns true when it actually started a habit-icon sync (so the caller can defer the focus-pool
+    /// sync until this one ends — they share one uploader).
+    @discardableResult
+    private func checkHabitIconsIfNeeded() -> Bool {
+        guard isConnected, iconSyncSupported, !hasCheckedIconsThisConnection else { return false }
         hasCheckedIconsThisConnection = true
         if focusButtonServiceObject.refreshEmojiIcons() {
             iconUploadStatus = FocusButtonText.checkingHabitIcons
+            return true
         } else {
             // Nothing pending to upload (already cached, or no habit icons set) — that's "up to date".
             iconUploadStatus = syncStatus(0, 0, label: FocusButtonText.habitIconsLabel)
+            return false
+        }
+    }
+
+    private var hasCheckedFocusIconsThisConnection = false
+
+    /// Populate the FOCUS-session emoji sync line once per connection (mirrors `checkHabitIconsIfNeeded`),
+    /// so the screen always shows whether the focus icons are synced — not only transiently after a Save.
+    /// Uploads any not-yet-cached focus emoji; if nothing is pending it's already "up to date".
+    private func checkFocusIconsIfNeeded() {
+        guard isConnected, iconSyncSupported, !hasCheckedFocusIconsThisConnection else { return }
+        hasCheckedFocusIconsThisConnection = true
+        let emoji = focusEmojiText.filter { EmojiSync.firstEmojiKey(in: String($0)) != nil }.prefix(5).map { String($0) }
+        // No focus emoji configured → nothing to sync; leave the line blank rather than claim "up to date".
+        guard !emoji.isEmpty else { focusIconUploadStatus = ""; return }
+        if focusButtonServiceObject.syncFocusEmojiPool(emoji) {
+            focusIconUploadStatus = FocusButtonText.checkingFocusIcons
+        } else {
+            focusIconUploadStatus = syncStatus(0, 0, label: FocusButtonText.focusIconsLabel)
         }
     }
 
@@ -1148,6 +1358,7 @@ struct FocusButtonToolView: View {
                 HStack(spacing: 8) {
                     Circle().fill(model.isConnected ? Color.green : Color.gray).frame(width: 10, height: 10)
                     Text(model.isConnected ? "Connected" : "Not connected").foregroundColor(.secondary)
+                        .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.focusButtonStatus)
                 }
                 HStack(spacing: 10) {
                     if model.isConnected {
@@ -1160,6 +1371,7 @@ struct FocusButtonToolView: View {
                         SwiftUI.Button("Connect") { model.connect() }
                             .buttonStyle(AppOrangeButtonStyle(secondary: false, height: 33))
                             .disabled(model.connecting || model.isCheckingFirmware)
+                            .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.focusButtonConnectButton)
                     }
                     if model.connecting { ProgressView().scaleEffect(0.5).frame(width: 16, height: 16) }
                 }
@@ -1224,6 +1436,7 @@ struct FocusButtonToolView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     if let url = URL(string: "https://button.focusbear.io") {
                         SwiftUI.Link("Get yours from button.focusbear.io", destination: url)
+                            .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.focusButtonShopLink)
                     }
                 }
             }
@@ -1351,10 +1564,12 @@ struct ExternalToolView: View {
             HStack(spacing: 8) {
                 Circle().fill(statusColor).frame(width: 10, height: 10)
                 Text(statusText).foregroundColor(.secondary)
+                    .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.externalToolStatus)
             }
             Text(shownDescription).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
             SwiftUI.Button(model.isInstalled ? "Open" : "Download") { primaryAction() }
                 .buttonStyle(AppOrangeButtonStyle(secondary: false))
+                .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.externalToolPrimaryButton)
         }
         // Standalone this view owns its padding; embedded (scrollable == false) the parent pads, so
         // the download content lines up with the shared title/toggle above it.

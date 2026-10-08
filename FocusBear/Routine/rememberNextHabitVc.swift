@@ -99,6 +99,9 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
         btnSkipHabit.title = buttonMoreActionsText
         textFieldNextHabit.isHidden = true
         customViewForList.isHidden = true
+        view.setUITestLandmark(UITestContract.Identifier.SessionsRegression.rememberNextScreen)
+        comboBoxHabits.setAccessibilityIdentifier(UITestContract.Identifier.SessionsRegression.rememberNextHabitField)
+        btnStartNextHabit.setAccessibilityIdentifier(UITestContract.Identifier.SessionsRegression.rememberNextStartButton)
         
         menuItemSkipHabit = NSMenuItem(title: "Skip this habit for today", action: #selector(menuItemSkipHabitClicked), keyEquivalent: "")
         menuItemSkipHabit.target = self

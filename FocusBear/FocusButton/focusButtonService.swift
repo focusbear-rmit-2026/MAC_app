@@ -10,6 +10,36 @@
 import Foundation
 import ORSSerial
 
+/// Focus Button protocol lines carry the focus goal (`SET|START|1500|<goal>`), habit names
+/// (`SET|HABITS|<id>,<name>,<seconds>|…`) and Late No More notification text (`SET|NOTIFY|<text>`).
+/// The log keeps the verbs, numbers, ids and error codes, which is what debugging the device needs,
+/// and describes every other field with `LogPrivacy`.
+enum FocusButtonLogFormat {
+    static let fieldSeparator: Character = "|"
+    static let entrySeparator: Character = ","
+    /// Verbs, states and firmware versions (`SET`, `RUNNING`, `M50-1.5.0`), numbers, emoji code points
+    /// (`1f4de`, `1f9d1-200d-1f4bb`: hex with at least one digit) and snake_case error codes.
+    private static let protocolToken = try! NSRegularExpression(
+        pattern: #"^(?:[A-Z0-9_.:+\-]*|(?=[0-9a-f-]*[0-9])[0-9a-f]+(?:-[0-9a-f]+)*|[a-z]+(?:_[a-z]+)+)$"#)
+
+    static func describe(_ line: String) -> String {
+        let fields = line.split(separator: fieldSeparator, omittingEmptySubsequences: false)
+        // Only protocol lines (an upper-case verb first) carry user text; anything else is the
+        // firmware's own diagnostic prose.
+        guard let verb = fields.first, isProtocolToken(String(verb)), !verb.isEmpty else { return line }
+        return fields.map { field in
+            field.split(separator: entrySeparator, omittingEmptySubsequences: false)
+                .map { token in isProtocolToken(String(token)) ? String(token) : LogPrivacy.text(String(token)) }
+                .joined(separator: String(entrySeparator))
+        }.joined(separator: String(fieldSeparator))
+    }
+
+    private static func isProtocolToken(_ token: String) -> Bool {
+        LogPrivacy.isDescription(token)
+            || protocolToken.firstMatch(in: token, range: NSRange(token.startIndex..., in: token)) != nil
+    }
+}
+
 
 class focusButtonService: NSObject {
     
@@ -27,6 +57,10 @@ class focusButtonService: NSObject {
     // MARK: - Properties
     
     private var serialPort: ORSSerialPort?
+    /// ORSSerialPort's write can block in the kernel when a USB serial device is wedged.
+    /// Keep that blocking operation away from AppKit's main thread so a Focus Button failure
+    /// cannot hang the whole app (the device can be unplugged while a command is in flight).
+    private let serialWriteQueue = DispatchQueue(label: "com.focusbear.focus-button.serial-write", qos: .utility)
     var isRunning = false
     private var rxThread: Thread?
     private var rxBuffer = ""
@@ -113,7 +147,6 @@ class focusButtonService: NSObject {
     // MARK: - Callbacks
     var onStateChanged: ((DeviceState) -> Void)?
     var onRemainingTimeChanged: ((Int64) -> Void)?
-    var onHabitsReceived: (([(id: String, name: String, durationSeconds: Int64)]) -> Void)?
     
     var onError: ((String) -> Void)?
     var onPortDisconnected: (() -> Void)?
@@ -135,6 +168,17 @@ class focusButtonService: NSObject {
     /// on disconnect), so settings UI can refresh the displayed version.
     static let firmwareVersionDidChange = Notification.Name("FocusButtonFirmwareVersionDidChange")
 
+    /// Re-requests GET|FIRMWAREVER while the version is still unknown after a connect. The single probe
+    /// in serialPortWasOpened can be dropped on the flaky USB-CDC link — the device still validates via
+    /// its STATUS→INFO reply, so it shows "Connected" but with no version, which silently gates OFF every
+    /// emoji/icon feature (firmwareSupportsEmoji / firmwareSupportsFocusEmoji / supportsEmojiIcons all
+    /// read nil→false: no habit icons upload, no focus pool, and the icon-sync UI never appears). Armed
+    /// on validation; stops the moment a version lands (or after a few tries).
+    private var firmwareRetryTimer: Timer?
+    private var firmwareRetryCount = 0
+    private let maxFirmwareRetries = 5
+    private let firmwareRetryInterval: TimeInterval = 1.0
+
     /// Path of the currently connected serial port (e.g. "/dev/cu.usbmodemXXXX"),
     /// or nil when not connected. Needed to hand the port to the firmware flasher.
     var connectedPortPath: String? { serialPort?.path }
@@ -146,6 +190,8 @@ class focusButtonService: NSObject {
     // MARK: - Public Methods
     
     func start() -> Bool {
+        // The device on the desk belongs to the person's own app, not a UI-test app.
+        if UITestHost.isEnabled { return false }
         log("FocusButton: Start()")
         userRequestedStayDisconnected = false   // an explicit start/connect clears a prior manual disconnect
         startReconnectMonitor()   // keep trying in the background even if this attempt finds no port
@@ -185,6 +231,7 @@ class focusButtonService: NSObject {
     /// More device countdowns and habit signals (they only send when connected). Idempotent; the tick
     /// is a cheap no-op while connected/connecting.
     func startReconnectMonitor() {
+        if UITestHost.isEnabled { return }
         DispatchQueue.main.async { [weak self] in
             guard let self = self, self.reconnectPollTimer == nil else { return }
             self.log("FocusButton: reconnect monitor armed (every \(Int(self.reconnectPollInterval))s)")
@@ -277,7 +324,7 @@ class focusButtonService: NSObject {
 
     func updateFocusGoal(goal: String) {
         guard isRunning, serialPort?.isOpen == true else { return }
-        log("FocusButton: UpdateFocusGoal() - \(goal)")
+        log("FocusButton: UpdateFocusGoal() - \(LogPrivacy.text(goal))")
         let sanitized = sanitizeForCommand(goal)
         sendCmd("SET|GOAL|\(sanitized)")
     }
@@ -425,7 +472,7 @@ class focusButtonService: NSObject {
     }
     
     func sendHabits(habits: [(id: String, name: String, durationSeconds: Int)]) {
-        log("FocusButton: sendHabits(): \(habits)")
+        log("FocusButton: sendHabits(): \(habits.count) habits")
         if habits.isEmpty {
             log("FocusButton: !! No habits to send.")
             return
@@ -483,7 +530,7 @@ class focusButtonService: NSObject {
     func showNotification(text: String, countdownSeconds: Int = 120) {
         let sanitized = sanitizeForCommand(text)
         guard !sanitized.isEmpty else { return }
-        log("FocusButton: showNotification() - \(sanitized) (\(countdownSeconds)s)")
+        log("FocusButton: showNotification() - \(LogPrivacy.text(sanitized)) (\(countdownSeconds)s)")
         // A Late No More notification takes over the device screen (firmware saves the prior state).
         // Mark it so the focus resync pauses — otherwise its periodic SET|START would switch the
         // device back to the focus countdown and the notification would never stick.
@@ -677,6 +724,10 @@ class focusButtonService: NSObject {
         responseCheckTimer = nil
         validationTimer?.invalidate()
         validationTimer = nil
+        stopFirmwareVersionRetry()
+        // Forget the last icon-sync results so the next connection re-checks (the device may have changed).
+        lastHabitEmojiProgress = nil
+        lastFocusEmojiProgress = nil
 
         if let port = serialPort {
             port.delegate = nil
@@ -715,8 +766,20 @@ class focusButtonService: NSObject {
     /// Fired once when the FOCUS-mode emoji pool sync ENDS (complete or not) — lets the UI settle the
     /// "syncing…" spinner even when the run finished incomplete. Delivered on the main thread.
     var onFocusEmojiFinished: ((_ done: Int, _ total: Int) -> Void)?
+    /// Fired once when the HABIT-icon sync ENDS (complete or not). Used to CHAIN the focus-pool sync
+    /// after it — both go through the one serial uploader, so starting the focus sync while the habit
+    /// sync is still running would cancel() it and strand the "Checking habit icons…" status.
+    /// Delivered on the main thread.
+    var onEmojiFinished: ((_ done: Int, _ total: Int) -> Void)?
     private enum EmojiSyncKind { case habit, focus }
     private var emojiSyncKind: EmojiSyncKind = .habit
+
+    /// Last (done, total) reported for each pool's icon sync — recorded here even while no screen is
+    /// observing (the Focus Button screen detaches only its own onEmojiProgress on hide). Lets the screen
+    /// show the settled status immediately when it's (re)shown, instead of leaving a stale "Checking…"
+    /// pinned when a sync finished off-screen. Reset on disconnect so a fresh connection re-checks.
+    private(set) var lastHabitEmojiProgress: (done: Int, total: Int)?
+    private(set) var lastFocusEmojiProgress: (done: Int, total: Int)?
 
     /// Uploads the emoji in the loaded habit names to the device. Writes via `sendRawLine` (not
     /// `sendCmd`) so its ACK-gated lockstep isn't disrupted by the no-response STATUS watchdog.
@@ -728,17 +791,20 @@ class focusButtonService: NSObject {
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 switch self.emojiSyncKind {
-                case .habit: self.onEmojiProgress?(done, total)
-                case .focus: self.onFocusEmojiProgress?(done, total)
+                case .habit: self.lastHabitEmojiProgress = (done, total); self.onEmojiProgress?(done, total)
+                case .focus: self.lastFocusEmojiProgress = (done, total); self.onFocusEmojiProgress?(done, total)
                 }
             }
         }
         sync.onFinished = { [weak self] done, total in
             DispatchQueue.main.async {
                 guard let self = self else { return }
-                // Only the focus pool needs a terminal signal (its spinner auto-clears only on success);
-                // habit-icon status is meant to stay pinned, so it has no finished hook.
-                if self.emojiSyncKind == .focus { self.onFocusEmojiFinished?(done, total) }
+                // The focus pool settles its spinner off this terminal signal; the habit line uses it to
+                // chain the focus-pool sync (they share this one uploader — see onEmojiFinished).
+                switch self.emojiSyncKind {
+                case .habit: self.onEmojiFinished?(done, total)
+                case .focus: self.onFocusEmojiFinished?(done, total)
+                }
             }
         }
         return sync
@@ -768,15 +834,20 @@ class focusButtonService: NSObject {
     /// via the same chunked SET|EMOJI path as habit emoji (cached keys are skipped; a declared key whose
     /// bitmap isn't cached yet falls back gracefully device-side). Call when the user's selection changes,
     /// not on every habit sync.
-    func syncFocusEmojiPool(_ emoji: [String]) {
-        guard firmwareSupportsFocusEmoji else { return }
+    /// Returns true only when an emoji-bitmap upload run was actually started (supported firmware + at
+    /// least one emoji) — i.e. when onFocusEmojiProgress/onFocusEmojiFinished will fire to settle the UI.
+    /// The caller uses this to avoid stranding a "Checking focus icons…" spinner on firmware that can't
+    /// upload (declaring the pool with SET|FOCUSEMOJIS produces no progress callback on its own).
+    @discardableResult
+    func syncFocusEmojiPool(_ emoji: [String]) -> Bool {
+        guard firmwareSupportsFocusEmoji else { return false }
         let keys = Array(EmojiSync.uniqueEmojiKeys(in: emoji).prefix(5))
         log("FocusButton: SET|FOCUSEMOJIS pool = [\(keys.joined(separator: ", "))]")
         sendRawLine("SET|FOCUSEMOJIS|" + keys.joined(separator: "|"))
-        if firmwareSupportsEmoji, !emoji.isEmpty {
-            emojiSyncKind = .focus
-            emojiSync.syncEmojis(fromHabitNames: emoji)
-        }
+        guard firmwareSupportsEmoji, !emoji.isEmpty else { return false }
+        emojiSyncKind = .focus
+        emojiSync.syncEmojis(fromHabitNames: emoji)
+        return true
     }
 
     /// Emoji the device draws its focus-ring hero from out of the box, before the user picks their own
@@ -787,8 +858,8 @@ class focusButtonService: NSObject {
     static var defaultFocusEmojiPoolText: String { defaultFocusEmojiPool.joined() }
 
     /// Seconds to wait after a first connect before pushing the default focus emoji, so the connect
-    /// handshake (SET|TIME / GET|HABITCOUNT → GET|HABIT reads) settles first — the emoji uploader is
-    /// ACK-gated lockstep and must not race those command/response round-trips.
+    /// handshake (SET|TIME, and the habit list the routine pushes) settles first — the emoji uploader
+    /// is ACK-gated lockstep and must not race those command/response round-trips.
     private static let defaultFocusIconsSyncDelay: TimeInterval = 2.0
 
     /// On the first connect of an emoji-capable device, push the default FOCUS-mode emoji pool so a
@@ -816,7 +887,11 @@ class focusButtonService: NSObject {
             return
         }
         guard let port = serialPort, port.isOpen, !isConnecting else { return }
-        port.send((line + "\n").data(using: .utf8) ?? Data())
+        let data = (line + "\n").data(using: .utf8) ?? Data()
+        serialWriteQueue.async { [weak port] in
+            guard let port, port.isOpen else { return }
+            port.send(data)
+        }
     }
 
     private func sendCmd(_ cmd: String) {
@@ -846,10 +921,16 @@ class focusButtonService: NSObject {
         }
         
         let command = cmd + "\n"
-        log("FocusButton: SendCmd >> \(cmd)")
+        log("FocusButton: SendCmd >> \(FocusButtonLogFormat.describe(cmd))")
         
-        // Send data (this doesn't throw, but may fail silently)
-        port.send(command.data(using: .utf8) ?? Data())
+        // ORSSerialPort can block while the USB device is wedged. Never perform this write on
+        // the main thread: the response timer and UI must remain responsive while the queue
+        // drains or the device is disconnected.
+        let data = command.data(using: .utf8) ?? Data()
+        serialWriteQueue.async { [weak port] in
+            guard let port, port.isOpen else { return }
+            port.send(data)
+        }
     }
     
     private func responseCheckTick() {
@@ -858,7 +939,7 @@ class focusButtonService: NSObject {
         guard pendingResponse else { return }
         pendingResponse = false
         
-        log("FocusButton: ?? No response to '\(lastSentCmd)' — querying STATUS")
+        log("FocusButton: ?? No response to '\(FocusButtonLogFormat.describe(lastSentCmd))' — querying STATUS")
         
         if let port = serialPort, port.isOpen {
             sendCmd("STATUS")
@@ -896,7 +977,7 @@ class focusButtonService: NSObject {
         responseCheckTimer?.invalidate()
         
         let line = stripTimestamp(from: raw)
-        log("FocusButton: HandleLine << \(line)")
+        log("FocusButton: HandleLine << \(FocusButtonLogFormat.describe(line))")
         
         let parts = line.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
         guard parts.count > 0 else { return }
@@ -925,21 +1006,6 @@ class focusButtonService: NSObject {
         case "EVENT":
             handleEvent(parts)
             
-        case "HABITCOUNT":
-            if parts.count >= 2, let count = Int(parts[1]), count > 0 {
-                for i in 1...count {
-                    sendCmd("GET|HABIT|h\(i)")
-                }
-            }
-            
-        case "HABIT":
-            if parts.count >= 4, let duration = Int64(parts[3]) {
-                let habitId = parts[1]
-                let habitName = parts[2]
-                // Handle habit received
-                onHabitsReceived?([(id: habitId, name: habitName, durationSeconds: duration)])
-            }
-
         case "EMOJILIST", "EMOJI":
             emojiSync.handleDeviceLine(parts)
 
@@ -958,9 +1024,38 @@ class focusButtonService: NSObject {
         let newValue = (version?.isEmpty == true) ? nil : version
         guard newValue != firmwareVersion else { return }
         firmwareVersion = newValue
+        if newValue != nil { stopFirmwareVersionRetry() }   // got it — no more re-requests needed
         DispatchQueue.main.async {
             NotificationCenter.default.post(name: focusButtonService.firmwareVersionDidChange, object: self)
         }
+    }
+
+    /// Keep asking the device for its firmware version until it answers (or we give up). A Focus device
+    /// can validate via its STATUS→INFO reply while the connect-time GET|FIRMWAREVER answer is lost on the
+    /// lossy USB-CDC link, leaving `firmwareVersion` nil forever — which disables every emoji/icon feature.
+    /// Idempotent; self-cancels once a version lands (setFirmwareVersion), on disconnect, or after the cap.
+    private func armFirmwareVersionRetry() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            guard self.firmwareVersion == nil, self.firmwareRetryTimer == nil else { return }
+            self.firmwareRetryCount = 0
+            let timer = Timer.scheduledTimer(withTimeInterval: self.firmwareRetryInterval, repeats: true) { [weak self] _ in
+                guard let self = self else { return }
+                guard self.isConnected, self.firmwareVersion == nil,
+                      self.firmwareRetryCount < self.maxFirmwareRetries else {
+                    self.stopFirmwareVersionRetry(); return
+                }
+                self.firmwareRetryCount += 1
+                self.log("FocusButton: firmware version still unknown — re-requesting GET|FIRMWAREVER (\(self.firmwareRetryCount)/\(self.maxFirmwareRetries))")
+                self.sendCmd("GET|FIRMWAREVER")
+            }
+            self.firmwareRetryTimer = timer
+        }
+    }
+
+    private func stopFirmwareVersionRetry() {
+        firmwareRetryTimer?.invalidate()
+        firmwareRetryTimer = nil
     }
     
     private func handleInfo(_ parts: [String]) {
@@ -1024,9 +1119,9 @@ class focusButtonService: NSObject {
                     
                     if currentAction != ._INPROGRESS_{
                         if currentState == ._MORNING_HABIT_{
-                            getHabitsVcObject().startMorningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
+                            getHabitsVcObject().startMorningRoutineHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
                         }else if currentState == ._EVENING_HABIT_{
-                            getHabitsVcObject().startEveningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
+                            getHabitsVcObject().startEveningRoutineHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
                         }
                     }
                 }else {
@@ -1034,9 +1129,9 @@ class focusButtonService: NSObject {
                         getHabitsVcObject().stopPostponeEndTimer()
                         closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
                         if currentState == ._POSTPONE_MORNING_HABIT_{
-                            getHabitsVcObject().startMorningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
+                            getHabitsVcObject().startMorningRoutineHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
                         }else if currentState == ._POSTPONE_EVENING_HABIT_{
-                            getHabitsVcObject().startEveningRouintHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
+                            getHabitsVcObject().startEveningRoutineHabitFromDeviceButton(name: name, shouldUpdateDeviceButton: false)
                         }
                     }
                     
@@ -1257,7 +1352,11 @@ extension focusButtonService: ORSSerialPortDelegate {
         let timezoneOffset = TimeZone.current.secondsFromGMT()
         let localEpoch = Int64(localDate.timeIntervalSince1970) + Int64(timezoneOffset)
         sendCmd("SET|TIME|\(localEpoch)")
-        sendCmd("GET|HABITCOUNT")
+
+        // If we validated via the STATUS→INFO reply (older firmware, or a dropped FIRMWAREVER answer),
+        // the version is still unknown here — keep asking until it lands so the emoji/icon features that
+        // gate on it can turn on. No-op once a version is already known.
+        armFirmwareVersionRetry()
 
         applyState(.idle)
         hasEverConnected = true   // remember (persisted) so auto-reconnect kicks in after future drops
@@ -1554,7 +1653,6 @@ final class FocusButtonFirmwareUpdater {
         }
     }
 }
-
 
 
 

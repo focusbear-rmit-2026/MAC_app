@@ -110,7 +110,7 @@ class popUpBlockConfirmVc: NSViewController {
     var titleStillFocusGoal = "Is your focus goal still: \"<GOAL>\"?"
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        view.setUITestLandmark(UITestContract.Identifier.Blocking.focusBlockPrompt)
         lblSelectTask.stringValue = "No current task, select a task to proceed."
         btnWorkingOnSomethingElse.title = "No I'm working on something else now"
         btnSetTask.title = "Set Task"
@@ -283,7 +283,7 @@ class popUpBlockConfirmVc: NSViewController {
             }
             
             if let currentTaskInToDoPlayer = getCurrentTaskInFocusMode(){
-                addLog(text: "currentTaskInToDoPlayer:- \(currentTaskInToDoPlayer)")
+                addLog(text: "currentTaskInToDoPlayer:- \(LogPrivacy.text(currentTaskInToDoPlayer))")
                 var currentTaskText = "Current task is \"<TASK>\""
                 if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
                     currentTaskText = popUpBlockConfirmVcInfo.value(forKey: "currentTaskText") as? String ?? currentTaskText
@@ -479,7 +479,7 @@ class popUpBlockConfirmVc: NSViewController {
             lblTitle.stringValue = blockTitle
             
             if let currentTaskInToDoPlayer = getCurrentTaskInFocusMode(){
-                addLog(text: "currentTaskInToDoPlayer:- \(currentTaskInToDoPlayer)")
+                addLog(text: "currentTaskInToDoPlayer:- \(LogPrivacy.text(currentTaskInToDoPlayer))")
                 var currentTaskText = "Current task is \"<TASK>\""
                 if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
                     currentTaskText = popUpBlockConfirmVcInfo.value(forKey: "currentTaskText") as? String ?? currentTaskText
@@ -1133,19 +1133,25 @@ class popUpBlockConfirmVc: NSViewController {
             if let pid = self.currentPid{
                 
                 
+                // Keep the blur over the real blocked Chrome window, not the front about:blank Meet
+                // call window (see getGoogleChromeBlockingWindowBounds / showBlockConfirmWindow).
+                let chromeTargetBounds = (self.browser == ._GOOGLE_CHROME_) ? getGoogleChromeBlockingWindowBounds() : nil
                 let options = CGWindowListOption(arrayLiteral: CGWindowListOption.excludeDesktopElements, CGWindowListOption.optionOnScreenOnly)
                 let windowListInfo = CGWindowListCopyWindowInfo(options, CGWindowID(0))
                 let windowInfoList = windowListInfo as NSArray? as? [[String: AnyObject]]
-                
+
                 for info in windowInfoList! {
                     let windowPID = info["kCGWindowOwnerPID"] as! UInt32
                     if  windowPID == pid {
                         if let windowFrame = info["kCGWindowBounds"] as? NSDictionary{
                             let height = windowFrame.value(forKey: "Height") as? Int ?? 0
+                            let width = windowFrame.value(forKey: "Width") as? Int ?? 0
+                            let x = windowFrame.value(forKey: "X") as? Int ?? 0
+                            let y = windowFrame.value(forKey: "Y") as? Int ?? 0
+                            if let t = chromeTargetBounds, (abs(x - t.x) > 30 || abs(y - t.y) > 30) {
+                                continue
+                            }
                             if height > 250{
-                                let width = windowFrame.value(forKey: "Width") as? Int ?? 0
-                                let x = windowFrame.value(forKey: "X") as? Int ?? 0
-                                let y = windowFrame.value(forKey: "Y") as? Int ?? 0
                                 if self.view.window?.isVisible ?? false{
                                     var frame = NSRect(x: x, y: y, width: width, height: height)
                                     if self.browser != nil{
@@ -1561,12 +1567,34 @@ class popUpBlockConfirmVc: NSViewController {
         //        appdelegate!.timerAllowUrl?.invalidate()
         focusModeHelper.stopUrlTimer()
         currentBrowserUrlForAi = ""
-        if isAppBlocking && currentApp != nil{
-            showReportBadAIResponseWindow(url: nil, app: currentAppName, payload: payload)
-        }else{
-            showReportBadAIResponseWindow(url: fullUrl, app: nil, payload: payload)
+
+        // Reporting a bad AI decision means the AI was wrong to block this — allow the current app/site
+        // for the rest of this focus session so it isn't re-blocked on the next check. Snapshot the item
+        // now so it's still correct if this (singleton) popup is later reset for a different block while
+        // the report window is open. The allow only runs if the user actually submits the report (see
+        // reportBadAIResponseVc.btnReportIssueClicked). We deliberately allow ONLY this exact app/URL —
+        // not the whole domain, and not the active tab title (the tab could have changed by submit time,
+        // and a bad-AI report shouldn't broadly unblock beyond the reported item).
+        let reportedApp = self.currentApp
+        let reportedUrl = self.url
+        let reportedIsApp = self.isAppBlocking && self.currentApp != nil
+        let onReported: () -> Void = {
+            if reportedIsApp, let app = reportedApp {
+                if !arrAllowedAppsInCuddlyModeCurrentFocus.contains(app){
+                    arrAllowedAppsInCuddlyModeCurrentFocus.append(app)
+                }
+            }else{
+                arrAllowedUrlsInCuddlyModeCurrentFocus.append(reportedUrl)
+            }
+            addLog(text: "popUpBlockConfirmVc:- bad-AI report submitted — allowed current \(reportedIsApp ? "app" : "site") for this session")
         }
-        
+
+        if isAppBlocking && currentApp != nil{
+            showReportBadAIResponseWindow(url: nil, app: currentAppName, payload: payload, onReported: onReported)
+        }else{
+            showReportBadAIResponseWindow(url: fullUrl, app: nil, payload: payload, onReported: onReported)
+        }
+
     }
     
     @IBAction func btnConvinceAgainClicked(_ sender: Any) {
@@ -1636,7 +1664,7 @@ class popUpBlockConfirmVc: NSViewController {
     /// Extracted so both the cached and fresh-fetch paths share the same logic (#1679).
     private func setTaskWithDeduplication(taskName: String, candidateTasks: [NSDictionary], shouldComplete: Bool) {
         if let match = TaskDeduplicationHelper.existingTask(named: taskName, in: candidateTasks) {
-            addLog(text: "popUpBlockConfirmVc: task '\(taskName)' already exists – reusing existing task, skipping creation.")
+            addLog(text: "popUpBlockConfirmVc: task \(LogPrivacy.text(taskName)) already exists – reusing existing task, skipping creation.")
             closeWindow()
             if let id = match.task.value(forKey: "id") as? String,
                let taskTitle = match.task.value(forKey: "title") as? String {
@@ -1647,10 +1675,10 @@ class popUpBlockConfirmVc: NSViewController {
             let today = Date()
             let nextWeek = Calendar.current.date(byAdding: .day, value: 7, to: today) ?? Date()
             let dateString = getStringFromDateInUtc(date: nextWeek, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-            addLog(text: "Create new task:- name: \(taskName)")
+            addLog(text: "Create new task:- name: \(LogPrivacy.text(taskName))")
             allApiObject.addTask(title: taskName, details: "", eisenhowerQuadrant: 1, dueDate: dateString, objective: "", tags: [], completionHandler: { result, json in
                 if result {
-                    addLog(text: "\(taskName) task created successfully.")
+                    addLog(text: "task \(LogPrivacy.text(taskName)) created successfully.")
                 }
                 DispatchQueue.main.async { [self] in
                     loader.stopAnimation(self)

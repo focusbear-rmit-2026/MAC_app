@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import SwiftUI
 
 class createFirstBlockingScheduleVc: NSViewController {
     
@@ -65,6 +66,10 @@ class createFirstBlockingScheduleVc: NSViewController {
   
     var bubbleView:BubbleView?
     var distractionBlockingProgressVcObj:distractionBlockingProgressVc?
+
+    // #2274: onboarding reuses the in-app SwiftUI blocking-schedule editor so the two screens match.
+    private var editorModel: Any?            // BlockingScheduleEditorModel (macOS 11+)
+    private var editorHostingView: NSView?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -162,12 +167,162 @@ class createFirstBlockingScheduleVc: NSViewController {
         //progress
         self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
         self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
-        getDistractionBlockingProgressVcObj().setProgress(level: 2, progress: 0.30)
+        getDistractionBlockingProgressVcObj().setProgress(level: 2, progress: 0.70)
+
+        setupSwiftUIEditor()
+    }
+
+    // MARK: - SwiftUI editor hosting (#2274)
+
+    /// Swap only the form area (the storyboard `scrollView` with the old date pickers / slider / day
+    /// boxes / checkboxes) for the same SwiftUI editor used by the in-app Blocking Schedule settings,
+    /// so the two screens match. Everything else on the screen is left untouched — the step-progress
+    /// bar, the "Set Block Details" title, the bear image + bubble, and the bottom "Add Block" CTA all
+    /// stay exactly where they were. Onboarding has no block list yet (no focus modes exist) and uses
+    /// the storyboard's own Add-Block button, so the editor's header, footer and block-list row are
+    /// hidden.
+    private func setupSwiftUIEditor() {
+        guard #available(macOS 11.0, *) else { return }
+
+        // Hide the old form. The controls live inside `scrollView`, which sits inside a bordered NSBox
+        // — hide the whole box so its border doesn't show around the SwiftUI editor. (A hidden view
+        // keeps its layout, so `scrollView`'s anchors below still position the hosting view correctly.)
+        var formBox: NSView = scrollView
+        while let sv = formBox.superview, !(formBox is NSBox), sv != view { formBox = sv }
+        formBox.isHidden = true
+
+        let model = BlockingScheduleEditorModel()
+        editorModel = model
+        configureModel(model)
+
+        let root = BlockingScheduleEditorView(
+            model: model,
+            onSave: { [weak self] in self?.saveFromModel() },
+            onCancel: {},
+            onDelete: {},
+            onEditBlockList: {},
+            onBack: {},
+            showBlockList: false,
+            showHeader: false,
+            showCancel: false,
+            showFooter: false,
+            expandMoreOptions: true)
+
+        let hosting = NSHostingView(rootView: root)
+        hosting.translatesAutoresizingMaskIntoConstraints = false
+        // Pin the hosting view over the (now hidden) scroll view's frame so it occupies the same
+        // form region. A hidden view keeps its layout, so these anchors track the old form box.
+        view.addSubview(hosting)
+        NSLayoutConstraint.activate([
+            hosting.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            hosting.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            hosting.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            hosting.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+        ])
+        editorHostingView = hosting
+    }
+
+    /// Seed the editor model with onboarding defaults (mirrors the old `resetData`): empty name,
+    /// today's weekday selected, a one-hour window starting two minutes from now, flexible strictness,
+    /// AI on, microbreaks skipped. There is deliberately no block-list selection during onboarding.
+    @available(macOS 11.0, *)
+    private func configureModel(_ model: BlockingScheduleEditorModel) {
+        model.isEditing = false
+        model.name = ""
+        model.selectedDays = [2, 3, 4, 5, 6]   // default to the "Weekdays" scope (Mon–Fri)
+        let now = Date()
+        let from = Calendar.current.date(byAdding: .minute, value: 2, to: now) ?? now
+        let till = Calendar.current.date(byAdding: .hour, value: 1, to: from) ?? from
+        model.startMinutes = minutesFromDate(from)
+        model.endMinutes = minutesFromDate(till)
+        if model.endMinutes <= model.startMinutes { model.endMinutes = min(1440, model.startMinutes + 60) }
+        model.strictness = ._NORMAL_
+        model.useAI = true
+        model.skipMicroBreaks = true
+    }
+
+    /// Reset the editor to onboarding defaults and, when the user picked a quick-start preset on the
+    /// previous step, overlay that preset's name/emoji/days/time/strictness. "Custom Schedule" leaves
+    /// nil, so the editor stays blank. Called from onboardingVc on every entry to _CREATE_BLOCKING_SCHEDULE_
+    /// (the VC is a singleton, so viewDidLoad — and its one-time configureModel — won't re-run). The
+    /// preset is consumed here so it doesn't leak into a later visit.
+    @available(macOS 11.0, *)
+    func applyOnboardingScheduleTemplate() {
+        guard let model = editorModel as? BlockingScheduleEditorModel else { return }
+        configureModel(model)
+        if let preset = getOnboardingVcObject().chosenSchedulePreset, !preset.isCustom {
+            model.name = preset.name
+            model.emoji = preset.emoji
+            model.selectedDays = Set(preset.days)
+            model.startMinutes = preset.startMinutes
+            model.endMinutes = preset.endMinutes
+            model.strictness = preset.strictness
+        }
+        getOnboardingVcObject().chosenSchedulePreset = nil
+    }
+
+    private func minutesFromDate(_ date: Date) -> Int {
+        let c = Calendar.current.dateComponents([.hour, .minute], from: date)
+        return (c.hour ?? 0) * 60 + (c.minute ?? 0)
+    }
+
+    /// Save handler driven by the SwiftUI editor. Mirrors `btnAddBlockClicked` but reads the SwiftUI
+    /// model and never asks for a block list (onboarding has none — `focusModeID` stays "").
+    @available(macOS 11.0, *)
+    private func saveFromModel() {
+        guard let model = editorModel as? BlockingScheduleEditorModel else { return }
+        addLog(text: "[user-action] createFirstBlockingScheduleVc:- Add Block (SwiftUI) clicked")
+
+        if model.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            var alertEnterName = "Please enter a name for your custom schedule before saving."
+            if let info = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary {
+                alertEnterName = info.value(forKey: "alertEnterName") as? String ?? alertEnterName
+            }
+            showAlert(title: alertEnterName)
+            addLog(text: "showAlert:- empty name")
+            return
+        }
+
+        let arrDays = Array(model.selectedDays).sorted()
+        if arrDays.isEmpty {
+            var alertSelectDay = "Please select at least one day for this schedule."
+            if let info = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary {
+                alertSelectDay = info.value(forKey: "alertSelectDay") as? String ?? alertSelectDay
+            }
+            showAlert(title: alertSelectDay)
+            addLog(text: "showAlert:- empty days array")
+            return
+        }
+
+        blockMode = model.strictness
+        let blockingSchedule = customBlockingSchedule(
+            id: UUID().uuidString,
+            name: model.name,
+            start: BlockingScheduleStore.hhmm(fromMinutes: model.startMinutes),
+            end: BlockingScheduleStore.hhmm(fromMinutes: model.endMinutes),
+            daysOfWeek: arrDays,
+            focusModeID: "",
+            blockLevel: blockMode,
+            isAIBlockingEnabled: model.useAI,
+            isMicroBreaksEnabled: !model.skipMicroBreaks,
+            emoji: model.emoji
+        )
+        customBlockingScheduleManagerObj.pendingFirstBlockingSchedule = blockingSchedule
+        getOnboardingVcObject().navigate(to: ._ASK_PERMISSIONS_)
     }
 
     override func viewWillAppear() {
         allApiObject.capturePosthog(event: "create-first-blocking-schedule-screen-shown", metadata: [:])
         showSelectedStrictnessLevel()
+        // Default the window to the shared new-schedule defaults. Without this the storyboard's
+        // useCurrentDate leaves both pickers at the current time.
+        datePickerFrom.dateValue = Self.date(atMinuteOfDay: BlockingScheduleDefaults.startMinutes)
+        datePickerTill.dateValue = Self.date(atMinuteOfDay: BlockingScheduleDefaults.endMinutes)
+    }
+
+    /// Today at the given minute-of-day — the date pickers are time-only, so the day part is ignored.
+    private static func date(atMinuteOfDay minutes: Int) -> Date {
+        Calendar.current.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: Date()) ?? Date()
     }
     
     override func viewDidAppear() {
@@ -176,7 +331,7 @@ class createFirstBlockingScheduleVc: NSViewController {
         if let info = configjson.value(forKey: "createFirstBlockingScheduleVcInfo") as? NSDictionary{
             bubbleText = info.value(forKey: "bubbleText") as? String ?? bubbleText
         }
-        
+
         if bubbleView == nil{
             bubbleView = PopupManager.showPopup(for: imgViewBear, edge: .minX, selfView: self.view, text: bubbleText, verticalOffset: 20, horizontalOffset: 25, fontSize: 13)
         }
@@ -215,20 +370,13 @@ class createFirstBlockingScheduleVc: NSViewController {
             }
         }
         
-        blockMode = ._NORMAL_
+        blockMode = BlockingScheduleDefaults.strictness
         sliderStrictness.integerValue = 1
-        checkBoxAiEnabled.state = .on
-        checkBoxSkipMicroBreaks.state = .on
-        
-        let now = Date()
-        
-        // From = current time + 2 minutes
-        let from = Calendar.current.date(byAdding: .minute, value: 2, to: now)!
-        
-        // Till = from + 1 hour
-        let till = Calendar.current.date(byAdding: .hour, value: 1, to: from)!
-        datePickerFrom.dateValue = from
-        datePickerTill.dateValue = till
+        checkBoxAiEnabled.state = BlockingScheduleDefaults.isAIEnabled ? .on : .off
+        checkBoxSkipMicroBreaks.state = BlockingScheduleDefaults.skipMicroBreaks ? .on : .off
+
+        datePickerFrom.dateValue = Self.date(atMinuteOfDay: BlockingScheduleDefaults.startMinutes)
+        datePickerTill.dateValue = Self.date(atMinuteOfDay: BlockingScheduleDefaults.endMinutes)
         
         showSelectedStrictnessLevel()
         
@@ -264,68 +412,13 @@ class createFirstBlockingScheduleVc: NSViewController {
     }
     
     @IBAction func btnAddBlockClicked(_ sender: Any) {
-        addLog(text: "[user-action] blockingScheduleEditorVC:- button Save Clicked")//2.27.421
-        if textFieldScheduleName.stringValue.isEmpty{
-            
-            var alertEnterName = "Please enter a name for your custom schedule before saving."
-            if let blockingScheduleEditorVcInfo = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary{
-                alertEnterName = blockingScheduleEditorVcInfo.value(forKey: "alertEnterName") as? String ?? alertEnterName
-            }
-            showAlert(title: alertEnterName)
-            
-            addLog(text: "showAlert:- empty name")//2.27.421
-            return;
-        }
-        
-        var arrDays = [Int]()
-        
-        for box in arrAllWeekDayBox{
-            if box.isSelected{
-                arrDays.append(box.index)
-            }
-        }
-        
-        if arrDays.count == 0{
-            var alertSelectDay = "Please select at least one day for this schedule."
-            if let blockingScheduleEditorVcInfo = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary{
-                alertSelectDay = blockingScheduleEditorVcInfo.value(forKey: "alertSelectDay") as? String ?? alertSelectDay
-            }
-            showAlert(title: alertSelectDay)
-            
-            addLog(text: "showAlert:- empty days array")//2.27.421
-            return;
-        }
-
-        if sliderStrictness.integerValue == 1{
-            addLog(text: "strictness level is normal mode")
-            blockMode = ._NORMAL_
-        }else if sliderStrictness.integerValue == 2{
-            addLog(text: "strictness level is strict mode")
-            blockMode = ._STRICT_
-        }else if sliderStrictness.integerValue == 3{
-            addLog(text: "strictness level is super strict mode")
-            blockMode = ._SUPER_STRICT_
-        }
-        
-        let blockingSchedule = customBlockingSchedule(
-            id: UUID().uuidString,
-            name: textFieldScheduleName.stringValue,
-            start: getTimeString(date: datePickerFrom.dateValue),
-            end: getTimeString(date: datePickerTill.dateValue),
-            daysOfWeek: arrDays,
-            focusModeID: "",
-            blockLevel: blockMode,
-            isAIBlockingEnabled: checkBoxAiEnabled.state == .on, isMicroBreaksEnabled: checkBoxSkipMicroBreaks.state != .on
-        )
-        customBlockingScheduleManagerObj.pendingFirstBlockingSchedule = blockingSchedule
-        getOnboardingVcObject().navigate(to: ._ASK_PERMISSIONS_)
+        // #2274: the form is now the SwiftUI editor; this storyboard CTA just drives its save path.
+        if #available(macOS 11.0, *) { saveFromModel() }
     }
 
     
     func getTimeString(date:Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
+        MachineDateFormat.string(from: date, format: MachineDateFormat.clockTime)
     }
 
     

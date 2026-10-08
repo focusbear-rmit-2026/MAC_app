@@ -44,6 +44,8 @@ struct BlockingScheduleHomeView: View {
             }
         }
         .background(FBColor.background)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(UITestContract.Identifier.Blocking.blockingSchedulesEditor)
     }
 
     private var header: some View {

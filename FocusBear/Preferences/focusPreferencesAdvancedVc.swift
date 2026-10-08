@@ -65,7 +65,14 @@ class focusPreferencesAdvancedVc: NSViewController {
     @IBOutlet weak var tokenField: NSTokenField!
     @IBOutlet weak var btnDndInfo: hoverInfoButton!
     @IBOutlet weak var checkBoxAutoDoNotDisturb: NSButton!
-    
+
+    // "Use AI for this block list" — the per-block-list AI relevance toggle (is_ai_enabled). Owned by the
+    // block list, NOT by blocking schedules (see CLAUDE.md). This is the storyboard checkbox: connect it
+    // to this outlet and wire its action to `checkBoxUseAiClicked(_:)`. (It was previously created in
+    // code, which double-rendered on top of the storyboard control — #2571 15.)
+    @IBOutlet weak var checkBoxUseAi: NSButton!
+    private var useAiTitle = "Use AI for this block list"
+
     var isShellScriptBeforeFocusEdited = false
     var isShellScriptAfterFocusEdited = false
     var toolTipDndMode = "Turn on Do Not Disturb automatically when starting a focus mode."
@@ -80,6 +87,8 @@ class focusPreferencesAdvancedVc: NSViewController {
         textViewRunShelltBeforeFocus.delegate = self
         
         tokenField.delegate = self
+        checkBoxUseAi?.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.blockListUseAiCheckbox)
+        btnOk.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.blockListAdvancedOkButton)
         
         btnCheckBoxSuggestWorkFocusMode.title = "Automatically suggest starting this focus mode when any allowed URL/App is opened"
         
@@ -171,6 +180,33 @@ class focusPreferencesAdvancedVc: NSViewController {
 
         popUpBtnFocusAlignmentScore.removeAllItems()
         popUpBtnFocusAlignmentScore.addItems(withTitles: arrFocusAlignmentScore)
+
+        setupUseAiCheckbox()
+    }
+
+    /// Applies the config-driven title to the storyboard "Use AI for this block list" checkbox. Its
+    /// state is set per selected mode where the rest of the advanced fields are populated, and toggling
+    /// it runs `checkBoxUseAiClicked`.
+    private func setupUseAiCheckbox() {
+        if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary {
+            useAiTitle = focusPreferencesAdvancedInfo.value(forKey: "checkBoxUseAiForBlockListText") as? String ?? useAiTitle
+        }
+        checkBoxUseAi?.title = useAiTitle
+    }
+
+    @IBAction func checkBoxUseAiClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
+        let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
+        guard row >= 0, row < arrFocusType.count else { return }
+        let enabled = (checkBoxUseAi?.state ?? .off) == .on
+        arrFocusType[row]["is_ai_enabled"] = enabled
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        allApiObject.capturePosthog(
+            event: enabled ? "settings-changed-enable-ai-for-block-list" : "settings-changed-disable-ai-for-block-list",
+            metadata: [:])
+        // Persist to the server so the choice follows the user across devices. `editFocusMode` sends it as
+        // the top-level `is_ai_enabled` column, which is what the server stores and returns (#2677).
+        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: { _ in })
     }
     
     override func viewWillAppear() {
@@ -328,6 +364,10 @@ class focusPreferencesAdvancedVc: NSViewController {
             
             let autoSuggestFocusModeOnAllowedURL = arrFocusType[row]["autoSuggestFocusModeOnAllowedURL"] as? Bool ?? false
             btnCheckBoxSuggestWorkFocusMode.state = autoSuggestFocusModeOnAllowedURL ? .on : .off
+
+            // Absent means AI on (matches isAIBlockingEnabled()'s veto-only reading of is_ai_enabled).
+            let isAiEnabled = arrFocusType[row]["is_ai_enabled"] as? Bool ?? true
+            checkBoxUseAi?.state = isAiEnabled ? .on : .off
         }
 
         btnShowScripts.image = NSImage(named: "NSTouchBarGoForwardTemplate")
@@ -347,6 +387,7 @@ class focusPreferencesAdvancedVc: NSViewController {
     }
     
     @objc func tableRowBlockedUrlsDoubleClicked(){
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let selectedTow = tblView.selectedRow
         if selectedTow == -1{
             return;
@@ -356,6 +397,7 @@ class focusPreferencesAdvancedVc: NSViewController {
         self.presentAsSheet(addWebUrlVcObj!)
     }
     @IBAction func checkBoxRunScriptBeforeFocusClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
         if checkBoxRunScriptBeforeFocus.state == .on{
             arrFocusType[row]["isScriptBeforeFocusEnabled"] = true
@@ -366,7 +408,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             btnSelectAppleScriptBeforeFocus.isEnabled = false
             allApiObject.capturePosthog(event: "settings-changed-disable-script-before-focus", metadata: [:])//#490
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         
     }
     
@@ -380,6 +422,7 @@ class focusPreferencesAdvancedVc: NSViewController {
     }
     
     @IBAction func checkBoxRunScriptAfterFocusClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
         if checkBoxRunScriptAfterFocus.state == .on{
             arrFocusType[row]["isScriptAfterFocusEnabled"] = true
@@ -390,11 +433,12 @@ class focusPreferencesAdvancedVc: NSViewController {
             btnSelectAppleScriptAfterFocus.isEnabled = false
             allApiObject.capturePosthog(event: "settings-changed-disable-script-after-focus", metadata: [:])//#490
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
 
     }
     
     @IBAction func checkBoxRunShellCommandBeforeFocusClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
         if checkBoxRunShellBeforeFocus.state == .on{
             arrFocusType[row]["isShellCommandBeforeFocusEnabled"] = true
@@ -406,12 +450,13 @@ class focusPreferencesAdvancedVc: NSViewController {
             textViewRunShelltBeforeFocus.isEditable = false
             allApiObject.capturePosthog(event: "settings-changed-enable-shell-command-before-focus", metadata: [:])
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
 
         
     }
     
     @IBAction func checkBoxRunShellCommandAfterFocusClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
         if checkBoxRunShellAfterFocus.state == .on{
             arrFocusType[row]["isShellCommandAfterFocusEnabled"] = true
@@ -423,11 +468,12 @@ class focusPreferencesAdvancedVc: NSViewController {
             textViewRunShelltAfterFocus.isEditable = false
             allApiObject.capturePosthog(event: "settings-changed-enable-shell-command-after-focus", metadata: [:])
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
 
     }
     
     @IBAction func btnSelectAppleScriptBeforeClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
         let dialog = NSOpenPanel()
         dialog.canChooseFiles = true
@@ -445,12 +491,13 @@ class focusPreferencesAdvancedVc: NSViewController {
         }
         dialog.allowedFileTypes = ["scpt"]
         dialog.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+            guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
             if modalResponse.rawValue == NSApplication.ModalResponse.OK.rawValue {
                 if let url = dialog.url {
                     arrFocusType[row]["scriptPathBeforeFocus"] = url.path
                     self.lblUrlCurrentApplescriptBefore.stringValue = url.path
                     self.lblUrlCurrentApplescriptBefore.toolTip = url.path
-                    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                    SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
 
                     allApiObject.capturePosthog(event: "set-apple-script-before-starting-focus-mode", metadata: [:])
                 }
@@ -459,6 +506,7 @@ class focusPreferencesAdvancedVc: NSViewController {
     }
     
     @IBAction func btnSelectAppleScriptAfterClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
         let dialog = NSOpenPanel()
         dialog.canChooseFiles = true
@@ -476,12 +524,13 @@ class focusPreferencesAdvancedVc: NSViewController {
         }
         dialog.allowedFileTypes = ["scpt"]
         dialog.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+            guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
             if modalResponse.rawValue == NSApplication.ModalResponse.OK.rawValue {
                 if let url = dialog.url {
                     arrFocusType[row]["scriptPathAfterFocus"] = url.path
                     self.lblUrlCurrentApplescriptAfter.stringValue = url.path
                     self.lblUrlCurrentApplescriptAfter.toolTip = url.path
-                    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                    SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
 
                     allApiObject.capturePosthog(event: "set-apple-script-after-completing-focus-mode", metadata: [:])
                 }
@@ -490,12 +539,14 @@ class focusPreferencesAdvancedVc: NSViewController {
     }
 
     @IBAction func btnAddUrlClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         addWebUrlVcObj!.currenUrlAddingtState = ._FOCUS_BLOCK_URL
         addWebUrlVcObj!.isAdding = true
         self.presentAsSheet(addWebUrlVcObj!)
     }
     
     @IBAction func btnRemoveUrlClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let selectedFocusTypeRow = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
         if selectedFocusTypeRow == -1{
             return
@@ -516,7 +567,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             }
             self.tblView.reloadData()
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
 
         allApiObject.capturePosthog(event: "remove-blocked-url-in-focus-mode", metadata: [:])//#490
 
@@ -524,12 +575,16 @@ class focusPreferencesAdvancedVc: NSViewController {
         
     }
     @IBAction func btnOkClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else {
+            dismiss(self)
+            return
+        }
         let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
         let oldFocusAlignmentScoreThreshold = arrFocusType[row]["focusAlignmentScoreThreshold"] as? Int ?? -1
         let focusAlignmentScoreThreshold = Int(popUpBtnFocusAlignmentScore.titleOfSelectedItem ?? "") ?? 80
         if oldFocusAlignmentScoreThreshold != focusAlignmentScoreThreshold{
             arrFocusType[row]["focusAlignmentScoreThreshold"] = focusAlignmentScoreThreshold
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
             allApiObject.capturePosthog(event: "focus-alignment-score-threshold-changed", metadata: [:])
         }
 
@@ -547,7 +602,7 @@ class focusPreferencesAdvancedVc: NSViewController {
                 allApiObject.capturePosthog(event: "set-shell-command-after-completing-focus-mode", metadata: [:])
             }
      
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         }
         self.dismiss(self)
     }
@@ -564,6 +619,7 @@ class focusPreferencesAdvancedVc: NSViewController {
     }
     
     @objc private func menuItemClicked(_ menuItem: NSMenuItem) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         if let fieldEditor = tokenField?.currentEditor() {
             let textRange = fieldEditor.selectedRange
             let replaceString = menuItem.title
@@ -601,6 +657,7 @@ class focusPreferencesAdvancedVc: NSViewController {
         }
     }
     @IBAction func btnAddAppClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let openPanel = NSOpenPanel()
         openPanel.canChooseFiles = true
         openPanel.canChooseDirectories = false
@@ -622,6 +679,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             }
         }
         openPanel.beginSheetModal(for: self.view.window!) { response in
+            guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
             guard response.rawValue == NSApplication.ModalResponse.OK.rawValue else {
                 //                if var arr =
                 
@@ -666,7 +724,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             self.tblViewApps.reloadData()
             self.tblViewApps.selectRowIndexes(IndexSet(arrayLiteral: (appsArray.count - 1)), byExtendingSelection: false)
             self.tblViewApps.scrollRowToVisible(appsArray.count - 1)
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
             if isContainAlready{
                 self.showAlertAppAlreadyAdded()
             }
@@ -691,6 +749,7 @@ class focusPreferencesAdvancedVc: NSViewController {
         })
     }
     @IBAction func btnRemoveAppClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let selectedFocusTypeRow = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
         if selectedFocusTypeRow == -1{
             return
@@ -708,12 +767,13 @@ class focusPreferencesAdvancedVc: NSViewController {
             }
             self.tblViewApps.reloadData()
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         allApiObject.capturePosthog(event: "remove-blocked-app-in-focus-mode", metadata: [:])
         reSetCurrentFocusMode(focusType:arrFocusType[selectedFocusTypeRow])
     }
     
     @IBAction func checkBoxAutoDoNotDisturbClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
         if checkBoxAutoDoNotDisturb.state == .on{
 
@@ -727,10 +787,11 @@ class focusPreferencesAdvancedVc: NSViewController {
                 alert.addButton(withTitle: buttonOkText)
                 alert.addButton(withTitle: buttonCancelText)
                 alert.beginSheetModal(for: self.view.window!, completionHandler: { response in
+                    guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
                     if response == .alertFirstButtonReturn{
                         _ = isAccessibilityEnabled(isPrompt: true)
                         arrFocusType[row]["isAutoDoNotDisturbEnabled"] = true
-                        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                         allApiObject.capturePosthog(event: "settings-changed-enable-dnd", metadata: [:])//#490
                     }else{
                         self.checkBoxAutoDoNotDisturb.state = .off
@@ -739,30 +800,32 @@ class focusPreferencesAdvancedVc: NSViewController {
 
             }else{
                 arrFocusType[row]["isAutoDoNotDisturbEnabled"] = true
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 allApiObject.capturePosthog(event: "settings-changed-enable-dnd", metadata: [:])//#490
             }
 
         }else{
             arrFocusType[row]["isAutoDoNotDisturbEnabled"] = false
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
             allApiObject.capturePosthog(event: "settings-changed-disable-dnd", metadata: [:])//#490
         }
 
     }
     
     @IBAction func popUpBtnFocusAlignmentScoreClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         
     }
     
     @IBAction func btnCheckBoxSuggestWorkFocusModeClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
         if btnCheckBoxSuggestWorkFocusMode.state == .on{
             arrFocusType[row]["autoSuggestFocusModeOnAllowedURL"] = true
         }else{
             arrFocusType[row]["autoSuggestFocusModeOnAllowedURL"] = false
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
     }
 }
 
@@ -872,6 +935,7 @@ extension focusPreferencesAdvancedVc:NSTextViewDelegate{
 extension focusPreferencesAdvancedVc:NSTextFieldDelegate, NSTokenFieldDelegate{
     
     func controlTextDidChange(_ obj: Notification) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         if let tokenfield = obj.object as? NSTokenField{
             if tokenfield == self.tokenField{
                 let selectedRow = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
@@ -904,9 +968,11 @@ extension focusPreferencesAdvancedVc:NSTextFieldDelegate, NSTokenFieldDelegate{
     }
     
     func tokenField(_ tokenField: NSTokenField, shouldAdd tokens: [Any], at index: Int) -> [Any] {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return [] }
         DispatchQueue.global().async {
             //usleep(50000)
             DispatchQueue.main.async {
+                guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
                 
                 let selectedRow = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
                 var dic = arrFocusType[selectedRow]

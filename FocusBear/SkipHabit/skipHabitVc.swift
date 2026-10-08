@@ -29,7 +29,8 @@ class skipHabitVc: NSViewController {
             lblTitle.stringValue = skipHabitVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
             btnDoHabit.title = skipHabitVcInfo.value(forKey: "buttonDoHabitsText") as? String ?? btnDoHabit.title
         }
-        
+        view.setUITestLandmark(UITestContract.Identifier.SessionsRegression.skipCountdownScreen)
+        btnDoHabit.setAccessibilityIdentifier(UITestContract.Identifier.SessionsRegression.skipCountdownKeepHabitButton)
     }
     
     override func viewWillDisappear() {
@@ -138,6 +139,10 @@ class skipHabitVc: NSViewController {
         if currentAction == ._INPROGRESS_ {
             focusButtonServiceObject.cancelHabit()
         }
+
+        // Skipping ends the habit, so a window that stepped aside for an allowed-activity habit may come
+        // back (report 2026-09-16_17-05-07). A no-op unless we were the ones who shrank it.
+        applyFullScreen(forAllowedActivityHabit: false)
 
         if rememberNextHabitVcObj != nil{
             if activityCompletionVcObj!.view.subviews.contains(rememberNextHabitVcObj!.view){

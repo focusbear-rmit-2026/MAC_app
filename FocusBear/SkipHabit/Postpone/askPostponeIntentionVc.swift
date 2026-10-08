@@ -65,9 +65,9 @@ class askPostponeIntentionVc: NSViewController, NSTextViewDelegate {
             
             if showAskFocusModeView && SettingsManagerObject.isGeekModeEnabled && !textView.string.isEmpty{
                 pomodoroVcObj?.isIntentionFromMorningPostpone = true
-                pomodoroVcObj?.textViewAchieve.string = textView.string
+                pomodoroVcObj?.goalText = textView.string
                 addLog(text: "postpone intention set on pomodoro view :- \(textView.string)")
-                pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
+                pomodoroVcObj!.showPostponeTitle()
             }
             
             
@@ -78,9 +78,9 @@ class askPostponeIntentionVc: NSViewController, NSTextViewDelegate {
             }
             if showAskFocusModeView && SettingsManagerObject.isGeekModeEnabled && !textView.string.isEmpty{
                 pomodoroVcObj?.isIntentionFromMorningPostpone = true
-                pomodoroVcObj?.textViewAchieve.string = textView.string
+                pomodoroVcObj?.goalText = textView.string
                 addLog(text: "postpone intention set on pomodoro view :- \(textView.string)")
-                pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
+                pomodoroVcObj!.showPostponeTitle()
             }
             
         }else if lastCurrentState == ._FOCUS_SUMMARY_{
@@ -95,9 +95,9 @@ class askPostponeIntentionVc: NSViewController, NSTextViewDelegate {
             
             if SettingsManagerObject.isGeekModeEnabled && !textView.string.isEmpty{
                 pomodoroVcObj?.isIntentionFromMorningPostpone = true
-                pomodoroVcObj?.textViewAchieve.string = textView.string
+                pomodoroVcObj?.goalText = textView.string
                 addLog(text: "postpone intention set on pomodoro view :- \(textView.string)")
-                pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
+                pomodoroVcObj!.showPostponeTitle()
             }
             
         }

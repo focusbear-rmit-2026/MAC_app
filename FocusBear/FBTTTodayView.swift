@@ -160,9 +160,8 @@ enum FBTTReader {
     }
 
     private static func dayString(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"   // local time zone, matching FBTT's day key
-        return f.string(from: date)
+        // Local time zone, matching FBTT's day key.
+        MachineDateFormat.string(from: date, format: MachineDateFormat.dayKey)
     }
 }
 
@@ -483,6 +482,7 @@ struct TimeTrackerEnableToggleView: View {
                 ))
                 .labelsHidden()
                 .toggleStyle(.switch)
+                .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.timeTrackerEnableToggle)
             }
             Divider()
         }

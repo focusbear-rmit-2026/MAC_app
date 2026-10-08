@@ -151,4 +151,63 @@ class TimeParsingTests: XCTestCase {
         let end   = getTimeFromString(val: "17:00")
         XCTAssertLessThan(start.hour, end.hour, "09 < 17 is a standard same-day range")
     }
+
+    // MARK: - Shared date formatters (Sentry FOCUS-BEAR-MACOS-1HT)
+
+    private static let dayKeyFormat = "yyyy-MM-dd"
+    private static let timestampFormat = "yyyy-MM-dd HH:mm:ss"
+
+    func test_dateHelpers_roundTripThroughTheSharedFormatters() throws {
+        let date = try XCTUnwrap(getDateFromString(date: "2026-09-27 21:05:09", dateFormat: Self.timestampFormat))
+        XCTAssertEqual(getStringFromDate(date: date, dateFormat: Self.timestampFormat), "2026-09-27 21:05:09")
+        XCTAssertEqual(getStringFromDate(date: date, dateFormat: Self.dayKeyFormat), "2026-09-27")
+    }
+
+    func test_utcHelpers_formatInUtcWhateverTheLocalZone() throws {
+        let epoch = Date(timeIntervalSince1970: 0)
+        XCTAssertEqual(getStringFromDateInUtc(date: epoch, dateFormat: Self.timestampFormat), "1970-01-01 00:00:00")
+        let parsed = try XCTUnwrap(getDateFromStringInUtc(date: "1970-01-01 00:00:00", dateFormat: Self.timestampFormat))
+        XCTAssertEqual(parsed, epoch)
+    }
+
+    func test_formatter_isBuiltOncePerFormatAndZone() {
+        let first = CachedDateFormatters.formatter(format: Self.dayKeyFormat, zone: .local)
+        XCTAssertTrue(first === CachedDateFormatters.formatter(format: Self.dayKeyFormat, zone: .local))
+        XCTAssertFalse(first === CachedDateFormatters.formatter(format: Self.dayKeyFormat, zone: .utc))
+        XCTAssertFalse(first === CachedDateFormatters.formatter(format: Self.timestampFormat, zone: .local))
+    }
+
+    func test_timeZoneChange_dropsTheCachedFormatters() {
+        let before = CachedDateFormatters.formatter(format: Self.dayKeyFormat, zone: .local)
+        NotificationCenter.default.post(name: .NSSystemTimeZoneDidChange, object: nil)
+        XCTAssertFalse(before === CachedDateFormatters.formatter(format: Self.dayKeyFormat, zone: .local),
+                       "a formatter keeps the zone it was built in, so a zone change must rebuild it")
+    }
+
+    func test_sharedFormatter_givesTheSameAnswerFromManyThreads() {
+        let date = Date(timeIntervalSince1970: 1_790_000_000)
+        let expected = getStringFromDateInUtc(date: date, dateFormat: Self.timestampFormat)
+        let results = ConcurrentResults()
+        DispatchQueue.concurrentPerform(iterations: 200) { _ in
+            results.append(getStringFromDateInUtc(date: date, dateFormat: Self.timestampFormat))
+        }
+        XCTAssertEqual(results.values, Array(repeating: expected, count: 200))
+    }
+}
+
+private final class ConcurrentResults {
+    private let lock = NSLock()
+    private var stored: [String] = []
+
+    var values: [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return stored
+    }
+
+    func append(_ value: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        stored.append(value)
+    }
 }

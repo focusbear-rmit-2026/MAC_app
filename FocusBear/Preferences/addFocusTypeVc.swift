@@ -35,6 +35,10 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
         lblError.stringValue = "Focus type with the same name already exist."
         lblError.isHidden = true
         textFieldFocusType.delegate = self
+        textFieldFocusType.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.addBlockListNameField)
+        btnAdd.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.addBlockListAddButton)
+        btnCancel.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.addBlockListCancelButton)
+        lblError.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.addBlockListError)
         
         
         if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
@@ -138,6 +142,7 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
     }
     
     @IBAction func btnAddClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         let newName = textFieldFocusType.stringValue.lowercased
         for dic in arrFocusType{
             if let name = dic["name"] as? String{
@@ -148,6 +153,13 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
             }
         }
         let id = getUuid()
+        // Note: we intentionally do NOT set "is_ai_enabled" here. Every read site treats an absent
+        // key as true (AI on) — the Advanced checkbox shows checked, and the runtime veto in
+        // SettingsManager.isAIBlockingEnabled() only turns AI off when the key is explicitly false.
+        // So an absent key behaves identically to is_ai_enabled = true. Consequence (by design, not a
+        // bug): a new mode always defaults to AI-on until the user unchecks it — you can't create a
+        // mode that defaults to AI-off. The key is written on the first toggle (and synced via
+        // editFocusMode under metadata); the server also sends it back on every focus mode after sync.
         let dic:[String:Any] = ["id":id, "name":textFieldFocusType.stringValue, "color": getColorString(color: colorWell.color), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedListApproach":false, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp, "autoSuggestFocusModeOnAllowedURL": true, "isAutoDoNotDisturbEnabled": true]//, "isAllowedAllUrls":true , "isBlockedAllUrls":false#453
         
         let row = focusPreferencesVcObj?.tblViewFocusType.numberOfRows ?? 0
@@ -166,10 +178,13 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
         }
 
         focusPreferencesVcObj?.checkState()
+        // #2571 (15): the Block List screen is a SwiftUI view over `arrFocusType`; it only re-reads on
+        // reload(). Without this the newly added mode didn't appear until the user switched tabs and back.
+        focusPreferencesVcObj?.refreshBlockListRedesign()
 
         lblError.isHidden = true
         self.dismiss(self)
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         resetPomodoroVcFocusListIfNeeded()
         
         allApiObject.addFocusMode(focusType: dic, completionHandler: {success in

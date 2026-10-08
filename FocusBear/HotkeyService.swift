@@ -6,6 +6,7 @@
 //    - Brain Dump  (default: ⌥⌘B)
 //    - Focus Music (default: ⌥⌘M)
 //    - Task List   (default: ⌥⌘T)
+//    - Voice input (⌥⌘V)
 //
 //  Uses the existing Carbon-based HotKey infrastructure already present in the app.
 //  Shortcuts are user-configurable and persist via UserDefaults (see SettingsManager).
@@ -44,14 +45,18 @@ final class HotkeyService {
     private var hotKeyFocusMusic: HotKey?
     private var hotKeyTaskList: HotKey?
     private var hotKeyStartFocusSession: HotKey?
+    private var hotKeyVoiceInput: HotKey?
     // MARK: - Registration
 
-    /// Re-reads current settings and registers/re-registers all three shortcuts.
+    /// Re-reads current settings and registers/re-registers the shortcuts.
     func registerAll() {
+        // Global shortcuts are machine-wide; a UI-test build would take them from the real app.
+        if UITestHost.isEnabled { return }
         registerBrainDump()
         registerFocusMusic()
         registerTaskList()
         registerFocusSession()
+        registerVoiceInput()
     }
 
     func registerBrainDump() {
@@ -143,6 +148,17 @@ final class HotkeyService {
     func unregisterFocusSession() {
         hotKeyStartFocusSession = nil
     }
+
+    /// Uses the menu microphone flow so permission prompts and recording feedback are identical.
+    private func registerVoiceInput() {
+        hotKeyVoiceInput = nil
+        hotKeyVoiceInput = HotKey(key: .v, modifiers: [.option, .command])
+        hotKeyVoiceInput?.keyDownHandler = {
+            menuViewControllerObj?.startVoiceInputFromShortcut()
+        }
+    }
+
+    static let voiceInputShortcutDisplay = "⌥⌘V"
 
     // MARK: - Helpers
 

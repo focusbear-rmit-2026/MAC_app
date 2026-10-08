@@ -8,6 +8,7 @@
 import Cocoa
 import SwiftUI
 import MediaPlayer
+import WebKit
 
 /// One row of the curated Focus Music library (arrAllTracks), reshaped into a SwiftUI-friendly,
 /// value-typed snapshot. arrAllTracks itself stays the source of truth — other files (menu "now
@@ -242,6 +243,17 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
 
     // MARK: - Hardware media key (play/pause) → focus music
 
+    /// What a system media command asks of us. `play`/`pause` are absolute: macOS sends `pause` on its
+    /// own (sleep, headphones unplugged, another app taking the audio route), and answering that by
+    /// *resuming* — which happens if every command is treated as a toggle — starts the audio queue
+    /// against a device that's going away and stalls the main thread inside AudioQueueStart. Only the
+    /// hardware play/pause key is a real toggle.
+    enum MediaKeyCommand {
+        case play
+        case pause
+        case toggle
+    }
+
     private var remoteCommandsRegistered = false
     private var isNowPlayingActive = false
 
@@ -252,12 +264,18 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
         guard !remoteCommandsRegistered else { return }
         remoteCommandsRegistered = true
         let center = MPRemoteCommandCenter.shared()
-        let toggle: (MPRemoteCommandEvent) -> MPRemoteCommandHandlerStatus = { [weak self] _ in
-            self?.togglePlayPauseFromMediaKey(); return .success
-        }
-        center.togglePlayPauseCommand.addTarget(handler: toggle)
-        center.playCommand.addTarget(handler: toggle)
-        center.pauseCommand.addTarget(handler: toggle)
+        center.togglePlayPauseCommand.addTarget { [weak self] _ in self?.scheduleMediaKeyCommand(.toggle); return .success }
+        center.playCommand.addTarget { [weak self] _ in self?.scheduleMediaKeyCommand(.play); return .success }
+        center.pauseCommand.addTarget { [weak self] _ in self?.scheduleMediaKeyCommand(.pause); return .success }
+    }
+
+    /// Hand the command back to MediaPlayer straight away and do the real work on the next main-queue
+    /// turn. Doing it inline (FOCUS-BEAR-MACOS-1CA) kept MediaPlayer's event dispatch open while we
+    /// re-entered it through MPNowPlayingInfoCenter and, worse, while NSSound blocked the main thread for
+    /// seconds in AudioQueueStart; MediaPlayer then dropped the still-pending dispatch and raised
+    /// `_MPRemoteCommandEventDispatch deallocated without calling continuation`.
+    private func scheduleMediaKeyCommand(_ command: MediaKeyCommand) {
+        DispatchQueue.main.async { [weak self] in self?.handleMediaKeyCommand(command) }
     }
 
     /// Publish focus-music playback to the system Now Playing centre so the hardware play/pause key is
@@ -290,22 +308,32 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
         isNowPlayingActive = true
     }
 
-    /// Toggle whatever focus-music source is active. Called from the hardware media key (may arrive off
-    /// the main thread) and reused by the menu's play/pause control.
-    func togglePlayPauseFromMediaKey() {
-        guard Thread.isMainThread else { DispatchQueue.main.async { [weak self] in self?.togglePlayPauseFromMediaKey() }; return }
+    /// Resolve a media command against the current state: the playing state to move to, or nil when the
+    /// command is already satisfied (a second `pause` while paused must NOT resume). Pure, so unit-tested.
+    static func resolvedPlaybackState(for command: MediaKeyCommand, isPlaying: Bool) -> Bool? {
+        let shouldPlay: Bool
+        switch command {
+        case .play: shouldPlay = true
+        case .pause: shouldPlay = false
+        case .toggle: shouldPlay = !isPlaying
+        }
+        return shouldPlay == isPlaying ? nil : shouldPlay
+    }
+
+    /// Apply a media command to whichever focus-music source is active. Main thread only — reached via
+    /// scheduleMediaKeyCommand().
+    func handleMediaKeyCommand(_ command: MediaKeyCommand) {
         if currentSound != nil,
            let i = arrAllTracks.firstIndex(where: { ($0["isPlaying"] as? Bool == true) || ($0["isPaused"] as? Bool == true) }) {
-            let sound = currentSound
-            if arrAllTracks[i]["isPlaying"] as? Bool == true {
-                sound?.pause()
-                arrAllTracks[i]["isPlaying"] = false
-                arrAllTracks[i]["isPaused"] = true
+            let isPlaying = arrAllTracks[i]["isPlaying"] as? Bool == true
+            guard let shouldPlay = Self.resolvedPlaybackState(for: command, isPlaying: isPlaying) else { return }
+            if shouldPlay {
+                currentSound?.resume()
             } else {
-                sound?.resume()
-                arrAllTracks[i]["isPlaying"] = true
-                arrAllTracks[i]["isPaused"] = false
+                currentSound?.pause()
             }
+            arrAllTracks[i]["isPlaying"] = shouldPlay
+            arrAllTracks[i]["isPaused"] = !shouldPlay
             refresh()
             menuViewControllerObj?.reloadIfNeeded()
             updateNowPlaying()
@@ -313,8 +341,17 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
         }
         // YouTube: pause/resume in place (not stop) so we stay Now Playing and can resume — see
         // youtubePaused. Shared with the menu control via toggleYouTubePlayPause().
-        if youtubePlayingId != nil { toggleYouTubePlayPause(); return }
-        if let id = spotifyPlayingId, let track = spotifyTracks.first(where: { $0.id == id }) { toggleSpotifyTrack(track); return }
+        if youtubePlayingId != nil {
+            guard let shouldPlay = Self.resolvedPlaybackState(for: command, isPlaying: !youtubePaused) else { return }
+            setYouTubePaused(!shouldPlay)
+            return
+        }
+        // Spotify's own app is Now Playing while it plays (see updateNowPlaying), so the only thing we can
+        // do from here is pause what we started — toggleSpotifyTrack pauses when given the playing track.
+        if let id = spotifyPlayingId, let track = spotifyTracks.first(where: { $0.id == id }),
+           Self.resolvedPlaybackState(for: command, isPlaying: true) == false {
+            toggleSpotifyTrack(track)
+        }
     }
 
     func setVolume(_ value: Float) {
@@ -506,13 +543,32 @@ final class FocusMusicViewModel: NSObject, ObservableObject {
         youtubePlayingKind = nil
     }
 
+    /// The live embedded YouTube WKWebView, registered by YouTubeMusicPlayerView.makeNSView. The player
+    /// lives inside the Focus Music screen's SwiftUI tree; when that screen isn't front (e.g. the user is
+    /// in the menu), its NSHostingView is detached from the window and SwiftUI stops calling updateNSView,
+    /// so a youtubePaused change would never reach the webview. Holding the webview here lets pause/resume
+    /// drive the IFrame API directly, independent of any SwiftUI re-render.
+    weak var youtubeWebView: WKWebView?
+
     /// Pause/resume the current YouTube track in place (not stop) — used by both the hardware media key
     /// and the menu now-playing play/pause control, so they behave the same. Keeps youtubePlayingId set
     /// so we stay the Now Playing app and can resume. No-op if no YouTube track is active.
     func toggleYouTubePlayPause() {
         guard youtubePlayingId != nil else { return }
-        youtubePaused.toggle()
+        setYouTubePaused(!youtubePaused)
+    }
+
+    private func setYouTubePaused(_ paused: Bool) {
+        youtubePaused = paused
+        // Drive the webview directly rather than waiting for a SwiftUI update that won't come while the
+        // Focus Music screen is off-window (the reason the menu's pause button did nothing).
+        applyYouTubePausedToWebView()
         menuViewControllerObj?.reloadIfNeeded()
+    }
+
+    /// Push the current youtubePaused state straight to the embedded player via the IFrame API.
+    func applyYouTubePausedToWebView() {
+        youtubeWebView?.evaluateJavaScript("fbSetPaused(\(youtubePaused ? "true" : "false"));", completionHandler: nil)
     }
 
     func toggleYoutubeMute() {

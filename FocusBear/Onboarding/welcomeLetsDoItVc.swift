@@ -20,7 +20,7 @@ class welcomeLetsDoItVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        btnLetsDoIt.setAccessibilityIdentifier(UITestContract.Identifier.Onboarding.letsDoItButton)
         
         btnLetsDoIt.title = "Let’s do it!"
         

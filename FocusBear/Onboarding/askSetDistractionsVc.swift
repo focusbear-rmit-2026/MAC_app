@@ -22,7 +22,8 @@ class askSetDistractionsVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        btnContinue.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.helpPickDistractionsButton)
+        btnNoThanks.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.pickDistractionsMyselfButton)
         
         lblTitle.stringValue = "Not sure which distractions to block?"
         lblSubTitle.stringValue = "We can suggest distractions based on your job - so you can stay in the zone."
@@ -69,7 +70,8 @@ class askSetDistractionsVc: NSViewController {
 
     @IBAction func btnNoThanksClicked(_ sender: Any) {
         addLog(text: "[user-action] askSetDistractionsVc:- btnNoThanks")
-        getOnboardingVcObject().navigate(to: ._ALLOWED_URLS_)
+        // Blocking order: blocked URLs → blocked apps → allowed URLs (see onboardingBlockedAppsVc).
+        getOnboardingVcObject().navigate(to: ._BLOCKED_URLS_)
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {

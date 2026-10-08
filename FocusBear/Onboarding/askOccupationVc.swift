@@ -8,6 +8,31 @@
 
 import Cocoa
 
+/// What the backend is told about a person's occupation when it generates their suggested work
+/// sites (`POST /user/occupation-sites`).
+///
+/// Each persona has an optional free-text field, and typing in it used to REPLACE the persona
+/// outright: a student who wrote "Computer Science" was sent exactly that, with no indication they
+/// were a student rather than a lecturer or a recruiter. The persona is the more reliable signal and
+/// was the one being discarded.
+///
+/// It also broke a backend rule that depends on it — Canvas is suggested for students by matching
+/// the occupation against `/\bstudents?\b/i`, which "Computer Science" does not satisfy
+/// (backend PR #2446, report 2026-09-21_17-58-22).
+enum OccupationDescription {
+
+    /// The persona, plus the detail when there is one. Both, never one instead of the other.
+    static func forRelevantSites(persona: String, detail: String) -> String {
+        let trimmedPersona = persona.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedDetail = detail.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedDetail.isEmpty { return trimmedPersona }
+        if trimmedPersona.isEmpty { return trimmedDetail }
+        // Avoid "student: student" when someone types their persona into the detail box.
+        if trimmedDetail.lowercased() == trimmedPersona.lowercased() { return trimmedPersona }
+        return "\(trimmedPersona): \(trimmedDetail)"
+    }
+}
+
 class askOccupationVc: NSViewController, NSTextFieldDelegate {
 
     @IBOutlet weak var loader: NSProgressIndicator!
@@ -32,8 +57,9 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
-        
+        btnContinue.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.occupationContinueButton)
+        btnSkip.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.occupationSkipButton)
+        textFieldOccupation.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.occupationDetailField)
         
         lblDescription.stringValue = "I’ll suggest which websites to block and which ones are productive."
         btnContinue.title = "That’s me!"
@@ -142,7 +168,7 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
     @IBAction func btnSkipClicked(_ sender: Any) {
         addLog(text: "[user-action] ask occupation view:- button Skip clicked.")
         allApiObject.capturePosthog(event: "ask-occupation-skipped", metadata: [:])
-        getOnboardingVcObject().navigateToAllowedUrlsVc()
+        getOnboardingVcObject().navigate(to: ._BLOCKED_URLS_)
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
@@ -163,7 +189,9 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
             if !textFieldOccupation.stringValue.isEmpty{
                 studentJson = ["University student": textFieldOccupation.stringValue]
                 occupationToSave = "universityStudent_\(textFieldOccupation.stringValue)"
-                occupationForRelevantSites = textFieldOccupation.stringValue
+                // Keep the persona; the typed detail is added to it, not swapped for it.
+                occupationForRelevantSites = OccupationDescription.forRelevantSites(
+                    persona: occupationForRelevantSites, detail: textFieldOccupation.stringValue)
             }
             if studentJson.keys.isEmpty{
                 posthogJson = [
@@ -182,7 +210,9 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
             if !textFieldOccupation.stringValue.isEmpty{
                 businessOwnerJson = ["Business owner": textFieldOccupation.stringValue]
                 occupationToSave = "businessOwner_\(textFieldOccupation.stringValue)"
-                occupationForRelevantSites = textFieldOccupation.stringValue
+                // Keep the persona; the typed detail is added to it, not swapped for it.
+                occupationForRelevantSites = OccupationDescription.forRelevantSites(
+                    persona: occupationForRelevantSites, detail: textFieldOccupation.stringValue)
             }
             
             if businessOwnerJson.keys.isEmpty{
@@ -202,7 +232,9 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
             if !textFieldOccupation.stringValue.isEmpty{
                 employeeJson = ["Employee": textFieldOccupation.stringValue]
                 occupationToSave = "employee_\(textFieldOccupation.stringValue)"
-                occupationForRelevantSites = textFieldOccupation.stringValue
+                // Keep the persona; the typed detail is added to it, not swapped for it.
+                occupationForRelevantSites = OccupationDescription.forRelevantSites(
+                    persona: occupationForRelevantSites, detail: textFieldOccupation.stringValue)
             }
             
             if employeeJson.keys.isEmpty{
@@ -223,7 +255,9 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
             if !textFieldOccupation.stringValue.isEmpty{
                 freelancerJson = ["Freelancer": textFieldOccupation.stringValue]
                 occupationToSave = "freelancer_\(textFieldOccupation.stringValue)"
-                occupationForRelevantSites = textFieldOccupation.stringValue
+                // Keep the persona; the typed detail is added to it, not swapped for it.
+                occupationForRelevantSites = OccupationDescription.forRelevantSites(
+                    persona: occupationForRelevantSites, detail: textFieldOccupation.stringValue)
             }
             
             if freelancerJson.keys.isEmpty{
@@ -245,7 +279,9 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
                 ]
                 occupationToSave = "other_\(textFieldOccupation.stringValue)"
                 
-                occupationForRelevantSites = textFieldOccupation.stringValue
+                // Keep the persona; the typed detail is added to it, not swapped for it.
+                occupationForRelevantSites = OccupationDescription.forRelevantSites(
+                    persona: occupationForRelevantSites, detail: textFieldOccupation.stringValue)
             }else{
                 posthogJson = [
                     "occupation": "Other"
@@ -272,7 +308,7 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
                 btnSkip.isEnabled = true
                 btnContinue.isEnabled = true
                 textFieldOccupation.isEnabled = true
-                getOnboardingVcObject().navigateToAllowedUrlsVc()
+                getOnboardingVcObject().navigate(to: ._BLOCKED_URLS_)
             }
         })
     }
@@ -295,6 +331,7 @@ extension askOccupationVc: NSCollectionViewDelegate, NSCollectionViewDataSource{
     func collectionView(_ collectionView: NSCollectionView, itemForRepresentedObjectAt indexPath: IndexPath) -> NSCollectionViewItem {
         let item = self.collectionView.makeItem(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "collectionViewItemOccupation"), for: indexPath) as! collectionViewItemOccupation
         item.lblTitle.stringValue = arrOccupations[indexPath.item]
+        item.lblTitle.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.occupationOptionPrefix + "\(indexPath.item)")
         if selectedIndex == indexPath.item{
             item.isItemSelected = true
         }else{

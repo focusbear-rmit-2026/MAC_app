@@ -23,7 +23,8 @@ class setScheduledDistractionBlockingVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        btnNoThanks.setAccessibilityIdentifier(UITestContract.Identifier.Onboarding.skipDistractionBlockingButton)
+        btnContinue.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.setUpDistractionBlockingButton)
         lblTitle.stringValue = "Set up Scheduled Distraction Blocking"
         lblSubTitle.stringValue = "Here’s what it will look like:"
         btnContinue.title = "Set up distraction blocking"
@@ -72,7 +73,9 @@ class setScheduledDistractionBlockingVc: NSViewController {
     @IBAction func btnNoThanksClicked(_ sender: Any) {
         addLog(text: "[user-action] setScheduledDistractionBlockingVc:- btnNoThanksClicked")
         allApiObject.capturePosthog(event: "set-distraction-blocking-skipped", metadata: [:])
-        getOnboardingVcObject().navigate(to: ._ALL_SET_)
+        // Blocking is the first section; skipping it jumps past the rest of the blocking-config
+        // steps to the blocking schedule step (habits now come later, after permissions).
+        getOnboardingVcObject().navigate(to: ._ASK_CREATE_BLOCKING_SCHEDULE_)
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {

@@ -27,7 +27,9 @@ enum ToolID: String, CaseIterable {
         let fallback: String
         switch self {
         case .focusMusic:  key = "menuFocusMusic";  fallback = "Focus Music"
-        case .brainDump:   key = "menuBrainDump";   fallback = "Brain Dump"
+        // The tool is still called `brainDump` internally, but the feature is now "Notes" — match the
+        // visible menu (which reads menuNotes) so the hidden/restore list doesn't show the old name. (#2658)
+        case .brainDump:   key = "menuNotes";       fallback = "Notes"
         case .todoList:    key = "menuTodoList";    fallback = "Todo List"
         case .stats:       key = "menuStats";       fallback = "Stats"
         case .tabAudit:    key = "menuTabAudit";    fallback = "Tab Audit"

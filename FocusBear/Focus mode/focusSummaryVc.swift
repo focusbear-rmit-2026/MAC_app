@@ -613,15 +613,19 @@ class focusSummaryVc: NSViewController {
     @IBAction func btnNeedMoreTimeClicked(_ sender: Any) {        
         if viewVisibleCount == 0{
             addLog(text: "[user-action] button Need one More minute Clicked from focus summary")
-            if cutOffTime != nil && SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff && !SettingsManagerObject.isEasySkipEnabled{
-                if isCutOffTimeGoing() && shouldAskPassword(){
-                    mainViewControllerObj?.showPasswordView()
-                }else{
-                    postponeFocusSummaryForOneMinute()
+            // Report 2026-09-17_17-05-10 was a postpone granted past the cutoff with NO password
+            // asked. This button skips the picker, so it does not pass through
+            // `popupAppointmentTimeVc`'s password gate; ask here instead. The setting is "require a
+            // password after the cutoff", so the answer is to ask for it — an earlier version
+            // refused outright, which locked out the user the setting exists to let through.
+            if isRoutinePostponeAfterCutoffPasswordRequired(){
+                addLog(text: "Need one more minute past cutoff:- asking for the postpone password")
+                askPostponePasswordAfterCutoff(presenter: self) { [weak self] in
+                    self?.postponeFocusSummaryForOneMinute()
                 }
-            }else{
-                postponeFocusSummaryForOneMinute()
+                return
             }
+            postponeFocusSummaryForOneMinute()
         }else{
             addLog(text: "[user-action] button I still need to work more Clicked from focus summary")
             getHabitsVcObject().abortCurrentState()

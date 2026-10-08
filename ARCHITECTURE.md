@@ -291,8 +291,11 @@ Offline handling: activity-logging calls that fail are appended to CSV files and
 - Config in `FocusBear/Auth0/Auth0.plist` (tenant `dev-2hidr8ad.us.auth0.com`).
 - Login is a Resource-Owner-Password grant from `Login/customLoginVc.swift` (realm
   `Username-Password-Authentication`, audience `https://auth.focusbear.io/api/v2/`).
-- Tokens are stored by Auth0's `CredentialsManager` in the **Keychain** (never UserDefaults; only a
-  `kUserdefaultsIsUserLoggedIn` flag lives there).
+- Tokens are stored by Auth0's `CredentialsManager` in the login **Keychain** (only a
+  `kUserdefaultsIsUserLoggedIn` flag lives in UserDefaults). Builds before the at-rest work also
+  copied the access token into the FBHelper shared suite; that copy is gone and the main app deletes
+  it at launch (`LegacySharedSuiteSecrets`). Log lines pass through `LogRedactor` (tokens,
+  passwords and emails never reach `Debug_Logs.txt`).
 - Refresh: `AppDelegate.renewCredentialsIfNeeded` — hand-rolled throttle (once per 5 min, renew when
   expiry < 24 h away). Plus most API calls independently ask `credentialsManager.credentials {...}`
   before firing.
@@ -344,7 +347,10 @@ LaunchAgent (`~/Library/LaunchAgents/com.focusbear.focusbearhelper.plist`, writt
 - **Purpose:** restart the main app if it's force-quit during a session, and show nag windows.
 - **IPC:** `DistributedNotificationCenter` notifications (object string
   `"com.App.EarnYourScreentime"`) + a shared App Group `UserDefaults` (`sharedDefaults`). Key names
-  are duplicated between `FBHelper/sharedFile.swift` and the main app — keep them in sync manually.
+  live in `FBHelper/sharedFile.swift`, which both targets compile.
+- **No secrets in the shared suite.** It is a plain plist in `~/Library/Preferences`. FBHelper has
+  no credentials: its analytics events go into `HelperEventQueue` and the signed-in main app sends
+  them. It learns "internal test account" from a bool, not from the email.
 - The helper polls on two 10 s timers (nag logic; force-quit monitoring). The main app posts
   `mainAppQuitByUser` on legitimate quit so the helper doesn't resurrect it.
 
@@ -356,8 +362,11 @@ The newest major feature (PR #1935 lineage) and the only subsystem built with a 
 
 - **`ScheduleKit.swift`** — pure, AppKit-free timeline engine. `ScheduleBuilder.build(...)` takes
   routine segments (with time windows), calendar meetings, `now`, day end, leave-buffer, and pomodoro
-  sprint config; packs habits strictly in-order per window (pushing past meetings, stopping at the
-  first habit that won't fit), inserts meeting blocks, and turns free gaps ≥ 10 min into deep-work
+  sprint config; packs habits into the free gaps of their routine window gap by gap
+  (`placeHabitsInGaps`: within a gap the earliest habit in routine order that still fits goes next, so
+  a shorter later habit fills the time before a meeting and the long one takes the first later gap;
+  a habit that fits in no gap of the window becomes a "not enough time today" overflow row), inserts
+  meeting blocks, and turns the free gaps left after habit placement (≥ 10 min) into deep-work
   blocks, optionally split into work/break sprints (`sprintWorkSeconds = breakAfterMinutes * 60`;
   `breakAfterMinutes` is a runtime global from server settings, default 0 — a ≤ 0 value yields
   un-split blocks). This is the **unit-tested** part (`ScheduleKitTests`).

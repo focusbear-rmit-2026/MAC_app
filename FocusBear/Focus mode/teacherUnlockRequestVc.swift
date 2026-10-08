@@ -12,9 +12,12 @@
 
 import Cocoa
 
-class teacherUnlockRequestVc: NSViewController {
+class teacherUnlockRequestVc: NSViewController, NSTextFieldDelegate {
 
     var sessionId = ""
+    // Pre-fills the "app name or website" field — e.g. when opened from a blocked-app notification's
+    // "I actually need this" button, so the student doesn't retype the app that was just blocked.
+    var prefillAppOrUrl = ""
 
     var lblTitle: NSTextField!
     var lblAppOrUrl: NSTextField!
@@ -35,7 +38,7 @@ class teacherUnlockRequestVc: NSViewController {
 
         var titleString = "Ask your teacher to unlock an app or website"
         var appOrUrlString = "App name or website"
-        var reasonString = "Reason (optional)"
+        var reasonString = "Reason"
         var placeHolderAppOrUrlString = "e.g. Desmos or desmos.com"
         var placeHolderReasonString = "Explain why you need this unlock...."
         var buttonCreateRequestString = "Send Request"
@@ -60,6 +63,9 @@ class teacherUnlockRequestVc: NSViewController {
 
         textFieldAppOrUrl = NSTextField(frame: NSRect(x: 20, y: 142, width: 420, height: 26))
         textFieldAppOrUrl.placeholderString = placeHolderAppOrUrlString
+        textFieldAppOrUrl.delegate = self
+        textFieldAppOrUrl.setAccessibilityTitleUIElement(lblAppOrUrl)
+        textFieldAppOrUrl.setAccessibilityIdentifier(UITestContract.Identifier.TeacherSession.unlockRequestAppOrUrlField)
         self.view.addSubview(textFieldAppOrUrl)
 
         lblReason = NSTextField(labelWithString: reasonString)
@@ -68,17 +74,22 @@ class teacherUnlockRequestVc: NSViewController {
 
         textFieldReason = NSTextField(frame: NSRect(x: 20, y: 80, width: 420, height: 26))
         textFieldReason.placeholderString = placeHolderReasonString
+        textFieldReason.delegate = self
+        textFieldReason.setAccessibilityTitleUIElement(lblReason)
+        textFieldReason.setAccessibilityIdentifier(UITestContract.Identifier.TeacherSession.unlockRequestReasonField)
         self.view.addSubview(textFieldReason)
 
         btnCreateRequest = NSButton(title: buttonCreateRequestString, target: self, action: #selector(btnCreateRequestClicked(_:)))
         btnCreateRequest.bezelStyle = .rounded
         btnCreateRequest.keyEquivalent = "\r"
         btnCreateRequest.frame = NSRect(x: 320, y: 20, width: 120, height: 32)
+        btnCreateRequest.setAccessibilityIdentifier(UITestContract.Identifier.TeacherSession.unlockRequestSendButton)
         self.view.addSubview(btnCreateRequest)
 
         btnCancel = NSButton(title: buttonCancelText, target: self, action: #selector(btnCancelClicked(_:)))
         btnCancel.bezelStyle = .rounded
         btnCancel.frame = NSRect(x: 200, y: 20, width: 110, height: 32)
+        btnCancel.setAccessibilityIdentifier(UITestContract.Identifier.TeacherSession.unlockRequestCancelButton)
         self.view.addSubview(btnCancel)
 
         loader = NSProgressIndicator(frame: NSRect(x: 170, y: 26, width: 20, height: 20))
@@ -88,9 +99,24 @@ class teacherUnlockRequestVc: NSViewController {
     }
 
     override func viewWillAppear() {
-        textFieldAppOrUrl.stringValue = ""
+        textFieldAppOrUrl.stringValue = prefillAppOrUrl
         textFieldReason.stringValue = ""
-        btnCreateRequest.isEnabled = true
+        // A reason is now required (matches the "Reason" label, no longer "optional"), so Send stays
+        // disabled until BOTH the app/URL and a reason are filled. Reason starts empty here, so even a
+        // prefilled app/URL can't be submitted without the student explaining why.
+        updateCreateRequestEnabled()
+    }
+
+    /// Enable Send only when both fields have non-whitespace content — this is what makes the reason
+    /// mandatory without needing a separate error string.
+    private func updateCreateRequestEnabled() {
+        let appOrUrl = textFieldAppOrUrl.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let reason = textFieldReason.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        btnCreateRequest.isEnabled = !appOrUrl.isEmpty && !reason.isEmpty
+    }
+
+    func controlTextDidChange(_ obj: Notification) {
+        updateCreateRequestEnabled()
     }
 
     @objc func btnCancelClicked(_ sender: Any) {
@@ -99,7 +125,10 @@ class teacherUnlockRequestVc: NSViewController {
 
     @objc func btnCreateRequestClicked(_ sender: Any) {
         let appOrUrl = textFieldAppOrUrl.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        if appOrUrl.isEmpty{
+        let reason = textFieldReason.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Defence in depth: the button is disabled unless both are filled, but guard here too.
+        if appOrUrl.isEmpty || reason.isEmpty{
+            NSSound.beep()
             return;
         }
         addLog(text: "[user-action] teacherUnlockRequestVc:- btnCreateRequestClicked")
@@ -116,7 +145,7 @@ class teacherUnlockRequestVc: NSViewController {
         loader.isHidden = false
         loader.startAnimation(self)
 
-        allApiObject.requestClassUnlock(sessionId: sessionId, requestedApp: requestedApp, requestedDomain: requestedDomain, reason: textFieldReason.stringValue, completionHandler: {result in
+        allApiObject.requestClassUnlock(sessionId: sessionId, requestedApp: requestedApp, requestedDomain: requestedDomain, reason: reason, completionHandler: {result in
             DispatchQueue.main.async {
                 self.loader.stopAnimation(self)
                 self.loader.isHidden = true

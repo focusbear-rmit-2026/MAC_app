@@ -262,7 +262,7 @@ class breakWarningVc: NSViewController {
             // Starts at 5s for a fresh break, escalates 5→10→15 per consecutive postpone.
             breakViewModel.requiredHoldSeconds = Double(min(15, 5 * (breakPostponeHoldCount + 1)))
         }
-        var title = "Your <DURATION> seconds micro break starts in"
+        var title = "Your <DURATION> micro break starts in"
         btnPostpone.title = "Postpone"
         if let breakWarningVcInfo = configjson.value(forKey: "breakWarningVcInfo") as? NSDictionary{
             btnPostpone.title = breakWarningVcInfo.value(forKey: "buttonPostponeNewText") as? String ?? btnPostpone.title
@@ -271,17 +271,22 @@ class breakWarningVc: NSViewController {
         setProgres()
         
         if let breakWarningVcInfo = configjson.value(forKey: "breakWarningVcInfo") as? NSDictionary{
+            // Read the V2 keys: <DURATION> is now substituted with a formatted "3 min 10 sec" string, so
+            // the title must NOT hardcode a "second" unit. The legacy title/titleMeetings keys (which do
+            // say "second") are left untouched for OLD app versions that still substitute the raw seconds
+            // number and share this same fetched config. New key missing (un-updated config) → the
+            // hardcoded fallback above already carries the correct no-"second" wording.
             if isBreakActivityShowingWhileMeeting{
-                title = "Your <DURATION> seconds mid meeting break starts in"
+                title = "Your <DURATION> mid meeting break starts in"
 //                lblDescription.stringValue = "Micro breaks can help you stay focused in meetings."
 
-                title = breakWarningVcInfo.value(forKey: "titleMeetings") as? String ?? title
+                title = breakWarningVcInfo.value(forKey: "titleMeetingsV2") as? String ?? title
 //                lblDescription.stringValue = breakWarningVcInfo.value(forKey: "descriptionMeetingsText") as? String ?? lblDescription.stringValue
             }else{
-                title = "Your <DURATION> seconds micro break starts in"
+                title = "Your <DURATION> micro break starts in"
 //                lblDescription.stringValue = "Micro breaks help keep your energy + alertness levels consistent throughout the day and have positive impacts on your posture (no more screen headaches)."
 
-                title = breakWarningVcInfo.value(forKey: "title") as? String ?? title
+                title = breakWarningVcInfo.value(forKey: "titleV2") as? String ?? title
 //                lblDescription.stringValue = breakWarningVcInfo.value(forKey: "descriptionText") as? String ?? lblDescription.stringValue
             }
             
@@ -297,7 +302,7 @@ class breakWarningVc: NSViewController {
 //            btnPostpone.title = breakWarningVcInfo.value(forKey: "buttonPostponeText") as? String ?? btnPostpone.title
         }
         
-        lblTitle.stringValue = title.replacingOccurrences(of: "<DURATION>", with: "\(totalDuration)")
+        lblTitle.stringValue = title.replacingOccurrences(of: "<DURATION>", with: formatBreakDuration(totalDuration))
         breakViewModel.title = lblTitle.stringValue
         popUpBtnClicked(self)
     }

@@ -57,7 +57,7 @@ class popUpSaveThisTaskForLaterVc: NSViewController {
                 let tasks = existingTasks ?? []
 
                 if let match = TaskDeduplicationHelper.existingTask(named: taskName, in: tasks) {
-                    addLog(text: "popUpSaveThisTaskForLaterVc: task '\(taskName)' already exists (id: \(match.task.value(forKey: "id") as? String ?? "?")) – reusing, skipping creation.")
+                    addLog(text: "popUpSaveThisTaskForLaterVc: task \(LogPrivacy.text(taskName)) already exists (id: \(match.task.value(forKey: "id") as? String ?? "?")) – reusing, skipping creation.")
                     if let id = match.task.value(forKey: "id") as? String {
                         taskPlayerVcObj?.addTaskInCurrentList(taskName: taskName, id: id, duration: 600)
                     }
@@ -67,7 +67,7 @@ class popUpSaveThisTaskForLaterVc: NSViewController {
                     let dateString = getStringFromDateInUtc(date: nextWeek, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
                     allApiObject.addTask(title: taskName, details: "", eisenhowerQuadrant: 1, dueDate: dateString, objective: "", tags: [], completionHandler: { result, json in
                         if result {
-                            addLog(text: "\(taskName) task created successfully.")
+                            addLog(text: "task \(LogPrivacy.text(taskName)) created successfully.")
                             DispatchQueue.main.async { [weak self] in
                                 guard self != nil else { return }
                                 if let json = json {

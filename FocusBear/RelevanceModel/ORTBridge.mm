@@ -11,7 +11,6 @@
 
 #include <array>
 #include "onnxruntime_cxx_api.h"
-
 #include <memory>
 #include <string>
 #include <vector>
@@ -140,6 +139,7 @@
         return nil;
     }
 }
+
 - (nullable NSArray<NSNumber *> *)runClassifierWithFeatures:
     (NSArray<NSNumber *> *)features {
 
@@ -276,5 +276,6 @@
         return nil;
     }
 }
+
 
 @end

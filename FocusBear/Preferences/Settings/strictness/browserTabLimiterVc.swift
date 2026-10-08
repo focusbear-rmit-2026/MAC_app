@@ -48,6 +48,9 @@ class browserTabLimiterVc: NSViewController {
         enableTabLimiterItemVcObj?.lblSubTitle.stringValue = subTitleTabLimiter
         enableTabLimiterItemVcObj?.delegate = self
         enableTabLimiterItemVcObj?.toolTip = strictness_BrowserTabLimiter
+        enableTabLimiterItemVcObj?.btnSwitch.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.tabLimiterSwitch)
+        textFieldTabLimitCount.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.tabLimiterCountField)
+        stepperTabLimitCount.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.tabLimiterStepper)
         
         arrForSearchFromSettings.append(["title": checkBoxTabLimiterText, "tabId": idBrowserTabLimiter, "object": enableTabLimiterItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": titleTabLimitCount, "tabId": idBrowserTabLimiter, "object": boxMaxTabLimit as Any])
@@ -141,6 +144,7 @@ extension browserTabLimiterVc: SettingToggleItemDelegate{
                     alertWarning.informativeText = "To enable the Browser Tab Limiter, permissions to manage browser tabs are required. Would you like to grant these permissions now?"
                     alertWarning.addButton(withTitle: buttonOkText)
                     alertWarning.addButton(withTitle: buttonCancelText)
+                    alertWarning.buttons.last?.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.tabLimiterPermissionCancelButton)
                     
                     if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
                         alertWarning.messageText = preferencesInfo.value(forKey: "alertWarningBrowserPermissionsTitle") as? String ?? alertWarning.messageText

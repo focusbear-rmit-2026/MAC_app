@@ -8,6 +8,12 @@
 
 import Cocoa
 
+/// `preferencesInfo` keys for the names VoiceOver gives the work-to-break ratio fields.
+private enum RatioFieldConfigKey {
+    static let workLabel = "workRatioFieldLabel"
+    static let breakLabel = "breakRatioFieldLabel"
+}
+
 class pomodoroSettingsVc: NSViewController {
 
     @IBOutlet weak var lblTo: NSTextField!
@@ -58,6 +64,8 @@ class pomodoroSettingsVc: NSViewController {
     
         var checkBoxPomodoroText = "Enter Focus session after completing morning routine"
         var buttonAdvancedText = "Advanced..."
+        var workRatioFieldLabel = "Focus minutes" // i18n-ignore: last-resort default; the real string comes from config
+        var breakRatioFieldLabel = "Break minutes" // i18n-ignore: last-resort default; the real string comes from config
 
         if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
             checkBoxPomodoroText = preferencesInfo.value(forKey: "checkBoxPomodoroText") as? String ?? checkBoxPomodoroText
@@ -81,8 +89,15 @@ class pomodoroSettingsVc: NSViewController {
             lblTitleWorkToBreakRatio.stringValue = preferencesInfo.value(forKey: "titleWorkToBreakRatio") as? String ?? lblTitleWorkToBreakRatio.stringValue
             descriptionWorkToBreakRatio = preferencesInfo.value(forKey: "descriptionWorkToBreakRatio") as? String ?? descriptionWorkToBreakRatio
             lblTo.stringValue = preferencesInfo.value(forKey: "toText") as? String ?? lblTo.stringValue
-            
+            workRatioFieldLabel = preferencesInfo.value(forKey: RatioFieldConfigKey.workLabel) as? String ?? workRatioFieldLabel
+            breakRatioFieldLabel = preferencesInfo.value(forKey: RatioFieldConfigKey.breakLabel) as? String ?? breakRatioFieldLabel
         }
+        // Two bare numbers under one title with only "to" between them: say which is which.
+        textFieldWorkRatio.setAccessibilityLabel(workRatioFieldLabel)
+        textFieldBreakRatio.setAccessibilityLabel(breakRatioFieldLabel)
+        textFieldWorkRatio.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.pomodoroWorkRatioField)
+        textFieldBreakRatio.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.pomodoroBreakRatioField)
+        lblDescriptionWorkToBreakRatio.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.pomodoroRatioDescription)
         
         textFieldWorkRatio.formatter = IntegerFormatter()
         textFieldBreakRatio.formatter = IntegerFormatter()

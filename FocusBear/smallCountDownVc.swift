@@ -21,7 +21,12 @@ class smallCountDownVc: NSViewController {
     var currentTimer = 0
     var totalDuration = 0
     var isFocusBreak = false/// it measn postpone notification, focus break and focus is about to end notification
-    
+    /// When true, this habit's floating timer popup stays hidden while it runs — used for allowed-app
+    /// habits, whose progress + Skip/Postpone now live in the menu, so the popup is redundant. The timer
+    /// still runs (it drives habit completion + the return to the routine at the end); only the popup is
+    /// suppressed. Reset when a non-suppressed timer starts.
+    var suppressPopupForAllowedAppHabit = false
+
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -65,11 +70,10 @@ class smallCountDownVc: NSViewController {
 
             if currentState == ._CUSTOM_ROUTINE_{
                 leftMenuVcObj?.showCustomRoutineView()
-                leftMenuVcObj?.disableAllExceptCustomRoutineTab()
             }else{
                 leftMenuVcObj?.showHabitsView()
-                leftMenuVcObj?.disableAllExceptHabitTab()
             }
+            leftMenuVcObj?.applyRoutineMenuAvailability()
             
             closeTimerBox()
             
@@ -90,11 +94,10 @@ class smallCountDownVc: NSViewController {
             showBlankWindowInSecondaryMonitor()
             if currentState == ._CUSTOM_ROUTINE_{
                 leftMenuVcObj?.showCustomRoutineView()
-                leftMenuVcObj?.disableAllExceptCustomRoutineTab()
             }else{
                 leftMenuVcObj?.showHabitsView()
-                leftMenuVcObj?.disableAllExceptHabitTab()
             }
+            leftMenuVcObj?.applyRoutineMenuAvailability()
           //  if checkIsFullScreenEnabled(){
              //   mainViewControllerObj?.checkIsFullScreenNeeded()
            // }
@@ -225,8 +228,10 @@ class smallCountDownVc: NSViewController {
             btnPostpone.isHidden = true
             btnSkip.isHidden = true
         }
-        self.view.window?.alphaValue = 1
-        
+        // Keep the popup invisible for allowed-app habits (progress + Skip/Postpone are in the menu);
+        // the timer below still runs so the habit completes and returns to the routine on its own.
+        self.view.window?.alphaValue = suppressPopupForAllowedAppHabit ? 0 : 1
+
         if timer != nil{
             timer?.invalidate()
             timer = nil
@@ -281,8 +286,10 @@ class smallCountDownVc: NSViewController {
         if remainingSeconds == 120{
             DispatchQueue.main.async {
                 if self.view.window?.alphaValue == 0{
+                    // For a suppressed allowed-app habit this is the moment the popup reappears — the
+                    // 2-minutes-left reminder still fires; only the earlier in-habit popup was hidden.
                     self.view.window?.alphaValue = 1
-                    //NSApplication.shared.activate(ignoringOtherApps: true)//done 
+                    //NSApplication.shared.activate(ignoringOtherApps: true)//done
                 }
             }
         }

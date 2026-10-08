@@ -36,7 +36,7 @@ extension WiFiProfileMapping {
     /// Load all saved mappings from UserDefaults.
     static func loadAll() -> [WiFiProfileMapping] {
         guard
-            let data = UserDefaults.standard.data(forKey: userDefaultsKey),
+            let data = SensitiveDefaults.data(forKey: userDefaultsKey),
             let decoded = try? JSONDecoder().decode([WiFiProfileMapping].self, from: data)
         else {
             return []
@@ -50,7 +50,7 @@ extension WiFiProfileMapping {
             addLog(text: "WiFiProfileMapping.saveAll: encoding failed")
             return
         }
-        UserDefaults.standard.set(data, forKey: userDefaultsKey)
+        SensitiveDefaults.set(data, forKey: userDefaultsKey)
         addLog(text: "WiFiProfileMapping.saveAll: saved \(mappings.count) mapping(s)")
     }
 

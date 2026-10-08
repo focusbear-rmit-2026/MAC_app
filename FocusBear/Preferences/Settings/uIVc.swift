@@ -123,6 +123,7 @@ class uIVc: NSViewController {
         darkModeItemVcObj?.lblSubTitle.isHidden = true
         darkModeItemVcObj?.delegate = self
         darkModeItemVcObj?.popUpBtn.removeAllItems()
+        darkModeItemVcObj?.popUpBtn.setAccessibilityIdentifier(UITestContract.Identifier.Settings.darkModePopup)
         darkModeItemVcObj?.popUpBtn.addItems(withTitles: popUpBtnDarkModeItems)
         darkModeItemVcObj?.toolTip = ui_DarkMode
         
@@ -142,6 +143,7 @@ class uIVc: NSViewController {
         focusGlowBorderSettingVcObj?.lblSubTitle.stringValue = descriptionFocusGlowBorder
         focusGlowBorderSettingVcObj?.lblSubTitle.isHidden = false
         focusGlowBorderSettingVcObj?.delegate = self
+        focusGlowBorderSettingVcObj?.btnSwitch.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.focusGlowBorderSwitch)
         focusGlowBorderSettingVcObj?.lineBottom.isHidden = false
 
 
@@ -149,6 +151,7 @@ class uIVc: NSViewController {
         enablePopoverMenuItemVcObj?.lblTitle.stringValue = switchButtonEnablePopoverMenuText
         enablePopoverMenuItemVcObj?.lblSubTitle.isHidden = true
         enablePopoverMenuItemVcObj?.delegate = self
+        enablePopoverMenuItemVcObj?.btnSwitch.setAccessibilityIdentifier(UITestContract.Identifier.Settings.popoverMenuSwitch)
         enablePopoverMenuItemVcObj?.lineBottom.isHidden = false
         enablePopoverMenuItemVcObj?.toolTip = ui_EnablePopoverMenu
         
@@ -365,7 +368,7 @@ extension uIVc: SettingToggleItemDelegate, SettingPopUpButtonItemDelegate{
             }
         }else if object == showDockIconItemVcObj{
             if state == .on{
-                if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil && SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
+                if SettingsManagerObject.isAppPasswordSet && SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
                     if isPasswordRequireInOpenSettings(){
                         mainViewControllerObj?.askPasswordForSettingsIfNeeded()
                     }else{

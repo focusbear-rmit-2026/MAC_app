@@ -41,6 +41,7 @@ class toDoListSettingsVc: NSViewController {
         showToDoPlayerItemVcObj?.lblTitle.stringValue = showToDoPlayerSettingTitle
         showToDoPlayerItemVcObj?.lblSubTitle.isHidden = true
         showToDoPlayerItemVcObj?.delegate = self
+        showToDoPlayerItemVcObj?.btnSwitch.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.showToDoPlayerSwitch)
         
         stackView.insertView(brainDumpSettingItemVcObj!.view, at: 1, in: .top)
         brainDumpSettingItemVcObj?.lblTitle.stringValue = brainDumpSettingTitle

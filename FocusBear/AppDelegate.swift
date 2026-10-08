@@ -15,15 +15,175 @@ import Auth0
 import TrueTime
 import CoreMedia
 
-@NSApplicationMain
+/// Logic tests use the app as a bundle host, without starting a signed-in desktop session.
+/// The dedicated scheme flag alone cannot change a normal app launch or a Release build.
+enum LogicTestHost {
+    static let HOST_ENVIRONMENT_KEY = "FOCUSBEAR_LOGIC_TEST_HOST"
+    static let ENABLED_ENVIRONMENT_VALUE = "1"
+    static let BUNDLE_IDENTIFIER_SUFFIX = ".logictests"
+    static let SHIPPING_BUNDLE_IDENTIFIER = "com.App.EarnYourScreentime"
+    static let BUNDLE_IDENTIFIER = SHIPPING_BUNDLE_IDENTIFIER + BUNDLE_IDENTIFIER_SUFFIX
+
+    static func sharedDefaultsSuiteName(productionSuiteName: String, bundleIdentifier: String?) -> String {
+        bundleIdentifier == BUNDLE_IDENTIFIER ? productionSuiteName + BUNDLE_IDENTIFIER_SUFFIX : productionSuiteName
+    }
+
+    static func shouldIsolate(environment: [String: String], hasXCTest: Bool, isDebug: Bool) -> Bool {
+        // The independently installed runner preflight verifies this exact expression.
+        isDebug && hasXCTest && environment["FOCUSBEAR_LOGIC_TEST_HOST"] == "1"
+    }
+
+    static func shouldPermitLaunch(environment: [String: String], bundleIdentifier: String?,
+                                   hasXCTest: Bool, isDebug: Bool) -> Bool {
+        let isIsolatedBundle = bundleIdentifier == BUNDLE_IDENTIFIER
+        let requestsLogicHost = environment[HOST_ENVIRONMENT_KEY] == ENABLED_ENVIRONMENT_VALUE
+        guard isIsolatedBundle || requestsLogicHost else { return true }
+        return isIsolatedBundle && shouldIsolate(environment: environment, hasXCTest: hasXCTest, isDebug: isDebug)
+    }
+
+    static var isEnabled: Bool {
+#if DEBUG
+        return shouldIsolate(environment: ProcessInfo.processInfo.environment,
+                             hasXCTest: NSClassFromString("XCTestCase") != nil, isDebug: true)
+#else
+        return false
+#endif
+    }
+
+    static func loadBundledConfiguration() {
+        guard let url = Bundle.main.url(forResource: "config", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let configuration = (try? JSONSerialization.jsonObject(with: data)) as? NSDictionary else {
+            preconditionFailure("Logic test host requires the bundled configuration")
+        }
+        currentLanguageCode = "en"
+        configjson = configuration
+        readConfigFile()
+    }
+
+    /// Credentials storage for the logic test host: in memory, never the login keychain.
+    ///
+    /// Every `AllApi` call asks `credentialsManager` for a token, and some test reaches one of them.
+    /// The host is an ad-hoc build, and its designated requirement is a bare cdhash, so every CI run is
+    /// a new binary to macOS: the developer got a "Focus Bear wants to use your confidential
+    /// information" prompt per run on their own Mac (the self-hosted runner). Each "Always Allow" added
+    /// another ACL entry — 24 CI cdhashes on the item by 2026-09-24. Tests have no business reading a
+    /// person's real login.
+    ///
+    /// UI-test builds (`UITestHost`) use it too: CI signs them ad hoc, so a keychain item they wrote
+    /// would prompt on the next run's binary and stall the suite. They sign in from the environment
+    /// on every launch instead.
+    final class CredentialsStore: CredentialsStorage {
+        private var entries: [String: Data] = [:]
+        func getEntry(forKey key: String) -> Data? { entries[key] }
+        func setEntry(_ data: Data, forKey key: String) -> Bool { entries[key] = data; return true }
+        func deleteEntry(forKey key: String) -> Bool { entries[key] = nil; return true }
+    }
+
+    static func makeCredentialsManager() -> CredentialsManager {
+        isEnabled || UITestHost.isEnabled
+            ? CredentialsManager(authentication: Auth0.authentication(), storage: CredentialsStore())
+            : CredentialsManager(authentication: Auth0.authentication())
+    }
+}
+
+@main
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDelegate, SPUUpdaterDelegate {
+    static func main() {
+#if DEBUG
+        let isDebug = true
+#else
+        let isDebug = false
+#endif
+        // Refuse unsafe test launches before AppKit creates the delegate or loads the storyboard.
+        guard LogicTestHost.shouldPermitLaunch(
+            environment: ProcessInfo.processInfo.environment,
+            bundleIdentifier: Bundle.main.bundleIdentifier,
+            hasXCTest: NSClassFromString("XCTestCase") != nil, isDebug: isDebug) else {
+            fatalError("Logic tests require an isolated Debug bundle, the logic-host flag, and XCTest")
+        }
+        _ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)
+    }
     
     let sharedDefaults = UserDefaults(suiteName: fbSharedDefaultsSuiteName)
     @IBOutlet weak var menuItemUninstall: NSMenuItem!
     
     let statusItem = NSStatusBar.system.statusItem(withLength:NSStatusItem.variableLength)
     var statusbutton:NSStatusBarButton?
-    
+
+    /// When this process started. NSApplicationMain creates the delegate before anything else runs, so
+    /// this is effectively launch time — used to tell the system's own launch activation apart from the
+    /// user switching to Focus Bear (see `AppActivationRestore.launchSettlingSeconds`).
+    private let launchedAt = Date()
+    var secondsSinceLaunch: TimeInterval { Date().timeIntervalSince(launchedAt) }
+
+    private var selfActivationMarkedAt: Date?
+    private var activationRestoreWorkItem: DispatchWorkItem?
+    private var windowsOnScreenAtActivation: Set<ObjectIdentifier>?
+
+    /// Declares that the app is coming to the front for a purpose of its OWN, so the activation that
+    /// follows (or has just happened) is not the user asking for the main window.
+    ///
+    /// AppKit cannot tell us where an activation came from, so origin is declared rather than detected —
+    /// see `AppActivationRestore`. Call this from any path that brings the app forward for a specific
+    /// transient thing AND does not put a window up during the settle period for
+    /// `didAnotherWindowOpenSinceActivation` to notice; a path that does open a window is already covered
+    /// without a marker.
+    func noteSelfActivation() {
+        selfActivationMarkedAt = Date()
+        // The marker can arrive after `applicationDidBecomeActive` has already scheduled a decision, so
+        // kill that decision outright rather than relying on the marker still being inside its window.
+        cancelScheduledMainWindowRestore()
+    }
+
+    /// Reads the self-activation marker and consumes it, so one self-activation suppresses exactly one
+    /// restore decision instead of blunting every ⌘-Tab for the next couple of seconds.
+    func consumeSelfActivationMarker() -> Bool {
+        guard let markedAt = selfActivationMarkedAt else { return false }
+        selfActivationMarkedAt = nil
+        return Date().timeIntervalSince(markedAt) < AppActivationRestore.selfActivationWindowSeconds
+    }
+
+    /// Decides whether to restore the main window one settle period after activation rather than at the
+    /// instant of it. The user's logs show `applicationDidBecomeActive` arriving BEFORE `togglePopover
+    /// start` on a menu-bar click, so deciding immediately would open a window on top of the menu they
+    /// asked for. Coalesced, because activation fires constantly.
+    ///
+    /// The windows on screen are recorded here, before the app has had time to put up whatever it may
+    /// have activated itself to show. Comparing that against the windows a settle period later is what
+    /// distinguishes "a window was already open when you switched in" — which must not stop the restore
+    /// — from "the app pulled itself forward to show you this", which must.
+    func scheduleMainWindowRestoreAfterActivation() {
+        activationRestoreWorkItem?.cancel()
+        // Guarded like the restore itself: reading the windows would load the main window from the
+        // storyboard, and the system's own launch activation must not be what does that.
+        if secondsSinceLaunch >= AppActivationRestore.launchSettlingSeconds {
+            windowsOnScreenAtActivation = nonMainWindowIdentitiesOnScreen()
+        }
+        let work = DispatchWorkItem { [weak self] in
+            self?.activationRestoreWorkItem = nil
+            restoreMainWindowOnActivationIfNeeded()
+        }
+        activationRestoreWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + AppActivationRestore.activationSettleSeconds,
+                                      execute: work)
+    }
+
+    /// The windows recorded at the last activation, consumed so that a later decision with no activation
+    /// behind it — a Dock reopen — compares against nothing rather than against a stale snapshot.
+    func consumeWindowsOnScreenAtActivation() -> Set<ObjectIdentifier>? {
+        defer { windowsOnScreenAtActivation = nil }
+        return windowsOnScreenAtActivation
+    }
+
+    /// The user switched away again inside the settle period — they are no longer asking for us, so a
+    /// window must not arrive in a now-background app.
+    func cancelScheduledMainWindowRestore() {
+        activationRestoreWorkItem?.cancel()
+        activationRestoreWorkItem = nil
+        windowsOnScreenAtActivation = nil
+    }
+
     var updaterController: SPUStandardUpdaterController?
     
     let client = TrueTimeClient.sharedInstance
@@ -78,8 +238,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     // auth
     var credential:Credentials?
-    var user: AuthUser?
-    let credentialsManager = CredentialsManager(authentication: Auth0.authentication())
+    var user: AuthUser? {
+        didSet {
+            FocusLifecycleIdentity.shared.updateAccountID(user?.userId)
+            // Encrypted local data is per account: opening the signed-in account's makes it readable.
+            guard let userId = user?.userId, !userId.isEmpty else { return }
+            SecureStore.shared.activate(accountId: userId)
+        }
+    }
+    // Tokens live in the data-protection keychain (no per-binary ACL, so macOS never asks for
+    // Uses Auth0's default (legacy login) keychain storage. A data-protection keychain path was tried on
+    // this branch but removed: in signed Release it stored the tokens yet could not read them back, so
+    // login looped every session (#2588). The legacy keychain already works for signed builds
+    // (certificate-based, no re-prompt), so we ship that and can revisit data-protection as a separate,
+    // properly-tested change.
+    let credentialsManager = LogicTestHost.makeCredentialsManager()
     
     // Renew credentials
     var renewCredentialsLastDate:Date?
@@ -112,6 +285,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     func deleteAllSettings(){
+        guard ManagedBlockingRuntime.shared.allowLegacySettingsMutation() else { return }
+        closeAllCsvFiles()
+        SecureStore.shared.eraseAllData()
         let domain = Bundle.main.bundleIdentifier!
         UserDefaults.standard.removePersistentDomain(forName: domain)
         UserDefaults.standard.synchronize()
@@ -134,20 +310,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
  
     func logout(isAutomatic:Bool) {
+        if !isAutomatic && !ManagedBlockingRuntime.shared.isSignedInAsWrongAccount && !ManagedBlockingRuntime.shared.allowLegacySettingsMutation() { return }
         addLog(text: "logout")
         
         //Improve auto logout - remember email address #1308//
         if !isAutomatic{
             UserDefaults.standard.removeObject(forKey: kUserDefaultsLastUserLoginWithGoogle)
         }
-        UserDefaults.standard.set(currentUserEmail, forKey: kUserDefaultsLastUserEmailBeforeLogout)
+        // The email is only known once the account details call returns; don't let an early logout
+        // overwrite the remembered address with an empty one.
+        if !currentUserEmail.isEmpty {
+            UserDefaults.standard.set(currentUserEmail, forKey: kUserDefaultsLastUserEmailBeforeLogout)
+        }
         //--------------------------------------------------//
 
         // Clear persisted user identity so stale data doesn't bleed into the next account
         currentLeaderboardUsername = ""
-        sharedDefaults?.removeObject(forKey: kUserdefaultsSharedLeaderboardUsername)
-        sharedDefaults?.removeObject(forKey: kUserdefaultsSharedUserEmail)
-        sharedDefaults?.removeObject(forKey: kUserdefaultsSharedUserName)
+        SharedSuiteHygiene.removeLegacySecrets(from: sharedDefaults)
+        sharedDefaults.map(InternalTestUser.clear(in:))
 
         self.user = nil
         let _ = self.credentialsManager.clear()
@@ -168,6 +348,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         UserDefaults.standard.removeObject(forKey: kUserdefaultsTalkingClockQuietStart)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsTalkingClockQuietEnd)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsTalkingClockSuppressMeetings)
+
+        // Queued CSV rows must be sealed while this account is still open; then its server-backed
+        // caches go (the next sign-in fetches them again) and its unsent local data stays, sealed.
+        closeAllCsvFiles()
+        SecureStore.shared.signOut()
         quitAndRestartApp()
     }
     let alertAppAutoRestart = NSAlert()
@@ -178,7 +363,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if let url = urls.first{
             let urlString = url.absoluteString
             lastOpenUrlString = urlString
-            addLog(text: "func:- open url \(urlString)")
+            addLog(text: "func:- open url \(LogPrivacy.url(urlString))")
             if isSettingsLoddedInAppdelegate{
                 filterUrl(url: lastOpenUrlString)
             }
@@ -199,18 +384,66 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
+    /// Called whenever an AppleScript command touches the app (custom verbs via runWhenAppReady, and the
+    /// standard get/set/make verbs via the `tasks` element accessors). Records that a script drove us and,
+    /// if we already finished launching in the background, brings the app to the foreground right away;
+    /// otherwise checkWindowState() will once loading completes.
+    @objc func fbNoteScriptingCommand() {
+        didHandleScriptingCommand = true
+        if isCheckWindowStateDone { fbActivateFromBackgroundLaunch() }
+    }
+
+    /// Foreground the app and clear the (late-rendering) splash after a background scripting launch. No-op
+    /// unless a script actually drove us and we're still inactive — so login/startup launches and normal
+    /// user launches (already frontmost) are left alone. Runs at most once per launch.
+    @objc func fbActivateFromBackgroundLaunch() {
+        guard didHandleScriptingCommand, !NSApplication.shared.isActive, !didForegroundFromScriptLaunch else { return }
+        didForegroundFromScriptLaunch = true
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        func dismissSplash() {
+            splashWcObj?.window?.orderOut(nil)
+            splashWcObj?.window?.close()
+        }
+        dismissSplash()
+        for delay in [0.3, 0.8, 1.5] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: dismissSplash)
+        }
+    }
+
     func applicationWillFinishLaunching(_ notification: Notification) {
-        SentrySDK.start { options in
-            options.dsn = "https://85574080eb088006a0f2b0f5d326d6ff@o4509122919006208.ingest.us.sentry.io/4509122992275456"
-            #if DEBUG
-            options.debug = true
-            #endif
-            options.attachStacktrace = true// line added on 5/3/25
-            options.enableSwizzling = false
-            options.enableAutoSessionTracking = false
-            options.sendDefaultPii = false // do not send PII (IP address, request bodies) by default
+        if LogicTestHost.isEnabled {
+            LogicTestHost.loadBundledConfiguration()
+            return
+        }
+        UITestHost.refuseUnisolatedLaunch()
+        // A UI-test app's failures belong in its test results, not in production Sentry.
+        if !UITestHost.isEnabled {
+            SentrySDK.start { options in
+                options.dsn = "https://85574080eb088006a0f2b0f5d326d6ff@o4509122919006208.ingest.us.sentry.io/4509122992275456"
+                #if DEBUG
+                options.debug = true
+                #endif
+                options.attachStacktrace = true// line added on 5/3/25
+                options.enableSwizzling = false
+                options.enableAutoSessionTracking = false
+                options.sendDefaultPii = false // do not send PII (IP address, request bodies) by default
+            }
         }
        
+        applyUITestResetIfNeeded()
+        listenForUITestCommandsIfRequested()
+        // Drafts older builds wrote in plain JSON are sealed whenever an account's key becomes available.
+        _ = NotificationCenter.default.addObserver(forName: SecureStore.didBecomeReady, object: SecureStore.shared,
+                                                   queue: nil) { _ in
+            DispatchQueue.global(qos: .utility).async { ProjectNoteDraftStore().sealLegacyDrafts() }
+        }
+        // Opens the previous launch's account (decrypting its values, migrating any plaintext) before
+        // anything reads them, and starts watching for the key when it is unavailable.
+        _ = SecureFiles.shared
+        // Prunes the sealed 30-minute browsing history from the last run even before anything is browsed.
+        _ = BrowsingHistory.shared
+        LegacyCalendarDateMigration.migrateUserDefaultsIfNeeded()
+
         //doing this because if app is started after quit by user then  helper app will know that main app is restarted
         //        getTransparentWindowObject().showWindow(nil)
         let isAppRestartedNormally = UserDefaults.standard.object(forKey: kUserDefaultsAppRestartedNormally) as? Bool ?? false
@@ -259,22 +492,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
 
-        let fontFamilies = NSFontManager.shared.availableFontFamilies.sorted()
-        for family in fontFamilies {
-            print(family)
-            let familyFonts = NSFontManager.shared.availableMembers(ofFontFamily: family)
-            if let fonts = familyFonts {
-                for font in fonts {
-                    print("\t\(font)")
-                }
-            }
-        }
-        
-        
         menuItemUninstall.isHidden = true
         client.start()// for getting true time
 
-        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: self, userDriverDelegate: nil)
+        // A UI-test app never checks for, downloads or installs updates.
+        updaterController = SPUStandardUpdaterController(startingUpdater: !UITestHost.isEnabled, updaterDelegate: self, userDriverDelegate: nil)
         updaterController?.updater.automaticallyChecksForUpdates = true
         
         
@@ -286,16 +508,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         DebugLogsFolderURL = applicationSupportURL!.appendingPathComponent("Logs")
         CreateDirectoryIfNotExist(path: DebugLogsFolderURL!.path)
         DebugLogsURL = DebugLogsFolderURL!.appendingPathComponent("Debug_Logs.txt")
-        //        DebugGraphLogsURL = DebugLogsFolderURL!.appendingPathComponent("Debug_Graphs_Logs.txt")
-        quantityCsvURL = applicationSupportURL!.appendingPathComponent("eystStats.csv")
+        if let logsFolder = DebugLogsFolderURL {
+            Log.queue.async { LogFilePermissions.tighten(folder: logsFolder) }
+            LegacyLogScrubber.scrubIfNeeded(folder: logsFolder, currentLog: DebugLogsURL)
+        }
+        quantityCsvURL = applicationSupportURL!.appendingPathComponent(kStatsCsvFileName)
         arrNonTimerBasedHabitsDurationsPlistFileUrl = applicationSupportURL!.appendingPathComponent("nonTimerBasedHabitsDurations.plist")
-        focusAlignmentScoreCsvURL = applicationSupportURL!.appendingPathComponent("focusAlignmentScore.csv")
-        focusAIDecisionsCsvURL = applicationSupportURL!.appendingPathComponent("focusAIDecisions.csv")
+        focusAlignmentScoreCsvURL = applicationSupportURL!.appendingPathComponent(kFocusAlignmentScoreCsvFileName)
+        focusAIDecisionsCsvURL = applicationSupportURL!.appendingPathComponent(kFocusAIDecisionsCsvFileName)
         browsersTabAuditCsvURL = applicationSupportURL!.appendingPathComponent("browsersTabAudit.csv")
-        focusProductivityStatsCsvURL = applicationSupportURL!.appendingPathComponent("focusProductivityStats.csv")
-        offlineActivitiesCsvURL = applicationSupportURL!.appendingPathComponent("offlineActivities.csv")
+        focusProductivityStatsCsvURL = applicationSupportURL!.appendingPathComponent(kFocusProductivityStatsCsvFileName)
+        offlineActivitiesCsvURL = applicationSupportURL!.appendingPathComponent(kOfflineActivitiesCsvFileName)
         trackFilesFolderURL = applicationSupportURL!.appendingPathComponent("Tracks")
-        usageTimingsExplanationCsvUrl = applicationSupportURL!.appendingPathComponent("usage_timings.csv")
+        usageTimingsExplanationCsvUrl = applicationSupportURL!.appendingPathComponent(kUsageTimingsCsvFileName)
         
         settingForScreeenTimeFileURL = applicationSupportURL!.appendingPathComponent("fbtt.plist")
         CreateDirectoryIfNotExist(path: trackFilesFolderURL!.path)
@@ -331,7 +556,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         allApiObject.downloadBlockPageAsync(url: URL(string: "https://focus-bear.github.io/assets/focus-blocked/index.html"), destinationUrl: fileUrl){ (success, error) in
             print(success)
-            if flaskServerObject.startFlaskServer(){
+            // A UI test that doesn't enforce blocking has no block page to serve; the server is a
+            // Rosetta process per test launch otherwise.
+            if !UITestHost.suppressesEnforcement, flaskServerObject.startFlaskServer(){
                 blockWebUrlString = "http://localhost:\(flaskServerPort)"
             }else{
                 blockWebUrlString = fileUrl.absoluteString
@@ -376,7 +603,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         // ///////////////////SET TOP ICON////////////////////////
         if self.statusItem.button != nil {
             self.statusbutton = self.statusItem.button
+            self.statusbutton?.setAccessibilityIdentifier(UITestContract.Identifier.MenuBar.statusItem)
             self.statusbutton?.image = NSImage(named: NSImage.Name("Bear-Small"))
+            // VoiceOver read the image's asset name ("Bear Small"); the icon is the app itself.
+            self.statusbutton?.setAccessibilityLabel(appName)
             
             self.statusbutton?.font = NSFont.systemFont(ofSize: 10)
             
@@ -506,10 +736,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             // froze the launch UI (Sentry AppHang: SimpleKeychain.data). Compute it once out here
             // instead: this closure is getConfigFile's URLSession completion, so we're already off the
             // main thread — no extra dispatch needed — then hop to main for the launch/login UI.
+            self.signInForUITestIfRequested()
             let canRenew = self.credentialsManager.canRenew()
             DispatchQueue.main.async {
 
                 NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(self.frontApplicationChanged), name: NSWorkspace.didActivateApplicationNotification, object: nil)//this is correct, needs to block uls even if user is not logged in
+                // Quick Look previews never trigger the activation notification above (see quickLookPreviewMonitor).
+                quickLookPreviewMonitor.shared.start()
                 NotificationCenter.default.addObserver(self, selector: #selector(self.screenChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
                 
                 if UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) != nil{
@@ -547,7 +780,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if UserDefaults.standard.object(forKey: kUserdefaultsIsUserLoggedIn) as? Bool == nil{
                     if UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) == nil{
                         closeSplashWindow()
-                        showWelcomeWindow()
+                        showWelcomeWindowOrAudhdResultsFirst()
                     }else{
                         closeSplashWindow()
                         
@@ -569,7 +802,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         // Present login screen
                         if UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) == nil{
                             closeSplashWindow()
-                            showWelcomeWindow()
+                            showWelcomeWindowOrAudhdResultsFirst()
                         }else{
                             closeSplashWindow()
                             showAskLoginWindow()
@@ -612,18 +845,52 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         mainViewControllerObj!.showOnboardingVc()
         leftMenuVcObj?.disableAllTabForOnboarding()
         mainViewControllerObj?.collapseLeftPanel()
-        getOnboardingVcObject().navigate(to: ._HOLD_ON_)
+        // Distraction blocking now comes before habits in onboarding: enter the blocking
+        // section first; it hands off to the habits intro (._HOLD_ON_) once finished.
+        getOnboardingVcObject().navigate(to: ._SET_DISTRACTION_BLOCKING_)
     }
     
+    /// What a failed credential read should cause. Report 2026-09-13: the access token expired,
+    /// its refresh token had already been revoked, and the app showed the "please login again"
+    /// alert **78 times** across **39 relaunches** — because every API call's credential callback
+    /// independently alerted and logged out, and `logout()` restarts the app, whose launch-time
+    /// requests then failed with "no credentials" and logged it out again.
+    enum CredentialFailure: Equatable {
+        /// Already logged out: show the login window. Never alert, never log out again — that is
+        /// the loop.
+        case alreadySignedOut
+        /// No internet: the session may be fine, so keep it and say so.
+        case offline
+        /// The session is genuinely dead: say so once and sign out.
+        case signOut
+        /// Something has already handled this in this process.
+        case handled
+
+        static func of(error: Error?, hasInternet: Bool, alreadyHandled: Bool) -> CredentialFailure {
+            if alreadyHandled { return .handled }
+            if let error = error as? CredentialsManagerError, error == .noCredentials { return .alreadySignedOut }
+            return hasInternet ? .signOut : .offline
+        }
+    }
+
+    /// Set for the life of the process the first time a credential failure is acted on. The process
+    /// is about to be restarted or is sitting on the login window, so it is never cleared.
+    private static var handledCredentialFailure = false
+
     func setCredentialAndUserInfo(credentialsInfo: CredentialsManagerResult<Credentials>, isAppLaunching:Bool){
+        // A late callback from a storyboard/global initializer must not open the credential-error
+        // modal while XCTest is preparing. Logic tests supply their own auth/API fixtures.
+        guard !LogicTestHost.isEnabled else { return }
         addLog(text: "set Credential And User Info")
         var newCredential:Credentials?
+        var credentialError: Error?
         do{
             newCredential = try credentialsInfo.get()
             if let newCredential = newCredential{
                 renewCredentialsIfNeeded(newCredential: newCredential)
             }
         }catch{
+            credentialError = error
             addLog(text: "failed:- appdelegate!.credentialsManager.credentials \(error.localizedDescription)")
             print(error)
         }
@@ -631,6 +898,45 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         var needToRefreshUser = false
         if newCredential == nil{
             addLog(text: "failed:- newCredential nil")
+            // One failure is enough. Without this, four concurrent Day Plan reloads meant four
+            // alerts and four logouts, and a logged-out relaunch alerted all over again.
+            let failure = AppDelegate.CredentialFailure.of(error: credentialError,
+                                                           hasInternet: Reachability.isConnectedToNetwork(),
+                                                           alreadyHandled: AppDelegate.handledCredentialFailure)
+            addLog(text: "credential failure: \(failure)")
+            switch failure {
+            case .handled:
+                return
+            case .alreadySignedOut:
+                // Already signed out — no keychain credentials. Showing the login window is the whole
+                // response; alerting and "logging out" an already-logged-out app is what looped it 39
+                // times. NOTE (#2583): .alreadySignedOut is CredentialsManagerError.noCredentials,
+                // which a FRESH user has too — so this branch used to show a brand-new user login
+                // instead of onboarding. That only happened because the timezone/busy-hours reporters
+                // called an authenticated API pre-auth in applicationDidFinishLaunching; they now start
+                // in loadAppAndSettings() (post-auth), so at launch a fresh user is routed to
+                // onboarding by the launch flow (kUserdefaultsIsUserLoggedIn == nil) and never reaches
+                // here — this branch now only fires for a user who WAS logged in but lost credentials,
+                // for whom login is correct. ⚠️ This is a per-request failure handler with no launch-
+                // flow context, so it can't itself tell "fresh" from "signed out": if any future
+                // pre-auth AllApi caller is added, the fresh-user-login regression returns. The real
+                // home for the login-vs-onboarding decision is the launch flow, not here. Kept as-is
+                // (option A) because the root cause is fixed; make it first-run-aware if that trap
+                // ever needs closing for good.
+                // In practice this branch is now rarely reached: .alreadySignedOut is specifically
+                // CredentialsManagerError.noCredentials — no credentials item in the keychain at all.
+                // With the pre-auth caller removed, at launch that means a user who was logged in but
+                // whose keychain item is now gone/cleared. (An expired token whose refresh fails is a
+                // different error and falls to .signOut/.offline below, not here.)
+                AppDelegate.handledCredentialFailure = true
+                DispatchQueue.main.async {
+                    closeSplashWindow()
+                    showCustomLoginWindow(isLogin: true)
+                }
+                return
+            case .offline, .signOut:
+                AppDelegate.handledCredentialFailure = true
+            }
             DispatchQueue.main.async {
                 
                 
@@ -761,8 +1067,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             
                             
                         case .failure(let error):
-                            let nsError = error as NSError
-                            addLog(text: "renewToken failed with error code: \(nsError.code)")
+                            // `AuthenticationError` is a struct, so its bridged NSError code is
+                            // always 1 — 245 consecutive failures all logged "error code: 1" and
+                            // said nothing. The description carries the actual reason (e.g.
+                            // "Unknown or invalid refresh token"), which is what identifies a dead
+                            // refresh token rather than a network blip.
+                            addLog(text: "renewToken failed: \(error.localizedDescription)")
                             
                         }
                     }
@@ -784,22 +1094,34 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 return;
             }
             if self.credential != nil{
+                // Warm the Todo List / Edit Habits / Stats shared webview so the first sidebar
+                // click on whichever of the three the user opens first is (often) already loaded.
+                // credentialsManager.credentials' callback fires on a background thread, but WKWebView
+                // must only ever be created on the main thread (WebKit crashes with EXC_BREAKPOINT
+                // otherwise) — SharedDashboardWebViewManager.shared lazily creates one on first access.
+                DispatchQueue.main.async {
+                    SharedDashboardWebViewManager.shared.preload(.editHabits)   // Todo List + Stats are native now; Edit Habits is the only shared web screen left
+                }
+
                 sharedDefaults?.setValue(self.user?.userId ?? "", forKeyPath: kUserdefaultsSharedUserId)
-                sharedDefaults?.setValue(self.credential!.accessToken, forKeyPath: kUserdefaultsSharedAccessToken)
                 sharedDefaults?.setValue(appVersion, forKeyPath: kUserdefaultsSharedAppVersion)
-                // Restore persisted user info so account screen shows correct values before the API call returns
-                currentUserEmail = sharedDefaults?.object(forKey: kUserdefaultsSharedUserEmail) as? String ?? ""
-                currentUserName = sharedDefaults?.object(forKey: kUserdefaultsSharedUserName) as? String ?? ""
-                currentLeaderboardUsername = sharedDefaults?.object(forKey: kUserdefaultsSharedLeaderboardUsername) as? String ?? ""
+                SharedSuiteHygiene.sendQueuedHelperEvents(from: sharedDefaults,
+                                                          signedInUserId: self.user?.userId ?? "") { event, metadata in
+                    allApiObject.captureEventEndpoint(event: event, metadata: metadata)
+                }
 
                 SentrySDK.configureScope { scope in
                     let user = User(userId: self.user?.userId ?? "")
                     scope.setUser(user)
                 }
-                
+                // Day Plan projects that only ever existed on this Mac get pushed to the backend once
+                // we're signed in (see DayPlanProjectRepair) — otherwise they never show on web/mobile.
+                DayPlanProjectRepair.shared.scheduleAfterLaunch()
+
                 sharedDefaults?.synchronize()
                 DispatchQueue.main.async {
                     kUserdefaultsVideoShown = kUserdefaultsVideoShown + (self.user?.userId ?? "")
+                    if self.handleUITestSkipOnboardingIfNeeded() { return }
                     if UserDefaults.standard.object(forKey: kUserdefaultsVideoShown) == nil{
                         var shouldShowOnboardingAfterLogin = true
                         var userHasDoneOnboardingOnWeb = false
@@ -899,11 +1221,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
         //if user clicked i already have a account from onboarding
         if currentState == ._ONBOARDING_{
-            leftMenuVcObj?.enableAllItems()
-            mainViewControllerObj?.expandLeftPanel()
-            mainViewControllerObj?.removeSubViews()
-            mainWindowControllerObj?.window?.close()
-            currentState = ._NOTHING_
+            let currentOnboardingState = getOnboardingVcObject().currentOnboardingState
+            // getUserSubscriptionInfo is now also called up-front from allSetVc (via
+            // onboardingFinishedGoAhedForSettings) while still on the All-Set screen. In that case
+            // skip the onboarding teardown/window-close — the loader/gating flow closes the window
+            // later in onboardingFinishedUnlockMachine(). Only tear down for the older non-_ALL_SET_ paths.
+            if currentOnboardingState != ._ALL_SET_{
+                leftMenuVcObj?.enableAllItems()
+                mainViewControllerObj?.expandLeftPanel()
+                mainViewControllerObj?.removeSubViews()
+                mainWindowControllerObj?.window?.close()
+                currentState = ._NOTHING_
+            }
         }
         allApiObject.getUserSubscriptionInfo(completionHandler: {dic,statusCode  in
             UserDefaults.standard.set(Date(), forKey: kUserdefaultsUserSubscriptionCheckDate)
@@ -927,15 +1256,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 
                 var activeEntitlementStatus = ""
                 if let activeEntitlements = subscriptionStatus["activeEntitlements"] as? [String]{
-                    if let status = activeEntitlements.first{
-                        activeEntitlementStatus = status
-                        if status == "personal" || status == "team_member" || status ==  "team_owner" || status == "team_size_5"{
-                            isPurchased = true
-                        }else if status == "trial"{
-                            isPurchased = false
-                        }else{
-                            isPurchased = false
-                        }
+                    // Consider every active entitlement, not just the first — see SubscriptionEntitlements.
+                    if let paid = SubscriptionEntitlements.payingEntitlement(in: activeEntitlements){
+                        activeEntitlementStatus = paid
+                        isPurchased = true
+                    }else{
+                        activeEntitlementStatus = activeEntitlements.first ?? ""
+                        isPurchased = false
                     }
                 }
                 let oldDaysLeft = daysLeft
@@ -964,6 +1291,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
             self.sharedDefaults?.setValue(isPurchased, forKeyPath: kUserdefaultsSharedIsPurchased)
             self.sharedDefaults?.synchronize()
+            // The sidebar decides whether to show "Upgrade Now" in viewWillAppear, which runs at launch
+            // — before this answer arrives. A paid account therefore kept the row for the rest of the
+            // session and was invited to upgrade something it already had (report 2026-09-14_19-47-35).
+            DispatchQueue.main.async { leftMenuVcObj?.checkPurchaseState() }
             
             
             DispatchQueue.main.async {
@@ -983,6 +1314,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 kUserdefaultsLastShutdownAbortedDate = kUserdefaultsLastShutdownAbortedDate + (self.user?.userId ?? "")
                 kUserdefaultsEveningHabitsShowedTillDate = kUserdefaultsEveningHabitsShowedTillDate + (self.user?.userId ?? "")
                 kUserdefaultsFocusSummaryShowedTillDate = kUserdefaultsFocusSummaryShowedTillDate + (self.user?.userId ?? "")
+                // #2142: namespace the brain-dump seed flag per user, so each user on this device gets
+                // their saved brain dump seeded into the webview once (not shared across accounts).
+                kUserdefaultsBrainDumpSentToWebView = kUserdefaultsBrainDumpSentToWebView + (self.user?.userId ?? "")
                 kUserdefaultsArrFocusTypes = kUserdefaultsArrFocusTypes + (self.user?.userId ?? "")
                 kUserdefaults24HoursClearPasswordTime = kUserdefaults24HoursClearPasswordTime + (self.user?.userId ?? "")
                 
@@ -1011,9 +1345,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 kUserdefaultsDisableBreaksForToday = kUserdefaultsDisableBreaksForToday + (self.user?.userId ?? "")
                 kUserdefaultsBreakOffDates = kUserdefaultsBreakOffDates + (self.user?.userId ?? "")
                 kUserdefaultsBreakOffPromptShown = kUserdefaultsBreakOffPromptShown + (self.user?.userId ?? "")
-                kUserdefaultsBreakFrequencyMinutes = kUserdefaultsBreakFrequencyMinutes + (self.user?.userId ?? "")
+                kUserdefaultsNextBreakDueTime = kUserdefaultsNextBreakDueTime + (self.user?.userId ?? "")
                 kUserdefaultsLastFocusModeStrictness = kUserdefaultsLastFocusModeStrictness + (self.user?.userId ?? "")
-                kUserdefaultsDontShowConfirmGeekModeAlert = kUserdefaultsDontShowConfirmGeekModeAlert + (self.user?.userId ?? "")
+                kUserdefaultsIsFocusSessionAutoStarted = kUserdefaultsIsFocusSessionAutoStarted + (self.user?.userId ?? "")
                 kUserDefaultsOpenTodoPlayerFirstTime = kUserDefaultsOpenTodoPlayerFirstTime + (self.user?.userId ?? "")
                 kUserDefaultsHideAppModeOption = kUserDefaultsHideAppModeOption + (self.user?.userId ?? "")
                 kUserdefaultsMicroBreaksDoneCount = kUserdefaultsMicroBreaksDoneCount + (self.user?.userId ?? "")
@@ -1038,8 +1372,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 
                 kUserDefaultsLastRoutinePostponeEndDate = kUserDefaultsLastRoutinePostponeEndDate + (self.user?.userId ?? "")
                 kUserDefaultsLastRoutinePostponeState = kUserDefaultsLastRoutinePostponeState + (self.user?.userId ?? "")
-                
-                kUserdefaultsBrainDumpSentToWebView = kUserdefaultsBrainDumpSentToWebView + (self.user?.userId ?? "")
+                kUserDefaultsPersistedPostponeCapChecked = kUserDefaultsPersistedPostponeCapChecked + (self.user?.userId ?? "")
+                kUserDefaultsMeetingSessionPostponeEndDate = kUserDefaultsMeetingSessionPostponeEndDate + (self.user?.userId ?? "")
 
                 kUserdefaultsHiddenFocusModeIDs = kUserdefaultsHiddenFocusModeIDs + (self.user?.userId ?? "")
 
@@ -1047,10 +1381,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
                 connectGlobalAndMacIDWithDistinctUserID()
                 
-                if let notes = UserDefaults.standard.object(forKey: "kUserdefaultsFocusModeNotes") as? String{// get notes from old key and remove it from old key
-                    UserDefaults.standard.set(notes, forKey: kUserdefaultsFocusModeNotes)
-                    UserDefaults.standard.removeObject(forKey: "kUserdefaultsFocusModeNotes")
-                }
                 
                 SettingsManagerObject.resetAllKeys()
                 
@@ -1103,15 +1433,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 self.currentUserURL = applicationSupportURL!.appendingPathComponent(self.user?.userId ?? "")
                 if self.currentUserURL != nil{
                     CreateDirectoryIfNotExist(path: self.currentUserURL!.path)
-                    quantityCsvURL = self.currentUserURL!.appendingPathComponent("eystStats.csv")
+                    quantityCsvURL = self.currentUserURL!.appendingPathComponent(kStatsCsvFileName)
                     arrNonTimerBasedHabitsDurationsPlistFileUrl = self.currentUserURL!.appendingPathComponent("nonTimerBasedHabitsDurations.plist")
-                    focusAlignmentScoreCsvURL = self.currentUserURL!.appendingPathComponent("focusAlignmentScore.csv")
-                    focusAIDecisionsCsvURL = self.currentUserURL!.appendingPathComponent("focusAIDecisions.csv")
-                    focusProductivityStatsCsvURL = self.currentUserURL!.appendingPathComponent("focusProductivityStats.csv")
-                    offlineActivitiesCsvURL = self.currentUserURL!.appendingPathComponent("offlineActivities.csv")
+                    focusAlignmentScoreCsvURL = self.currentUserURL!.appendingPathComponent(kFocusAlignmentScoreCsvFileName)
+                    focusAIDecisionsCsvURL = self.currentUserURL!.appendingPathComponent(kFocusAIDecisionsCsvFileName)
+                    focusProductivityStatsCsvURL = self.currentUserURL!.appendingPathComponent(kFocusProductivityStatsCsvFileName)
+                    offlineActivitiesCsvURL = self.currentUserURL!.appendingPathComponent(kOfflineActivitiesCsvFileName)
                     newLocalSettingsFileURL = self.currentUserURL!.appendingPathComponent("localSettings.plist")
                     browsersTabAuditCsvURL = self.currentUserURL!.appendingPathComponent("browsersTabAudit.csv")
-                    usageTimingsExplanationCsvUrl = self.currentUserURL!.appendingPathComponent("usage_timings.csv")
+                    usageTimingsExplanationCsvUrl = self.currentUserURL!.appendingPathComponent(kUsageTimingsCsvFileName)
                 }
                 nonTimerBasedHabitsObject.readNonTimerBasedHabitsDurations()
                 if let id  = UserDefaults.standard.object(forKey: kUserdefaultsDeviceId) as? String{
@@ -1162,8 +1492,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     func loadAppAndSettings(){
+        DispatchQueue.main.async { ManagedBlockingRuntime.shared.authenticatedSessionReady() }
         addLog(text: "load App And Settings")
-        
+
+        // Declared timezone first (the busy-hours day keys are validated against it), then the hourly
+        // EventKit busy-hours report to the portfolio (#2418); the Day Plan also triggers it.
+        // Started here rather than in applicationDidFinishLaunching so they only fire once the user
+        // is signed in — they hit authenticated endpoints, and running them pre-auth broke the fresh
+        // -user launch (login shown instead of onboarding) and looped "please login again" (#2583).
+        // Both start() calls are idempotent, so reaching this twice is harmless.
+        UserTimezoneSync.shared.start()
+        BusyHoursReporter.shared.start()
+
         checkAllCsvFiles()
         
         SettingsManagerObject.getUserLocalDeviceSettings(completionHandler: {
@@ -1230,7 +1570,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                     }else{
                         UserDefaults.standard.removeObject(forKey: kUserdefaults24HoursClearPasswordTime)
-                        UserDefaults.standard.removeObject(forKey: SettingsManagerObject.kUserdefaultsAppPassword)
+                        SettingsManagerObject.appPassword.clear()
                         SettingsManagerObject.isSettingsChanged = true
                         SettingsManagerObject.putUserLocalDeviceSettings()
                         addLog(text: "password is cleared after 24 hours")
@@ -1258,43 +1598,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 addLog(text: "get user Details Info")
                 allApiObject.getAllFocusModes(completionHandler: {dic in
                     if let arrFocusModes = dic as? [[String:Any]]{
-                        var newArr = [[String:Any]]()
-                        
-                        for i in 0..<arrFocusModes.count{
-                            var focusDic = arrFocusModes[i]
-                            focusDic.removeValue(forKey: "created_at")
-                            focusDic.removeValue(forKey: "updated_at")
-                            focusDic.removeValue(forKey: "user_id")
-                            focusDic.removeValue(forKey: "deleted_at")
-                            focusDic.removeValue(forKey: "doNotSuggestAnyMore")
-                            var newDic = [String:Any]()
-                            for key in focusDic.keys{
-                                if key == "metadata"{
-                                    if let metaDataDic = focusDic["metadata"] as? [String:Any]{
-                                        for key in metaDataDic.keys{
-                                            newDic[key] = metaDataDic[key]
-                                        }
-                                    }
-                                }else if key == "tags"{
-                                    if let arrTags = focusDic["tags"] as? [NSDictionary]{
-                                        var arrtags = [String]()
-                                        for tagInfo in arrTags{
-                                            arrtags.append(tagInfo["text"] as? String ?? "")
-                                        }
-                                        newDic["tags"] = arrtags
-                                    }
-                                }else{
-                                    newDic[key] = focusDic[key]
-                                }
-                            }
-                            newDic.removeValue(forKey: "doNotSuggestAnyMore")
-                            print(newDic)
-                            print("////////\(newArr.count)")
-                            newArr.append(newDic)
-                            
-                        }
-                        
-                        UserDefaults.standard.set(plistSafeFocusModes(newArr), forKey: kUserdefaultsArrFocusTypes)
+                        let newArr = arrFocusModes.map(flattenServerFocusMode)
+                        SensitiveDefaults.set(plistSafeFocusModes(newArr), forKey: kUserdefaultsArrFocusTypes)
                     }
                     
                     checkAllFocusModes()
@@ -1314,10 +1619,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         currentUserEmail = dic?.value(forKey: "email") as? String ?? ""
                         currentUserName = dic?.value(forKey: "name") as? String ?? ""
                         currentLeaderboardUsername = dic?.value(forKey: "username") as? String ?? ""
-                        self.sharedDefaults?.setValue(currentUserEmail, forKeyPath: kUserdefaultsSharedUserEmail)
-                        self.sharedDefaults?.setValue(currentUserName, forKeyPath: kUserdefaultsSharedUserName)
-                        self.sharedDefaults?.setValue(currentLeaderboardUsername, forKeyPath: kUserdefaultsSharedLeaderboardUsername)
-                        self.sharedDefaults?.synchronize()
+                        if let sharedDefaults = self.sharedDefaults {
+                            InternalTestUser.record(email: currentUserEmail, in: sharedDefaults)
+                        }
                         DispatchQueue.main.async {
                             accountVcObj?.reloadView()
                         }
@@ -1364,10 +1668,32 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        guard !LogicTestHost.isEnabled else { return }
+        // #2575: the app is now running, so any pending "relaunch me at X" request from the
+        // "turn everything off until tomorrow" flow is satisfied — clear it so the helper won't
+        // relaunch/activate us again. (The helper also clears it when it fires; this covers the case
+        // where the user reopens the app manually before that time.)
+        sharedDefaults?.removeObject(forKey: kUserdefaultsMainAppScheduledRestartDate)
+        sharedDefaults?.synchronize()
+        SharedSuiteHygiene.removeLegacySecrets(from: sharedDefaults)
+        WebCacheCleaner.clearFocusBearCaches()
+        // Armed first, so a hang during the rest of startup is still reported.
+        MainThreadWatchdog.shared.start()
+        // Both the Do Not Disturb click and the shutdown prompt ask this before taking the menu bar
+        // or the screen away from the user, so it has to be watching from launch.
+        MenuBarActivityProbe.shared.startMonitoring()
+        ManagedBlockingRuntime.shared.restoreLastSession()
         // Insert code here to initialize your application
+
+        // Warm up the native relevance shadow model so it's ready before the first focus-mode URL check.
+        RelevanceShadowNativeModel.shared.warmUp()
 
         // Start Wi-Fi profile auto-switching (#1000)
         WiFiMonitorService.shared.startMonitoring()
+
+        // Hear the meetings the user deals with in the Late No More app. Safe before login: it only
+        // calls the API when the user acts, and that call checks for credentials first.
+        LateNoMoreDismissalRelay.startRelayingLateNoMoreAcknowledgements()
 
         // Let another local process (e.g. a firmware flashing tool) ask us to release the Focus Button
         // serial port via ~/.focusbear/focus-button-command (#1947 / Focus-Button#15,#21).
@@ -1375,6 +1701,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
         // Glowing screen-edge border shown while a focus session is running.
         FocusGlowBorderManager.shared.start()
+
+        #if DEBUG
+        // Lets a local UI test run take the screen from a routine nobody is using (UITestRunnerYield.swift).
+        UITestRunnerYieldController.shared.start()
+        #endif
+
+        // ⚠️ applicationDidFinishLaunching runs for EVERYONE on every launch — before the
+        // logged-in/onboarding/login decision, and for fresh and logged-out users too. So it is NOT
+        // a safe place to start anything that hits authenticated endpoints or assumes a signed-in
+        // user: any AllApi call here reaches setCredentialAndUserInfo on failure and runs auth
+        // handling before we've decided the launch flow. Put that work in loadAppAndSettings()
+        // instead, which only runs once credentials have resolved.
+        // Example: the timezone sync and busy-hours reporter used to start here and, being
+        // pre-auth, showed fresh users the login screen and looped "please login again" (#2583) —
+        // they now start in loadAppAndSettings().
 
 #if DEBUG
         // Offscreen Day Plan mockup render (DEBUG-only; no-op unless FB_MOCKUP_FILE is set); quits when done.
@@ -1384,7 +1725,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if #available(macOS 13.0, *) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 MenuSnapshot.renderIfRequested()
-                if ProcessInfo.processInfo.environment["FB_SNAPSHOT_MENU"] == "1" { NSApp.terminate(nil) }
+                if OffscreenRenderLaunch.isMenuSnapshot { NSApp.terminate(nil) }
             }
         }
         // "Create Claude debug task…" Help-menu item (one user only). The user loads asynchronously after
@@ -1574,25 +1915,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         if aNotification.name == NSWorkspace.willSleepNotification {
             print("Going to sleep")
-            
+
+            markIndefiniteFocusSleepStartIfNeeded()
             if !isAutoFocusPaused{
                 macSleepPauseFocusModeIfRunning()
             }
         }else if aNotification.name == NSWorkspace.didWakeNotification {
             print("Woke up")
-            
+
+            excludeIndefiniteFocusSleepDurationIfNeeded()
             if isAutoFocusPaused{
                 macWakeupResumeFocusModeIfRunning()
             }
-            
+
         }else if aNotification.name == NSNotification.Name(rawValue: "com.apple.screensaver.didstart") {
             print("com.apple.screensaver.didstart")
-            
+
+            markIndefiniteFocusSleepStartIfNeeded()
             macSleepPauseFocusModeIfRunning()
-            
+
         }else if aNotification.name == NSNotification.Name(rawValue: "com.apple.screensaver.didstop") {
             print("com.apple.screensaver.didstop")
-            
+
+            excludeIndefiniteFocusSleepDurationIfNeeded()
             if isSystemSleep{
                 return;
             }
@@ -1659,7 +2004,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     getTaskPlayerVcObject().loadView()
                     getTaskPlayerVcObject().loadRequest()
                     shouldReloadTaskPlayer = true
-                    showTaskPlayerWindow(totalDuration: minute, intention: whatToAchieveInFocusBlock, automatically:true)
+                    showRunningFocusSessionWindow()
                 }
                 let name = dic["name"] as? String ?? ""
                 addLog(text: "\(name) focus mode resumed successfully")// added v 3.32.483 //
@@ -1692,20 +2037,57 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
         menuViewControllerObj?.showFocusModeCountDownIfNeeded()
     }
-    
+
+    // A focus session is "indefinite" when it runs with no countdown timer (e.g. a blocking-schedule
+    // activated block list). Timered sessions already exclude sleep time via
+    // macSleepPauseFocusModeIfRunning / macWakeupResumeFocusModeIfRunning; indefinite ones don't, so we
+    // exclude sleep separately (see indefiniteFocusSleepStartDate). isAutoFocusPaused is only set by the
+    // timered pause, so gating on it keeps a just-paused timered session out of the indefinite path.
+    private var isIndefiniteFocusSessionRunning:Bool {
+        return isFocusModeOn() && timerForFocusMode == nil && !isAutoFocusPaused
+    }
+
+    // Called when the Mac is about to sleep / the screensaver starts. Records the moment so the sleep
+    // gap can be excluded from an indefinite focus session's recorded duration.
+    func markIndefiniteFocusSleepStartIfNeeded(){
+        guard isIndefiniteFocusSessionRunning, indefiniteFocusSleepStartDate == nil else { return }
+        indefiniteFocusSleepStartDate = Date()
+        addLog(text: "indefinite focus session: mac sleeping - will exclude idle time from duration")
+    }
+
+    // Called on wake / screensaver stop. Pushes the duration segment start forward by the slept
+    // interval so `Date() - startFocusModeTimeForPauseAndResume` (used to record the block duration in
+    // tryFocusModeFinished) skips the time the Mac was asleep. Idempotent across repeated wake events.
+    func excludeIndefiniteFocusSleepDurationIfNeeded(){
+        guard let sleepStart = indefiniteFocusSleepStartDate else { return }
+        indefiniteFocusSleepStartDate = nil
+        let sleptSeconds = Int(Date().timeIntervalSince(sleepStart))
+        guard sleptSeconds > 0, let segmentStart = startFocusModeTimeForPauseAndResume else { return }
+        startFocusModeTimeForPauseAndResume = segmentStart.addingTimeInterval(TimeInterval(sleptSeconds))
+        addLog(text: "indefinite focus session: excluded \(sleptSeconds)s of sleep from focus duration")
+    }
+
     func extendFocusModeFor(minutes:Int){
         addLog(text: "extendFocusModeFor \(minutes)")
         if teacherSessionManagerObject.isTeacherSessionActive(){// the teacher owns the schedule of a class session
             return;
         }
+        // Extending must leave AI relevance checking exactly as it was — same block list, same
+        // `is_ai_enabled`. Captured here and re-asserted once the extension has been applied.
+        let blockingContextBeforeExtension = FocusSessionExtension.captureBlockingContext()
         if minutes > 0{
             if isFocusModeOn(){
                 if timerForFocusMode != nil{
                     if let fireDate =  startFocusModeTimeForPauseAndResume{
                         let interval = focusModeSecondsToPerform
-                        let passedSeconds = Calendar.current.dateComponents([.second], from: fireDate, to: Date()).second ?? 0
+                        let now = Date()
+                        let passedSeconds = Calendar.current.dateComponents([.second], from: fireDate, to: now).second ?? 0
+                        let remainingFocusModeSeconds = max(0, interval - passedSeconds)
+                        let baseEnd = max(now, endFocusModeTime ?? now.addingTimeInterval(TimeInterval(remainingFocusModeSeconds)))
+                        let grantedMinutes = FocusSessionExtension.cutoffLimitedMinutes(minutes, from: baseEnd, now: now)
+                        guard grantedMinutes > 0 else { return }
+                        let grantedEnd = baseEnd.addingTimeInterval(TimeInterval(grantedMinutes * 60))
                         focusModeActualDurationPerformed += passedSeconds
-                        let remainingFocusModeSeconds = interval - passedSeconds
                         addLog(text: "Remaining seconds \(remainingFocusModeSeconds)")
                         
                         //focusButtonService
@@ -1718,10 +2100,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         timerForFocusModeEndNotification = nil
                         
                         
-                        startFocusModeTimeForPauseAndResume = Date()
-                        focusModeSecondsToPerform = remainingFocusModeSeconds + (minutes * 60)//(minutes * 60)
-                        endFocusModeTime = Calendar.current.date(byAdding: .second, value: focusModeSecondsToPerform, to: Date())
-                        timerForFocusMode = Timer.scheduledTimer(timeInterval: TimeInterval(focusModeSecondsToPerform), target: self, selector: #selector(self.focusModeTimerFinished), userInfo: nil, repeats: false)
+                        startFocusModeTimeForPauseAndResume = now
+                        focusModeSecondsToPerform = max(0, Int(grantedEnd.timeIntervalSince(now)))
+                        focusModeMinutesToPerform = FocusSessionClock.plannedMinutes(focusModeMinutesToPerform, changedBy: grantedMinutes)
+                        endFocusModeTime = grantedEnd
+                        timerForFocusMode = Timer(fireAt: grantedEnd, interval: 0, target: self, selector: #selector(self.focusModeTimerFinished), userInfo: nil, repeats: false)
                         RunLoop.main.add((timerForFocusMode!), forMode: RunLoop.Mode.common)
                         
                         if focusModeSecondsToPerform > warningShowSecondsBeforeFocusModeEndTime{
@@ -1745,6 +2128,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             
                         })
                         updateAllFocusModes()
+                        FocusSessionExtension.reapplyBlockingContext(blockingContextBeforeExtension)
                     }
                     
                     
@@ -1792,6 +2176,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         
                         startFocusModeTimeForPauseAndResume = Date()
                         focusModeSecondsToPerform = newRemainingSeconds
+                        focusModeMinutesToPerform = FocusSessionClock.plannedMinutes(focusModeMinutesToPerform, changedBy: -minutes)
                         endFocusModeTime = Calendar.current.date(byAdding: .second, value: focusModeSecondsToPerform, to: Date())
                         timerForFocusMode = Timer.scheduledTimer(timeInterval: TimeInterval(focusModeSecondsToPerform), target: self, selector: #selector(self.focusModeTimerFinished), userInfo: nil, repeats: false)
                         RunLoop.main.add((timerForFocusMode!), forMode: RunLoop.Mode.common)
@@ -1868,9 +2253,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
             leftMenuVcObj?.resetFocusModeTitle()
             leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
-            if leftMenuVcObj?.boxTodoPlayer.isSelected ?? false{
-                mainViewControllerObj?.showTaskView()//reloading
-            }
+            // The TOOLS slot is the To-do list now, and it reloads itself in viewWillAppear — there is
+            // nothing to re-show here. The headless player still needs its pending reload.
+            reloadHeadlessToDoPlayerIfPending()
             
             if taskPlayerVcObj != nil{
                 getTaskPlayerVcObject().notifyToDoPlayerPauseState(isPaused: true)
@@ -1939,9 +2324,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 
                 if leftMenuVcObj != nil{
                     leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
-                    if leftMenuVcObj?.boxTodoPlayer.isSelected ?? false{
-                        mainViewControllerObj?.showTaskView()//reloading
-                    }
+                    reloadHeadlessToDoPlayerIfPending()
                     if taskPlayerVcObj != nil{
                         getTaskPlayerVcObject().notifyToDoPlayerPauseState(isPaused: false)
                     }
@@ -2024,7 +2407,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         var jsonResult:NSDictionary?
         jsonResult = json
         if jsonResult == nil{
-            if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+            if let stringDic = SensitiveDefaults.object(forKey: kUserdefaultsSelectedJson) as? String {
                 //            jsonResult = dic
                 if let data = stringDic.data(using: String.Encoding.utf8) {
                     
@@ -2046,7 +2429,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 jsonResult = dicResult
                                 
                                 if let str = String(data: data, encoding: String.Encoding.utf8){
-                                    UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+                                    SensitiveDefaults.set(str, forKey: kUserdefaultsSelectedJson)
                                 }
                             }
                         }catch {
@@ -2389,10 +2772,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
             
             if let breakMinutes = jsonResult!.value(forKey: "break_after_minutes") as? Int {
-                // Respect a locally-chosen break frequency (set via the break-frequency
-                // prompt) so the server sync does not clobber the user's choice.
-                let localOverride = UserDefaults.standard.integer(forKey: kUserdefaultsBreakFrequencyMinutes)
-                breakAfterMinutes = localOverride > 0 ? localOverride : breakMinutes
+                // break_after_minutes is the single source of truth. Changes are written straight to it
+                // (BreakFrequencyStreakTracker.saveNewBreakFrequency → server + re-cached settings), so we
+                // read it directly rather than letting a separate local key shadow the server value.
+                breakAfterMinutes = breakMinutes
             }
             
             if let customRoutines = jsonResult!.value(forKey: "custom_routines") as? [NSDictionary] {
@@ -2543,9 +2926,37 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 sharedDefaults?.synchronize()
             }
         }
+        // The app is designed to always have a routine start and shut-off time. If the settings payload
+        // was missing `startup_time` / `shutdown_time` (absent key or unparseable), these stay nil — and
+        // routine-window code force-unwraps them (startTime!/shutOffTime! appears ~87×), which crashed the
+        // app on launch (checkLastHabitShowDate, #2457). Fall back to sensible defaults so they are never
+        // nil: routine start 05:15, shut-off 20:00.
+        if startTime == nil {
+            startTime = Time(hour: 5, minute: 15, second: 0)
+            startTimeString = "05:15:00"
+            addLog(text: "startup_time missing → defaulting startTime to 05:15")
+        }
+        if shutOffTime == nil {
+            shutOffTime = Time(hour: 20, minute: 0, second: 0)
+            shutOffTimeString = "20:00:00"
+            addLog(text: "shutdown_time missing → defaulting shutOffTime to 20:00")
+        }
     }
     
     var isSettingsLoddedInAppdelegate = false
+    /// Set once checkWindowState() has run loadAllWindows(), i.e. the main VCs/windows are set up
+    /// and settings (startTime/shutOffTime) are populated. The onboarding "Start using Focus Bear"
+    /// hand-off waits on this before showing the main window, so the Day Plan can't be opened before
+    /// the app is fully initialised (which crashed getNextRoutineInfo on a nil shutOffTime).
+    var isCheckWindowStateDone = false
+    /// Set the first time an AppleScript command touches us (see fbNoteScriptingCommand). `tell application
+    /// … to <cmd>` LAUNCHES the closed app in the background first and only THEN sends the command, so the
+    /// launch itself looks like a normal launch (NSApplicationLaunchIsDefaultLaunchKey is true) — the only
+    /// reliable "a script drove us" signal is a command actually arriving. Combined with `!isActive` this
+    /// distinguishes a scripting launch (activate the app) from a login/startup launch (leave it backgrounded).
+    var didHandleScriptingCommand = false
+    /// Guards fbActivateFromBackgroundLaunch so we foreground/clear-splash only once per launch.
+    private var didForegroundFromScriptLaunch = false
     func initialWork(){
         addLog(text: "initialWork")
         isAppInitialLodded = true
@@ -2553,7 +2964,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         // -------------------GETTING SETTINGS JSON----------------------//
         var isFirstTime = false
-        if UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) == nil{
+        if SensitiveDefaults.object(forKey: kUserdefaultsSelectedJson) == nil{
             isFirstTime = true
         }
         
@@ -2568,18 +2979,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             
             if settings != nil{
                 if isFirstTime{
-                    
-                    //                    let breakDuration = UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationValue) as? Int ?? defaultBreakDurationValue
-                    //
-                    //                    var startDate = UserDefaults.standard.object(forKey: kUserdefaultsStartupTimeFromOnboarding) as? String ?? defaultStartTime
-                    //                    var shutOffDate = UserDefaults.standard.object(forKey: kUserdefaultsShutOffTimeFromOnboarding) as? String ?? defaultShutDownTime
-                    //                    var sleepTime = UserDefaults.standard.object(forKey: kUserdefaultsSleepTimeFromOnboarding) as? String ?? defaultSleepTime
-                    
-                    //                    if packId.isEmpty{// work for focus only
-                    //                        startDate = "00:00"
-                    //                        shutOffDate = "23:59"
-                    //                        sleepTime = "23:59"
-                    //                    } //  new v 2.28.447
+                    // Break frequency chosen in onboarding (enableBreaksFromOnboarding seeds 60). Falls
+                    // back to 60 if the in-memory global was reset by the time this first-run save runs,
+                    // so a fresh user always gets an hourly break out of the box. Persisted here with the
+                    // valid full-settings save instead of a standalone PUT (which 400s mid-onboarding).
+                    let breakDuration = breakAfterMinutes > 0 ? breakAfterMinutes : 60
                     let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
                     if isHabitsDisabled{
                         let startDate = "00:00"
@@ -2589,10 +2993,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         
                         settings!["startup_time"] = startDate
                         settings!["shutdown_time"] = shutOffDate
-                        //                            settings!["break_after_minutes"] = breakDuration
+                        settings!["break_after_minutes"] = breakDuration
                         settings!["sleep_time"] = sleepTime
                         
-//                        UserDefaults.standard.removeObject(forKey: kUserdefaultsBreakDurationValue)
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsStartupTimeFromOnboarding)
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffTimeFromOnboarding)
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsSleepTimeFromOnboarding)
@@ -2610,7 +3013,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         do {
                                             let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
                                             if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
-                                                UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                                SensitiveDefaults.set(backToString, forKey: kUserdefaultsSelectedJson)
                                                 //appdelegate?.readSettingsJsonDictionary(json: nil)//will not do this here
                                             }
                                         } catch let myJSONError {
@@ -2620,7 +3023,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         do {
                                             let data = try (JSONSerialization.data(withJSONObject: settings!, options: .prettyPrinted))
                                             if let str = String(data: data, encoding: String.Encoding.utf8){
-                                                UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+                                                SensitiveDefaults.set(str, forKey: kUserdefaultsSelectedJson)
                                             }
                                         } catch let error as NSError {
                                             print(error)
@@ -2631,23 +3034,47 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             }
                         })
                     }else{
-                        do {
-                            let data = try (JSONSerialization.data(withJSONObject: settings!, options: .prettyPrinted))
-                            if let str = String(data: data, encoding: String.Encoding.utf8){
-                                UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+                        // Habits enabled: still sync the onboarding break frequency to the server so it
+                        // isn't left local-only (this branch previously just cached). Mirrors the PUT above.
+                        settings!["break_after_minutes"] = breakDuration
+                        allApiObject.isSettingsValid(settings: settings!, isOnboarding:true, completionHandler: {dic,statusCode  in
+                            DispatchQueue.main.async {
+                                if dic == nil{
+                                    self.readSettingsAndLoadApp(settings: settings)
+                                }else{
+                                    if statusCode == 200{
+                                        let settings = dic?.mutableCopy() as? NSMutableDictionary
+                                        self.readSettingsAndLoadApp(settings: settings)
+                                        do {
+                                            let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
+                                            if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
+                                                SensitiveDefaults.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                            }
+                                        } catch let myJSONError {
+                                            print(myJSONError)
+                                        }
+                                    }else{
+                                        do {
+                                            let data = try (JSONSerialization.data(withJSONObject: settings!, options: .prettyPrinted))
+                                            if let str = String(data: data, encoding: String.Encoding.utf8){
+                                                SensitiveDefaults.set(str, forKey: kUserdefaultsSelectedJson)
+                                            }
+                                        } catch let error as NSError {
+                                            print(error)
+                                        }
+                                        self.readSettingsAndLoadApp(settings: settings)
+                                    }
+                                }
                             }
-                        } catch let error as NSError {
-                            print(error)
-                        }
-                        self.readSettingsAndLoadApp(settings: settings)
+                        })
                     }
-                    
-                    
+
+
                 }else{
                     do {
                         let data = try (JSONSerialization.data(withJSONObject: settings!, options: .prettyPrinted))
                         if let str = String(data: data, encoding: String.Encoding.utf8){
-                            UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+                            SensitiveDefaults.set(str, forKey: kUserdefaultsSelectedJson)
                         }
                     } catch let error as NSError {
                         print(error)
@@ -2668,7 +3095,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func readSettingsAndLoadApp(settings: NSMutableDictionary?){
         self.readSettingsJsonDictionary(json: settings)
         
-        arrAllFocusModeTags = UserDefaults.standard.object(forKey: kUserdefaultsAllFocusModesTags) as? [[String : String]] ?? []
+        arrAllFocusModeTags = SensitiveDefaults.object(forKey: kUserdefaultsAllFocusModesTags) as? [[String : String]] ?? []
         allApiObject.getFocusModeTags(completionHandler: {arrJson in
             
         })
@@ -2684,6 +3111,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addLog(text: "func:- initialWork   isSettingsLoddedInAppdelegate done")
             
             self.isSettingsLoddedInAppdelegate = true
+            if UITestHost.isEnabled {
+                // Not left to the next five-second tick: every UI test launch waited for it.
+                DispatchQueue.main.async { self.runUITestLaunchHooks() }
+            }
             //
             SettingsManagerObject.readLocalSettings()
             if UserDefaults.standard.object(forKey: kUserdefaultsIsAppEnabled) == nil{
@@ -2765,7 +3196,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 if (getHabitsVcObject().habitsView.subviews.contains(activityCompletionVcObj!.view)){
                                     if (getHabitsVcObject().view.subviews.contains((logQuantityVcObj!.view))){
                                         if currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
-                                            if logQuantityVcObj!.tabClickedSelectNextTextField(){
+                                            if logQuantityVcObj!.tabClickedSelectNextTextField(backwards: event.modifierFlags.contains(.shift)){
                                                 return nil
                                             }
                                         }
@@ -2791,6 +3222,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                    || fid.hasPrefix("taskModal") || fid == "projectFilter" {
                                 return event
                             }
+                            // Log Quantity dialog: Return always commits the entered value via OK,
+                            // regardless of the current routine state/action. The state-nested handlers
+                            // below reach btnOkClicked only on some paths (they miss e.g. the action-bar /
+                            // past-habit and _SPECIAL_ACTIVITY_ entries), so Return did nothing there.
+                            // Resign first responder first to commit an in-progress textFieldCount edit
+                            // (its value is stored on controlTextDidEndEditing). Returning nil stops the
+                            // event so it can't also start/skip a habit — in the borderless full-screen
+                            // window a plain default button doesn't receive Return and the habit "Start"
+                            // button would otherwise steal it.
+                            if let logQ = logQuantityVcObj,
+                               getHabitsVcObject().view.subviews.contains(logQ.view) {
+                                logQ.view.window?.makeFirstResponder(nil)
+                                logQ.btnOkClicked(self)
+                                return nil
+                            }
                             if mainWindowControllerObj?.window?.isVisible ?? false && (leftMenuVcObj?.boxHabits.isSelected ?? false || leftMenuVcObj?.boxCustomRoutine.isSelected ?? false || leftMenuVcObj?.boxMicroBreaks.isSelected ?? false){
                                 if currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                                     if askPostponeVcObj != nil{
@@ -2803,7 +3249,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                             return event
                                         }
                                     }
-                                    if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                                    if SettingsManagerObject.isAppPasswordSet{
                                         if enterPasswordVcObj != nil{
                                             if getHabitsVcObject().view.subviews.contains(enterPasswordVcObj!.view){
                                                 return event
@@ -2874,14 +3320,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                 }
                                             }
                                         }else if currentState == ._MICRO_BREAK_{
-                                            if (getHabitsVcObject().habitsView.subviews.contains(firstViewControllerObj!.view)){
-                                                if !firstViewControllerObj!.isTimerGoingOn{
-                                                    if firstViewControllerObj!.btnStartFirstHabit.isEnabled{
-                                                        firstViewControllerObj?.btnStartFirstHabitClicked(self)
-                                                        return nil
-                                                    }
-                                                }
-                                            }else if (getHabitsVcObject().habitsView.subviews.contains(activityCompletionVcObj!.view)){
+                                            // The break start screen is now its own SwiftUI screen; it
+                                            // ignores Return while the brain dump has focus so a newline
+                                            // there doesn't start the break.
+                                            if breakStartVcObj?.startFromReturnKey() ?? false{
+                                                return nil
+                                            }
+                                            if (getHabitsVcObject().habitsView.subviews.contains(activityCompletionVcObj!.view)){
                                                 if (getHabitsVcObject().view.subviews.contains((logQuantityVcObj!.view))){
                                                     logQuantityVcObj?.btnOkClicked(self)
                                                     return nil
@@ -2959,6 +3404,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
     @objc func togglePopover(_ isDefaultButton:Bool = true) {
         addLog(text: "togglePopover start")
+        // Clicking the menu-bar item activates the app, and that activation reaches
+        // applicationDidBecomeActive BEFORE this action is delivered (visible in the user's logs), so the
+        // "a menu is open" guard cannot see the menu yet. Declare the activation as ours: the user asked
+        // for the menu, not for the full window.
+        noteSelfActivation()
         menuOpenedFromFloatingBar = false
         if let runningApp = NSWorkspace.shared.frontmostApplication{
             if runningApp.bundleIdentifier != Bundle.main.bundleIdentifier{
@@ -2973,8 +3423,37 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
         
         addLog(text: "[user-action] Top bar focus bear button clicked")
+        // An open overlay panel closes on this click whatever is frontmost NOW. Clicking the status
+        // item can make us the frontmost app, which would make isFrontmostAppCoveringScreen() false
+        // and send us down the popover path — opening a SECOND menu on top of the panel.
+        if menuShownInOverlayPanel {
+            hideMenuOverlayPanel()
+            addLog(text: "togglePopover end (overlay panel closed)")
+            return
+        }
+        // Over an app covering the screen (native OR non-native full-screen), neither the popover nor a
+        // plain window renders above it — only an NSPanel (.nonactivatingPanel) does (the window type the
+        // focus tooltip uses, which the user confirmed shows there). Present the menu in that panel.
+        if isFrontmostAppCoveringScreen(), let button = statusItem.button {
+            showMenuInOverlayPanel(button: button)
+            addLog(text: "togglePopover end (overlay panel)")
+            return
+        }
         if isFocusBearMenuVisible(){
-            closePopover()
+            // In window mode, if another app is covering the screen (full-screen) the menu may be stuck
+            // behind it — re-show it (close + open) so it comes back to the front over the full-screen app,
+            // instead of toggling it closed. Otherwise (popover mode, or nothing covering) a click just
+            // closes the menu, as normal.
+            if !SettingsManagerObject.isMenuPopoverEnabled{
+                if isFrontmostAppCoveringScreen(){
+                    closePopover()
+                    showPopover(isDefaultButton: isDefaultButton)
+                }else{
+                    closePopover()
+                }
+            }else{
+                closePopover()
+            }
         } else{
             addLog(text: "popover is not visible")
             if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._CUSTOM_ROUTINE_{
@@ -3005,16 +3484,52 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         if isDefaultButton{
             if let button = statusItem.button{
+                // Self-heal the shared menu content. The menu VC can only live in ONE container (the
+                // popover OR the detached window); moving it around can leave it detached, which renders
+                // an EMPTY menu. Re-attach it to the container that matches the current mode before showing.
+                ensureMenuContentAttached()
+                // A popover renders on Focus Bear's own Space, so over ANOTHER app's native full-screen
+                // Space it stays hidden. The detached window menu shows there fine, so for full-screen
+                // temporarily flip to window mode (in-memory only — never persisted) and move the shared
+                // menu VC into the window. closePopover() restores popover mode. This reuses all the
+                // window-mode plumbing (sizing, outside-click dismiss) rather than fighting NSPopover.
+                if SettingsManagerObject.isMenuPopoverEnabled, isFrontmostAppInNativeFullScreen() {
+                    menuFlippedToWindowForFullScreen = true
+                    SettingsManagerObject.isMenuPopoverEnabled = false
+                    if popover.isShown { popover.performClose(nil) }
+                    popover.contentViewController = nil
+                    getMenuWindowObject().contentViewController = menuViewControllerObj
+                }
                 if SettingsManagerObject.isMenuPopoverEnabled{
                     popover.show(relativeTo: button.bounds, of: button, preferredEdge: NSRectEdge.minY)
-                    // Make the POPOVER'S own window key (not the status button's). The old
-                    // `button.window?.becomeKey()` left the status-item window key and the popover
-                    // non-key, so the .transient popover never armed its outside-click auto-dismiss —
-                    // clicking away didn't close the menu. This matches the floating-bar path below.
+                    // Make the POPOVER'S own window key (not the status button's) so the .transient popover
+                    // arms its outside-click auto-dismiss.
                     menuViewControllerObj?.view.window?.makeKey()
+
+                    // Raise the popover to .popUpMenu and let it join all spaces so it appears over another
+                    // app's full-screen space (and stays visible under Stage Manager). popUpMenu (vs the old
+                    // .statusBar) sits ABOVE an app's traditional full-screen window, which occludes lower
+                    // levels.
+                    if let window = popover.contentViewController?.view.window {
+                        window.level = .popUpMenu
+                        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+                    }
                 }else{
-                    getMenuWindowObject().showWindow(self)
-                    NSApplication.shared.activate(ignoringOtherApps: true)
+                    let wc = getMenuWindowObject()
+                    wc.showWindow(self)
+                    if menuFlippedToWindowForFullScreen {
+                        // Position under the status icon and make the window able to sit on the active
+                        // full-screen Space, then order it front WITHOUT activating Focus Bear (which
+                        // would yank the user out of the full-screen app).
+                        positionMenuWindowUnderStatusItem(button: button)
+                        wc.window?.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+                        wc.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.popUpMenuWindow)))
+                        wc.window?.orderFrontRegardless()
+                        wc.window?.makeKey()
+                        installMenuOutsideClickMonitors()
+                    } else {
+                        NSApplication.shared.activate(ignoringOtherApps: true)
+                    }
                 }
                 addLog(text: "showPopover End")
             }
@@ -3054,30 +3569,182 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
 
+
         // Window mode is a pinned, detached window: it should stay open until the user explicitly
         // closes it (a menu action, the pin toggle, or clicking the status item) — so we no longer
         // auto-dismiss it on an outside click, which made window mode behave just like the popover.
         // Popover mode keeps its own .transient auto-dismiss; nothing to install here.
+
+        raiseMenuAboveBlockBuddyBlurIfVisible()
     }
-    
+
+    /// The AI-block "Quick check-in" buddy raises a dimming blur backdrop (`blurWcObj`) at
+    /// modalPanelWindow level. The Focus Bear menu sits at the SAME level — both the unpinned popover's
+    /// own window and the pinned detached window (`getMenuWindowObject()`) — so the blur covers the menu
+    /// and the user can't reach it (e.g. to stop the session) while the buddy is up. When the blur is
+    /// visible, raise whichever menu presentation is active to popUpMenuWindow level (matching the buddy
+    /// dialog at `AiBlockBuddyScreen`) so it renders ABOVE the blur; restore the pinned window's normal
+    /// modalPanelWindow level once the blur is gone (unless it's deliberately raised for native
+    /// full-screen). The full-screen overlay-panel path already sits at popUpMenuWindow, so it's
+    /// unaffected. No-op for normal (no-blur) menu z-order.
+    private func raiseMenuAboveBlockBuddyBlurIfVisible() {
+        let blurVisible = blurWcObj?.window?.isVisible == true
+        // screenSaver level (1000) is definitively above the blur (modalPanel 8) AND the buddy dialog
+        // (popUpMenu 101) — a plain popUpMenu raise wasn't beating the blur in practice.
+        let overBlurLevel = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.screenSaverWindow)))
+        let modalPanelLevel = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+        if blurVisible {
+            let target: NSWindow? = SettingsManagerObject.isMenuPopoverEnabled ? menuViewControllerObj?.view.window : getMenuWindowObject().window
+            target?.level = overBlurLevel
+            target?.orderFrontRegardless()
+            addLog(text: "raiseMenuAboveBlur: popover=\(SettingsManagerObject.isMenuPopoverEnabled) menuLvl=\(target?.level.rawValue ?? -999) blurLvl=\(blurWcObj?.window?.level.rawValue ?? -999) buddyLvl=\(aiBlockBuddyWcObj?.window?.level.rawValue ?? -999)")
+        } else if !menuFlippedToWindowForFullScreen {
+            getMenuWindowObject().window?.level = modalPanelLevel
+        }
+    }
+
+    /// True while the menu is temporarily shown as a detached window because the frontmost app is in
+    /// native full-screen (popover mode can't render there). closePopover() uses this to restore
+    /// popover mode. Never persisted — the user's isMenuPopoverEnabled setting is untouched.
+    var menuFlippedToWindowForFullScreen = false
+
+    /// Ensure the shared menu view controller is attached to the container for the CURRENT mode (popover
+    /// when `isMenuPopoverEnabled`, else the detached window). The VC can only be in one place at a time,
+    /// so a mode flip / earlier full-screen experiment can leave it detached → an empty menu. Idempotent.
+    func ensureMenuContentAttached() {
+        if menuViewControllerObj == nil {
+            menuViewControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("menuViewController")) as? menuViewController
+        }
+        if SettingsManagerObject.isMenuPopoverEnabled {
+            if popover.contentViewController !== menuViewControllerObj {
+                getMenuWindowObject().contentViewController = nil
+                popover.contentViewController = menuViewControllerObj
+                popover.animates = false
+                popover.behavior = .transient
+            }
+        } else {
+            if getMenuWindowObject().contentViewController !== menuViewControllerObj {
+                popover.contentViewController = nil
+                getMenuWindowObject().contentViewController = menuViewControllerObj
+            }
+        }
+    }
+
+    // MARK: - Full-screen overlay panel
+
+    /// A borderless NON-ACTIVATING panel used ONLY to show the menu over another app that's covering the
+    /// screen (native or non-native full-screen). An NSPanel(.nonactivatingPanel) renders on the active
+    /// full-screen Space where a plain NSWindow does NOT (it's the window type the focus tooltip uses,
+    /// which the user confirmed shows over their full-screen). Lazily created, reused.
+    private var menuOverlayPanel: NSPanel?
+    var menuShownInOverlayPanel = false
+
+    private func getMenuOverlayPanel() -> NSPanel {
+        if let panel = menuOverlayPanel { return panel }
+        let panel = MenuOverlayPanel(contentRect: NSRect(x: 0, y: 0, width: 320, height: 400),
+                                     styleMask: [.nonactivatingPanel, .borderless],
+                                     backing: .buffered, defer: false)
+        panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.popUpMenuWindow)))
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = true
+        panel.hidesOnDeactivate = false
+        panel.isFloatingPanel = true
+        panel.becomesKeyOnlyIfNeeded = true
+        menuOverlayPanel = panel
+        // `isFloatingPanel` rewrites the level, so record what the panel actually settled on and
+        // restore that on every show — otherwise one appearance over the buddy's blur left the panel
+        // pinned at screen-saver level for the rest of the session (seen as lvl=1000 in the logs).
+        menuOverlayPanelRestingLevel = panel.level
+        return panel
+    }
+
+    /// The overlay panel's level when it is not being raised above the AI-block buddy's blur.
+    private var menuOverlayPanelRestingLevel: NSWindow.Level = .floating
+
+    /// Host the shared menu VC in the overlay panel, position it under the status icon and show it over the
+    /// full-screen app. Detaches the VC from the popover/window (only one container can own it).
+    private func showMenuInOverlayPanel(button: NSStatusBarButton) {
+        if popover.isShown { popover.performClose(nil) }
+        if getMenuWindowObject().window?.isVisible ?? false { getMenuWindowObject().window?.close() }
+        if menuViewControllerObj == nil {
+            menuViewControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("menuViewController")) as? menuViewController
+        }
+        popover.contentViewController = nil
+        getMenuWindowObject().contentViewController = nil
+        let panel = getMenuOverlayPanel()
+        panel.contentViewController = menuViewControllerObj
+        panel.layoutIfNeeded()
+        if let size = menuViewControllerObj?.view.fittingSize, size.width > 1, size.height > 1 {
+            panel.setContentSize(size)
+        }
+        if let buttonWindow = button.window {
+            let screenRect = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
+            panel.setFrameTopLeftPoint(NSPoint(x: screenRect.midX - panel.frame.width / 2, y: screenRect.minY))
+        }
+        // If the AI-block buddy's blur backdrop is up, raise the panel above it (screenSaver level beats
+        // the blur AND the buddy dialog) so the menu isn't hidden behind the blur over a full-screen app.
+        if blurWcObj?.window?.isVisible == true {
+            panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.screenSaverWindow)))
+        } else {
+            panel.level = menuOverlayPanelRestingLevel
+        }
+        panel.orderFrontRegardless()
+        menuShownInOverlayPanel = true
+        installMenuOutsideClickMonitors(force: true)
+        addLog(text: "overlay panel shown: onActiveSpace=\(panel.isOnActiveSpace) visible=\(panel.isVisible) lvl=\(panel.level.rawValue) blurVis=\(blurWcObj?.window?.isVisible ?? false) blurLvl=\(blurWcObj?.window?.level.rawValue ?? -999) buddyLvl=\(aiBlockBuddyWcObj?.window?.level.rawValue ?? -999) frame=\(panel.frame)")
+    }
+
+    /// Close the overlay panel and return the menu VC to the popover/window for the next normal open.
+    func hideMenuOverlayPanel() {
+        removeMenuOutsideClickMonitors()
+        menuOverlayPanel?.orderOut(nil)
+        menuOverlayPanel?.contentViewController = nil
+        menuShownInOverlayPanel = false
+        ensureMenuContentAttached()
+    }
+
+    /// Place the detached menu window directly beneath the status-bar icon.
+    private func positionMenuWindowUnderStatusItem(button: NSStatusBarButton) {
+        guard let win = getMenuWindowObject().window, let buttonWindow = button.window else { return }
+        let screenRect = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
+        win.setFrameTopLeftPoint(NSPoint(x: screenRect.midX - win.frame.width / 2, y: screenRect.minY))
+    }
+
     func closePopover() {
         addLog(text: "closePopover")
+        if menuShownInOverlayPanel { hideMenuOverlayPanel(); return }
         removeMenuOutsideClickMonitors()
         if SettingsManagerObject.isMenuPopoverEnabled{
             popover.performClose(nil)
         }else{
             getMenuWindowObject().window?.close()
         }
+        // Restore popover mode if we temporarily flipped to a window for a full-screen app, moving the
+        // shared menu VC back onto the popover so the next normal open works.
+        if menuFlippedToWindowForFullScreen {
+            menuFlippedToWindowForFullScreen = false
+            getMenuWindowObject().contentViewController = nil
+            SettingsManagerObject.isMenuPopoverEnabled = true
+            popover.contentViewController = menuViewControllerObj
+            popover.animates = false
+            popover.behavior = .transient
+        }
     }
 
     /// Watch for clicks outside the menu window and close it (the window doesn't auto-dismiss like a
     /// .transient popover). Global monitor catches clicks in other apps; local monitor catches clicks
     /// elsewhere in our own app. Only used in window mode.
-    func installMenuOutsideClickMonitors() {
-        guard !SettingsManagerObject.isMenuPopoverEnabled else { return }
+    ///
+    /// Both monitors hand the event to `MenuOutsideClickPolicy`, which is the only place allowed to
+    /// answer "was that click away from the menu". The global monitor's event carries no window of
+    /// ours, so it is classified by screen location instead.
+    func installMenuOutsideClickMonitors(force: Bool = false) {
+        guard force || !SettingsManagerObject.isMenuPopoverEnabled else { return }
         removeMenuOutsideClickMonitors()
-        menuOutsideClickMonitorGlobal = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            self?.closeMenuIfClickedOutside(nil)
+        menuOutsideClickMonitorGlobal = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
+            self?.closeMenuIfClickedOutside(event)
         }
         menuOutsideClickMonitorLocal = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
             self?.closeMenuIfClickedOutside(event)
@@ -3090,10 +3757,62 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if let m = menuOutsideClickMonitorLocal { NSEvent.removeMonitor(m); menuOutsideClickMonitorLocal = nil }
     }
 
-    private func closeMenuIfClickedOutside(_ localEvent: NSEvent?) {
+    /// The actions a user's click fires to OPEN or close the menu. A mouse-down on a control wired to
+    /// one of them is the toggle, which reaches `togglePopover` a moment later — dismissing the menu
+    /// from the monitor would only hide it microseconds before that action re-shows it.
+    private static let menuToggleActions: Set<Selector> = [
+        #selector(AppDelegate.togglePopoverFromButton(_:)),
+        #selector(AppDelegate.bringMainWindowToForeground(_:)),
+        #selector(floatingTopBarVc.btnBarClicked(_:))
+    ]
+
+    /// Did the click land on the chrome that owns the menu — the status-bar icon, or the floating
+    /// bar's menu button? The status item is answered by geometry (we hold the button, and its window
+    /// is a private AppKit class not worth matching); anything else by what the control under the
+    /// click actually does.
+    private func clickHitsMenuOwnerChrome(_ event: NSEvent) -> Bool {
+        let clicked = event.window
+        let location = event.locationInWindow
+        let statusButton = statusItem.button
+        // A windowless event (the global monitor, and any status-item click macOS reports that way)
+        // carries its location in screen coordinates.
+        let hitStatusItem = clicked == nil
+            ? MenuOutsideClickPolicy.hits(statusButton, screenLocation: location)
+            : MenuOutsideClickPolicy.hits(statusButton, clickedWindow: clicked, locationInWindow: location)
+        if hitStatusItem { return true }
+        let viewUnderClick = MenuOutsideClickPolicy.viewUnderClick(in: clicked, locationInWindow: location)
+        return MenuOutsideClickPolicy.togglesMenu(viewUnderClick: viewUnderClick,
+                                                  toggleActions: AppDelegate.menuToggleActions)
+    }
+
+    /// Where a monitored click landed, relative to the menu currently on screen.
+    private func menuClickTarget(for event: NSEvent?, menu: NSWindow?) -> MenuOutsideClickPolicy.ClickTarget {
+        guard let event else { return .otherApplication }
+        return MenuOutsideClickPolicy.target(clickedWindow: event.window, menu: menu,
+                                             hitOwnerChrome: clickHitsMenuOwnerChrome(event)) { window, menuWindow in
+            guard let window = window as? NSWindow, let menuWindow = menuWindow as? NSWindow else { return false }
+            return MenuWindowOwnership.isOwned(window, by: menuWindow)
+        }
+    }
+
+    private func closeMenuIfClickedOutside(_ event: NSEvent?) {
+        // Full-screen overlay panel: dismiss on a click away from it. Trust the panel's own
+        // visibility, not just the flag, so a stale flag tidies up once instead of on every click.
+        if menuShownInOverlayPanel {
+            let panel = menuOverlayPanel
+            guard panel?.isVisible == true else { hideMenuOverlayPanel(); return }
+            let target = menuClickTarget(for: event, menu: panel)
+            guard MenuOutsideClickPolicy.decide(target: target, isMenuVisible: true) == .dismiss else { return }
+            addLog(text: "overlay panel dismissed by click: \(target)")
+            hideMenuOverlayPanel()
+            return
+        }
         guard let menuWindow = menuWcObj?.window, menuWindow.isVisible else { removeMenuOutsideClickMonitors(); return }
-        // A local click inside the menu window itself must not dismiss it.
-        if let event = localEvent, event.window == menuWindow { return }
+        // A click inside the menu window — or inside a sheet / child window it presented, such as the
+        // to-do task editor — must not dismiss it, and neither must the click on the icon that owns it.
+        let target = menuClickTarget(for: event, menu: menuWindow)
+        guard MenuOutsideClickPolicy.decide(target: target, isMenuVisible: true) == .dismiss else { return }
+        addLog(text: "menu window dismissed by click: \(target)")
         closeMenuWindowIsVisible()
         removeMenuOutsideClickMonitors()
     }
@@ -3217,7 +3936,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     self.timerCheckClearPasswordTime?.invalidate()
                     self.timerCheckClearPasswordTime = nil
                     UserDefaults.standard.removeObject(forKey: kUserdefaults24HoursClearPasswordTime)
-                    UserDefaults.standard.removeObject(forKey: SettingsManagerObject.kUserdefaultsAppPassword)
+                    SettingsManagerObject.appPassword.clear()
                     SettingsManagerObject.isSettingsChanged = true
                     SettingsManagerObject.putUserLocalDeviceSettings()
                     addLog(text: "password is cleard after 24 hours")
@@ -3229,17 +3948,34 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
-    func quitAndRestartApp(){
+    /// `coverWithSplash` keeps the splash screen up across the restart: shown now, before this process
+    /// quits, and again by the relaunched app (the "restarted normally" flag is what suppresses it on
+    /// relaunch, so it is deliberately NOT set). Used after routine edits so the user isn't left with an
+    /// unguarded desktop while the app comes back — a silent restart is fine for enable/disable toggles.
+    func quitAndRestartApp(coverWithSplash: Bool = false){
         print("quitAndRestartApp")
-        addLog(text: "quitAndRestartApp")
+        addLog(text: "quitAndRestartApp coverWithSplash=\(coverWithSplash)")
+        if coverWithSplash {
+            showSplashWindow()
+        }
         let task = Process()
+        let myPID = ProcessInfo.processInfo.processIdentifier
         var args: [AnyHashable] = []
         args.append("-c")
-        args.append("sleep \(1); open \"\(Bundle.main.bundlePath)\"")
+        // #2784: wait for THIS instance to fully exit before relaunching, instead of a fixed `sleep 1`.
+        // In a Teacher/Student focus session, applicationWillTerminate blocks the main thread up to ~2s
+        // on the final teacher heartbeat, so the old process outlived the 1s sleep — `open` then fired
+        // while the dying instance was still alive and LaunchServices just re-activated it instead of
+        // launching a fresh one, so the app never reopened (reliably, 3/3). Poll until the old PID is
+        // gone (0.2s steps, ~10s cap so a hung process still relaunches), then open a guaranteed-fresh
+        // instance. This hardens every quitAndRestartApp caller, not just the teacher-session path.
+        args.append("for i in $(seq 1 50); do kill -0 \(myPID) 2>/dev/null || break; sleep 0.2; done; open \"\(Bundle.main.bundlePath)\"")
         task.launchPath = "/bin/sh"
         task.arguments = args as? [String]
         task.launch()
-        UserDefaults.standard.set(true, forKey: kUserDefaultsAppRestartedNormally)
+        if !coverWithSplash {
+            UserDefaults.standard.set(true, forKey: kUserDefaultsAppRestartedNormally)
+        }
         terminateFromSelf = true
         quitApplicationSmoothly()
     }
@@ -3470,9 +4206,61 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         loadMenuWindow()
     }
 
+    // #2142: guards the one-time brain-dump migration so overlapping checkWindowState calls don't each
+    // fire an upsert — without an id the API creates a new note, so two racing calls would duplicate it.
+    private var isBrainDumpMigrationInFlight = false
+
+    /// #2142: one-time migration of the saved local brain dump into the backend (PUT /note upsert), run
+    /// at startup from checkWindowState so the web Brain Dump loads the migrated note from the API when it
+    /// opens. Guarded per-user by `kUserdefaultsBrainDumpSentToWebView`; an empty local brain dump is a
+    /// no-op upsert-wise (don't clobber whatever the backend already has) but still marks migration done.
+    /// The flag is set only on a 200, so a failed upsert (logged in AllApi via writeJsonInLog) retries.
+    private func migrateBrainDumpToBackendIfNeeded() {
+        guard UserDefaults.standard.value(forKey: kUserdefaultsBrainDumpSentToWebView) == nil,
+              !isBrainDumpMigrationInFlight else { return }
+        let notes = SensitiveDefaults.object(forKey: kUserdefaultsFocusModeNotes) as? String ?? ""
+        guard !notes.isEmpty else {
+            UserDefaults.standard.set(true, forKey: kUserdefaultsBrainDumpSentToWebView)
+            return
+        }
+        isBrainDumpMigrationInFlight = true
+        allApiObject.upsertBrainDumpNote(body: notes) { [weak self] _, statusCode in
+            DispatchQueue.main.async {
+                self?.isBrainDumpMigrationInFlight = false
+                if statusCode == 200 {
+                    UserDefaults.standard.set(true, forKey: kUserdefaultsBrainDumpSentToWebView)
+                }
+            }
+        }
+    }
+
+    /// Re-pull the user's focus modes (block lists) from the server into arrFocusType. Mirrors the
+    /// fetch/transform/store the startup path does, exposed so the blocking-schedule realtime sync can
+    /// refresh block lists too: a schedule changed on another device may reference a focus mode this
+    /// Mac hasn't fetched, and without it the schedule shows the wrong / "Update block list" name.
+    func refreshFocusModesFromServer(completion: (() -> Void)? = nil) {
+        allApiObject.getAllFocusModes(completionHandler: { dic in
+            if let arrFocusModes = dic as? [[String:Any]]{
+                let newArr = arrFocusModes.map(flattenServerFocusMode)
+                SensitiveDefaults.set(plistSafeFocusModes(newArr), forKey: kUserdefaultsArrFocusTypes)
+            }
+            checkAllFocusModes()
+            completion?()
+        })
+    }
+
     @objc func checkWindowState(){
         loadAllWindows()
+        isCheckWindowStateDone = true
         isFirstRun = false
+
+        // Cold Apple-event launch: the app is up but still in the background (never activated). Bring it to
+        // the foreground now that it's ready, so it doesn't sit invisible/unresponsive until a Dock click.
+        // Also force out the splash, whose showWindow (applicationWillFinishLaunching) renders late under a
+        // background launch. Guarded by !isActive so a normal user launch that's already frontmost is left
+        // alone. Retried over ~1.5s to catch the late splash render.
+        // A script command that cold-launched us may have arrived before we finished loading — foreground now.
+        fbActivateFromBackgroundLaunch()
         
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
@@ -3484,10 +4272,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         getAllLongTermGoals()
         getTotalFocuedTime()
+        migrateBrainDumpToBackendIfNeeded()
         if !lastOpenUrlString.isEmpty{
             filterUrl(url: lastOpenUrlString)
         }
-        
+
+        // Deferred deep link: a fresh install coming from the web AuDHD test carries
+        // the retest code on the clipboard (the deep link is lost across the install),
+        // so read it ONCE on the first launch and open the results — otherwise a new
+        // downloader lands on the home screen and never sees their results. Gated on
+        // a UserDefaults flag so a returning user's clipboard is never re-scanned.
+        if !UserDefaults.standard.bool(forKey: AudhdResults.clipboardCheckedDefaultsKey) {
+            UserDefaults.standard.set(true, forKey: AudhdResults.clipboardCheckedDefaultsKey)
+            if let clip = NSPasteboard.general.string(forType: .string),
+               let testCode = AudhdResults.testCode(fromClipboard: clip) {
+                showAudhdResultsWindow(testCode: testCode)
+            }
+        }
+
         if let lastHabitShowDate = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitShowDate) as? Date{
             checkLastHabitShowDate(lastHabitShowDate: lastHabitShowDate)
         }else{
@@ -3521,15 +4323,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         teacherSessionManagerObject.adoptCurrentSessionOnLaunch()// live class session adoption:- joined resumes, invited shows the join prompt
 
 
-        // v 2.27.435 //The app should automatically restart the focus session after the app restarts during permissions #1559
-        if UserDefaults.standard.object(forKey: kUserdefaultsUserShouldDoFirstFocusSesion) != nil{
-            UserDefaults.standard.removeObject(forKey: kUserdefaultsUserShouldDoFirstFocusSesion)
-            menuShowSimplePomodoroModeView()
-        }
-        
-        
-
-        
         // Set up callbacks
         focusButtonServiceObject.onStateChanged = { state in
             print("Device state changed to: \(state.rawValue)")
@@ -3541,12 +4334,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             print("Time remaining: \(minutes):\(String(format: "%02d", remainingSeconds))")
         }
 
-
-        focusButtonServiceObject.onHabitsReceived = { habits in
-            for habit in habits {
-                print("Received habit: \(habit.name) (\(habit.durationSeconds)s)")
-            }
-        }
 
         // Persistent restore hook: when the button (re)connects, re-push the currently-running focus
         // session so it reappears on device. Uses a dedicated slot (not onDeviceConnected, which the
@@ -3592,34 +4379,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 
     func checkLastHabitShowDate(lastHabitShowDate:Date){
-        isHabitAlreadyShowed = true
-        var currentDate = Date()
-        // currentDate is 1 am and startdate is 10 am
-        let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: currentDate)!
-        if currentDate.compare(startDate) == .orderedAscending {//currentDate < startDate
-            currentDate = Calendar.current.date(byAdding: .day, value: -1, to: currentDate) ?? currentDate
-        }
-        let year1 = Calendar.current.component(.year, from: lastHabitShowDate)
-        let year2 = Calendar.current.component(.year, from: currentDate)
-        if year2>year1{
-            isHabitAlreadyShowed = false
-        }else{
-            if year1 == year2{
-                let month1 = Calendar.current.component(.month, from: lastHabitShowDate)
-                let month2 = Calendar.current.component(.month, from: currentDate)
-                if month2>month1{
-                    isHabitAlreadyShowed = false
-                }else{
-                    if month1 == month2{
-                        let day1 = Calendar.current.component(.day, from: lastHabitShowDate)
-                        let day2 = Calendar.current.component(.day, from: currentDate)
-                        if day2>day1{
-                            isHabitAlreadyShowed = false
-                        }
-                    }
-                }
-            }
-        }
+        isHabitAlreadyShowed = isHabitAlreadyShown(lastShown: lastHabitShowDate, now: Date(), routineStart: startTime)
     }
     
     
@@ -3634,6 +4394,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     var alertSuggestFocusMode:NSAlert?
     var isUserOnMeeting = false
     var meetingStartTime:Date?
+    /// The current (or most recent) run of detected call presence, bridged across witness dropouts —
+    /// see `MeetingCoverage.presenceRunStart`. Read by the meeting-session auto-end to tell a call the
+    /// user was in from a pre-join device check.
+    private var meetingPresenceRunStart: Date?
+    private var meetingPresenceRunEnd: Date?
     
     var isAutoMeetingsModeStarted = false
     var appUsedInAutoMeetingFocusMode = ""
@@ -3784,15 +4549,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             )
 
             var micStatus: MicStatus?
+            var micOwner = MicOwnerKind.none
             if isMicAlreadyOn{
                 let monitor = micMonitor()
                 let status = monitor.microphoneStatus()
-                micStatus = status
-                // Instrumentation: per-app mic attribution (microphoneStatus) has been observed to return
-                // an empty/partial apps list on some Bluetooth inputs — the browser then never matches a
-                // meeting app and, because micStatus is non-nil, the runningAppNames fallback below is
-                // skipped, so a browser call goes undetected. Log the input route + attributed apps so a
-                // meeting-detection miss can be correlated with the active mic device.
+                // Per-app mic attribution (microphoneStatus) returns an EMPTY apps list on some Bluetooth
+                // inputs (confirmed via the input-route logs below). An empty attribution must NOT suppress
+                // the runningAppNames fallback: treat it as "unknown app" (micStatus = nil) so the fallback
+                // matches a running meeting app by name — otherwise a Bluetooth-headset call goes
+                // undetected even though the mic is on.
+                micStatus = status.apps.isEmpty ? nil : status
+                micOwner = MicOwnerKind.classify(isMicOn: true, owners: status.apps)
                 let micApps = status.apps.map { "\($0.appName)[\($0.bundleID)]" }.joined(separator: ", ")
                 addLog(text: "func checkIsMeetingsGoingOn:- input=\(monitor.defaultInputDeviceInfo()) micApps(\(status.apps.count))=[\(micApps)]")
             }
@@ -3808,7 +4575,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         let nameLowercased = app.appName.lowercased()
                                         let url = URL(fileURLWithPath: apppPath)
                                         let appNameToCheck = url.deletingPathExtension().lastPathComponent.lowercased()
-                                        if nameLowercased.contains(s: appNameToCheck){
+                                        // Match either way: an allowed app's PATH name and its running
+                                        // DISPLAY name can differ and neither is always the longer one —
+                                        // e.g. Zoom's app is "zoom.us.app" (→ "zoom.us") but its running
+                                        // name is "Zoom" (→ "zoom"), so a one-directional contains missed
+                                        // Zoom entirely (Bluetooth-headset call went undetected).
+                                        if nameLowercased.contains(s: appNameToCheck) || appNameToCheck.contains(s: nameLowercased){
                                             
                                             if isUserOnMeeting{
                                                 if isFocusModeOn(){
@@ -3828,7 +4600,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                             if let browser = getCurrentBrowserFrom(browserName: appNameToCheck){
                                                 addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is a browser:- get current url")
                                                 
-                                                if !isBrowserMeetingAllowed(focus: focus, browser: browser){
+                                                if !isBrowserMeetingAllowed(focus: focus, browser: browser, micOwner: micOwner){
                                                     continue;
                                                 }
                                             }
@@ -3845,7 +4617,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 }else{
                                     for nameLowercased in runningAppNames{
                                         let url = URL(fileURLWithPath: apppPath)
-                                        if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
+                                        let appNameToCheck = url.deletingPathExtension().lastPathComponent.lowercased()
+                                        // Bidirectional (see the micStatus branch above): "zoom.us" vs a
+                                        // running "zoom" must still match.
+                                        if appNameToCheck == nameLowercased
+                                            || appNameToCheck.contains(s: nameLowercased)
+                                            || nameLowercased.contains(s: appNameToCheck){
                                             
                                             if isUserOnMeeting{
                                                 if isFocusModeOn(){
@@ -3872,7 +4649,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                             if let browser = getCurrentBrowserFrom(browserName: nameLowercased){
                                                 addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is a browser:- get current url")
                                                 
-                                                if !isBrowserMeetingAllowed(focus: focus, browser: browser){
+                                                if !isBrowserMeetingAllowed(focus: focus, browser: browser, micOwner: micOwner){
                                                     continue;
                                                 }
                                             }
@@ -3894,10 +4671,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         // and of per-app mic attribution (which misses browser calls on some Bluetooth
                         // inputs — see the instrumentation above). Only reached with mic/camera/keep-awake
                         // already on, so an idle open tab alone won't trip it.
-                        if detectBrowserMeeting(focus: focus, runningAppNames: runningAppNames){
+                        if detectBrowserMeeting(focus: focus, runningAppNames: runningAppNames, micOwner: micOwner){
                             return;
                         }
-                        addLog(text: "func checkIsMeetingsGoingOn:- no meeting app or browser-meeting matched (mic=\(isMicAlreadyOn) cam=\(isCameraAlreadyOn))")
+                        addLog(text: "func checkIsMeetingsGoingOn:- no meeting app or browser-meeting matched (mic=\(isMicAlreadyOn) cam=\(isCameraAlreadyOn) micOwner=\(micOwner.rawValue))")
                         handleMeetingEnded()
                         break;
                     }
@@ -3913,14 +4690,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     /// Meetings focus type lists that browser AND the mic is attributed to it — the latter fails for
     /// browser calls on some Bluetooth inputs (`microphoneStatus` returns no apps), so a Google Meet
     /// call slips through with mic/camera live but nothing matched. Check any running, recognised
-    /// browser for a live meeting URL (`meet.google.com/<room>`, or the focus's `allowed_urls`) and
-    /// treat that as the meeting. Returns true if one was found + handled. Runs on the detection
-    /// background queue; reads browser tabs via the AppHang-safe `fetchBrowserAllTabUrlsInBackground`.
-    private func detectBrowserMeeting(focus: [String: Any], runningAppNames: Set<String>) -> Bool {
+    /// browser for a meeting tab (see `BrowserMeetingDecision`) and treat that as the meeting. Returns
+    /// true if one was found + handled. Runs on the detection background queue; reads browser tabs via
+    /// the AppHang-safe `fetchBrowserAllTabUrlsInBackground`.
+    private func detectBrowserMeeting(focus: [String: Any], runningAppNames: Set<String>, micOwner: MicOwnerKind) -> Bool {
         for name in runningAppNames {
             guard let browser = getCurrentBrowserFrom(browserName: name) else { continue }
-            if isBrowserMeetingAllowed(focus: focus, browser: browser){
-                addLog(text: "func checkIsMeetingsGoingOn:- browser meeting detected in \(name)")
+            if let reason = browserMeetingReason(focus: focus, browser: browser, micOwner: micOwner){
+                addLog(text: "func checkIsMeetingsGoingOn:- browser meeting detected in \(name) (\(reason.rawValue), micOwner=\(micOwner.rawValue))")
                 appUsedInAutoMeetingFocusMode = name
                 handleMeetingDetected()
                 return true
@@ -3929,10 +4706,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         return false
     }
     
+    /// Grace timer that auto-ends an LNM meeting focus session shortly after the user leaves the meeting.
+    /// Delayed so a breakout-room switch (which momentarily looks like leaving) doesn't end it prematurely.
+    // A cancellable main-queue work item (NOT a Timer): handleMeetingEnded runs on the background
+    // meeting-detection thread, where Timer.scheduledTimer lands on a non-spinning run loop and never fires.
+    private var meetingSessionAutoEndWorkItem: DispatchWorkItem?
+    /// Allowance past a meeting session's booked length (plus the auto-end wait) before its recorded
+    /// duration is clamped — room for a call overrunning a little, never for a whole night.
+    private let meetingDurationCapSlackSeconds = 5 * 60
+
     private func handleMeetingEnded(){
         if isUserOnMeeting{
             isUserOnMeeting = false
+            meetingPresenceRunEnd = Date()
             writeSettingForScreeenTime(habitInfo: "")
+            // A meeting focus session (started by LNM when the meeting began) should end when the meeting
+            // ends — but only after a grace period, since switching into a breakout room briefly reads as
+            // "left the meeting". handleMeetingDetected cancels this if a meeting resumes within the window.
+            startMeetingSessionAutoEndGraceIfNeeded()
 
             // A break/habit activity video paused when the meeting started (see
             // `suspendActivityVideoForMeeting`) must be resumed, otherwise a meeting detected mid-break
@@ -3956,31 +4747,32 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
-    private func isBrowserMeetingAllowed(focus: [String: Any], browser:BROWSER) -> Bool {
-        
-        if let allTabUrls = fetchBrowserAllTabUrlsInBackground(browser: browser){
-            for  activeTabUrl in allTabUrls{
-                
-                let domain = getDomainFromUrl(url: activeTabUrl)
-                if domain == "meet.google.com"{
-                    let urlElements = activeTabUrl.components(separatedBy: "/")
-                    if urlElements.last != "meet.google.com"{
-                        return true
-                    }
-                }
-                
-                let arrAllowedUrlsMeetingsFocus = focus["allowed_urls"] as? [String] ?? []
-                for turl in arrAllowedUrlsMeetingsFocus{
-                    if validation.isUrlValid(urlToCheck: activeTabUrl, allowUrl: turl){
-                        return true
-                    }
-                }
-            }
+    private func isBrowserMeetingAllowed(focus: [String: Any], browser: BROWSER, micOwner: MicOwnerKind) -> Bool {
+        browserMeetingReason(focus: focus, browser: browser, micOwner: micOwner) != nil
+    }
+
+    /// Why `browser`'s open tabs show a call (Meet, Teams, Zoom, Jitsi, Whereby, Zoho, Webex, or the
+    /// Meetings focus's `allowed_urls`), or nil when they don't.
+    private func browserMeetingReason(focus: [String: Any], browser: BROWSER, micOwner: MicOwnerKind) -> BrowserMeetingDecision.Reason? {
+        guard let allTabUrls = fetchBrowserAllTabUrlsInBackground(browser: browser) else { return nil }
+        let allowedMeetingUrls = focus["allowed_urls"] as? [String] ?? []
+        let evidence = BrowserMeetingDecision.TabEvidence.from(tabUrls: allTabUrls) { tabUrl in
+            allowedMeetingUrls.contains { validation.isUrlValid(urlToCheck: tabUrl, allowUrl: $0) }
         }
-        return false
+        return BrowserMeetingDecision.reason(evidence: evidence, micOwner: micOwner)
     }
     
     private func fetchBrowserAllTabUrlsInBackground(browser: BROWSER) -> [String]? {
+        if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+            return nil
+        }
+        // Every window, not just the front one: a call often sits in its own window, and Chrome's
+        // front window can be the meeting's blank picture-in-picture window (report
+        // 2026-10-06_13-30-40). Firefox/SigmaOS have no window list, and a window read can fail —
+        // both fall back to the front-window read.
+        if let windows = getBrowserAllWindowStruct(browser: browser), !windows.isEmpty {
+            return windows.values.flatMap { $0 }
+        }
         // Call directly on the (background) meeting-detection thread. `getBrowserAllTabUrl`
         // routes through `runAppleScriptSafely`, which already serialises the AppleScript onto
         // `appleScriptSerialQueue` and applies a bounded timeout — a background caller gets the
@@ -3992,10 +4784,87 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         return getBrowserAllTabUrl(browser: browser)
     }
     
+    /// Schedule the meeting focus session to auto-end after the grace window, unless a meeting resumes in
+    /// the meantime (handleMeetingDetected cancels the timer). No-op unless an LNM meeting session is live.
+    private func startMeetingSessionAutoEndGraceIfNeeded() {
+        guard currentAccountabilityBuddySession?.isMeeting == true else { return }
+        addLog(text: "meeting ended: auto-ending meeting focus session in \(Int(MeetingSessionAutoEndRules.quietSecondsBeforeEnding))s unless a meeting resumes (breakout-room grace)")
+        // Schedule on the MAIN queue (this can be called from the background detection thread) so it fires
+        // reliably; a DispatchWorkItem lets handleMeetingDetected cancel it if a meeting resumes.
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.meetingSessionAutoEndWorkItem?.cancel()
+            let work = DispatchWorkItem { [weak self] in self?.autoEndMeetingFocusSessionIfMeetingOver() }
+            self.meetingSessionAutoEndWorkItem = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + MeetingSessionAutoEndRules.quietSecondsBeforeEnding, execute: work)
+        }
+    }
+
+    /// Re-check after another grace window, without the "meeting ended" log line — the meeting has not
+    /// ended, we simply cannot see it right now.
+    private func rearmMeetingSessionAutoEndGrace() {
+        let work = DispatchWorkItem { [weak self] in self?.autoEndMeetingFocusSessionIfMeetingOver() }
+        meetingSessionAutoEndWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + MeetingSessionAutoEndRules.quietSecondsBeforeEnding, execute: work)
+    }
+
+    /// Fired after the grace window: end the meeting focus session iff the meeting is still over and the
+    /// live session is still the meeting one (a new session, or a re-detected meeting, cancels this).
+    private func autoEndMeetingFocusSessionIfMeetingOver() {
+        meetingSessionAutoEndWorkItem = nil
+        guard currentAccountabilityBuddySession?.isMeeting == true else {
+            addLog(text: "meeting focus session auto-end skipped: isMeetingSession=false")
+            return
+        }
+        let now = Date()
+        let calendarSaysLive = MeetingCoverage.hasLiveOrImminentMeeting(
+            now: now, meetings: AnnouncedMeetingRegister.shared.activeMeetings())
+        let presenceSeconds = meetingPresenceRunStart.flatMap { start in
+            meetingPresenceRunEnd.map { $0.timeIntervalSince(start) }
+        }
+        // No recorded end: detection never saw this call, so there is no dropout to wait out and the
+        // calendar alone decides.
+        let quietSeconds = meetingPresenceRunEnd.map { now.timeIntervalSince($0) } ?? .infinity
+        let decision = MeetingCoverage.autoEndDecision(isUserOnMeeting: isUserOnMeeting,
+                                                       hasLiveAnnouncedMeeting: calendarSaysLive,
+                                                       lastPresenceSeconds: presenceSeconds,
+                                                       quietSeconds: quietSeconds)
+        guard decision == .end else {
+            addLog(text: "meeting focus session auto-end skipped: \(decision) onMeeting=\(isUserOnMeeting) calendarSaysLive=\(calendarSaysLive) presence=\(presenceSeconds.map { Int($0) } ?? -1)s quiet=\(quietSeconds.isFinite ? Int(quietSeconds) : -1)s")
+            // Re-arm rather than give up: detection may stay quiet for the whole call (a browser tab
+            // the mic check can't see), and the session must still end once the meeting really is over.
+            rearmMeetingSessionAutoEndGrace()
+            return
+        }
+        addLog(text: "meeting ended >\(Int(MeetingSessionAutoEndRules.quietSecondsBeforeEnding))s ago: auto-ending meeting focus session (calendarSaysLive=\(calendarSaysLive) presence=\(presenceSeconds.map { Int($0) } ?? -1)s)")
+        // If the meeting had postponed an INCOMPLETE morning/evening routine, hand the user back to it (same
+        // as stopping the session manually) rather than just ending — otherwise the routine is silently
+        // abandoned after the meeting. Otherwise finish silently.
+        if routinePostponeStateToReCoverOnExtend() != nil {
+            addLog(text: "meeting auto-end: incomplete routine to recover → resuming routine")
+            menuViewControllerObj?.stopFocusModeAndResumeRoutine()
+        } else {
+            tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend: false, isCustomRoutineTime: false, shouldUpdateFocusButton: true)
+        }
+    }
+
     func handleMeetingDetected(){
+        let now = Date()
+        if !isUserOnMeeting {
+            meetingPresenceRunStart = MeetingCoverage.presenceRunStart(now: now,
+                                                                       previousRunStart: meetingPresenceRunStart,
+                                                                       previousRunEnd: meetingPresenceRunEnd)
+            meetingPresenceRunEnd = nil
+        }
         isUserOnMeeting = true
-        meetingStartTime = Date()
+        meetingStartTime = now
         writeSettingForScreeenTime(habitInfo: "")
+        // A meeting is (still) on — cancel any pending auto-end of the meeting focus session. Covers the
+        // breakout-room case where the meeting briefly looked ended and re-appeared within the grace window.
+        DispatchQueue.main.async { [weak self] in
+            self?.meetingSessionAutoEndWorkItem?.cancel()
+            self?.meetingSessionAutoEndWorkItem = nil
+        }
 
         // A break/habit activity video already playing when the meeting starts must be paused so it
         // doesn't blast audio/video into the call (#1878).
@@ -4014,7 +4883,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 self.statusbutton?.imagePosition = .imageLeft
             }
         }
-        if  SettingsManagerObject.showMeetingDetectionAlert{
+        if  SettingsManagerObject.showMeetingDetectionAlert && !FeatureSnooze.isSnoozed(.meetingDetection){
             timerMeetingStartAlert?.invalidate()
             timerMeetingStartAlert = nil
             DispatchQueue.main.async { [self] in
@@ -4364,23 +5233,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     self.setStatusBarButtonColorForFocusMode(color: nil, colorString: arrFocusType[i]["color"] as? String ?? "")
                     statusbutton?.title = buttonStatusStateFocusText
                     statusbutton?.imagePosition = .imageLeft
-                    if timerForFocusMode != nil{
-                        timerForFocusMode?.invalidate()
-                        timerForFocusMode = nil
-                        setAppIconForFocusModeScore(probability: nil)
-                        timerForFocusModeEndNotification?.invalidate()
-                        timerForFocusModeEndNotification = nil
-                    }
-                    
-                    startFocusModeTimeForPauseAndResume = Date()
-                    focusModeSecondsToPerform = 300
+                    setAppIconForFocusModeScore(probability: nil)
+                    // Arm the focus timers the same way every other focus start does. setFocusModeTimer
+                    // sets up BOTH the session-end timer (timerForFocusMode → focusModeTimerFinished, which
+                    // already handles the meetings case) AND the end-of-session warning
+                    // (timerForFocusModeEndNotification → showFocusModeFinishNotification → the extend/end
+                    // window). This meeting path previously armed NEITHER, so a Meetings focus mode started
+                    // from "Block everything else" never showed the normal end-warning (#2207 Scenario 5).
+                    // 5 = the meeting focus duration (matches endFocusModeTime above); it also sets
+                    // focusModeSecondsToPerform / startFocusModeTimeForPauseAndResume.
+                    setFocusModeTimer(hour: nil, minute: 5)
                     isFocusModeStartedFromPomodoroMode = false
                     whatToAchieveInFocusBlock = ""
                     let time = focusModeSecondsToPerform*60
                     focusButtonServiceObject.startFocusSession(seconds: time)
                     focusModeStartted(isStartedByPusher: false)
                     allApiObject.capturePosthog(event: "start-meetings-focus-mode", metadata: [:])
-                    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                    SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                     isMeetingsFocusStartedAutomatically = true
                     isFocusModeStartedAutomatically = false
 
@@ -4477,6 +5346,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
                     self.abortAllProcess()
                     currentState = ._NOTHING_
+                    routineTornDownForWakeAt = Date()
                     leftMenuVcObj?.habitOver()
                     backgroundThread()
                     if self.isUserOnMeeting && currentState == ._NOTHING_{
@@ -4493,6 +5363,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         leftMenuVcObj?.microBreaksOver()
                     }
                     currentState = ._NOTHING_
+                    routineTornDownForWakeAt = Date()
                     if mainWindowControllerObj?.window?.isVisible ?? false{
                         mainWindowControllerObj?.window?.close()
                         hideBlankWindowInSecondaryMonitor()
@@ -4561,6 +5432,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     
                                     dic[headers[i]] = subarray[i]
                                 }
+                                dic = LegacyCalendarDateMigration.normalizingOfflineActivityTimestamps(dic)
                                 dic["duration_logged"] = Int(dic["duration_logged"] as? String ?? "") ?? 0
                                 
                                 let quantity_logged_string = dic["quantity_logged"] as? String ?? ""
@@ -4688,7 +5560,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     var nRetry = 0
     
     func filterUrl(url:String){
-        addLog(text: "func:- filterUrl \(url)")
+        addLog(text: "func:- filterUrl \(LogPrivacy.url(url))")
+
+        // Growth/unlock flow: open the gated "advanced AuDHD results" webview.
+        // Handled ABOVE the app-enabled / subscription guards below, so it works even
+        // when the app isn't enabled or the subscription has expired. See online-tests#57.
+        let decoded = url.removingPercentEncoding ?? url
+        if decoded.hasPrefix(AudhdResults.deepLinkPrefix) {
+            if let testCode = AudhdResults.testCode(fromDeepLink: decoded), !testCode.isEmpty {
+                addLog(text: "func:- filterUrl- opening AuDHD results webview")
+                showAudhdResultsWindow(testCode: testCode)
+            } else {
+                addLog(text: "func:- filterUrl- view-audhd-results missing \(AudhdResults.testCodeParamKey)")
+            }
+            return
+        }
+
         if !isAppEnable{
             addLog(text: "func:- filterUrl- app is not enabled- return")
             return;
@@ -4948,12 +5835,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
         else if urlString.contains("focusbear://event-about-to-start?"){
             addLog(text: "event-about-to-start:- \(urlString)")
+            // Late No More announcing a meeting brings the app forward by itself (the `closePopover()`
+            // below says as much: "popover was showing automatically reason: app activate"). That is the
+            // app talking about a meeting, never the user asking for the main window — and when a routine
+            // is already postponed this path shows NO window at all, so nothing else would stop a restore
+            // putting one over the meeting.
+            noteSelfActivation()
             urlString = urlString.replacingOccurrences(of: "focusbear://event-about-to-start?", with: "")
-            if popupAppointmentTimeWcObj != nil{
-                if popupAppointmentTimeWcObj?.window?.isVisible ?? false{
-                    return;
-                }
-            }
+            // NOTE: the "an appointment popup is already visible → ignore" check used to sit here,
+            // before the URL was even parsed. See below: it now needs the new meeting's end time,
+            // because a popup for an EARLIER meeting must not swallow the next one.
             let arrActivityInfo = urlString.components(separatedBy: "&")
             if arrActivityInfo.count > 1{
                 var eventTitle = ""
@@ -5004,8 +5895,53 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     addLog(text: "event-about-to-start:- ignoring stale trigger, appointment started more than 15 minutes ago at \(startTime)")
                     return
                 }
-                if eventEndTime != nil{
+                // SECURITY: past the cut-off (the hard evening-routine lock), a Late No More appointment
+                // trigger must NOT pause/unlock the routine — otherwise it's a free bypass of the cut-off
+                // without the required password. This mirrors the enforcement already done for an
+                // already-visible popup in returnFromSystemSleepCheckAppStateAgain (the shut-off/cut-off
+                // branch there); the INITIAL trigger here was missing the same guard. The user must finish
+                // their locked routine.
+                if isCutOffTimeGoing(){
+                    addLog(text: "event-about-to-start:- past cut-off, NOT pausing habits (cut-off lock enforced)")
+                    return
+                }
+                // Late No More re-fires this URL whenever its own warning state is rebuilt (its
+                // `shownWarnings` map is in-memory, so a relaunch or a sleep/wake replay re-arms it).
+                // Don't re-open the popup for a meeting the user has already dealt with here.
+                if let startTime = eventStartTime,
+                   LateNoMoreDismissalRegistry.shared.isDismissed(LateNoMoreMeeting(title: eventTitle, startDate: startTime)){
+                    addLog(text: "event-about-to-start:- already dismissed on this Mac, ignoring")
+                    return
+                }
+                if let announcedEndTime = eventEndTime{
                     addLog(text: "event-about-to-start:- got end time")
+                    // An all-day event or day-long block is not an appointment to pause habits for.
+                    // "Look after Sean" 08:00-20:30 held this popup over the morning routine for an
+                    // hour and swallowed the real call announced beside it (report
+                    // 2026-09-25_22-31-53, follow-up).
+                    if let startTime = eventStartTime,
+                       !MeetingCoverage.isMeeting(start: startTime, end: announcedEndTime){
+                        addLog(text: "event-about-to-start:- ignoring trigger, \(startTime)-\(announcedEndTime) is longer than a meeting (all-day event or calendar block)")
+                        return
+                    }
+                    // Remember EVERY announced meeting, popup or not: the routine's postpone is
+                    // computed from the whole live/imminent chain, so it has to be able to see the
+                    // meeting that follows the one currently on screen.
+                    AnnouncedMeetingRegister.shared.record(title: eventTitle,
+                                                           start: eventStartTime ?? Date(),
+                                                           end: announcedEndTime)
+                    // A popup still on screen for an EARLIER meeting must not swallow this trigger.
+                    // Back-to-back meetings arrive as two triggers (Lunch 12:45-13:00 then UX checkin
+                    // 13:00-13:20); dropping the second one wholesale meant nothing extended the
+                    // postpone and the routine resumed inside the second call (report
+                    // 2026-09-15_13-03-02). Re-point the popup at the meeting that reaches further;
+                    // a duplicate or shorter trigger is still ignored so coverage never shrinks.
+                    if popupAppointmentTimeWcObj?.window?.isVisible ?? false,
+                       let visibleEndTime = popupAppointmentTimeVcObj?.endTime,
+                       !MeetingCoverage.shouldRetargetAppointmentPopup(showing: visibleEndTime, incoming: announcedEndTime){
+                        addLog(text: "event-about-to-start:- visible popup already covers this meeting, ignoring trigger")
+                        return
+                    }
                     if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                         
                         lastCurrentState = currentState
@@ -5091,10 +6027,39 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         mainWindowControllerObj?.window?.close()
                         hideBlankWindowInSecondaryMonitor()
                         
-                        showPopupAppointmentWindow(title: eventTitle, endTime: eventEndTime!)
+                        showPopupAppointmentWindow(title: eventTitle, startTime: eventStartTime, endTime: announcedEndTime)
                         closeEasyPostponeWindowIfVisible()
                     }else{
+                        // No routine to postpone right now — but one may already BE postponed, and
+                        // that postpone was sized for the previous meeting. Stretch it over this one
+                        // too, otherwise it expires partway into a back-to-back call.
+                        getHabitsVcObject().extendPostponeToCoverAnnouncedMeetings()
                         closePopover()// popover was showing automatically reason: app activate so close popover here without checking any rhing
+                    }
+                    // Start the AI meeting session for the meeting's FULL remaining duration, regardless of
+                    // routine state (even when the routine is already postponed or idle), so it reliably
+                    // covers the whole meeting and supersedes an active all-day block schedule (a live
+                    // session forces AI on + overrides the running focus mode to allow-list). Previously the
+                    // session only started from the popup's Thanks/auto-close path — which fired at the
+                    // meeting's END, yielding a ~1-minute session, or never started at all when the routine
+                    // was already postponed (so the all-day block-list schedule governed the meeting and
+                    // "allowed everything"). Opt-in via the AI-accountability setting; the nil-session guard
+                    // stops an overlapping/replayed trigger restarting (and shortening) a live session.
+                    if let meetingEndTime = eventEndTime {
+                        Task { @MainActor in
+                            if SettingsManagerObject.isAccountabilityBuddyEnabled, currentAccountabilityBuddySession == nil {
+                                let remainingSeconds = Int(meetingEndTime.timeIntervalSinceNow)
+                                if remainingSeconds > 0 {
+                                    startMeetingFocusSession(title: eventTitle, durationMinutes: MeetingPostponeSession.sessionMinutes(secondsRemaining: remainingSeconds))
+                                    // The meeting session covers a live call the user must actually attend, so drop
+                                    // the routine's borderless full-screen window — otherwise it stayed covering the
+                                    // whole screen and the user couldn't see/join the meeting.
+                                    if mainWindowControllerObj?.isFullScreenVisible ?? false {
+                                        mainWindowControllerObj?.window?.close()
+                                    }
+                                }
+                            }
+                        }
                     }
                 }else{
                     addLog(text: "event-about-to-start:- end time is nil")
@@ -5142,6 +6107,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     @objc func backgroundThread(){
         DispatchQueue.main.async {
+            if self.isSettingsLoddedInAppdelegate {
+                self.runUITestLaunchHooks()
+            }
             if isAppEnable{// If the app is disabled, this function will be called only in one case—when the app has been deactivated for 4 hours.
                 self.checkIsMeetingsGoingOn() //and app kon kon si check krni haiu
             }else{
@@ -5174,15 +6142,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 isPurchased = false
                                 var activeEntitlementStatus = ""
                                 if let activeEntitlements = subscriptionStatus["activeEntitlements"] as? [String]{
-                                    if let status = activeEntitlements.first{
-                                        activeEntitlementStatus = status
-                                        if status == "personal" || status == "team_member" || status ==  "team_owner" || status == "team_size_5"{
-                                            isPurchased = true
-                                        }else if status == "trial"{
-                                            isPurchased = false
-                                        }else{
-                                            isPurchased = false
-                                        }
+                                    // Consider every active entitlement — see SubscriptionEntitlements.
+                                    if let paid = SubscriptionEntitlements.payingEntitlement(in: activeEntitlements){
+                                        activeEntitlementStatus = paid
+                                        isPurchased = true
+                                    }else{
+                                        activeEntitlementStatus = activeEntitlements.first ?? ""
+                                        isPurchased = false
                                     }
                                 }
                                 let oldDaysLeft = daysLeft
@@ -5293,7 +6259,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     if !isAppEnable{
                         shouldShowEveningHabit = false
                         
-                        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                        if SettingsManagerObject.isAppPasswordSet{
                             if SettingsManagerObject.isPasswordRequireInSkipEvening{
                                 shouldShowEveningHabit = true
                             }
@@ -5328,7 +6294,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if !isAppEnable{
                     shouldShowEveningHabit = false
                     
-                    if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                    if SettingsManagerObject.isAppPasswordSet{
                         if cutOffTime != nil{
                             if isCutOffTimeGoing(){
                                 if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
@@ -5427,7 +6393,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     
                     if UserDefaults.standard.object(forKey: kUserdefaultsShutdownAborted) as? Date == nil{
                         if currentState != ._SHUTOFFMAC_{
-                            self.shutOffMac()
+                            // This check is a five-second repeating timer, and `shutOffMac()` used to run
+                            // its whole pipeline — alerts, window raising, `activate(ignoringOtherApps:)` —
+                            // on every beat of it. Run it once per situation instead.
+                            self.shutOffMacIfNagIsDue()
                         }else if shutOffTimeVcObj != nil{
                             if shutOffTimeVcObj!.boxUpEarly.isHidden && shutOffTimeVcObj!.step == 0{
                                 shutOffTimeVcObj?.checkUpEarlyTime()
@@ -5506,17 +6475,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     return;
                                 }
                                 
-                                if self.isUserOnMeeting{
-                                    addLog(text: "isUserOnMeeting True: Morning Habits Time checking Cancelled.")
+                                // Detection is briefly quiet after unlocking; the live meeting session
+                                // still owns this time. Explicit Stop clears that session before resuming.
+                                if MeetingCoverage.shouldHoldMorningRoutineForMeeting(
+                                    isUserOnMeeting: self.isUserOnMeeting,
+                                    isMeetingSessionLive: currentAccountabilityBuddySession?.isMeeting == true) {
+                                    addLog(text: "Active meeting: Morning Habits Time checking Cancelled.")
                                     customBlockingScheduleManagerObj.checkCustomBlockingScheduleTime()
                                     return;
                                 }
                                 arrFilteredMorningHabits.removeAll()
                                 arrPreFilteredMorningHabits.removeAll()
-                                let currentWeekDay = Date().dayOfWeek()
-                                
+                                let today = Date()
+
                                 for habit in arrAllDaysMorningHabits{
-                                    if isScheduledForWeekday(habit.days_of_week, currentWeekDay: currentWeekDay) {
+                                    if RoutineHabitSchedule.shouldPlay(habitId: habit.id, daysOfWeek: habit.days_of_week, on: today) {
                                         arrFilteredMorningHabits.append(habit)
                                     }
                                 }
@@ -5540,6 +6513,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     getHabitsVcObject().setActivityTimer()
                                     return;
                                 }
+                                // The morning routine is due but a focus session is still running — finish it
+                                // and let the routine render. This is also the path a postpone → start focus →
+                                // Stop uses: stopFocusModeAndResumeRoutine() (menuViewController) only flips the
+                                // routine's postpone state back and calls backgroundThread(); it relies on THIS
+                                // block to actually finish the running session. Don't gate it on time-only
+                                // conditions or that Stop-resume flow leaves the session running.
                                 if isFocusModeOnOrPaused(){
                                     addLog(text: "isFocusModeOnOrPaused True: focusModeFinished.")
                                     self.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: true, allowExtend:false, isCustomRoutineTime:false, shouldUpdateFocusButton: true)
@@ -5791,6 +6770,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     
     var timerHighPriorityHabitTime:Timer?
+
+    /// The shutdown nag that last ran, so the five-second check can tell a new situation from the
+    /// same one polled again.
+    var lastShutOffNag: ShutdownNagRecord?
+    /// When `returnFromSystemSleepCheckAppStateAgain` last ended the running routine so the shutdown
+    /// check could rebuild it. See `ShutdownNagPolicy.decide`.
+    var routineTornDownForWakeAt: Date?
+
+    /// When a shutdown prompt first wanted focus and found the user in a menu. Bounds how long the
+    /// shutdown itself will hold back.
+    var shutdownFocusWaitingSince: Date?
+
+    /// Re-asks for focus while the shutdown screen is being held back for an open menu.
+    var shutdownFocusRetryTimer: Timer?
     
     func startTimerAlertHighPriorityHabit(durationSeconds:Int) {
         self.timerHighPriorityHabitTime = nil
@@ -5805,10 +6798,73 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         NSApp.stopModal()
     }
     
+    /// The five-second shutdown check, filtered so the shutdown pipeline runs once per situation
+    /// rather than once per timer beat. See `ShutdownNagPolicy` for why.
+    func shutOffMacIfNagIsDue(){
+        let now = Date()
+        let situation = ShutdownNagSituation(state: currentState,
+                                             action: currentAction,
+                                             habitIndex: currentHabitIndex,
+                                             isCutOffPassed: cutOffTime == nil ? false : isCutOffTimeGoing())
+        let abortedUntil = UserDefaults.standard.object(forKey: kUserdefaultsShutdownAborted) as? Date
+        let isAborted = ShutdownNagPolicy.isAborted(abortedUntil: abortedUntil, now: now)
+
+        switch ShutdownNagPolicy.decide(isShutdownAborted: isAborted, situation: situation,
+                                        lastNag: lastShutOffNag, now: now,
+                                        routineTornDownForWakeAt: routineTornDownForWakeAt) {
+        case .stayQuiet:
+            return
+        case .fire:
+            lastShutOffNag = ShutdownNagRecord(situation: situation, firedAt: now)
+            shutOffMac()
+        }
+    }
+
+    /// Act on a `ShutdownFocusPolicy` decision. `deferToUser` deliberately leaves focus alone: the
+    /// user is in a menu, and taking focus is what dismisses it.
+    func applyShutdownFocus(_ decision: ShutdownFocusDecision){
+        switch decision {
+        case .takeFocus:
+            NSApplication.shared.activate(ignoringOtherApps: true)
+        case .requestAttention:
+            _ = NSApp.requestUserAttention(.criticalRequest)
+            NSApplication.shared.activate(ignoringOtherApps: false)
+        case .deferToUser:
+            addLog(text: "Shutdown prompt: the menu bar is in use — not taking focus")
+            _ = NSApp.requestUserAttention(.criticalRequest)
+        }
+    }
+
+    /// Ask for focus on behalf of a shutdown prompt, honouring `ShutdownFocusPolicy`.
+    func requestShutdownFocus(urgency: ShutdownFocusUrgency){
+        let now = Date()
+        let decision = ShutdownFocusPolicy.decide(urgency: urgency,
+                                                  menuBar: MenuBarActivityProbe.shared.activity(),
+                                                  now: now,
+                                                  waitingSince: shutdownFocusWaitingSince)
+        if decision == .deferToUser {
+            if shutdownFocusWaitingSince == nil { shutdownFocusWaitingSince = now }
+            // The shutdown itself still has to happen, so keep asking until the user is out of the
+            // menu — or until the policy runs out of patience on their behalf.
+            if urgency == .shutdownStarting { scheduleShutdownFocusRetry(urgency: urgency) }
+        } else {
+            shutdownFocusWaitingSince = nil
+        }
+        applyShutdownFocus(decision)
+    }
+
+    private func scheduleShutdownFocusRetry(urgency: ShutdownFocusUrgency){
+        shutdownFocusRetryTimer?.invalidate()
+        shutdownFocusRetryTimer = Timer.scheduledTimer(withTimeInterval: kShutdownFocusRetrySeconds,
+                                                       repeats: false) { [weak self] _ in
+            self?.requestShutdownFocus(urgency: urgency)
+        }
+    }
+
     @objc func shutOffMac(){
         isHabitAlreadyShowed = false
         addLog(text: "Initiating shut off process.")
-        
+
         //    (Mic/camera shouldn't prevent shutdown #62)
         if UserDefaults.standard.object(forKey: kUserdefaultsShutOffCancelledForEveningRoutine) == nil{
             if (currentState == ._EVENING_HABIT_ && currentAction == ._START_) || currentState == ._FOCUS_SUMMARY_{
@@ -5858,7 +6914,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if currentAction == ._INPROGRESS_{
                     if isCutOffTimeGoing(){
                         if !arrFilteredEveningHabits[currentHabitIndex].isPriorityHigh{
-                            addLog(text: "evening habit skipped:- running late global cutoff time passed:- \(arrFilteredEveningHabits[currentHabitIndex].name)  \(arrFilteredEveningHabits[currentHabitIndex].id)") // remove this
+                            addLog(text: "evening habit skipped:- running late global cutoff time passed:- \(LogPrivacy.text(arrFilteredEveningHabits[currentHabitIndex].name))  \(arrFilteredEveningHabits[currentHabitIndex].id)") // remove this
                             abortAllProcess()
                             if mainWindowControllerObj?.window?.isVisible ?? false{
                                 mainWindowControllerObj?.window?.close()
@@ -5876,11 +6932,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             alertHighPriorityHabitTime.informativeText = cutOffTimePassedsubTitle
                             alertHighPriorityHabitTime.addButton(withTitle: buttonOkText)
                             
-                            NSApplication.shared.activate(ignoringOtherApps: true)
+                            // Telling the user a habit was skipped is not worth pulling the screen out
+                            // from under whatever they are doing.
+                            self.requestShutdownFocus(urgency: .notice)
                             self.startTimerAlertHighPriorityHabit(durationSeconds: 5)//
                             alertHighPriorityHabitTime.runModal()
                             //                            currentState = ._NOTHING_
                             isHighPrioritySequenceGoing = true
+                            releaseFullScreenAfterCutoffSkip()
                             mainWindowControllerObj?.showWindow(self)
                             showBlankWindowInSecondaryMonitor()
                             leftMenuVcObj?.showHabitsView()
@@ -5896,7 +6955,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         mainWindowControllerObj?.window?.close()
                                         hideBlankWindowInSecondaryMonitor()
                                     }
-                                    addLog(text: "evening habit skipped:- cutoff time for this running habit passed:- \(arrFilteredEveningHabits[currentHabitIndex].name)  \(arrFilteredEveningHabits[currentHabitIndex].id)") // remove this
+                                    addLog(text: "evening habit skipped:- cutoff time for this running habit passed:- \(LogPrivacy.text(arrFilteredEveningHabits[currentHabitIndex].name))  \(arrFilteredEveningHabits[currentHabitIndex].id)") // remove this
                                     let alertHighPriorityHabitTime = NSAlert()
                                     alertHighPriorityHabitTime.setSharingType()
                                     var cutOffTimePassedForHabitText = "It's past the cutoff time you set for this habit. Taking you to your next habit."
@@ -5911,6 +6970,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     self.startTimerAlertHighPriorityHabit(durationSeconds: 5)
                                     alertHighPriorityHabitTime.runModal()
                                     isHighPrioritySequenceGoing = true
+                                    releaseFullScreenAfterCutoffSkip()
                                     mainWindowControllerObj?.showWindow(self)
                                     showBlankWindowInSecondaryMonitor()
                                     leftMenuVcObj?.showHabitsView()
@@ -6108,7 +7168,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 if arrHabitIds.contains(habit.id){
                                     arrFilteredEveningHabits.append(habit)
                                 }else{
-                                    addLog(text: "evening habit skipped:- habit was not selected by user last time:- \(habit.name)  \(habit.id)") // remove this
+                                    addLog(text: "evening habit skipped:- habit was not selected by user last time:- \(LogPrivacy.text(habit.name))  \(habit.id)") // remove this
                                 }
                             }
                             if arrFilteredEveningHabits.count == 0{
@@ -6264,7 +7324,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             return;
         }
         arrFilteredEveningHabits.removeAll()
-        let currentWeekDay = Date().dayOfWeek()
+        let today = Date()
         let isCutOffTimeGoing = isCutOffTimeGoing()
         for habit in arrAllDaysEveningHabits{
             if isCutOffTimeGoing{
@@ -6272,15 +7332,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
                     let currentDate = Date()
                     if currentDate > cutOffDate{
-                        addLog(text: "evening habit skipped:- running late cutoff time passed for this habit:- \(habit.name)  \(habit.id)") // remove this
+                        addLog(text: "evening habit skipped:- running late cutoff time passed for this habit:- \(LogPrivacy.text(habit.name))  \(habit.id)") // remove this
                         continue;
                     }
                 }
             }
-            if isScheduledForWeekday(habit.days_of_week, currentWeekDay: currentWeekDay) {
+            if RoutineHabitSchedule.shouldPlay(habitId: habit.id, daysOfWeek: habit.days_of_week, on: today) {
                 arrFilteredEveningHabits.append(habit)
             }else{
-                addLog(text: "evening habit skipped:- current day is not from selected days \(habit.days_of_week):- \(habit.name)  \(habit.id)") // remove this
+                addLog(text: "evening habit skipped:- not scheduled for today or skipped ahead \(habit.days_of_week):- \(LogPrivacy.text(habit.name))  \(habit.id)") // remove this
             }
         }
         
@@ -6317,7 +7377,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         if tempHabits[i].isPriorityHigh{
                             arrFilteredEveningHabits.append(tempHabits[i])
                         }else{
-                            addLog(text: "evening habit skipped:- Global cutoffTime passed and this habit is not high priority habit:- \(tempHabits[i].name)  \(tempHabits[i].id)") // remove this
+                            addLog(text: "evening habit skipped:- Global cutoffTime passed and this habit is not high priority habit:- \(LogPrivacy.text(tempHabits[i].name))  \(tempHabits[i].id)") // remove this
                         }
                     }
                     
@@ -6374,8 +7434,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 hideBlankWindowInSecondaryMonitor()
                 
                 UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
-                UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
-                UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
+                SensitiveDefaults.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+                SensitiveDefaults.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
                 leftMenuVcObj?.habitOver()
                 currentHabitIndex = -1
             }
@@ -6578,8 +7638,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
+    /// A cutoff time just ended the running evening habit — the automatic twin of the user pressing
+    /// Skip, which calls this same lifecycle point (`skipHabitVc`). Without it an ALLOWED-ACTIVITY habit
+    /// ended this way is still "holding the screen" as far as window routing knows, so the
+    /// `showHabitsView()` that follows shrinks the window again and the rest of the routine runs
+    /// windowed instead of in borderless full screen (2026-09-24 17:37: the "Life Admin" habit hit its
+    /// cutoff, then `leaveFullScreen (routing … holding=true leftForHabit=true)` and nothing restored it).
+    /// Must run before the window is re-routed. A no-op when the skipped habit was an ordinary one.
+    private func releaseFullScreenAfterCutoffSkip() {
+        applyFullScreen(forAllowedActivityHabit: false)
+    }
+
     func abortAllProcess(){// do not change current state and current action inside this function
         addLog(text: "call abort all process.")
+        // Only forget the step-aside when the routine is genuinely over. This function is NOT only
+        // an abort: finishing a habit and starting the next one runs through it too (35 times in one
+        // evening), and resetting there wiped the marker between a habit starting and ending — so
+        // the routine never returned to full screen (report 2026-09-21_10-04-09, follow-up).
+        if AllowedActivityFullScreen.shouldForgetStepAside(routineState: currentState) {
+            allowedActivityFullScreenCoordinator.reset()
+        }
         //        if (mainWindowControllerObj?.window!.isVisible)! {// jaruri ni h ki window dikh hi rhi ho
         if currentAction == ._INPROGRESS_{
             if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
@@ -6648,6 +7726,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     //skipped activities will always there in completed activities
     @objc func startHabitsCall(activityId:String?, skippedActivities:[String], completedActivities:[String], needToCreateActivityId:Bool = false){
+        // A custom routine owns the routine window while it runs. Starting morning habits here
+        // calls abortAllProcess() below and tears it down — the user sees the custom routine they
+        // just started exit straight back into the morning routine. See MorningRoutineStartGuard.
+        guard MorningRoutineStartGuard.shouldStartMorningRoutine(currentState: currentState) else {
+            addLog(text: "func startHabitsCall:- skipped, a custom routine is currently running.")
+            return
+        }
         addLog(text: "Initiating morning habits.")
         additionalHabitTotalCompletedSeconds = 0
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutdownAborted)
@@ -6920,9 +8005,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             mainWindowControllerObj?.showWindow(self)
         }
         leftMenuVcObj?.showSettingsView()
-        
+
         addLog(text: "Showing preferences")
         NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
+        // Full-screen (borderless kiosk) mode is a lock — opening Settings must NOT break out of it and
+        // expose other apps. Re-assert the full-screen window + bring it to front so Settings shows inside
+        // the lock. checkIsFullScreenNeeded keeps full-screen when the setting is on (no-op otherwise).
+        if checkIsFullScreenEnabled() {
+            mainViewControllerObj?.checkIsFullScreenNeeded()
+            mainWindowControllerObj?.window?.makeKeyAndOrderFront(self)
+        }
     }
     
     
@@ -6944,6 +8036,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     func applicationWillTerminate(_ aNotification: Notification) {
+        ManagedBlockingRuntime.shared.stop()
         // Insert code here to tear down your application
         addLog(text: "Application Will Terminate")
         UserDefaults.standard.set(true, forKey: kUserdefaultsAppQuitProperly)
@@ -6954,7 +8047,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         firefoxServer.stop()
         EventBuffer.shared.flushEvents()
         focusButtonServiceObject.stop()
-        
+        WebCacheCleaner.clearFocusBearCachesBeforeQuit()
+
         closeAllCsvFiles()
     }
     
@@ -6965,11 +8059,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             terminateFromSelf = false
             return .terminateNow
         }else {
+            if ManagedBlockingRuntime.shared.isSettingsLocked {
+                _ = ManagedBlockingRuntime.shared.allowLegacySettingsMutation()
+                return .terminateCancel
+            }
+            // Teacher session:- block user-initiated quit (Cmd+Q / dock / menu) so a student can't
+            // quit the app to escape a class focus session. Show the teacher-locked alert (with Request
+            // unlock) instead. Placed before the quit flow below so it also covers the case where the
+            // main window is visible (which otherwise routes to abortCurrentState, not showQuitWindow).
+            if teacherSessionManagerObject.isTeacherSessionActive(){
+                addLog(text: "[user-action] quit blocked during teacher session — showing locked alert")
+                teacherSessionManagerObject.showTeacherSessionLockedAlert()
+                return .terminateCancel
+            }
             if currentState == ._ONBOARDING_{
                 
                 if UserDefaults.standard.object(forKey: kUserdefaultsIsUserLoggedIn) as? Bool == nil{
                     if UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) == nil{
-                        sharedDefaults?.removeObject(forKey: kUserdefaultsSharedAccessToken)
                         sharedDefaults?.setValue(globalUUID, forKeyPath: kUserdefaultsSharedUserId)
                         sharedDefaults?.setValue(true, forKeyPath: kUserdefaultsOnboardingIncompleted)
                         sharedDefaults?.setValue(Date(), forKeyPath: kUserdefaultsAppQuitForUser)
@@ -7002,15 +8108,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
+    /// The Dock-icon path. Clicking the Dock icon and ⌘-Tabbing are the same request — "show me Focus
+    /// Bear" — so both go through `restoreMainWindowOnActivationIfNeeded()` first. Popping the menu-bar
+    /// menu, which is all a Dock click used to do, stays as the fallback for the states where the main
+    /// window is deliberately absent (a running routine, onboarding).
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         print("applicationShouldHandleReopen")
-        
+
         if blankLayerWcObj != nil{
             if blankLayerWcObj?.window != nil{
                 if blankLayerWcObj!.window!.isVisible{
                     return false
                 }
             }
+        }
+        if restoreMainWindowOnActivationIfNeeded(){
+            return true
         }
         var isAnyStanderdWindowVisible = false
         
@@ -7066,19 +8179,27 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     // didnot do this work in applicationShouldHandleReopen because applicationShouldHandleReopen calls again and aain if reload after force quit setting is enabled
+    /// ⌘-Tab cannot be detected as a keystroke — the system app switcher consumes it and never delivers
+    /// it to the app — but the activation it causes lands here, on every single switch-to. This used to
+    /// log and stop, so ⌘-Tabbing back to Focus Bear with its window closed showed nothing at all
+    /// (report 2026-09-16_16-01-15). The decision is scheduled rather than taken here — at this instant a
+    /// menu-bar click's popover is opening but not yet open, and a self-activation has not necessarily
+    /// declared itself yet; see `scheduleMainWindowRestoreAfterActivation()`.
     func applicationDidBecomeActive(_ notification: Notification) {
-        
+
         if self.timerMoveWindowToCenter != nil{
             self.timerMoveWindowToCenter?.invalidate()
             self.timerMoveWindowToCenter = nil
         }
         addLog(text: "applicationDidBecomeActive")
         print("applicationDidBecomeActive")
+        scheduleMainWindowRestoreAfterActivation()
     }
-    
+
     func applicationDidResignActive(_ notification: Notification) {
         print("applicationDidResignActive")
         addLog(text: "applicationDidResignActive")
+        cancelScheduledMainWindowRestore()
         
         makeAllAlertWindowToTopLevelWindow()
         
@@ -7176,7 +8297,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     
-    func setFocusModeTimer(hour:Int?, minute:Int?){
+    func setFocusModeTimer(hour:Int?, minute:Int?, seconds: Int? = nil){
         addLog(text: "setFocusModeTimer")
         DispatchQueue.global().sync {
             focusModeMinutesToPerform = minute ?? 0
@@ -7190,7 +8311,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             timerForFocusModeEndNotification?.invalidate()
             timerForFocusModeEndNotification = nil
             var time = 0
-            if hour != nil{
+            if let seconds {
+                time = max(1, seconds)
+            }else if hour != nil{
                 time = hour!*60*60
             }else if minute != nil{
                 time = minute!*60
@@ -7215,9 +8338,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     /// mode), duration and intention — no config window. Mirrors the tail of the simple-pomodoro
     /// start so blocking (`workBeforeFocusBegin`), DND, the timers, the Focus Button and
     /// `focusModeStartted` all engage exactly as they do from the pomodoro flow.
-    @objc func startFocusFromMenu(focusModeId: String, minutes: Int, intention: String) {
+    /// - Parameter isAutoStarted: the app started this session, not the user — a meeting detected on
+    ///   the calendar, or an approved postpone. Those are the sessions that get dismissed seconds
+    ///   later, so their Do Not Disturb request is given longer to settle before it costs a click.
+    @objc func startFocusFromMenu(focusModeId: String, minutes: Int, intention: String,
+                                  isAutoStarted: Bool = false, initialTaskQueue: String? = nil, durationSeconds: Int = 0) {
         let minute = max(1, minutes)
-        endFocusModeTime = Calendar.current.date(byAdding: .minute, value: minute, to: Date())
+        let seconds = durationSeconds > 0 ? durationSeconds : minute * MeetingFocusResumeTiming.SECONDS_PER_MINUTE
+        endFocusModeTime = Date().addingTimeInterval(TimeInterval(seconds))
 
         minFocusAlignmentScoreToShowDistractingPopUp = 99.9
         if SettingsManagerObject.isDataCollectionModeEnabled {
@@ -7226,7 +8354,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
         // The focus modes may not be loaded into the global yet (the pomodoro screen normally does it),
         // so hydrate from UserDefaults first — otherwise the menu could start nothing.
-        if arrFocusType.isEmpty, let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrFocusTypes) as? [[String:Any]] {
+        if arrFocusType.isEmpty, let arr = SensitiveDefaults.object(forKey: kUserdefaultsArrFocusTypes) as? [[String:Any]] {
             arrFocusType = arr
         }
         // Resolve which block list / focus mode to run: the chosen id, else the default one, else the
@@ -7245,12 +8373,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             arrFocusType[i]["lastScheduledEndDate"] = getStringFromDate(date: end, dateFormat: "yyyy-MM-dd HH:mm:ss")
         }
         arrFocusType[i]["lastIntentionUsed"] = intention
+        // #777: remember the chosen duration per focus mode, so each mode defaults to its own last
+        // duration next time (persisted with arrFocusType below and synced via updateAllFocusModes).
+        arrFocusType[i]["lastDurationUsed"] = minute
         if isAccessibilityEnabled(isPrompt: true) {
-            DNDManager.shared.setDND(true)
+            DNDManager.shared.setDND(true, settle: isAutoStarted ? .autoStartedSession : .standard)
         }
         workBeforeFocusBegin(index: i)
         setStatusBarButtonColorForFocusMode(color: nil, colorString: arrFocusType[i]["color"] as? String ?? "")
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         updateAllFocusModes()
 
         isFocusModeRunning = true
@@ -7260,24 +8391,47 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         timerForFocusMode?.invalidate(); timerForFocusMode = nil
         timerForFocusModeEndNotification?.invalidate(); timerForFocusModeEndNotification = nil
 
-        setFocusModeTimer(hour: nil, minute: minute)
-        focusButtonServiceObject.startFocusSession(seconds: minute * 60)
+        setFocusModeTimer(hour: nil, minute: minute, seconds: seconds)
+        focusButtonServiceObject.startFocusSession(seconds: seconds)
 
         isFocusModeStartedFromPomodoroMode = true
         isSkipBreakActivityDuringPomodoro = true
         whatToAchieveInFocusBlock = intention
+        // A new session starts only with tasks explicitly selected for it. `lastTaskUsed` is a
+        // persistence snapshot for resuming a session, not a reusable queue for unrelated work.
+        focusModeTaskString = initialTaskQueue ?? "[]"
+        arrFocusType[i]["lastTaskUsed"] = focusModeTaskString
+        updateAllFocusModes()
         focusModeStartted(isStartedByPusher: false)
 
         // Remember this duration so the menu defaults to it next time.
         UserDefaults.standard.set(minute, forKey: kUserdefaultsLastFocusModeMinutes)
+        // #777: a focus mode started from the menu becomes the pomodoro screen's last-used mode too, so
+        // opening pomodoro pre-selects it. kUserdefaultsLastPomodoroFocusModeId is the pomodoro-specific
+        // "last mode" (not clobbered by scheduled blocking, unlike kUserdefaultsLastFocusModeId).
+        UserDefaults.standard.set(arrFocusType[i]["id"] as? String ?? "", forKey: kUserdefaultsLastPomodoroFocusModeId)
 
         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled {
-            showTaskPlayerWindow(totalDuration: minute, intention: intention, automatically: true)
+            // #2163: starting a focus session straight from the menu overlay on a fresh launch (main
+            // window never opened) showed a BLANK Todo Player — the webview had never loaded its URL,
+            // and this path only showed the window without loading it. Load the view (guarded so we
+            // don't rebuild an already-loaded webview) and its request, and flag a reload so reloadData
+            // injects the token/duration once shown — mirroring the resume and pusher-event paths.
+            if !getTaskPlayerVcObject().isViewLoaded {
+                getTaskPlayerVcObject().loadView()
+            }
+            getTaskPlayerVcObject().loadRequest()
+            shouldReloadTaskPlayer = true
+            showRunningFocusSessionWindow()
         }
     }
 
     func setFocusModeTimerForExtendAfterComplete(hour:Int?, minute:Int?){
         addLog(text: "setFocusModeTimer")
+        // The blocking context in force before the extension is re-applied below, after this method
+        // re-reads `currentRunningFocusType` out of `arrFocusType` — otherwise a stale copy of the
+        // block list could quietly change whether AI relevance checking applies to the extra minutes.
+        let blockingContextBeforeExtension = FocusSessionExtension.captureBlockingContext()
         DispatchQueue.global().sync {
             focusModeMinutesToPerform += minute ?? 0
             
@@ -7328,17 +8482,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 var stringTime = ""
                 
                 if let date = endFocusModeTime{
-                    stringTime = getStringFromDate(date: date, dateFormat: "hh:mm a")
+                    stringTime = getDisplayStringFromDate(date: date, dateFormat: "hh:mm a")
                 }
                 
                 for dic in arrFocusType{
                     if dic["isOn"] as? Bool == true{
-                        currentRunningFocusType = dic
+                        currentRunningFocusType = FocusSessionExtension.focusModePreservingAI(
+                            dic, before: blockingContextBeforeExtension)
                         let currentRunningFocusModeName = currentRunningFocusType["name"] as? String ?? ""
                         addLog(text: "\(currentRunningFocusModeName) extended until - \(stringTime)")
                     }
                 }
                 isFocusModeRunning = true
+                FocusSessionExtension.reapplyBlockingContext(blockingContextBeforeExtension)
                 if let isRelaxFocus = currentRunningFocusType["isRelaxFocus"] as? Bool{
                     if  isRelaxFocus{
                         showSavedSitesForLaterWindowForBreaks()
@@ -7394,7 +8550,30 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     
     @objc func focusModeTimerFinished(){
+        if currentAccountabilityBuddySession?.isMeeting == true, endMeetingSessionWithItsRoutinePostpone(){ return }
         tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:true, isCustomRoutineTime:false, shouldUpdateFocusButton: true)
+    }
+
+    /// A meeting session that runs out takes the routine postpone it was covering with it — see
+    /// `MeetingPostponeSession`. Returns false when it covered none, so the session finishes as usual.
+    private func endMeetingSessionWithItsRoutinePostpone() -> Bool {
+        let habits = getHabitsVcObject()
+        switch habits.routinePostponeOutcomeWhenMeetingSessionRunsOut() {
+        case .finishNormally:
+            return false
+        case .resumeRoutine:
+            // The path Stop and the meeting auto-end already take: finish silently, resume the routine.
+            guard let menu = menuViewControllerObj else { return false }
+            addLog(text: "meeting focus session ran out: ending the routine postpone it covered → resuming routine")
+            menu.stopFocusModeAndResumeRoutine()
+            return true
+        case .continueInto(let next):
+            addLog(text: "meeting focus session ran out: \(LogPrivacy.text(next.title)) follows straight on → new meeting session and postpone")
+            tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend: false, isCustomRoutineTime: false, shouldUpdateFocusButton: true)
+            // After the finish's own main-queue clean-up, so it cannot tear down the new session.
+            DispatchQueue.main.async { habits.continueMeetingPostpone(into: next) }
+            return true
+        }
     }
     
     
@@ -7439,30 +8618,75 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 savedSitesForLaterWcObj!.close()
             }
         }
+        // Ending the focus session must always dismiss the block overlays. They were previously only
+        // closed inside specific browser/URL branches later in this function, so stopping while the
+        // "set intention" (blocked-URL) window was up left it stranded on screen — and since the focus
+        // timer that watches for tab/window changes is invalidated above, nothing would close it
+        // afterwards either (it kept showing even when the user switched tab/window). Close both
+        // block windows unconditionally here.
+        closeSetIntentionBlockedUrlsWinddowIfVisible()
+        closeIntentionBlockedUrlsWinddowIfVisible()
         if isFocusModeOn(){// is paused then already calculated
             let totalSeconds = Int(Date().timeIntervalSince(startFocusModeTimeForPauseAndResume ?? Date()))
             focusModeActualDurationPerformed += totalSeconds
+        }
+        // Hard safety cap for meeting sessions: a meeting focus block can never record more than the
+        // meeting's expected length plus a short grace. Belt-and-suspenders against any path (a missed
+        // auto-end, a clock jump, wake after an overnight sleep) inflating a meeting to many hours — the
+        // way a stale start time once logged a ~10-minute meeting as 13–15h. Read the cap here, before
+        // currentAccountabilityBuddySession is cleared below.
+        if let meetingSession = currentAccountabilityBuddySession, meetingSession.isMeeting {
+            let maxMeetingSeconds = meetingSession.durationMinutes * 60
+                + Int(MeetingSessionAutoEndRules.quietSecondsBeforeEnding) + meetingDurationCapSlackSeconds
+            if focusModeActualDurationPerformed > maxMeetingSeconds {
+                addLog(text: "meeting focus block duration \(focusModeActualDurationPerformed)s exceeds cap \(maxMeetingSeconds)s — clamping")
+                focusModeActualDurationPerformed = maxMeetingSeconds
+            }
         }
         focusModeFinishedCapturePosthog()
         
         var currentFocusModeName = ""
         var currentFocusModeId = ""
+        // Clear EVERY running/paused mode, not just the first: if two entries were ever `isOn`
+        // simultaneously, stopping after the first left one on, so the menu stayed on "Stop Focus
+        // Session" and a new session couldn't start. The per-mode cleanup (DND, workAfterFocusBegin)
+        // still runs once, for the first — matching the previous single-session behaviour.
+        var didHandleFirstRunningMode = false
         for i in 0..<arrFocusType.count{
             if arrFocusType[i]["isOn"] as? Bool == true || arrFocusType[i]["isPaused"] as? Bool == true{
                 arrFocusType[i]["isOn"] = false
                 arrFocusType[i]["isPaused"] = false
-                currentFocusModeName = arrFocusType[i]["name"] as? String ?? ""
-                currentFocusModeId = arrFocusType[i]["id"] as? String ?? ""
-                
-                if DNDManager.shared.isDndEnabled{
-                    DNDManager.shared.setDND(false)
+                if !didHandleFirstRunningMode{
+                    didHandleFirstRunningMode = true
+                    currentFocusModeName = arrFocusType[i]["name"] as? String ?? ""
+                    currentFocusModeId = arrFocusType[i]["id"] as? String ?? ""
+
+                    // A session that ends into the "extend?" screen has not really ended yet: the
+                    // user can put it straight back. Releasing DND on that edge and re-taking it
+                    // seconds later cost two synthetic menu-bar clicks for one continuous session,
+                    // so the release settles for long enough that an extension collapses it away.
+                    if DNDManager.shared.isDndEnabled{
+                        DNDManager.shared.setDND(false, settle: allowExtend ? .sessionMayBeExtended : .standard)
+                    }
+                    workAfterFocusBegin(index: i)
                 }
-                workAfterFocusBegin(index: i)
-                break;
             }
         }
         
         isFocusModeRunning = false
+        // Preserve the buddy session across the completed screen so its "Extend Session" button can
+        // re-activate the AI accountability buddy (same goal + allow-list + strict AI). Only when an
+        // extend is actually offered; otherwise the buddy is genuinely over. A non-buddy finish sets
+        // this to nil (currentAccountabilityBuddySession is nil), so no stale buddy leaks into a later
+        // normal extend.
+        lastCompletedAccountabilityBuddySession = allowExtend ? currentAccountabilityBuddySession : nil
+        currentAccountabilityBuddySession = nil   // end the accountability-buddy allow-list with the session
+        clearPersistedAccountabilityBuddySession()   // don't restore it on the next launch
+        // NOTE: isFocusSessionAutoStarted is deliberately NOT reset here. The backend can still report
+        // this session as running (its finish PATCH may not have landed before the app was killed), and
+        // checkIsAnyOldFoucsModeRemaining would then resurrect it on the next launch — which must come
+        // back stoppable, not as a locked super-strict session. The marker is overwritten by the next
+        // start instead, in focusModeStartted(); see FocusSessionStopPermission.swift.
 
         DispatchQueue.main.async {
             closePupUpBlockIfVisible()
@@ -7495,18 +8719,28 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "Meeting using {\(self.appUsedInAutoMeetingFocusMode)}", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
             
             
-            allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: Date(), rating:nil, completionHandler: {newDic in
+            allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: Date(), rating:nil, sessionTasks: focusModeTaskString, completionHandler: {newDic in
                 DispatchQueue.main.async {
                     
                 }
             })
             focusModeFinishedResetAllData()
         }else{
+            let finishTime = Date()
+            if !isSilent{
+                // Every other branch shows the end screen. The finish goes to the server now, not when
+                // that screen closes: a quit or crash while it was up left the session running on the
+                // server, and the next launch restored it (#2678). Queued ahead of the end screen's
+                // resetData below, so a close always finds this session.
+                DispatchQueue.main.async {
+                    FocusSessionFinishReporter.shared.sessionEnded(focusModeId: currentFocusModeId, finishTime: finishTime)
+                }
+            }
             if isSilent{
                 let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
                 addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
                 
-                allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: Date(), rating:nil, completionHandler: {newDic in
+                allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: Date(), rating:nil, sessionTasks: focusModeTaskString, completionHandler: {newDic in
                     DispatchQueue.main.async {
                         
                     }
@@ -7529,7 +8763,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     focusCompletedFullScreenVcObj?.allowExtend = allowExtend
                     
                     getHabitsVcObject().showDayEndFocusCompletedView()
-                    focusCompletedFullScreenVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: Date(), isShutOffTime: isShutOffTime)
+                    focusCompletedFullScreenVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: finishTime, isShutOffTime: isShutOffTime)
                 }
             }else if isMorningRoutineTime || isCustomRoutineTime{
                 lastFocusModeTempInfo = nil
@@ -7552,7 +8786,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }else{
                         getHabitsVcObject().showCustomRoutineFocusCompletedView()
                     }
-                    focusCompletedFullScreenVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: Date(), isShutOffTime: isShutOffTime)
+                    focusCompletedFullScreenVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: finishTime, isShutOffTime: isShutOffTime)
                 }
             }else{
                 if arrAllowedAppsInCuddlyModeCurrentFocus.count != 0 || arrAllowedUrlsInCuddlyModeCurrentFocus.count != 0{
@@ -7570,7 +8804,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     focusCompletedVcObj?.allowExtend = allowExtend
                     focusCompletedVcObj?.currentFocusModeId = currentFocusModeId
                     self.showFocusCompletedView()
-                    focusCompletedVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: Date(), isShutOffTime: false)
+                    focusCompletedVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: finishTime, isShutOffTime: false)
                     NSApplication.shared.activate(ignoringOtherApps: true)
                     DispatchQueue.global().async {
                         DispatchQueue.main.async {
@@ -7604,17 +8838,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func showFocusCompletedView(){
         addLog(text: "show Focus Completed View")
         mainWindowControllerObj?.showWindow(self)
+        // Assert the window size the user actually asked for before drawing the screen, the same
+        // order every other main-window state uses (showWelcomeWindow, completeRemainingOnboarding).
+        // Without it the focus-completed screen — the one offering "Do break habits" — inherited
+        // whatever size the window happened to have, so a user with full screen ON got a small
+        // window at exactly the moment the app is meant to pull them back into their routine
+        // (report 2026-09-21_10-04-09). checkIsFullScreenNeeded is a no-op when the setting is off,
+        // and keeps the window alone while an allowed-activity habit is playing.
+        mainViewControllerObj?.checkIsFullScreenNeeded()
         leftMenuVcObj!.showFocusCompletedView()
     }
 
     @objc func focusModeStartted(isStartedByPusher:Bool){
+        invalidateMeetingFocusHandoffForNewSession()
         addLog(text: "focus Mode Started called")
+        // Reset the postpone-origin flag at every session start; the postpone-pomodoro path re-sets it to
+        // true right after calling this (see pomodoroVc), so non-postpone sessions start clean.
+        isFocusSessionStartedFromPostponeIntention = false
         addLog(text: "getBlockedAppsToBlock:- \(getBlockedAppsToBlock())")
         if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             customBlockingScheduleManagerObj.customBlockingScheduleFinished()
         }
         
         focusModeStarttedResetAllData()
+        // Every session starts USER-started. The auto-started paths (startScopedAiFocusSession: the LNM
+        // meeting session and the approved-postpone buddy) reach this via startFocusFromMenu and then set
+        // the marker back to true, so resetting it here can't strand them — but it does stop a session the
+        // user starts themselves from inheriting a previous auto-started session's password-gate bypass.
+        // Deliberately NOT in focusModeStarttedResetAllData(): resumeFocusModeAfterAppStartted calls that
+        // too, and a session resumed after a relaunch must keep the marker it restored.
+        setFocusSessionAutoStarted(false)
         playFocusModeStartedSound()
         
         closeSmallCountDownTimerBoxIfVisible()
@@ -7638,7 +8891,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         var stringTime = ""
         
         if let date = endFocusModeTime{
-            stringTime = getStringFromDate(date: date, dateFormat: "hh:mm a")
+            stringTime = getDisplayStringFromDate(date: date, dateFormat: "hh:mm a")
         }
         
         for dic in arrFocusType{
@@ -7657,7 +8910,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
         
-        arrFocusBlockNotificationShownForApps.removeAll()
         frontApplicationChanged()// call it because front application is active already
         
         DispatchQueue.global().sync {
@@ -7674,9 +8926,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
             leftMenuVcObj?.resetFocusModeTitle()
         }
-        if UserDefaults.standard.object(forKey: kUserdefaultsUserShouldDoFirstFocusSesion) != nil{
-            UserDefaults.standard.removeObject(forKey: kUserdefaultsUserShouldDoFirstFocusSesion)
-        }
         menuViewControllerObj?.showFocusModeCountDownIfNeeded()
         currentFocusAlignmentScore = 100
         getArrayOfTaskForApi()
@@ -7690,6 +8939,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
 
     @objc func frontApplicationChanged(){
+        // UI-test builds run on a developer's own Mac: never hide, launch or close their other apps.
+        if UITestHost.suppressesEnforcement { return }
 
         if UserDefaults.standard.object(forKey: kUserdefaultsIsUserLoggedIn) as? Bool != nil{
             if UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) != nil{
@@ -7841,7 +9092,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 }
                                 
                                 
-                                for path in SettingsManagerObject.arrAlwaysAllowedApps{
+                                for path in SettingsManagerObject.effectiveAlwaysAllowedApps{
                                     let url = URL(fileURLWithPath: path)
                                     if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
                                         isAppAllowed = true
@@ -7874,7 +9125,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 return;
                             }
                             
-                            for path in SettingsManagerObject.arrAlwaysAllowedApps{
+                            for path in SettingsManagerObject.effectiveAlwaysAllowedApps{
                                 let url = URL(fileURLWithPath: path)
                                 if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
                                     setFocusBearIconToNormal()
@@ -7915,12 +9166,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     isAppAllowed = true
                                     isAllowedAppIsDefault = true
                                 }else{
-                                    for path in allowAppsPath{
-                                        let url = URL(fileURLWithPath: path)
-                                        if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
-                                            isAppAllowed = true
-                                            break;
-                                        }
+                                    if isRunningAppInAllowedApps(allowAppsPath, runningAppNameLowercased: nameLowercased){
+                                        isAppAllowed = true
                                     }
                                 }
                             }
@@ -8063,7 +9310,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         return;
                     }
                     
-                    for path in SettingsManagerObject.arrAlwaysAllowedApps{
+                    for path in SettingsManagerObject.effectiveAlwaysAllowedApps{
                         let url = URL(fileURLWithPath: path)
                         if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
                             setFocusBearIconToNormal()
@@ -8103,12 +9350,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             isAppAllowed = true
                             isAllowedAppIsDefault = true
                         }else{
-                            for path in allowAppsPath{
-                                let url = URL(fileURLWithPath: path)
-                                if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
-                                    isAppAllowed = true
-                                    break;
-                                }
+                            if isRunningAppInAllowedApps(allowAppsPath, runningAppNameLowercased: nameLowercased){
+                                isAppAllowed = true
                             }
                         }
                     }
@@ -8197,12 +9440,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         focusModeOpenCurrentAppForAlignmentScore(appNameLowercased: nameLowercased)
                         return;
                     }else if !isAppAllowed{
-                        
-                        
+
+
                         focusModeOpenCurrentAppForAlignmentScore(appNameLowercased: nameLowercased)
                         focusTryToBlockUnwantedApp(runningApp: runningApp, appName: name, appNameLowercased: nameLowercased)
-                        focusModeHelper.stopUrlTimer()
-                        
+                        // focusTryToBlockUnwantedApp may SYNCHRONOUSLY allow a browser: tryCheckAppFromAi
+                        // appends it to arrAllowedAppsInCuddlyModeCurrentFocus (strictness != normal, or
+                        // data-collection mode) — in both cuddly and teacher/AI mode. When that happens the
+                        // browser IS now allowed, so its URLs must be checked: (re)start the URL timer
+                        // instead of stopping it. Previously this branch ALWAYS stopped the timer and
+                        // returned before reaching setTimeCheckUrlsForFocusMode below, so on the FIRST visit
+                        // to a browser no sites were blocked — only the SECOND visit (browser already in the
+                        // allowed list, so it takes the allowed branch) started URL checking.
+                        if arrBrowsersLowerCasedNames.contains(nameLowercased), arrAllowedAppsInCuddlyModeCurrentFocus.contains(runningApp){
+                            setTimeCheckUrlsForFocusMode(nameLowercased: nameLowercased)
+                        }else{
+                            focusModeHelper.stopUrlTimer()
+                        }
+
                         return;
                     }else{
                         if isSelfApp{
@@ -8344,6 +9599,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     @objc func blockUrlsInBackground(){
+        ManagedBlockingRuntime.shared.checkCurrentBrowserNow()
         addLog(text:"func call:- blockUrlsInBackground")
         if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
             addLog(text:"Browsers Permissions not set by user return;")
@@ -8409,6 +9665,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 
                 
                 if var url = getActiveTabUrlOf(browser: currentBrowser){
+                    if ManagedBlockingRuntime.shared.shouldDeferLegacyURL(url) { return }
                     
                     if currentBrowser == ._OPERA_GX_{
                         if url.contains("gxcorner.games"){ //  alllow gxcorner (default url)
@@ -8520,7 +9777,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     if arrBlockedUrls.count == 0{
                                         arrBlockedUrls = ["facebook.com"] // for try block url if no blocked url is set
                                     }
-                                    addLog(text: "Try website blocking view is visible and current app is:- \(nameLowercased) and current url is:- \(url)")
+                                    addLog(text: "Try website blocking view is visible and current app is:- \(nameLowercased) and current url is:- \(LogPrivacy.site(url))")
                                 }
                             }
                         }
@@ -8687,6 +9944,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     
     @objc func checkFcousAllowedApp(){
+        // Re-attach a persisted accountability-buddy session to the focus session the app restored on
+        // restart, so its AI overrides don't get lost — the "AI blocking removed after restart" symptom.
+        // Retried each tick until it attaches or the persisted session expires: the focus-mode restore is
+        // async, so the first tick often runs before isFocusModeRunning is true. The function owns the
+        // done flag, and sets it only on a terminal outcome.
+        if !didAttemptAccountabilityBuddyRestore {
+            restoreAccountabilityBuddySessionIfNeeded()
+        }
         if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning{
             addEntryInProductivityStatsCsv()
         }
@@ -8716,7 +9981,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 // browser — see startTeacherSession), and every real app switch restarts it via
                 // frontApplicationChanged(). A per-tick self-heal for the "no app-switch notification"
                 // case is therefore redundant.
-                for path in SettingsManagerObject.arrAlwaysAllowedApps{
+                for path in SettingsManagerObject.effectiveAlwaysAllowedApps{
                     let url = URL(fileURLWithPath: path)
                     if url.deletingPathExtension().lastPathComponent.lowercased() == name{
                         DispatchQueue.main.async {
@@ -8754,12 +10019,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     
                     
                     let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-                    for path in allowAppsPath{
-                        let url = URL(fileURLWithPath: path)
-                        if url.deletingPathExtension().lastPathComponent.lowercased() == name{
-                            isAppAllowed = true
-                            break;
-                        }
+                    if isRunningAppInAllowedApps(allowAppsPath, runningAppNameLowercased: name){
+                        isAppAllowed = true
                     }
                 }
                 
@@ -9024,7 +10285,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func tryToBlockAlwaysBlockedApp(runningApp: NSRunningApplication, appName:String)->Bool{
         print("tryToBlockAlwaysBlockedApp*************")
         
-        for path in SettingsManagerObject.arrAlwaysAllowedApps{
+        for path in SettingsManagerObject.effectiveAlwaysAllowedApps{
             let url = URL(fileURLWithPath: path)
             if url.deletingPathExtension().lastPathComponent.lowercased() == appName.lowercased(){
                 print("App \(appName) is in Always Allowed list, skipping block")
@@ -9132,6 +10393,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     func blockAlwaysBlockedApp(runningApp: NSRunningApplication, appName:String){
+        // UI-test builds run on a developer's own Mac: never hide, launch or close their other apps.
+        if UITestHost.suppressesEnforcement { return }
         addLog(text:"blockAlwaysBlockedApp:- \(appName)")// addded in 2.28.443
         exitFullScreen(runningApp:runningApp)
         runningApp.hide()
@@ -9159,7 +10422,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     func blockAlwaysBlockedUrl(script: String, browser: BROWSER?, url:String){
-        addLog(text:"blockAlwaysBlockedUrl:- \(url)")
+        addLog(text:"blockAlwaysBlockedUrl:- \(LogPrivacy.site(url))")
+        BrowsingHistory.shared.record(.blocked, url: url, app: browser.map { "\($0)" }, reason: BrowsingReason.alwaysBlocked,
+                                      focusMode: runningFocusModeName)
         if browser == ._ARC_{
             NSWorkspace.shared.launchApplication("Arc")
         }
@@ -9258,6 +10523,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     func startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl:Bool){
+        // UI-test builds run on a developer's own Mac: never launch the habit's allowed apps there.
+        let shouldLaunchAppAndUrl = shouldLaunchAppAndUrl && !UITestHost.isEnabled
         addLog(text:"start Timer Activities AllowedApp")
         
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_{
@@ -9365,17 +10632,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     @objc func checkActivityAllowedApp(){
+        // UI-test builds run on a developer's own Mac: never hide, launch or close their other apps.
+        if UITestHost.suppressesEnforcement { return }
         if (currentState == ._MICRO_BREAK_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && (currentActivityPlaying != nil || currentHabitPlaying != nil){
             if let runningApp = NSWorkspace.shared.frontmostApplication{
                 if let appUrl = runningApp.bundleURL{
                     let name = appUrl.deletingPathExtension().lastPathComponent.lowercased()//runningApp.localizedName?.lowercased(){
                     let localizedNameLowercased = runningApp.localizedName?.lowercased()
+
+                    // A restored habit may already have Chrome frontmost, with no activation event.
+                    // App allow rules must still start the independent website restriction timer.
+                    habitBlockTimerHelper.startUrlTimer(browserName: name)
                     
                     if name == selfAppName.lowercased() || name == focusBearTimeTrackerAppName{
                         return;
                     }
                     
-                    for path in SettingsManagerObject.arrAlwaysAllowedApps{
+                    for path in SettingsManagerObject.effectiveAlwaysAllowedApps{
                         let url = URL(fileURLWithPath: path)
                         if url.deletingPathExtension().lastPathComponent.lowercased() == name{
                             DispatchQueue.main.async {
@@ -9437,12 +10710,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             isAppAllowed = true
                         }else{
                             let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-                            for path in allowAppsPath{
-                                let url = URL(fileURLWithPath: path)
-                                if url.deletingPathExtension().lastPathComponent.lowercased() == name{
-                                    isAppAllowed = true
-                                    break;
-                                }
+                            if isRunningAppInAllowedApps(allowAppsPath, runningAppNameLowercased: name){
+                                isAppAllowed = true
                             }
                         }
                         
@@ -9573,6 +10842,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     
     func showExtraWindows(){
+        guard checkIsFullScreenEnabled(), mainWindowControllerObj?.shouldCoverSecondaryScreens == true else {
+            hideBlankWindowInSecondaryMonitor()
+            return
+        }
         let screenList = NSScreen.screens
         if screenList.count == 1{
             if arrWindows.count != 0{
@@ -9586,21 +10859,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             return
         }
         if arrWindows.count == 0{
-            
-            for i in 0..<screenList.count {  // create the corresponding windows
-                let screen = screenList[i]
-                //                let  mainWindowControllerObj  = mainstoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("mainWindowController")) as! mainWindowController
-                if i != 0{//if screen != mainWindowControllerObj?.window?.screen{
-                    let window = NSWindow(contentRect: NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), styleMask: .borderless, backing: .buffered, defer: true, screen: screen)
-                    
-                    if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                        if state{
-                            window.sharingType = .none
-                        }
+            // Cover every display except the one the routine is on — the same choice its frame uses.
+            let host = mainWindowControllerObj?.fullScreenDisplay
+            for screen in FullScreenDisplays.screensToCover(all: screenList, host: host) {
+                let window = NSWindow(contentRect: NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), styleMask: .borderless, backing: .buffered, defer: true, screen: screen)
+                
+                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                    if state{
+                        window.sharingType = .none
                     }
-                    window.contentViewController = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("blankController")) as! blankController
-                    arrWindows.append(resetWin(window))
                 }
+                window.setFrame(screen.frame, display: false)
+                window.contentViewController = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("blankController")) as! blankController
+                arrWindows.append(resetWin(window))
             }
             
         }
@@ -9616,36 +10887,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     @objc func setframe(){
-        //let screenList = NSScreen.screens
-        for i in 0..<arrWindows.count {  // create the corresponding windows
-            let window = arrWindows[i]
-            window.setFrame(NSMakeRect(NSMinX(window.screen!.frame), NSMinY(window.screen!.frame), NSWidth(window.screen!.frame), NSHeight(window.screen!.frame)), display: true)
-        }
-    }
-    
-    @objc func screenChanged() {  // call back for when the user reconfigured the Screen
-        if !checkIsFullScreenEnabled(){
-            return;
-        }
-        if isMainWindowLoaded{
-            if (mainWindowControllerObj?.window!.isVisible)! && (mainWindowControllerObj?.isFullScreenVisible ?? false){
-                let screenList = NSScreen.screens
-                for screen in screenList {  // create the corresponding windows
-                    print("screenFrame is \(screen.frame)")
-                    mainWindowControllerObj!.window?.setFrame(NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), display: true)
-                    break;
-                }
-                for i in 0..<arrWindows.count{
-                    let window = arrWindows[i]
-                    window.orderOut(nil)
-                    arrWindows[i].windowController?.window = nil
-                }
-                arrWindows.removeAll()
-                showExtraWindows()
+        for window in arrWindows {
+            guard let screen = window.screen else {
+                window.orderOut(nil)
+                continue
             }
+            window.setFrame(screen.frame, display: true)
         }
     }
     
+    @objc func screenChanged() {
+        guard let controller = mainWindowControllerObj else { return }
+        controller.reconcileFullScreenDisplays { self.showExtraWindows() }
+    }
+
     var timerPomodoroMode: Timer?
     //Called when the "Take a five minute break" button is clicked.
     func setTimerForPomodoroMode(delay:TimeInterval){
@@ -9821,8 +11076,7 @@ final class ClaudeDebugTaskMenu: NSObject {
         let note = textView.string.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let fm = FileManager.default
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-        let stamp = f.string(from: Date())
+        let stamp = MachineDateFormat.string(from: Date(), format: MachineDateFormat.fileNameTimestamp)
         let folder = fm.homeDirectoryForCurrentUser.appendingPathComponent("FocusBear-Claude-Tasks/\(stamp)")
         try? fm.createDirectory(at: folder, withIntermediateDirectories: true)
 

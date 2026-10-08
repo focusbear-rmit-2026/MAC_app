@@ -22,7 +22,8 @@ class confirmBlockingScheduleCreationVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        btnNo.setAccessibilityIdentifier(UITestContract.Identifier.Onboarding.skipBlockingScheduleButton)
+        btnYes.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.createBlockingScheduleButton)
         lblTitle.stringValue = "Add a New Blocking Schedule"
         lblSubTitle.stringValue = "You can have distracting sites and apps blocked during work hours or at night ⏰"
         btnNo.title = "No thanks"
@@ -91,7 +92,9 @@ class confirmBlockingScheduleCreationVc: NSViewController {
     @IBAction func btnYesClicked(_ sender: Any) {
         addLog(text: "[user-action] confirmBlockingScheduleCreationVc:- btnYesClicked")
         allApiObject.capturePosthog(event: "add-new-block-clicked", metadata: [:])
-        getOnboardingVcObject().navigate(to: ._CREATE_BLOCKING_SCHEDULE_)
-        
+        // Show the quick-start presets first (same grid the running app offers when adding a schedule);
+        // picking one pre-fills the editor. The presets step then advances to _CREATE_BLOCKING_SCHEDULE_.
+        getOnboardingVcObject().navigate(to: ._CHOOSE_BLOCKING_SCHEDULE_PRESET_)
+
     }
 }

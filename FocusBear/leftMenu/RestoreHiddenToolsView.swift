@@ -36,6 +36,7 @@ struct RestoreHiddenToolsView: View {
                             onRestore(tool)
                             hidden = ToolVisibilityStore.hiddenTools()
                         }
+                        .accessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.restoreToolPrefix + tool.rawValue)
                     }
                 }
             }

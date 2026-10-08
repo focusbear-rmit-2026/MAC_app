@@ -23,7 +23,8 @@ class setUpAccountVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        btnSignUp.setAccessibilityIdentifier(UITestContract.Identifier.Onboarding.signUpButton)
+        btnStayAnonymous.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.stayAnonymousButton)
         lblTitle.stringValue = "Set up an account"
         lblSubtile.stringValue = "Stay focused across all your devices - no matter where you work."
         btnStayAnonymous.title = "I’ll stay anonymous"
@@ -106,13 +107,7 @@ class setUpAccountVc: NSViewController {
                     print("User signed up: \(user)")
                     allApiObject.capturePosthog(event: "register-homemade", metadata: [:])
                     DispatchQueue.main.async {
-                        Auth0
-                            .authentication()
-                            .login(usernameOrEmail: email,
-                                   password: password,
-                                   realmOrConnection: "Username-Password-Authentication",
-                                   audience:"https://auth.focusbear.io/api/v2/",
-                                   scope: "openid profile email offline_access")
+                        PasswordSignIn.request(email: email, password: password)
                             .start { result in
                                 
                                 DispatchQueue.main.async {

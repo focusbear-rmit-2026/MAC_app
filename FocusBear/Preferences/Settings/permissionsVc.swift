@@ -46,6 +46,9 @@ class permissionsVc: NSViewController {
             lblTitle.stringValue = settingsNew.value(forKey: "permissionsSettingTitle") as? String ?? lblTitle.stringValue
             lblDescription.stringValue = settingsNew.value(forKey: "descriptionPermissions") as? String ?? lblDescription.stringValue
         }
+        // The pane title is the only text that names the browsers table.
+        tblView.setAccessibilityLabel(lblTitle.stringValue)
+        tblView.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.permissionsTable)
         
     }
     
@@ -263,6 +266,8 @@ extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
             cell.lblTitle.stringValue = arrBrowsers[row]["name"] as? String ?? ""
             //            cell.lblDescription.stringValue = arrBrowsers[row]["description"] as? String ?? ""
             cell.imgView.image = arrBrowsers[row]["image"] as? NSImage
+            // The browser's name is written beside its icon.
+            cell.imgView.hideDecorativeIconFromVoiceOver()
             cell.lblFirefoxPermission.isHidden = true
             let state = arrBrowsers[row]["isEnabled"] as? Bool ?? false
             if state{
@@ -348,63 +353,83 @@ extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
                 }
                 
                 let appName = getCurrentBrowserNameFrom(browser: browser) ?? ""
+                let bundleId = Bundle(path: "/Applications/\(appName).app")?.bundleIdentifier ?? ""
                 NSWorkspace.shared.open(URL(fileURLWithPath: "/Applications/\(appName).app"))
-//                var shouldShowPermissionBox = true
-//                if !permissionAlertShownInfoDic.contains(browser){
-//                    shouldShowPermissionBox = false// will show Automatically from "getActiveTabUrlOf" func
-//                }
-                if getActiveTabUrlOf(browser: browser) != nil{
+                // Request Automation permission with a single BLOCKING prompt (shows the OS consent
+                // dialog once and waits for the user's answer) instead of polling getActiveTabUrlOf —
+                // which re-fired the dialog every tick (loop) and popped the "Unable to get URL" alert
+                // before the user could even answer. isBrowserAutomationRequestInFlight pauses passive
+                // URL probes while the dialog is up so they can't tear it down.
+                if isBrowserAutomationRequestInFlight { return }
+                browsersAutoPromptAttempted.insert(browser.rawValue) // this explicit request counts; don't auto-prompt again
+                isBrowserAutomationRequestInFlight = true
+                DispatchQueue.global().async {
+                    let target = NSAppleEventDescriptor(bundleIdentifier: bundleId)
+                    let status = AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, true)
                     DispatchQueue.main.async {
-                        self.arrBrowsers[row]["isEnabled"] = true
-                        self.tblView.reloadData()
-                        if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
-                            UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
+                        isBrowserAutomationRequestInFlight = false
+                        if status == noErr {
+                            self.arrBrowsers[row]["isEnabled"] = true
+                            self.tblView.reloadData()
+                            if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+                                UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
+                            }
+                            self.saveBrowsersPermissionInfo()
+                            self.permissionGivenFromBrowser()
+                            return
                         }
-                        self.saveBrowsersPermissionInfo()
-                        self.permissionGivenFromBrowser()
-                    }
-                }else {
-                    DispatchQueue.main.async {
-                        //if shouldShowPermissionBox{
-                            let alert = NSAlert()
-                            alert.setSharingType()
-                            alert.alertStyle = .informational
-                            
-                            var urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Security & Privacy > Privacy and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
-                            
-                            if #available(macOS 13.0, *) {
-                                urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Privacy & Security and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
-                                
-                                if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
-                                    urlError = onboardingControllingBrowserVcInfo.value(forKey: "alertOpenPreferencesLatestOsText") as? String ?? urlError
-                                }
-                            }else {
-                                urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Security & Privacy > Privacy and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
-                                
-                                if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
-                                    urlError = onboardingControllingBrowserVcInfo.value(forKey: "alertOpenPreferencesText") as? String ?? urlError
-                                }
-                            }
-                            
-                            urlError = urlError.replacingOccurrences(of: "<APPNAME>", with: appName)
-                            var buttonPreferencesText = "Open Automation Preferences"
-                            
-                            if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
-                                buttonPreferencesText = onboardingControllingBrowserVcInfo.value(forKey: "buttonOpenPreferences") as? String ?? buttonPreferencesText
-                            }
-                            
-                            alert.messageText = urlError
-                            alert.addButton(withTitle: buttonPreferencesText)
-                            alert.addButton(withTitle: buttonCancelText)
-                            
-                            alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-                                if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-                                    let urlstring = "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation";
-                                    NSWorkspace.shared.open(URL(string: urlstring)!)
-                                }
-                            })
-                        //}
+                        // Not authorized. Start polling so a manual grant in System Settings still
+                        // reflects here (getActiveTabUrlOf is now gated, so the timer can't loop the
+                        // dialog), and only show the "open Automation preferences" alert on a real denial.
                         self.startTimerCheckPermission()
+                        guard status == OSStatus(errAEEventNotPermitted) else {
+                            addLog(text: "Automation request for \(appName) returned status \(status)")
+                            return
+                        }
+                        // The blocking request can resolve after the user has navigated away from the
+                        // Permissions screen, leaving self.view.window nil — force-unwrapping it in
+                        // beginSheetModal crashed. Bail if there's no window to attach the sheet to.
+                        guard let window = self.view.window else {
+                            addLog(text: "permissionsVc: view no longer in a window — skipping the Automation-preferences alert")
+                            return
+                        }
+                        let alert = NSAlert()
+                        alert.setSharingType()
+                        alert.alertStyle = .informational
+
+                        var urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Security & Privacy > Privacy and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
+
+                        if #available(macOS 13.0, *) {
+                            urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Privacy & Security and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
+
+                            if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
+                                urlError = onboardingControllingBrowserVcInfo.value(forKey: "alertOpenPreferencesLatestOsText") as? String ?? urlError
+                            }
+                        }else {
+                            urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Security & Privacy > Privacy and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
+
+                            if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
+                                urlError = onboardingControllingBrowserVcInfo.value(forKey: "alertOpenPreferencesText") as? String ?? urlError
+                            }
+                        }
+
+                        urlError = urlError.replacingOccurrences(of: "<APPNAME>", with: appName)
+                        var buttonPreferencesText = "Open Automation Preferences"
+
+                        if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
+                            buttonPreferencesText = onboardingControllingBrowserVcInfo.value(forKey: "buttonOpenPreferences") as? String ?? buttonPreferencesText
+                        }
+
+                        alert.messageText = urlError
+                        alert.addButton(withTitle: buttonPreferencesText)
+                        alert.addButton(withTitle: buttonCancelText)
+
+                        alert.beginSheetModal(for: window, completionHandler: { (modalResponse) in
+                            if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+                                let urlstring = "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation";
+                                NSWorkspace.shared.open(URL(string: urlstring)!)
+                            }
+                        })
                     }
                 }
             }

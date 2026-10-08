@@ -177,43 +177,11 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
             print(error)
             print(html)
         })
-        //load installed apps
-        var arrInstalledApps = [String]()
-        let urls = FileManager.default.urls(for: .applicationDirectory, in: [.systemDomainMask, .localDomainMask])
-        let properties = [URLResourceKey.localizedNameKey, URLResourceKey.creationDateKey, URLResourceKey.contentModificationDateKey, URLResourceKey.localizedTypeDescriptionKey,URLResourceKey.nameKey]
-       
-        for url in urls{
-            let array = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: properties, options: .skipsHiddenFiles)
-            if array != nil{
-                for appUrl in array!{
-                    
-                    if appUrl.pathExtension == "app"{
-                        let appName = appUrl.deletingPathExtension().lastPathComponent
-                        print(appName)
-                        arrInstalledApps.append(appName)
-                    }else{
-                        if appUrl.isDirectory{
-                            let arrAppInFolder = try? FileManager.default.contentsOfDirectory(at: appUrl, includingPropertiesForKeys: properties, options: .skipsHiddenFiles)
-                            if arrAppInFolder != nil{
-                                for appUrl in arrAppInFolder!{
-                                    if appUrl.pathExtension == "app"{
-                                        let appName = appUrl.deletingPathExtension().lastPathComponent
-                                        print(appName)
-                                        arrInstalledApps.append(appName)
-                                    }
-                                }
-                            }
-                            
-                        }
-                    }
-                }
-            }
-        }
-        
-        
-        addLog(text: "Load Installed Apps to web settings:- \(arrInstalledApps)")
+        // Installed apps are the web's allowed-app suggestions (one enumerator for every loader: InstalledApps).
+        let installedApps = InstalledApps.shared.names()
+        addLog(text: "Load Installed Apps to web settings:- \(installedApps.count) apps")
         let mutableDic = NSMutableDictionary()
-        mutableDic["installedApps"] = arrInstalledApps
+        mutableDic["installedApps"] = installedApps
         
         do {
             let data = try (JSONSerialization.data(withJSONObject: mutableDic, options: .prettyPrinted))
@@ -297,8 +265,19 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
     @objc func showNextView(){
         addLog(text: "[user-action] installHabitPacksVc:- showNextView")
         hasSkippedHabits = false
+        enableBreaksFromOnboarding()
+        // Habits is the last section now (after permissions): finish onboarding.
+        getOnboardingVcObject().navigate(to: ._ALL_SET_)
+    }
+
+    /// Turn breaks on by default coming out of onboarding, and seed a sensible 60-minute default frequency
+    /// (unless the user/server already set one) so new users get an hourly break out of the box.
+    private func enableBreaksFromOnboarding() {
         UserDefaults.standard.set(true, forKey: kUserdefaultsBreaksEnabledFromOnboarding)
-        getOnboardingVcObject().navigate(to: ._SET_DISTRACTION_BLOCKING_)
+        // Seed the 60-min default into the live global only. It's persisted to break_after_minutes with
+        // the valid onboarding settings save in AppDelegate.initialWork (isFirstTime) — a standalone
+        // full-settings PUT here 400s because the fresh user's times/activities aren't set yet.
+        breakAfterMinutes = 60
     }
     
     
@@ -312,7 +291,8 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
         }
         allApiObject.capturePosthog(event: "set-up-habits-webview-skipped", metadata: [:])
         hasSkippedHabits = true
-        UserDefaults.standard.set(true, forKey: kUserdefaultsBreaksEnabledFromOnboarding)
-        getOnboardingVcObject().navigate(to: ._SET_DISTRACTION_BLOCKING_)
+        enableBreaksFromOnboarding()
+        // Habits is the last section now (after permissions): finish onboarding.
+        getOnboardingVcObject().navigate(to: ._ALL_SET_)
     }
 }

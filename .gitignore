@@ -37,3 +37,8 @@ Certificates/Upload sentry files using sentry cli.rtfd/
 # FocusBear/RelevanceModel/README.md. Large prebuilt lib; pinned + checksum-verified.
 FocusBear/RelevanceModel/onnxruntime/lib/
 FocusBear/RelevanceModel/onnxruntime/include/
+
+# UI-test builds and results (scripts/run-ui-tests.sh, docs/ui-tests.md).
+build-ui/
+UITestResults.xcresult/
+UITestResults.xcresult/

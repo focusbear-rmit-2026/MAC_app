@@ -1,0 +1,26 @@
+name: UI test selection
+
+# Guards the map that decides which UI tests a pull request runs (.github/ui-test-impact.json):
+# every UI test class must be in it, or a change would never select that class, and every test it
+# names must exist. Also runs the selection script's own tests. Cheap, so it runs on GitHub's runners
+# for every change to the suite, labelled or not.
+on:
+  pull_request:
+    paths:
+      - 'FocusBearUITests/**'
+      - '.github/ui-test-impact.json'
+      - 'scripts/select-ui-tests.py'
+      - 'scripts/test-select-ui-tests.py'
+
+jobs:
+  check-map:
+    name: Every UI test class is in the selection map
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Selection script tests
+        run: python3 scripts/test-select-ui-tests.py
+      - name: Every class is mapped
+        run: python3 scripts/select-ui-tests.py check

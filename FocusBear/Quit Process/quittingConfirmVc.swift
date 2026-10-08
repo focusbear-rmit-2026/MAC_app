@@ -365,7 +365,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             
             let logType = "Quit"
             let activity = ""
-            UserDefaults.standard.set("I've got an emergency", forKey: kUserDefaultsLastQuitReason)
+            SensitiveDefaults.set("I've got an emergency", forKey: kUserDefaultsLastQuitReason)
             addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I've got an emergency", feedback: "", tags:"")
 
             allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":"I've got an emergency", "usageStartDate":getFirstRunDateString(), "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled()])
@@ -380,7 +380,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             }else if popUpBtnAppNotWorking.indexOfSelectedItem == reasonBlockingIndex{
                 quitReason = quitReason + " " + "The blocking features are not working properly"
             }
-            UserDefaults.standard.set(quitReason, forKey: kUserDefaultsLastQuitReason)
+            SensitiveDefaults.set(quitReason, forKey: kUserDefaultsLastQuitReason)
             allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":quitReason, "usageStartDate":getFirstRunDateString(), "feedback":self.textView.string, "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled()])
             
         }else if self.popUpBtnReasons.indexOfSelectedItem == self.haveMeetingReasonIndex{
@@ -388,7 +388,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             
             let logType = "Quit"
             let activity = ""//
-            UserDefaults.standard.set("I have a meeting", forKey: kUserDefaultsLastQuitReason)
+            SensitiveDefaults.set("I have a meeting", forKey: kUserDefaultsLastQuitReason)
             addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I have a meeting", feedback: "", tags:"")
             allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":"I have a meeting", "usageStartDate":getFirstRunDateString(), "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled()])
         }else if self.popUpBtnReasons.indexOfSelectedItem == self.someOneElseReasonIndex{
@@ -396,26 +396,26 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             
             let logType = "Quit"
             let activity = ""
-            UserDefaults.standard.set("Someone else is using my computer", forKey: kUserDefaultsLastQuitReason)
+            SensitiveDefaults.set("Someone else is using my computer", forKey: kUserDefaultsLastQuitReason)
             addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Someone else is using my computer", feedback: "", tags:"")
             allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":"Someone else is using my computer", "usageStartDate":getFirstRunDateString(), "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled()])
         }else if self.popUpBtnReasons.indexOfSelectedItem == self.appAnnoyingReasonIndex{
             addLog(text: "App Quit - I'm finding Focus Bear annoying")
-            UserDefaults.standard.set("I'm finding Focus Bear annoying", forKey: kUserDefaultsLastQuitReason)
+            SensitiveDefaults.set("I'm finding Focus Bear annoying", forKey: kUserDefaultsLastQuitReason)
             allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":"I'm finding Focus Bear annoying", "usageStartDate":getFirstRunDateString(), "feedback":self.textView.string, "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled()])
         }else if self.popUpBtnReasons.indexOfSelectedItem == self.wantToRelaxReasonIndex{
             addLog(text: "App Quit - I want to relax for a while without restrictions")
             
             let logType = "Quit"
             let activity = ""
-            UserDefaults.standard.set("I want to relax for a while without restrictions", forKey: kUserDefaultsLastQuitReason)
+            SensitiveDefaults.set("I want to relax for a while without restrictions", forKey: kUserDefaultsLastQuitReason)
             addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I want to relax for a while without restrictions", feedback: "", tags:"")
             allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":"I want to relax for a while without restrictions", "usageStartDate":getFirstRunDateString(), "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled()])
         }else if self.popUpBtnReasons.indexOfSelectedItem == self.somethingElseReasonIndex{
             addLog(text: "App Quit - Something else")
             let logType = "Quit"//
             let activity = ""
-            UserDefaults.standard.set("Something else", forKey: kUserDefaultsLastQuitReason)
+            SensitiveDefaults.set("Something else", forKey: kUserDefaultsLastQuitReason)
             
             addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Something else", feedback: self.textView.string, tags:"")
             allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":"Something else", "usageStartDate":getFirstRunDateString(), "feedback":self.textView.string, "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled()])
@@ -423,7 +423,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             addLog(text: "App Quit - quit immediately")
             let logType = "Quit"//
             let activity = ""
-            UserDefaults.standard.set("Quit immediately", forKey: kUserDefaultsLastQuitReason)
+            SensitiveDefaults.set("Quit immediately", forKey: kUserDefaultsLastQuitReason)
             
             addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Quit immediately", feedback: "", tags:"")
             allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":"Quit immediately", "usageStartDate":getFirstRunDateString(), "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled()])

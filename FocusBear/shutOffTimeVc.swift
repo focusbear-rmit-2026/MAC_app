@@ -109,7 +109,7 @@ class shutOffTimeVc: NSViewController {
     func resetView(){
         bottomSpaceLblAlreadyUnlocked.constant = 30
         lblAlreadyUnlocked.isHidden = true
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{//} && isCutOffTimeGoing(){
+        if !SettingsManagerObject.isAppPasswordSet{//} && isCutOffTimeGoing(){
             // if user has not unlocked today
             if let date = UserDefaults.standard.object(forKey: kUserdefaultsLastShutdownAbortedDate) as? Date{
                 if Date().compare(date) == .orderedAscending {
@@ -150,8 +150,8 @@ class shutOffTimeVc: NSViewController {
             shutOffdate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
         }
         
-        let startDateString = getStringFromDate(date: startDate, dateFormat: timeFormat)
-        let shutOffDateString = getStringFromDate(date: shutOffdate, dateFormat: timeFormat)
+        let startDateString = getDisplayStringFromDate(date: startDate, dateFormat: timeFormat)
+        let shutOffDateString = getDisplayStringFromDate(date: shutOffdate, dateFormat: timeFormat)
         
         
         lblSubTitle.stringValue = "You told me you wanted to stay off your computer from \(shutOffDateString) to \(startDateString). Enjoy your evening and sleep well. Look forward to helping you with your morning routine tomorrow."
@@ -254,7 +254,7 @@ class shutOffTimeVc: NSViewController {
     /// honours that specific rule too — not only the abort-shutoff one. Without this, a user with only
     /// the postpone-after-cutoff password rule on could unlock past cutoff with no password. Shared by
     /// every shutoff-screen button that can unlock/postpone past the cutoff (Unlock computer, Work
-    /// emergency, Start morning routine early) so none of them can bypass the rule the other two honour.
+    /// emergency). Starting the morning routine early is allowed without unlocking the computer.
     private func shouldGateShutoffAction() -> Bool {
         let postponeAfterCutoff = isCutOffTimeGoing() && SettingsManagerObject.isPasswordRequireInPostponeEveningAfterCutOff
         return SettingsManagerObject.isPasswordRequireInAbortShutoff || postponeAfterCutoff
@@ -263,7 +263,7 @@ class shutOffTimeVc: NSViewController {
     @IBAction func btnGetAccessNowClicked(_ sender: Any) {
         addLog(text:"[user-action] btnGetAccessNowClicked")
         
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
+        if !SettingsManagerObject.isAppPasswordSet{
             // if user has not unlocked today
             var shouldAbortShutDownInOneClick = true
             if let date = UserDefaults.standard.object(forKey: kUserdefaultsLastShutdownAbortedDate) as? Date{
@@ -530,7 +530,7 @@ class shutOffTimeVc: NSViewController {
     
     func startMorningRoutineClicked(){
         var jsonResult = NSDictionary()
-        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+        if let stringDic = SensitiveDefaults.object(forKey: kUserdefaultsSelectedJson) as? String {
             if let data = stringDic.data(using: String.Encoding.utf8) {
                 do {
                     jsonResult = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
@@ -579,7 +579,7 @@ class shutOffTimeVc: NSViewController {
                             print(jsonResultData)
                             
                             if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
-                                UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                SensitiveDefaults.set(backToString, forKey: kUserdefaultsSelectedJson)
                                 
                             }
                         } catch let myJSONError {
@@ -611,16 +611,9 @@ class shutOffTimeVc: NSViewController {
 
     @IBAction func btnStartMorningRoutineClicked(_ sender: Any) {
         addLog(text: "[user-action] btnStartMorningRoutineClicked")
-        if shouldAskPassword(){
-            if shouldGateShutoffAction(){
-                showPasswordReason = passwordReason._START_EVENING_ROUTINE_
-                mainViewControllerObj!.showPasswordView()
-            }else{
-                startMorningRoutineClicked()
-            }
-        }else{
-            startMorningRoutineClicked()
-        }
+        // Starting the morning routine is permitted even while shutoff is active.
+        // The unlock/postpone rules still protect Unlock computer and Work emergency.
+        startMorningRoutineClicked()
     }
     
     @IBAction func btnShutDownMacClicked(_ sender: Any) {

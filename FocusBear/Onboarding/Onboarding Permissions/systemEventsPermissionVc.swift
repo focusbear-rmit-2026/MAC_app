@@ -8,6 +8,20 @@
 
 import Cocoa
 
+// Why the consent-prompt loop happened here:
+//
+// This screen used to detect the System Events Automation grant by polling
+// checkAutomationPermissionWithAppleScript() on a 1-second repeating timer. That helper runs an
+// AppleScript against System Events, and the AppleScript layer was switched to runAppleScriptSafely
+// (which enforces a ~5s timeout). With the OS consent dialog still pending, each poll's script
+// blocks, times out after ~5s, and the next tick fires another one — so the dialog kept being
+// re-triggered / torn down, appearing then vanishing every couple of seconds in a loop.
+//
+// Fix: don't poll. Request the grant with a single BLOCKING
+// AEDeterminePermissionToAutomateTarget(com.apple.systemevents, askUserIfNeeded: true) — it shows
+// the dialog once and waits for the user's answer, no AppleScript involved. (Same fix as the
+// browser-permission screen; see onboardingControllingBrowserVc.) System Events must be launched
+// first or that call returns procNotFound (-600) — see ensureSystemEventsRunningForAutomation().
 class systemEventsPermissionVc: NSViewController {
     
     @IBOutlet weak var btnImagePermission: cursorButton!
@@ -25,9 +39,15 @@ class systemEventsPermissionVc: NSViewController {
     var bubbleView:BubbleView?
     var distractionBlockingProgressVcObj:distractionBlockingProgressVc?
     var permissionSet = false
+    /// True while the blocking System-Events consent prompt is on screen — guards against
+    /// re-requesting (which would stack/loop dialogs) on repeated taps.
+    var isRequestInFlight = false
+    /// After a denial we poll (non-prompting) so a manual toggle in System Settings reflects here.
+    var grantPollTimer: Timer?
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        btnGrantPermission.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.systemEventsOpenSettingsButton)
         // Do view setup here.
         if #available(macOS 13.0, *) {
             lblDescription.stringValue = "If you've previously denied permission for system events, please open System Preferences, locate the Focus Bear icon under System Preferences > Privacy & Security > Automation, and toggle its checkbox on."
@@ -70,6 +90,9 @@ class systemEventsPermissionVc: NSViewController {
     }
     
     override func viewDidAppear() {
+        // A granted background agent may have exited idle before this screen opened. Detect its
+        // actual status without requiring another click or opening another consent dialog.
+        startGrantPolling()
         showOnboardingBellIcon(view: self.view, screen: "system-events-permission-screen")
         
         // Show bubble
@@ -85,6 +108,7 @@ class systemEventsPermissionVc: NSViewController {
     }
     
     override func viewWillDisappear() {
+        stopGrantPolling()
         hideOnboardingBellIcon(view: self.view)
     }
     
@@ -118,58 +142,6 @@ class systemEventsPermissionVc: NSViewController {
         }
     }
     
-    var currentTimer = 0
-    var totalDuration = 0
-    var timer:Timer?
-    func startTimer() {
-        totalDuration = 10
-        self.timer?.invalidate()
-        self.timer = nil
-        DispatchQueue.global().sync {
-            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
-        }
-    }
-    @objc func performTimerCount() {
-        currentTimer += 1
-        DispatchQueue.main.async { [self] in
-            if checkAutomationPermissionWithAppleScript() {
-                self.timer?.invalidate()
-                menuViewControllerObj?.systemEventsPermissionGiven = true
-                self.getDistractionBlockingProgressVcObj().setProgress(level: 3, progress: 0.5)
-                self.btnGrantPermission.title = "Proceed"
-                lblTitle.stringValue = "Well done, sorting that with your bear hands!"
-                lblSubTitle.stringValue = "Systems events permissions have been granted."
-                
-                if let systemEventsPermissionVcInfo = configjson.value(forKey: "systemEventsPermissionVcInfo") as? NSDictionary{
-                    lblTitle.stringValue = systemEventsPermissionVcInfo.value(forKey: "titlePermissionsGrantedNew") as? String ?? lblTitle.stringValue
-                    lblSubTitle.stringValue = systemEventsPermissionVcInfo.value(forKey: "subTitlePermissionsGrantedNew") as? String ?? lblSubTitle.stringValue
-                    btnGrantPermission.title = systemEventsPermissionVcInfo.value(forKey: "buttonProceed") as? String ?? btnGrantPermission.title
-                }
-                
-                imgViewTick.isHidden = false
-                btnImagePermission.isHidden = true
-                imgViewPermission.alphaValue = 0.5
-                permissionSet = true
-                imgViewBear.isHidden = true
-                bubbleView?.isHidden = true
-                btnInfo.isHidden = true
-            } else {
-                print("Automation permission for System Events is not granted.")
-            }
-        }
-        if currentTimer >= 5{
-            self.lblDescription.isHidden = false
-        }
-        if currentTimer >= totalDuration{
-            DispatchQueue.main.async {
-                self.timer?.invalidate()
-                self.btnContinue.isHidden = false
-            }
-        }
-    }
-    
-    
     @IBAction func btnInfoClicked(_ sender: hoverInfoButton) {
         var msg = "We need System Events permission to: block distractions from full screen apps and to show a blur over distracting sites"
         if let systemEventsPermissionVcInfo = configjson.value(forKey: "systemEventsPermissionVcInfo") as? NSDictionary{
@@ -195,14 +167,100 @@ class systemEventsPermissionVc: NSViewController {
             }
         }else{
             addLog(text: "[user-action] systemEventsPermissionVc:- Button Grant Permission clicked")
-            startTimer()
-            if checkAutomationPermissionWithAppleScript() {
-                print("Automation permission for System Events is granted.")
-            } else {
-                print("Automation permission for System Events is not granted.")
+            requestSystemEventsPermission()
+        }
+
+    }
+
+    /// Request System Events Automation permission with a single BLOCKING prompt: shows the OS
+    /// consent dialog once and waits for the user's answer. Mirrors the browser-permission fix —
+    /// polling with checkAutomationPermissionWithAppleScript() re-triggered/cancelled the dialog
+    /// every tick (it runs AppleScript via runAppleScriptSafely, ~5s timeout), so the prompt kept
+    /// showing then vanishing in a loop. isRequestInFlight guards against double-taps.
+    func requestSystemEventsPermission() {
+        guard !isRequestInFlight, beginSystemEventsAutomationRequest() else { return }
+        stopGrantPolling()
+        isRequestInFlight = true
+        let target = NSAppleEventDescriptor(bundleIdentifier: "com.apple.systemevents")
+        DispatchQueue.global().async {
+            // AEDeterminePermissionToAutomateTarget returns procNotFound (-600) if the target app
+            // isn't running. System Events is a faceless agent, so launch it and wait first.
+            ensureSystemEventsRunningForAutomation()
+            let status = AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, true)
+            DispatchQueue.main.async {
+                self.isRequestInFlight = false
+                finishSystemEventsAutomationRequest(status: status)
+                guard self.isViewLoaded, self.view.window != nil else { return }
+                if status == noErr {
+                    addLog(text: "System Events automation granted")
+                    self.applyGrantedState()
+                } else {
+                    addLog(text: "System Events explicit request completed: status=\(status) result=\(SystemEventsAutomationResult(status: status).rawValue)")
+                    // Surface the help text + the "I can't grant" escape button, and start polling
+                    // so a manual grant in System Settings (after this denial) reflects here.
+                    self.lblDescription.isHidden = false
+                    self.btnContinue.isHidden = false
+                    self.startGrantPolling()
+                }
             }
         }
-        
+    }
+
+    /// After a denial, poll (WITHOUT prompting) so a manual toggle in System Settings > Privacy &
+    /// Security > Automation is picked up here. This is safe — there is no consent dialog pending at
+    /// this point (the blocking request already resolved), so AEDetermine(askUserIfNeeded:false)
+    /// only reads the status and can't dismiss anything. The poll is skipped while another blocking
+    /// request is in flight.
+    func startGrantPolling() {
+        stopGrantPolling()
+        grantPollTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            if self.isRequestInFlight || isSystemEventsAutomationRequestInFlight || self.permissionSet { return }
+            DispatchQueue.global().async {
+                ensureSystemEventsRunningForAutomation()
+                guard !isSystemEventsAutomationRequestInFlight else { return }
+                let target = NSAppleEventDescriptor(bundleIdentifier: "com.apple.systemevents")
+                let status = AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, false)
+                recordSystemEventsAutomationStatus(status)
+                if status == noErr {
+                    DispatchQueue.main.async {
+                        guard !self.permissionSet, !self.isRequestInFlight, self.isViewLoaded, self.view.window != nil else { return }
+                        addLog(text: "System Events automation granted (detected via polling after manual change)")
+                        self.applyGrantedState()
+                    }
+                }
+            }
+        }
+    }
+
+    func stopGrantPolling() {
+        grantPollTimer?.invalidate()
+        grantPollTimer = nil
+    }
+
+    /// Apply the "granted" UI (tick over the screenshot, progress, Proceed). Shared by the
+    /// blocking request above (and previously the polling timer).
+    func applyGrantedState() {
+        stopGrantPolling()
+        menuViewControllerObj?.systemEventsPermissionGiven = true
+        self.getDistractionBlockingProgressVcObj().setProgress(level: 3, progress: 0.5)
+        self.btnGrantPermission.title = "Proceed"
+        lblTitle.stringValue = "Well done, sorting that with your bear hands!"
+        lblSubTitle.stringValue = "Systems events permissions have been granted."
+
+        if let systemEventsPermissionVcInfo = configjson.value(forKey: "systemEventsPermissionVcInfo") as? NSDictionary{
+            lblTitle.stringValue = systemEventsPermissionVcInfo.value(forKey: "titlePermissionsGrantedNew") as? String ?? lblTitle.stringValue
+            lblSubTitle.stringValue = systemEventsPermissionVcInfo.value(forKey: "subTitlePermissionsGrantedNew") as? String ?? lblSubTitle.stringValue
+            btnGrantPermission.title = systemEventsPermissionVcInfo.value(forKey: "buttonProceed") as? String ?? btnGrantPermission.title
+        }
+
+        imgViewTick.isHidden = false
+        btnImagePermission.isHidden = true
+        imgViewPermission.alphaValue = 0.5
+        permissionSet = true
+        imgViewBear.isHidden = true
+        bubbleView?.isHidden = true
+        btnInfo.isHidden = true
     }
     
     @IBAction func btnImagePermissionClicked(_ sender: Any) {

@@ -182,6 +182,10 @@ let kUserdefaultsOnboardingIncompleted = "kUserdefaultsOnboardingIncompleted"
 
 var kUserdefaultsStartMainAppIfNotRunning = "kUserdefaultsStartMainAppIfNotRunning"
 
+// #2575: a Date written by the main app (scheduleMainAppRestart). When set, this helper relaunches the
+// main app once the time passes, then clears it. Must match the constant in FocusBear/allUserdefaults.swift.
+let kUserdefaultsMainAppScheduledRestartDate = "kUserdefaultsMainAppScheduledRestartDate"
+
 let appdelegate = NSApplication.shared.delegate as? AppDelegate
 
 
@@ -271,88 +275,21 @@ extension Bundle {
     }
 }
 
-var baseUrl = "https://api.focusbear.io"//"https://api.aws.focusbear.io" // todo //  //https://api.focusbear.io"
-
-func captureEventEndpoint (event:String, metadata:[String:Any]){
-    addLog(text: "captureEventEndpoint event: \(event)")
-    
-    let responsePath = "\(baseUrl)/events"
-    if let responsePathUrl = NSURL(string: responsePath){
-        guard sharedDefaults?.object(forKey: kUserdefaultsSharedAccessToken) != nil else{
-            addLog(text: "func call:- captureEventEndpoint return:- no accessToken found")
-            return
-        }
-        let request = makeRequest(responsePathUrl: responsePathUrl)
-        request.httpMethod = "POST";
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        var distinct_id = ""
-        if let userId = sharedDefaults?.object(forKey: kUserdefaultsSharedUserId) as? String {
-            distinct_id = userId
-        }else{
-            return;
-        }
-        
-        var properties = [String:Any]()
-        
-        
-        
-        for key in metadata.keys{
-            properties[key] = metadata[key]
-        }
-        var event_data = [String : Any]()
-        event_data = ["data":properties]
-        
-        let json: [String: Any] = [
-            "event_type": event,
-            "user_properties": [
-                "USERNAME": sharedDefaults?.object(forKey: kUserdefaultsSharedUserName) as? String ?? "",
-                "id": distinct_id,
-                "USES_MAC_APP": true
-            ],
-            "event_data": event_data
-        ]
-
-        let jsonData = try? JSONSerialization.data(withJSONObject: json)
-        request.httpBody = jsonData
-        let task = URLSession.shared.dataTask(with: request as URLRequest) {
-            data, response, error in
-            
-            if let httpResponse = response as? HTTPURLResponse{
-                if httpResponse.statusCode == 204{ //it means it is right
-                    print("api call captureEventEndpoint success")
-                    // addLog(text: "api call captureEventEndpoint success")
-                    return;
-                }else{
-                    addLog(text: "api call captureEventEndpoint error:- statusCode is \(httpResponse.statusCode)")
-//                    self.writeJsonInLog(data: data)
-                    return
-                }
-            }
-            if error != nil {
-                addLog(text: "api call captureEventEndpoint error: \(error!.localizedDescription)")
-                return
-            }
-            
-            return
-        }
-        
-        task.resume()
-    }else{
-        
+/// Queues the event for the main app to send to `/events`: FBHelper holds no credentials.
+func captureEventEndpoint(event: String, metadata: [String: Any]) {
+    guard let sharedDefaults,
+          let userId = sharedDefaults.object(forKey: kUserdefaultsSharedUserId) as? String else {
+        addLog(text: "captureEventEndpoint skipped \(event): no user id")
         return
     }
+    HelperEventQueue(defaults: sharedDefaults).enqueue(event: event, metadata: metadata, userId: userId)
+    addLog(text: "captureEventEndpoint queued \(event)")
 }
 
 func capturePosthog(event:String, metadata:[String:Any]){
-    if let currentUserEmail = sharedDefaults?.object(forKey: kUserdefaultsSharedUserEmail) as? String{
-        if currentUserEmail.lowercased().contains("internaltest") || isTestUser{
-            return;
-        }
-    }else{
-        if isTestUser{
-            return;
-        }
+    let isInternalTestUser = sharedDefaults.map(InternalTestUser.isRecorded(in:)) ?? false
+    if isInternalTestUser || isTestUser {
+        return
     }
     
     captureEventEndpoint(event: event, metadata: metadata)
@@ -438,19 +375,6 @@ func capturePosthog(event:String, metadata:[String:Any]){
 
 
 
-func makeRequest(responsePathUrl: NSURL)->NSMutableURLRequest{
-    let userId = sharedDefaults?.object(forKey: kUserdefaultsSharedUserId) as? String ?? ""
-    let token = sharedDefaults?.object(forKey: kUserdefaultsSharedAccessToken) as? String ?? ""
-    let currentDeviceId = sharedDefaults?.object(forKey: kUserdefaultsSharedCurrentDeviceId) as? String ?? ""
-    let request = NSMutableURLRequest(url:responsePathUrl as URL);
-    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-    request.addValue("mac-os", forHTTPHeaderField: "platform")
-    request.addValue(sharedDefaults?.object(forKey: kUserdefaultsSharedAppVersion) as? String ?? "", forHTTPHeaderField: "app-version")
-    request.addValue(userId, forHTTPHeaderField: "x-focus-bear-user-id")
-    request.addValue(currentDeviceId, forHTTPHeaderField: "device-id")
-    request.addValue(currentDeviceId, forHTTPHeaderField: "device_id")
-    return request
-}
 
 
 

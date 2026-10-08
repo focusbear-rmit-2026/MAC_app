@@ -94,7 +94,9 @@ var kUserdefaultsEditBlockedUrlsOnce = "kUserdefaultsEditBlockedUrlsOnce"
 var kUserdefaultsShutOffCancelledForEveningRoutine = "kUserdefaultsShutOffCancelledForEveningRoutine"
 var kUserdefaultsLastFocusSavedIntention = "kUserdefaultsLastFocusSavedIntention"
 
-var kUserdefaultsAllFocusModesTags = "kUserdefaultsAllFocusModesTags"
+/// The unsuffixed key: sign-in appends the user id to `kUserdefaultsAllFocusModesTags` (SecureStore registers the base).
+let kUserdefaultsAllFocusModesTagsBase = "kUserdefaultsAllFocusModesTags"
+var kUserdefaultsAllFocusModesTags = kUserdefaultsAllFocusModesTagsBase
 var kUserdefaultsIsAppEnabled = "kUserdefaultsIsAppEnabled"
 var kUserdefaultsLastAppAbortedDate = "kUserdefaultsLastAppAbortedDate"
 var kUserdefaultsLastFocusModeDoneDate = "kUserdefaultsLastFocusModeDoneDate"
@@ -128,7 +130,9 @@ var kUserdefaultsBlockedAppsFromOnboarding = "kUserdefaultsBlockedAppsFromOnboar
 
 //var kUserdefaultsSelectedFolder = "kUserdefaultsSelectedFolder"
 
-var kUserdefaultsArrFocusTypes = "kUserdefaultsArrFocusTypes"
+/// The unsuffixed key: sign-in appends the user id to `kUserdefaultsArrFocusTypes` (SecureStore registers the base).
+let kUserdefaultsArrFocusTypesBase = "kUserdefaultsArrFocusTypes"
+var kUserdefaultsArrFocusTypes = kUserdefaultsArrFocusTypesBase
 var kUserdefaults24HoursClearPasswordTime = "kUserdefaults24HoursClearPasswordTime"
 var kUserdefaultsSelectedLanguage = "kUserdefaultsSelectedLanguage"
 var kUserdefaultsScreenTimeEnabled = "kUserdefaultsScreenTimeEnabled"
@@ -137,7 +141,13 @@ let kUserdefaultsFocusAddedFromFirstHabit = "kUserdefaultsFocusAddedFromFirstHab
 //var kUserdefaultsDontShowToolBoxAutomatically = "kUserdefaultsShowToolBoxAutomatically"
 //var kUserdefaultsDontShowToolBoxAutomaticallyForActivity = "kUserdefaultsDontShowToolBoxAutomaticallyForActivity"
 
-var kUserdefaultsFocusModeNotes = "kUserdefaultsFocusModeNotes"
+/// The unsuffixed key: sign-in appends the user id to `kUserdefaultsFocusModeNotes` (SecureStore registers the base).
+let kUserdefaultsFocusModeNotesBase = "kUserdefaultsFocusModeNotes"
+var kUserdefaultsFocusModeNotes = kUserdefaultsFocusModeNotesBase
+
+// #2142: set once the saved local brain dump has been migrated to the backend (PUT /note). After that
+// the native Notes view (FocusBear/Notes) loads the brain dump from the API, so we never re-seed it.
+var kUserdefaultsBrainDumpSentToWebView = "kUserdefaultsBrainDumpSentToWebView"
 
 let kUserdefaultsFocusCompletedTourShown = "kUserdefaultsFocusCompletedTourShown"
 
@@ -162,9 +172,15 @@ var kUserdefaultsDisableBreaksForToday = "kUserdefaultsDisableBreaksForToday"
 
 var kUserdefaultsIsHabitsDisabledFromOnboarding = "kUserdefaultsIsHabitsDisabledFromOnboarding"
 
-var kUserdefaultsLastHabitSavedNotes = "kUserdefaultsLastHabitSavedNotes"
-var kUserdefaultsLastActivitySavedNotes = "kUserdefaultsLastActivitySavedNotes"
-var kUserdefaultsLastCustomRoutineHabitSavedNotes = "kUserdefaultsLastCustomRoutineHabitSavedNotes"
+/// The unsuffixed key: sign-in appends the user id to `kUserdefaultsLastHabitSavedNotes` (SecureStore registers the base).
+let kUserdefaultsLastHabitSavedNotesBase = "kUserdefaultsLastHabitSavedNotes"
+var kUserdefaultsLastHabitSavedNotes = kUserdefaultsLastHabitSavedNotesBase
+/// The unsuffixed key: sign-in appends the user id to `kUserdefaultsLastActivitySavedNotes` (SecureStore registers the base).
+let kUserdefaultsLastActivitySavedNotesBase = "kUserdefaultsLastActivitySavedNotes"
+var kUserdefaultsLastActivitySavedNotes = kUserdefaultsLastActivitySavedNotesBase
+/// The unsuffixed key: sign-in appends the user id to `kUserdefaultsLastCustomRoutineHabitSavedNotes` (SecureStore registers the base).
+let kUserdefaultsLastCustomRoutineHabitSavedNotesBase = "kUserdefaultsLastCustomRoutineHabitSavedNotes"
+var kUserdefaultsLastCustomRoutineHabitSavedNotes = kUserdefaultsLastCustomRoutineHabitSavedNotesBase
 
 
 var kUserdefaultsLastSpecaialActivitySavedNotes = "kUserdefaultsLastSpecaialActivitySavedNotes"
@@ -183,8 +199,12 @@ var kUserdefaultsIsGlobalUUIDLinked = "kUserdefaultsIsGlobalUUIDLinked"
 var kUserdefaultsIsMacIdLinked = "kUserdefaultsIsMacIdLinked"
 
 var kUserdefaultsLastFocusModeStrictness = "kUserdefaultsLastFocusModeStrictness"
+// Whether the running focus session was started by the app (a Late No More meeting, or an
+// approved-postpone accountability buddy) rather than by the user. Persisted beside the strictness
+// above and restored with it, so an auto-started session stays stoppable after a relaunch.
+// See FocusSessionStopPermission.swift.
+var kUserdefaultsIsFocusSessionAutoStarted = "kUserdefaultsIsFocusSessionAutoStarted"
 
-var kUserdefaultsDontShowConfirmGeekModeAlert = "kUserdefaultsDontShowConfirmGeekModeAlert"
 // Suppresses the "Want to play some focus music?" prompt shown after a focus session starts.
 var kUserdefaultsDontAskFocusMusicPrompt = "kUserdefaultsDontAskFocusMusicPrompt"
 // The user's saved answer to the focus-music prompt: "ask" (default, prompt each focus session),
@@ -201,13 +221,19 @@ var kUserDefaultsBlockPageTourShowed = "kUserDefaultsBlockPageTourShowed"
 
 var kUserDefaultsHowHeardAboutApp = "kUserDefaultsHowHeardAboutApp"
 
-var kUserDefaultsLastQuitReason = "kUserDefaultsLastQuitReason"
+/// The unsuffixed key: sign-in appends the user id to `kUserDefaultsLastQuitReason` (SecureStore registers the base).
+let kUserDefaultsLastQuitReasonBase = "kUserDefaultsLastQuitReason"
+var kUserDefaultsLastQuitReason = kUserDefaultsLastQuitReasonBase
 var kUserdefaultsManageTaskFirstTime = "kUserdefaultsManageTaskFirstTime"
 
 
 var kUserdefaultsLastBreaksStartTime = "kUserdefaultsLastBreaksStartTime"
 var kUserdefaultsArrayBreaksDurations = "kUserdefaultsArrayBreaksDurations"
 var kUserdefaultsLastBreakEndTime = "kUserdefaultsLastBreakEndTime" // added on 24/7/25 v 1.26.394 //Mac app shows “Time since last break: 39m” but I actually had my laptop closed for 39m and just opened it now. It should show more like 2minutes
+// Wall-clock time the next break is due. Persisted so that plain stop/reschedule events (pause/resume,
+// settings reload, a deferred break) preserve how far the countdown has progressed instead of restarting
+// a full interval each time — otherwise the countdown can perpetually reset and breaks stop firing.
+var kUserdefaultsNextBreakDueTime = "kUserdefaultsNextBreakDueTime"
 
 
 var kUserDefaultsCustomGoals = "kUserDefaultsCustomGoals"
@@ -230,16 +256,24 @@ var kUserdefaultsFocusAllThingsExpanded = "kUserdefaultsFocusAllThingsExpanded"
 
 var kUserdefaultsStartMainAppIfNotRunning = "kUserdefaultsStartMainAppIfNotRunning"
 
+// #2575: a Date in the shared suite. When set, the always-running helper (FBHelper) relaunches the main
+// app once this time passes, then clears the key. Written by scheduleMainAppRestart() when the user picks
+// "turn everything off until tomorrow". Must match the identical constant in FBHelper/globalFile.swift.
+let kUserdefaultsMainAppScheduledRestartDate = "kUserdefaultsMainAppScheduledRestartDate"
+
 var kUserdefaultsBrowsersTabAuditReportSaveDate = "kUserdefaultsBrowsersTabAuditReportSaveDate"
 
 var kUserdefaultsLastUnlockTimeByAccountabilityBuddy = "kLastUnlockTimeByAccountabilityBuddy"
-
-var kUserdefaultsUserShouldDoFirstFocusSesion = "kUserShouldDoFirstFocusSesion"
 
 
 
 var kUserDefaultsLastRoutinePostponeEndDate = "kLastRoutinePostponeEndDate" // v 2.28.454
 var kUserDefaultsLastRoutinePostponeState = "kLastRoutinePostponeState"// morning/ evening/ focus summary  // v 2.28.454
+// Set once the persisted routine postpone has been checked against the meeting-postpone cap — see
+// `PersistedPostponeRestore`.
+var kUserDefaultsPersistedPostponeCapChecked = "kPersistedPostponeCapChecked"
+// End date of the routine postpone a meeting focus session is covering — see `MeetingPostponeSession`.
+var kUserDefaultsMeetingSessionPostponeEndDate = "kMeetingSessionPostponeEndDate"
 
 var kUserDefaultsBlockingScheduleAddedFirstTime = "kBlockingScheduleAddedFirstTime"// v2.29.461
 
@@ -247,7 +281,6 @@ var kUserDefaultsBlockingScheduleAddedFirstTime = "kBlockingScheduleAddedFirstTi
 // login (see AppDelegate) — keeps each account's off-streak / frequency separate on a shared device.
 var kUserdefaultsBreakOffDates         = "kFBBreakOffDates"
 var kUserdefaultsBreakOffPromptShown   = "kFBBreakOffPromptShownDate"
-var kUserdefaultsBreakFrequencyMinutes = "kFBBreakFrequencyMinutes"
 
 var kUserdefaultsHiddenFocusModeIDs = "kHiddenFocusModeIDs"
 // IDs of TOOLS sidebar rows the user hid via the hover ✕ (restored via the TOOLS gear icon).
@@ -267,8 +300,18 @@ var kUserdefaultsIsGuestAccount = "kUserdefaultsIsGuestAccount"
 // WiFi profile auto-switching (#1000)
 let kUserdefaultsWiFiProfileMappings = "kFBWiFiProfileMappings"
 
+// Personal data SecureStore keeps encrypted (FocusBear/Security/SensitiveKeyRegistry.swift).
+let kUserdefaultsDayPlanTasksByDay = "dayPlanTasksByDay"
+let kUserdefaultsScheduleEventPrivateNotes = "scheduleEventPrivateNotes"
+let kUserdefaultsScheduleEventLocalOverrides = "scheduleEventLocalOverrides"
+let kUserdefaultsAiBlockingLogEntries = "aiBlockingLogEntries"
+let kAccountabilityBuddySessionPersistKey = "kAccountabilityBuddySessionPersist"
+/// SettingsManager appends the user id to its copies of these at sign-in.
+let kUserdefaultsArrBlockedUrlsBase = "kUserdefaultsArrBlockedUrls"
+let kUserdefaultsArrBlockedAppsBase = "kUserdefaultsArrBlockedApps"
+let kUserdefaultsArrAlwaysAllowedAppsBase = "kUserdefaultsArrAlwaysAllowedApps"
+let kUserdefaultsLocalDeviceSettingsBase = "kUserdefaultsLocalDeviceSettings"
 
-var kUserdefaultsBrainDumpSentToWebView = "kUserdefaultsBrainDumpSentToWebView"
 
 // Talking clock (#1674)
 var kUserdefaultsTalkingClockEnabled = "kUserdefaultsTalkingClockEnabled"

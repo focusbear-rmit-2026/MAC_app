@@ -34,7 +34,7 @@ class habitsStateVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        btnResumeHabits.setAccessibilityIdentifier(UITestContract.Identifier.Routine.primaryButton)
         lblTitle.stringValue = ""// v 2.28.453
         btnResumeHabits.title = "Resume Habits"
         
@@ -140,7 +140,7 @@ class habitsStateVc: NSViewController {
                 let (nextRoutine, nextRoutineName, nextRoutineIsEveningRoutine) = getNextRoutineInfo()
                 
                
-                let (dateString) = getStringFromDate(date: nextRoutine, dateFormat: getSystemTimeFormat())
+                let (dateString) = getDisplayStringFromDate(date: nextRoutine, dateFormat: getSystemTimeFormat())
                 var nextRoutineText = "Great job staying on track! Your next scheduled routine (<ROUTINE>) is set for <TIME>. Be ready to jump back in and continue building those healthy habits. You've got this!"
                 if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
                     nextRoutineText = habitsStateVcInfo.value(forKey: "nextRoutineText") as? String ?? nextRoutineText
@@ -176,7 +176,7 @@ class habitsStateVc: NSViewController {
                         
                         let startdate = Calendar.current.date(bySettingHour: startTime.hour, minute: startTime.minute, second: startTime.second, of: Date()) ?? Date()
                         
-                        let dateString = getStringFromDate(date: startdate, dateFormat: getSystemTimeFormat())
+                        let dateString = getDisplayStringFromDate(date: startdate, dateFormat: getSystemTimeFormat())
                         shutoffAbortedText = shutoffAbortedText.replacingOccurrences(of: "<TIME>", with: dateString)
                         lblTitle.stringValue = shutoffAbortedText
                         
@@ -217,7 +217,17 @@ class habitsStateVc: NSViewController {
             let currentDate = Date()
             let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
             let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
-            if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_  && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil{
+            // #2442: whenever there are no local Focus Bear UserDefaults for this device (a fresh install /
+            // new machine on first run, or after a ⌘⌃K data-clear) and the user signs in with an EXISTING
+            // account, kUserdefaultsStartRoutineButtonClicked/firstRunDate are absent so this looks brand-new
+            // — but the server reports today's morning routine as already completed. routinePostponedInfoVc's
+            // getLastActivityInfo sets isHabitAlreadyShowed=true from that server state, then re-navigates,
+            // re-entering reloadData; without the isHabitAlreadyShowed guard this block treats the returning
+            // user as fresh and re-shows routinePostponedInfoVc, whose viewDidAppear re-fires
+            // getMorningHabitsListAgain → tight infinite loop (loader flashes, app unresponsive). Skip the
+            // fresh-user routing once the routine is already done today: isHabitAlreadyShowed is the one
+            // flag sourced from the server rather than the (absent) local UserDefaults.
+            if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_ && !isHabitAlreadyShowed && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil{
                 lblTitle.stringValue = ""
                 if sameDay || !shouldDoHabits(){
                     btnResumeHabits.isHidden = false
@@ -261,7 +271,7 @@ class habitsStateVc: NSViewController {
                             
                             
                             isFreeTimeBeforeShutoff = true
-                            let cutOffDateString = getStringFromDate(date: cutOffdate, dateFormat: getSystemTimeFormat())
+                            let cutOffDateString = getDisplayStringFromDate(date: cutOffdate, dateFormat: getSystemTimeFormat())
                             var freeTimeText = "Well done finishing your evening routine 👏\nYour sleep time is <CUTOFFTIME>.\nYour next morning routine starts at <STARTTIME>.\nRest well and recharge for a strong start tomorrow 💪"
                             
                             btnResumeHabits.title = "Change timing"
@@ -271,7 +281,7 @@ class habitsStateVc: NSViewController {
                             }
                             let startdate = Calendar.current.date(bySettingHour: startTime.hour, minute: startTime.minute, second: startTime.second, of: Date()) ?? Date()
                             
-                            let dateString = getStringFromDate(date: startdate, dateFormat: getSystemTimeFormat())
+                            let dateString = getDisplayStringFromDate(date: startdate, dateFormat: getSystemTimeFormat())
                             freeTimeText = freeTimeText.replacingOccurrences(of: "<STARTTIME>", with: dateString)
                             freeTimeText = freeTimeText.replacingOccurrences(of: "<CUTOFFTIME>", with: cutOffDateString)
                             
@@ -465,7 +475,7 @@ class habitsStateVc: NSViewController {
 
                             if let cutOffTime = cutOffTime{
                                 let cutOffdate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date()) ?? Date()
-                                let cutOffDateString = getStringFromDate(date: cutOffdate, dateFormat: getSystemTimeFormat())
+                                let cutOffDateString = getDisplayStringFromDate(date: cutOffdate, dateFormat: getSystemTimeFormat())
                                 var freeTimeText = sleepTimeCancelledEveningRoutineWithUndo
                                 
                                 freeTimeText = freeTimeText.replacingOccurrences(of: "<CUTOFFTIME>", with: cutOffDateString)
@@ -483,7 +493,7 @@ class habitsStateVc: NSViewController {
                             
                             let startdate = Calendar.current.date(bySettingHour: startTime.hour, minute: startTime.minute, second: startTime.second, of: Date()) ?? Date()
                             
-                            let dateString = getStringFromDate(date: startdate, dateFormat: getSystemTimeFormat())
+                            let dateString = getDisplayStringFromDate(date: startdate, dateFormat: getSystemTimeFormat())
                             shutoffAbortedText = shutoffAbortedText.replacingOccurrences(of: "<TIME>", with: dateString)
                             
                             lblDescription.stringValue = shutoffAbortedText
@@ -503,7 +513,7 @@ class habitsStateVc: NSViewController {
                     if let startTime = startTime {
                         if let cutOffTime = cutOffTime{
                             let cutOffdate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date()) ?? Date()
-                            let cutOffDateString = getStringFromDate(date: cutOffdate, dateFormat: getSystemTimeFormat())
+                            let cutOffDateString = getDisplayStringFromDate(date: cutOffdate, dateFormat: getSystemTimeFormat())
                             var freeTimeText = sleepTimeCancelledEveningRoutineWithUndo
                             
                             freeTimeText = freeTimeText.replacingOccurrences(of: "<CUTOFFTIME>", with: cutOffDateString)
@@ -515,7 +525,7 @@ class habitsStateVc: NSViewController {
                         }
                         
                         let startdate = Calendar.current.date(bySettingHour: startTime.hour, minute: startTime.minute, second: startTime.second, of: Date()) ?? Date()
-                        let dateString = getStringFromDate(date: startdate, dateFormat: getSystemTimeFormat())
+                        let dateString = getDisplayStringFromDate(date: startdate, dateFormat: getSystemTimeFormat())
                         lblDescription.stringValue = nextMorningRoutineStartText
                         lblDescription.stringValue = lblDescription.stringValue.replacingOccurrences(of: "<STARTTIME>", with: dateString)
                         btnUnCancelRoutine.title = buttonUncancelEveningRoutine
@@ -525,7 +535,7 @@ class habitsStateVc: NSViewController {
                     let (nextRoutine, nextRoutineName, nextRoutineIsEveningRoutine) = getNextRoutineInfo()
                     
                    
-                    let (dateString) = getStringFromDate(date: nextRoutine, dateFormat: getSystemTimeFormat())
+                    let (dateString) = getDisplayStringFromDate(date: nextRoutine, dateFormat: getSystemTimeFormat())
                     var nextRoutineText = nextRoutineTimeCancelledMorningRoutineWithUndo
                     nextRoutineText = nextRoutineText.replacingOccurrences(of: "<ROUTINE>", with: nextRoutineName)
                     nextRoutineText = nextRoutineText.replacingOccurrences(of: "<TIME>", with: dateString)

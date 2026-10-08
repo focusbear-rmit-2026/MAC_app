@@ -28,6 +28,26 @@ class upgradeNowVc: NSViewController {
     @IBOutlet weak var imgView: NSImageView!
     @IBOutlet weak var btnInfo: hoverInfoButton!
     
+    /// A plain ✕ in the top-left. The only way out was the "Continue with limited features" link at the
+    /// very bottom, which does not read as "close this" — the window looked like something the user was
+    /// stuck in (report 2026-09-14_19-47-35). Same action as that link, just where a close control
+    /// belongs. Added in code because this screen is a storyboard scene.
+    private func addCloseButton() {
+        let close = NSButton(title: "✕", target: self, action: #selector(btnContinueClicked(_:)))
+        close.isBordered = false
+        close.font = .systemFont(ofSize: 15, weight: .medium)
+        close.contentTintColor = .secondaryLabelColor
+        close.toolTip = "Close"
+        close.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(close)
+        NSLayoutConstraint.activate([
+            close.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
+            close.topAnchor.constraint(equalTo: view.topAnchor, constant: 10),
+            close.widthAnchor.constraint(equalToConstant: 24),
+            close.heightAnchor.constraint(equalToConstant: 24),
+        ])
+    }
+
     var nagShownReason: String = ""
     var vcShownFromExpireUsageAlert = false
     var isViewVisible = false
@@ -58,6 +78,7 @@ class upgradeNowVc: NSViewController {
         lblPointThird.stringValue = "Customizable focus modes"
         lblPointFourth.stringValue = "Automatic goal tracking"
         btnUpgradeNow.title = "Upgrade Now"
+        addCloseButton()
         lblMoneyBack.stringValue = "30 days money back guarantee"
         lblSyncInfo.stringValue = "After you pay, click the Sync Payment Status button below"
         btnRestorePurchases.title = "Sync Payment Status"

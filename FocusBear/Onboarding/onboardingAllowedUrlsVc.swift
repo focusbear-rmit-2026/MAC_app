@@ -30,6 +30,10 @@ class onboardingAllowedUrlsVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        textFieldUrl.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.allowedUrlField)
+        btnAdd.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.allowedUrlAddButton)
+        btnContinue.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.allowedUrlsContinueButton)
+        btnSkip.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.allowedUrlsSkipButton)
         lblChangeThisLater.stringValue = "you can change this later"
         lblTitle.stringValue = "What websites do you use for work?"
         lblSubtitle.stringValue = "We'll use these to kick off your focus sessions."
@@ -59,7 +63,7 @@ class onboardingAllowedUrlsVc: NSViewController {
         //progress
         self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
         self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
-        getDistractionBlockingProgressVcObj().setProgress(level: 1, progress: 0.5)
+        getDistractionBlockingProgressVcObj().setProgress(level: 1, progress: 0.80)
         
 
         textFieldUrl.textColor = .labelColor
@@ -166,7 +170,8 @@ class onboardingAllowedUrlsVc: NSViewController {
     @IBAction func btnSkipClicked(_ sender: Any) {
         addLog(text: "[user-action] onboardingAllowedUrlsVc:- Button skip clicked")
         allApiObject.capturePosthog(event: "onboarding-allowed-urls-skipped", metadata: [:])
-        getOnboardingVcObject().navigate(to: ._BLOCKED_URLS_)
+        // Allowed URLs is the last blocking-config step → continue to the blocking schedule step.
+        getOnboardingVcObject().navigate(to: ._ASK_CREATE_BLOCKING_SCHEDULE_)
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
@@ -185,8 +190,9 @@ class onboardingAllowedUrlsVc: NSViewController {
             occupationSpecificRelevantSitesForFocusMode = [String:Any]()
             occupationSpecificRelevantSitesForFocusMode?["user_relevant_sites"] = arrAllowedUrls
         }
-        
-        getOnboardingVcObject().navigate(to: ._BLOCKED_URLS_)
+
+        // Allowed URLs is the last blocking-config step → continue to the blocking schedule step.
+        getOnboardingVcObject().navigate(to: ._ASK_CREATE_BLOCKING_SCHEDULE_)
     }
     
     @IBAction func btnCheckBoxSelectAllClicked(_ sender: NSButton) {
@@ -299,8 +305,11 @@ extension onboardingAllowedUrlsVc: NSOutlineViewDelegate, NSOutlineViewDataSourc
             
             if let url = data["url"] as? String {
                 cell.btnCheckBox.title = url
+                cell.btnCheckBox.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.allowedUrlCheckboxPrefix + url)
             }else if let category = data["category"] as? String{
                 cell.btnCheckBox.title = category
+                // Reused cells: a category row must not keep the site identifier of its last use.
+                cell.btnCheckBox.setAccessibilityIdentifier(nil)
             }
 
             return cell

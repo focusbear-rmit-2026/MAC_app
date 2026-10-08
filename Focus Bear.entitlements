@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Debug/CI entitlements. Deliberately WITHOUT keychain-access-groups: that is a restricted
+  entitlement and macOS SIGKILLs a process claiming it without a provisioning profile that
+  grants it, which ad-hoc builds do not embed. The signed Release build uses
+  "Focus Bear-Release.entitlements" — keep the two in sync when adding anything else.
+-->
 <plist version="1.0">
 <dict>
 	<key>com.apple.security.automation.apple-events</key>

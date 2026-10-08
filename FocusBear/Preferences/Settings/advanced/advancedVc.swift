@@ -113,7 +113,16 @@ class advancedVc: NSViewController {
         arrForSearchFromSettings.append(["title": addOnsItemVcObj!.lblTitle.stringValue, "tabId": idAdvanced, "object": addOnsItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": talkingClockListItemVcObj!.lblTitle.stringValue, "tabId": idAdvanced, "object": talkingClockListItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": researchItemVcObj!.lblTitle.stringValue, "tabId": idAdvanced, "object": researchItemVcObj!.bgBox as Any])
+        identifyRowsForUITests()
+    }
 
+    private func identifyRowsForUITests() {
+        let rows: [(settingListItemVc?, String)] = [(meetingsListItemVcObj, idMeetings), (privacyListItemVcObj, idPrivacy),
+                                                     (addOnsItemVcObj, idAddOns), (talkingClockListItemVcObj, idTalkingClock),
+                                                     (researchItemVcObj, idResearch)]
+        for (row, pageId) in rows {
+            row?.btnRow.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.advancedRowPrefix + pageId)
+        }
     }
     override func viewWillAppear() {
         if settingsSideBarVcObj != nil{

@@ -9,6 +9,19 @@
 import Cocoa
 import Auth0
 
+/// The email + password sign-in request. Shared by the login screen and the UI-test session seed so
+/// both authenticate exactly the same way.
+enum PasswordSignIn {
+    private static let connection = "Username-Password-Authentication"
+    private static let audience = "https://auth.focusbear.io/api/v2/"
+    private static let scope = "openid profile email offline_access"
+
+    static func request(email: String, password: String, session: URLSession = .shared) -> Request<Credentials, AuthenticationError> {
+        Auth0.authentication(session: session).login(usernameOrEmail: email, password: password,
+                                                     realmOrConnection: connection, audience: audience, scope: scope)
+    }
+}
+
 class customLoginVc: NSViewController {
 
     
@@ -176,8 +189,19 @@ class customLoginVc: NSViewController {
         textFieldConfirmPasword.delegate = self
         secureTextFieldPassword.delegate = self
         secureTextFieldConfirmPassword.delegate = self
-        
-        
+        textFieldEmail.setAccessibilityIdentifier(UITestContract.Identifier.Login.emailField)
+        secureTextFieldPassword.setAccessibilityIdentifier(UITestContract.Identifier.Login.passwordField)
+        btnSignIn.setAccessibilityIdentifier(UITestContract.Identifier.Login.signInButton)
+        secureTextFieldConfirmPassword.setAccessibilityIdentifier(UITestContract.Identifier.Login.confirmPasswordField)
+        btnCreateAccount.setAccessibilityIdentifier(UITestContract.Identifier.Login.createAccountButton)
+        btnShowPassword.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.showPasswordButton)
+        textFieldPassword.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.plainPasswordField)
+        btnForgotPassword.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.forgotPasswordButton)
+        btnSignUp.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.switchToSignUpButton)
+        btnSignInBottom.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.switchToSignInButton)
+        btnBack.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.formBackButton)
+        lblTitlePasswordRules.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.passwordRules)
+
         btnShowPasswordTrackingArea = NSTrackingArea.init(rect: btnShowPassword.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         btnShowPassword.addTrackingArea(btnShowPasswordTrackingArea!)
         
@@ -459,13 +483,7 @@ class customLoginVc: NSViewController {
         textFieldPassword.isEnabled = false
         self.btnBack.isEnabled = false
         self.btnForgotPassword.isEnabled = false
-        Auth0
-            .authentication()
-            .login(usernameOrEmail: email,
-                   password: password,
-                   realmOrConnection: "Username-Password-Authentication",
-                   audience:"https://auth.focusbear.io/api/v2/",
-                   scope: "openid profile email offline_access")
+        PasswordSignIn.request(email: email, password: password)
             .start { result in
                 
                 DispatchQueue.main.async {
@@ -713,13 +731,7 @@ class customLoginVc: NSViewController {
                     print("User signed up: \(user)")
                     allApiObject.capturePosthog(event: "register-homemade", metadata: [:])
                     DispatchQueue.main.async {
-                    Auth0
-                        .authentication()
-                        .login(usernameOrEmail: email,
-                               password: password,
-                               realmOrConnection: "Username-Password-Authentication",
-                               audience:"https://auth.focusbear.io/api/v2/",
-                               scope: "openid profile email offline_access")
+                    PasswordSignIn.request(email: email, password: password)
                         .start { result in
                             
                             DispatchQueue.main.async {
@@ -865,6 +877,7 @@ class customLoginVc: NSViewController {
         alert.informativeText = text
         alert.alertStyle = NSAlert.Style.warning
         alert.addButton(withTitle: buttonOkText)
+        alert.window.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.formAlert)
 
         alert.beginSheetModal(for: view.window!, completionHandler: { (modalResponse) in
             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){

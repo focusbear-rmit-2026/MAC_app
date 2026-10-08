@@ -1,0 +1,37 @@
+{
+  "configurations": [
+    {
+      "id": "6A1F1B0C-5E53-4F1B-9C2D-1A0000000001",
+      "name": "Smoke",
+      "options": {}
+    }
+  ],
+  "defaultOptions": {
+    "testTimeoutsEnabled": true,
+    "defaultTestExecutionTimeAllowance": 300,
+    "maximumTestExecutionTimeAllowance": 300
+  },
+  "testTargets": [
+    {
+      "target": {
+        "containerPath": "container:FocusBear.xcodeproj",
+        "identifier": "F0CB0A000000000000000001",
+        "name": "Focus BearUITests"
+      },
+      "selectedTests": [
+        "A0AccountCleanupUITests/testLeftoversFromEarlierRunsAreRemoved()",
+        "AuthUITests/testSignInWithEmailAndPassword()",
+        "LaunchAndNavigationUITests/testLoggedOutLaunchOffersSignIn()",
+        "LaunchAndNavigationUITests/testSidebarShowsTheMainDestinations()",
+        "DayPlanAndToDoUITests/testDayPlanAddAndCompleteTask()",
+        "DayPlanAndToDoUITests/testToDoAddCompleteAndDelete()",
+        "FocusSessionUITests/testStartAndEndASession()",
+        "SettingsUITests/testAToggleRoundTrips()",
+        "BlockingAndRoutineUITests/testBlockListsOpen()",
+        "ToolsUITests/testMenuBarPopoverOffersTheMainActions()",
+        "KeyboardDefaultsUITests/testSignInFormTabGoesFromEmailToPassword()"
+      ]
+    }
+  ],
+  "version": 1
+}

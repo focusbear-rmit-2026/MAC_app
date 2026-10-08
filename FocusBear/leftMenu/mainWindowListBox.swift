@@ -9,7 +9,7 @@
 
 import Cocoa
 
-class mainWindowListBox: NSBox {
+class mainWindowListBox: PressableBox {
     // MARK: - Properties
     
     let kBorderColor = NSColor(red: 232/255, green: 136/255, blue: 0/255, alpha: 1)
@@ -20,7 +20,11 @@ class mainWindowListBox: NSBox {
     var alwaysEnabled = false
     var isEnabled: Bool = true{
         didSet {
-            if alwaysEnabled, !isEnabled, currentState != ._ONBOARDING_ {
+            // alwaysEnabled tabs (Todo List) stay reachable during normal use, but must NOT before the
+            // user is authenticated. The login and onboarding screens disable every tab; letting an
+            // alwaysEnabled tab snap itself back on lets a logged-out user open it and leave the login
+            // view with no way back. Allow the disable to stick in BOTH pre-auth states.
+            if alwaysEnabled, !isEnabled, currentState != ._ONBOARDING_, currentState != ._LOGIN_ {
                 isEnabled = true   // re-entrant set; guard above prevents recursion
                 return
             }
@@ -38,9 +42,13 @@ class mainWindowListBox: NSBox {
                     imageView?.alphaValue = 0.5
                 }
             }
+            updateTooltip()
+            hideButton?.isHidden = !(showsHideButton && hovered && isEnabled)
         }
     }
-    var disableReason = ""
+    var disableReason = "" {
+        didSet { updateTooltip() }
+    }
     weak var delegate: mainWindowListBoxDelegate?
     
     var isSelected: Bool = false {
@@ -70,6 +78,7 @@ class mainWindowListBox: NSBox {
     override var title: String{
         didSet {
             label?.stringValue = title
+            updateTooltip()
         }
     }
     
@@ -106,6 +115,7 @@ class mainWindowListBox: NSBox {
         
         setupContentView()
         updateAppearance()
+        updateTooltip()
         
         // Tracking area for hover effects
         let trackingArea = NSTrackingArea(
@@ -158,6 +168,7 @@ class mainWindowListBox: NSBox {
         
         self.imageView = imageView
         self.label = label
+        hideDrawingFromAccessibility(imageView, label)
 
         // Trailing "hide" button, revealed on hover only when showsHideButton is set (see mouseEntered).
         let hideButton = cursorButton(title: "✕", target: self, action: #selector(hideButtonClicked))
@@ -165,6 +176,7 @@ class mainWindowListBox: NSBox {
         hideButton.translatesAutoresizingMaskIntoConstraints = false
         hideButton.isHidden = true
         hideButton.toolTip = leftMenuConfigString("hideToolTooltip") ?? "Hide this tool"
+        hideButton.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.hideToolButton)
         contentView.addSubview(hideButton)
         NSLayoutConstraint.activate([
             hideButton.widthAnchor.constraint(equalToConstant: 20),
@@ -217,17 +229,45 @@ class mainWindowListBox: NSBox {
         // tool opens its window and steals focus, the follow-up mouseExited never arrives. Any state
         // change that touches `hovered`/`isSelected`/`isEnabled` and calls updateAppearance keeps it right.
         hideButton?.isHidden = !(showsHideButton && hovered && isEnabled)
+        // #2252: keep the ✕ readable in every state. A selected row uses a solid light fill and forces
+        // its label to black; the ✕ was left at the appearance-adaptive labelColor (white in dark mode),
+        // so it vanished on the selected fill. Match the ✕ to the label's colour so it always contrasts.
+        if let color = label?.textColor {
+            hideButton?.attributedTitle = NSAttributedString(string: "✕", attributes: [.foregroundColor: color])
+        }
     }
     
     // MARK: - Mouse Events
+    /// The icon and label are passive parts of this row. Giving them the hit can consume a
+    /// click in their NSControl handling before it reaches the row's navigation action.
+    /// The trailing hide button remains an independent control with its own action.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard let hit = super.hitTest(point) else { return nil }
+        if let hideButton = hideButton, hit === hideButton || hit.isDescendant(of: hideButton) {
+            return hit
+        }
+        return self
+    }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        isEnabled
+    }
+
+    private func updateTooltip() {
+        let text = isEnabled ? title : disableReason
+        toolTip = text.isEmpty ? nil : text
+    }
+
     override func mouseEntered(with event: NSEvent) {
         super.mouseEntered(with: event)
+        // Tooltips here are NATIVE (`updateTooltip`), not a popover. Both popover helpers —
+        // `showTooltip` and `showTooltipWithOsTahoe` — put a real window under the cursor, and its
+        // .transient dismissal ate the row's first click, so a collapsed-sidebar icon needed two
+        // clicks to navigate (#2484, #2515). A native tooltip is passive and cannot do that, and it
+        // covers both cases those fixes handled: the row title when enabled, the disableReason when not.
         if isEnabled{
-            // Collapsed sidebar hides the row labels, so surface the item's title on hover. Only enabled
-            // items reach here (they never carry a disableReason), so the disabled tooltip below is untouched.
-            if (mainViewControllerObj?.isLeftPanelCollapsed ?? false), !title.isEmpty{
-                showTooltip(sender: self, msg: title, preferredEdge: .maxX, maxWidthVal: 250, autoCloseOnMouseExit: true)
-            }
+            // Native tooltips stay passive. The old transient popover could consume the first
+            // navigation click just to dismiss itself, especially in the collapsed sidebar.
             hovered = true
             updateAppearance()   // reveals the hover ✕ (see updateAppearance)
             DispatchQueue.global().async {
@@ -246,18 +286,11 @@ class mainWindowListBox: NSBox {
                     }
                 }
             }
-        }else{
-            // Disabled item: keep showing its disableReason (unchanged behavior).
-            if !disableReason.isEmpty{
-                showTooltip(sender: self, msg: disableReason, preferredEdge: .maxX, maxWidthVal: 250, autoCloseOnMouseExit: true)
-            }
         }
     }
 
     override func mouseExited(with event: NSEvent) {
         super.mouseExited(with: event)
-        // Close whatever hover tooltip we showed (disableReason or the collapsed-title one).
-        closePopoverTooltipIfVisible()
         if isEnabled{
             hovered = false
             updateAppearance()   // hides the hover ✕ (see updateAppearance)
@@ -266,14 +299,24 @@ class mainWindowListBox: NSBox {
     }
     
     override func mouseDown(with event: NSEvent) {
-        super.mouseDown(with: event)
-        if isEnabled && !isSelected{
-            if delegate?.selectableListBoxShouldChangeSelection(self) ?? true{
-                isSelected = true
-                delegate?.selectableListBoxDidChangeSelectionByUser(self)
-            }
-        }
+        selectByUser()
     }
+
+    /// A click, or its accessibility equivalent. Returns whether the row accepted the press.
+    @discardableResult
+    private func selectByUser() -> Bool {
+        guard isEnabled, !isSelected else { return false }
+        if delegate?.selectableListBoxShouldChangeSelection(self) ?? true {
+            isSelected = true
+            delegate?.selectableListBoxDidChangeSelectionByUser(self)
+        }
+        return true
+    }
+
+    // MARK: - PressableBox
+    override var isPressable: Bool { isEnabled }
+    override var spokenTitle: String? { title.isEmpty ? label?.stringValue : title }
+    override func performPress() -> Bool { selectByUser() }
     
     // MARK: - Selection Management
     private func notifySelectionChange() {

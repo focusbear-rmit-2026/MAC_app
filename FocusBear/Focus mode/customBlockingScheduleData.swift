@@ -9,6 +9,9 @@
 
 import Foundation
 
+/// The local cache of the user's blocking schedules, kept in their Application Support folder.
+let kBlockingSchedulesCacheFileName = "blocking_schedules.json"
+
 // MARK: - Enums with API raw values
 //enum PauseFriction: String, Codable {
 //    case none
@@ -554,6 +557,13 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         get { stateQueue.sync { _isAnyCustomScheduleOn } }
         set { stateQueue.sync { _isAnyCustomScheduleOn = newValue } }
     }
+    /// The schedule that is blocking right now, if any. Several screens need to name it (the menu's
+    /// blocking card, the focus-start notice), and each was re-deriving it from `arrBlockingSchedule`.
+    var runningSchedule: customBlockingSchedule? {
+        guard isAnyCustomScheduleOn else { return nil }
+        return arrBlockingSchedule.first { $0.state == .on }
+    }
+
     var currentScheduleFinishTime:Date?
     var isAnyCustomSchedulePaused = false
     var pendingFirstBlockingSchedule: customBlockingSchedule?
@@ -724,6 +734,21 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         }
     }
     
+    /// Forget the task queue remembered against the block list that is now running.
+    ///
+    /// Without this the reset is cosmetic: `lastTaskUsed` is stored per block list and round-trips
+    /// through the server, so the next fetch — or a relaunch — puts the old queue straight back.
+    /// That is why the same completed task returned across DAYS and not merely across sessions.
+    func clearRememberedTaskQueueForCurrentBlockList() {
+        guard let id = currentRunningFocusType["id"] as? String,
+              let index = arrFocusType.firstIndex(where: { $0["id"] as? String == id }) else { return }
+        guard !((arrFocusType[index]["lastTaskUsed"] as? String ?? "").isEmpty) else { return }
+        addLog(text: "blocking schedule: clearing the remembered task queue for this block list")
+        arrFocusType[index]["lastTaskUsed"] = ""
+        currentRunningFocusType["lastTaskUsed"] = ""
+        updateAllFocusModes()
+    }
+
     func startCustomBlockingSchedule(index:Int){
         addLog(text: "Custom blocking schedule started.")
         // Guard a stale index: the array can shrink between when the caller captured `index` and here,
@@ -752,7 +777,17 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         
         let lastIntentionUsed = currentRunningFocusType["lastIntentionUsed"] as? String ?? ""
         whatToAchieveInFocusBlock = lastIntentionUsed
-        focusModeTaskString = currentRunningFocusType["lastTaskUsed"] as? String ?? ""
+        // A blocking schedule turning on never asks what you are working on, so it must not inherit
+        // a task queue. `lastTaskUsed` is a per-block-list snapshot for RESUMING a session, not a
+        // reusable queue — and it round-trips through the server, so a task finished days ago comes
+        // back every time that schedule fires (report 2026-09-18_12-44-51, still reproducing on
+        // 2026-09-22: "Software Development" sat in that block list's lastTaskUsed unchanged for
+        // over 24 hours and was re-seeded on every schedule start).
+        //
+        // The earlier fix for this covered the focus-mode start paths in AppDelegate and never
+        // reached here — git shows this line untouched since the feature was written.
+        focusModeTaskString = "[]"
+        clearRememberedTaskQueueForCurrentBlockList()
         taskCreatedByBlockPopup = ""
         currentFocusModeStrictness = arrBlockingSchedule[index].blockLevel
         startFocusModeTime = Date()
@@ -761,7 +796,6 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
             minFocusAlignmentScoreToShowDistractingPopUp = 0
         }
         
-        arrFocusBlockNotificationShownForApps.removeAll()
         currentRunningAppNameForAi = ""
         currentBrowserUrlForAi = ""
         dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus.removeAll()
@@ -804,23 +838,23 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
                     if SettingsManagerObject.isGeekModeEnabled{
                         if pomodoroVcObj != nil{
                             if pomodoroVcObj?.isViewVisible ?? false{
-                                let intentionAdded = pomodoroVcObj?.textViewAchieve.string
+                                let intentionAdded = pomodoroVcObj?.goalText
                                 leftMenuVcObj?.showPomodoro(pomodoroVcObj: pomodoroVcObj!.view)
                                 
                                 //Postpone intention overwritten by blocking schedule #1815 added v 3.32.484
                                 if let intentionAdded = intentionAdded{
-                                    pomodoroVcObj?.textViewAchieve.string = intentionAdded
+                                    pomodoroVcObj?.goalText = intentionAdded
                                 }
                             }
                         }
                     }else if simplePomodoroVcObj != nil{
                         if simplePomodoroVcObj?.isViewVisible ?? false{
-                            let intentionAdded = simplePomodoroVcObj?.textViewAchieve.string
+                            let intentionAdded = simplePomodoroVcObj?.goalText
                             leftMenuVcObj?.showPomodoro(pomodoroVcObj: simplePomodoroVcObj!.view)
                             
                             //Postpone intention overwritten by blocking schedule #1815 added v 3.32.484
                             if let intentionAdded = intentionAdded{
-                                simplePomodoroVcObj?.textViewAchieve.string = intentionAdded
+                                simplePomodoroVcObj?.goalText = intentionAdded
                             }
                         }
                     }
@@ -843,10 +877,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         guard let jsonData = try? encoder.encode(arrBlockingSchedule[index]) else { return }
-        if let jsonString = String(data: jsonData, encoding: .utf8) {//
-            print(jsonString)
-            addLog(text: "Blocking schedule added:- \(jsonString)")
-        }
+        addLog(text: "Blocking schedule added:- id=\(arrBlockingSchedule[index].id) \(LogPrivacy.structure(jsonData))")
         allApiObject.addBlockingSchedule(jsonData: jsonData, completionHandler: {bool in
             
         })
@@ -856,20 +887,14 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         guard let jsonData = try? encoder.encode(arrBlockingSchedule[index]) else { return }
-        
-        if let jsonString = String(data: jsonData, encoding: .utf8) {//
-            print(jsonString)
-            addLog(text: "Blocking schedule updated:- \(jsonString)")
-        }
+        addLog(text: "Blocking schedule updated:- id=\(arrBlockingSchedule[index].id) \(LogPrivacy.structure(jsonData))")
         allApiObject.updateBlockingSchedule(id: arrBlockingSchedule[index].id, jsonData: jsonData, completionHandler: {bool in
             
         })
     }
 
     func readCustomBlockingScheduleData(jsonData: Data) {
-        if let jsonString = String(data: jsonData, encoding: .utf8) {
-            addLog(text: "Read Custom Blocking Schedule Data: \(jsonString)")
-        }
+        addLog(text: "Read Custom Blocking Schedule Data: \(LogPrivacy.structure(jsonData))")
 
         let decoder = JSONDecoder()
 
@@ -916,15 +941,13 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     }
 
     
-    // local cache added v3.32.487
-    private let localBlockingSchedulesFile = "blocking_schedules.json"
-
+    // local cache added v3.32.487; sealed at rest by SecureFiles (a server-backed copy of the schedules)
     private func blockingSchedulesFileURL() -> URL {
         let currentUserURL = appdelegate!.currentUserURL ?? applicationSupportURL!
         if !FileManager.default.fileExists(atPath: currentUserURL.path) {
             try? FileManager.default.createDirectory(at: currentUserURL, withIntermediateDirectories: true)
         }
-        return currentUserURL.appendingPathComponent(localBlockingSchedulesFile)
+        return currentUserURL.appendingPathComponent(kBlockingSchedulesCacheFileName)
     }
 
     func saveBlockingSchedulesToLocal() {
@@ -934,7 +957,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
             
             let data = try encoder.encode(arrBlockingSchedule)
             
-            try data.write(to: blockingSchedulesFileURL(), options: .atomic)
+            try SecureFiles.shared.write(data, to: blockingSchedulesFileURL())
             
             addLog(text: "Blocking schedules saved locally.")
             
@@ -946,13 +969,13 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     func loadBlockingSchedulesFromLocal() {
         let url = blockingSchedulesFileURL()
         
-        guard FileManager.default.fileExists(atPath: url.path) else {
+        guard SecureFiles.shared.exists(url) else {
             addLog(text: "No local blocking schedules file found.")
             return
         }
         
         do {
-            let data = try Data(contentsOf: url)
+            let data = try SecureFiles.shared.readData(url)
             
             let decoder = JSONDecoder()
             let wrapped = try decoder.decode([FailableDecodable<customBlockingSchedule>].self, from: data)
@@ -1023,7 +1046,24 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         // Reads go through the serialized `isAnyCustomScheduleOn` /
         // `arrBlockingSchedule` accessors below.
         guard isAnyCustomScheduleOn else { return false }
-        return arrBlockingSchedule.first(where: { $0.state == .on })?.isAIBlockingEnabled ?? false
+        guard let active = arrBlockingSchedule.first(where: { $0.state == .on }) else { return false }
+        // AI is a property of the BLOCK LIST (focus mode) the schedule runs, NOT of the schedule itself
+        // (see CLAUDE.md). Read the associated block list's is_ai_enabled (absent ⇒ on). Fall back to the
+        // schedule's own now-hidden flag only if the block list can't be resolved.
+        if let focusMode = arrFocusType.first(where: { $0["id"] as? String == active.focusModeID }) {
+            // AI relevance checking is only wired into the ALLOW-LIST approach: the per-URL loop
+            // (focusTimerManager.checkInBackground) routes an un-allowed URL to focusTryToBlockUnwantedUrl
+            // → checkUrlFromAi only when the block list uses an allow-list. A blacklist ("block these
+            // specific sites, allow everything else") short-circuits every non-listed URL to allowed and
+            // never consults the AI. So a blacklist with is_ai_enabled=true would make isAIBlockingEnabled()
+            // report true — starting an "AI blocking session" that blocks nothing but the few listed sites
+            // (bug: user in a meeting saw AI blocking start yet everything was allowed). Gate the AI flag on
+            // the approach so a blacklist falls back to plain static enforcement.
+            let isAllowedListApproach = focusMode["isAllowedListApproach"] as? Bool ?? false
+            let isAiEnabledForBlockList = focusMode["is_ai_enabled"] as? Bool ?? true
+            return isAllowedListApproach && isAiEnabledForBlockList
+        }
+        return active.isAIBlockingEnabled
     }
     func isMicroBreaksEnabled()->Bool{
         if isAnyCustomScheduleOn{

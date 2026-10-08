@@ -18,8 +18,8 @@ class holdOnVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
-        lblTitle.stringValue = "Hold on a minute!"
+        btnContinue.setAccessibilityIdentifier(UITestContract.Identifier.Onboarding.holdOnContinueButton)
+        lblTitle.stringValue = "You've blocked the bad habits. How about some good habits?"
         btnContinue.title = "Okay..."
         
         if let holdOnVcInfo = configjson["holdOnVcInfo"] as? [String: Any] {

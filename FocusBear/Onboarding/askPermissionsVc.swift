@@ -22,6 +22,8 @@ class askPermissionsVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        btnContinue.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.askPermissionsGrantButton)
+        btnSkip.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.askPermissionsSkipButton)
         lblTitle.stringValue = "The schedule is set up! Now let's sort permissions."
         lblSubTitle.stringValue = "Focus Bear needs System Events, Accessibility, and Browser permissions to keep distractions blocked."
         btnSkip.title = "Skip"
@@ -77,6 +79,7 @@ class askPermissionsVc: NSViewController {
     @IBAction func btnSkipClicked(_ sender: Any) {
         addLog(text: "[user-action] askPermissionsVc:- btnSkipClicked")
         allApiObject.capturePosthog(event: "ask-permissions-skipped", metadata: [:])
-        getOnboardingVcObject().navigate(to: ._ALL_SET_)
+        // Habits come after permissions now → skipping permissions continues to the habits section.
+        getOnboardingVcObject().navigate(to: ._HOLD_ON_)
     }
 }

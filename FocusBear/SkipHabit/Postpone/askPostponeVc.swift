@@ -11,6 +11,10 @@ import SwiftUI
 
 class askPostponeVc: NSViewController {
 
+    /// Lengths the "minutes to postpone" dropdown offers, shortest first. The first entry doubles as
+    /// the fallback when the cutoff has trimmed every other option away.
+    private static let postponeMinuteOptions = [5, 10, 15, 20, 25, 30, 45, 60, 90]
+
     // #1590: for the mid-break "are you sure" confirmation, replace the passive
     // countdown with the same press-and-hold-to-postpone friction used on the
     // pre-break warning popup (escalating hold time by activityPostponeCount).
@@ -22,6 +26,11 @@ class askPostponeVc: NSViewController {
     /// Readers on the evening postpone path (this VC and enterPasswordVc) use this
     /// instead of `popUpButtonSelectMinutes.title`, which the evening flow hides.
     var resolvedEveningPostponeMinutes: Int?
+
+    /// Set by `enterPasswordVc` when the user has just entered the correct password to postpone.
+    /// `resetView()` consumes it once, so the press-and-hold countdown isn't demanded on top of the
+    /// password for the same postpone attempt. See `PostponeGate`.
+    var hasSatisfiedPostponePassword = false
 
     @IBOutlet weak var btnCancelPostpone: cursorButton!
     @IBOutlet weak var lblSelectMinutes: NSTextField!
@@ -42,9 +51,8 @@ class askPostponeVc: NSViewController {
 
         
         lblSelectMinutes.stringValue = "Select minutes to postpone:"
-        popUpButtonSelectMinutes.removeAllItems()
-        popUpButtonSelectMinutes.addItems(withTitles: ["5", "10", "15", "20", "25", "30", "45", "60", "90"])
-        
+        reloadPostponeMinuteOptions()
+
         btnOkIWillDoBreak.title = "Argh ok I'll take a break!"
         if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
             btnOkIWillDoBreak.title = activityPostponeInfo.value(forKey: "buttonTakeBreakText") as? String ?? btnOkIWillDoBreak.title
@@ -74,12 +82,36 @@ class askPostponeVc: NSViewController {
         }else{
             self.view.removeFromSuperview()
             getHabitsVcObject().abortCancel()
+            // Restore the Postpone button — abortCancel() only re-shows it on the micro-break path, so
+            // for a regular habit, cancelling postpone otherwise left the button hidden (lost).
+            getHabitsVcObject().showCloseButtons()
             self.timer?.invalidate()
             self.timer = nil
         }
     }
+    /// Rebuilds the minutes dropdown, dropping any length that would run past the user's cutoff time.
+    ///
+    /// Report 2026-09-17_17-05-10 — "should have maximum postpone set to cutoff time". The grant is
+    /// clamped anyway, but offering 90 minutes at 16:48 against a 17:00 cutoff invites the user to
+    /// pick a number the app will silently shorten. Micro-break postpones keep the full ladder: the
+    /// cutoff governs the evening routine, not breaks during the day.
+    private func reloadPostponeMinuteOptions(){
+        var options = Self.postponeMinuteOptions
+        if currentState != ._MICRO_BREAK_, let limit = minutesUntilCutoff(){
+            options = options.filter { $0 <= limit }
+            if options.isEmpty { options = [Self.postponeMinuteOptions[0]] }
+        }
+        popUpButtonSelectMinutes.removeAllItems()
+        popUpButtonSelectMinutes.addItems(withTitles: options.map(String.init))
+    }
+
     func resetView(){
         addLog(text: "Ask postpone view - resetView")
+        reloadPostponeMinuteOptions()
+        // One-shot: consume the password the user just entered for THIS postpone attempt, so a
+        // later reopen of the dialog is gated normally again.
+        let passwordAlreadySatisfied = hasSatisfiedPostponePassword
+        hasSatisfiedPostponePassword = false
         hideHoldToPostpone()
         resolvedEveningPostponeMinutes = nil
         isShowingAskOfficeModeView = false
@@ -88,12 +120,12 @@ class askPostponeVc: NSViewController {
         btnOkIWillDoBreak.isHidden = true
         lblTimer.isHidden = true
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
-            if activityPostponeCount == 0{
-                showHabitPostponeView()
-            }else{
-                showHabitTimerView()
+            switch PostponeGate.step(activityPostponeCount: activityPostponeCount,
+                                     passwordAlreadySatisfied: passwordAlreadySatisfied) {
+            case .postponeOptions: showHabitPostponeView()
+            case .holdToConfirm:   showHabitTimerView()
             }
-            
+
         }else if currentState == ._FOCUS_SUMMARY_{
             popUpButtonSelectMinutes.isHidden = false
             lblSelectMinutes.isHidden = false
@@ -509,7 +541,7 @@ class askPostponeVc: NSViewController {
     func addOfficeFriendlyActivityInSettings(){
         addLog(text: "addOfficeFriendlyActivityInSettings")//
         var jsonResult = NSDictionary()
-        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+        if let stringDic = SensitiveDefaults.object(forKey: kUserdefaultsSelectedJson) as? String {
             //            jsonResult = dic
             if let data = stringDic.data(using: String.Encoding.utf8) {
                 
@@ -574,7 +606,7 @@ class askPostponeVc: NSViewController {
                                 print(jsonResultData)
                                 
                                 if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
-                                    UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                    SensitiveDefaults.set(backToString, forKey: kUserdefaultsSelectedJson)
                                     
                                 }
                             } catch let myJSONError {

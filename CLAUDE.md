@@ -6,6 +6,77 @@ Start with [`ARCHITECTURE.md`](ARCHITECTURE.md) for how the app is structured (s
 flow, the global-singleton/state-machine/view-swapping patterns) and [`TECH_DEBT.md`](TECH_DEBT.md)
 for the known-problems register before "fixing" anything that looks odd.
 
+## Where work goes: the existing cluster PRs (standing rule, 2026-10-04)
+
+**Never open a new Mac-App PR.** On 2026-10-04 the 124 open PRs — many undoing each other's work —
+were consolidated into feature-area **cluster PRs**, and the user made it a standing rule that every
+fix goes into the matching existing cluster:
+
+| Cluster | Branch | Area |
+|---|---|---|
+| C0 | `cluster/ci-test-infrastructure` | CI, test infrastructure, docs — **base of every other cluster** |
+| C1 | `cluster/routine-meetings-postpones` | routine, meetings, postpones |
+| C2 | `cluster/displays-fullscreen` | displays, borderless full screen |
+| C3 | `cluster/day-plan` | Day Plan |
+| C4 | `cluster/tasks-rescheduler` | tasks, to-do, rescheduler/forecast |
+| C5 | `cluster/projects-tracker` | Projects portfolio, Time Tracker |
+| C6 | `cluster/ai-checkin-buddy` | AI check-in, accountability buddy |
+| C7 | `cluster/accessibility-keyboard` | accessibility, keyboard, notes |
+| C8 | `cluster/breaks-habits` | breaks, micro-breaks, habits |
+| C9 | `cluster/blocking-managed-trusted-time` | blocking, managed mode, trusted time |
+| C10 | `cluster/helper-stability-sentry` | helper, stability, Sentry |
+| C11 | `cluster/report-tooling` | report-problem tooling |
+| C12 | `cluster/ui-tests-events-v2` | XCUITest suite, events-v2 |
+| C13 | `cluster/at-rest-encryption` | at-rest secrets (stacked on C12) |
+
+```bash
+git fetch origin
+git worktree add ~/dev/claude-worktrees/Mac-App-cluster-<area> origin/cluster/<area>   # or reuse it
+# …one self-contained commit…
+git push origin HEAD:cluster/<area>
+# then add a row for the fix to that cluster PR's body table
+```
+
+- Make each fix **one self-contained commit that also cherry-picks onto the local install branch**, so
+  it can be installed before the cluster merges.
+- Feature clusters target C0's branch; once C0 merges, merge `main-human-verified` into each cluster and
+  retarget it. Never force-push a cluster branch.
+- If nothing fits, use the closest cluster and say so; ask the user before creating a new cluster.
+- **Only the user's own PRs.** Consolidating, closing, reopening, editing or folding a PR into a cluster applies
+  only to PRs authored by `jeznag`. Never touch other people's PRs (2026-10-04: #1829 and #2847 were closed by
+  mistake and reopened). Check `.author.login` before any bulk action.
+- This overrides the global "always open a PR" rule for this repo. Tell sub-agents explicitly — they
+  default to `gh pr create`.
+
+Earlier regimes (commit straight to `integration/mac-swiftui-rebuild`, then one PR per change into
+`main-human-verified`) are over; they are recorded below only because they explain the repo's history.
+
+### ⚠️ #2569 was a SQUASH merge — ancestry lies
+
+None of integration's ~755 commits are ancestors of `main-human-verified`, even though all of their
+content is in it. So this is **wrong** and will tell you a landed fix is missing:
+
+```bash
+git merge-base --is-ancestor <sha> origin/main-human-verified   # says NO for everything
+```
+
+Check the **content** instead:
+
+```bash
+git show origin/main-human-verified:path/to/File.swift | grep "the line the fix added"
+```
+
+This cost a wrong P1 issue (#2614): a fix that had been on main for two days was reported as unshipped
+because ancestry said so.
+
+### Why integration existed
+
+The per-change PRs were all extractions from that one branch, so each carried the whole mega/main
+divergence. That reached 102 open PRs, sixteen of which (#2528–#2560) were cumulative snapshots of one
+another — the largest +123,291 lines. 77 were closed on 2026-09-17 after verifying by content sampling
+that their added lines were already on the branch. Never force-push a shared branch; other agents build
+on it concurrently.
+
 ## Building
 
 - **Workspace, not project:** always build via `FocusBear.xcworkspace` (it pulls in Pods + SPM).
@@ -18,7 +89,10 @@ for the known-problems register before "fixing" anything that looks odd.
     | grep -E "error:|BUILD SUCCEEDED|BUILD FAILED"
   ```
 - Built app lands at `build/Build/Products/Debug/Focus Bear.app`.
-- Relaunch: `killall "Focus Bear"; open "build/Build/Products/Debug/Focus Bear.app"`.
+- Local testing runs from `~/Applications/Focus Bear.app` through LaunchServices (`open -a`).
+  Stage and verify the signed build before replacing that installed copy. Follow the exact helper
+  job/process shutdown sequence in `HANDOVER-CODEX.md`; a stale helper job can relaunch the old
+  DerivedData copy. Do not run the user app from the build/test output directory.
 - SPM deps: ORSSerialPort, Auth0/JWTDecode/SimpleKeychain, Swifter, NWWebSocket, PusherSwift, Sentry, TrueTime, TweetNacl.
 - SourceKit live-diagnostics in the editor often show false "Cannot find type X in scope"
   across files in the same target (e.g. `ScheduleBuilder`, `ScheduleText`). These are NOT
@@ -31,6 +105,66 @@ for the known-problems register before "fixing" anything that looks odd.
 - `ENABLE_HARDENED_RUNTIME` MUST be `NO` for Debug configs in `project.pbxproj`. Hardened
   runtime blocks the TCC calendar prompt — symptom: "Grant access did nothing" / no prompt.
   (Ad-hoc signing also silently disables it.) Verify with `granted=true, status=3`.
+
+### Keychain prompts ("Focus Bear wants to use your confidential information…")
+
+- The Auth0 tokens are a **generic password** in the login keychain, service
+  `com.App.EarnYourScreentime`, account `credentials`
+  (`security find-generic-password -s com.App.EarnYourScreentime`).
+- macOS grants access by matching the calling binary against the item's ACL **designated
+  requirement**. For a properly signed build that is certificate-based and survives rebuilds
+  and updates; for an **ad-hoc** build (`CODE_SIGN_IDENTITY = -`, the Debug default) the
+  designated requirement is literally `cdhash H"…"`, so *every rebuild is a different app* and
+  macOS re-prompts. Verified with a signing probe: rebuilt ad-hoc binary → `errSecAuthFailed`,
+  rebuilt Apple-Development-signed binary → reads fine.
+- So: **a worktree without `Config/Local.xcconfig` builds ad-hoc and re-prompts on every
+  build** (and loses TCC grants). Copy `Config/Local.xcconfig` into every new worktree.
+- `security dump-keychain -a ~/Library/Keychains/login.keychain-db` prints each item's ACL
+  and partition list — accumulated `cdhash:` entries are the fingerprint of this problem.
+- **Every build, Release included, keeps the tokens in the login keychain** (Auth0's default
+  `CredentialsManager` storage). A data-protection-keychain store (`CredentialsKeychainStorage`)
+  existed briefly and was removed in #2588: Release could write tokens but not read them back,
+  which caused a login loop. `Focus Bear-Release.entitlements` still claims
+  `keychain-access-groups`, which nothing uses now. Unit-test and UI-test hosts keep credentials
+  in memory (`LogicTestHost.makeCredentialsManager`).
+- **The token must never leave the keychain.** Older builds copied it into the FBHelper shared
+  suite (`~/Library/Preferences/TCUD568B3U.group.com.focusbear.fbmac.plist`), which any process
+  running as the user can read. FBHelper now queues its analytics events for the main app to send
+  (`HelperEventQueue`), and the main app deletes the old copy at launch and logout
+  (`LegacySharedSuiteSecrets`). Don't add secrets, emails or names back to the shared suite.
+  Local tools that need the to-do list ask the app instead: the AppleScript command
+  `list to dos` (`FBListToDosCommand`) answers with the app's own credentials, read-only. The
+  `focusbear-tasks` skill uses it.
+- **The settings/quit password is not in the preferences plist** (`AppPasswordStore`). A salted
+  PBKDF2 verifier in UserDefaults decides "is a password set" and checks entries, so a locked or
+  re-signed keychain can never lock anyone out; the base64 value settings sync must send lives in
+  the keychain (per-signature account, no prompts). Use `SettingsManagerObject.isAppPasswordSet` /
+  `.appPassword`, never `UserDefaults…kUserdefaultsAppPassword` (`PlaintextSecretSourceTests`
+  fails the build otherwise). Settings upload waits while the keychain copy is unreadable, because
+  uploading without it would clear the password on the server.
+- **Personal data is encrypted at rest per account** (`FocusBear/Security/SecureStore.swift`). Keys
+  listed in `SensitiveKeyRegistry` (habits JSON, block lists, Day Plan, calendar notes, AI decisions,
+  Wi-Fi networks, brain dump, habit-note drafts, quit reasons) go through `SensitiveDefaults`, never
+  `UserDefaults.standard`; the CSVs/JSON logs in `SensitiveKeyRegistry.files` go through
+  `SecureFiles.shared`; project-note drafts are sealed by `ProjectNoteDraftStore`.
+  `scripts/check-sensitive-defaults.sh` (CI) fails on a registered key or file used the old way. AES-GCM,
+  one random data key per account in the login keychain (`dek.v1.<account>.<signature>`, never prompts),
+  key fingerprint in every envelope. Ad-hoc builds (CI, UI tests, Debug without `Local.xcconfig`) do
+  not encrypt (`.disabled`): their key would change every build.
+  - **Failure rules — keep them when adding a key.** Pick its durability honestly. *Server-backed*: an
+    unreadable copy reads as empty and is fetched again. *Local-only*: never overwritten or deleted
+    without having been read; writes made while the key is unavailable wait in memory and are merged
+    (`SecureMerge`) into the sealed value when the key returns. Nothing is ever written in plaintext as
+    a fallback. Migration is verify-then-delete per key behind a one-time sealed backup.
+  - Sign-out deletes the account's server-backed caches; local-only data (and the key) stay for that
+    account. Reset/uninstall erase everything (`eraseAllData`). Values written before any sign-in wait in
+    memory for the first account.
+  - Not encrypted, on purpose: values needed before sign-in (`kUserDefaultsLastUserEmailBeforeLogout`,
+    onboarding selections), `fbtt.plist` (read by the Time Tracker app), the browser-tab audit CSV
+    (opened in another app), ids/durations/colours, and the debug logs (redacted instead).
+  - Threat model: this stops another program running as the user from silently reading Focus Bear's
+    files. Apple Events to Focus Bear need the user's Automation consent, and reading its memory needs
+    debugger privileges, so the app itself is not an open door to the decrypted data.
 
 ## Signed / release build (Developer ID + notarized DMG)
 
@@ -96,11 +230,44 @@ detail in `README.md` and `docs/local-development-setup-v2.md`. Build fixes live
 ## Debug-report workflow (~/FocusBear-Claude-Tasks)
 
 The in-app "report problem" feature (`helpVc.swift` / `AppDelegate.swift`) writes a folder with
-`TASK.md`, `logs/`, `screenshots/` to `~/FocusBear-Claude-Tasks/`. A `/loop` watches for new folders
+`TASK.md`, `logs/`, `screenshots/` to `~/FocusBear-Claude-Tasks/`.
+
+**`logs/` is an extract, not a copy.** It holds `recent.log` — the 5 minutes of app log before the
+report, oldest first — and `SOURCES.md`, which names each real log file it came from, its size at the
+time, and the byte offset where the extract begins. For anything older, read the real Logs folder
+(`~/Library/Application Support/<bundle id>/Logs/`: `Debug_Logs.txt` plus rotated
+`Debug_Logs - <date>.txt`) from that offset backwards. Reports used to copy every log (~230 MB each,
+57 GB in total). A report's `logs/` is deleted when it is confirmed fixed; screenshots and notes stay. A `/loop` watches for new folders
 and works them. Workflow rules (also in agent memory): after 8pm don't ask the user questions — act
 at ≥90% confidence else move the folder to `Needs Clarification/` with a `CLAUDE-NOTES.md`; finished
 reports go to `Ready for Human QA/` renamed `descriptive-hyphenated-<timestamp>` with notes. Don't
 reveal report folders in Finder (that pile-up was removed).
+
+**The queue is not "are there new folders?".** Five reports sat in *Rework needed* for days with
+nobody looking, and four were already fixed — the fixes landed 3–12 minutes after the user tested, so
+the feedback was about a build that did not contain them. Run
+**`scripts/check-report-rework.py`** before concluding there is nothing to do; it reproduces
+`LocalReportStatus.status(...)` from outside the app and lists both rework and still-open reports.
+
+**Feedback on a FILED report wakes nobody by default.** The queue monitor watches for new folders;
+feedback appended to an existing `TASK.md` creates none. On 2026-09-22 two reports sat in rework for
+five hours for exactly that reason — hours after `check-report-rework.py` existed. Detectable on
+demand is not the same as noticed, so run
+**`scripts/watch-report-rework.sh`** as a second monitor alongside the queue one; it prints a line
+the moment a report ENTERS rework.
+
+*Rework needed* is computed, never stored: the newest `- Added:` stamp in `TASK.md` versus
+`CLAUDE-NOTES.md`'s mtime. So **a fix that ships without its notes being stamped stays in rework
+forever**, however finished it is. Stamp the update at INSTALL time, not commit time — a commit is
+not an install, and filing before installing is what caused every one of those five.
+
+**Writing notes: one original note, then stamped updates.** The app parses a notes file
+(`LocalReportNoteParser`) into the first diagnosis plus every `## Update` section, and renders each
+as its own card — original first (collapsed when updates exist), updates below it newest-first. So:
+append a new `## Update` section rather than editing the diagnosis, and stamp the heading —
+`## Update — 2026-09-15 22:40 — what changed` — so the card can show when it was written. Unstamped
+headings (`## Update`, `## Update 2 — …`) still parse; they just render without a date. Anything
+written under an update (`### …`, `## How to test Update 2`) belongs to that update's card.
 
 ## Verifying UI without seeing the window
 
@@ -156,3 +323,17 @@ Multiple Claude agents (mac/mobile/backend/windows) share a board via the `/coor
 
 `GET https://api.focusbear.io/to-do?page=1&take=50&status=NOT_STARTED&order=DESC&sort_mode=SMART`
 (SMART = TOP-score order). Response items have `duration`, `eisenhower_quadrant`, `tags`.
+
+## AI blocking ownership: it's a per-block-list setting, NOT per-schedule
+
+"Use AI for this block list" belongs to the **block list (focus mode)**, not to blocking
+schedules. Custom blocking schedules must NOT expose their own "Use AI" option — a schedule
+just activates a block list, and the block list's `is_ai_enabled` governs AI relevance
+checking. When adding/moving AI-related toggles, keep them on the focus-mode settings screen
+(`focusPreferencesAdvancedVc`), read/write `arrFocusType[row]["is_ai_enabled"]`, and **sync to
+the server** via `editFocusMode`. `is_ai_enabled` is a **top-level column** on the server, not a
+`metadata` key: every focus-mode write promotes it with `applyFocusModeTopLevelColumns` (as it does
+`categories`), and the read side (`flattenServerFocusMode`) lets top-level columns win over a stale
+`metadata` copy. Sending it only inside `metadata` left the column `true`, so "Use AI" came back on
+after a relaunch (#2677). Other per-mode fields with no column of their own still round-trip via
+`metadata`.

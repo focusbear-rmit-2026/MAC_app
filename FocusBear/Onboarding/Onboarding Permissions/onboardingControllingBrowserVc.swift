@@ -10,6 +10,9 @@ import Cocoa
 
 class onboardingControllingBrowserVc: NSViewController {
 
+    @IBOutlet weak var imgViewScreenshot: shadowImageView!
+    @IBOutlet weak var btnImgView: cursorButton!
+    @IBOutlet weak var imgViewTick: NSImageView!
     @IBOutlet weak var boxScrollView: NSBox!
     @IBOutlet weak var scrollView: NSScrollView!
     @IBOutlet weak var btnDidNotWork: Button!
@@ -24,6 +27,9 @@ class onboardingControllingBrowserVc: NSViewController {
     var checkPermissionTimer:DispatchSourceTimer?
     var arrBrowsers = [[String:Any]]()
     var anyBrowserPermissionSet = false
+    /// True while a blocking Automation-permission prompt is on screen. Pauses the checkPermission
+    /// timer so it can't touch the target (which would dismiss or re-trigger the OS dialog).
+    var isRequestInFlight = false
     
     var buttonRequestPermissionText = "Request Permission"
     var enabledText = "✅  Enabled!"
@@ -77,6 +83,12 @@ class onboardingControllingBrowserVc: NSViewController {
         self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
         self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
         getDistractionBlockingProgressVcObj().setProgress(level: 3, progress: 0.75)
+
+        // Every non-granted browser shows its own Request button. Proceed is always available;
+        // the VC-level tick only appears once every browser is granted.
+        imgViewTick.isHidden = true
+        btnContinue.isHidden = false
+        btnImgView.isHidden = false
     }
     
     func reloadData(){
@@ -197,6 +209,7 @@ class onboardingControllingBrowserVc: NSViewController {
     override func viewWillAppear() {
         UserDefaults.standard.set(true, forKey: kUserdefaultsControllingBrowserVcShown)
         reloadData()
+        updateScreenshotAndProceedState()
         startTimerCheckPermission()
         allApiObject.capturePosthog(event: "permission-to-block-distractions-shown", metadata: [:])
     }
@@ -226,6 +239,9 @@ class onboardingControllingBrowserVc: NSViewController {
     
     
     @objc func checkPermission(){
+        // Don't probe while a blocking permission prompt is up — any Apple-Events call here would
+        // dismiss it. The blocking request resolves the grant itself.
+        if isRequestInFlight { return }
         let runningApps = NSWorkspace.shared.runningApplications
         for runningApp in runningApps{
             if let name = runningApp.localizedName{
@@ -241,7 +257,21 @@ class onboardingControllingBrowserVc: NSViewController {
                     for i in 0..<arrBrowsers.count{
                         if arrBrowsers[i]["browser"] as? BROWSER == browser{
                             let state = arrBrowsers[i]["isEnabled"] as? Bool ?? false
-                            if !state{
+                            let requested = arrBrowsers[i]["isRequested"] as? Bool ?? false
+                            // Only probe browsers the user has actively requested — otherwise
+                            // entering this screen with the global permissions flag already set
+                            // would prompt for every running browser at once.
+                            // And only actually read the tab URL (which itself pops the OS consent
+                            // dialog) once Automation is authorized — checked here WITHOUT prompting.
+                            // Otherwise the 1s timer would re-trigger the consent dialog every tick,
+                            // looping the popup. The first prompt comes from the explicit request.
+                            // Firefox is extension-based (no Apple Events) so it can never be
+                            // "Automation authorized"; gate it only on the extension having reported a
+                            // URL (getActiveTabUrlOf is a pure read for Firefox and can't loop the OS
+                            // consent dialog). Without this exemption, Firefox is never detected as
+                            // granted after the user installs the extension.
+                            let firefoxOrAuthorized = (browser == ._FIREFOX_) || isAutomationAuthorized(bundleId: runningApp.bundleIdentifier ?? "")
+                            if !state && requested && firefoxOrAuthorized {
                                 if getActiveTabUrlOf(browser: browser) != nil{
                                     DispatchQueue.main.async {
                                         self.arrBrowsers[i]["isEnabled"] = true
@@ -282,6 +312,7 @@ class onboardingControllingBrowserVc: NSViewController {
                                         
                                         self.permissionGivenFromBrowser()
                                         self.anyBrowserPermissionSet = true
+                                        self.updateScreenshotAndProceedState()
                                     }
                                     
                                 }
@@ -339,7 +370,8 @@ class onboardingControllingBrowserVc: NSViewController {
         addLog(text: "closeView")
         saveBrowsersPermissionInfo()
         if currentState == ._ONBOARDING_{
-            getOnboardingVcObject().navigate(to: ._ALL_SET_)
+            // Browser permission is the last permissions step → continue to the habits section.
+            getOnboardingVcObject().navigate(to: ._HOLD_ON_)
         }else{
             self.view.window?.close()
             
@@ -365,6 +397,52 @@ class onboardingControllingBrowserVc: NSViewController {
         addLog(text: "[user-action] btnSkipClicked")
         closeView()
     }
+    
+    @IBAction func btnImgViewClicked(_ sender: Any) {
+        addLog(text: "[user-action] btnImgViewClicked")
+        // Clicking the screenshot requests permission for the first browser that isn't granted yet.
+        if let row = firstUngrantedBrowserIndex() {
+            requestPermission(row: row)
+        }
+    }
+
+    /// Whether Focus Bear already has Automation (Apple Events) permission for `bundleId`,
+    /// checked WITHOUT prompting (askUserIfNeeded: false). Used to poll for the grant from
+    /// the 1s timer without re-triggering the OS consent dialog every tick. Returns true
+    /// only when the status is authorized; a pending/denied/not-running app returns false.
+    func automationStatus(bundleId: String) -> OSStatus {
+        guard !bundleId.isEmpty else { return OSStatus(procNotFound) }
+        let target = NSAppleEventDescriptor(bundleIdentifier: bundleId)
+        return AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, false)
+    }
+
+    func isAutomationAuthorized(bundleId: String) -> Bool {
+        return automationStatus(bundleId: bundleId) == noErr
+    }
+
+    /// Index of the first browser that hasn't been granted permission yet, or nil if all granted.
+    func firstUngrantedBrowserIndex() -> Int? {
+        for i in 0..<arrBrowsers.count {
+            if !(arrBrowsers[i]["isEnabled"] as? Bool ?? false) { return i }
+        }
+        return nil
+    }
+
+    /// True once every installed browser has been granted permission.
+    func allBrowsersGranted() -> Bool {
+        return firstUngrantedBrowserIndex() == nil
+    }
+
+    /// Shows the VC-level tick and dims the screenshot once every browser is granted.
+    /// Proceed is always visible (the user can proceed at any time); each non-granted
+    /// browser exposes its own Request button.
+    func updateScreenshotAndProceedState() {
+        let allGranted = allBrowsersGranted()
+        btnImgView.isHidden = allGranted
+        imgViewTick.isHidden = !allGranted
+        // Dim the screenshot once every browser is granted — mirrors systemEventsPermissionVc's done-state.
+        imgViewScreenshot.alphaValue = allGranted ? 0.5 : 1.0
+    }
 }
 
 extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSource {
@@ -380,23 +458,30 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
             cell.imgView.image = arrBrowsers[row]["image"] as? NSImage
             cell.lblFirefoxPermission.isHidden = true
             let state = arrBrowsers[row]["isEnabled"] as? Bool ?? false
+            // Every non-granted browser shows its own Request button (no sequential reveal and
+            // no "I don't use this" skip). A granted browser collapses to just its tick.
             if state{
                 cell.imgViewTick.isHidden = false
                 cell.btnRequest.isHidden = true
             }else{
                 cell.imgViewTick.isHidden = true
                 cell.btnRequest.isHidden = false
+                cell.btnRequest.isEnabled = true
             }
             
             
-            if !cell.btnRequest.isHidden {
+            if !cell.btnRequest.isHidden && cell.btnRequest.isEnabled {
                 addPulseRing(to: cell.btnRequest)
             } else {
-                cell.btnRequest.layer?.sublayers?.removeAll {
-                    $0.name == "PulseRing"
-                }
+                // Stop the pulse — addPulseRing adds a CABasicAnimation under "bgPulse", so remove
+                // that (the old sublayer-name removal never matched anything). Without this the
+                // disabled button keeps pulsing its orange background, hiding the grayed-out state.
+                cell.btnRequest.layer?.removeAnimation(forKey: "bgPulse")
+                cell.btnRequest.layer?.backgroundColor = cell.btnRequest.isEnabled
+                    ? (NSColor(named: "dark_OrangeColor")?.cgColor ?? NSColor.orange.cgColor)
+                    : NSColor.clear.cgColor
             }
-            
+
             if arrBrowsers[row]["browser"] as? BROWSER == ._FIREFOX_{
                 if !state{
                     cell.lblFirefoxPermission.isHidden = false
@@ -415,8 +500,7 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
             cell.btnRequest.target = self
             cell.btnRequest.tag = row
             cell.btnRequest.action = #selector(btnRequestClicked(sender:))
-            
-            
+
             cell.btnInfo.target = self
             cell.btnInfo.tag = row
             cell.btnInfo.action = #selector(btnFirefoxInfoClicked(sender:))
@@ -446,6 +530,9 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
     
     func requestPermission(row:Int){
         UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
+        // Mark this browser as user-requested so the checkPermission timer will poll it
+        // (and only it) for the grant — see the guard in checkPermission().
+        arrBrowsers[row]["isRequested"] = true
         if let browser = arrBrowsers[row]["browser"] as? BROWSER{
             var browserNameForPosthog = ""
             if browser == ._SAFARI_{
@@ -498,53 +585,89 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
                     }
                 }
                 let appName = getCurrentBrowserNameFrom(browser: browser) ?? ""
+                let bundleId = Bundle(path: "/Applications/\(appName).app")?.bundleIdentifier ?? ""
                 NSWorkspace.shared.open(URL(fileURLWithPath: "/Applications/\(appName).app"))
-                if getActiveTabUrlOf(browser: browser) != nil{
+
+                // Request Automation permission with a single BLOCKING prompt: this shows the OS
+                // consent dialog once and waits for the user's answer. Polling can't do this —
+                // getActiveTabUrlOf re-triggers the dialog every tick (loop), and
+                // AEDeterminePermissionToAutomateTarget(askUserIfNeeded:false) dismisses a dialog
+                // that's already showing (vanishes after ~1s). While this runs, the 1s timer is
+                // paused via isRequestInFlight so it can't interfere with the dialog.
+                //
+                // History: the re-appearing-every-few-seconds loop started once the AppleScript
+                // helpers (getActiveTabUrlOf → get<Browser>ActiveTabUrl) moved to
+                // runAppleScriptSafely, which times out after ~5s. With the consent dialog pending
+                // the script times out and the next timer tick re-runs it, re-triggering the
+                // prompt. This blocking-request path sidesteps AppleScript entirely for the grant.
+                self.isRequestInFlight = true
+                browsersAutoPromptAttempted.insert(browser.rawValue) // this explicit request counts; don't auto-prompt again
+                isBrowserAutomationRequestInFlight = true // pause passive URL probes (getActiveTabUrlOf) while the dialog is up
+                DispatchQueue.global().async {
+                    let target = NSAppleEventDescriptor(bundleIdentifier: bundleId)
+                    let status = AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, true)
                     DispatchQueue.main.async {
-                        self.arrBrowsers[row]["isEnabled"] = true
-                        self.tblView.reloadData()
-                        allApiObject.capturePosthog(event: "onboarding-granted-permission-\(browserNameForPosthog)", metadata: [:])
-                        addLog(text: "Permission granted for browser:- \(browserNameForPosthog)")
-                        self.saveBrowsersPermissionInfo()
-                        self.permissionGivenFromBrowser()
-                        self.anyBrowserPermissionSet = true
-                    }
-                }else{
-                    DispatchQueue.main.async {
-                        addLog(text: "⚠️ Permission not granted for browser:- \(browserNameForPosthog)")
-                        
+                        self.isRequestInFlight = false
+                        isBrowserAutomationRequestInFlight = false
+                        if status == noErr {
+                            self.arrBrowsers[row]["isEnabled"] = true
+                            self.tblView.reloadData()
+                            allApiObject.capturePosthog(event: "onboarding-granted-permission-\(browserNameForPosthog)", metadata: [:])
+                            addLog(text: "Permission granted for browser:- \(browserNameForPosthog)")
+                            self.saveBrowsersPermissionInfo()
+                            self.permissionGivenFromBrowser()
+                            self.anyBrowserPermissionSet = true
+                            self.updateScreenshotAndProceedState()
+                            return
+                        }
+
+                        // Not authorized. Only surface the "open Automation preferences" alert when
+                        // the user actually DENIED (blocking prompt returned not-permitted). Other
+                        // statuses (app not scriptable, etc.) are logged and ignored.
+                        guard status == OSStatus(errAEEventNotPermitted) else {
+                            addLog(text: "Automation request for \(appName) returned status \(status)")
+                            return
+                        }
+                        addLog(text: "⚠️ Permission denied for browser:- \(browserNameForPosthog)")
+
                         let alert = NSAlert()
                         alert.setSharingType()
                         alert.alertStyle = .informational
-                        
+
                         var urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Security & Privacy > Privacy and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
-                        
+
                         if #available(macOS 13.0, *) {
                             urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Privacy & Security and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
-                            
+
                             if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
                                 urlError = onboardingControllingBrowserVcInfo.value(forKey: "alertOpenPreferencesLatestOsText") as? String ?? urlError
                             }
                         }else {
                             urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Security & Privacy > Privacy and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
-                            
+
                             if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
                                 urlError = onboardingControllingBrowserVcInfo.value(forKey: "alertOpenPreferencesText") as? String ?? urlError
                             }
                         }
-                        
+
                         urlError = urlError.replacingOccurrences(of: "<APPNAME>", with: appName)
                         var buttonPreferencesText = "Open Automation Preferences"
-                        
+
                         if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
                             buttonPreferencesText = onboardingControllingBrowserVcInfo.value(forKey: "buttonOpenPreferences") as? String ?? buttonPreferencesText
                         }
-                        
+
                         alert.messageText = urlError
                         alert.addButton(withTitle: buttonPreferencesText)
                         alert.addButton(withTitle: buttonCancelText)
-                        
-                        alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+
+                        // The blocking request can resolve after the user left this screen, so
+                        // self.view.window may be nil — bail instead of force-unwrapping (crash).
+                        guard let window = self.view.window else {
+                            addLog(text: "onboardingControllingBrowserVc: view no longer in a window — skipping the preferences alert")
+                            return
+                        }
+                        alert.beginSheetModal(for: window, completionHandler: { (modalResponse) in
                             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                                 let urlstring = "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation";
                                 NSWorkspace.shared.open(URL(string: urlstring)!)

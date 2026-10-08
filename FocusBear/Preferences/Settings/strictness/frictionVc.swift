@@ -164,7 +164,7 @@ extension frictionVc: SettingToggleItemDelegate{
                 startMainAppForceQuitMonitoring()
                 allApiObject.capturePosthog(event: "settings-changed-enable-reload-after-force-quit", metadata: [:])
             }else{
-                if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil && SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
+                if SettingsManagerObject.isAppPasswordSet && SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
                     
                     if isPasswordRequireInOpenSettings(){
                         mainViewControllerObj?.askPasswordForSettingsIfNeeded()

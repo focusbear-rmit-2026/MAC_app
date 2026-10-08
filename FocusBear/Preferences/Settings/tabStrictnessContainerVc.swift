@@ -27,6 +27,7 @@ class tabStrictnessContainerVc: NSViewController {
     }
     
     @IBAction func btnSegmentControlGeekModeClicked(_ sender: Any) {
+        guard ManagedBlockingRuntime.shared.allowLegacySettingsMutation() else { return segmentControlGeekMode.showCurrentMode() }
         if segmentControlGeekMode.selectedSegment == 0{
             if SettingsManagerObject.isGeekModeEnabled{
                 return;
@@ -55,36 +56,42 @@ class tabStrictnessContainerVc: NSViewController {
     }
     
     func showStrictnessView(){
+        if ManagedBlockingRuntime.shared.isSettingsLocked { showFocusPreferences(); return }
         removeSubViews()
         self.containerView.addSubview(getStrictnessVcObject().view)
         self.containerView.addConstraints(subView: getStrictnessVcObject().view)
     }
 
     func showBrowserTabLimiterView(){
+        if ManagedBlockingRuntime.shared.isSettingsLocked { showFocusPreferences(); return }
         removeSubViews()
         self.containerView.addSubview(getBrowserTabLimiterVcObject().view)
         self.containerView.addConstraints(subView: getBrowserTabLimiterVcObject().view)
     }
     
     func showBlockedUrlsView(){
+        if ManagedBlockingRuntime.shared.isSettingsLocked { showFocusPreferences(); return }
         removeSubViews()
         self.containerView.addSubview(getBlockedUrlsVcObject().view)
         self.containerView.addConstraints(subView: getBlockedUrlsVcObject().view)
     }
     
     func showBlockedAppsView(){
+        if ManagedBlockingRuntime.shared.isSettingsLocked { showFocusPreferences(); return }
         removeSubViews()
         self.containerView.addSubview(getBlockedAppsVcObject().view)
         self.containerView.addConstraints(subView: getBlockedAppsVcObject().view)
     }
     
     func showAlwaysAllowedAppsView(){
+        if ManagedBlockingRuntime.shared.isSettingsLocked { showFocusPreferences(); return }
         removeSubViews()
         self.containerView.addSubview(getAlwaysAllowedAppsVcObject().view)
         self.containerView.addConstraints(subView: getAlwaysAllowedAppsVcObject().view)
     }
     
     func showCustomBlockingSchedulesView(){
+        if ManagedBlockingRuntime.shared.isSettingsLocked { showFocusPreferences(); return }
         removeSubViews()
         self.containerView.addSubview(getCustomBlockingSchedulesVcObject().view)
         self.containerView.addConstraints(subView: getCustomBlockingSchedulesVcObject().view)
@@ -93,6 +100,7 @@ class tabStrictnessContainerVc: NSViewController {
     }
 
     func showBlockingSchedulesView(index:Int, shouldCreateNew:Bool){
+        if ManagedBlockingRuntime.shared.isSettingsLocked { showFocusPreferences(); return }
         removeSubViews()
         self.containerView.addSubview(getBlockingScheduleEditorVCObject().view)
         self.containerView.addConstraints(subView: getBlockingScheduleEditorVCObject().view)
@@ -101,6 +109,7 @@ class tabStrictnessContainerVc: NSViewController {
 
     /// Open the editor pre-filled for a schedule drag-created on the calendar.
     func showBlockingScheduleEditorPrefilled(weekday:Int, startMinutes:Int, endMinutes:Int){
+        if ManagedBlockingRuntime.shared.isSettingsLocked { showFocusPreferences(); return }
         let editor = getBlockingScheduleEditorVCObject()
         editor.prefillDays = [weekday]
         editor.prefillStart = customBlockingSchedule.parseTime(BlockingScheduleStore.hhmm(fromMinutes: startMinutes))
@@ -113,6 +122,7 @@ class tabStrictnessContainerVc: NSViewController {
 
     /// Open the editor pre-filled from a Quick-Start preset.
     func showBlockingScheduleEditorPreset(_ preset: SchedulePreset){
+        if ManagedBlockingRuntime.shared.isSettingsLocked { showFocusPreferences(); return }
         let editor = getBlockingScheduleEditorVCObject()
         if !preset.isCustom {
             editor.prefillName = preset.name

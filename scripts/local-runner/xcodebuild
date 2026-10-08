@@ -1,0 +1,134 @@
+#!/usr/bin/python3
+"""Runner-scoped safety preflight; not a sandbox against hostile workflow code.
+
+Install this file as VERSION/bin/xcodebuild and the reviewed preflight as
+VERSION/check-isolated-test-host.py. Neither file is loaded from a job checkout.
+"""
+from pathlib import Path
+import os
+import subprocess
+import sys
+
+
+REAL_XCODEBUILD = "/usr/bin/xcodebuild"
+PYTHON = "/usr/bin/python3"
+GIT = "/usr/bin/git"
+TRUSTED_PREFLIGHT = Path(__file__).resolve().parent.parent / "check-isolated-test-host.py"
+TEST_ACTIONS = {"test", "test-without-building"}
+# Consume values before looking for actions: a result directory or scheme named "test"
+# is not a test action. Unknown options are left for xcodebuild to diagnose.
+VALUE_OPTIONS = {
+    "-workspace", "-project", "-scheme", "-configuration", "-target", "-sdk", "-arch",
+    "-destination", "-destination-timeout", "-derivedDataPath", "-resultBundlePath",
+    "-resultBundleVersion", "-resultStreamPath", "-clonedSourcePackagesDirPath", "-jobs",
+    "-parallel-testing-enabled", "-parallel-testing-worker-count", "-maximum-concurrent-test-simulator-destinations",
+    "-maximum-concurrent-test-device-destinations", "-maximum-parallel-testing-workers",
+    "-test-iterations", "-test-timeouts-enabled", "-default-test-execution-time-allowance",
+    "-maximum-test-execution-time-allowance", "-test-repetition-relaunch-enabled",
+    "-testLanguage", "-testRegion", "-testPlan", "-only-test-configuration", "-skip-test-configuration",
+    "-xctestrun", "-xcconfig", "-toolchain", "-exportPath", "-archivePath", "-exportOptionsPlist",
+    "-packageCachePath", "-packageAuthorizationProvider", "-authenticationKeyPath",
+    "-authenticationKeyID", "-authenticationKeyIssuerID", "-scmProvider",
+}
+UNSAFE_OPTIONS = {"-xctestrun", "-xcconfig", "-testPlan", "-target", "-only-test-configuration", "-skip-test-configuration"}
+UNSAFE_SETTINGS = {"CONFIGURATION", "SWIFT_ACTIVE_COMPILATION_CONDITIONS", "OTHER_SWIFT_FLAGS",
+                   "TEST_HOST", "BUNDLE_LOADER", "TEST_TARGET_NAME", "TEST_EXECUTABLE_PREFIX",
+                   "TEST_EXECUTABLE_SUFFIX", "XCODE_XCCONFIG_FILE", "FOCUSBEAR_LOGIC_TEST_HOST"}
+
+
+class UnsafeInvocation(Exception):
+    pass
+
+
+def parse(arguments):
+    actions, options, settings = [], {}, {}
+    index = 0
+    while index < len(arguments):
+        argument = arguments[index]
+        option, equals, value = argument.partition("=")
+        if option in VALUE_OPTIONS:
+            if not equals:
+                index += 1
+                value = arguments[index] if index < len(arguments) else None
+            options.setdefault(option, []).append(value)
+        elif argument in TEST_ACTIONS:
+            actions.append(argument)
+        elif equals and not option.startswith("-"):
+            settings[option.split("[", 1)[0]] = value
+        index += 1
+    return actions, options, settings
+
+
+def checkout_root(cwd, options):
+    selectors = [(key, value) for key in ("-workspace", "-project") for value in options.get(key, [])]
+    if len(selectors) > 1:
+        raise UnsafeInvocation("Use one explicit workspace or project; multiple targets cannot be verified.")
+    try:
+        selected = None
+        location = Path(cwd).resolve(strict=True)
+        if selectors:
+            kind, value = selectors[0]
+            if not value:
+                raise UnsafeInvocation("The workspace/project path is missing.")
+            selected = (location / value).resolve(strict=True)
+            location = selected.parent
+        completed = subprocess.run([GIT, "-C", str(location), "rev-parse", "--show-toplevel"],
+                                   capture_output=True, text=True, check=False)
+        if completed.returncode:
+            raise UnsafeInvocation("Cannot identify the actual invocation's Git checkout.")
+        root = Path(completed.stdout.strip()).resolve(strict=True)
+        if selected is not None:
+            expected = root / ("FocusBear.xcworkspace" if kind == "-workspace" else "FocusBear.xcodeproj")
+            if selected != expected.resolve(strict=True):
+                raise UnsafeInvocation("The requested workspace/project is not the verified Focus Bear target.")
+        elif location != root:
+            raise UnsafeInvocation("From a subdirectory, specify the Focus Bear workspace/project explicitly.")
+        return root
+    except OSError:
+        raise UnsafeInvocation("The requested checkout or workspace/project does not exist.") from None
+
+
+def validate_invocation(arguments, cwd, environment):
+    actions, options, settings = parse(arguments)
+    if "test-without-building" in actions:
+        raise UnsafeInvocation("Use test to rebuild the verified source; prebuilt test-host provenance cannot be verified.")
+    if options.get("-scheme") != ["Focus Bear"] or options.get("-configuration") != ["Debug"]:
+        raise UnsafeInvocation("App-hosted CI tests require exactly -scheme 'Focus Bear' -configuration Debug.")
+    if UNSAFE_OPTIONS.intersection(options) or UNSAFE_SETTINGS.intersection(settings):
+        raise UnsafeInvocation("Test-plan, configuration, compiler-condition or test-host overrides cannot be verified.")
+    if environment.get("XCODE_XCCONFIG_FILE"):
+        raise UnsafeInvocation("An inherited XCODE_XCCONFIG_FILE can override the isolated Debug host.")
+    for key in ("FOCUSBEAR_LOGIC_TEST_HOST", "TEST_RUNNER_FOCUSBEAR_LOGIC_TEST_HOST"):
+        if key in environment and environment[key] != "1":
+            raise UnsafeInvocation("An inherited test-host flag conflicts with the isolated scheme.")
+    return checkout_root(cwd, options)
+
+
+def run(arguments, environment=None, cwd=None, execute=None, preflight=None):
+    environment = os.environ if environment is None else environment
+    cwd = Path.cwd() if cwd is None else Path(cwd)
+    # No PATH lookup for the real tool, so this wrapper cannot recursively call itself.
+    execute = execute or (lambda argv: os.execv(REAL_XCODEBUILD, argv))
+    guarded_repository = environment.get("GITHUB_ACTIONS") == "true" and environment.get("GITHUB_REPOSITORY", "").casefold() == "focus-bear/mac-app"
+    if guarded_repository and TEST_ACTIONS.intersection(parse(arguments)[0]):
+        try:
+            root = validate_invocation(arguments, cwd, environment)
+            if preflight is None:
+                if not TRUSTED_PREFLIGHT.is_file():
+                    raise UnsafeInvocation("The runner's trusted preflight is missing; reinstall its reviewed version.")
+                result = subprocess.run([PYTHON, "-I", str(TRUSTED_PREFLIGHT), str(root)], check=False)
+                passed = result.returncode == 0
+            else:
+                passed = preflight(root)
+            if not passed:
+                raise UnsafeInvocation("This checkout failed the trusted isolated-host preflight. Bring in Mac PR2465 first.")
+        except (UnsafeInvocation, OSError) as error:
+            # Do not print command-line values: they can contain credentials or private paths.
+            print("::error::Focus Bear runner refused app-hosted tests: " + str(error), file=sys.stderr)
+            return 78
+    execute([REAL_XCODEBUILD] + list(arguments))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(run(sys.argv[1:]))

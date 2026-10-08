@@ -12,6 +12,10 @@ import SwiftUI
 
 class accountVc: NSViewController {
 
+    @IBOutlet weak var btnCancelEditing: cursorButton!
+    @IBOutlet weak var btnUpdate: Button!
+    @IBOutlet weak var btnEditUserName: cursorButton!
+    @IBOutlet weak var textFieldEditUserName: NSTextField!
     @IBOutlet weak var topSpaceUserId: NSLayoutConstraint!
     @IBOutlet weak var btnResendConfirmation: underLineButton!
     @IBOutlet weak var lblEmailNotVerified: NSTextField!
@@ -39,6 +43,7 @@ class accountVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        lblEmaiId.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.accountEmail)
         // Do view setup here.
         lblSubscriptionDetails.stringValue = "Subscription Details"
         lblStatus.stringValue = "Status:"
@@ -53,6 +58,7 @@ class accountVc: NSViewController {
         lblTitleName.stringValue = "Leaderboard Username:"
         lblTitleEmailId.stringValue = "Email Id:"
         btnLogout.title = "Logout"
+        btnLogout.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.logoutButton)
         btnResetPassword.title = "Reset Password"
         if let accountVcInfo = configjson.value(forKey: "accountVcInfo") as? NSDictionary{
             lblTitle.stringValue = accountVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
@@ -82,12 +88,28 @@ class accountVc: NSViewController {
         arrForSearchFromSimpleModeSettings.append(["title": lblTitleEmailId.stringValue, "tabId": idAccount, "object": lblTitleEmailId as Any])
         arrForSearchFromSimpleModeSettings.append(["title": lblTitleName.stringValue, "tabId": idAccount, "object": lblTitleName as Any])
         arrForSearchFromSimpleModeSettings.append(["title": lblTitleUserId.stringValue, "tabId": idAccount, "object": lblTitleUserId as Any])
-        
-        
+
+        // Leaderboard-username editing (#1133): start in read-only display mode (label + edit icon);
+        // the editable field + Update button appear only when the user taps the edit icon.
+        btnUpdate.title = "Update"
+        btnEditUserName.toolTip = "Edit"
+        btnCancelEditing.toolTip = "Undo"
+        if let accountVcInfo = configjson.value(forKey: "accountVcInfo") as? NSDictionary{
+            btnUpdate.title = accountVcInfo.value(forKey: "buttonUpdateUsernameText") as? String ?? btnUpdate.title
+            btnEditUserName.toolTip = accountVcInfo.value(forKey: "editUsernameTooltip") as? String ?? btnEditUserName.toolTip
+            btnCancelEditing.toolTip = accountVcInfo.value(forKey: "cancelUsernameTooltip") as? String ?? btnCancelEditing.toolTip
+        }
+        // Icon-only buttons: the tooltip is the only text that says what they do.
+        btnEditUserName.setAccessibilityLabel(btnEditUserName.toolTip)
+        btnCancelEditing.setAccessibilityLabel(btnCancelEditing.toolTip)
+        setUsernameEditMode(false)
     }
     
     override func viewWillAppear(){
         addLog(text: "accountVc:- viewWillAppear")
+        // If the user left the screen mid-edit, discard that and return to the read-only display.
+        btnUpdate.isEnabled = true
+        setUsernameEditMode(false)
         reloadView()
     }
 
@@ -98,11 +120,13 @@ class accountVc: NSViewController {
             lblUserId.stringValue = ""
         }
         if currentLeaderboardUsername.isEmpty {
-            var leaderboardUsernamePlaceholder = "Not set — update your leaderboard username in the web app"
+            // New key for the editable UX. The old `leaderboardUsernamePlaceholder` ("...in the web app")
+            // is left untouched so older app versions still read it correctly from the served config.
+            var leaderboardUsernameNotSet = "Not set — click Edit to set your leaderboard username"
             if let accountVcInfo = configjson.value(forKey: "accountVcInfo") as? NSDictionary{
-                leaderboardUsernamePlaceholder = accountVcInfo.value(forKey: "leaderboardUsernamePlaceholder") as? String ?? leaderboardUsernamePlaceholder
+                leaderboardUsernameNotSet = accountVcInfo.value(forKey: "leaderboardUsernameNotSetText") as? String ?? leaderboardUsernameNotSet
             }
-            lblName.stringValue = leaderboardUsernamePlaceholder
+            lblName.stringValue = leaderboardUsernameNotSet
         } else {
             lblName.stringValue = currentLeaderboardUsername
         }
@@ -162,7 +186,71 @@ class accountVc: NSViewController {
 
         configureGuestConversionCard()
     }
+    /// Toggle between the read-only username label (+ edit icon) and the editable field (+ Update button).
+    private func setUsernameEditMode(_ editing: Bool){
+        lblName.isHidden = editing
+        btnEditUserName.isHidden = editing
+        textFieldEditUserName.isHidden = !editing
+        btnUpdate.isHidden = !editing
+        btnCancelEditing.isHidden = !editing
+    }
 
+    @IBAction func btnCancelEditingClicked(_ sender: Any) {
+        addLog(text: "[user-action] accountVc:- cancel editing leaderboard username")
+        // Discard any typed changes and return to the read-only display, without calling the API.
+        btnUpdate.isEnabled = true   // in case a prior in-flight update had disabled it
+        setUsernameEditMode(false)
+    }
+
+    @IBAction func btnEditUserNameClicked(_ sender: Any) {
+        addLog(text: "[user-action] accountVc:- edit leaderboard username clicked")
+        // Prefill with the current username (empty when not set), switch to edit mode, and focus the field.
+        textFieldEditUserName.stringValue = currentLeaderboardUsername
+        setUsernameEditMode(true)
+        self.view.window?.makeFirstResponder(textFieldEditUserName)
+    }
+
+    @IBAction func btnUpdateClicked(_ sender: Any) {
+        addLog(text: "[user-action] accountVc:- update leaderboard username clicked")
+        let newUsername = textFieldEditUserName.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        // The backend needs a non-empty value and caps username at 30 chars.
+        if newUsername.isEmpty || newUsername.count > 30 {
+            let alert = NSAlert()
+            alert.setSharingType()
+            alert.messageText = newUsername.isEmpty
+                ? "Please enter a leaderboard username."
+                : "Leaderboard username must be 30 characters or fewer."
+            if let accountVcInfo = configjson.value(forKey: "accountVcInfo") as? NSDictionary {
+                let key = newUsername.isEmpty ? "usernameEmptyText" : "usernameTooLongText"
+                alert.messageText = accountVcInfo.value(forKey: key) as? String ?? alert.messageText
+            }
+            alert.runModal()
+            return
+        }
+        // Disable Update while the request is in flight to avoid double-submits; the completion is on main.
+        btnUpdate.isEnabled = false
+        allApiObject.updateLeaderboardUsername(username: newUsername) { [weak self] _, statusCode in
+            guard let self = self else { return }
+            self.btnUpdate.isEnabled = true
+            if statusCode == 200 {
+                currentLeaderboardUsername = newUsername
+                self.setUsernameEditMode(false)   // back to label + edit icon
+                self.reloadView()
+                allApiObject.capturePosthog(event: "leaderboard-username-updated", metadata: [:])
+            } else {
+                // Keep edit mode so the user can correct and retry (e.g. a taken username).
+                let alert = NSAlert()
+                alert.setSharingType()
+                alert.messageText = "Couldn't update your leaderboard username."
+                alert.informativeText = "That username may already be taken. Please try a different one."
+                if let accountVcInfo = configjson.value(forKey: "accountVcInfo") as? NSDictionary {
+                    alert.messageText = accountVcInfo.value(forKey: "usernameUpdateFailedTitle") as? String ?? alert.messageText
+                    alert.informativeText = accountVcInfo.value(forKey: "usernameUpdateFailedText") as? String ?? alert.informativeText
+                }
+                alert.runModal()
+            }
+        }
+    }
     // MARK: - Guest account conversion (#1850)
 
     private var guestConversionHostingView: NSHostingView<AnonymousAccountConversionView>?
@@ -247,9 +335,9 @@ class accountVc: NSViewController {
                 addLog(text:"isEmailVerified :- \(isEmailVerified)")
                 currentUserEmail = dic?.value(forKey: "email") as? String ?? ""
                 currentUserName = dic?.value(forKey: "username") as? String ?? ""
-                appdelegate!.sharedDefaults?.setValue(currentUserEmail, forKeyPath: kUserdefaultsSharedUserEmail)
-                appdelegate!.sharedDefaults?.setValue(currentUserName, forKeyPath: kUserdefaultsSharedUserName)
-                appdelegate!.sharedDefaults?.synchronize()
+                if let sharedDefaults = appdelegate?.sharedDefaults {
+                    InternalTestUser.record(email: currentUserEmail, in: sharedDefaults)
+                }
                 
                 if isCurrentUserGuestAccount(){
                     addLog(text: "No need to verify email. Reason: Guest account.")

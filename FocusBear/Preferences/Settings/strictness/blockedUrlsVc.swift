@@ -75,7 +75,7 @@ class blockedUrlsVc: NSViewController {
         if selectedUrlsRow < SettingsManagerObject.arrBlockedUrls.count{
             SettingsManagerObject.arrBlockedUrls.remove(at: selectedUrlsRow)
             tblView.reloadData()
-            UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
+            SensitiveDefaults.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
         }
         SettingsManagerObject.isSettingsChanged = true
         UserDefaults.standard.set(true, forKey: kUserdefaultsEditBlockedUrlsOnce)

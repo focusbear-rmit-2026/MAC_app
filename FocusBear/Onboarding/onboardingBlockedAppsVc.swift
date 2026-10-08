@@ -27,6 +27,11 @@ class onboardingBlockedAppsVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        tblView.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedAppsTable)
+        btnAdd.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedAppsAddButton)
+        btnRemove.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedAppsRemoveButton)
+        lblBlockedCount.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedAppsCount)
+        btnContinue.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.blockedAppsProceedButton)
         // Do view setup here.
         lblTitle.stringValue = "Choose apps to block"
         btnContinue.title = "Proceed"
@@ -79,7 +84,8 @@ class onboardingBlockedAppsVc: NSViewController {
         let defaultApps = [
             "Chess",
             "Stocks",
-            "TV"
+            "TV",
+            "News"
         ]
 
         for appName in defaultApps {
@@ -99,6 +105,8 @@ class onboardingBlockedAppsVc: NSViewController {
             return "com.apple.stocks"
         case "TV":
             return "com.apple.TV"
+        case "News":
+            return "com.apple.news"
         default:
             return ""
         }
@@ -233,9 +241,13 @@ class onboardingBlockedAppsVc: NSViewController {
         UserDefaults.standard.set(arrBlockedApps, forKey: kUserdefaultsBlockedAppsFromOnboarding)
 
         SettingsManagerObject.arrBlockedApps = arrBlockedApps
-        UserDefaults.standard.set(SettingsManagerObject.arrBlockedApps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)//
+        SensitiveDefaults.set(SettingsManagerObject.arrBlockedApps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)//
         UserDefaults.standard.set(true, forKey: kUserdefaultsIsAnyDistractionSetByUser)
-        getOnboardingVcObject().navigate(to: ._ASK_CREATE_BLOCKING_SCHEDULE_)
+        // After blocked URLs + apps, continue through allowed URLs → blocking schedule → permissions;
+        // the habits intro comes last, after permissions. Jumping straight to _HOLD_ON_ here (added in
+        // #2569) skipped the blocking-schedule and permission screens for users who set up blocking, so
+        // blocking couldn't actually be enforced. (#2599)
+        getOnboardingVcObject().navigateToAllowedUrlsVc()
         
     }
 }

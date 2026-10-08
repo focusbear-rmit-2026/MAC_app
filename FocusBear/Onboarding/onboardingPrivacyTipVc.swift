@@ -27,7 +27,10 @@ class onboardingPrivacyTipVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        checkBoxTerms.setAccessibilityIdentifier(UITestContract.Identifier.Onboarding.termsCheckBox)
+        btnContinue.setAccessibilityIdentifier(UITestContract.Identifier.Onboarding.privacyContinueButton)
+        btnPrivacyPolicy.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.privacyPolicyLink)
+        btnTerms.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.termsLink)
         
         lblPointFirst.stringValue = "We never track which sites or apps you visit."
         lblPointSecond.stringValue = "Your data syncs across devices so blocking works everywhere."

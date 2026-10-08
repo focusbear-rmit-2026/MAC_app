@@ -37,7 +37,10 @@ jobs:
           cache-dependency-path: .github/scripts/requirements_qa_check.txt
 
       - name: Install FFmpeg
-        uses: FedericoCarboni/setup-ffmpeg@v3
+        # Install from apt rather than FedericoCarboni/setup-ffmpeg@v3, which broke upstream with
+        # "AssertionError [ERR_ASSERTION]: Failed to read version from readme". ffmpeg is in the
+        # ubuntu-latest apt repos, so this is simpler and doesn't depend on the third-party action.
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
       - name: Install dependencies
         run: pip install -r .github/scripts/requirements_qa_check.txt
@@ -54,4 +57,7 @@ jobs:
           OPENAI_MODEL: gpt-5-mini
           REASONING_EFFORT: medium
           DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          # Comma-separated logins: if one authored an issue's LAST comment, the checker
+          # skips that issue (never nagged — the ball is in their court).
+          EXEMPT_LAST_COMMENTERS: catherineisonline
         run: python .github/scripts/check_qa_evidence.py

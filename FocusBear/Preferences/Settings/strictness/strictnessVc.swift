@@ -70,6 +70,8 @@ class strictnessVc: NSViewController {
             blockingScheduleTitle = settingsNew.value(forKey: "blockingScheduleSettingTitle") as? String ?? blockingScheduleTitle
             titleBlockLists = settingsNew.value(forKey: "titleBlockLists") as? String ?? titleBlockLists
         }
+        sliderStrictness.setAccessibilityLabel(lblTitleStrictnessLevel.stringValue)
+        sliderStrictness.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.strictnessSlider)
         
         if let blockedUrlsViewInfo = configjson.value(forKey: "blockedUrlsViewInfo") as? NSDictionary{
             blockedUrlsSettingTitle = blockedUrlsViewInfo.value(forKey: "title") as? String ?? blockedUrlsSettingTitle
@@ -140,6 +142,7 @@ class strictnessVc: NSViewController {
         blockListItemVcObj?.lblDescription.isHidden = true
         blockListItemVcObj?.toolTip = strictness_Block_Lists
         blockListItemVcObj?.delegate = self
+        blockListItemVcObj?.btnRow.setAccessibilityIdentifier(UITestContract.Identifier.Blocking.blockListsRow)
         
         
         //---Custom Blocking----
@@ -153,6 +156,7 @@ class strictnessVc: NSViewController {
         customBlockingVcObj?.lblDescription.isHidden = true
         customBlockingVcObj?.delegate = self
         customBlockingVcObj?.toolTip = strictness_Blocking_Schedules
+        customBlockingVcObj?.btnRow.setAccessibilityIdentifier(UITestContract.Identifier.Blocking.blockingSchedulesRow)
 
         stackView.addView(blockedURLsItemVcObj!.view, in: .bottom)
         blockedURLsItemVcObj?.lblTitle.stringValue = blockedUrlsSettingTitle
@@ -189,6 +193,7 @@ class strictnessVc: NSViewController {
         alwaysAllowedAppsItemVcObj?.lblDescription.isHidden = true
         alwaysAllowedAppsItemVcObj?.delegate = self
         alwaysAllowedAppsItemVcObj?.toolTip = strictness_AlwaysAllowedApps
+        alwaysAllowedAppsItemVcObj?.btnRow.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.alwaysAllowedAppsRow)
 
         stackView.addView(browserTabLimiterItemVcObj!.view, in: .bottom)
         browserTabLimiterItemVcObj?.lblTitle.stringValue = tabLimiterSettingTitle
@@ -196,21 +201,20 @@ class strictnessVc: NSViewController {
         browserTabLimiterItemVcObj?.lblDescription.isHidden = true
         browserTabLimiterItemVcObj?.delegate = self
         browserTabLimiterItemVcObj?.lineBottom.isHidden = true
+        browserTabLimiterItemVcObj?.btnRow.setAccessibilityIdentifier(UITestContract.Identifier.SettingsRegression.tabLimiterRow)
 
         arrForSearchFromSettings.append(["title": frictionItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": frictionItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": passwordItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": passwordItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": focusModeItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": focusModeItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": browserTabLimiterItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": browserTabLimiterItemVcObj!.bgBox as Any])
-        arrForSearchFromSettings.append(["title": blockedURLsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedURLsItemVcObj!.bgBox as Any])
-        arrForSearchFromSettings.append(["title": blockedAppsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedAppsItemVcObj!.bgBox as Any])
+        // #2352: Super Distracting Sites/Apps are hidden in both modes, so they're not searchable in
+        // either. Always Allowed Apps shows in Geek mode only, so it stays in the (Geek) search list.
         arrForSearchFromSettings.append(["title": alwaysAllowedAppsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": alwaysAllowedAppsItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": customBlockingVcObj!.lblTitle.stringValue, "tabId": idTabStrictness, "object": customBlockingVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": blockListItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockListItemVcObj!.bgBox as Any])
-        
+
+        // #2352: Simple mode hides Super Distracting Sites/Apps AND Always Allowed Apps — none are searchable here.
         arrForSearchFromSimpleModeSettings.append(["title": browserTabLimiterItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": browserTabLimiterItemVcObj!.bgBox as Any])
-        arrForSearchFromSimpleModeSettings.append(["title": blockedURLsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedURLsItemVcObj!.bgBox as Any])
-        arrForSearchFromSimpleModeSettings.append(["title": blockedAppsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedAppsItemVcObj!.bgBox as Any])
-        arrForSearchFromSimpleModeSettings.append(["title": alwaysAllowedAppsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": alwaysAllowedAppsItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": customBlockingVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": customBlockingVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": blockListItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockListItemVcObj!.bgBox as Any])
     }
@@ -262,6 +266,13 @@ class strictnessVc: NSViewController {
             customBlockingVcObj?.view.isHidden = true
             blockListItemVcObj?.view.isHidden = true
         }
+
+        // #2352 (Bala feedback): Super Distracting Sites / Super Distracting Apps are removed from the
+        // Blocking UI in BOTH Geek and Simple mode. Always Allowed Apps is a Geek-mode-only row. Kept
+        // after the branches above so this wins regardless of which path (Blocks / Settings) we're on.
+        blockedURLsItemVcObj?.view.isHidden = true
+        blockedAppsItemVcObj?.view.isHidden = true
+        alwaysAllowedAppsItemVcObj?.view.isHidden = !SettingsManagerObject.isGeekModeEnabled
     }
     
     func reloadStrictnessLevelState(){

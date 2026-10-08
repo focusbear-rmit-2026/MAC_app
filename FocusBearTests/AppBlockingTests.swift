@@ -9,6 +9,15 @@
 import XCTest
 
 class AppBlockingTests: XCTestCase {
+
+    /// macOS's own prompts are the system asking the user something, never a distraction. The AI
+    /// check-in was put over a keychain prompt mid-session (Sentry FOCUS-BEAR-MACOS-1K8, 2026-09-25).
+    func testSystemPromptsAndSettingsAreNeverBlocked() {
+        for app in ["securityagent", "system settings", "system preferences", "loginwindow", "universalaccessauthwarn"] {
+            XCTAssertTrue(focusDefaultAllowApps.contains(app), app)
+        }
+    }
+
     
     override func setUp() {
         super.setUp()
@@ -299,4 +308,56 @@ class AppBlockingTests: XCTestCase {
         )
         XCTAssertTrue(result, "An app in none of the lists should be blocked")
     }
+
+    // MARK: The login-item LaunchAgent (report 2026-09-21_18-01-43, issue #409)
+    //
+    // macOS announced the auto-start item as: «"open" is an item that can run in the background».
+    // It was named after the program launchd ran, and that program was /usr/bin/open.
+
+    private var helperBundle: URL {
+        URL(fileURLWithPath: "/Applications/Focus Bear.app/Contents/Resources/FBHelper.app")
+    }
+
+    func testLaunchdRunsTheHelperItselfNotUsrBinOpen() {
+        let arguments = HelperLaunchAgent.programArguments(helperBundle: helperBundle)
+
+        XCTAssertFalse(arguments.contains("/usr/bin/open"),
+                       "the background item is named after this program — it must not be `open`")
+        XCTAssertEqual(arguments.count, 1, "no wrapper process, so KeepAlive supervises the helper")
+        XCTAssertTrue(arguments[0].hasSuffix("FBHelper.app/Contents/MacOS/FBHelper"),
+                      "inside the bundle, so macOS can attribute the item to it")
+    }
+
+    func testThePlistIsWhatLaunchdNeeds() {
+        let plist = HelperLaunchAgent.plist(helperBundle: helperBundle)
+
+        XCTAssertEqual(plist["Label"] as? String, "com.focusbear.focusbearhelper")
+        XCTAssertNotEqual(plist["Label"] as? String, "com.focusbear.focusbearhelper.plist",
+                          "a label is not a filename")
+        XCTAssertEqual(plist["RunAtLoad"] as? Bool, true)
+        XCTAssertEqual(plist["KeepAlive"] as? Bool, true)
+    }
+
+    /// The check that decides whether to leave an existing agent alone. The old one returned early
+    /// whenever any argument merely mentioned the helper — so the legacy /usr/bin/open agent would
+    /// have been treated as current and never replaced.
+    func testALegacyOpenBasedAgentIsNotMistakenForACurrentOne() {
+        let legacy = ["/usr/bin/open", "-F", "-g", helperBundle.path, "--args"]
+        XCTAssertFalse(HelperLaunchAgent.matchesCurrentDesign(existingArguments: legacy,
+                                                              helperBundle: helperBundle),
+                       "it mentions the helper, but it is exactly what we are replacing")
+
+        let current = HelperLaunchAgent.programArguments(helperBundle: helperBundle)
+        XCTAssertTrue(HelperLaunchAgent.matchesCurrentDesign(existingArguments: current,
+                                                             helperBundle: helperBundle),
+                      "a correct agent must be left alone, or every launch rewrites it")
+    }
+
+    func testAnAgentForSomeOtherProgramIsNotOurs() {
+        XCTAssertFalse(HelperLaunchAgent.matchesCurrentDesign(existingArguments: nil,
+                                                              helperBundle: helperBundle))
+        XCTAssertFalse(HelperLaunchAgent.matchesCurrentDesign(existingArguments: ["/usr/bin/true"],
+                                                              helperBundle: helperBundle))
+    }
+
 }

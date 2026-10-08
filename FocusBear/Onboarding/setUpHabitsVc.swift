@@ -21,7 +21,7 @@ class setUpHabitsVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        btnSkip.setAccessibilityIdentifier(UITestContract.Identifier.Onboarding.skipHabitsButton)
         lblTitle.stringValue = "Set up habits to focus better"
         lblSubTitle.stringValue = "Research shows that habits like sleeping better, meditating, and exercising improve your focus"
         btnContinue.title = "Set up habits"
@@ -58,7 +58,8 @@ class setUpHabitsVc: NSViewController {
         allApiObject.capturePosthog(event: "set-up-habits-skipped", metadata: [:])
         isHabitsDisabled = true
         UserDefaults.standard.set(true, forKey: kUserdefaultsIsHabitsDisabledFromOnboarding)
-        getOnboardingVcObject().navigate(to: ._SET_DISTRACTION_BLOCKING_)
+        // Habits is the last section now (after permissions); skipping it finishes onboarding.
+        getOnboardingVcObject().navigate(to: ._ALL_SET_)
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {

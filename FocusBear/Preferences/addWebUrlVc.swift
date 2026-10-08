@@ -179,6 +179,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
     }
     
     @IBAction func btnAddClicked(_ sender: Any) {
+        guard !ManagedBlockingRuntime.shared.isSettingsLocked else { return }
         var arrDomain = [String]()
         var domain = ""
         if isAdding{
@@ -246,7 +247,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
                 focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (urlsArray.count - 1)), byExtendingSelection: false)
                 focusPreferencesVcObj?.tblViewAllowedUrls.scrollRowToVisible(urlsArray.count - 1)
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 
                 reSetCurrentFocusMode(focusType:arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow])
                 
@@ -289,7 +290,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 
                 
                 
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 
                 reSetCurrentFocusMode(focusType:arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow])
                 allApiObject.capturePosthog(event: "add-blocked-url-in-focus-mode", metadata: [:])
@@ -320,7 +321,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 }
                 
                 
-                UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
+                SensitiveDefaults.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
                 SettingsManagerObject.isSettingsChanged = true
                 allApiObject.capturePosthog(event: "add-always-blocked-url", metadata: [:])
             }
@@ -359,7 +360,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow] = dic
                 focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
                 focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (self.currentRow)), byExtendingSelection: false)
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 
                 reSetCurrentFocusMode(focusType:arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow])
                 allApiObject.capturePosthog(event: "edit-allowed-url-in-focus-mode", metadata: [:])//#490
@@ -403,7 +404,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 }
                 
                 
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 reSetCurrentFocusMode(focusType:arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow])
                 allApiObject.capturePosthog(event: "edit-blocked-url-in-focus-mode", metadata: [:])//#490
             }else if currenUrlAddingtState == ._ALL_BLOCK_URL{
@@ -433,7 +434,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                     blockedUrlsVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (currentRow)), byExtendingSelection: false)
                 }
                 
-                UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
+                SensitiveDefaults.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
                 SettingsManagerObject.isSettingsChanged = true
                 allApiObject.capturePosthog(event: "edit-always-blocked-url", metadata: [:])//#490//
             }

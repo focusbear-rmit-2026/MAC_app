@@ -9,6 +9,82 @@
 import Cocoa
 import SwiftUI
 
+/// A left-menu item whose availability a running routine governs.
+enum LeftMenuRoutineItem: CaseIterable {
+    case editHabits
+    case settings
+    case blocking
+    case microBreaks
+    case focusSession
+    case habits
+    case customRoutine
+}
+
+/// Why a routine has disabled a left-menu item. `leftMenuVc` maps this to the localized sentence
+/// (`disableReasonMorningRoutine` and friends, loaded from `leftMenuVcInfo` in config.json).
+enum LeftMenuDisableReason: CaseIterable {
+    case morningRoutine
+    case eveningRoutine
+    case focusSummary
+    case shutoffTime
+    case customRoutine
+}
+
+/// Which left-menu items stay clickable in a given app state — a pure function of `CURRENTSTATE`, so
+/// the rule is unit-testable and `leftMenuVc` only applies the answer to its boxes.
+///
+/// A routine "owns" the main window only while it is genuinely RUNNING. Every `_POSTPONE_*` state is
+/// the user explicitly stepping away from the routine, so nothing is restricted there — postponed is
+/// not active, and the menu comes back exactly as it is when idle.
+enum LeftMenuAvailability {
+
+    /// Items that stay available even while a routine owns the window. These are the "go and change a
+    /// preference" destinations: the user must be able to adjust their settings, their habit list and
+    /// what is blocked without first ending the routine. All three share the same tab handling —
+    /// `askPasswordForSettingsIfNeeded()` still enforces strictness, and
+    /// `checkScreenSizeIfFullScreenHabitIsRunning()` keeps the full-screen window — so opening any of
+    /// them cannot let the user slip out of a running routine.
+    static let alwaysAvailable: Set<LeftMenuRoutineItem> = [.editHabits, .settings, .blocking]
+
+    /// Why the menu is restricted in `state`, or nil when no routine owns the window (idle, every
+    /// `_POSTPONE_*` state, onboarding, a micro break — micro breaks run their own disable pass in
+    /// `microBreaksStarted`).
+    static func disableReason(for state: CURRENTSTATE) -> LeftMenuDisableReason? {
+        switch state {
+        case ._MORNING_HABIT_:  return .morningRoutine
+        case ._EVENING_HABIT_:  return .eveningRoutine
+        case ._FOCUS_SUMMARY_:  return .focusSummary
+        case ._SHUTOFFMAC_:     return .shutoffTime
+        case ._CUSTOM_ROUTINE_: return .customRoutine
+        default:                return nil
+        }
+    }
+
+    /// Whether `item` is clickable while the app is in `state`.
+    static func isEnabled(_ item: LeftMenuRoutineItem, during state: CURRENTSTATE) -> Bool {
+        guard let reason = disableReason(for: state) else { return true }
+        if alwaysAvailable.contains(item) { return true }
+        // The running routine's own tab is the way back into it, so it stays clickable; the other
+        // routine tab — and the tabs that would start a competing activity — does not.
+        switch item {
+        case .habits:        return reason != .customRoutine
+        case .customRoutine: return reason == .customRoutine
+        default:             return false
+        }
+    }
+
+    /// As above, but with the live-session carve-out: a habit-attached focus session
+    /// (`isAllowedActivityRunning`) runs in a routine state, so the base rule disables the Focus Session
+    /// tab — yet the user was just dropped into a LIVE session and must be able to return to it. Keep that
+    /// one tab reachable while such a session is running (#2793). Disabling Focus Session during a plain
+    /// routine stays correct; this only carves out the case where a session is actually live.
+    static func isEnabled(_ item: LeftMenuRoutineItem, during state: CURRENTSTATE,
+                          isAllowedActivityRunning: Bool) -> Bool {
+        if item == .focusSession && isAllowedActivityRunning { return true }
+        return isEnabled(item, during: state)
+    }
+}
+
 class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
 
     
@@ -26,6 +102,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     @IBOutlet weak var boxFocusMusic: mainWindowListBox!
     @IBOutlet weak var boxBrainDump: mainWindowListBox!
     @IBOutlet weak var boxTodoPlayer: mainWindowListBox!
+
+    /// Drives the "Focusing (Nm left)" row title while a session is running.
+    private var focusMinutesTimer: Timer?
     @IBOutlet weak var boxToolsItems: accordionBox!
     @IBOutlet weak var boxBrowsersTabAudit: mainWindowListBox!
     // Programmatically-added TOOLS items, surfaced out of Settings > Add-Ons.
@@ -48,7 +127,12 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     var disableReasonCustomRoutine = "Disabled because your custom routine is in progress. Go to the Custom Routine tab to continue."
     
     var lastSelectedBox:mainWindowListBox?
-    private var isToolsSectionExpanded = true
+    // #2352 (Bala feedback): TOOLS starts COLLAPSED — still true for anyone who has never opened it.
+    // It is now REMEMBERED once the user chooses (report 2026-09-21_16-00-46: "tools keeps
+    // collapsing"), so the default survives and a deliberate choice is not overridden every launch.
+    // It still auto-expands when a tool inside it becomes selected, and that does NOT count as a
+    // choice — see ToolsSectionPreference.
+    private var isToolsSectionExpanded = ToolsSectionPreference.isExpandedForCurrentUser
     private var hiddenToolsPopover: NSPopover?
 
     override func viewDidLoad() {
@@ -89,15 +173,10 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         
         boxTodoPlayer.imageIcon = NSImage(named: "validIcon")
         boxTodoPlayer.alwaysEnabled = true   // Todo List must always stay reachable (never greyed out)
-        
-        if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-            boxTodoPlayer.title = "Todo Player"
-        }else{
-            boxTodoPlayer.title = "Todo List"
-        }
+        applyTodoToolTitle()
         
         boxBrainDump.imageIcon = NSImage(named: "brainDump")
-        boxBrainDump.title = "Brain Dump"
+        boxBrainDump.title = "Notes"   // i18n-ignore: last-resort default; the real string comes from config (menuNotes)
 
         // TOOLS rows the user can hover-hide via ✕ and restore via the TOOLS gear icon.
         let hideableTools: [(mainWindowListBox, ToolID)] = [
@@ -116,6 +195,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         
         boxBrowsersTabAudit.imageIcon = NSImage(named: "NSTouchBarOpenInBrowserTemplate")
         boxBrowsersTabAudit.title = "Tab Audit"
+        boxBrowsersTabAudit.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.tabAuditMenuItem)
         boxBrowsersTabAudit.imageView?.contentTintColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
         
         boxFocusMusic.imageIcon = NSImage(named: "music_albums_fill")
@@ -178,25 +258,31 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
 
         installToolsAddOnItems()
         ensureMenuScrolls()
+        sidebarHeaderToggle = SidebarHeaderToggle(toggle: btnExpandLeftMenu)
 
         // Custom Routine is removed from the menu (now lives in the Day Plan's Custom Routines
-        // panel). setExpanded(true) above runs before the accordion's onStateChanged is assigned,
-        // so the closure doesn't hide it on first load — hide it explicitly here. Tab Audit is
-        // restored (visible by default, user-hideable) — its initial visibility is set below by
-        // refreshToolsVisibility(), via the hideableTools list above.
+        // panel); hide it explicitly here.
         boxCustomRoutine.isHidden = true
 
-        boxToolsItems.setExpanded(true)
+        // Restore what this account last chose; collapsed if it never has (#2352's default).
+        // setExpanded runs before onStateChanged is assigned, so it doesn't apply row visibility
+        // itself — refreshToolsVisibility() below does that.
+        boxToolsItems.setExpanded(ToolsSectionPreference.isExpandedForCurrentUser)
         boxToolsItems.onStateChanged = { [weak self] isExpanded in
-            print("Tools is now \(isExpanded ? "expanded" : "collapsed")")
             self?.isToolsSectionExpanded = isExpanded
             self?.refreshToolsVisibility()
+        }
+        // Only a click is a choice. The auto-expand in selectableListBoxSelectionDidChange goes
+        // through setExpanded and so never lands here, which is what stops it silently cancelling a
+        // collapse the user asked for.
+        boxToolsItems.onUserToggled = { isExpanded in
+            ToolsSectionPreference.recordUserChoice(isExpanded)
         }
         boxToolsItems.onGearClicked = { [weak self] in
             self?.showHiddenToolsPopover()
         }
-        // setExpanded(true) above ran before onStateChanged was assigned, so it didn't apply
-        // hidden-row state on first load — apply it explicitly now.
+        // setExpanded(false) above ran before onStateChanged was assigned, so it didn't apply
+        // hidden-row state on first load — apply it explicitly now (collapses all tool rows).
         refreshToolsVisibility()
 
         boxPreferences.setExpanded(true)
@@ -229,6 +315,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxHabits.delegate = self
         boxCustomRoutine.delegate = self
         boxUpgradeNow.delegate = self
+        setUITestIdentifiers()
         
         if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
             boxToolsItems.title = leftMenuVcInfo.value(forKey: "titleTools") as? String ?? boxToolsItems.title
@@ -243,12 +330,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuStartFocusSession") as? String ?? boxFocusSession.title
             boxMicroBreaks.title = leftMenuVcInfo.value(forKey: "menuStartMicroBreak") as? String ?? boxMicroBreaks.title
             
-            if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-                boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoPlayer") as? String ?? boxTodoPlayer.title
-            }else{
-                boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoList") as? String ?? boxTodoPlayer.title
-            }
-            boxBrainDump.title = leftMenuVcInfo.value(forKey: "menuBrainDump") as? String ?? boxBrainDump.title
+            applyTodoToolTitle()
+            boxBrainDump.title = leftMenuVcInfo.value(forKey: "menuNotes") as? String ?? boxBrainDump.title
             boxBrowsersTabAudit.title = leftMenuVcInfo.value(forKey: "menuTabAudit") as? String ?? boxBrowsersTabAudit.title
             boxFocusMusic.title = leftMenuVcInfo.value(forKey: "menuFocusMusic") as? String ?? boxFocusMusic.title
             
@@ -303,24 +386,34 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         let isFocusModePaused = isFocusModePaused()
 
         if isFocusModeOn{
-            boxFocusSession.title = "Stop Focus Session"
-//            imgViewStopSuperFocusSession.image = iconStopFocusSession
-            if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
-                boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuStopFocusSession") as? String ?? boxFocusSession.title
-            }
+            // The row says what is happening, not what tapping it does — it has never stopped the
+            // session, it opens the session screen (see `case boxFocusSession`), where pause and End
+            // Session live. It used to read "Stop Focus Session", which promised something it did not do.
+            boxFocusSession.title = focusingRowTitle()
+            startFocusMinutesTicker()
         }else if isFocusModePaused{
+            stopFocusMinutesTicker()
             boxFocusSession.title = "Resume Focus Session"
 //            imgViewStopSuperFocusSession.image = iconResumeFocusSession
             if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
                 boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuResumeFocusSession") as? String ?? boxFocusSession.title
             }
         }else if isHardCorePomodoroModeOn{
+            stopFocusMinutesTicker()
             boxFocusSession.title = "Stop Super Focus Session"
 //            imgViewStopSuperFocusSession.image = iconStopFocusSession
             if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
                 boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuStopSuperFocusSession") as? String ?? boxFocusSession.title
             }
+        }else if isAnyAllowedFocusModeActivityRunning{
+            // A habit with a focus mode attached is a LIVE session even though isFocusModeOn() is false
+            // for it (it sets isAnyAllowedFocusModeActivityRunning, not arrFocusType[...].isOn). Show the
+            // same "Focusing (Xm left)" row and keep the countdown ticking, instead of "Start Focus
+            // Session" — which wrongly implied no session was running (#2793).
+            boxFocusSession.title = focusingRowTitle()
+            startFocusMinutesTicker()
         }else{
+            stopFocusMinutesTicker()
             boxFocusSession.title = "Start Focus Session"
             if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
                 boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuStartFocusSession") as? String ?? boxFocusSession.title
@@ -346,6 +439,17 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         for (box, id) in addOnHideableTools {
             box?.isHidden = !isToolsSectionExpanded || ToolVisibilityStore.isHidden(id)
         }
+    }
+
+    /// True if `box` is one of the rows living under the collapsible TOOLS section (storyboard tools +
+    /// the programmatic Focus Button / Time Tracker / Late No More add-ons). Used to auto-expand TOOLS
+    /// when a tool is selected (#2352).
+    private func isToolBox(_ box: mainWindowListBox) -> Bool {
+        let toolBoxes: [mainWindowListBox?] = [
+            boxFocusMusic, boxBrainDump, boxTodoPlayer, boxMotivation, boxBrowsersTabAudit,
+            boxFocusButtonTool, boxTimeTrackerTool, boxLateNoMoreTool
+        ]
+        return toolBoxes.contains { $0 === box }
     }
 
     private func showHiddenToolsPopover() {
@@ -385,6 +489,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxFocusButtonTool = focusBtn
         boxTimeTrackerTool = timeTracker
         boxLateNoMoreTool = lateNoMore
+        timeTracker.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.timeTrackerMenuItem)
+        lateNoMore.setAccessibilityIdentifier(UITestContract.Identifier.OnboardingRegression.lateNoMoreMenuItem)
 
         let addOnHideableTools: [(mainWindowListBox, ToolID)] = [
             (focusBtn, .focusButton), (timeTracker, .timeTracker), (lateNoMore, .lateNoMore)
@@ -401,12 +507,20 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         stack.insertArrangedSubview(focusBtn, at: after + 1)
         stack.insertArrangedSubview(timeTracker, at: after + 2)
         stack.insertArrangedSubview(lateNoMore, at: after + 3)
+        matchSubviewOrderToArrangement(of: stack)
         for box in [focusBtn, timeTracker, lateNoMore] {
             box.heightAnchor.constraint(equalToConstant: 32).isActive = true
             // Pin leading/trailing to an existing item so the row lines up exactly with it.
             box.leadingAnchor.constraint(equalTo: boxMotivation.leadingAnchor).isActive = true
             box.trailingAnchor.constraint(equalTo: boxMotivation.trailingAnchor).isActive = true
         }
+    }
+
+    /// A stack view adds inserted rows to the END of its subviews, and VoiceOver reads subviews in
+    /// order — so these rows were read after "Upgrade Now", at the bottom of the menu.
+    private func matchSubviewOrderToArrangement(of stack: NSStackView) {
+        let arranged = stack.arrangedSubviews
+        stack.subviews = arranged + stack.subviews.filter { !arranged.contains($0) }
     }
 
     /// Make the menu scroll when its items are taller than the window (the document view already grows
@@ -518,6 +632,10 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     }
 
     func selectableListBoxDidChangeSelectionByUser(_ box: mainWindowListBox) {
+        defer {
+            mainViewControllerObj?.namePageForVoiceOver(box.spokenTitle)
+            mainViewControllerObj?.markContentForUITests(shownBy: box.accessibilityIdentifier())
+        }
         if box == boxFocusButtonTool { mainViewControllerObj?.showFocusButtonToolView(); return }
         if box == boxTimeTrackerTool { mainViewControllerObj?.showTimeTrackerToolView(); return }
         if box == boxLateNoMoreTool { mainViewControllerObj?.showLateNoMoreToolView(); return }
@@ -527,23 +645,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             showDayPlanForCurrentState()
             break;
         case boxFocusSession:
-            let isFocusModeOn = isFocusModeOn()
-            let isFocusModePaused = isFocusModePaused()
-
-            if isFocusModeOn{
-                mainViewControllerObj?.showFocusModeState()
-            }else if isFocusModePaused{
-                mainViewControllerObj?.showFocusModeState()
-            }else if isHardCorePomodoroModeOn{
-                mainViewControllerObj?.showFocusModeState()
-            }else{
-                if SettingsManagerObject.isGeekModeEnabled{
-                    appdelegate?.menuShowPomodoroModeView()
-                }else{
-                    appdelegate?.menuShowSimplePomodoroModeView()
-                }
-            }
-            //enableAllItems()
+            showFocusSessionTabContent()
         case boxMicroBreaks:
             if currentState == ._MICRO_BREAK_{
                 var isBreakWarningVisible = false
@@ -620,6 +722,12 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     
     func selectableListBoxSelectionDidChange(_ box: mainWindowListBox) {
         lastSelectedBox = box
+        // #2352: TOOLS is collapsed by default; auto-expand it when a tool inside it becomes the
+        // selection (e.g. the app restores onto a tool view, or a tool is opened from the menu) so the
+        // highlighted tool stays visible.
+        if !isToolsSectionExpanded, isToolBox(box) {
+            boxToolsItems.setExpanded(true)   // fires onStateChanged → sets the flag + refreshToolsVisibility()
+        }
         switch box{
 
         case boxHabits:
@@ -629,14 +737,20 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
             }
         case boxFocusSession:
-            if currentState == ._MICRO_BREAK_{// if micro break started while focus mode is running and focus mode finished after miro break started then dont show small view if full screen is enabled v 2.28.438 
-                if checkIsFullScreenEnabled(){
-                    mainViewControllerObj?.checkIsFullScreenNeeded()
-                }else{
-                    mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
-                }
-            }else{
+            // Starting a session lands here (showRunningFocusSessionWindow -> showFocusModeStateView),
+            // so this runs on every session start. It used to call showSmallScreen(showMinimumSize: true)
+            // for every state but _MICRO_BREAK_, which snapped the window back to 1008x600 — the user's
+            // "starting a session changes the size of the window". The window is now left alone unless
+            // the app's borderless full-screen window is actually up; see FocusSessionRouting.windowSizing.
+            switch FocusSessionRouting.windowSizing(
+                isFullScreenWindowVisible: mainWindowControllerObj?.isFullScreenVisible ?? false,
+                isFullScreenModeEnabled: checkIsFullScreenEnabled()){
+            case .keepFullScreen:
+                mainViewControllerObj?.checkIsFullScreenNeeded()
+            case .restoreSmallWindow:
                 mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            case .leaveAsIs:
+                break
             }
         case boxMicroBreaks:
             if currentState == ._MICRO_BREAK_{
@@ -681,11 +795,11 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         case boxFocusMusic:
             checkScreenSizeIfFullScreenHabitIsRunning()
         case boxBlocks:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            keepFullScreenLockOrShrink()
         case boxSettings:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            keepFullScreenLockOrShrink()
         case boxEditHabits:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            keepFullScreenLockOrShrink()
         case boxMotivation:
             checkScreenSizeIfFullScreenHabitIsRunning()
         case boxHelpAndSupport:
@@ -702,7 +816,37 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         }
     }
     
+    /// Settings / Blocks / Edit-Habits nav items used to unconditionally shrink to a normal window — which,
+    /// in Focus Bear's borderless full-screen (kiosk) mode, DROPPED OUT of full-screen and exposed the
+    /// desktop / other apps (e.g. opening Settings from a full-screen Day Plan). When full-screen mode is
+    /// on, keep the lock (show the pane inside the full-screen window); otherwise shrink as before. Mirrors
+    /// the tool-tab fix that uses checkScreenSizeIfFullScreenHabitIsRunning for routine states.
+    private func keepFullScreenLockOrShrink() {
+        if checkIsFullScreenEnabled() {
+            mainViewControllerObj?.checkIsFullScreenNeeded()
+        } else {
+            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+        }
+    }
+
+    static func shouldKeepCutoffWindow(state: CURRENTSTATE, isFullScreenVisible: Bool,
+                                      isFullScreenEnabled: Bool, isCutoffPassed: Bool,
+                                      isAllowedActivityRunning: Bool) -> Bool {
+        state == ._NOTHING_ && isFullScreenVisible && isFullScreenEnabled
+            && isCutoffPassed && !isAllowedActivityRunning
+    }
+
     func checkScreenSizeIfFullScreenHabitIsRunning(){
+        // A routine resync temporarily clears currentState. Navigating to Help must not
+        // remove the existing cutoff cover while that resync is pending.
+        if Self.shouldKeepCutoffWindow(state: currentState,
+                                      isFullScreenVisible: mainWindowControllerObj?.isFullScreenVisible ?? false,
+                                      isFullScreenEnabled: checkIsFullScreenEnabled(),
+                                      isCutoffPassed: isCutOffTimeGoing(),
+                                      isAllowedActivityRunning: isAnyAllowedFocusModeActivityRunning) {
+            mainViewControllerObj?.checkIsFullScreenNeeded()
+            return
+        }
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_ || currentState == ._CUSTOM_ROUTINE_ || currentState == ._MICRO_BREAK_{
             
             if !isAnyAllowedFocusModeActivityRunning && checkIsFullScreenEnabled(){
@@ -734,6 +878,14 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 }
             }
         }
+
+        // Leaving the Micro Break tab after changing the break interval but not turning breaks on:
+        // confirm first instead of silently discarding the change.
+        if boxMicroBreaks.isSelected, box != boxMicroBreaks,
+           breaksStateVcObj?.hasUnsavedFrequencyChange == true {
+            promptUnsavedBreakFrequency(targetBox: box)
+            return false
+        }
         if box == boxUpgradeNow{
             addLog(text:"[user-action] leftMenuVc:- btnUpgradeNowClicked")
             showUpgradeNowWindow(reason: "upgrade_now_button")
@@ -741,6 +893,13 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         }
         
         if mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false{
+            return false
+        }
+        if box == boxSettings || box == boxBlocks || box == boxEditHabits,
+           mainViewControllerObj?.deferSettingsNavigationUntilAuthorized({ [weak self, weak box] in
+               guard let self, let box else { return }
+               self.switchToTab(box)
+           }) == true {
             return false
         }
         return true
@@ -763,16 +922,59 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             alert.beginSheetModal(for: window, completionHandler: { (modalResponse) in
                 if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                 }
-                
-                
+
+
             })
         }
+    }
+
+    /// The user changed the break interval but didn't turn breaks on, then tried to switch tabs. Confirm
+    /// before leaving: turn breaks on with the new interval, discard the change, or stay.
+    private func promptUnsavedBreakFrequency(targetBox: mainWindowListBox){
+        let alert = NSAlert()
+        alert.setSharingType()
+        alert.alertStyle = .informational
+        var message = "You changed how often you'd like a break but haven't turned breaks on yet. Turn breaks on with the new interval?"
+        var buttonTurnOn = "Turn breaks on"
+        var buttonDiscard = "Discard change"
+        var buttonCancel = "Cancel"
+        if let breakStateVcInfo = configjson.value(forKey: "breakStateVcInfo") as? NSDictionary{
+            message = breakStateVcInfo.value(forKey: "unsavedFrequencyMessage") as? String ?? message
+            buttonTurnOn = breakStateVcInfo.value(forKey: "unsavedFrequencyTurnOnButton") as? String ?? buttonTurnOn
+            buttonDiscard = breakStateVcInfo.value(forKey: "unsavedFrequencyDiscardButton") as? String ?? buttonDiscard
+            buttonCancel = breakStateVcInfo.value(forKey: "unsavedFrequencyCancelButton") as? String ?? buttonCancel
+        }
+        alert.messageText = message
+        alert.addButton(withTitle: buttonTurnOn)   // .alertFirstButtonReturn
+        alert.addButton(withTitle: buttonDiscard)  // .alertSecondButtonReturn
+        alert.addButton(withTitle: buttonCancel)   // .alertThirdButtonReturn
+        guard let window = self.view.window else { return }
+        alert.beginSheetModal(for: window, completionHandler: { [weak self] response in
+            guard let self = self else { return }
+            switch response{
+            case .alertFirstButtonReturn:
+                breaksStateVcObj?.turnOnBreaksWithPendingFrequency()
+                self.switchToTab(targetBox)
+            case .alertSecondButtonReturn:
+                breaksStateVcObj?.discardPendingFrequencyChange()
+                self.switchToTab(targetBox)
+            default:
+                break // Cancel — stay on the Micro Break tab
+            }
+        })
+    }
+
+    /// Programmatically complete a tab switch that selectableListBoxShouldChangeSelection had blocked
+    /// (the pending-change flag is cleared by the callers above, so this won't re-prompt).
+    private func switchToTab(_ box: mainWindowListBox){
+        box.isSelected = true
+        selectableListBoxDidChangeSelectionByUser(box)
     }
     
     
     func habitStarted(){
-        disableAllExceptHabitTab()
-        
+        applyRoutineMenuAvailability()
+
         boxHabits.isSelected = true
         mainViewControllerObj?.showHabitsView()
         reloadHabitStatus()
@@ -783,8 +985,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     }
     
     func customRoutineStarted(){
-        disableAllExceptCustomRoutineTab()
-        
+        applyRoutineMenuAvailability()
+
         boxCustomRoutine.isSelected = true
         mainViewControllerObj?.showHabitsView()
         reloadHabitStatus()
@@ -793,31 +995,47 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         mainWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
     }
     
-    func disableAllExceptHabitTab(){
-        var toolTipDisableReason = ""
-        
-        if currentState == ._MORNING_HABIT_{
-            toolTipDisableReason = disableReasonMorningRoutine
-        }else if currentState == ._EVENING_HABIT_{
-            toolTipDisableReason = disableReasonEveningRoutine
-        }else if currentState == ._FOCUS_SUMMARY_{
-            toolTipDisableReason = disableReasonFocusSummary
-        }else if currentState == ._SHUTOFFMAC_{
-            toolTipDisableReason = disableReasonShutoffTime
-        }else if currentState == ._CUSTOM_ROUTINE_{
-            toolTipDisableReason = disableReasonCustomRoutine
+    /// Bring the routine-governed left-menu items in line with `currentState` (`LeftMenuAvailability`).
+    /// Disabled items carry that state's reason as their tooltip; in a state where no routine owns the
+    /// window — idle, or any `_POSTPONE_*` — everything here is re-enabled.
+    func applyRoutineMenuAvailability(){
+        let toolTipDisableReason = localizedDisableReason(LeftMenuAvailability.disableReason(for: currentState))
+        for item in LeftMenuRoutineItem.allCases {
+            let box = boxFor(item)
+            // The live-session carve-out (#2793) keeps the Focus Session tab reachable while a
+            // habit-attached session is running; the global is read here and passed into the pure helper.
+            if LeftMenuAvailability.isEnabled(item, during: currentState,
+                                              isAllowedActivityRunning: isAnyAllowedFocusModeActivityRunning) {
+                box.isEnabled = true
+            } else {
+                box.setDisableWithRaason(reason: toolTipDisableReason)
+            }
         }
-        
-        boxEditHabits.setDisableWithRaason(reason: toolTipDisableReason)
-        boxSettings.setDisableWithRaason(reason: toolTipDisableReason)
-        boxBlocks.setDisableWithRaason(reason: toolTipDisableReason)
-        
-        boxMicroBreaks.setDisableWithRaason(reason: toolTipDisableReason)
-        boxFocusSession.setDisableWithRaason(reason: toolTipDisableReason)
-        boxHabits.isEnabled = true
-        boxCustomRoutine.setDisableWithRaason(reason: toolTipDisableReason)
     }
-    
+
+    private func boxFor(_ item: LeftMenuRoutineItem) -> mainWindowListBox {
+        switch item {
+        case .editHabits:    return boxEditHabits
+        case .settings:      return boxSettings
+        case .blocking:      return boxBlocks
+        case .microBreaks:   return boxMicroBreaks
+        case .focusSession:  return boxFocusSession
+        case .habits:        return boxHabits
+        case .customRoutine: return boxCustomRoutine
+        }
+    }
+
+    private func localizedDisableReason(_ reason: LeftMenuDisableReason?) -> String {
+        switch reason {
+        case .morningRoutine: return disableReasonMorningRoutine
+        case .eveningRoutine: return disableReasonEveningRoutine
+        case .focusSummary:   return disableReasonFocusSummary
+        case .shutoffTime:    return disableReasonShutoffTime
+        case .customRoutine:  return disableReasonCustomRoutine
+        case nil:             return ""
+        }
+    }
+
     func disableAllTabForOnboarding(){
         let toolTipDisableReason = ""
         boxEditHabits.setDisableWithRaason(reason: toolTipDisableReason)
@@ -837,35 +1055,19 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         
         boxUpgradeNow.setDisableWithRaason(reason: toolTipDisableReason)
         boxHelpAndSupport.setDisableWithRaason(reason: toolTipDisableReason)
+
+        // The add-on TOOLS tabs are created programmatically (installToolsAddOnItems), so they aren't
+        // storyboard outlets and were missing from this disable pass — leaving Focus Button / Time
+        // Tracker / Late No More clickable on the login and onboarding screens, which let a logged-out
+        // user leave the login view with no way back. Optionals: nil until the tools are installed.
+        boxFocusButtonTool?.setDisableWithRaason(reason: toolTipDisableReason)
+        boxTimeTrackerTool?.setDisableWithRaason(reason: toolTipDisableReason)
+        boxLateNoMoreTool?.setDisableWithRaason(reason: toolTipDisableReason)
     }
     
-    
-    func disableAllExceptCustomRoutineTab(){
-        var toolTipDisableReason = ""
-        
-        if currentState == ._MORNING_HABIT_{
-            toolTipDisableReason = disableReasonMorningRoutine
-        }else if currentState == ._EVENING_HABIT_{
-            toolTipDisableReason = disableReasonEveningRoutine
-        }else if currentState == ._FOCUS_SUMMARY_{
-            toolTipDisableReason = disableReasonFocusSummary
-        }else if currentState == ._SHUTOFFMAC_{
-            toolTipDisableReason = disableReasonShutoffTime
-        }else if currentState == ._CUSTOM_ROUTINE_{
-            toolTipDisableReason = disableReasonCustomRoutine
-        }
-
-        boxEditHabits.setDisableWithRaason(reason: toolTipDisableReason)
-        boxSettings.setDisableWithRaason(reason: toolTipDisableReason)
-        boxBlocks.setDisableWithRaason(reason: toolTipDisableReason)
-
-        boxMicroBreaks.setDisableWithRaason(reason: toolTipDisableReason)
-        boxFocusSession.setDisableWithRaason(reason: toolTipDisableReason)
-        boxHabits.setDisableWithRaason(reason: toolTipDisableReason)
-        boxCustomRoutine.isEnabled = true
-    }
     
     func habitOver(){
+        mainWindowControllerObj?.restoreWindowAfterPostponement()
         enableAllItems()
         reloadHabitStatus()
         mainViewControllerObj?.expandLeftPanel()
@@ -931,6 +1133,14 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxCustomRoutine.isEnabled = true
         boxUpgradeNow.isEnabled = true
         boxHelpAndSupport.isEnabled = true
+
+        // Re-enable the programmatic TOOLS tabs alongside the rest, so they recover after the login/
+        // onboarding disable pass (disableAllTabForOnboarding). Optionals: nil until tools are installed.
+        // isEnabled is independent of the user's hide choice (ToolVisibilityStore/isHidden), so a hidden
+        // tool stays hidden regardless.
+        boxFocusButtonTool?.isEnabled = true
+        boxTimeTrackerTool?.isEnabled = true
+        boxLateNoMoreTool?.isEnabled = true
     }
     
     func showPomodoro(pomodoroVcObj:NSView){
@@ -939,6 +1149,26 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     }
     
     
+    /// Language-independent handles for the UI tests (the titles come from translated config).
+    private func setUITestIdentifiers() {
+        let identifiers: [(mainWindowListBox, String)] = [
+            (boxHabits, UITestContract.Identifier.Menu.dayPlan),
+            (boxFocusSession, UITestContract.Identifier.Menu.focusSession),
+            (boxTodoPlayer, UITestContract.Identifier.Menu.todo),
+            (boxSettings, UITestContract.Identifier.Menu.settings),
+            (boxBlocks, UITestContract.Identifier.Menu.blocks),
+            (boxHelpAndSupport, UITestContract.Identifier.Menu.help),
+            (boxBrainDump, UITestContract.Identifier.Tools.notes),
+            (boxMotivation, UITestContract.Identifier.Tools.stats),
+            (boxFocusMusic, UITestContract.Identifier.Tools.focusMusic),
+            (boxEditHabits, UITestContract.Identifier.Tools.editHabits),
+        ]
+        for (box, identifier) in identifiers { box.setAccessibilityIdentifier(identifier) }
+        boxFocusButtonTool?.setAccessibilityIdentifier(UITestContract.Identifier.Tools.focusButton)
+        boxToolsItems.setAccessibilityIdentifier(UITestContract.Identifier.Tools.section)
+        boxPreferences.setAccessibilityIdentifier(UITestContract.Identifier.Tools.preferencesSection)
+    }
+
     func showHabitsView(){
         boxHabits.isSelected = true
         mainViewControllerObj?.showHabitsView()
@@ -1014,6 +1244,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     
     
     func showSettingsView(){
+        if mainViewControllerObj?.deferSettingsNavigationUntilAuthorized({ [weak self] in
+            self?.showSettingsView()
+        }) == true { return }
         if mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false{
             return;
         }
@@ -1027,6 +1260,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     
     
     func showFocusModeSettingsView(){
+        if mainViewControllerObj?.deferSettingsNavigationUntilAuthorized({ [weak self] in
+            self?.showFocusModeSettingsView()
+        }) == true { return }
         if mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false{
             return;
         }
@@ -1039,6 +1275,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     
     
     func showBlocksView(){
+        if mainViewControllerObj?.deferSettingsNavigationUntilAuthorized({ [weak self] in
+            self?.showBlocksView()
+        }) == true { return }
         if mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false{
             return;
         }
@@ -1050,10 +1289,40 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     
     func showFocusModeStateView(){
         boxFocusSession.isSelected = true
-        mainViewControllerObj?.showFocusModeState()
+        showFocusSessionTabContent()
     }
-    
+
+    /// Puts the right screen in the Focus Session tab: the ongoing-session screen while there IS a
+    /// session, otherwise the start-a-session screen.
+    ///
+    /// The single funnel for both the left-menu click and every `showRunningFocusSessionWindow()`
+    /// caller, so the two can't drift. A running **blocking schedule** is not a session and must land
+    /// on "start a session" — report 2026-09-16_15-13-57: an all-day schedule left the tab stuck on
+    /// "Ongoing Focus Session" (headed with the *schedule's* block list), with no way to start a real
+    /// one. The schedule stays visible — it still blocks, and the start screen names it.
+    func showFocusSessionTabContent(){
+        switch FocusSessionRouting.destinationNow{
+        case .runningSession:
+            mainViewControllerObj?.showFocusModeState()
+        case .startSession:
+            showStartFocusSessionView()
+        }
+    }
+
+    /// The start-a-session screen — advanced in geek mode, simple otherwise. Each entry point returns
+    /// early for the mode it isn't, so the choice has to be made here.
+    func showStartFocusSessionView(){
+        if SettingsManagerObject.isGeekModeEnabled{
+            appdelegate?.menuShowPomodoroModeView()
+        }else{
+            appdelegate?.menuShowSimplePomodoroModeView()
+        }
+    }
+
     func showEditHabitsView(){
+        if mainViewControllerObj?.deferSettingsNavigationUntilAuthorized({ [weak self] in
+            self?.showEditHabitsView()
+        }) == true { return }
         if mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false{
             return;
         }
@@ -1063,22 +1332,245 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         mainViewControllerObj?.askPasswordForSettingsIfNeeded()
     }
     
-    func focusModeOrFocusModeHabitStarted(){// also for custom schedule blocking
-        boxTodoPlayer.title = "Todo Player"
+    /// "Focusing (29m left)" — the running session and how much of it is left.
+    private func focusingRowTitle() -> String {
+        var template = "Focusing (<MINUTES>m left)"   // i18n-ignore: last-resort default; the real string comes from config (menuFocusingTimeLeft)
         if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
-            boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoPlayer") as? String ?? boxTodoPlayer.title
+            template = leftMenuVcInfo.value(forKey: "menuFocusingTimeLeft") as? String ?? template
         }
+        return template.replacingOccurrences(of: "<MINUTES>", with: "\(focusingRowMinutesRemaining())")
     }
-    
-    func focusModeOrFocusModeHabitFinished(){
-        boxTodoPlayer.title = "Todo List"
+
+    /// Minutes left for the focusing row. A real focus session counts down `endFocusModeTime`; a
+    /// habit-attached activity has no focus-session clock (endFocusModeTime is deliberately nil — the
+    /// habit finishes on the routine's own timer), so fall back to that timer's remaining time
+    /// (totalDuration − currentTimer) rounded the same way, so the row reads "Focusing (Xm left)"
+    /// identically for both (#2793).
+    private func focusingRowMinutesRemaining() -> Int {
+        if let end = endFocusModeTime {
+            return FocusSessionClock.minutesRemaining(until: end)
+        }
+        if isAnyAllowedFocusModeActivityRunning, let timer = timerViewcontrollerObj {
+            let remainingSeconds = max(0, timer.totalDuration - timer.currentTimer)
+            return FocusSessionClock.minutesRemaining(until: Date().addingTimeInterval(TimeInterval(remainingSeconds)))
+        }
+        return 0
+    }
+
+    /// Keeps the countdown in the row's title honest while a session runs. Deliberately re-enters
+    /// `resetFocusModeTitle()` so the title has exactly one place it is computed, and every other
+    /// branch of that method stops the ticker — so pause, finish and abort all revert cleanly.
+    private func startFocusMinutesTicker(){
+        guard focusMinutesTimer == nil else { return }
+        let timer = Timer(timeInterval: leftMenuFocusMinutesTickInterval, repeats: true) { [weak self] _ in
+            self?.resetFocusModeTitle()
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        focusMinutesTimer = timer
+    }
+
+    private func stopFocusMinutesTicker(){
+        focusMinutesTimer?.invalidate()
+        focusMinutesTimer = nil
+    }
+
+    /// The TOOLS entry is the To-do list in every session state. It used to flip to "Todo Player"
+    /// while a focus session, allowed activity or blocking schedule was running, because the slot then
+    /// opened the web To-do Player instead; the running session now carries its own native task queue,
+    /// so the slot is only ever the list. Kept as one helper so the title has a single source.
+    private func applyTodoToolTitle(){
+        boxTodoPlayer.title = "Todo List"   // i18n-ignore: last-resort default; the real string comes from config (menuTodoList)
         if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
             boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoList") as? String ?? boxTodoPlayer.title
         }
     }
 
+    /// Session start / finish no longer change the TOOLS title, but both are called from ~20 places
+    /// across the routine, pomodoro and blocking paths; they stay as the one place that would need to
+    /// react if the tool ever becomes session-dependent again.
+    func focusModeOrFocusModeHabitStarted(){// also for custom schedule blocking
+        applyTodoToolTitle()
+    }
+
+    func focusModeOrFocusModeHabitFinished(){
+        applyTodoToolTitle()
+    }
+
+    private var sidebarHeaderToggle: SidebarHeaderToggle?
+
+    // viewWillLayout, not viewDidLayout: the sidebar's width is already final here (its parent laid
+    // it out), and constraints changed before this view's own pass take effect in that same pass.
+    override func viewWillLayout() {
+        super.viewWillLayout()
+        sidebarHeaderToggle?.update(sidebarWidth: view.bounds.width,
+                                    isSidebarCollapsed: mainViewControllerObj?.isLeftPanelCollapsed ?? false)
+    }
+
     @IBAction func btnExpandLeftMenuClicked(_ sender: Any) {
         mainViewControllerObj?.toggleLeftPaneWidth()
+    }
+}
+
+/// The sidebar header's collapse/expand toggle: a double chevron pointing the way the sidebar will
+/// move, on the logo's row rather than on a line of its own beneath it (report 2026-09-26_20-15-15).
+/// The header drops that line, so the menu moves up.
+///
+/// A collapsed sidebar is no wider than the logo, so there the toggle goes back under the logo, as it
+/// always was.
+///
+/// Repositioned in code rather than in Main.storyboard because hand-edited storyboard XML conflicts
+/// with every other change to the scene. That means taking over some of the scene's constraints,
+/// found by what they join, since storyboard constraints carry no identifier.
+final class SidebarHeaderToggle {
+
+    private enum Symbol {
+        static let collapse = "chevron.left.2"
+        static let expand = "chevron.right.2"
+        static let configuration = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
+    }
+
+    private enum ConfigKey {
+        static let section = "leftMenuVcInfo"
+        static let collapseLabel = "collapseMenuTooltip"
+        static let expandLabel = "expandMenuTooltip"
+    }
+
+    private enum FallbackLabel {
+        static let collapse = "Collapse menu"   // i18n-ignore: last-resort default; the real string comes from config (collapseMenuTooltip)
+        static let expand = "Expand menu"       // i18n-ignore: last-resort default; the real string comes from config (expandMenuTooltip)
+    }
+
+    private enum Metric {
+        /// Where the storyboard's vertically centred logo sat in its 80pt header. The window has a
+        /// full-size content view, so this is also what keeps the logo clear of the traffic lights.
+        static let logoTopInset: CGFloat = 23
+        /// The storyboard's 80pt header less the toggle's own line (14pt button + 4pt gap).
+        static let headerHeightWithToggleBesideLogo: CGFloat = 62
+        static let titleToToggleSpacing: CGFloat = 8
+        /// The storyboard's inset from the toggle to the sidebar's trailing edge.
+        static let toggleTrailingInset: CGFloat = 8
+    }
+
+    private let toggle: NSButton
+    private let logo: NSView?
+    private let title: NSView?
+    private let headerHeight: NSLayoutConstraint?
+    private let stackedHeaderHeight: CGFloat
+    /// The storyboard's "separator sits 4pt below the toggle", which is what gives the toggle its line.
+    private let toggleLineBelowLogo: NSLayoutConstraint?
+    private var toggleBesideLogoConstraints: [NSLayoutConstraint] = []
+    /// The logo's right edge and the toggle's width, read once from the storyboard constraints rather
+    /// than from live frames. Frames are zero before the first layout, so `logo.frame.maxX` was 0 on
+    /// that pass and a 50pt collapsed sidebar looked wide enough for the toggle beside the logo — which
+    /// activated the beside-logo constraints at 50pt and logged conflicting constraints. Constraint
+    /// constants are stable on every pass. Left at 0 when init bails (then `update()` no-ops anyway).
+    private var logoRightEdge: CGFloat = 0
+    private var toggleWidth: CGFloat = 0
+
+    private var isToggleBesideLogo: Bool?
+    private var isPointingToExpand: Bool?
+
+    init(toggle: NSButton) {
+        self.toggle = toggle
+        // The storyboard scales its image up to fill the button, which suited the wide sidebar glyph
+        // but makes a chevron outweigh the title beside it; the symbol's point size sets it instead.
+        toggle.imageScaling = .scaleProportionallyDown
+        let headerContent = toggle.superview
+        let headerBox = headerContent?.superview
+        logo = headerContent?.subviews.first { $0 is NSImageView }
+        title = headerContent?.subviews.first { $0 is NSTextField }
+        headerHeight = headerBox?.constraints.first {
+            $0.firstItem === headerBox && $0.firstAttribute == .height && $0.secondItem == nil
+        }
+        stackedHeaderHeight = headerHeight?.constant ?? 0
+        toggleLineBelowLogo = headerContent?.constraints.first { $0.secondItem === toggle && $0.secondAttribute == .bottom }
+
+        guard let header = headerContent, let logo = logo, let title = title,
+              headerHeight != nil, toggleLineBelowLogo != nil else {
+            addLog(text: "SidebarHeaderToggle: the sidebar header's storyboard constraints have changed; the toggle stays where the storyboard puts it")
+            return
+        }
+        pinLogoToTop(logo, in: header)
+        releaseTitleTrailing(title, in: header)
+        toggleBesideLogoConstraints = [
+            toggle.centerYAnchor.constraint(equalTo: logo.centerYAnchor),
+            title.trailingAnchor.constraint(lessThanOrEqualTo: toggle.leadingAnchor, constant: -Metric.titleToToggleSpacing),
+        ]
+        // Just under required, so any transient that activates these before the placement decision has
+        // run breaks them gracefully instead of logging a hard conflict. In steady state (beside-logo)
+        // there is room, so they hold; when collapsed they are deactivated entirely.
+        toggleBesideLogoConstraints.forEach { $0.priority = NSLayoutConstraint.Priority(999) }
+        // Fixed geometry from the constraints, not live frames (see `logoRightEdge`).
+        let logoWidth = logo.constraints.first { $0.firstItem === logo && $0.firstAttribute == .width && $0.secondItem == nil }?.constant ?? logo.frame.width
+        let logoLeading = header.constraints.first {
+            ($0.firstItem === logo && $0.firstAttribute == .leading && $0.secondItem === header) ||
+            ($0.firstItem === header && $0.firstAttribute == .leading && $0.secondItem === logo)
+        }.map { abs($0.constant) } ?? logo.frame.minX
+        logoRightEdge = logoLeading + logoWidth
+        toggleWidth = toggle.constraints.first { $0.firstItem === toggle && $0.firstAttribute == .width && $0.secondItem == nil }?.constant ?? toggle.frame.width
+    }
+
+    func update(sidebarWidth: CGFloat, isSidebarCollapsed: Bool) {
+        updateDirection(isSidebarCollapsed: isSidebarCollapsed)
+        updatePlacement(isToggleBesideLogo: hasRoomBesideLogo(sidebarWidth: sidebarWidth))
+    }
+
+    private func hasRoomBesideLogo(sidebarWidth: CGFloat) -> Bool {
+        // Use the constraint-derived geometry, never the live frames: on the first layout pass they are
+        // zero, which used to make a collapsed sidebar report room for the toggle beside the logo.
+        guard logoRightEdge > 0 else { return false }
+        let widthNeeded = logoRightEdge + Metric.titleToToggleSpacing + toggleWidth + Metric.toggleTrailingInset
+        return sidebarWidth >= widthNeeded
+    }
+
+    /// The storyboard centres the logo in the header. Once the header can shrink, that would drag the
+    /// logo up under the traffic lights, so it stays where it was.
+    private func pinLogoToTop(_ logo: NSView, in header: NSView) {
+        header.constraints.first { $0.firstItem === logo && $0.firstAttribute == .centerY }?.isActive = false
+        logo.topAnchor.constraint(equalTo: header.topAnchor, constant: Metric.logoTopInset).isActive = true
+    }
+
+    /// The storyboard pins the title's trailing edge to the header's, which would run it under a toggle
+    /// beside it. It ends before the toggle instead (see `toggleBesideLogoConstraints`).
+    private func releaseTitleTrailing(_ title: NSView, in header: NSView) {
+        header.constraints.first { $0.secondItem === title && $0.firstAttribute == .trailing }?.isActive = false
+    }
+
+    private func updatePlacement(isToggleBesideLogo: Bool) {
+        guard !toggleBesideLogoConstraints.isEmpty, isToggleBesideLogo != self.isToggleBesideLogo else { return }
+        self.isToggleBesideLogo = isToggleBesideLogo
+        if isToggleBesideLogo {
+            toggleLineBelowLogo?.isActive = false
+            NSLayoutConstraint.activate(toggleBesideLogoConstraints)
+            headerHeight?.constant = Metric.headerHeightWithToggleBesideLogo
+        } else {
+            NSLayoutConstraint.deactivate(toggleBesideLogoConstraints)
+            toggleLineBelowLogo?.isActive = true
+            headerHeight?.constant = stackedHeaderHeight
+        }
+        // With no toggle to stop at, the title would draw past a collapsed sidebar's edge into the page
+        // beside it: views don't clip to their bounds by default.
+        title?.isHidden = !isToggleBesideLogo
+    }
+
+    private func updateDirection(isSidebarCollapsed: Bool) {
+        guard isSidebarCollapsed != isPointingToExpand else { return }
+        isPointingToExpand = isSidebarCollapsed
+        let label = isSidebarCollapsed
+            ? localizedLabel(ConfigKey.expandLabel, fallback: FallbackLabel.expand)
+            : localizedLabel(ConfigKey.collapseLabel, fallback: FallbackLabel.collapse)
+        let symbol = isSidebarCollapsed ? Symbol.expand : Symbol.collapse
+        if let image = NSImage(systemSymbolName: symbol, accessibilityDescription: label)?
+            .withSymbolConfiguration(Symbol.configuration) {
+            toggle.image = image
+        }
+        toggle.toolTip = label
+        toggle.setAccessibilityLabel(label)
+    }
+
+    private func localizedLabel(_ key: String, fallback: String) -> String {
+        let section = configjson.value(forKey: ConfigKey.section) as? NSDictionary
+        return section?.value(forKey: key) as? String ?? fallback
     }
 }
 

@@ -370,6 +370,17 @@ class CustomWindow: NSWindow {//bacause titleless window per textfield kaam ni k
     }
 }
 
+/// The menu's full-screen overlay panel. A BORDERLESS window can't become key by default, so nothing
+/// inside it can hold the caret — quick-add task had no cursor and swallowed every keystroke while the
+/// menu was shown over a full-screen app (report 2026-09-14_12-13-25). `.nonactivatingPanel` still
+/// delivers keys without activating Focus Bear, and `becomesKeyOnlyIfNeeded` (set by the caller) keeps
+/// merely OPENING the menu from stealing focus from whatever is full-screen: the panel takes the
+/// keyboard only when a field in it asks for it. Never main — the app's real main window keeps that.
+final class MenuOverlayPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
+}
+
 
 
 
@@ -730,10 +741,24 @@ class customNewBadgeBox: NSBox {
     var label:NSTextField!
     override func awakeFromNib() {
         super.awakeFromNib()
+        setupBadge()
+    }
+
+    override func layout() {
+        super.layout()
+        // Keep the pill fully rounded whatever its final height is. Applied in layout() (not once in
+        // awakeFromNib) so it's correct both for storyboard instances and code-created ones whose frame
+        // isn't known at init time. #2622
+        self.cornerRadius = self.frame.height / 2
+    }
+
+    /// Builds the badge's label + styling. Safe to call from a nib (via awakeFromNib) or programmatically
+    /// when reusing this badge on a code-built row; idempotent so repeated calls don't stack labels. #2622
+    func setupBadge() {
+        guard label == nil else { return }
         addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
         self.boxType = .custom
         self.borderWidth = 0
-        self.cornerRadius = self.frame.height / 2
         self.fillColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
         var newBadgeText = "New"
         if let common = configjson.value(forKey: "common") as? NSDictionary{
@@ -750,7 +775,7 @@ class customNewBadgeBox: NSBox {
         self.addSubview(label)
         self.addVerticalCenterConstraints(subView: label)
     }
-    
+
     override func mouseEntered(with event: NSEvent) {
         super.mouseEntered(with: event)
         NSCursor.pointingHand.set()
@@ -981,7 +1006,6 @@ class GeekModeSegmentedControl: NSSegmentedControl {
     var segmentGeekModeTrackingArea: NSTrackingArea?
     let geekModeIndex = 0
     let simpleModeIndex = 1
-    var isMenuButton = false
     override func awakeFromNib() {
         super.awakeFromNib()
         
@@ -1057,161 +1081,140 @@ class GeekModeSegmentedControl: NSSegmentedControl {
         NSCursor.arrow.set()
     }
     
-    func changeAppModeTo(geekMode:Bool){
-        //--------------------------------------------------------------------//
-        //Support freemium#1066
-        //only simple mode allowed
-        addLog(text:"func changeAppModeTo geekMode \(geekMode)")
-        if isExpired && geekMode{
-            var titleNoGeekMode = "Geek mode is only supported in Pro edition."
-            if let upgradeToProNagVcInfo = configjson.value(forKey: "upgradeToProNagVcInfo") as? NSDictionary{
-                titleNoGeekMode = upgradeToProNagVcInfo.value(forKey: "titleNoGeekMode") as? String ?? titleNoGeekMode
-            }
-            showUpgradeToProNagWindow(titleText: titleNoGeekMode, reason: "activate_geek_mode")
-            if SettingsManagerObject.isGeekModeEnabled{
-                self.setSelected(true, forSegment: 0)
-            }else{
-                self.setSelected(true, forSegment: 1)
-            }
-            return;
+    /// The Geek/Simple segmented control's own entry point: switch the mode, and put the highlight
+    /// back on whichever segment the switch actually settled on.
+    func changeAppModeTo(geekMode: Bool) {
+        switchAppMode(toGeekMode: geekMode,
+                      reflectSelection: { [weak self] selectedGeekMode in
+            guard let self = self else { return }
+            self.setSelected(true, forSegment: selectedGeekMode ? self.geekModeIndex : self.simpleModeIndex)
+        })
+    }
+
+    /// Highlights the mode the app is actually in — after a click that was refused (a managed student's
+    /// settings are locked), which has already moved the highlight.
+    func showCurrentMode() {
+        setSelected(true, forSegment: SettingsManagerObject.isGeekModeEnabled ? geekModeIndex : simpleModeIndex)
+    }
+
+}
+
+/// Switches the app between Simple and Geek mode, with the freemium gate and the follow-up reload in
+/// `appModeChangeDone`. Free-standing rather than a method on GeekModeSegmentedControl so screens
+/// without that control — the focus-session start flow's "Extra Powerful Options" / "Regular
+/// Options" links — switch through exactly the same path instead of writing `isGeekModeEnabled`
+/// themselves.
+///
+/// #2449: the switch is silent. It used to run a "Geek Mode activates a lot more features and can be
+/// overwhelming" confirmation on the way in and a "Simple Mode active" notice on the way out; both
+/// were removed because nothing about the two modes needs confirming.
+/// - Parameters:
+///   - geekMode: the mode to switch to.
+///   - reflectSelection: called with the mode the switch settled on, so a segmented control can put
+///     its own highlight back when the freemium gate refuses the change.
+func switchAppMode(toGeekMode geekMode: Bool,
+                   reflectSelection: ((Bool) -> Void)? = nil) {
+    //--------------------------------------------------------------------//
+    //Support freemium#1066
+    //only simple mode allowed
+    addLog(text:"func changeAppModeTo geekMode \(geekMode)")
+    if isExpired && geekMode{
+        var titleNoGeekMode = "Geek mode is only supported in Pro edition."
+        if let upgradeToProNagVcInfo = configjson.value(forKey: "upgradeToProNagVcInfo") as? NSDictionary{
+            titleNoGeekMode = upgradeToProNagVcInfo.value(forKey: "titleNoGeekMode") as? String ?? titleNoGeekMode
         }
-        //-----------------------------------------------------------------------//
-        if SettingsManagerObject.isGeekModeEnabled == geekMode{
-            return;
-        }
-        
-        if geekMode{
-            let dontShowGeekModeConfirmAlert = UserDefaults.standard.object(forKey: kUserdefaultsDontShowConfirmGeekModeAlert) as? Bool ?? false
-            if !dontShowGeekModeConfirmAlert{
-                allApiObject.capturePosthog(event: "waiting-to-confirm-wants-to-switch-to-geek-mode", metadata: [:])
-                
-                var alertConfirmSwitchGeekMode = "Geek Mode activates a lot more features and can be overwhelming. We recommend you stick with Simple Mode for the first few days."
-                var buttonActivateGeekModeText = "Activate Geek Mode"
-                var buttonStickSimpleModeText = "Stick with Simple Mode"
-                var buttonDontShowAgainText = "Don't show again"
-                var alertConfirmSwitchGeekModeDescription = "You can switch the modes from Preferences -> Settings tab"
-                
-                if let geekModeInfo = configjson.value(forKey: "geekModeInfo") as? NSDictionary{
-                    alertConfirmSwitchGeekMode = geekModeInfo.value(forKey: "alertConfirmSwitchGeekMode") as? String ?? alertConfirmSwitchGeekMode
-                    buttonActivateGeekModeText = geekModeInfo.value(forKey: "buttonActivateGeekModeText") as? String ?? buttonActivateGeekModeText
-                    buttonStickSimpleModeText = geekModeInfo.value(forKey: "buttonStickSimpleModeText") as? String ?? buttonStickSimpleModeText
-                    buttonDontShowAgainText = geekModeInfo.value(forKey: "buttonDontShowAgainText") as? String ?? buttonDontShowAgainText
-                    alertConfirmSwitchGeekModeDescription = geekModeInfo.value(forKey: "alertConfirmSwitchGeekModeDescription") as? String ?? alertConfirmSwitchGeekModeDescription
-                }
-            
-                let alert = NSAlert()
-                alert.setSharingType()
-                alert.messageText = alertConfirmSwitchGeekMode
-                if isMenuButton{
-                    alert.informativeText = alertConfirmSwitchGeekModeDescription
-                }
-                alert.addButton(withTitle: buttonStickSimpleModeText)
-                alert.addButton(withTitle: buttonActivateGeekModeText)
-                
-                alert.showsSuppressionButton = true
-                alert.suppressionButton?.title = buttonDontShowAgainText
-                NSApplication.shared.activate(ignoringOtherApps: true)
-                let result = alert.runModal()
-                if result == .alertFirstButtonReturn{
-                    self.setSelected(true, forSegment: 1)
-                    allApiObject.capturePosthog(event: "stick-to-simple-mode", metadata: [:])
-                }else if result == .alertSecondButtonReturn{
-                    SettingsManagerObject.isGeekModeEnabled = geekMode
-                    appModeChangeDone(geekMode: geekMode)
-                }
-                if alert.suppressionButton?.state == .on{
-                    UserDefaults.standard.set(true, forKey: kUserdefaultsDontShowConfirmGeekModeAlert)
-                }
-            }else{
-                SettingsManagerObject.isGeekModeEnabled = geekMode
-                appModeChangeDone(geekMode: geekMode)
-            }
+        showUpgradeToProNagWindow(titleText: titleNoGeekMode, reason: "activate_geek_mode")
+        if SettingsManagerObject.isGeekModeEnabled{
+            reflectSelection?(true)
         }else{
-            SettingsManagerObject.isGeekModeEnabled = geekMode
-            appModeChangeDone(geekMode: geekMode)
+            reflectSelection?(false)
         }
+        return;
+    }
+    //-----------------------------------------------------------------------//
+    if SettingsManagerObject.isGeekModeEnabled == geekMode{
+        return;
     }
     
-    func appModeChangeDone(geekMode:Bool){
-        if !geekMode{
-            SettingsManagerObject.storedCuddlyModeEnabled = true
-        }else{
-            // doing this because in simple mode when user start a pomodoro mode with blocking style (AI) we change local var isAiCheckUrlEnabled to true and if user starts pomodoro with blockDistractingsites/apps focus mode we change isAiCheckUrlEnabled to false but doesn't upload it so when user change app mode to geek mode we need to reload this setting from userdefaults
-            if let isEnabled = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAiCheckUrlEnabled) as? Bool{
-                SettingsManagerObject.isAiCheckUrlEnabled = isEnabled
-            }
-        }
-        SettingsManagerObject.isSettingsChanged = true
-        
-        if isFocusBearMenuVisible(){
-            menuViewControllerObj?.reloadData()
-        }
-        if SettingsManagerObject.isGeekModeEnabled{
-            preferencesSettingsIndex = 3
-            preferencesEditHabitsIndex = 4
-            preferencesBlocksIndex = 2
-//            leftMenuVcObj?.boxFocusModeSettings.isHidden = false
-        }else{
-            preferencesSettingsIndex = 2
-            preferencesEditHabitsIndex = 3
-            preferencesBlocksIndex = 1
-//            leftMenuVcObj?.boxFocusModeSettings.isHidden = true
-        }
+    SettingsManagerObject.isGeekModeEnabled = geekMode
+    appModeChangeDone(geekMode: geekMode)
+}
 
-        if leftMenuVcObj?.boxSettings.isSelected ?? false{
-            settingsSideBarVcObj?.reloadDataForAppMode()
-            if geekMode{
-                settingsContainerVcObj?.segmentControlGeekMode.setSelected(true, forSegment: geekModeIndex)
-            }else{
-                settingsContainerVcObj?.segmentControlGeekMode.setSelected(true, forSegment: simpleModeIndex)
-            }
-            
-            let selectedRow = settingsSideBarVcObj?.tblView.selectedRow ?? 0
-            let arrSettingsList = settingsSideBarVcObj?.arrSettingsList ?? []
-            let id = arrSettingsList[selectedRow]["id"] as? String ?? ""
-            
-            switch id {
-            case idUi:
-                uIVcObj?.reloadDataForAppMode()
-            case idAccesibility:
-                break;
-            case idAi:
-                break;
-            case idPomodoro:
-                break;
-            case idStrictness:
-                strictnessVcObj?.reloadDataForAppMode()
-            case idAdvanced:
-                break;
-            case idAccount:
-                break;
-            case idUninstall:
-                break;
-            case idPermissions:
-                break;
-            default:
-                break;
-            }
+func appModeChangeDone(geekMode: Bool) {
+    if !geekMode{
+        SettingsManagerObject.storedCuddlyModeEnabled = true
+    }else{
+        // doing this because in simple mode when user start a pomodoro mode with blocking style (AI) we change local var isAiCheckUrlEnabled to true and if user starts pomodoro with blockDistractingsites/apps focus mode we change isAiCheckUrlEnabled to false but doesn't upload it so when user change app mode to geek mode we need to reload this setting from userdefaults
+        if let isEnabled = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAiCheckUrlEnabled) as? Bool{
+            SettingsManagerObject.isAiCheckUrlEnabled = isEnabled
         }
-        
-        if SettingsManagerObject.isGeekModeEnabled{
-            allApiObject.capturePosthog(event: "switch-to-geek-mode", metadata: [:])
+    }
+    SettingsManagerObject.isSettingsChanged = true
+    
+    if isFocusBearMenuVisible(){
+        menuViewControllerObj?.reloadData()
+    }
+    if SettingsManagerObject.isGeekModeEnabled{
+        preferencesSettingsIndex = 3
+        preferencesEditHabitsIndex = 4
+        preferencesBlocksIndex = 2
+//            leftMenuVcObj?.boxFocusModeSettings.isHidden = false
+    }else{
+        preferencesSettingsIndex = 2
+        preferencesEditHabitsIndex = 3
+        preferencesBlocksIndex = 1
+//            leftMenuVcObj?.boxFocusModeSettings.isHidden = true
+    }
+
+    if leftMenuVcObj?.boxSettings.isSelected ?? false{
+        settingsSideBarVcObj?.reloadDataForAppMode()
+        if geekMode{
+            settingsContainerVcObj?.segmentControlGeekMode.setSelected(true, forSegment: 0)
         }else{
-            allApiObject.capturePosthog(event: "switch-to-simple-mode", metadata: [:])
+            settingsContainerVcObj?.segmentControlGeekMode.setSelected(true, forSegment: 1)
         }
         
-        if !geekMode{
-            var msg = "Simple Mode active - only basic features shown. Focus modes, pomodoros etc. are no longer available. Toggle the switch to go back to Geek Mode."
-            if let geekModeInfo = configjson.value(forKey: "geekModeInfo") as? NSDictionary{
-                msg = geekModeInfo.value(forKey: "alertSimpleModeEnabled") as? String ?? msg
-            }
-            let alert = NSAlert()
-            alert.setSharingType()
-            alert.messageText = msg
-            alert.addButton(withTitle: buttonOkText)
-            NSApplication.shared.activate(ignoringOtherApps: true)
-            alert.runModal()
+        let selectedRow = settingsSideBarVcObj?.tblView.selectedRow ?? 0
+        let arrSettingsList = settingsSideBarVcObj?.arrSettingsList ?? []
+        let id = arrSettingsList[selectedRow]["id"] as? String ?? ""
+        
+        switch id {
+        case idUi:
+            uIVcObj?.reloadDataForAppMode()
+        case idAccesibility:
+            break;
+        case idAi:
+            break;
+        case idPomodoro:
+            break;
+        case idStrictness:
+            strictnessVcObj?.reloadDataForAppMode()
+        case idAdvanced:
+            break;
+        case idAccount:
+            break;
+        case idUninstall:
+            break;
+        case idPermissions:
+            break;
+        default:
+            break;
         }
+    }
+
+    // #2352: the Blocking tab (boxBlocks path) also hosts strictnessVc and shows the Geek/Simple
+    // toggle, but the boxSettings branch above doesn't cover it — so switching mode while on the
+    // Blocking tab never reloaded row visibility (Always Allowed Apps stayed hidden until you left
+    // the tab and came back). Reload it live here too, and keep its own toggle in sync.
+    if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+        strictnessVcObj?.reloadDataForAppMode()
+        tabStrictnessContainerVcObj?.segmentControlGeekMode?.setSelected(true, forSegment: geekMode ? 0 : 1)
+    }
+
+    if SettingsManagerObject.isGeekModeEnabled{
+        allApiObject.capturePosthog(event: "switch-to-geek-mode", metadata: [:])
+    }else{
+        allApiObject.capturePosthog(event: "switch-to-simple-mode", metadata: [:])
     }
 }
 

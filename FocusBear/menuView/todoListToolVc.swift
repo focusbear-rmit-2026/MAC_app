@@ -1,125 +1,123 @@
 //
-//  addTaskVc.swift
+//  todoListToolVc.swift
 //  Focus Bear
 //
 //  Created by Prashant Sawnani on 21/10/23.
 //  Copyright © 2023 Focus Bear. All rights reserved.
 //
+//  Hosts the native To-do List / Projects screen (FocusBear/ToDo). It replaced the
+//  dashboard.focusbear.io/webview/tools-todo-list webview; the native views talk to the same /to-do,
+//  /projects and /portfolio APIs the web page uses, so tasks stay in sync with the dashboard and
+//  mobile app. Shown by ViewController.showTaskView when no focus session is running (the running
+//  focus-session To-do Player is still taskPlayerVc's webview).
+//
 
 import Cocoa
-import WebKit
-class todoListToolVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate {
+import SwiftUI
 
-    @IBOutlet weak var webView: WKWebView!
-    let handler = MessageHandler()
+class todoListToolVc: NSViewController {
 
-    // Spinner shown while the dashboard webview is loading, so the user isn't staring at a
-    // blank white screen for the few seconds it takes the page to load.
-    private let loadingSpinner: NSProgressIndicator = {
-        let indicator = NSProgressIndicator()
-        indicator.style = .spinning
-        indicator.controlSize = .regular
-        indicator.isDisplayedWhenStopped = false
-        indicator.translatesAutoresizingMaskIntoConstraints = false
-        return indicator
-    }()
+    let todoStore: ToDoStore
+    let projectsStore: ProjectsStore
+    /// Which tab is showing; a project tap on the Projects tab switches back to Tasks.
+    private let tabSubject = ToDoTabSelection()
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // Do view setup here.
-        self.webView.navigationDelegate = self
-        webView.configuration.userContentController.add(AccessTokenRequestHandler.shared, name: AccessTokenRequestHandler.messageName)
+    /// Open this screen on the Tasks tab with the reschedule plan already opening — the Day Plan's
+    /// over-capacity banner offers it, and the plan lives here.
+    func openReprioritisePlan(focusing target: ForecastDayFocus.Target? = nil) {
+        tabSubject.selectedTab = .tasks
+        todoStore.forecast.prepareWorkPlanLoadingIfNeeded(focusing: target)
+    }
 
-        webView.addSubview(loadingSpinner)
+    init() {
+        let strings = ToDoStrings.load()
+        todoStore = ToDoStore(strings: strings)
+        projectsStore = ProjectsStore(strings: strings, forecast: todoStore.forecast)
+        super.init(nibName: nil, bundle: nil)
+        projectsStore.onSelectProject = { [weak self] project in
+            self?.todoStore.setProjectFilter(project.id)
+            self?.tabSubject.selectedTab = .tasks
+        }
+        todoStore.onTaskChanged = { [weak self] in
+            self?.projectsStore.detail?.reloadTasks()
+            self?.todoStore.forecast.markDirty()
+        }
+        todoStore.forecast.onApplied = { [weak self] in
+            self?.projectsStore.loadProjects()
+            self?.projectsStore.detail?.reloadTasks()
+        }
+        // The row's Snooze is the Day Plan's smart snooze; it scans the schedule's free time per day.
+        todoStore.scheduleFreeMinutes = { scheduleViewController.scheduleFreeMinutes(on: $0) }
+        // A project created on either tab must show up on the other: the Projects list / portfolio
+        // and the task editor's project catalogue are separate stores.
+        projectsStore.onProjectCreated = { [weak self] project in self?.todoStore.insertProject(project) }
+        todoStore.onProjectCreated = { [weak self] project in self?.projectsStore.insertProject(project) }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("todoListToolVc is built in code")
+    }
+
+    /// Built in code (no storyboard scene) — new Mac UI is SwiftUI hosted in an NSHostingView.
+    override func loadView() {
+        let container = NSView()
+        let screen = ToDoHostView(todoStore: todoStore, projectsStore: projectsStore, tabSelection: tabSubject) { [weak self] in
+            self?.view.window?.close()
+        }
+        let hosting = NSHostingView(rootView: screen)
+        hosting.translatesAutoresizingMaskIntoConstraints = false
+        // The hosting view's intrinsic (ideal) size is the whole task list; at the default 750
+        // compression resistance it outranks the window's size and would grow the main window to fit
+        // every row. Let the window size win so the list scrolls instead.
+        if #available(macOS 13.0, *) {
+            hosting.sizingOptions = []
+        }
+        hosting.setContentCompressionResistancePriority(.init(1), for: .vertical)
+        hosting.setContentCompressionResistancePriority(.init(1), for: .horizontal)
+        hosting.setContentHuggingPriority(.init(1), for: .vertical)
+        hosting.setContentHuggingPriority(.init(1), for: .horizontal)
+        container.addSubview(hosting)
         NSLayoutConstraint.activate([
-            loadingSpinner.centerXAnchor.constraint(equalTo: webView.centerXAnchor),
-            loadingSpinner.centerYAnchor.constraint(equalTo: webView.centerYAnchor)
+            hosting.topAnchor.constraint(equalTo: container.topAnchor),
+            hosting.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            hosting.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            hosting.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
-    }
-    override func viewWillDisappear() {
-//        update all tags because it may be posssible that user has created some tags in webview
-        allApiObject.getFocusModeTags(completionHandler: {arrJson in
-            
-        })
-    }
-    
-    func reloadData(){
-        loadingSpinner.startAnimation(nil)
-        let webUrl:String = "https://dashboard.focusbear.io/webview/tools-todo-list?bust_cache=\(getUuid())"
-        let link = URL(string:webUrl)!
-        let request = URLRequest(url: link)
-        self.webView.load(request)
+        view = container
     }
 
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        DispatchQueue.global().async {
-            sleep(1)
-            DispatchQueue.main.async {
-                self.loadingSpinner.stopAnimation(nil)
-                self.removeWebViewLoadFailedView(webView: webView)
-                self.setAccessTokenToWebView()
-            }
-        }
-    }
-    
-    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        handleLoadError(webView: webView)
-    }
-    
-    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        handleLoadError(webView: webView)
-    }
-  
-
-    var webViewLoadFailedVcObj:webViewLoadFailedVc?
-    func removeWebViewLoadFailedView(webView: WKWebView) {
-        if webViewLoadFailedVcObj != nil{
-            if webView.subviews.contains(webViewLoadFailedVcObj!.view){
-                webViewLoadFailedVcObj?.view.removeFromSuperview()
-            }
-        }
-    }
-   
-    func handleLoadError(webView: WKWebView) {
-        loadingSpinner.stopAnimation(nil)
-        if webViewLoadFailedVcObj != nil{
-            if webView.subviews.contains(webViewLoadFailedVcObj!.view){
-                webViewLoadFailedVcObj?.reloadData()
-                return;
-            }
-        }
-        webViewLoadFailedVcObj = getWebViewLoadFailedVcObject()
-        webViewLoadFailedVcObj!.customDelegate = self
-        webViewLoadFailedVcObj?.webView = webView
-        webView.addSubview(webViewLoadFailedVcObj!.view)
-        webView.addConstraints(subView: webViewLoadFailedVcObj!.view)
-        webViewLoadFailedVcObj?.reloadData()
-    }
-    
-    func reloadClicked(webView:WKWebView){
+    /// Reload every time the screen is shown (the webview reloaded the page on each open).
+    override func viewWillAppear() {
+        super.viewWillAppear()
         reloadData()
     }
-    
-    func setAccessTokenToWebView(requestId: String? = nil){
-        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
-        let intention = whatToAchieveInFocusBlock
-        var stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\"}"
-        
-        if !intention.isEmpty{
-            stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"intention\":\"\(intention)\"}"
-        }
-        if let requestId = requestId {
-            stringJson = String(stringJson.dropLast()) + ",\"requestId\":\"\(requestId)\"}"
-        }
-        let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadAccessTokenForToDo) { loadAccessTokenForToDo(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
-        
-        
-        
-        webView.evaluateJavaScript(settingsFunc,completionHandler: { (html: Any?, error: Error?) in
-            print(error as Any)
-            print("****error")
-            print(html as Any)
-        })
+
+    func reloadData() {
+        todoStore.screenAppeared()
+        projectsStore.screenAppeared()
     }
-    
+
+    /// The webview used to refresh focus-mode tags on close because the user may have created
+    /// projects in it; the native editor can too (`POST /projects`), so keep the Day Plan's tag
+    /// cache in step.
+    override func viewWillDisappear() {
+        super.viewWillDisappear()
+        allApiObject.getFocusModeTags(completionHandler: { _ in })
+    }
+}
+
+/// Bridges the VC's tab selection into SwiftUI so a project tap can switch tabs.
+final class ToDoTabSelection: ObservableObject {
+    @Published var selectedTab = ToDoScreenTab.tasks
+}
+
+private struct ToDoHostView: View {
+    @ObservedObject var todoStore: ToDoStore
+    @ObservedObject var projectsStore: ProjectsStore
+    @ObservedObject var tabSelection: ToDoTabSelection
+    let onClose: () -> Void
+
+    var body: some View {
+        ToDoScreen(todoStore: todoStore, projectsStore: projectsStore, selectedTab: $tabSelection.selectedTab, onClose: onClose)
+    }
 }

@@ -25,12 +25,7 @@ final class RelevanceOnnxModel {
 
     /// All four artifacts must be present (see RelevanceModelDownloader). Returns nil if any model
     /// or tokenizer fails to load.
-    init?(
-        minilmPath: String,
-        textcnnPath: String,
-        vocabURL: URL,
-        wordIndexURL: URL
-    ) {
+    init?(minilmPath: String, textcnnPath: String, vocabURL: URL, wordIndexURL: URL) {
         guard let m = ORTBridge(modelPath: minilmPath),
               let t = ORTBridge(modelPath: textcnnPath),
               let wp = BertWordPieceTokenizer(vocabURL: vocabURL),
@@ -38,10 +33,8 @@ final class RelevanceOnnxModel {
             return nil
         }
 
-        minilm = m
-        textcnn = t
-        wordpiece = wp
-        keras = k
+        minilm = m; textcnn = t; wordpiece = wp; keras = k
+
     }
 
     func predict(focusIntention: String, tabTitle: String) -> Prediction? {

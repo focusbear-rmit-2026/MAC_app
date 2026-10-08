@@ -381,4 +381,338 @@ class CustomBlockingScheduleTests: XCTestCase {
             excludingId: schedule.id
         ))
     }
+
+    // MARK: - Why blocking is off (menu "Blocking is off" card, Mac-App#1978)
+
+    /// Everything granted, a schedule running — nothing to explain.
+    private func blockingOn() -> BlockingStatus {
+        BlockingStatus(isAppEnabled: true, permissions: .granted, isAnyBrowserEnabled: true,
+                       scheduleCount: 1, isAnyScheduleOn: true, isAnySchedulePaused: false,
+                       isAnyScheduleCoveringNow: true, isFocusSessionRunning: false,
+                       isRoutineRunning: false)
+    }
+
+    func test_blockingOffReasons_emptyWhileAScheduleIsRunning() {
+        XCTAssertEqual(blockingOn().offReasons, [])
+    }
+
+    // MARK: - Browser reads that stopped answering (report 2026-09-11_16-56-33)
+
+    func test_blockingOffReasons_reportsABrowserThatStoppedAnsweringEvenWhileAScheduleRuns() {
+        var status = blockingOn()
+        status.isBrowserUrlReadFailing = true
+        XCTAssertEqual(status.offReasons, [.browserNotResponding],
+                       "Nothing can be checked, so this is reported even with a schedule on")
+        XCTAssertEqual(BlockingStatusCardKind(reasons: status.offReasons), .off,
+                       "A browser that cannot be read is not a mere warning")
+    }
+
+    func test_blockingOffReasons_staysQuietAboutReadsWhenNoBrowserIsSetUpAtAll() {
+        var status = blockingOn()
+        status.isAnyBrowserEnabled = false
+        status.isBrowserUrlReadFailing = true
+        XCTAssertEqual(status.offReasons, [.noBrowserEnabled],
+                       "The fix is to set a browser up; failing reads of nothing add no information")
+    }
+
+    func test_browserUrlReadHealth_needsARunOfFailuresAndReportsEachTransitionOnce() {
+        var health = BrowserUrlReadHealth()
+        for _ in 1..<BrowserUrlReadHealth.failureThreshold {
+            XCTAssertFalse(health.record(succeeded: false), "A handful of empty reads is normal")
+            XCTAssertFalse(health.isFailing)
+        }
+        XCTAssertTrue(health.record(succeeded: false), "The threshold failure is the one worth logging")
+        XCTAssertTrue(health.isFailing)
+        XCTAssertFalse(health.record(succeeded: false), "Still failing is not news")
+        XCTAssertTrue(health.record(succeeded: true), "Recovery is news")
+        XCTAssertFalse(health.isFailing)
+        XCTAssertFalse(health.record(succeeded: true))
+    }
+
+    func test_browserUrlReadHealth_oneGoodReadResetsTheRun() {
+        var health = BrowserUrlReadHealth()
+        for _ in 1..<BrowserUrlReadHealth.failureThreshold { _ = health.record(succeeded: false) }
+        _ = health.record(succeeded: true)
+        for _ in 1..<BrowserUrlReadHealth.failureThreshold {
+            XCTAssertFalse(health.record(succeeded: false))
+        }
+        XCTAssertFalse(health.isFailing, "The count starts again after a browser answers")
+    }
+
+    func test_blockingOffReasons_emptyDuringAFocusSessionWithNoSchedule() {
+        var status = blockingOn()
+        status.scheduleCount = 0
+        status.isAnyScheduleOn = false
+        status.isFocusSessionRunning = true
+        XCTAssertEqual(status.offReasons, [], "a focus session blocks on its own")
+    }
+
+    func test_blockingOffReasons_namesMissingPermissionsEvenMidSession() {
+        var status = blockingOn()
+        status.permissions = .missing
+        status.isFocusSessionRunning = true
+        XCTAssertEqual(status.offReasons, [.permissionsMissing],
+                       "retain the permission warning while a session runs")
+    }
+
+    func test_blockingOffReasons_distinguishesTheThreeScheduleGaps() {
+        var status = blockingOn()
+        status.isAnyScheduleOn = false
+
+        status.scheduleCount = 0
+        XCTAssertEqual(status.offReasons, [.noSchedule])
+
+        status.scheduleCount = 1
+        status.isAnySchedulePaused = true
+        XCTAssertEqual(status.offReasons, [.schedulePaused])
+
+        status.isAnySchedulePaused = false
+        status.isAnyScheduleCoveringNow = false
+        XCTAssertEqual(status.offReasons, [.noScheduleRightNow])
+    }
+
+    func test_blockingOffReasons_listsEveryCauseThatApplies() {
+        var status = blockingOn()
+        status.permissions = .missing
+        status.scheduleCount = 0
+        status.isAnyScheduleOn = false
+        XCTAssertEqual(status.offReasons, [.permissionsMissing, .noSchedule],
+                       "both causes are named, most severe first")
+    }
+
+    func test_blockingOffReasons_deactivatedAppIsTheWholeStory() {
+        var status = blockingOn()
+        status.isAppEnabled = false
+        status.permissions = .missing
+        status.scheduleCount = 0
+        status.isAnyScheduleOn = false
+        XCTAssertEqual(status.offReasons, [.appDeactivated],
+                       "the consequences of deactivating mustn't bury the thing to undo")
+    }
+
+    func test_blockingOffReasons_everyReasonHasAnExplanationAndAFix() {
+        for reason in BlockingOffReason.allCases {
+            XCTAssertFalse(reason.explanation.isEmpty, "\(reason.rawValue) needs an explanation")
+            XCTAssertFalse(reason.fixTitle.isEmpty, "\(reason.rawValue) needs a fix button")
+        }
+    }
+
+    // MARK: - Not asserting what we can't establish (report 2026-09-10_07-54-05)
+
+    /// The reported false positive, end to end: every grant in place and a schedule covering the
+    /// moment, but mid-morning-routine — so schedule activation was suppressed and the card claimed
+    /// both missing permissions and that no schedule covered right now. Neither was true.
+    func test_blockingOffReasons_silentDuringARoutineWithEverythingGranted() {
+        var status = blockingOn()
+        status.isAnyScheduleOn = false      // routines suppress schedule activation
+        status.isRoutineRunning = true
+        XCTAssertEqual(status.offReasons, [],
+                       "a running routine blocks on its own — nothing here is off")
+    }
+
+    /// An unfinished or timed-out permission probe must not be reported as a denial: the menu
+    /// renders before the async probe lands, and a busy AppleScript queue is not a refusal.
+    func test_blockingOffReasons_saysNothingWhilePermissionsAreUnknown() {
+        var status = blockingOn()
+        status.permissions = .unknown
+        XCTAssertEqual(status.offReasons, [],
+                       "an inconclusive probe is not evidence of a missing permission")
+
+        status.isAnyScheduleOn = false
+        status.isAnyScheduleCoveringNow = false
+        XCTAssertEqual(status.offReasons, [.noScheduleRightNow],
+                       "the schedule gap still stands on its own while permissions are unknown")
+    }
+
+    /// Permissions granted but no browser set up: a real gap, but in the browser list — so it gets
+    /// its own reason and its own fix, never the permissions wizard.
+    func test_blockingOffReasons_noBrowserEnabledIsNotAMissingPermission() {
+        var status = blockingOn()
+        status.isAnyBrowserEnabled = false
+        XCTAssertEqual(status.offReasons, [.noBrowserEnabled])
+        XCTAssertNotEqual(BlockingOffReason.noBrowserEnabled.fixTitle,
+                          BlockingOffReason.permissionsMissing.fixTitle,
+                          "the two must not send the user to the same place")
+    }
+
+    /// A missing grant already explains why nothing is blocked; the browser list is the next thing
+    /// to fix, not a second cause to bury it under.
+    func test_blockingOffReasons_missingPermissionsOutranksTheBrowserList() {
+        var status = blockingOn()
+        status.permissions = .missing
+        status.isAnyBrowserEnabled = false
+        XCTAssertEqual(status.offReasons, [.permissionsMissing])
+    }
+
+    /// An unreadable browser list reads as "nothing to report", so an unloaded list can't accuse
+    /// a user who has browsers set up.
+    func test_blockingOffReasons_scheduleCoveringNowIsNeverCalledAGap() {
+        var status = blockingOn()
+        status.isAnyScheduleOn = false
+        status.isAnyScheduleCoveringNow = true
+        XCTAssertEqual(status.offReasons, [],
+                       "claiming no schedule covers now, while one does, is the falsehood to avoid")
+    }
+
+    /// The log line is what makes the next report answerable without a code read, so it has to
+    /// carry every input and the conclusion.
+    func test_blockingStatus_logDescriptionCarriesInputsAndConclusion() {
+        var status = blockingOn()
+        status.permissions = .unknown
+        let line = status.logDescription
+        for field in ["appEnabled=", "permissions=", "browserEnabled=", "schedules=", "scheduleOn=",
+                      "schedulePaused=", "scheduleCoversNow=", "focusSession=", "routine="] {
+            XCTAssertTrue(line.contains(field), "log line is missing \(field): \(line)")
+        }
+        XCTAssertTrue(line.contains("no confirmed blocking issue"),
+                      "unknown permission evidence cannot prove blocking is on: \(line)")
+
+        status.permissions = .missing
+        XCTAssertTrue(status.logDescription.contains(BlockingOffReason.permissionsMissing.rawValue),
+                      "the concluded reasons must be named in the log")
+    }
+
+    func test_missingPermissionDuringActiveBlockingShowsAttentionInsteadOfOff() {
+        var status = blockingOn()
+        status.permissions = .missing
+        XCTAssertEqual(BlockingStatusCardKind(reasons: status.offReasons), .attention)
+        status.isAnyScheduleOn = false
+        status.isFocusSessionRunning = true
+        XCTAssertEqual(BlockingStatusCardKind(reasons: status.offReasons), .attention)
+        status.isFocusSessionRunning = false
+        status.isRoutineRunning = true
+        XCTAssertEqual(BlockingStatusCardKind(reasons: status.offReasons), .attention)
+    }
+
+    func test_disabledBrowserDoesNotClaimApplicationBlockingIsOff() {
+        var status = blockingOn()
+        status.isAnyBrowserEnabled = false
+        XCTAssertEqual(status.offReasons, [.noBrowserEnabled])
+        XCTAssertEqual(BlockingStatusCardKind(reasons: status.offReasons), .attention)
+    }
+
+    func test_realOffCauseKeepsOffHeadlineAlongsidePermissionWarning() {
+        var status = blockingOn()
+        status.permissions = .missing
+        status.isAnyScheduleOn = false
+        status.isAnyScheduleCoveringNow = false
+        XCTAssertEqual(BlockingStatusCardKind(reasons: status.offReasons), .off)
+        status.isAppEnabled = false
+        XCTAssertEqual(status.offReasons, [.appDeactivated])
+        XCTAssertEqual(BlockingStatusCardKind(reasons: status.offReasons), .off)
+    }
+
+    func test_permissionHealthNamesOnlyConfirmedAffectedCapabilities() {
+        var health = BlockingPermissionHealth(accessibilityGranted: false, systemEvents: .unknown)
+        XCTAssertEqual(health.state, .missing)
+        XCTAssertEqual(health.issues, [.accessibility])
+        health.systemEvents = .missing
+        XCTAssertEqual(health.issues, [.accessibility, .systemEvents])
+        health.accessibilityGranted = true
+        XCTAssertEqual(health.issues, [.systemEvents])
+        health.systemEvents = .unknown
+        XCTAssertEqual(health.state, .unknown)
+        XCTAssertEqual(health.issues, [])
+        health.systemEvents = .granted
+        XCTAssertEqual(health.state, .granted)
+    }
+
+    func test_automationPermissionQueryDistinguishesDenialFromUnavailableTarget() {
+        XCTAssertEqual(BlockingPermissionsState.automationAuthorizationStatus(0), .granted)
+        XCTAssertEqual(BlockingPermissionsState.automationAuthorizationStatus(-1743), .missing)
+        XCTAssertEqual(BlockingPermissionsState.automationAuthorizationStatus(-1744), .missing)
+        for status: Int32 in [-600, -1712, -50] {
+            XCTAssertEqual(BlockingPermissionsState.automationAuthorizationStatus(status), .unknown)
+        }
+    }
+
+    func test_permissionProbeAllowsOnlyOneInFlightCheckAndRefreshesAfterGrant() {
+        var probe = BlockingPermissionProbeCache()
+        XCTAssertEqual(probe.state(at: 100), .unknown)
+        XCTAssertTrue(probe.begin(at: 100))
+        XCTAssertFalse(probe.begin(at: 101))
+        probe.complete(.missing, startedAt: 100)
+        XCTAssertEqual(probe.state(at: 101), .missing)
+        XCTAssertFalse(probe.begin(at: 105))
+        XCTAssertTrue(probe.begin(at: 110))
+        probe.complete(.granted, startedAt: 110)
+        XCTAssertEqual(probe.state(at: 111), .granted)
+        // A duplicate/late older completion cannot overwrite the more recent grant.
+        probe.complete(.missing, startedAt: 100)
+        XCTAssertEqual(probe.state(at: 112), .granted)
+    }
+
+    func test_permissionEvidenceExpiresFromProbeStartRatherThanLateCompletion() {
+        var probe = BlockingPermissionProbeCache()
+        XCTAssertTrue(probe.begin(at: 100))
+        probe.complete(.missing, startedAt: 100)
+        XCTAssertEqual(probe.state(at: 130), .missing)
+        XCTAssertEqual(probe.state(at: 131), .unknown)
+        XCTAssertEqual(probe.state(at: 99), .unknown)
+        XCTAssertTrue(probe.begin(at: 140))
+        probe.complete(.missing, startedAt: 140)
+        XCTAssertEqual(probe.state(at: 171), .unknown,
+                       "a slow completion must not give old evidence a new 30-second lifetime")
+    }
+
+    func test_inconclusivePermissionRecheckDoesNotRetainAnEarlierDenial() {
+        var probe = BlockingPermissionProbeCache()
+        XCTAssertTrue(probe.begin(at: 100))
+        probe.complete(.missing, startedAt: 100)
+        XCTAssertTrue(probe.begin(at: 110))
+        probe.complete(.unknown, startedAt: 110)
+        XCTAssertEqual(probe.state(at: 111), .unknown)
+    }
+}
+
+// MARK: - New-schedule defaults (report 2026-09-15_17-43-33)
+
+/// The onboarding / "add new block" editor seeds a brand-new schedule from
+/// `BlockingScheduleDefaults`; an existing schedule is always loaded from its own saved values.
+/// These two paths are what keep "change the default" from rewriting anybody's saved window.
+@available(macOS 11.0, *)
+final class BlockingScheduleDefaultsTests: XCTestCase {
+
+    func testNewScheduleDefaultsToEightAmUntilFivePm() {
+        let model = BlockingScheduleEditorModel()
+        model.applyNewScheduleDefaults()
+        XCTAssertEqual(model.startMinutes, 8 * 60, "a new schedule should start at 08:00")
+        XCTAssertEqual(model.endMinutes, 17 * 60, "a new schedule should end at 17:00")
+    }
+
+    func testNewScheduleLeavesAiAndMicrobreakOptionsUnticked() {
+        let model = BlockingScheduleEditorModel()
+        model.useAI = true
+        model.skipMicroBreaks = true
+        model.applyNewScheduleDefaults()
+        XCTAssertFalse(model.useAI, "\"use AI to block distractions\" must not be ticked by default")
+        XCTAssertFalse(model.skipMicroBreaks, "\"skip microbreaks\" must not be ticked by default")
+    }
+
+    func testNewScheduleKeepsAPrefilledWindow() {
+        let model = BlockingScheduleEditorModel()
+        model.applyNewScheduleDefaults(startMinutes: 20 * 60, endMinutes: 23 * 60)
+        XCTAssertEqual(model.startMinutes, 20 * 60, "a dragged/preset start time still wins over the default")
+        XCTAssertEqual(model.endMinutes, 23 * 60)
+    }
+
+    func testExistingScheduleKeepsItsSavedWindowAndToggles() {
+        let model = BlockingScheduleEditorModel()
+        model.applySavedSchedule(startMinutes: 9 * 60, endMinutes: 18 * 60,
+                                 isAIBlockingEnabled: true, isMicroBreaksEnabled: false)
+        XCTAssertTrue(model.isEditing)
+        XCTAssertEqual(model.startMinutes, 9 * 60, "an existing user's saved start time is untouched")
+        XCTAssertEqual(model.endMinutes, 18 * 60, "an existing user's saved end time is untouched")
+        XCTAssertTrue(model.useAI, "a saved schedule with AI on stays on")
+        XCTAssertTrue(model.skipMicroBreaks, "a saved schedule that skips microbreaks keeps skipping them")
+    }
+
+    func testExistingCrossMidnightScheduleClampsToEndOfDay() {
+        let model = BlockingScheduleEditorModel()
+        model.applySavedSchedule(startMinutes: 22 * 60, endMinutes: 2 * 60,
+                                 isAIBlockingEnabled: false, isMicroBreaksEnabled: true)
+        XCTAssertEqual(model.startMinutes, 22 * 60)
+        XCTAssertEqual(model.endMinutes, 1440, "a window running past midnight clamps to the end of the day")
+        XCTAssertFalse(model.skipMicroBreaks)
+    }
 }

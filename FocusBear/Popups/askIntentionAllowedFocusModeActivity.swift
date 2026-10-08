@@ -59,7 +59,7 @@ class askIntentionAllowedFocusModeActivity: NSViewController {
                 }
             }
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        SensitiveDefaults.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         updateAllFocusModes()
         self.dismiss(self)
         timerViewcontrollerObj?.startTimerHabit(durationSeconds: durationSeconds, name: name, currentHabit: currentHabit, currentTimerValue: currentTimerValue, shouldUpdateDeviceButton: shouldUpdateDeviceButton)

@@ -16,7 +16,7 @@ class popUpOfflineVc: NSViewController {
     var step = 1
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        view.setUITestLandmark(UITestContract.Identifier.ManagedSafety.offlinePopup)
     }
   
     override func viewWillAppear() {
